@@ -1,5 +1,5 @@
 # Multi-stage build for Rust Worker
-FROM rust:1.80-slim AS builder
+FROM rust:1-slim AS builder
 
 WORKDIR /usr/src/kepce
 
