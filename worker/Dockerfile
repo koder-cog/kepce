@@ -3,8 +3,8 @@ FROM rust:1-slim AS builder
 
 WORKDIR /usr/src/kepce
 
-# Install pkg-config, libssl-dev, and g++ for building reqwest/openssl/ort-sys (C++)
-RUN apt-get update && apt-get install -y pkg-config libssl-dev g++ && rm -rf /var/lib/apt/lists/*
+# Install build-essential, pkg-config, and libssl-dev for C++ linking (ort-sys/fastembed)
+RUN apt-get update && apt-get install -y build-essential pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace cargo metadata
 COPY Cargo.toml Cargo.lock ./
