@@ -39,6 +39,8 @@ WORKDIR /app
 COPY --from=builder /usr/src/kepce/target/release/api /app/kepce-api
 COPY db /app/db
 
+RUN mkdir -p /app/static/avatars /app/uploads && chown -R nobody:nogroup /app/static /app/uploads
+
 EXPOSE 8000
 
 USER nobody:nogroup
