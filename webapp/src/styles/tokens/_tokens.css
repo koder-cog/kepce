@@ -1,0 +1,13 @@
+/*
+ * kepçe design system tokens v2.1 — manifest
+ *
+ * This file is a pure entry point. Each sub-file defines
+ * CSS custom properties in :root with their theme overrides.
+ * No style rules or element selectors live here.
+ */
+
+@import "_colors.css";
+@import "_typography.css";
+@import "_spacing.css";
+@import "_motion.css";
+@import "_shadows.css";

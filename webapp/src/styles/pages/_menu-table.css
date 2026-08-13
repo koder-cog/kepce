@@ -1,0 +1,55 @@
+/* SSR (Static Site Generation) Specific Styles */
+
+.ssr-page-title {
+  margin-bottom: var(--space-xl);
+  font-family: var(--font-display);
+}
+
+.ssr-menu-grid {
+  display: grid;
+  gap: var(--space-xl);
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.ssr-card {
+  margin-bottom: var(--space-xl);
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.ssr-card__header {
+  padding: 16px;
+  margin: 0;
+  background: var(--color-surface-variant);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ssr-card__table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.ssr-card__cell {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.ssr-card__cell--right {
+  text-align: right;
+  color: var(--color-accent);
+}
+
+.ssr-card__footer {
+  padding: 16px;
+  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--color-text-secondary);
+  border-top: 1px solid var(--color-border);
+}
+
+.ssr-text-muted {
+  color: var(--color-text-secondary);
+}

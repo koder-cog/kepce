@@ -1,0 +1,374 @@
+@layer components {
+  /* ── Layout ──────────────────────────────────────────────── */
+
+  /* Görev #70: "Ana içeriğe geç" bağlantısı — yalnızca klavye odağında
+     görünür olur. */
+  .skip-link {
+    position: absolute;
+    top: var(--space-sm);
+    left: var(--space-sm);
+    z-index: var(--z-max);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-accent-primary);
+    color: var(--color-text-on-accent);
+    font-weight: var(--font-weight-semibold);
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    transform: translateY(-200%);
+    transition: transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .skip-link:focus-visible {
+    transform: translateY(0);
+  }
+
+  .page-wrapper {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .page-container {
+    flex: 1;
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: var(--space-xl) var(--space-xl);
+    box-sizing: border-box;
+    /* Responsive (600px, 900px vb.) genişlik/alan geçişlerini pürüzsüz yapmak için */
+    transition:
+      padding var(--dur-slow) var(--ease-standard),
+      max-width var(--dur-slow) var(--ease-standard),
+      width var(--dur-slow) var(--ease-standard);
+  }
+
+  @media (max-width: 600px) {
+    .page-container {
+      padding: var(--space-md) var(--space-md);
+      width: 100%;
+      overflow-x: hidden;
+    }
+  }
+
+  .centered-content {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 60vh;
+    flex-direction: column;
+    gap: var(--space-xl);
+    text-align: center;
+  }
+
+  /* ── View Transitions (Persistent App Shell) ─────────────── */
+
+  #main-nav {
+    view-transition-name: main-nav;
+  }
+
+  /* We isolated main-footer to prevent it from inheriting the root's scale effect */
+  #site-footer {
+    view-transition-name: main-footer;
+  }
+
+  /* Main Content Animation (Quick Crossfade) applied to root */
+  ::view-transition-old(root) {
+    animation: fade-out-content 150ms ease-in both;
+  }
+
+  ::view-transition-new(root) {
+    animation: fade-in-content 150ms ease-out both;
+  }
+
+  ::view-transition-image-pair(root) {
+    isolation: isolate;
+  }
+
+  ::view-transition-old(main-footer) {
+    animation: fade-out-footer 150ms ease-in both;
+  }
+
+  ::view-transition-new(main-footer) {
+    animation: fade-in-footer 150ms ease-out both;
+  }
+
+  @keyframes fade-out-content {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in-content {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-out-footer {
+    to {
+      opacity: 0;
+    }
+  }
+
+  @keyframes fade-in-footer {
+    from {
+      opacity: 0;
+    }
+  }
+
+  /* ── Sidebar Layout ──────────────────────────── */
+  .sidebar-layout {
+    display: grid;
+    grid-template-columns: minmax(240px, 280px) 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+    margin-top: var(--space-xl);
+  }
+
+  .sidebar-island {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: calc(var(--nav-height) + var(--space-xl));
+    padding-bottom: var(--space-sm);
+    view-transition-name: sidebar-island;
+  }
+
+  .sidebar__nav {
+    padding: var(--space-lg) var(--space-lg);
+  }
+
+  .sidebar-nav-group {
+    margin-bottom: var(--space-md);
+  }
+
+  .sidebar-nav-group:last-child {
+    margin-bottom: 0;
+  }
+
+  /* Collapsible categories using button */
+  .sidebar-nav-group__title {
+    padding: 0 var(--space-sm);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-black);
+    color: var(--color-muted);
+    margin-bottom: var(--space-xs);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    user-select: none;
+    outline: none;
+    transition: opacity var(--dur-fast);
+  }
+
+  .sidebar-nav-group__title:hover {
+    opacity: 0.8;
+  }
+
+  .sidebar-nav-group__title:active {
+    transform: none;
+  }
+
+  .sidebar-nav-group__chevron {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    transition: transform var(--dur-default) var(--ease-spring-bounce);
+    transform: rotate(-90deg);
+    /* Kapalıyken sağa bakar */
+  }
+
+  .sidebar-nav-group__title.open .sidebar-nav-group__chevron {
+    transform: rotate(0deg);
+    /* Açıkken aşağı bakar */
+  }
+
+
+  .sidebar-nav-group__links {
+    display: block;
+  }
+
+  .sidebar-nav-link {
+    display: block;
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: 2px;
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    transition: all var(--motion-effects-fast);
+    position: relative;
+    cursor: pointer;
+    outline: none;
+  }
+
+  .sidebar-nav-link:last-child {
+    margin-bottom: 0;
+  }
+
+  .sidebar-nav-link:focus-visible {
+    background: var(--color-surface-sunken);
+    box-shadow: inset 0 0 0 2px var(--color-accent-primary);
+  }
+
+  @media (hover: hover) {
+    .sidebar-nav-link:hover {
+      background: var(--color-accent-primary-light);
+      color: var(--color-accent-primary);
+    }
+  }
+
+  .sidebar-nav-link--active {
+    background: var(--color-accent-primary);
+    color: var(--color-text-on-accent) !important;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .sidebar-nav-link--active:hover {
+    background: var(--color-accent-primary-hover);
+    color: var(--color-text-on-accent) !important;
+  }
+
+  .sidebar-nav-link:active {
+    transform: scale(var(--press-scale));
+  }
+
+  /* ── Mobil Dropdown Tetikleyici ──────────────────────── */
+  .sidebar-mobile-dropdown {
+    display: none;
+    width: 100%;
+    margin-bottom: var(--space-md);
+  }
+
+  .sidebar-mobile-trigger {
+    width: 100%;
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    font-size: var(--text-base);
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-semibold);
+    text-align: left;
+    box-shadow: var(--shadow-sm);
+    height: auto;
+  }
+
+  .sidebar-dropdown-title {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-black);
+    color: var(--color-muted);
+    padding: var(--space-sm) var(--space-md);
+    margin-top: var(--space-xs);
+    pointer-events: none;
+  }
+
+  .sidebar-dropdown-divider {
+    height: 0;
+    border-top: 1px solid var(--color-border-light);
+    margin: var(--space-md);
+  }
+
+  .sidebar-dropdown-item {
+    font-weight: var(--font-weight-medium);
+  }
+
+  /* ── İçerik ── */
+  .sidebar-content {
+    min-width: 0;
+  }
+
+  .sidebar-header {
+    margin-bottom: var(--space-xl);
+  }
+
+  .sidebar-header__title {
+    font-size: var(--text-h2);
+    font-family: var(--font-display);
+    margin: 0;
+    color: var(--color-text);
+    line-height: var(--leading-heading);
+  }
+
+  .sidebar-header__desc {
+    color: var(--color-muted);
+    margin-top: var(--space-xs);
+    font-size: var(--text-base);
+    max-width: 600px;
+    line-height: var(--leading-relaxed);
+  }
+
+  /* ── Responsive Updates ──────────────────────────────── */
+  @media (max-width: 900px) {
+    .sidebar-layout {
+      grid-template-columns: 1fr;
+      margin-top: 0;
+    }
+
+    .sidebar-island {
+      display: none;
+    }
+
+    .sidebar-mobile-dropdown {
+      display: block;
+    }
+
+    .sidebar-header__title {
+      font-size: var(--text-h3);
+    }
+  }
+
+
+  /* ── Utilities ───────────────────────────────────────────── */
+
+  .u-show-desktop {
+    display: inline-block !important;
+  }
+
+  .u-show-tablet {
+    display: none !important;
+  }
+
+  .u-show-mobile {
+    display: none !important;
+  }
+
+  @media (max-width: 900px) {
+    .u-show-desktop {
+      display: none !important;
+    }
+
+    .u-show-tablet {
+      display: inline-block !important;
+    }
+
+    .u-show-mobile {
+      display: none !important;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .u-show-desktop {
+      display: none !important;
+    }
+
+    .u-show-tablet {
+      display: none !important;
+    }
+
+    .u-show-mobile {
+      display: inline-block !important;
+    }
+  }
+}

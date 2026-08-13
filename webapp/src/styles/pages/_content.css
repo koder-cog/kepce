@@ -1,0 +1,172 @@
+@layer components {
+  .content-page {
+    margin: 0 auto;
+    padding: 0;
+    max-width: 75ch;
+  }
+
+  .content-page__header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: var(--space-2xl);
+    gap: var(--space-sm);
+    height: min-content !important;
+  }
+
+  .content-page__title {
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-regular);
+    font-size: var(--text-h1);
+    line-height: var(--leading-display);
+    color: var(--color-text-primary);
+  }
+
+  .content-page__meta {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .content-page__date,
+  .content-page__archive-notice {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .content-page__archive-link {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-accent-primary);
+    text-decoration: none;
+    transition: color var(--dur-fast) var(--ease-standard),
+                filter var(--dur-fast) var(--ease-standard),
+                opacity var(--dur-fast) var(--ease-standard);
+  }
+
+  .content-page__archive-link:hover {
+    filter: brightness(1.25);
+    text-decoration: underline;
+    opacity: 0.9;
+  }
+
+  .content-page__date,
+  .content-page__archive-notice {
+    color: var(--color-muted);
+  }
+
+  .content-page__body {
+    font-size: var(--text-p2);
+    line-height: var(--leading-loose);
+    color: var(--color-text);
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .content-page__body p {
+    margin-bottom: var(--space-xl);
+  }
+
+  .content-page__body h2 {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-h2);
+    margin-bottom: var(--space-lg) !important;
+    line-height: var(--leading-heading);
+  }
+
+  .content-page__body h3 {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-h3);
+    margin-top: var(--space-2xl);
+    margin-bottom: var(--space-md);
+    line-height: var(--leading-snug);
+  }
+
+  /* Lists */
+  .content-page__body ul {
+    margin-bottom: var(--space-xl);
+    padding-left: var(--space-xl);
+    list-style-type: disc;
+  }
+
+  .content-page__body ol {
+    margin-bottom: var(--space-xl);
+    padding-left: var(--space-xl);
+    list-style-type: decimal;
+  }
+
+  .content-page__body li {
+    margin-bottom: var(--space-sm);
+  }
+
+  .content-page__body li::marker {
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-bold);
+  }
+
+  /* Links */
+  .content-page__body a {
+    color: var(--color-accent-primary);
+    text-decoration: none;
+    font-weight: var(--font-weight-semibold);
+    transition: all var(--motion-effects-fast);
+  }
+
+  .content-page__body a:hover {
+    text-decoration: underline;
+    opacity: 0.8;
+  }
+
+  /* Emphasis */
+  .content-page__body strong {
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+  }
+
+  /* Blockquotes */
+  .content-page__body blockquote {
+    border-left: 4px solid var(--color-accent-primary-light);
+    padding: var(--space-md) var(--space-xl);
+    margin: var(--space-xl) 0;
+    background: var(--color-surface-sunken);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    font-style: italic;
+    color: var(--color-text-secondary);
+  }
+
+  /* ── Contact Page Specifics ───────────────────────────────── */
+  .contact-form-section {
+    margin-top: var(--space-2xl);
+  }
+
+  .contact-form-card {
+    background: var(--color-surface-elevated);
+    padding: var(--space-xl);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+  }
+
+  .contact-form-card form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .contact-form-card .btn {
+    width: 100%;
+    height: var(--control-height);
+    margin-top: var(--space-sm);
+    border-radius: var(--radius-md) !important;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-base);
+  }
+
+  .contact-info-section {
+    margin-top: var(--space-2xl);
+    padding-top: var(--space-xl);
+    border-top: 1px solid var(--color-border-light);
+  }
+}

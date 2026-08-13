@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kesinti | Kepçe</title>
+
+  <!-- Fontlar -->
+  <style>
+    @font-face {
+      font-family: 'Public Sans';
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+      src: url(/fonts/publicsans-ijwRs572Xtc6ZYQws9YVwnNGfJ4.woff2) format('woff2');
+    }
+
+    @font-face {
+      font-family: 'Public Sans';
+      font-style: normal;
+      font-weight: 700;
+      font-display: swap;
+      src: url(/fonts/publicsans-ijwRs572Xtc6ZYQws9YVwnNIfJ7Cww.woff2) format('woff2');
+    }
+
+    :root {
+      color-scheme: light dark;
+      --color-background: #f9f5e5;
+      --color-card: #ffffff;
+      --color-surface-elevated: #f9f7f0;
+      --color-text: #242828;
+      --color-muted: #6f6c64;
+      --color-accent-primary: #db6f3f;
+      --color-accent-primary-hover: #c97956;
+      --color-text-on-accent: #242828;
+      --color-border-light: #ece9dc;
+      --color-border: #e0ddd0;
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-full: 9999px;
+      --dur-fast: 200ms;
+      --dur-default: 350ms;
+      --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+      --ease-spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background: #242828;
+        --color-card: #141414;
+        --color-surface-elevated: #1e2121;
+        --color-text: #f9f5e5;
+        --color-muted: #999999;
+        --color-accent-primary: #e38e69;
+        --color-accent-primary-hover: #f0ab8b;
+        --color-text-on-accent: #242828;
+        --color-border-light: #2e3131;
+        --color-border: #3a3d3d;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Public Sans', system-ui, -apple-system, sans-serif;
+      background-color: var(--color-background);
+      color: var(--color-text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .maintenance-card {
+      background-color: var(--color-card);
+      border: 1px solid var(--color-border-light);
+      border-radius: var(--radius-lg);
+      padding: 48px 36px;
+      max-width: 520px;
+      width: 100%;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .empty-state__icon {
+      margin-bottom: 24px;
+      color: var(--color-accent-primary);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 104px;
+      height: 104px;
+      background: var(--color-surface-elevated);
+      border: 1px solid var(--color-border-light);
+      border-radius: 50%;
+    }
+
+    .empty-state__icon svg {
+      width: 48px;
+      height: 48px;
+    }
+
+    h1 {
+      font-family: 'Public Sans', system-ui, sans-serif;
+      font-size: 28px;
+      font-weight: 900;
+      line-height: 1.2;
+      margin-bottom: 16px;
+      color: var(--color-text);
+    }
+
+    p {
+      font-family: 'Public Sans', system-ui, sans-serif;
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--color-muted);
+      margin-bottom: 32px;
+      max-width: 440px;
+    }
+
+    p strong {
+      color: var(--color-text);
+      font-weight: 700;
+    }
+
+    .social-links {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      flex-wrap: wrap;
+      width: 100%;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 12px 24px;
+      border-radius: var(--radius-full);
+      border: none;
+      font-family: 'Public Sans', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+      background-color: var(--color-accent-primary);
+      color: var(--color-text-on-accent);
+      transition: transform var(--dur-default) var(--ease-spring-bounce),
+        background-color var(--dur-fast) var(--ease-standard);
+      backface-visibility: hidden;
+      will-change: transform;
+    }
+
+    .btn:hover {
+      background-color: var(--color-accent-primary-hover);
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+      transition-duration: 100ms;
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    .auto-reload {
+      margin-top: 28px;
+      font-size: 12px;
+      color: var(--color-muted);
+      opacity: 0.75;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="maintenance-card" role="status" aria-live="polite">
+    <div class="empty-state__icon">
+      <!-- Kepçe / Çorba Kasesi SVG İkonu -->
+      <?xml version="1.0" encoding="UTF-8"?>
+      <svg height="16px" viewBox="0 0 16 16" width="16px" xmlns="http://www.w3.org/2000/svg">
+        <g fill="currentColor">
+          <path
+            d="m 4.007812 0 c -2.222656 0 -4.007812 1.785156 -4.007812 4.003906 v 2.976563 c 0 2.21875 1.785156 4.003906 4.007812 4.003906 h 2.980469 v 1.285156 c -0.289062 0.171875 -0.535156 0.414063 -0.707031 0.703125 h -3.285156 c -0.554688 0 -1 0.449219 -1 1 c 0 0.550782 0.445312 1 1 1 h 3.246094 c 0.351562 0.640625 1.023437 1.035156 1.753906 1.039063 c 0.726562 -0.003907 1.398437 -0.398438 1.75 -1.039063 h 3.261718 c 0.550782 0 1 -0.449218 1 -1 c 0 -0.550781 -0.449218 -1 -1 -1 h -3.292968 c -0.175782 -0.289062 -0.421875 -0.53125 -0.714844 -0.703125 v -1.285156 h 2.996094 c 2.21875 0 4.003906 -1.785156 4.003906 -4.003906 v -2.976563 c 0 -2.21875 -1.785156 -4.003906 -4.003906 -4.003906 z m 0 2 h 7.988282 c 1.125 0 2.003906 0.878906 2.003906 2.003906 v 2.976563 c 0 1.125 -0.878906 2.003906 -2.003906 2.003906 h -7.988282 c -1.128906 0 -2.007812 -0.878906 -2.007812 -2.003906 v -2.976563 c 0 -1.125 0.878906 -2.003906 2.007812 -2.003906 z m 3.988282 11 c 0.554687 0 1.003906 0.449219 1.003906 1.003906 c 0 0.558594 -0.449219 1.007813 -1.003906 1.007813 c -0.558594 0 -1.007813 -0.449219 -1.007813 -1.007813 c 0 -0.554687 0.449219 -1.003906 1.007813 -1.003906 z m 0 0" />
+          <path
+            d="m 5 4 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 s -1 -0.449219 -1 -1 s 0.449219 -1 1 -1 z m 0 0" />
+          <path
+            d="m 8 4 c 0.550781 0 1 0.449219 1 1 s -0.449219 1 -1 1 s -1 -0.449219 -1 -1 s 0.449219 -1 1 -1 z m 0 0" />
+        </g>
+      </svg>
+    </div>
+
+    <h1>Sıçtık Cafer Bez Getir</h1>
+
+    <p>
+      Şu an size siteyi gösteremiyoruz çünkü ya bakım yapmaktayız ya da site çöktü.
+      Aşağıdaki bağlantılardan güncelleme var mı kontrol edebilirsiniz.
+    </p>
+
+    <div class="social-links">
+      <a href="https://x.com/kepceorg" target="_blank" rel="noopener noreferrer" class="btn">
+        Twitter
+      </a>
+      <a href="https://instagram.com/kepceorg" target="_blank" rel="noopener noreferrer" class="btn">
+        Instagram
+      </a>
+      <a href="https://reddit.com/r/kepce" target="_blank" rel="noopener noreferrer" class="btn">
+        Subreddit
+      </a>
+    </div>
+
+    <div class="auto-reload">
+      Sayfa 15 saniyede bir otomatik kontrol edilmektedir...
+    </div>
+  </main>
+
+  <script>
+    setTimeout(function () {
+      location.reload();
+    }, 15000);
+  </script>
+</body>
+
+</html>

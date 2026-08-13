@@ -1,0 +1,45 @@
+/* ── Shake / Pulse Animations ─────────────────────────────── */
+/* Tıklanan zaten-aktif UI öğeleri için sarsılma animasyonu.
+   Örn. Nav.svelte'de .anim-shake sınıfı ile kullanılır.
+   (Eskiden _interactive.css içinde .disclaimer-card adıyla
+   yanlış tanımlanmıştı — gerçek .disclaimer-card bileşeni
+   _disclaimer-card.css'tedir.) */
+
+@keyframes shake-disclaimer {
+  0%, 100% {
+    translate: 0 0;
+  }
+  10% {
+    translate: -5px 0;
+  }
+  20% {
+    translate: 5px 0;
+  }
+  30% {
+    translate: -5px 0;
+  }
+  40% {
+    translate: 4px 0;
+  }
+  50% {
+    translate: -4px 0;
+  }
+  60% {
+    translate: 3px 0;
+  }
+  70% {
+    translate: -2px 0;
+  }
+  80% {
+    translate: 2px 0;
+  }
+  90% {
+    translate: -1px 0;
+  }
+}
+
+.anim-shake {
+  animation: shake-disclaimer var(--dur-medium) linear;
+  background-color: var(--color-accent-disclaimer);
+  color: var(--color-toast-text);
+}

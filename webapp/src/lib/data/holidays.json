@@ -1,0 +1,222 @@
+{
+    "01-01": {
+        "name": "Yılbaşı",
+        "theme": "accent-disclaimer",
+        "message": "Mutlu yıllar! Umarız bu yıl yemekhanede daha çok et çıkar."
+    },
+    "04-23": {
+        "name": "Ulusal Egemenlik ve Çocuk Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ulusal Egemenlik ve Çocuk Bayramı kutlu olsun!"
+    },
+    "05-01": {
+        "name": "İşçi ve Emekçi Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "İşçi ve Emekçi Bayramı kutlu olsun!"
+    },
+    "05-19": {
+        "name": "Atatürk'ü Anma, Gençlik ve Spor Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Atatürk'ü Anma, Gençlik ve Spor Bayramı kutlu olsun!"
+    },
+    "07-15": {
+        "name": "Demokrasi ve Milli Birlik Günü",
+        "theme": "accent-disclaimer",
+        "message": "15 Temmuz şehitlerini saygıyla anıyoruz."
+    },
+    "08-30": {
+        "name": "Zafer Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Zafer Bayramı kutlu olsun!"
+    },
+    "10-29": {
+        "name": "Cumhuriyet Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Cumhuriyet Bayramı kutlu olsun!"
+    },
+    "11-10": {
+        "name": "Atatürk'ü Anma Günü",
+        "theme": "accent-disclaimer",
+        "message": "Ulu Önder Atatürk'ü saygı ve özlemle anıyoruz."
+    },
+    "12-31": {
+        "name": "Yılbaşı Arifesi",
+        "theme": "accent-disclaimer",
+        "message": "Mutlu yıllar! Umarım gelecek yıl yemekhanede daha çok et çıkar..."
+    },
+    "2026-03-20": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2026-03-21": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2026-03-22": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2026-05-27": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2026-05-28": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2026-05-29": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2026-05-30": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2027-03-09": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2027-03-10": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2027-03-11": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2027-05-16": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2027-05-17": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2027-05-18": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2027-05-19": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2028-02-26": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2028-02-27": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2028-02-28": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2028-05-05": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2028-05-06": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2028-05-07": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2028-05-08": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2029-02-14": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2029-02-15": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2029-02-16": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2029-04-24": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2029-04-25": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2029-04-26": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2029-04-27": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2030-02-04": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2030-02-05": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2030-02-06": {
+        "name": "Ramazan Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Ramazan Bayramı mübarek olsun!"
+    },
+    "2030-04-13": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2030-04-14": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2030-04-15": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    },
+    "2030-04-16": {
+        "name": "Kurban Bayramı",
+        "theme": "accent-disclaimer",
+        "message": "Kurban Bayramı mübarek olsun!"
+    }
+}

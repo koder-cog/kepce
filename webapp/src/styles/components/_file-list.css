@@ -1,0 +1,147 @@
+@layer components {
+
+  /* Listeye giriş animasyonunu tanımlayalım */
+  @keyframes file-item-enter {
+    0% {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    100% {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+
+
+  .c-file-list {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-xs);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    contain: content;
+    overflow: hidden;
+  }
+
+  .c-file-list:empty {
+    display: none;
+  }
+
+  .c-file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border-bottom: 1px solid var(--color-border-light);
+    
+    /* Animasyon ve Performanslı Transition */
+    animation: file-item-enter var(--dur-default) var(--ease-spatial-default) both;
+    transition: background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  .c-file-item:last-child {
+    border-bottom: none;
+  }
+
+  .c-file-item:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+  }
+
+
+  .c-file-item__info {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    color: var(--color-text-primary);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    overflow: hidden;
+  }
+
+  .c-file-item__icon {
+    color: var(--color-accent-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* İkonun biraz daha tok durması için */
+    padding: 4px;
+    background: var(--color-accent-primary-alpha-10);
+    border-radius: var(--radius-sm);
+  }
+
+  .c-file-item__name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 280px;
+    /* Metnin daha pürüzsüz render edilmesi için */
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .c-file-item__remove {
+    background: transparent;
+    border: none;
+    color: var(--color-muted);
+    cursor: pointer;
+    padding: var(--space-xs);
+    border-radius: var(--radius-sm);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    /* Benmari Standartlarına uygun geçişler */
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+  }
+
+  /* Silme Butonu Hover */
+  .c-file-item__remove:hover {
+    color: var(--color-accent-negative);
+    background-color: var(--color-accent-negative-alpha-10);
+  }
+
+  /* Tıklanma (Active) hissiyatı (Squish Effect) */
+  .c-file-item__remove:active {
+    background-color: var(--color-accent-negative-alpha-20);
+    transform: scale(0.98);
+  }
+
+  /* Klavyeyle odaklanma (Accessibility) */
+  .c-file-item__remove:focus-visible {
+    outline: 2px solid var(--color-accent-negative);
+    outline-offset: 2px;
+  }
+
+  @media (max-width: 600px) {
+    .c-file-item__name {
+      max-width: 180px;
+    }
+  }
+
+  /* EXTRA: Eğer liste elemanları sırayla gelsin (Staggering) istersen: */
+  .c-file-item:nth-child(1) {
+    animation-delay: 0.08s;
+  }
+
+  .c-file-item:nth-child(2) {
+    animation-delay: 0.16s;
+  }
+
+  .c-file-item:nth-child(3) {
+    animation-delay: 0.24s;
+  }
+
+  .c-file-item:nth-child(4) {
+    animation-delay: 0.32s;
+  }
+
+  .c-file-item:nth-child(5) {
+    animation-delay: 0.4s;
+  }
+}

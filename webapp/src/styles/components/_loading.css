@@ -1,0 +1,169 @@
+@layer components {
+  /* ── Legacy Spinner (used by multiple pages) ─────────────── */
+
+  .loading-full {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3xl);
+    min-height: 400px;
+    color: var(--color-muted);
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--color-border-light);
+    border-top-color: var(--color-accent-primary);
+    border-radius: var(--radius-full);
+    animation: legacySpin var(--dur-slower) linear infinite;
+    margin: 0 auto var(--space-lg);
+    display: block;
+  }
+
+  @keyframes legacySpin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .loading-spinner--xs {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+    margin: 0;
+  }
+
+  /* ── M3 Expressive Loader ────────────────────────────────── */
+  
+  .m3-loader {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    animation: m3-spin 3s linear infinite;
+  }
+
+  .m3-loader--sm { width: 20px; height: 20px; }
+  .m3-loader--md { width: 48px; height: 48px; }
+  .m3-loader--lg { width: 64px; height: 64px; }
+  
+  .m3-loader--accent { color: var(--color-accent-primary); }
+  .m3-loader--current { color: currentColor; }
+
+  .m3-loader svg {
+    width: 100%;
+    height: 100%;
+  }
+
+  .m3-loader path {
+    transition: fill var(--motion-effects-default);
+  }
+
+  @keyframes m3-spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  /* ── Button Loading State ────────────────────────────────── */
+
+  .btn {
+    position: relative;
+    overflow: hidden;
+    transition: transform var(--dur-default) var(--ease-spatial-default),
+                background var(--dur-fast) var(--ease-standard),
+                opacity var(--dur-fast) var(--ease-standard);
+  }
+
+  .btn--loading {
+    pointer-events: none;
+  }
+
+  .btn__text {
+    display: inline-block;
+    transition: transform var(--motion-effects-default),
+                opacity var(--motion-effects-default);
+  }
+
+  .btn--loading .btn__text {
+    transform: translateY(-1.5em);
+    opacity: 0;
+  }
+
+  .btn__loader {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, 100%);
+    opacity: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--motion-effects-default),
+                opacity var(--motion-effects-default);
+    color: currentColor;
+  }
+
+  .btn--loading .btn__loader {
+    transform: translate(-50%, -50%);
+    opacity: 1;
+  }
+
+  /* Variant specifics */
+  .btn--primary .m3-loader path {
+    fill: var(--color-text-on-accent);
+  }
+
+  /* ── Screen Loaders & Containers ─────────────────────────── */
+
+  .centered-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: var(--space-2xl) var(--space-lg);
+    min-height: 40vh;
+  }
+
+  .verification-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-4xl) var(--space-lg);
+    text-align: center;
+  }
+
+  .verification-status {
+    margin-top: var(--space-xl);
+  }
+
+  .verification-status__title {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    margin-bottom: var(--space-sm);
+  }
+
+  .verification-status__desc {
+    color: var(--color-muted);
+    font-size: var(--text-base);
+  }
+
+  .status-loader-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-4xl) 0;
+  }
+
+  .stats-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: var(--space-4xl) 0;
+    min-height: 200px;
+  }
+}

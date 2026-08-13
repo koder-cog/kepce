@@ -1,0 +1,1 @@
+ALTER TABLE comments ADD COLUMN IF NOT EXISTS deletion_type VARCHAR(50);

@@ -1,0 +1,10 @@
+# Kepçe
+Kepçe, KYK yurtlarındaki tabldot menülerini önünüze döken öğrenci yorumlarını ve istatistikleri barındıran açık kaynaklı, bağımsız bir web platformudur.
+
+## Ne İşe Yarar?
+- KYK yurtlarındaki günlük ve aylık yemekhane menülerini kolayca görüntülenebilir.
+- Öğrenciler yemekler veya yorumlar hakkında fikirlerini paylaşıp oy verebilir.
+- Geçmiş yemeklerin ve menülerin ne kadar sevildiğine dair veri analizlerine bakılabilir.
+- Geliştiriciler için ücretsiz API erişimi vardır.
+
+Daha fazla bilgi, kaynak kodlar ve katkı sağlamak için: https://kepce.org

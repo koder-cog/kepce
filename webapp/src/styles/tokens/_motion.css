@@ -1,0 +1,124 @@
+/*
+ * kepçe design tokens — motion
+ *
+ * Easing curves, durations, motion shorthand composites,
+ * reduced-motion accessibility utilities, and keyframe animations.
+ *
+ * These tokens are theme-agnostic — no dark mode overrides needed.
+ */
+
+:root {
+    /* ── easing curves ──────────────────────────────────────── */
+
+    /* spatial — for layout / position changes */
+    --ease-spatial-fast: cubic-bezier(0.42, 1.67, 0.21, 0.9);
+    --ease-spatial-default: cubic-bezier(0.38, 1.21, 0.22, 1);
+    --ease-spatial-slow: cubic-bezier(0.39, 1.29, 0.35, 0.98);
+
+    /* effects — for visual feedback (opacity, color, shadow) */
+    --ease-effects-fast: cubic-bezier(0.31, 0.94, 0.34, 1);
+    --ease-effects-default: cubic-bezier(0.25, 1, 0.35, 1);
+    --ease-effects-slow: cubic-bezier(0.2, 1, 0.4, 1);
+
+    /* standard Material-inspired */
+    --ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-entrance: cubic-bezier(0, 0, 0.2, 1);
+    --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+    /* tactile / expressive */
+    --ease-tactile: cubic-bezier(0.15, 0, 0, 1);
+    --ease-spring-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-expressive: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+
+    /* ── durations ──────────────────────────────────────────── */
+    --dur-instant: 100ms;
+    --dur-fast: 200ms;
+    --dur-default: 350ms;
+    --dur-medium: 500ms;
+    --dur-slow: 650ms;
+    --dur-slower: 900ms;
+
+    /* ── motion shorthand composites ────────────────────────── */
+    --motion-spatial-fast: var(--dur-fast) var(--ease-spatial-fast);
+    --motion-spatial-default: var(--dur-default) var(--ease-spatial-default);
+    --motion-spatial-slow: var(--dur-slow) var(--ease-spatial-slow);
+    --motion-effects-fast: var(--dur-fast) var(--ease-effects-fast);
+    --motion-effects-default: var(--dur-default) var(--ease-effects-default);
+    --motion-effects-slow: var(--dur-slow) var(--ease-effects-slow);
+    --motion-dissolve: var(--dur-default) var(--ease-effects-default);
+    --motion-tactile: var(--dur-instant) var(--ease-tactile);
+    --motion-expressive: var(--dur-default) var(--ease-expressive);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ACCESSIBILITY — reduced motion & animation toggles
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── respect system preference ─────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    :root,
+    :root.disable-animations {
+        /* Soften all spatial and bouncy easings to simple fades/linear movements */
+        --ease-spatial-fast: var(--ease-effects-fast);
+        --ease-spatial-default: var(--ease-effects-default);
+        --ease-spatial-slow: var(--ease-effects-slow);
+        --ease-spring-bounce: var(--ease-effects-default);
+        --ease-expressive: var(--ease-effects-default);
+        --ease-tactile: var(--ease-effects-default);
+        --ease-standard: var(--ease-effects-default);
+        --ease-entrance: var(--ease-effects-default);
+        --ease-exit: var(--ease-effects-default);
+
+        /* Speed up durations so motions feel like quick fades rather than spatial travels */
+        --dur-instant: 50ms;
+        --dur-fast: 50ms;
+        --dur-default: 100ms;
+        --dur-medium: 150ms;
+        --dur-slow: 200ms;
+        --dur-slower: 250ms;
+    }
+
+    html {
+        scroll-behavior: auto;
+    }
+}
+
+/* ── manual disable class ──────────────────────────────────── */
+:root.disable-animations {
+    /* Soften all spatial and bouncy easings to simple fades/linear movements */
+    --ease-spatial-fast: var(--ease-effects-fast);
+    --ease-spatial-default: var(--ease-effects-default);
+    --ease-spatial-slow: var(--ease-effects-slow);
+    --ease-spring-bounce: var(--ease-effects-default);
+    --ease-expressive: var(--ease-effects-default);
+    --ease-tactile: var(--ease-effects-default);
+    --ease-standard: var(--ease-effects-default);
+    --ease-entrance: var(--ease-effects-default);
+    --ease-exit: var(--ease-effects-default);
+
+    /* Speed up durations so motions feel like quick fades rather than spatial travels */
+    --dur-instant: 50ms;
+    --dur-fast: 50ms;
+    --dur-default: 100ms;
+    --dur-medium: 150ms;
+    --dur-slow: 200ms;
+    --dur-slower: 250ms;
+}
+
+:root.disable-animations html {
+    scroll-behavior: auto;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════════════ */
+
+@keyframes u-fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes u-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}

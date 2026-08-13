@@ -1,0 +1,23 @@
+  .disclaimer-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--color-text);
+    position: relative;
+  }
+
+  .disclaimer-card__source {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-accent-disclaimer);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+

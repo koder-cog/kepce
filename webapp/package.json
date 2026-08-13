@@ -1,0 +1,28 @@
+{
+  "name": "kepce-webapp",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Kepçe — Açık Veri, Temiz Arayüz",
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "^3.0.10",
+    "@sveltejs/kit": "^2.70.2",
+    "@sveltejs/vite-plugin-svelte": "^7.1.2",
+    "@testing-library/svelte": "^5.4.2",
+    "jsdom": "^29.1.1",
+    "svelte-check": "^4.7.2",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.10"
+  },
+  "dependencies": {
+    "dompurify": "^3.3.3",
+    "svelte": "^5.56.3"
+  }
+}

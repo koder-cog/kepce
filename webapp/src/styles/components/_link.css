@@ -1,0 +1,79 @@
+/* ── Interactive Text Links ────────────────────────────────── */
+
+/* Mobil dokunma vurgusunu kaldır (squish efektinin kendisi _button.css'te
+   tanımlıdır). _interactive.css'ten ayrıştırıldı. */
+button,
+.btn,
+.month-nav__btn,
+.day-selector__item,
+.nav-bar__link,
+.archive-controls__btn,
+.archive-row__btn {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.c-link,
+.text-link,
+.auth-footer__link,
+.legal-consents a,
+.comments-page__breadcrumb a,
+.content-page__body a,
+p a:not([class]),
+li a:not([class]) {
+  /* Button Resets (allowing buttons to act as links seamlessly) */
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+  
+  /* Link Styling */
+  color: var(--color-accent-primary);
+  text-decoration: none;
+  font-weight: var(--font-weight-semibold);
+  transition: color var(--dur-fast) var(--ease-standard),
+    filter var(--dur-fast) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
+  cursor: pointer;
+}
+
+.c-link:hover,
+.text-link:hover,
+.auth-footer__link:hover,
+.legal-consents a:hover,
+.comments-page__breadcrumb a:hover,
+.content-page__body a:hover,
+p a:not([class]):hover,
+li a:not([class]):hover {
+  color: var(--color-accent-primary);
+  filter: brightness(1.25);
+  text-decoration: underline;
+  opacity: 0.9;
+}
+
+/* Text links should not squish when clicked, even if they are <button> elements */
+.c-link:active,
+.text-link:active,
+.auth-footer__link:active,
+.legal-consents a:active,
+.comments-page__breadcrumb a:active,
+.content-page__body a:active,
+p a:not([class]):active,
+li a:not([class]):active {
+  transform: none !important;
+}
+
+.c-link--subtle {
+  color: var(--color-text-muted) !important;
+  text-decoration: none;
+  font-weight: var(--font-weight-medium) !important;
+  transition: color var(--dur-fast) var(--ease-standard);
+  cursor: pointer;
+}
+
+.c-link--subtle:hover {
+  color: var(--color-text) !important;
+  text-decoration: underline;
+  filter: none;
+}

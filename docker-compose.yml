@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  db:
+    build:
+      context: ./db
+      dockerfile: Dockerfile
+    container_name: kepce-db
+    environment:
+      # SA-1: Secret'lar için varsayılan (fallback) değer YOK — env eksikse compose
+      # başlamaz. Public repodaki bilinen şifrelerle sessizce ayağa kalkma riski kaldırıldı.
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER tanimli olmali (.env)}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali (.env)}
+      POSTGRES_DB: ${POSTGRES_DB:-kepce}
+    command:
+      - "postgres"
+      - "-c"
+      - "wal_level=replica"
+      - "-c"
+      - "archive_mode=on"
+      - "-c"
+      - "archive_command=pgbackrest --stanza=kepce-stanza archive-push %p"
+      - "-c"
+      - "max_wal_senders=3"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - pgbackrest_data:/opt/kepce/backups/pgbackrest
+      - ./db/pgbackrest.conf:/etc/pgbackrest.conf:ro
+    ports:
+      # SA-1: Sadece localhost'a bağlanır; internete/dış ağa açık değil.
+      - "127.0.0.1:5432:5432"
+    networks:
+      - backend-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: kepce-api
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER tanimli olmali}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali}@db:5432/${POSTGRES_DB:-kepce}
+      # SA-1: Bilinen bir varsayılan JWT secret ile çalışmak = admin token sahteciliği.
+      - KEPCE_SECRET_KEY=${KEPCE_SECRET_KEY:?KEPCE_SECRET_KEY tanimli olmali (openssl rand -hex 32)}
+      # KEPCE_PII_SECRET_KEY kaldırıldı: kodda hiç kullanılmıyordu (ölü yapılandırma).
+      # PII şifrelemesi ileride uygulanırsa KVKK kararıyla birlikte yeniden eklenmeli.
+      - KEPCE_CORS_ORIGIN=${KEPCE_CORS_ORIGIN:-http://localhost}
+      - COOKIE_SECURE=${COOKIE_SECURE:-false}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GOOGLE_REDIRECT_URI=${GOOGLE_REDIRECT_URI}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - KEPCE_BASE_URL=${KEPCE_BASE_URL}
+    volumes:
+      - uploads:/app/uploads
+      - avatars:/app/static/avatars
+    networks:
+      - frontend-net
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+    container_name: kepce-worker
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER tanimli olmali}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali}@db:5432/${POSTGRES_DB:-kepce}
+      - WORKER_INTERVAL_SECS=${WORKER_INTERVAL_SECS:-3600}
+      - WORKER_MENU_DIR=/app/data/menuler
+    volumes:
+      - menuler:/app/data/menuler
+    networks:
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy
+
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile
+    container_name: kepce-webapp
+    ports:
+      - "80:8080"
+    networks:
+      - frontend-net
+    depends_on:
+      - api
+
+volumes:
+  pgdata:
+  uploads:
+  avatars:
+  menuler:
+  pgbackrest_data:
+
+networks:
+  frontend-net:
+  backend-net:
+    internal: true

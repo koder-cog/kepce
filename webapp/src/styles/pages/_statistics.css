@@ -1,0 +1,540 @@
+@layer components {
+
+  /* ── Temel Animasyon Tanımları (Tokens ile Entegre) ──────────── */
+  @keyframes pureFadeIn {
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
+  }
+
+  /* Listeler için yumuşak belirme ve %2'lik mikroskobik büyüme (MD3 Style) */
+  @keyframes staggerFade {
+    from {
+      opacity: 0;
+      transform: scale(0.98);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  /* ── Ortak Stagger (Kaskad) Elementleri ──────────────────────── */
+  .stats-item,
+  .tag-stat-bar-wrapper,
+  .contributor-card,
+  .audit-metric-card,
+  .audit-system-item {
+    /* Daha yavaş, yumuşak bir entrance (MD3 Effects Default) */
+    animation: staggerFade var(--dur-medium) var(--ease-effects-default) both;
+    /* Gecikme 80ms'ye çıkarıldı, agresiflik bitti */
+    animation-delay: calc(var(--stagger-idx, 0) * 80ms);
+    will-change: transform, opacity;
+  }
+
+  /* ── Ana İçerik Yüklenme / Sekme Geçişi Animasyonları ────────── */
+  .stat-card,
+  .humanity-container,
+  .audit-sections {
+    animation: pureFadeIn var(--dur-default) var(--ease-entrance) forwards;
+  }
+
+  /* ── Statistics Page Genel ─────────────────────────────────── */
+
+  .stats-placeholder {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    animation: pureFadeIn var(--dur-medium) var(--ease-entrance) forwards;
+  }
+
+  .stat-card {
+    background: var(--color-surface-elevated);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-light);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    box-shadow: var(--shadow-sm);
+    /* Tokens dosyanızdaki shadow kullanıldı */
+  }
+
+  .stats-section-title {
+    margin-bottom: var(--space-xl);
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: var(--space-md);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-xs);
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-xl);
+  }
+
+
+
+  .stats-section-title--danger {
+    color: var(--color-error);
+    border-bottom-color: var(--color-error);
+  }
+
+  .comments-header-actions {
+    margin-bottom: var(--space-xl);
+  }
+
+  /* v3 (görev #44): .stats-filters tanımsızdı — iki dropdown h2 içinde
+     üst üste biniyordu. Yan yana, doğru aralıklı yerleşim. */
+  .stats-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-shrink: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .stats-filters>* {
+    min-width: 140px;
+  }
+
+  @media (max-width: 600px) {
+    .stats-section-title {
+      flex-wrap: wrap;
+    }
+
+    .stats-filters {
+      width: 100%;
+    }
+
+    .stats-filters>* {
+      flex: 1;
+      min-width: 0;
+    }
+  }
+
+  .stats-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+  }
+
+  .stats-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md);
+    transition: background-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+    cursor: default;
+    border-radius: var(--radius-md);
+  }
+
+  .stats-item:hover {
+    background-color: var(--color-surface-sunken);
+  }
+
+  .stats-item:nth-child(n+3) .stats-item__rank {
+    opacity: var(--opacity-gtk);
+  }
+
+  .stats-item:last-child {
+    border-bottom: none;
+  }
+
+  .stats-item__rank {
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-black);
+    color: var(--color-muted);
+    min-width: 32px;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .stats-item.rank-top .stats-item__rank {
+    font-size: var(--text-2xl);
+    color: var(--color-accent-primary);
+  }
+
+  .stats-item.rank-top .stats-item__rank--negative {
+    color: var(--color-accent-negative);
+  }
+
+  .stats-item.rank-top .stats-item__rank--disclaimer {
+    color: var(--color-accent-disclaimer);
+  }
+
+  .stats-item__content {
+    flex: 1;
+  }
+
+  .stats-item__name {
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-base);
+  }
+
+  .stats-item__category {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-top: 2px;
+  }
+
+  .stats-item__value {
+    text-align: right;
+  }
+
+  .stats-item__score {
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-base);
+  }
+
+  .stats-item__meta {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-top: 2px;
+  }
+
+  .tag-stats-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    flex: 1;
+  }
+
+  .tag-stat-bar-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .tag-stat-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: var(--text-sm);
+  }
+
+  .tag-stat-name {
+    font-weight: var(--font-weight-bold);
+  }
+
+  .tag-stat-count {
+    color: var(--color-muted);
+  }
+
+  .tag-stat-track {
+    width: 100%;
+    height: 8px;
+    background-color: var(--color-border-light);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+
+  .tag-stat-fill {
+    height: 100%;
+    background-color: var(--color-accent-primary);
+    border-radius: var(--radius-full);
+    width: var(--width, 0%);
+    /* Çubukların dolma hızı: daha yavaş ve MD3 spatial eğrisi */
+    transition: width var(--dur-slower) var(--ease-spatial-default);
+    will-change: width;
+  }
+
+  .tag-stat-fill--negative {
+    background-color: var(--color-accent-negative);
+  }
+
+  .tag-stat-fill--neutral {
+    background-color: var(--color-accent-disclaimer);
+  }
+
+  .tag-stat-fill--positive {
+    background-color: var(--color-accent-positive);
+  }
+
+  .tag-stat-fill--primary {
+    background-color: var(--color-accent-primary);
+  }
+
+  .pulse-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+  }
+
+  @media (min-width: 900px) {
+    .pulse-grid {
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: var(--space-xl);
+    }
+  }
+
+  .pulse-column {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+  }
+
+  .pulse-column-title {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-md);
+    margin: 0 0 var(--space-xs) 0;
+    padding-bottom: var(--space-md);
+    border-bottom: 1px dashed var(--color-border-light);
+    letter-spacing: var(--tracking-slight);
+  }
+
+  .pulse-empty {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-style: italic;
+    padding: var(--space-md) 0;
+  }
+
+  /* ── İnsaniyet Tab Styles ────────────────────────────────── */
+  .humanity-container {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  .contributor-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .contributor-card {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    background: var(--color-surface-elevated);
+    padding: var(--space-sm) 0;
+  }
+
+  .contributor-card__rank {
+    font-family: var(--font-display);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-black);
+    color: var(--color-muted);
+    min-width: 32px;
+    text-align: center;
+  }
+
+  .contributor-card__avatar {
+    width: 48px;
+    height: 48px;
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-accent-primary);
+    border: 2px solid var(--color-border-light);
+    overflow: hidden;
+  }
+
+  .contributor-card__avatar img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .contributor-card__info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .contributor-card__name {
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-lg);
+    color: var(--color-text);
+  }
+
+  .contributor-card__value {
+    text-align: right;
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-base);
+    color: var(--color-muted);
+  }
+
+  /* ── Denetim Tab Styles ──────────────────────────────────── */
+
+  .audit-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-xl);
+  }
+
+  .audit-metric-card {
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .audit-metric-card__label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+  }
+
+  .audit-metric-card__value {
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-black);
+    color: var(--color-accent-primary);
+    margin: var(--space-xs) 0;
+  }
+
+  .audit-metric-card__value.warning {
+    color: var(--color-error);
+  }
+
+  .audit-metric-card__desc {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-bottom: var(--space-md);
+  }
+
+  .audit-progress-track {
+    width: 100%;
+    height: 6px;
+    background-color: var(--color-border-light);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    transform: translateZ(0);
+  }
+
+  .audit-progress-fill {
+    height: 100%;
+    background-color: var(--color-accent-primary);
+    border-radius: var(--radius-full);
+    width: var(--width, 0%);
+    transition: width var(--dur-slower) var(--ease-spatial-default);
+    will-change: width;
+  }
+
+  .audit-progress-fill--warning {
+    background-color: var(--color-error);
+  }
+
+  .audit-sections {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-2xl);
+  }
+
+  .audit-panel-card {
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .audit-panel-card__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-black);
+    margin-bottom: var(--space-xl);
+    border-bottom: 2px solid var(--color-border);
+    padding-bottom: var(--space-sm);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .audit-system-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .audit-system-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-md);
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-light);
+  }
+
+  .audit-system-item__info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .audit-system-item__info strong {
+    font-size: var(--text-base);
+    color: var(--color-text);
+  }
+
+  .audit-status-label {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-muted);
+  }
+
+  .audit-status-label.active {
+    color: var(--color-text);
+    border-color: var(--color-accent-primary-light);
+  }
+
+  .audit-status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .audit-status-dot--ok {
+    background-color: var(--color-accent-primary);
+  }
+
+  .audit-status-dot--error {
+    background-color: var(--color-error);
+  }
+
+  .audit-status-dot--warning {
+    background-color: var(--color-warning);
+  }
+
+  /* ── Yorum İstatistikleri ───────────────────────────────── */
+  .comments-stats-container {
+    animation: pureFadeIn var(--dur-default) var(--ease-entrance) forwards;
+  }
+
+  .comments-grid {
+    display: flex;
+    flex-direction: column;
+  }
+
+}

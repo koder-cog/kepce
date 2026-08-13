@@ -1,0 +1,35 @@
+//! `SeaORM` Entity
+
+pub mod prelude;
+
+pub mod api_keys;
+pub mod api_usage_logs;
+pub mod badges;
+pub mod cities;
+pub mod comments;
+pub mod contact_messages;
+pub mod dish_aliases;
+pub mod dish_tags;
+pub mod dish_votes;
+pub mod dishes;
+pub mod meal_category_prices;
+pub mod menu_dishes;
+pub mod menu_history;
+pub mod menu_submissions;
+pub mod menu_votes;
+pub mod menus;
+pub mod notifications;
+pub mod pricing_periods;
+pub mod projects;
+pub mod reports;
+pub mod sea_orm_active_enums;
+pub mod system_incidents;
+pub mod tags;
+pub mod user_badges;
+pub mod user_blocks;
+pub mod user_favorites;
+pub mod user_pinned_dishes;
+pub mod user_sessions;
+pub mod user_warnings;
+pub mod users;
+pub mod vote_reactions;

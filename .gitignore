@@ -1,0 +1,91 @@
+# ========================================
+# KEPÇE - Git Ignore Configuration
+# ========================================
+
+# 1. Environment & Secrets
+.env
+.env.local
+.env.*.local
+.env.production
+
+# 2. Rust & Cargo
+target/
+**/*.rs.bk
+*.pdb
+
+# 3. Node.js & Webapp
+node_modules/
+npm-debug.log*
+webapp/build/
+webapp/dist/
+webapp/.svelte-kit/
+webapp/.vite/
+webapp/static/*/index.html
+
+# 4. Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+
+# 5. Databases
+*.db
+*.sqlite
+*.sqlite3
+test_*.db
+temp_*.db
+
+# 6. Logs & PID Files
+*.log
+*.pid
+api/log/
+worker/log/
+webapp/log/
+webapp/dev.log
+logs/
+
+# 7. OS & IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 8. AI Tools & Agents
+.aider*
+.roo/
+/.agents/
+*-preview-*.md
+
+# 9. Project Specific Data & Backups
+/backups/
+/data/
+storage/
+worker/data/
+.fastembed_cache/
+
+# 10. Temporary, Scratch & Audit Files
+# ----------------------------------------
+.scratch/
+*.tmp
+*.temp
+*.bak
+*.backup
+*_audit.txt
+*_report.json
+diff_*.txt
+fix_*.js
+
+# 11. Uploads & Avatars (Runtime Data)
+/static/avatars/
+/api/static/avatars/
+/uploads/
+docs/.cache/
+docs/node_modules/

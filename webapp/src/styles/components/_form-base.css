@@ -1,0 +1,268 @@
+@layer components {
+  /* ── Form System (The "Cake Mold") ────────────────────────── */
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    width: 100%;
+    position: relative;
+  }
+
+  .form-label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-secondary);
+    letter-spacing: 0.02em;
+    margin-left: var(--space-xs);
+    display: block;
+  }
+
+  .form-required-mark {
+    color: var(--color-accent-negative);
+    margin-left: 2px;
+  }
+
+  .form-help {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-top: var(--space-xs);
+    margin-left: var(--space-xs);
+    opacity: 0.8;
+  }
+
+  /* ── Global Form Resets ───────────────────────────────────── */
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input[type="number"],
+  input[type="month"],
+  input[type="date"],
+  textarea {
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    transition: all var(--motion-effects-fast);
+    outline: none;
+  }
+
+  /* Browser Autofill Override */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover {
+    -webkit-text-fill-color: var(--color-text) !important;
+    -webkit-box-shadow: inset 0 0 0 9999px var(--color-surface-sunken) !important;
+    box-shadow: inset 0 0 0 9999px var(--color-surface-sunken) !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+  }
+
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-text-fill-color: var(--color-text) !important;
+    -webkit-box-shadow: inset 0 0 0 9999px var(--color-surface-sunken) !important;
+    box-shadow: inset 0 0 0 9999px var(--color-surface-sunken) !important;
+    transition: background-color 5000s ease-in-out 0s !important;
+  }
+
+  /* Firefox ve Standart Sözdizimi */
+  input:autofill,
+  input:autofill:hover {
+    background-color: var(--color-surface-sunken) !important;
+    color: var(--color-text) !important;
+  }
+
+  input:autofill:focus,
+  input:autofill:active {
+    background-color: var(--color-surface-sunken) !important;
+    color: var(--color-text) !important;
+  }
+
+
+
+  .form-textarea--resizable {
+    min-height: 80px !important;
+    resize: vertical !important;
+  }
+
+  input:disabled,
+  textarea:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+    background: var(--color-border-light);
+  }
+
+  /* Unified Modal Input (Aliased to global styles) */
+  .modal-input {
+    /* Most styles inherited from global reset above */
+    margin-bottom: var(--space-md);
+  }
+
+  /* ── Contribution Page Forms ───────────────────────────────── */
+
+  .contribution-header {
+    max-width: 760px;
+    margin: 0 auto;
+    /* text alignment is already handled by content-page__header's align-items: flex-start */
+  }
+
+  .contribution-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    max-width: 760px;
+    margin: 0 auto;
+    text-align: left;
+  }
+
+  .form-footer__links {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    align-items: flex-start;
+  }
+
+  .contribution-notes-area {
+    /* Inherits global styles, just needs vertical resize */
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .char-counter-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: var(--text-2xs);
+    font-weight: bold;
+    opacity: 0.5;
+    pointer-events: none;
+  }
+
+  .form-footer-hint {
+    margin-bottom: 0;
+    font-size: var(--text-xs);
+    opacity: 0.6;
+  }
+
+  /* ── Textarea Karakter Sayacı ─────────────────────────────── */
+
+  .c-char-counter {
+    display: block;
+    text-align: right;
+    font-size: var(--text-2xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-muted);
+    opacity: 0.6;
+    padding-top: var(--space-xs);
+    padding-right: 2px;
+    pointer-events: none;
+    transition: color var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard);
+    user-select: none;
+  }
+
+  .c-char-counter--over {
+    color: var(--color-accent-negative);
+    opacity: 1;
+  }
+
+  /* Overlay varyantı: textarea içinde absolute konumlanır */
+  .c-char-counter--overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    display: inline;
+    padding-top: 0;
+  }
+
+  /* Geriye dönük uyumluluk — eski sınıf isimleri */
+  .char-counter-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: var(--text-2xs);
+    font-weight: bold;
+    opacity: 0.5;
+    pointer-events: none;
+    color: var(--color-muted);
+    transition: color var(--dur-fast) var(--ease-standard);
+    user-select: none;
+  }
+
+  .char-counter {
+    display: block;
+    text-align: right;
+    font-size: var(--text-2xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-muted);
+    opacity: 0.6;
+    padding-top: var(--space-xs);
+    user-select: none;
+  }
+
+  .char-counter--over {
+    color: var(--color-accent-negative);
+    opacity: 1;
+  }
+
+  .file-drop-zone {
+    margin-top: var(--space-xs);
+    padding: var(--space-2xl);
+    border: 2px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--motion-effects-fast);
+    background: var(--color-surface-sunken);
+  }
+
+  .file-drop-zone:hover {
+    background: var(--color-surface-elevated);
+    border-color: var(--color-accent-primary);
+  }
+
+  .file-drop-zone__icon {
+    display: flex;
+    justify-content: center;
+    color: var(--color-text);
+  }
+
+  /* ── Dropdown Form Control (Standard look, matching height) ── */
+  .dropdown-form-control .dropdown__trigger {
+    height: var(--control-height);
+  }
+
+  .dropdown-form-control .dropdown__chevron {
+    color: inherit;
+  }
+
+  /* Error States for Floating Label */
+  .form-group--error input,
+  .form-group--error textarea,
+  .form-group--error select {
+    border-color: var(--color-accent-negative) !important;
+  }
+
+  .form-group--error .form-label {
+    color: var(--color-accent-negative) !important;
+  }
+
+  .form-group--error::after {
+    content: attr(data-error);
+    position: absolute;
+    bottom: -22px;
+    left: var(--space-xs);
+    font-size: var(--text-2xs);
+    color: var(--color-accent-negative);
+    font-weight: var(--font-weight-bold);
+    white-space: nowrap;
+    z-index: 10;
+  }
+}

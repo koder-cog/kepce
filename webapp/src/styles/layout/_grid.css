@@ -1,0 +1,28 @@
+/* 
+  Kepçe Webapp — CSS: Layout Standartları
+  =======================================
+  
+  Kural 4: Responsive Geçişler sadece 600px ve 900px
+  Kural 4: Hiyerarşi & Padding. .page-container sadece bir kez kullanılır.
+*/
+
+/* Mobil Varsayılan (Mobile First) */
+.menu-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+/* Tablet / Küçük Masaüstü (600px+) */
+@media (min-width: 600px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* Masaüstü (900px+) */
+@media (min-width: 900px) {
+  .menu-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}

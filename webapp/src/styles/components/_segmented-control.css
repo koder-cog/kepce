@@ -1,0 +1,101 @@
+@layer components {
+  /* ── Segmented Control (Apple HIG Standartları) ────────────────────────── */
+
+  .c-segmented-control {
+    position: relative;
+    display: inline-flex;
+    /* content-sized by default */
+    gap: 2px;
+    background: var(--color-surface-sunken);
+    padding: 3px;
+    border-radius: var(--radius-full);
+    isolation: isolate;
+    border: 1px solid var(--color-border);
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .c-segmented-control__indicator {
+    position: absolute;
+    top: 3px;
+    bottom: 3px;
+    left: var(--indicator-left, 3px);
+    width: var(--indicator-width, 0);
+    background: var(--color-card);
+    border-radius: var(--radius-full);
+    box-shadow: var(--shadow-sm);
+    z-index: 0;
+  }
+
+  .c-segmented-control.is-ready .c-segmented-control__indicator {
+    transition: all var(--motion-spatial-default);
+  }
+
+  .c-segmented-control__btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-full);
+    border: none;
+    background: transparent;
+    color: var(--color-muted);
+    font-family: var(--font-body);
+    font-size: var(--text-xs);
+    /* Adjusted to match HIG legibility */
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: color var(--motion-effects-fast);
+    white-space: nowrap;
+    z-index: 1;
+    /* HIG Rule: Segments should be equal in width */
+    flex: 1;
+    flex-basis: 0;
+    min-width: max-content;
+  }
+
+  .c-segmented-control__btn:hover {
+    color: var(--color-text);
+  }
+
+  .c-segmented-control__btn--active {
+    color: var(--color-text);
+  }
+
+  .c-segmented-control__btn svg {
+    flex-shrink: 0;
+    /* İkonların inline (18px) boyutunu ezmemesi için width/height kısıtlaması kaldırıldı */
+  }
+
+  .c-segmented-control__fallback-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+    display: inline-block;
+  }
+
+  /* ── Responsive Variant ────────────────────────────── */
+
+  /* Masaüstünde: Sadece yazı göster, ikonu gizle (HIG: Mix yasak) */
+  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon {
+    display: none;
+  }
+
+  /* Mobilde / Dar ekranda (650px altı): Yazıyı gizle, ikonu göster */
+  @media (max-width: 650px) {
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label {
+      display: none !important;
+    }
+
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon {
+      display: block;
+    }
+
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn {
+      min-width: 0;
+    }
+  }
+}

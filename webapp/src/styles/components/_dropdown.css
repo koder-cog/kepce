@@ -1,0 +1,228 @@
+@layer components.elements {
+  /* ══════════════════════════════════════════════════════════════
+   _dropdown.css – Dropdown Trigger ve Kapsayıcı Stilleri
+   Menü paneli (c-menu) stilleri _menu.css'tedir.
+   ══════════════════════════════════════════════════════════════ */
+
+  /* ── Kapsayıcı ── */
+  .dropdown {
+    position: relative;
+    width: auto;
+    max-width: 100%;
+  }
+
+  .dropdown--open {
+    z-index: calc(var(--z-navbar) + 1);
+  }
+
+  .dropdown--disabled {
+    pointer-events: none;
+  }
+
+  /* ── Varyant: secondary → İçerik genişliği ── */
+  .dropdown--secondary {
+    width: max-content;
+  }
+
+  .select-enhancer-wrapper--secondary .dropdown {
+    width: max-content;
+  }
+
+  /* ── Varyant: ghost → İçerik genişliği ── */
+  .dropdown--ghost {
+    width: max-content;
+  }
+
+  /* ═══ Tetikleyici (Trigger) ═══════════════════════════════════ */
+
+  /* ── Temel (Primary) ── */
+  .dropdown__trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    width: 100%;
+    min-width: 0;
+    padding: 0 var(--space-md);
+    height: var(--control-height);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    cursor: pointer;
+    background-clip: padding-box;
+    outline: none;
+    box-shadow: none;
+    overflow: hidden;
+    transform: translateZ(0);
+    transition: all var(--motion-effects-default);
+    text-align: left;
+  }
+
+  /* Squish: primary trigger'da çocukları küçült, tetikleyiciyi değil */
+  .dropdown__trigger--primary:active {
+    transform: translateZ(0) !important;
+  }
+
+  .dropdown__trigger--primary>*:not(.dropdown__chevron) {
+    transition: transform var(--dur-default) var(--ease-spring-bounce);
+    will-change: transform;
+  }
+
+  .dropdown__trigger--primary:active>*:not(.dropdown__chevron) {
+    transform: scale(0.98);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
+  }
+
+  /* Focus */
+  .dropdown__trigger:focus-visible {
+    outline: none;
+    box-shadow: var(--shadow-focus);
+    border-color: var(--color-accent-primary);
+  }
+
+  /* Hover */
+  @media (hover: hover) {
+    .dropdown__trigger:hover {
+      border-color: var(--color-accent-primary-light);
+      background: var(--color-surface);
+      color: var(--color-text);
+    }
+  }
+
+  /* Açık durum */
+  .dropdown__trigger--open {
+    border-color: var(--color-accent-primary);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-focus);
+  }
+
+  /* Disabled */
+  .dropdown__trigger--disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+    background: var(--color-muted);
+    color: var(--color-text);
+    border-color: var(--color-border);
+  }
+
+}
+
+@layer components.modifiers {
+  /* ── Varyant: Secondary (Hap / Pill) ── */
+  .dropdown__trigger--secondary {
+    background: var(--color-accent-primary);
+    border-color: var(--color-border);
+    border-radius: var(--radius-full);
+    color: var(--color-text-on-accent);
+    padding: var(--space-sm) var(--space-md);
+    height: auto;
+    width: max-content;
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .dropdown__trigger--secondary:active {
+    transform: scale(0.98);
+  }
+
+  @media (hover: hover) {
+    .dropdown__trigger--secondary:hover {
+      border-color: var(--color-surface-elevated);
+      background: var(--color-accent-primary-hover);
+      color: var(--color-text-on-accent);
+    }
+  }
+
+  .dropdown__trigger--secondary:focus-visible {
+    border-color: var(--color-accent-primary-hover);
+  }
+
+  .dropdown__trigger--secondary.dropdown__trigger--open {
+    border-color: inherit;
+    background: var(--color-accent-primary);
+  }
+
+  /* ── Varyant: Ghost (Hayalet) ── */
+  button.dropdown__trigger.dropdown__trigger--ghost,
+  .dropdown__trigger--ghost {
+    background: transparent;
+    border-color: transparent;
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary, var(--color-muted));
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    padding: var(--space-xs) var(--space-sm);
+    height: auto;
+    width: max-content;
+    box-shadow: none;
+    transition: all var(--dur-fast) var(--ease-tactile);
+  }
+
+  button.dropdown__trigger.dropdown__trigger--ghost:active,
+  .dropdown__trigger--ghost:active {
+    transform: scale(0.96);
+  }
+
+  @media (hover: hover) {
+
+    button.dropdown__trigger.dropdown__trigger--ghost:hover,
+    .dropdown__trigger--ghost:hover {
+      background: var(--color-surface-sunken);
+      color: var(--color-text);
+      border-color: transparent;
+    }
+  }
+
+  button.dropdown__trigger.dropdown__trigger--ghost:focus-visible,
+  .dropdown__trigger--ghost:focus-visible {
+    border-color: var(--color-border);
+    box-shadow: var(--shadow-focus);
+  }
+
+  button.dropdown__trigger.dropdown__trigger--ghost.dropdown__trigger--open,
+  .dropdown__trigger--ghost.dropdown__trigger--open {
+    border-color: transparent;
+    background: var(--color-surface-sunken);
+    color: var(--color-text);
+  }
+
+  /* ── Chevron ── */
+  .dropdown__chevron {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    flex-shrink: 0;
+    transition: transform var(--dur-default) var(--ease-standard);
+    transform: rotate(0deg);
+  }
+
+  .dropdown__trigger--open .dropdown__chevron {
+    transform: rotate(180deg);
+  }
+
+  /* ── Label ── */
+  .dropdown__label {
+    flex: 1 1 auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+  }
+
+  /* ── Mobil: Şehir seçici tam genişlik ── */
+  @media (max-width: 600px) {
+
+    #city-selector-container,
+    #city-selector-container .dropdown,
+    #city-selector-container .dropdown__trigger--secondary {
+      width: 100% !important;
+      max-width: 100% !important;
+    }
+  }
+}

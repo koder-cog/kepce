@@ -1,0 +1,40 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2021"
+description = "Kepçe V2 High Performance API"
+
+[dependencies]
+shared = { path = "../shared" }
+# Async Web Framework
+axum = { version = "0.7", features = ["multipart", "macros"] }
+tokio.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+validator = { version = "0.20", features = ["derive"] }
+
+# Database ORM
+sea-orm.workspace = true
+
+# Utilities
+chrono.workspace = true
+uuid.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+tower-http = { version = "0.5", features = ["cors", "fs", "trace"] }
+reqwest.workspace = true
+
+# Authentication & Security
+jsonwebtoken = { version = "10.4", features = ["rust_crypto"] }
+bcrypt = "0.15"
+rand.workspace = true
+anyhow.workspace = true
+dotenvy.workspace = true
+sha2.workspace = true
+http = "1.4.2"
+lazy_static = "1.5.0"
+
+[dev-dependencies]
+tower = { version = "0.5", features = ["util"] }

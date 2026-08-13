@@ -1,0 +1,68 @@
+/*
+ * kepçe design tokens — typography
+ *
+ * Font families, text size scale, line heights, letter-spacing,
+ * measure (max-width), and font weights.
+ *
+ * These tokens are theme-agnostic — no dark mode overrides needed.
+ */
+
+:root {
+    /* ── font families ──────────────────────────────────────── */
+    --font-display: 'paytone one', sans-serif;
+    --font-body: 'public sans', -apple-system, blinkmacsystemfont, 'segoe ui', sans-serif;
+    --font-mono: ui-monospace, 'sf mono', 'cascadia code', menlo, consolas, monospace;
+
+    /* ── heading sizes ──────────────────────────────────────── */
+    --text-h1: clamp(2.25rem, 8vw, 3.5rem);
+    --text-h2: clamp(1.75rem, 6vw, 2.5rem);
+    --text-h3: clamp(1.5rem, 4vw, 1.75rem);
+    --text-h4: clamp(1.125rem, 3vw, 1.25rem);
+    --text-h5: 1rem;
+    --text-h6: 0.875rem;
+
+    /* ── body / utility sizes ───────────────────────────────── */
+    --text-2xs: 0.625rem;
+    --text-xs: 0.75rem;
+    --text-sm: 0.875rem;
+    --text-base: 1rem;
+    --text-lg: clamp(1rem, 1.5vw, 1.125rem);
+    --text-xl: clamp(1.125rem, 2vw, 1.25rem);
+    --text-2xl: clamp(1.25rem, 3vw, 1.5rem);
+    --text-3xl: clamp(1.5rem, 5vw, 2rem);
+
+    /* ── paragraph sizes ────────────────────────────────────── */
+    --text-p1: var(--text-xl);
+    --text-p2: var(--text-lg);
+    --text-p3: var(--text-base);
+
+    /* ── line heights ───────────────────────────────────────── */
+    --leading-display: 1.1;
+    --leading-tight: 1.15;
+    --leading-heading: 1.2;
+    --leading-snug: 1.35;
+    --leading-none: 1;
+    --leading-comfortable: 1.4;
+    --leading-relaxed: 1.5;
+    --leading-body: 1.6;
+    --leading-loose: 1.8;
+
+    /* ── letter-spacing ─────────────────────────────────────── */
+    --tracking-tight: -0.02em;
+    --tracking-slight: -0.01em;
+    --tracking-wide: 0.02em;
+    --tracking-wider: 0.05em;
+    --tracking-widest: 0.1em;
+
+    /* ── measure (max line width for readability) ───────────── */
+    --measure: 68ch;
+
+    /* ── font weights ───────────────────────────────────────── */
+    --font-weight-light: 300;
+    --font-weight-regular: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-extrabold: 800;
+    --font-weight-black: 900;
+}

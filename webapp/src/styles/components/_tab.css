@@ -1,0 +1,159 @@
+@layer components {
+  /* ==========================================================================
+     Centralized & Modular Tabs Component
+     Supports Level 1, Level 2, Level 3+ recursive styling inside a wrapper.
+     ========================================================================== */
+
+  /* ── Tab Layout & Keyframes ─────────────────────────── */
+
+
+
+  /* ── Tab Container (Wrapper) ────────────────────────── */
+  .c-tabs-container {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    margin-bottom: var(--space-xl);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Tab Row ────────────────────────────────────────── */
+  .c-tabs {
+    display: flex;
+    width: 100%;
+    gap: var(--space-xs);
+    padding: var(--space-xs);
+    position: relative;
+    z-index: 1;
+  }
+
+  /* The sliding indicator */
+  .c-tabs__indicator {
+    position: absolute;
+    top: var(--space-xs);
+    bottom: var(--space-xs);
+    left: 0;
+    width: var(--indicator-width, 0);
+    transform: var(--indicator-transform, translateX(0));
+    background: var(--color-accent-primary);
+    border-radius: var(--radius-md);
+    z-index: -1;
+    opacity: 0;
+  }
+
+  .c-tabs-container.is-ready .c-tabs__indicator {
+    opacity: 1;
+    transition: all var(--motion-spatial-default);
+  }
+
+  /* Sub or tertiary level tab rows receive a border divider automatically */
+  .c-tabs + .c-tabs {
+    border-top: 1px solid var(--color-border-light);
+  }
+
+  /* Optional class for dynamic entrance/exit rows */
+  .c-tabs--sub {
+    overflow: hidden;
+    transform-origin: top center;
+  }
+
+  /* ── Tab Button ─────────────────────────────────────── */
+  .c-tab {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-lg);
+    border: none;
+    background: transparent;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    opacity: 0.6;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    position: relative;
+    z-index: 2;
+    transition: color var(--dur-fast) var(--ease-standard),
+                opacity var(--dur-fast) var(--ease-standard),
+                transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .c-tab:not(.c-tab--active):hover {
+    opacity: 1;
+    background: var(--color-surface-sunken);
+  }
+
+  .c-tab:active {
+    transform: scale(var(--press-scale, 0.98));
+  }
+
+  /* Active State */
+  .c-tab--active {
+    color: var(--color-text);
+    font-weight: var(--font-weight-bold);
+    opacity: 1;
+  }
+
+  .c-tab--active::selection,
+  .c-tab--active *::selection {
+    background: var(--color-text);
+    color: var(--color-card);
+  }
+
+  .c-tab__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Masaüstü: İkon ve yazı birlikte varsa sadece yazıyı göster */
+  .c-tab__icon--responsive {
+    display: none;
+  }
+
+  /* Disabled State (e.g. Coming Soon) */
+  .c-tab--disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    position: relative;
+  }
+
+  .c-tab__soon {
+    font-size: 0.65rem;
+    font-weight: var(--font-weight-bold);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+    background: var(--color-accent-primary-light);
+    color: var(--color-accent-primary);
+    padding: 1px 5px;
+    border-radius: var(--radius-full);
+    line-height: var(--leading-comfortable);
+  }
+
+  /* ── Tab Content Container ──────────────────────────── */
+  .c-tab-content {
+    min-height: 400px;
+  }
+
+  /* ── Responsive Mobile Scroll ───────────────────────── */
+  @media (max-width: 600px) {
+    .c-tabs {
+      flex-wrap: nowrap;
+    }
+    .c-tab {
+      flex: 1;
+      padding: var(--space-sm);
+    }
+    .c-tab__label--responsive {
+      display: none; /* Sıkışınca yazıları gizle */
+    }
+    .c-tab__icon--responsive {
+      display: flex; /* İkonu geri getir */
+    }
+  }
+}

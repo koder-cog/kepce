@@ -1,0 +1,38 @@
+kepce.org, www.kepce.org {
+    encode zstd gzip
+
+    # Güvenlik Başlıkları (Security Headers)
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Content-Security-Policy "default-src 'self'; font-src 'self' data:; img-src 'self' data: https:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; frame-ancestors 'none';"
+        Cross-Origin-Opener-Policy "same-origin"
+    }
+
+    # Statik bakım dosyası servisi
+    root * /srv/static
+
+    # 1. API istekleri -> Rust API container'ı (api:8000)
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+
+    # 2. Statik yüklemeler (avatarlar vb.) -> Rust API container'ı (api:8000)
+    handle /static/* {
+        reverse_proxy api:8000
+    }
+
+    # 3. Ön yüz (Svelte WebApp) -> Frontend container'ı (webapp:8080)
+    handle {
+        reverse_proxy webapp:8080
+    }
+
+    # 3. 502 / 503 hatasında Özel Bakım Sayfası ("Kepçeleri Yıkıyoruz")
+    handle_errors {
+        @maintenance expression `{err.status_code} in [502, 503]`
+        rewrite @maintenance /maintenance.html
+        file_server
+    }
+}

@@ -1,0 +1,189 @@
+@layer components {
+  /* ── Skeleton Screen System ──────────────────────────────── */
+
+  .skeleton {
+    background: var(--color-surface-sunken);
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-sunken) 25%,
+      var(--color-border-light) 50%,
+      var(--color-surface-sunken) 75%
+    );
+    background-size: 200% 100%;
+    animation: skeleton-shimmer 2s infinite linear;
+    border-radius: var(--radius-sm);
+    pointer-events: none;
+    user-select: none;
+  }
+
+  @keyframes skeleton-shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* Skeleton shapes */
+  .skeleton--text {
+    height: 0.8em;
+    width: 100%;
+    margin-bottom: 0.5em;
+  }
+
+  .skeleton--title {
+    height: 1.2em;
+    width: 60%;
+    margin-bottom: 1em;
+    border-radius: var(--radius-md);
+  }
+
+  .skeleton--rect {
+    height: 100px;
+    width: 100%;
+  }
+
+  .skeleton--circle {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+  }
+
+  .meal-card-skeleton {
+    background: var(--color-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl); /* Matched to .meal-card */
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 280px;
+    box-sizing: border-box;
+  }
+
+  .meal-card-skeleton__header {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-lg); /* Matched to .meal-card__header */
+  }
+
+  .meal-card-skeleton__title {
+    height: 2rem; /* Matches var(--text-2xl) */
+    width: 40%;
+    border-radius: var(--radius-md);
+  }
+
+  .meal-card-skeleton__badge {
+    margin-left: auto;
+    width: 120px;
+    height: 32px;
+    border-radius: var(--radius-full);
+  }
+
+  .meal-card-skeleton__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    flex: 1;
+  }
+
+  .meal-card-skeleton__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xs) 0;
+    gap: var(--space-md);
+  }
+
+  .meal-card-skeleton__text {
+    height: 1.2rem;
+    flex: 1;
+    border-radius: var(--radius-sm);
+  }
+
+  .meal-card-skeleton__action {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .meal-card-skeleton__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-md);
+    margin-top: auto;
+  }
+
+  .meal-card-skeleton__votes {
+    width: 80px;
+    height: 42px;
+    border-radius: var(--radius-full);
+  }
+
+  .meal-card-skeleton__actions {
+    display: flex;
+    gap: var(--space-sm);
+  }
+
+  .meal-card-skeleton__action-btn {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-full);
+  }
+
+  /* ── Skeleton Utilities & Overrides ───────────────────────── */
+  .skeleton--w80 { width: 80% !important; }
+  .skeleton--w75 { width: 75% !important; }
+  .skeleton--w70 { width: 70% !important; }
+  .skeleton--w65 { width: 65% !important; }
+  .skeleton--w60 { width: 60% !important; }
+  .skeleton--w50 { width: 50% !important; }
+  .skeleton--w45 { width: 45% !important; }
+  .skeleton--time-w { width: 80px !important; }
+
+  .skeleton--bot-card {
+    opacity: 0.8;
+    background: var(--color-surface-sunken);
+  }
+  .skeleton--bot-title {
+    width: 50%;
+    height: 2rem;
+    margin-bottom: var(--space-lg);
+    border-radius: var(--radius-md);
+  }
+  .skeleton--bot-line {
+    width: 100%;
+    height: 1rem;
+    margin-bottom: var(--space-sm);
+  }
+  .skeleton--bot-line-80 {
+    width: 80%;
+    height: 1rem;
+    margin-bottom: var(--space-lg);
+  }
+  .skeleton--bot-action {
+    width: 100px;
+    height: 1rem;
+  }
+  .skeleton--bot-report {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+  }
+  
+  .skeleton--timeline {
+    opacity: 0.8;
+  }
+
+  /* Responsive Adjustments */
+  @media (max-width: 600px) {
+    .meal-card-skeleton__badge {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+    }
+    .meal-card-skeleton__title,
+    .skeleton--bot-title {
+      height: 1.75rem;
+    }
+  }
+}

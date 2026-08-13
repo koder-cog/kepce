@@ -1,0 +1,30 @@
+# Rust Workspace Konfigürasyonu
+# ================================
+# Tüm Rust crate'leri (api, worker, shared) bu workspace altında derlenir.
+# `cargo build` komutu tüm üyeleri birlikte derler.
+# `cargo build -p api` ile sadece API derlenebilir.
+
+[workspace]
+members = [
+    "api",
+    "worker",
+    "shared"
+]
+resolver = "2"
+
+# Ortak bağımlılıklar — sürüm skew'ini önlemek için tek noktada tanımlanır.
+# Alt crate'ler `dependency.workspace = true` ile referans verir.
+[workspace.dependencies]
+sea-orm = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tokio = { version = "1", features = ["full"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+sha2 = "0.11"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls"] }
+anyhow = "1"
+dotenvy = "0.15"
+rand = "0.8"

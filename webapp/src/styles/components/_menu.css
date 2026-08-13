@@ -1,0 +1,342 @@
+@layer components {
+  /* ══════════════════════════════════════════════════════════════
+     _menu.css – c-menu: Popover / Context / Action / Dropdown Menüleri
+     ══════════════════════════════════════════════════════════════ */
+
+  /* ── Panel ── */
+  .c-menu {
+    position: absolute;
+    z-index: var(--z-popover);
+    min-width: 200px;
+    max-width: min(480px, calc(100vw - 32px));
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-xs);
+
+    background: var(--color-surface-elevated);
+    background-clip: padding-box;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-xl);
+
+    /* Varsayılan: gizli */
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.96) translateY(-4px);
+    transform-origin: top right;
+    transition:
+      opacity var(--motion-effects-default),
+      transform var(--motion-spatial-default),
+      visibility var(--dur-default) step-end;
+  }
+
+  .c-menu--open {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1) translateY(0);
+    transition:
+      opacity var(--motion-effects-default),
+      transform var(--motion-spatial-default),
+      visibility var(--dur-default) step-start;
+  }
+
+  /* ── Scroll Area ── */
+  .c-menu__scroll-area {
+    flex: 1 1 auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar-thumb) transparent;
+  }
+
+  @supports (-webkit-appearance: none) {
+    .c-menu__scroll-area::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .c-menu__scroll-area::-webkit-scrollbar-thumb {
+      background: var(--color-scrollbar-thumb);
+      border-radius: var(--radius-full);
+    }
+
+    .c-menu__scroll-area::-webkit-scrollbar-track {
+      background: transparent;
+    }
+  }
+
+  /* ── Menü Öğesi ── */
+  .c-menu__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background: none;
+    border: none;
+    border-radius: var(--radius-md);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    text-align: left;
+    cursor: pointer;
+    min-height: 36px;
+    appearance: none;
+    transition:
+      background var(--motion-effects-fast),
+      color var(--motion-effects-fast),
+      transform var(--dur-default) var(--ease-spring-bounce);
+    will-change: transform;
+  }
+
+  .c-menu__item svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  /* Hover */
+  @media (hover: hover) {
+    .c-menu__item:hover:not(.c-menu__item--selected) {
+      background-color: color-mix(in srgb, var(--color-accent-primary) 50%, transparent);
+      color: var(--color-text);
+    }
+
+    .c-menu__item--selected:hover {
+      background-color: var(--color-accent-primary-hover);
+      color: var(--color-text-on-accent);
+    }
+
+    .c-menu__item--danger:hover {
+      background: rgba(210, 86, 74, 0.08);
+      color: var(--color-accent-negative);
+    }
+  }
+
+  /* Squish */
+  .c-menu__item:active {
+    transform: scale(0.98);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
+  }
+
+  /* Durum sınıfları */
+  .c-menu__item--selected {
+    background-color: var(--color-accent-primary);
+    color: var(--color-text-on-accent);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .c-menu__item--highlighted:not(.c-menu__item--selected) {
+    background-color: color-mix(in srgb, var(--color-accent-primary) 50%, transparent);
+    color: var(--color-text);
+  }
+
+  .c-menu__item--danger {
+    color: var(--color-accent-negative);
+  }
+
+  .c-menu__item--accent {
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-bold);
+  }
+
+  .c-menu__item--disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
+
+  /* Alt kısımdaki özel buton (örn: Şehrinizi göremiyor musunuz?) */
+  .c-menu__item.c-menu__item--special {
+    color: var(--color-muted);
+    font-size: var(--text-sm);
+    justify-content: center;
+    margin-top: var(--space-2xs);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    border-top: 1px solid var(--color-border-light);
+    transition: color var(--motion-effects-default);
+  }
+
+  @media (hover: hover) {
+    .c-menu__item.c-menu__item--special:hover {
+      background: none;
+      color: var(--color-accent-primary);
+      text-decoration: underline;
+    }
+  }
+
+  /* ── Öğe alt-elemanları ── */
+  .c-menu__item-label {
+    flex: 1 1 auto;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    line-height: 1.4;
+  }
+
+  .c-menu__item-check {
+    flex-shrink: 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+
+  /* SVG checkmark simgesi (polyline) kullanıldığı için, menü genelindeki 
+     fill: currentColor kuralının içini doldurup üçgen yapmasını engelliyoruz */
+  .c-menu__item-check svg {
+    fill: none !important;
+  }
+
+  .c-menu__item-icon {
+    flex-shrink: 0;
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+  }
+
+  .c-menu__empty-state {
+    justify-content: center;
+    color: var(--color-muted);
+    font-style: italic;
+  }
+
+  /* ── Ayırıcı ── */
+  .c-menu__divider {
+    height: 0;
+    border-top: 1px solid var(--color-border-light);
+    margin: var(--space-xs) var(--space-md);
+    flex-shrink: 0;
+  }
+
+  .c-menu__divider:first-child,
+  .c-menu__divider:last-child {
+    display: none;
+  }
+
+  /* ── Bölüm ── */
+  .c-menu__section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  /* ═══ Combo Box / Arama Çubuğu ══════════════════════════════ */
+  .c-menu__search {
+    padding: var(--space-sm);
+    border-bottom: 1px solid var(--color-border-light);
+    flex-shrink: 0;
+  }
+
+  .c-menu__search input {
+    width: 100%;
+    padding: var(--space-xs) var(--space-md);
+    height: 36px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    font-family: var(--font-body);
+    transition: all var(--motion-effects-fast);
+    box-sizing: border-box;
+  }
+
+  .c-menu__search input::placeholder {
+    color: var(--color-muted);
+  }
+
+  .c-menu__search input:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-focus);
+  }
+
+  /* ═══ Overlay (Mobil Modal Arkaplanı) ════════════════════════ */
+  .c-menu__overlay {
+    position: fixed;
+    inset: 0;
+    background-color: var(--scrim-medium);
+    will-change: opacity;
+    /* Prefix MUST come before standard — esbuild deduplicates and keeps
+       the last occurrence. If -webkit- is last, Firefox/Chromium lose blur. */
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    backdrop-filter: blur(var(--blur-md));
+    z-index: calc(var(--z-popover) - 1);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--motion-effects-default), visibility var(--motion-effects-default);
+  }
+
+  .c-menu__overlay--open {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* ═══ Mobil (600px ve altı) ══════════════════════════════════ */
+  @media (max-width: 600px) {
+    .c-menu {
+      max-width: calc(100vw - var(--space-md) * 2);
+    }
+
+    .c-menu__item {
+      min-height: 44px;
+      font-size: var(--text-base);
+    }
+
+    /* ── Centered Modal (Uzun Listeler) ── */
+    .c-menu--modal {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      bottom: auto !important;
+      right: auto !important;
+      transform: translate(-50%, -50%) scale(0.95) !important;
+      width: 90vw !important;
+      max-width: 400px;
+      max-height: 80vh !important;
+      border-radius: var(--radius-xl);
+      transform-origin: center center !important;
+      padding: 0;
+    }
+
+    .c-menu--modal.c-menu--open {
+      transform: translate(-50%, -50%) scale(1) !important;
+    }
+
+    .c-menu--modal .c-menu__search .c-menu__item--special {
+      padding: var(--space-md);
+      margin-bottom: 0;
+      border-bottom: 1px solid var(--color-border-light);
+    }
+
+    .c-menu--modal .c-menu__search input {
+      height: 44px;
+      font-size: var(--text-base);
+      border-radius: var(--radius-lg);
+    }
+
+    .c-menu--modal .c-menu__scroll-area {
+      padding: var(--space-xs);
+    }
+
+    .c-menu--modal .c-menu__item {
+      padding: var(--space-md);
+      font-size: var(--text-base);
+      min-height: 52px;
+      border-radius: var(--radius-md);
+    }
+  }
+
+  /* ── Dropdown lock ── */
+  html.dropdown-open {
+    overflow: hidden;
+  }
+}

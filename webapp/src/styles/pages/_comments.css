@@ -1,0 +1,165 @@
+@layer components {
+  /* ── 0. Alt Katman Hiyerarşisi (Cascade Hierarchy) ─────────── */
+  @layer reset, layout, elements, capsule, thread, card, legacy;
+
+  /* ── 1. Bağlamsal Sıfırlama (Contextual Reset) ──────────────── */
+  @layer reset {
+
+    .comments-page input,
+    .comments-page textarea,
+    .comments-page button,
+    .comments-page select {
+      font-family: inherit;
+      font-size: inherit;
+      color: inherit;
+      border: none;
+      outline: none;
+      box-shadow: none;
+    }
+  }
+
+  /* ── 2. Sayfa Düzeni (Page Layout & Headers) ──────────────── */
+  @layer layout {
+    .comments-page {
+      margin: 0 auto;
+      padding: var(--space-xl) 0 120px;
+      /* Mobil alt sabit girdi alanı boşluğu */
+    }
+
+    .comments-section {
+      display: flex;
+      flex-direction: column;
+    }
+
+    #comment-input-container {
+      order: 1;
+      margin-bottom: 0;
+    }
+
+    #comments-list-container {
+      order: 2;
+    }
+
+    .comments-page__header {
+      margin-bottom: var(--space-2xl);
+      text-align: left;
+    }
+
+    .comments-page__breadcrumb {
+      margin-bottom: var(--space-md);
+      font-size: var(--text-sm);
+      color: var(--color-muted);
+    }
+
+    .comments-page__title {
+      font-size: var(--text-h2);
+      margin-bottom: var(--space-xs);
+    }
+
+    .comments-page__date {
+      font-size: var(--text-lg);
+      color: var(--color-muted);
+    }
+
+    .comments-page__back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-xs);
+      color: var(--color-muted);
+      text-decoration: none;
+      font-family: var(--font-display);
+      font-size: var(--text-2xl);
+      font-weight: var(--font-weight-semibold);
+      transition: transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+      margin-bottom: var(--space-lg);
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .comments-page__back-link:active {
+      transform: scale(0.98);
+    }
+
+    .comments-page__back-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform var(--dur-fast) var(--ease-standard);
+    }
+
+    .comments-page__back-icon svg {
+      color: inherit;
+    }
+
+    .comments-page__back-text {
+      color: inherit;
+    }
+
+    @media (hover: hover) {
+      .comments-page__back-link:hover {
+        color: var(--color-accent-primary);
+      }
+
+      .comments-page__back-link:hover .comments-page__back-icon {
+        transform: translateX(-4px);
+      }
+    }
+
+    .comments-page__nav-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-lg);
+      flex-wrap: wrap;
+      gap: var(--space-sm);
+    }
+
+    .comments-section-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-md);
+      margin-top: var(--space-xl);
+    }
+
+    .comments-section-title h2 {
+      font-family: var(--font-display);
+      font-size: var(--text-h3);
+      color: var(--color-text);
+      margin: 0;
+    }
+
+    .comments-section-title svg {
+      color: var(--color-accent-primary);
+    }
+
+    .focus-return-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(var(--color-accent-primary-rgb), 0.05);
+      border: 1px solid var(--color-accent-primary);
+      font-weight: var(--font-weight-bold);
+      color: var(--color-accent-primary);
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      text-decoration: none;
+      transition: all var(--dur-fast) var(--ease-standard);
+    }
+
+    @media (hover: hover) {
+      .focus-return-btn:hover {
+        background: rgba(var(--color-accent-primary-rgb), 0.1);
+      }
+    }
+
+    @media (max-width: 600px) {
+      .comments-page {
+        padding-bottom: var(--bottom-bar-offset);
+      }
+
+      .comments-section-title {
+        margin-bottom: var(--space-xl);
+      }
+    }
+  }
+}

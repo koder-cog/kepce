@@ -1,0 +1,114 @@
+name: Kepçe CI Pipeline
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+env:
+  CARGO_TERM_COLOR: always
+  DATABASE_URL: postgresql://kepce_admin:SIFRE@localhost:5432/kepce
+  KEPCE_SECRET_KEY: test-secret-key-at-least-thirty-two-characters-long
+  KEPCE_PII_SECRET_KEY: test-pii-secret-key-for-database-encryption
+
+jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: kepce_admin
+          POSTGRES_DB: kepce
+          POSTGRES_PASSWORD: SIFRE
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Initialize Database Schema
+        run: |
+          PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f migrations/schema.sql
+
+      - name: Seed Database
+        run: |
+          PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f migrations/migration.sql
+
+      - name: Setup Rust Toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v2
+
+      - name: Check Code Formatting
+        run: cargo fmt --all -- --check
+
+      - name: Run Clippy Lints
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run Backend Tests
+        run: cargo test --workspace
+
+      - name: Stray Binary Guard
+        run: |
+          echo "Checking for accidental binary files outside allowed directories..."
+          STRAY_FILES=$(find . -type f \( -name "*.pdf" -o -name "*.xlsx" -o -name "*.xls" -o -name "*.exe" \) \
+            -not -path "*/worker/tests/fixtures/*" \
+            -not -path "*/node_modules/*" \
+            -not -path "*/target/*" \
+            -not -path "*/.git/*" \
+            -not -path "*/.svelte-kit/*")
+          if [ -n "$STRAY_FILES" ]; then
+            echo "::error::Found stray binary files outside allowed directories:"
+            echo "$STRAY_FILES"
+            exit 1
+          fi
+          echo "No stray binary files found."
+
+  frontend-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Install Frontend Dependencies
+        run: |
+          cd webapp
+          npm ci
+
+      - name: Run Frontend Code Checks
+        run: |
+          cd webapp
+          npm run check
+
+      - name: Run Frontend Tests
+        run: |
+          cd webapp
+          npm run test
+
+      - name: Build Frontend Production Bundle
+        run: |
+          cd webapp
+          npm run build

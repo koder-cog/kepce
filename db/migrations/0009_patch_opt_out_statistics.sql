@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS opt_out_statistics BOOLEAN NOT NULL DEFAULT false;

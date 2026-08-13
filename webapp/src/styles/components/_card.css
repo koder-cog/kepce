@@ -1,0 +1,825 @@
+@layer components {
+  /* ── Meal Cards Container ─────────────────────────────────── */
+
+  .meal-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: var(--space-lg);
+  }
+
+  .meal-cards--list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-md);
+  }
+
+  /* ── Meal Card ────────────────────────────────────────────── */
+
+  .meal-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    position: relative;
+    transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default),
+      transform var(--dur-default) var(--ease-spring-bounce), box-shadow var(--dur-default) var(--ease-spring-bounce);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    will-change: transform;
+  }
+
+  .meal-card--sunken {
+    background: var(--color-surface-sunken);
+    border-color: rgba(0,0,0,0.02);
+  }
+
+  .meal-card--accent-disclaimer {
+    border-color: var(--color-accent-disclaimer);
+    box-shadow: 0 4px 12px rgba(var(--color-accent-disclaimer-rgb), 0.15);
+  }
+
+
+  .meal-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    /* Rely on order and margins */
+    margin-bottom: var(--space-lg);
+  }
+
+  .meal-card__title {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black) !important;
+    font-size: var(--text-2xl);
+    color: var(--color-text);
+    line-height: 1.2;
+  }
+
+  .meal-card__source-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-left: auto;
+    /* Push to the right */
+  }
+
+  .meal-card__calories-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface-variant);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    white-space: nowrap;
+    cursor: default;
+    border: 1px solid var(--color-border-subtle);
+  }
+
+  @media (hover: hover) {
+    .meal-card__source-wrapper:hover {
+      z-index: var(--z-toast);
+      /* Breaks out of parent stacking context to stay above navbar */
+    }
+  }
+
+  .meal-card__source {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface-variant);
+    border-radius: var(--radius-full);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-on-accent);
+    white-space: nowrap;
+    cursor: help;
+    transition: all var(--dur-fast) var(--ease-standard);
+  }
+
+  .meal-card__source:hover {
+    color: var(--color-text);
+    background: var(--color-surface-elevated);
+  }
+
+  .meal-card__source--verified,
+  .meal-card__source--positive {
+    background: var(--color-accent-positive);
+  }
+
+  .meal-card__source--primary {
+    background: var(--color-accent-primary);
+  }
+
+  .meal-card__source--disclaimer {
+    background: var(--color-accent-disclaimer);
+  }
+
+  .meal-card__source--critical {
+    background: var(--color-accent-disclaimer);
+  }
+
+  .meal-card__source:hover {
+    background-color: var(--color-border-light);
+  }
+
+
+  /* Tooltip Portal */
+  .tooltip-portal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    pointer-events: none;
+    z-index: var(--z-max);
+  }
+
+  .meal-card__source-tooltip {
+    display: none;
+    /* Hide local version, used as data source */
+  }
+
+  /* ── Tooltips (Material Design 3 Style) ────────────────── */
+
+  .tooltip-instance {
+    position: absolute;
+    width: auto;
+    min-width: 48px;
+    max-width: min(320px, calc(100vw - 32px));
+    background: var(--color-tooltip-bg);
+    color: var(--color-tooltip-text);
+    padding: 4px 8px;
+    /* Plain tooltip padding */
+    border-radius: var(--radius-tooltip);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+    line-height: 1.2;
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-md);
+    /* Block pointer events when invisible so it doesn't interfere */
+    pointer-events: none;
+    z-index: var(--z-max);
+    opacity: 0;
+    transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+    white-space: normal;
+    word-break: normal;
+    overflow-wrap: break-word;
+    hyphens: auto;
+    text-align: center;
+  }
+
+  .tooltip-instance--measuring {
+    transition: none !important;
+  }
+
+  .tooltip-instance--placed-above {
+    transform: translateY(4px);
+  }
+
+  .tooltip-instance--placed-below {
+    transform: translateY(-4px);
+  }
+
+  /* Expressive variant for longer text/rich content */
+  .tooltip-instance--expressive {
+    padding: 12px 16px;
+    line-height: var(--leading-relaxed);
+    white-space: normal;
+    text-align: left;
+    box-shadow: var(--shadow-lg);
+    font-size: var(--text-sm);
+  }
+
+  .tooltip-instance--visible {
+    opacity: 1;
+    transform: translateY(0);
+    /* pointer-events kasıtlı olarak kapalı bırakıldı: görünür tooltip
+       altındaki buton/link tıklamalarını engellemesin (görev #5). */
+  }
+
+  /* Yalnızca zengin içerikli (link içerebilen) tooltip'lerde hover
+     survival gerektiği için tıklanabilirliği geri açıyoruz. */
+  .tooltip-instance--expressive.tooltip-instance--visible {
+    pointer-events: auto;
+  }
+
+
+  .c-badge-pill {
+    font-size: var(--text-2xs);
+    font-weight: 800;
+    padding: 2px 6px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 4px;
+    vertical-align: middle;
+  }
+
+  .c-badge-pill--celiac {
+    background: rgba(var(--color-accent-positive-rgb), 0.15);
+    color: var(--color-accent-positive);
+  }
+
+  .c-badge-pill--vegetarian {
+    background: rgba(var(--color-info-rgb), 0.15);
+    color: var(--color-info);
+  }
+
+  .c-badge-pill--spicy {
+    background: rgba(var(--color-warning-rgb), 0.15);
+    color: var(--color-warning);
+  }
+
+  .c-badge-pill--info {
+    background: var(--color-surface-variant);
+    color: var(--color-muted);
+    border: 1px solid var(--color-border-light);
+  }
+
+  .c-badge-pill--price {
+    background: rgba(var(--color-accent-positive-rgb), 0.15);
+    color: var(--color-accent-positive);
+  }
+
+  .meal-card__source svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    flex-shrink: 0;
+    display: block;
+    overflow: visible;
+  }
+
+  .meal-card__items {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .meal-card__item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-xs) 0;
+  }
+
+  .meal-card__item-row--alternative {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0px;
+    padding: var(--space-sm) 0;
+  }
+
+  .meal-card__dish-separator--yada {
+    text-align: left;
+    margin: var(--space-xs) 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .meal-card__dish-separator-text {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    font-style: italic;
+    opacity: 0.8;
+  }
+
+  .meal-card__item {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-regular);
+    color: var(--color-text);
+    line-height: normal;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .meal-card__dish-part {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 1;
+    min-width: 0;
+    gap: var(--space-xs);
+    padding: 2px 0;
+    transition: opacity var(--motion-effects-default);
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .meal-card__dish-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-shrink: 0;
+    /* margin-top removed for center alignment */
+    /* Align with text baseline */
+  }
+
+  .meal-card__diet-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-full);
+    background: rgba(var(--color-accent-positive-rgb), 0.1);
+    color: var(--color-diet-positive);
+    flex-shrink: 0;
+  }
+
+  .meal-card__diet-icon svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+  }
+
+  .meal-card__dish-name {
+    flex: 1;
+    white-space: normal;
+    word-break: break-word;
+    line-height: var(--leading-comfortable);
+  }
+
+  .meal-card__dish-separator {
+    color: var(--color-muted);
+    opacity: 0.5;
+    flex-shrink: 0;
+    margin-right: 2px;
+  }
+
+  .meal-card__takeaways-row {
+    padding-top: var(--space-md);
+    margin-top: var(--space-md);
+    border-top: 1px dashed var(--color-border-light);
+  }
+
+  .meal-card__takeaways-content {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+  }
+
+  .meal-card__takeaway-btn {
+    appearance: none;
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    flex: 0 0 100%;
+    color: var(--color-muted);
+    transition: all var(--motion-effects-fast);
+  }
+
+  .meal-card__takeaway-btn:hover {
+    color: var(--color-text);
+  }
+
+
+  .meal-card__takeaway-btn:active {
+    transform: scale(1);
+    /* Global buton squish efektini ez */
+  }
+
+  .meal-card__takeaway-btn .meal-card__dish-actions {
+    color: var(--color-muted);
+    transition: all var(--motion-effects-fast);
+  }
+
+  .meal-card__takeaway-btn:hover .meal-card__dish-actions {
+    color: var(--color-accent-primary);
+    transform: translateX(4px) scale(1.1);
+  }
+
+  .meal-card__takeaway-btn:active .meal-card__dish-actions {
+    transform: translateX(var(--space-sm));
+    color: var(--color-accent-primary-hover);
+  }
+
+  .meal-card__takeaway-btn svg {
+    margin-top: 1px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
+
+  .meal-card__star-btn {
+    background: none;
+    border: none;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    cursor: pointer;
+    color: var(--color-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--dur-default) var(--ease-spring-bounce), 
+                color var(--dur-fast) var(--ease-standard), 
+                filter var(--dur-fast) var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .meal-card__star-btn:hover {
+      color: var(--color-accent-disclaimer);
+      transform: scale(1.15);
+    }
+
+    .meal-card__star-btn.active:hover {
+      transform: scale(1.15);
+      filter: drop-shadow(0 0 4px rgba(255, 202, 40, 0.4));
+    }
+  }
+
+  .meal-card__star-btn:active {
+    transform: scale(0.9);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
+  }
+
+  @keyframes star-burst {
+    0% { transform: scale(0.9); }
+    40% { transform: scale(1.25); }
+  }
+
+  .meal-card__star-btn.active {
+    color: var(--color-star-active);
+    /* Golden star */
+    animation: star-burst var(--dur-medium) var(--ease-spring-bounce);
+  }
+
+  .meal-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: var(--space-md);
+    margin-top: auto;
+  }
+
+  .meal-card__votes {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 0 var(--space-sm);
+    height: 42px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+    background: var(--color-surface-variant);
+    box-sizing: border-box;
+    transition: all var(--motion-effects-fast);
+  }
+
+  .meal-card__vote-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: all var(--motion-effects-fast);
+    color: var(--color-muted);
+    padding: 0;
+  }
+
+  .meal-card__vote-btn:hover {
+    color: var(--color-text);
+  }
+
+  .meal-card__vote-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  .meal-card__vote-btn.is-active[data-vote="up"],
+  .meal-card__vote-btn.is-active[data-vote="up"]:hover {
+    color: var(--color-accent-positive);
+  }
+
+  .meal-card__vote-btn.is-active[data-vote="down"],
+  .meal-card__vote-btn.is-active[data-vote="down"]:hover {
+    color: var(--color-accent-negative);
+  }
+
+  .meal-card__vote-count {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    min-width: 16px;
+    text-align: center;
+    transition: color var(--dur-fast);
+  }
+
+  .meal-card__vote-count.positive {
+    color: var(--color-accent-positive);
+  }
+
+  .meal-card__vote-count.negative {
+    color: var(--color-accent-negative);
+  }
+
+  .meal-card__vote-count.disclaimer {
+    color: var(--color-accent-disclaimer);
+  }
+
+  .meal-card__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .meal-card__action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    width: auto;
+    min-width: 42px;
+    height: 42px;
+    border: 1px solid var(--color-border);
+    background: var(--color-surface-variant);
+    cursor: pointer;
+    border-radius: var(--radius-full);
+    transition: all var(--motion-effects-fast);
+    color: var(--color-muted);
+    box-sizing: border-box;
+  }
+
+  .meal-card__action-btn:has(.meal-card__action-badge) {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .meal-card__action-badge {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-muted);
+    transition: color var(--motion-effects-fast);
+  }
+
+  .meal-card__action-btn:hover {
+    border-color: var(--color-border);
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+  }
+
+  .meal-card__action-btn:hover .meal-card__action-badge {
+    color: var(--color-text);
+  }
+
+  .meal-card__action-btn:active {
+    transform: scale(0.98);
+  }
+
+  .meal-card__action-btn svg {
+    width: 18px;
+    height: 18px;
+    fill: currentColor;
+  }
+
+  /* ── amk botu Köşesi Card ──────────────────────────────────── */
+
+  .bot-card {
+    background: linear-gradient(135deg, var(--color-accent-primary) 0%, var(--color-accent-primary-hover) 100%);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    color: var(--color-text);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default),
+      transform var(--dur-default) var(--ease-spring-bounce), box-shadow var(--dur-default) var(--ease-spring-bounce);
+    will-change: transform;
+  }
+
+  /* Hide AI elements when setting is disabled */
+  .hide-ai .ai-element,
+  .hide-ai .bot-card {
+    display: none;
+  }
+
+  .bot-card::before {
+    content: '>';
+    position: absolute;
+    top: var(--space-lg);
+    right: var(--space-lg);
+    font-family: 'Courier New', monospace;
+    font-size: var(--text-4xl);
+    font-weight: bold;
+    color: var(--color-text-on-accent);
+    opacity: 0.1;
+    line-height: var(--leading-none);
+  }
+
+  .bot-card__title {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black) !important;
+    font-size: var(--text-2xl);
+    margin-bottom: var(--space-md);
+    color: var(--color-text-on-accent);
+  }
+
+  .bot-card__text {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    line-height: 1.7;
+    color: var(--color-text-on-accent);
+    opacity: 0.95;
+    margin-bottom: var(--space-md);
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .bot-card__text p {
+    margin: 0;
+  }
+
+  .bot-card__footer {
+    margin-top: auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-md);
+  }
+
+  .bot-card__link {
+    font-size: var(--text-sm);
+    color: var(--color-text-on-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    opacity: 0.8;
+    transition: opacity var(--motion-effects-fast);
+    text-align: left;
+  }
+
+  .bot-card__link:hover {
+    opacity: 1;
+  }
+
+  .bot-card .meal-card__action-btn {
+    background: rgba(var(--color-card-rgb), 0.12);
+    border-color: rgba(var(--color-card-rgb), 0.2);
+    color: var(--color-text-on-accent);
+  }
+
+  @media (hover: hover) {
+    .bot-card .meal-card__action-btn:hover {
+      background: rgba(var(--color-card-rgb), 0.2);
+      border-color: rgba(var(--color-card-rgb), 0.35);
+      color: var(--color-text-on-accent);
+    }
+  }
+
+  /* ── Empty States ──────────────────────────────────────────── */
+
+  .meal-card--empty {
+    background: var(--color-card);
+    border: 1px solid var(--color-border-light);
+  }
+
+  /* Yemek listesi yüklenemediğinde (menu.items / menu.dishes / menu.foods
+     üçü de boş) gösterilen bilgilendirici fallback kutusu. Hem UX
+     açısından kullanıcıyı bilgilendirir hem de API response farklılıklarını
+     gözle görülebilir kılar. */
+  .meal-card__empty-items {
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    background: var(--color-surface-sunken);
+    text-align: center;
+    border: 1px dashed var(--color-border-light);
+    color: var(--color-muted);
+  }
+
+  /* MenuCard'ın debug paneli. menu objesinin hangi alanları içerdiğini
+     (items / dishes / foods) JSON olarak gösterir; sorunun API response
+     farklılığı mı yoksa veri eksikliği mi olduğunu hızlıca ayıklamak
+     için kullanılır. ?debug=1 veya localStorage.kepce_debug=1 ile
+     etkinleştirilir. */
+  .meal-card__debug {
+    margin: 0 0 var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface-sunken);
+    border: 1px dashed var(--color-warning);
+    border-radius: var(--radius-md);
+    font-family: var(--font-mono, monospace);
+    font-size: var(--text-xs);
+  }
+  .meal-card__debug summary {
+    cursor: pointer;
+    color: var(--color-warning);
+    font-weight: var(--font-weight-bold);
+    user-select: none;
+  }
+  .meal-card__debug pre {
+    margin: var(--space-sm) 0 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    color: var(--color-text-secondary);
+    max-height: 360px;
+    overflow: auto;
+  }
+
+  .meal-card--empty .meal-card__title {
+    color: var(--color-muted);
+  }
+
+  .meal-card__header-actions,
+  .meal-card__empty-icon {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .meal-card__empty-icon {
+    color: var(--color-muted);
+    opacity: 0.4;
+  }
+
+  .meal-card__empty-content {
+    opacity: 0.35;
+    padding: var(--space-md) 0;
+  }
+
+  /* ── Responsive Overrides ── */
+
+  @media (max-width: 600px) {
+    .meal-cards {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 600px) {
+    .meal-card__title {
+      font-size: var(--text-xl) !important;
+    }
+
+    .bot-card__title {
+      font-size: var(--text-xl) !important;
+    }
+
+    .meal-card__source {
+      padding: 0 !important;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      aspect-ratio: 1 / 1;
+    }
+
+    .meal-card__source-text {
+      display: none;
+    }
+
+    .meal-card__dish-part {
+      flex: 1 1 auto;
+      min-width: auto;
+    }
+  }
+}
+
+.meal-card__dish-info-wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.meal-card__takeaway-list {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-md);
+  width: 100%;
+}
+
+/* ── MenuCard specific ── */
+.weight-info {
+  margin-top: 2px;
+}
+.calorie-info {
+  margin-top: 8px;
+}
+.calorie-info span {
+  font-weight: var(--font-weight-medium);
+}

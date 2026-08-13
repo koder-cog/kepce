@@ -1,0 +1,48 @@
+  .u-syntax-keyword {
+    color: var(--color-accent-primary) !important;
+  }
+
+  .u-syntax-type {
+    color: var(--color-accent-secondary) !important;
+  }
+
+  .u-syntax-func {
+    color: #61afef !important;
+  }
+
+  .u-syntax-string {
+    color: #98c379 !important;
+  }
+
+  .u-syntax-builtin {
+    color: #e06c75 !important;
+  }
+
+  /* ── Component specific utility combinations ───────────────── */
+  .grid-auto-200 {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--space-md);
+    padding: var(--space-lg);
+  }
+
+  .grid-cols-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-lg);
+  }
+
+  .showcase-tall-box {
+    height: 600px;
+    background: linear-gradient(to bottom, var(--color-surface-hover), transparent);
+    margin-top: var(--space-md);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px dashed var(--color-border);
+  }
+
+  .prev-month {
+    color: var(--color-text);
+  }

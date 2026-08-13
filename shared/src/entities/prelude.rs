@@ -1,0 +1,32 @@
+//! `SeaORM` Entity
+
+pub use super::api_keys::Entity as ApiKeys;
+pub use super::api_usage_logs::Entity as ApiUsageLogs;
+pub use super::badges::Entity as Badges;
+pub use super::cities::Entity as Cities;
+pub use super::comments::Entity as Comments;
+pub use super::contact_messages::Entity as ContactMessages;
+pub use super::dish_aliases::Entity as DishAliases;
+pub use super::dish_tags::Entity as DishTags;
+pub use super::dish_votes::Entity as DishVotes;
+pub use super::dishes::Entity as Dishes;
+pub use super::meal_category_prices::Entity as MealCategoryPrices;
+pub use super::menu_dishes::Entity as MenuDishes;
+pub use super::menu_history::Entity as MenuHistory;
+pub use super::menu_submissions::Entity as MenuSubmissions;
+pub use super::menu_votes::Entity as MenuVotes;
+pub use super::menus::Entity as Menus;
+pub use super::notifications::Entity as Notifications;
+pub use super::pricing_periods::Entity as PricingPeriods;
+pub use super::projects::Entity as Projects;
+pub use super::reports::Entity as Reports;
+pub use super::system_incidents::Entity as SystemIncidents;
+pub use super::tags::Entity as Tags;
+pub use super::user_badges::Entity as UserBadges;
+pub use super::user_blocks::Entity as UserBlocks;
+pub use super::user_favorites::Entity as UserFavorites;
+pub use super::user_pinned_dishes::Entity as UserPinnedDishes;
+pub use super::user_sessions::Entity as UserSessions;
+pub use super::user_warnings::Entity as UserWarnings;
+pub use super::users::Entity as Users;
+pub use super::vote_reactions::Entity as VoteReactions;

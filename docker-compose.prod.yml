@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  # Webapp'in 80 portunu dışarı açmasını engelliyoruz, bunu Caddy devralacak.
+  webapp:
+    ports: []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: kepce-caddy
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /var/run
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./static:/srv/static:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - frontend-net
+      - backend-net
+    depends_on:
+      - webapp
+      - api
+
+volumes:
+  caddy_data:
+  caddy_config:

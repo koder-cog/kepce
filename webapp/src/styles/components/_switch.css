@@ -1,0 +1,122 @@
+@layer components {
+  /* ── Switch Row (for consents and settings) ── */
+  .form-switch-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .form-switch-row__text {
+    font-size: var(--text-sm);
+    line-height: var(--leading-comfortable);
+    color: var(--color-text);
+  }
+
+  /* ── Hybrid Switch (Benmari) ──────────────────────────── */
+
+  .c-switch {
+    width: 64px;
+    height: 28px;
+    background: var(--color-switch-track-off);
+    border-radius: var(--radius-full);
+    position: relative;
+    transition:
+      background var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-default) var(--ease-expressive);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding: 0;
+    border: 1px solid var(--color-border);
+    cursor: pointer;
+  }
+
+  .c-switch:active {
+    transform: scale(0.98);
+  }
+
+  .c-switch:active .c-switch__handle {
+    width: 32px;
+  }
+
+  .c-switch__handle {
+    width: 37px;
+    height: 24px;
+    background: var(--color-switch-handle);
+    border: 1px solid var(--color-switch-handle-border);
+    border-radius: 12px;
+    transition:
+      transform var(--dur-medium) var(--ease-expressive),
+      width var(--dur-medium) var(--ease-expressive),
+      background var(--dur-fast) var(--ease-standard);
+    z-index: 2;
+    will-change: transform, width;
+    margin-left: 2px;
+  }
+
+  .c-input-hidden:checked+.c-switch {
+    background: var(--color-switch-track-on);
+    border-color: var(--color-switch-track-on);
+  }
+
+  .c-input-hidden:checked+.c-switch .c-switch__handle {
+    transform: translateX(22px);
+    background: var(--color-switch-handle-active);
+  }
+
+  .c-input-hidden:checked+.c-switch:active .c-switch__handle {
+    transform: translateX(27px);
+  }
+
+  /* ── Switch Indicators (Mechanical I/O) ── */
+  body.show-indicators .c-switch::before,
+  body.show-indicators .c-switch::after {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: var(--text-2xs);
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black);
+    pointer-events: none;
+    line-height: var(--leading-none);
+    transition: opacity var(--dur-fast) var(--ease-standard);
+  }
+
+  /* 'I' (ON) - Placed on the left */
+  body.show-indicators .c-switch::before {
+    content: 'I';
+    left: 14px;
+    color: var(--color-text-on-accent);
+    opacity: 0;
+    /* Hidden by default, handle will be here when OFF */
+    z-index: 1;
+  }
+
+  /* 'O' (OFF) - Placed on the right */
+  body.show-indicators .c-switch::after {
+    content: '○';
+    right: 11px;
+    color: var(--color-text);
+    opacity: 0.45;
+    z-index: 1;
+  }
+
+  /* Toggle visibility based on state */
+  body.show-indicators .c-input-hidden:checked+.c-switch::before {
+    opacity: 1;
+    /* Revealed when handle moves to the right */
+  }
+
+  body.show-indicators .c-input-hidden:not(:checked)+.c-switch::after {
+    opacity: 0.45;
+    /* Visible when handle is on the left */
+  }
+
+  body.show-indicators .c-input-hidden:checked+.c-switch::after {
+    opacity: 0;
+    /* Covered/Hidden when handle moves to the right */
+  }
+}

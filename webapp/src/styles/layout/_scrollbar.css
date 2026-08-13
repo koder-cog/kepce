@@ -1,0 +1,171 @@
+@layer components {
+  /* ── Custom Scrollbar ──────────────────────────────────────── */
+
+  .c-scrollbar {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    z-index: var(--z-max);
+    display: flex;
+    justify-content: flex-end;
+    background: transparent;
+    pointer-events: auto;
+    opacity: 0;
+    transition:
+      opacity var(--motion-effects-default),
+      transform var(--motion-effects-default);
+  }
+
+  /* Hide custom scrollbar component on touch devices to favor native performance/UX */
+  @media (hover: none) {
+    .c-scrollbar {
+      display: none !important;
+    }
+  }
+
+  /* Visibility synced with the entire page state via body */
+  body.is-page-ready .c-scrollbar:not(.is-permanent) {
+    opacity: 0;
+    /* Tamamen kaybolur */
+  }
+
+  body.is-page-ready.is-scrolling .c-scrollbar,
+  body.is-page-ready .c-scrollbar:hover,
+  body.is-page-ready .c-scrollbar.is-active,
+  body.is-page-ready .c-scrollbar.is-permanent {
+    opacity: 1;
+    /* Kalıcı ayarı açıksa veya etkileşimdeyse tamamen görünür */
+  }
+
+  .c-scrollbar--hidden {
+    display: none;
+  }
+
+  /* The visible track background - Flat Style */
+    .c-scrollbar::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: var(--scrollbar-width-narrow);
+    background: var(--color-scrollbar-track);
+    transition: all var(--motion-effects-default);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+
+    .c-scrollbar:hover::before,
+    .c-scrollbar.is-active::before {
+      width: var(--scrollbar-width-wide);
+      opacity: 1;
+    }
+  }
+
+  .c-scrollbar__thumb {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: var(--scrollbar-width-narrow);
+    min-height: 40px;
+    border-radius: var(--radius-full);
+    background: var(--color-scrollbar-thumb);
+    transition:
+      width var(--motion-effects-default),
+      background var(--motion-effects-default),
+      opacity var(--motion-effects-default),
+      transform var(--motion-effects-fast);
+    cursor: grab;
+  }
+
+  @media (hover: hover) {
+
+    .c-scrollbar:hover .c-scrollbar__thumb,
+    .c-scrollbar.is-active .c-scrollbar__thumb {
+      width: var(--scrollbar-width-wide);
+      background: var(--color-scrollbar-thumb);
+    }
+  }
+
+  .c-scrollbar.is-active .c-scrollbar__thumb {
+    cursor: grabbing;
+    background: var(--color-scrollbar-thumb-hover);
+  }
+
+  /* Always Show Scrollbars (Accessibility Feature) */
+  .c-scrollbar.is-permanent::before {
+    width: var(--scrollbar-width-wide);
+    opacity: 1;
+  }
+
+  .c-scrollbar.is-permanent .c-scrollbar__thumb {
+    width: var(--scrollbar-width-wide);
+    right: 0;
+  }
+
+  /* ── Native Scrollbar Overrides (Applied only to desktop/pointer devices) ── */
+  @media (hover: hover) {
+
+    /* Standard Scrollbar Properties (Baseline 2024) */
+    html, body {
+      scrollbar-gutter: stable;
+    }
+
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--color-scrollbar-thumb) var(--color-scrollbar-track);
+    }
+
+    /* Chrome, Edge, Safari */
+    @supports selector(::-webkit-scrollbar) {
+
+      /* Not: Burada `*::` yerine açıkça `html::` / `body::` kullanılıyor.
+         Bazı CSS minifier'lar `*::` kuralını geçersiz bir `::` selektöre
+         dönüştürüp tarayıcıda "Ruleset ignored due to bad selector"
+         uyarısına yol açıyor. Açık selektörler hem minifier-safe hem de
+         daha performanslı. */
+      html::-webkit-scrollbar,
+      body::-webkit-scrollbar {
+        width: 6px;
+        height: 6px;
+      }
+
+      html::-webkit-scrollbar-track,
+      body::-webkit-scrollbar-track {
+        background: var(--color-scrollbar-track);
+      }
+
+      html::-webkit-scrollbar-thumb,
+      body::-webkit-scrollbar-thumb {
+        background: var(--color-scrollbar-thumb);
+        border-radius: var(--radius-full);
+      }
+
+      html::-webkit-scrollbar-thumb:hover,
+      body::-webkit-scrollbar-thumb:hover {
+        background: var(--color-scrollbar-thumb-hover);
+      }
+    }
+
+    /* Keep the main page scrollbar hidden since we use a custom component (.c-scrollbar) for it */
+    html,
+    body {
+      scrollbar-width: none !important;
+    }
+  }
+
+  /* ── Accessibility & High Contrast ─────────────────────────── */
+  @media (forced-colors: active) {
+    .c-scrollbar__thumb {
+      background: CanvasText !important;
+    }
+
+    .c-scrollbar::before {
+      border: 1px solid CanvasText;
+    }
+  }
+}

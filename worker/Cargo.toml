@@ -1,0 +1,35 @@
+[package]
+name = "worker"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+shared = { path = "../shared" }
+# Async Runtime & Networking
+tokio.workspace = true
+reqwest.workspace = true
+
+# Serialization
+serde.workspace = true
+serde_json.workspace = true
+
+# Parsing
+calamine = { version = "0.36.0", features = ["chrono", "dates"] }
+regex = "1.13.1"
+fastembed = "5.17.3"
+scraper = "0.19" # For HTML parsing (KykYemek)
+
+# Database ORM
+sea-orm.workspace = true
+
+# Utilities
+dotenvy.workspace = true
+anyhow.workspace = true
+uuid.workspace = true
+thiserror = "1.0"
+chrono.workspace = true
+lazy_static = "1.5.0"
+base64 = "0.22"
+tracing.workspace = true
+tracing-subscriber.workspace = true
+rand.workspace = true

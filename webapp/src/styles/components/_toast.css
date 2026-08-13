@@ -1,0 +1,137 @@
+@layer components {
+  .c-toast-container {
+    position: fixed;
+    bottom: var(--space-xl);
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    z-index: var(--z-toast);
+    pointer-events: none;
+  }
+
+  .c-toast {
+    background-color: var(--color-surface);
+    color: var(--color-text-primary);
+    padding: var(--space-md) var(--space-md) var(--space-md) var(--space-lg);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    pointer-events: auto;
+    animation: toast-enter var(--dur-default) var(--ease-entrance) forwards;
+    border: 1px solid var(--color-border);
+    position: relative;
+    overflow: hidden;
+    max-width: 90vw;
+    width: max-content;
+    min-width: 280px;
+  }
+
+  .c-toast--closing {
+    animation: toast-exit var(--dur-fast) var(--ease-exit) forwards;
+  }
+
+  .c-toast__message {
+    font-size: 0.875rem;
+    margin: 0;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .c-toast__action {
+    background: none;
+    border: none;
+    color: var(--color-accent-primary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0 var(--space-xs);
+    font-size: 0.875rem;
+    white-space: nowrap;
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+
+  @media (hover: hover) {
+    .c-toast__action:hover {
+      color: var(--color-accent-primary-hover);
+    }
+  }
+
+  /* Dairesel kapat butonu — (X) stili */
+  .c-toast__close {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    background-color: var(--color-surface-hover);
+    color: var(--color-text-secondary);
+    cursor: pointer;
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard);
+    /* İkonun tam ortada durması için */
+    padding: 0;
+  }
+
+  .c-toast__close svg {
+    display: block;
+    flex-shrink: 0;
+  }
+
+  @media (hover: hover) {
+    .c-toast__close:hover {
+      background-color: var(--color-surface-active);
+      color: var(--color-text-primary);
+    }
+  }
+
+  .c-toast__close:active {
+    transform: scale(0.92);
+  }
+
+  .c-toast__progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    background: var(--color-accent-primary);
+    opacity: 0.4;
+    width: 100%;
+    transform-origin: left;
+    /* transition dinamik olarak JS'te ekleniyor */
+  }
+
+  @keyframes toast-enter {
+    from { opacity: 0; transform: translateY(16px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0)    scale(1); }
+  }
+
+  @keyframes toast-exit {
+    from { opacity: 1; transform: scale(1); }
+    to   { opacity: 0; transform: scale(0.94); }
+  }
+
+  @media (max-width: 600px) {
+    .c-toast-container {
+      left: var(--space-md);
+      right: var(--space-md);
+      bottom: var(--space-lg);
+      transform: none;
+      width: auto;
+    }
+
+    .c-toast {
+      width: 100%;
+      min-width: 0;
+      max-width: none;
+    }
+  }
+}

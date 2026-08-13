@@ -1,0 +1,164 @@
+/* 
+  _notifications.css 
+*/
+
+.notification-page__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xl);
+}
+
+.notification-page__header-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.notification-page__title {
+  font-family: var(--font-display);
+  font-size: var(--text-3xl);
+  font-weight: var(--font-weight-black);
+  color: var(--color-text);
+  margin: 0;
+}
+
+/* Time Groups */
+.notification-group {
+  margin-bottom: var(--space-xl);
+}
+
+.notification-group__title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: var(--space-md);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+/* Cards - aligned with meal-card style */
+.notification-card {
+  display: flex;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+  background: var(--color-card);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  position: relative;
+  transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default), transform var(--dur-default) var(--ease-spring-bounce), box-shadow var(--dur-default) var(--ease-spring-bounce);
+  align-items: center;
+  /* V-Center requested by user */
+}
+
+.notification-card--unread {
+  background: var(--color-surface-sunken);
+  border-color: var(--color-border);
+}
+
+.notification-card--unread .notification-card__title {
+  font-weight: var(--font-weight-black);
+}
+
+.notification-card__icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-surface-variant);
+  color: var(--color-text-secondary);
+}
+
+.notification-card--unread .notification-card__icon {
+  background-color: var(--color-accent-primary-light);
+  color: var(--color-accent-primary);
+}
+
+.notification-card__content {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.notification-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+}
+
+.notification-card__title {
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  margin: 0;
+  line-height: var(--leading-comfortable);
+  padding-right: var(--space-md);
+}
+
+.notification-card__time {
+  font-size: var(--text-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
+
+.notification-card__message {
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  margin: 0;
+  line-height: var(--leading-relaxed);
+}
+
+.notification-card__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+/* Badge for tabs */
+.notification-tab__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-accent-negative);
+  color: var(--color-text-on-dark);
+  font-size: var(--text-2xs);
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--radius-full);
+  padding: 2px 6px;
+  margin-left: var(--space-xs);
+  min-width: 20px;
+}
+
+@media (max-width: 600px) {
+  .notification-page {
+    margin-top: var(--space-lg);
+  }
+
+  .notification-page__header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-md);
+  }
+
+  .notification-card {
+    padding: var(--space-md);
+    gap: var(--space-sm);
+  }
+
+  .notification-card__icon {
+    width: 40px;
+    height: 40px;
+  }
+}

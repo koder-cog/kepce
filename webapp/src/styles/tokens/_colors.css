@@ -1,0 +1,285 @@
+/*
+ * kepçe design tokens — colors
+ *
+ * Color palette, surfaces, semantic states, opacity, interaction states,
+ * and theme overrides (dark/light).
+ *
+ * Dark mode is split into two blocks due to pure CSS limitations:
+ *   - @media (prefers-color-scheme: dark) — system-level auto dark
+ *   - :root.dark — manual class toggle
+ * Both define identical overrides so the theme is consistent regardless
+ * of how dark mode is activated.
+ */
+
+:root {
+    color-scheme: light;
+
+    /* ── color palette ─────────────────────────────────────── */
+    --color-accent-primary: #db6f3f; /* Mathematically calculated to pass WCAG UI (3:1 vs bg) & Text (4.5:1 vs text) */
+    --color-accent-primary-hover: #c97956;
+    --color-accent-primary-light: rgba(219, 111, 63, 0.15);
+    --color-accent-subtle: rgba(219, 111, 63, 0.12);
+    --color-accent-text: #a85636;
+    --color-accent-text-hover: #b74f22; /* Calculated for link hover contrast */
+    --color-accent-primary-rgb: 219, 111, 63;
+
+    /* ── backgrounds & surfaces ─────────────────────────────── */
+    --color-background: #f9f5e5;
+    --color-background-rgb: 249, 245, 229;
+    --color-card: #ffffff;
+    --color-card-rgb: 255, 255, 255;
+    --color-surface: #ffffff;
+    --color-surface-sunken: #e9e5d6;
+    --color-surface-elevated: #ffffff;
+    --color-surface-variant: #f9f7f0;
+
+    /* ── text ───────────────────────────────────────────────── */
+    --color-text: #242828;
+    --color-text-primary: #242828;
+    --color-text-secondary: #6f6c64;
+    --color-text-on-accent: #242828;
+    --color-text-on-dark: #f9f5e5;
+
+    /* ── links ──────────────────────────────────────────────── */
+    --color-link: var(--color-accent-text);
+    --color-link-hover: var(--color-accent-text-hover);
+
+    /* ── borders ────────────────────────────────────────────── */
+    --color-border: #e0ddd0;
+    --color-border-light: #ece9dc;
+    --color-border-strong: #8f8a77;
+
+    /* ── semantic states ────────────────────────────────────── */
+    --color-success: #add18a;
+    --color-warning: #ecbf7f;
+    --color-error: #d2564a;
+    --color-info: #8fb9d8;
+
+    --color-on-success: #33501e;
+    --color-on-warning: #5c3f14;
+    --color-on-error: #ffffff;
+    --color-on-info: #1e4258;
+
+    --color-success-text: #4a6b2a;
+    --color-warning-text: #8a6220;
+    --color-error-text: #b23a2e;
+    --color-info-text: #2e6a94;
+
+    --color-accent-positive-rgb: 173, 209, 138;
+    --color-accent-negative-rgb: 210, 86, 74;
+    --color-info-rgb: 143, 185, 216;
+    --color-warning-rgb: 236, 191, 127;
+    --color-accent-disclaimer-rgb: var(--color-warning-rgb);
+
+    --color-accent-disclaimer: var(--color-warning);
+    --color-accent-positive: var(--color-success);
+    --color-accent-negative: var(--color-error);
+    --color-muted: var(--color-text-secondary);
+
+    --color-on-card: #d9d9d9;
+    --color-toast-bg: #242828;
+    --color-toast-text: #f9f5e5;
+    --color-tooltip-bg: var(--color-surface-elevated);
+    --color-tooltip-text: var(--color-text);
+    --radius-tooltip: 8px;
+
+    /* ── switch ─────────────────────────────────────────────── */
+    --color-switch-handle: var(--color-text);
+    --color-switch-handle-active: var(--color-card);
+    --color-switch-handle-border: transparent;
+    --color-switch-track-off: var(--color-card);
+    --color-switch-track-on: var(--color-accent-primary);
+
+    /* ── star / rating ──────────────────────────────────────── */
+    --color-star: #ffb400;
+    --color-star-active: var(--color-star);
+    --color-rating-star: var(--color-star);
+    --color-diet-positive: var(--color-success);
+
+    /* ── scrim ──────────────────────────────────────────────── */
+    --color-scrim: #000000;
+    --scrim-light: rgba(0, 0, 0, 0.2);
+    --scrim-medium: rgba(0, 0, 0, 0.4);
+    --scrim-heavy: rgba(0, 0, 0, 0.6);
+
+    /* ── contribution interface (CI) ────────────────────────── */
+    --color-ci-background: #ffffff;
+    --color-ci-pill-background: #e8e6dc;
+    --color-ci-pill-text: #242828;
+    --color-ci-pill-hover: #dcd9c0;
+    --color-ci-submit-background: var(--color-accent-primary);
+    --color-ci-submit-text: #242828;
+
+    /* ── scrollbar ──────────────────────────────────────────── */
+    --color-scrollbar-thumb: rgba(0, 0, 0, 0.25);
+    --color-scrollbar-thumb-hover: rgba(0, 0, 0, 0.4);
+    --color-scrollbar-track: transparent;
+    --scrollbar-width-narrow: 4px;
+    --scrollbar-width-wide: 10px;
+    --scrollbar-hit-area: 10px;
+
+    /* ── opacity ────────────────────────────────────────────── */
+    --opacity-disabled: 0.4;
+    --opacity-muted: 0.5;
+    --opacity-dim: 0.64;
+    --opacity-subtle: 0.8;
+    --opacity-full: 1;
+    --opacity-gtk: 0.34902;
+
+    /* ── interaction states ─────────────────────────────────── */
+    --state-hover-opacity: 0.08;
+    --state-focus-opacity: 0.12;
+    --state-pressed-opacity: 0.16;
+    --state-dragged-opacity: 0.24;
+    --press-scale: 0.96;
+    --press-scale-strong: 0.92;
+
+    /* ── assets (color-dependent) ───────────────────────────── */
+    --svg-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666666' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE — consolidated overrides
+   Two blocks are required (pure CSS cannot alias @media + class).
+   Both define identical values so the theme is consistent whether
+   activated via system preference or manual .dark class toggle.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── auto dark (system preference) ─────────────────────────── */
+@media (prefers-color-scheme: dark) {
+    :root:not(.light) {
+        color-scheme: dark;
+        --color-background: #242828;
+        --color-background-rgb: 36, 40, 40;
+        --color-card: #141414;
+        --color-card-rgb: 20, 20, 20;
+        --color-surface: #141414;
+        --color-surface-sunken: #1a1d1d;
+        --color-surface-elevated: #1a1d1d;
+        --color-surface-variant: #1e2121;
+        --color-text: #f9f5e5;
+        --color-text-primary: #f9f5e5;
+        --color-text-secondary: #999999;
+        --color-border: #3a3d3d;
+        --color-border-light: #2e3131;
+        --color-border-strong: #747874;
+        --color-accent-primary: #e38e69;
+        --color-accent-primary-hover: #f0ab8b;
+        --color-accent-text: #eda07e;
+        --color-accent-text-hover: #df7f55;
+        --color-link: var(--color-accent-text);
+        --color-link-hover: var(--color-accent-text-hover);
+        --color-error: #e07a6d;
+        --color-on-error: #242828;
+        --color-error-text: #e89a90;
+        --color-success-text: var(--color-success);
+        --color-warning-text: var(--color-warning);
+        --color-info-text: var(--color-info);
+        --nav-bg-opacity: 0.8;
+        --color-ci-background: #141414;
+        --color-ci-pill-background: #2e2e2e;
+        --color-ci-pill-text: #cccccc;
+        --color-ci-pill-hover: #3e3e3e;
+        --color-ci-submit-background: var(--color-accent-primary);
+        --color-ci-submit-text: #242828;
+        --color-on-card: #3a3d3d;
+        --color-toast-bg: #2e3131;
+        --color-toast-text: #f9f5e5;
+        --color-tooltip-bg: var(--color-surface-elevated);
+        --color-tooltip-text: var(--color-text);
+        --color-scrollbar-track: transparent;
+        --color-scrollbar-thumb: rgba(255, 255, 255, 0.25);
+        --color-scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+        --scrim-light: rgba(0, 0, 0, 0.3);
+        --scrim-medium: rgba(0, 0, 0, 0.5);
+        --scrim-heavy: rgba(0, 0, 0, 0.7);
+        --color-switch-handle: #ffffff;
+        --color-switch-handle-active: var(--color-background);
+        --color-switch-handle-border: rgba(255, 255, 255, 0.2);
+        --color-switch-track-off: rgba(255, 255, 255, 0.12);
+        --color-switch-track-on: var(--color-accent-primary);
+        --svg-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f9f5e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    }
+}
+
+/* ── manual dark class ─────────────────────────────────────── */
+:root.dark {
+    color-scheme: dark;
+    --color-background: #242828;
+    --color-background-rgb: 36, 40, 40;
+    --color-card: #141414;
+    --color-card-rgb: 20, 20, 20;
+    --color-surface: #141414;
+    --color-surface-sunken: #1a1d1d;
+    --color-surface-elevated: #1a1d1d;
+    --color-surface-variant: #1e2121;
+    --color-text: #f9f5e5;
+    --color-text-primary: #f9f5e5;
+    --color-text-secondary: #999999;
+    --color-border: #3a3d3d;
+    --color-border-light: #2e3131;
+    --color-border-strong: #747874;
+    --color-accent-primary: #e38e69;
+    --color-accent-primary-hover: #f0ab8b;
+    --color-accent-text: #eda07e;
+    --color-accent-text-hover: #df7f55;
+    --color-link: var(--color-accent-text);
+    --color-link-hover: var(--color-accent-text-hover);
+    --color-error: #e07a6d;
+    --color-on-error: #242828;
+    --color-error-text: #e89a90;
+    --color-success-text: var(--color-success);
+    --color-warning-text: var(--color-warning);
+    --color-info-text: var(--color-info);
+    --nav-bg-opacity: 0.8;
+    --color-ci-background: #141414;
+    --color-ci-pill-background: #2e2e2e;
+    --color-ci-pill-text: #cccccc;
+    --color-ci-pill-hover: #3e3e3e;
+    --color-ci-submit-background: var(--color-accent-primary);
+    --color-ci-submit-text: #242828;
+    --color-on-card: #3a3d3d;
+    --color-toast-bg: #2e3131;
+    --color-toast-text: #f9f5e5;
+    --color-tooltip-bg: var(--color-surface-elevated);
+    --color-tooltip-text: var(--color-text);
+    --color-scrollbar-track: transparent;
+    --color-scrollbar-thumb: rgba(255, 255, 255, 0.25);
+    --color-scrollbar-thumb-hover: rgba(255, 255, 255, 0.4);
+    --scrim-light: rgba(0, 0, 0, 0.3);
+    --scrim-medium: rgba(0, 0, 0, 0.5);
+    --scrim-heavy: rgba(0, 0, 0, 0.7);
+    --color-switch-handle: #ffffff;
+    --color-switch-handle-active: var(--color-background);
+    --color-switch-handle-border: rgba(255, 255, 255, 0.2);
+    --color-switch-track-off: rgba(255, 255, 255, 0.12);
+    --color-switch-track-on: var(--color-accent-primary);
+    --svg-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f9f5e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+}
+
+/* ── manual light class (explicit override) ────────────────── */
+:root.light {
+    color-scheme: light;
+    --color-background: #f9f5e5;
+    --color-background-rgb: 249, 245, 229;
+    --color-card: #ffffff;
+    --color-card-rgb: 255, 255, 255;
+    --color-surface: #ffffff;
+    --color-surface-sunken: #e9e5d6;
+    --color-surface-elevated: #ffffff;
+    --color-surface-variant: #f9f7f0;
+    --color-text: #242828;
+    --color-text-primary: #242828;
+    --color-text-secondary: #6f6c64;
+    --color-border: #e0ddd0;
+    --color-border-light: #ece9dc;
+    --color-border-strong: #8f8a77;
+    --nav-bg-opacity: 0.5;
+    --color-toast-bg: #242828;
+    --color-toast-text: #f9f5e5;
+    --color-switch-handle: var(--color-text);
+    --color-switch-handle-active: var(--color-card);
+    --color-switch-handle-border: transparent;
+    --color-switch-track-off: var(--color-card);
+    --color-switch-track-on: var(--color-accent-primary);
+}

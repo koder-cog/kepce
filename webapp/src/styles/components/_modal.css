@@ -1,0 +1,299 @@
+@layer components {
+
+  /* ── 1. Modal Base & Layout ────────────────────────────────── */
+  .c-modal {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    visibility: hidden;
+    transition: visibility 0s linear var(--dur-default);
+  }
+
+  .c-modal--open {
+    pointer-events: auto;
+    visibility: visible;
+    transition-delay: 0s;
+  }
+
+  /* ── 2. Backdrop (Arkaplan Karartması) ─────────────────────── */
+  .c-modal__backdrop {
+    position: absolute;
+    inset: 0;
+
+    background-color: var(--scrim-medium);
+    /* Prefix MUST come before standard — esbuild deduplicates and keeps
+       the last occurrence. If -webkit- is last, Firefox/Chromium lose blur. */
+    -webkit-backdrop-filter: blur(var(--blur-md));
+    backdrop-filter: blur(var(--blur-md));
+
+    opacity: 0;
+    transition: opacity var(--dur-default) var(--ease-standard);
+  }
+
+  .c-modal--open .c-modal__backdrop {
+    opacity: 1;
+  }
+
+  /* ── 3. Surface (Modal Gövdesi) ────────────────────────────── */
+  .c-modal__surface {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+
+    /* Sizing */
+    width: 92%;
+    max-width: 500px;
+    /* Refined for dialogs */
+    max-height: 90vh;
+
+    /* Theming & Visuals */
+    background-color: var(--color-card);
+    border-radius: var(--radius-dialog);
+    box-shadow: var(--shadow-dialog);
+
+    /* MD3 Expressive Entrance Animation */
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+    transition:
+      opacity var(--dur-default) var(--ease-standard),
+      transform var(--dur-default) var(--ease-spring-bounce);
+  }
+
+  .c-modal--open .c-modal__surface {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+
+  /* ── 4. Header ─────────────────────────────────────────────── */
+  .c-modal__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-xl) var(--space-xl) var(--space-md);
+  }
+
+  .c-modal__title {
+    margin: 0;
+    font-size: var(--text-xl);
+    font-family: var(--font-display);
+    line-height: 1.2;
+  }
+
+  .c-modal__icon {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    color: var(--color-accent-primary);
+  }
+
+  .c-modal__icon--danger {
+    color: var(--color-error);
+  }
+
+  /* ── 5. Content ────────────────────────────────────────────── */
+  .c-modal__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+
+    width: 100%;
+    padding: var(--space-md) var(--space-xl);
+    overflow-y: auto;
+    scrollbar-width: thin;
+
+    color: var(--color-muted);
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+  }
+
+  /* ── 6. Forms inside Modal ──────────────────────────────────── */
+  .c-modal__form-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    width: 100%;
+  }
+
+  .c-modal__label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text-secondary);
+  }
+
+  .c-modal__input {
+    width: 100%;
+    padding: var(--space-md) var(--space-lg);
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    transition: all var(--motion-effects-fast);
+    outline: none;
+    resize: vertical;
+  }
+
+  .c-modal__input:focus {
+    background: var(--color-card);
+    border-color: var(--color-accent-primary);
+    box-shadow: var(--shadow-focus);
+  }
+
+  /* Standart form-group'ların alt boşluğu sıfırlanır */
+  .c-modal__content .form-group {
+    margin-bottom: 0;
+  }
+
+  /* ── 7. Footer ─────────────────────────────────────────────── */
+  .c-modal__footer {
+    display: flex;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-xl) var(--space-xl);
+  }
+
+  .c-modal__footer .btn {
+    flex: 1;
+  }
+
+  /* ── 8. Modifiers (Lightbox) ───────────────────────────────── */
+  .c-modal--lightbox .c-modal__surface {
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .c-modal--lightbox .c-modal__header,
+  .c-modal--lightbox .c-modal__footer {
+    display: none;
+  }
+
+  .c-modal--lightbox .c-modal__content {
+    position: relative;
+    padding: 0;
+  }
+
+  .c-lightbox-img {
+    display: block;
+    max-width: 100%;
+    max-height: 80vh;
+    border-radius: var(--radius-dialog);
+    object-fit: contain;
+  }
+
+  .c-lightbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+
+    background: rgba(0, 0, 0, 0.4);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    line-height: 0;
+    transition: background-color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+    z-index: 100;
+  }
+
+  .c-lightbox-close:hover {
+    background: rgba(0, 0, 0, 0.7);
+  }
+
+  .c-lightbox-close:active {
+    transform: scale(0.98);
+  }
+
+  /* ── 9. Interactive Widgets ────────────────────────────────── */
+  .c-rating-stars {
+    display: flex;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin: var(--space-md) 0;
+
+    color: var(--color-border);
+    font-size: 2.5rem;
+    cursor: pointer;
+  }
+
+  .c-rating-stars span {
+    transition: transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+  }
+
+  .c-rating-stars span:hover {
+    transform: scale(1.2);
+  }
+
+  .c-rating-stars span.active {
+    color: var(--color-rating-star);
+  }
+
+  .c-wizard-dots {
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-bottom: var(--space-md);
+  }
+
+  .c-wizard-dot {
+    width: 8px;
+    height: 8px;
+    background-color: var(--color-border);
+    border-radius: 50%;
+    transition: background-color var(--dur-default) var(--ease-standard);
+  }
+
+  .c-wizard-dot.active {
+    background-color: var(--color-accent-primary);
+  }
+
+  /* ── 10. Responsive Overrides ──────────────────────────────── */
+
+  /* Tablet & Desktop (Büyük Ekranlar) */
+  @media (min-width: 600px) {
+    .c-modal__surface {
+      min-height: auto;
+    }
+  }
+
+  /* Mobil (Küçük Ekranlar) */
+  @media (max-width: 600px) {
+    .c-modal__footer {
+      flex-direction: column-reverse;
+      /* Mobilde butonları alt alta üzer (Örn: İptal altta, Onayla üstte) */
+    }
+  }
+
+  /* ── 11. Takeaway Modal ────────────────────────────────────── */
+  .c-takeaway-modal__empty {
+    text-align: center;
+    padding: var(--space-xl) 0;
+    color: var(--color-muted);
+  }
+
+
+
+  .c-takeaway-modal__note {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
+
+  .c-takeaway-modal__note-line {
+    margin: 0;
+  }
+}

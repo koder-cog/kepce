@@ -1,0 +1,182 @@
+  .empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    max-width: 540px;
+    margin: auto;
+    padding: var(--space-2xl) 0;
+    min-height: 280px;
+    flex: 1;
+    width: 100%;
+    animation: empty-state-entry var(--dur-medium) var(--ease-spatial-default);
+  }
+
+  .empty-state-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    width: 100%;
+  }
+
+  .error-page {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 50vh;
+    padding: var(--space-xl);
+  }
+
+  @keyframes empty-state-entry {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .empty-state__icon {
+    margin-bottom: var(--space-md);
+    color: var(--color-accent-primary);
+    opacity: 1;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 120px;
+    background: var(--color-surface-elevated);
+    border-radius: 50%;
+  }
+
+  .empty-state__title,
+  .empty-state h3.empty-state__title,
+  .content-page__body h3.empty-state__title {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-3xl);
+    margin: var(--space-md) 0;
+    color: var(--color-text);
+  }
+
+  .empty-state__desc,
+  .empty-state p.empty-state__desc,
+  .content-page__body p.empty-state__desc {
+    font-size: var(--text-lg);
+    color: var(--color-muted);
+    line-height: 1.6;
+    margin-bottom: calc(2 * var(--space-md));
+    max-width: 420px;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
+
+  .empty-state__actions {
+    display: flex;
+    gap: var(--space-md);
+    justify-content: center;
+  }
+
+  /* Görev #19: Kompakt varyant — içeriksiz öğün/bot kartları gibi
+     satır-içi durumlarda tam boyut empty-state yerine kullanılır. */
+  .empty-state--compact {
+    min-height: 0;
+    padding: 0;
+    max-width: none;
+  }
+
+  .empty-state--compact p.empty-state__desc {
+    display: none;
+  }
+
+  .empty-state--compact .empty-state__icon {
+    width: 44px;
+    height: 44px;
+    margin-bottom: var(--space-sm);
+  }
+
+  .empty-state--compact .empty-state__title {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-bold);
+    margin: 0 0 var(--space-xs);
+  }
+
+  .empty-state--compact .empty-state__desc {
+    font-size: var(--text-sm);
+    margin-bottom: 0;
+  }
+
+  .meal-card--empty {
+    border-style: solid;
+    border-width: 2px;
+    border-color: var(--color-border-light);
+    background: transparent;
+  }
+
+  /* ── Chips ────────────────────────────────────────────────── */
+
+  .chip {
+    padding: var(--space-sm) var(--space-lg);
+    border-radius: var(--radius-full);
+    border: 1px solid var(--color-border);
+    background: var(--color-card);
+    color: var(--color-text);
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    cursor: pointer;
+    transition: all var(--motion-effects-fast);
+    white-space: nowrap;
+  }
+
+  @media (hover: hover) {
+    .chip:hover {
+      border-color: inherit;
+      background: var(--color-accent-primary-light);
+    }
+  }
+
+  .chip.active {
+    background: var(--color-accent-primary);
+    border-color: inherit;
+    color: var(--color-text-on-accent);
+  }
+
+  /* ── Disclaimer Card ───────────────────────────────────────── */
+
+  .disclaimer-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    font-size: var(--text-sm);
+    line-height: 1.7;
+    color: var(--color-text);
+    position: relative;
+  }
+
+  .disclaimer-card__source {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-xs) var(--space-sm);
+    background: var(--color-accent-disclaimer);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+  }
+
+.u-border {
+  border: 1px solid var(--border) !important;
+}
+
+.u-border-top {
+  border-top: 1px solid var(--border) !important;
+}
