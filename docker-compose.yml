@@ -56,6 +56,8 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
       - RESEND_API_KEY=${RESEND_API_KEY}
       - KEPCE_BASE_URL=${KEPCE_BASE_URL}
+      - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL}
+      - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
     volumes:
       - uploads:/app/uploads
       - avatars:/app/static/avatars
