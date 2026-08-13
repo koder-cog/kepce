@@ -26,7 +26,7 @@ COPY api/src ./api/src
 COPY db ./db
 
 # Recompile the release binary
-RUN cargo clean -p api -p shared && cargo build --release -p api
+RUN rm -rf target/release/deps/libshared* target/release/deps/shared* target/release/deps/libapi* target/release/deps/api* target/release/.fingerprint/shared* target/release/.fingerprint/api* target/release/api && cargo build --release -p api
 
 # Runtime stage
 FROM debian:bookworm-slim

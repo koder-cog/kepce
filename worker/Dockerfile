@@ -25,7 +25,7 @@ COPY shared/src ./shared/src
 COPY worker/src ./worker/src
 
 # Recompile the release binary
-RUN cargo clean -p worker -p shared && cargo build --release -p worker
+RUN rm -rf target/release/deps/libshared* target/release/deps/shared* target/release/deps/libworker* target/release/deps/worker* target/release/.fingerprint/shared* target/release/.fingerprint/worker* target/release/worker && cargo build --release -p worker
 
 # Runtime stage
 FROM debian:bookworm-slim
