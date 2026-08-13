@@ -1,5 +1,5 @@
 kepce.org, www.kepce.org {
-    tls internal
+    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
     encode zstd gzip
 
     # Güvenlik Başlıkları (Security Headers)

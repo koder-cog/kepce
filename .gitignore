@@ -7,6 +7,10 @@
 .env.local
 .env.*.local
 .env.production
+certs/
+*.pem
+*.crt
+*.key
 
 # 2. Rust & Cargo
 target/
