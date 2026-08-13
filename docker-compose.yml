@@ -77,6 +77,7 @@ services:
       - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER tanimli olmali}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali}@db:5432/${POSTGRES_DB:-kepce}
       - WORKER_INTERVAL_SECS=${WORKER_INTERVAL_SECS:-3600}
       - WORKER_MENU_DIR=/app/data/menuler
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - menuler:/app/data/menuler
     networks:

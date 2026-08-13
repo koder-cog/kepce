@@ -27,8 +27,8 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe, dağı
 - **Backend:** Rust (Axum, SeaORM) ve PostgreSQL
 - **Frontend:** SvelteKit 2 (Svelte 5) ve CSS
 - **Veri Madenciliği:** Rust tabanlı otomatik Excel ve PDF ayrıştırıcı worker
-- **Veri Bütünlüğü:** Hash Chain mimarisi ile değiştirilemez geçmiş kaydı
-- **Yapay Zeka (Opsiyonel):** Gemini API ile PDF ve görsel formatındaki menüleri işleme
+- **Veri Bütünlüğü:** Hash chain ile değiştirilemez geçmiş kaydı
+- **Yapay Zeka:** Gemini API ile PDF ve görsel formattaki menüleri işleme
 
 ## Kurulum ve Çalıştırma
 

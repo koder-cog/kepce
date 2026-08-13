@@ -1,4 +1,5 @@
 kepce.org, www.kepce.org {
+    tls internal
     encode zstd gzip
 
     # Güvenlik Başlıkları (Security Headers)
