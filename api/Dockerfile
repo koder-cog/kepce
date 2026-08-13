@@ -23,6 +23,7 @@ RUN cargo build --release -p api
 # Copy real source files
 COPY shared/src ./shared/src
 COPY api/src ./api/src
+COPY api/prompts ./api/prompts
 COPY db ./db
 
 # Recompile the release binary
