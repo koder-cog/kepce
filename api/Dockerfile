@@ -26,7 +26,7 @@ COPY api/src ./api/src
 COPY db ./db
 
 # Recompile the release binary
-RUN touch api/src/main.rs && cargo build --release -p api
+RUN cargo clean -p api -p shared && cargo build --release -p api
 
 # Runtime stage
 FROM debian:bookworm-slim
