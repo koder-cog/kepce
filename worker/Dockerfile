@@ -3,8 +3,8 @@ FROM rust:1-slim AS builder
 
 WORKDIR /usr/src/kepce
 
-# Install pkg-config and libssl-dev for building reqwest/openssl
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+# Install pkg-config, libssl-dev, and g++ for building reqwest/openssl/ort-sys (C++)
+RUN apt-get update && apt-get install -y pkg-config libssl-dev g++ && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace cargo metadata
 COPY Cargo.toml Cargo.lock ./
@@ -30,7 +30,7 @@ RUN rm -rf target/release/deps/libshared* target/release/deps/shared* target/rel
 # Runtime stage
 FROM debian:bookworm-slim
 
-RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates libssl3 libstdc++6 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 

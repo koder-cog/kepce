@@ -1,9 +1,9 @@
 # Kepçe - Önüne Hazır Konanı Yeme Sanatı
 
-Ön Uyarı: Bu proje henüz geliştirme aşamasında olup bazı eksiklikler barındırmaktadır. Planlanan geliştirmelere ve güncel duruma [görev listemizden](/.scratch/docs/planning/task.md) ulaşabilirsiniz.
+Ön Uyarı: Bu proje henüz geliştirme aşamasında olup eksiklikler barındırmaktadır. Planlanan geliştirmelere ve güncel duruma [görev listemizden](/.scratch/docs/planning/task.md) ulaşabilirsiniz.
 
 [![Web Sitesi](https://img.shields.io/badge/Web_Sitesi-kepce.org-blue?style=flat-square)](https://kepce.org)
-[![Lisans: AGPL v3](https://img.shields.io/badge/Lisans-AGPL%20v3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0#license-text)
+[![AGPL v3](https://img.shields.io/badge/Lisans-AGPL%20v3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0#license-text)
 
 Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe, dağınık KYK tabela listelerini toplayan ve temiz bir REST API ile sunan bir topluluk projesidir.
 
