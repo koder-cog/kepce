@@ -30,7 +30,7 @@ COPY db ./db
 RUN rm -rf target/release/deps/libshared* target/release/deps/shared* target/release/deps/libapi* target/release/deps/api* target/release/.fingerprint/shared* target/release/.fingerprint/api* target/release/api && cargo build --release -p api
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 RUN apt-get update && apt-get install -y ca-certificates libssl3 && rm -rf /var/lib/apt/lists/*
 

@@ -1,10 +1,6 @@
 version: '3.8'
 
 services:
-  # Webapp'in 80 portunu dışarı açmasını engelliyoruz, bunu Caddy devralacak.
-  webapp:
-    ports: []
-
   caddy:
     image: caddy:2-alpine
     container_name: kepce-caddy

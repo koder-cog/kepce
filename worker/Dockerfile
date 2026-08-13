@@ -28,7 +28,7 @@ COPY worker/src ./worker/src
 RUN rm -rf target/release/deps/libshared* target/release/deps/shared* target/release/deps/libworker* target/release/deps/worker* target/release/.fingerprint/shared* target/release/.fingerprint/worker* target/release/worker && cargo build --release -p worker
 
 # Runtime stage
-FROM debian:bookworm-slim
+FROM debian:trixie-slim
 
 RUN apt-get update && apt-get install -y ca-certificates libssl3 libstdc++6 && rm -rf /var/lib/apt/lists/*
 
