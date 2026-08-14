@@ -1,42 +1,11 @@
-# Multi-stage build for Rust Worker
-FROM rust:1-slim AS builder
-
-WORKDIR /usr/src/kepce
-
-# Install build-essential, pkg-config, and libssl-dev for C++ linking (ort-sys/fastembed)
-RUN apt-get update && apt-get install -y build-essential pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
-
-# Copy workspace cargo metadata
-COPY Cargo.toml Cargo.lock ./
-COPY shared/Cargo.toml ./shared/
-COPY api/Cargo.toml ./api/
-COPY worker/Cargo.toml ./worker/
-COPY moderator/Cargo.toml ./moderator/
-
-# Build skeleton project to cache build dependencies
-RUN mkdir -p shared/src api/src worker/src moderator/src && \
-    echo "fn main() {}" > api/src/main.rs && \
-    echo "fn main() {}" > worker/src/main.rs && \
-    echo "fn main() {}" > moderator/src/main.rs && \
-    touch shared/src/lib.rs
-
-RUN cargo build --release -p worker
-
-# Copy real source files
-COPY shared/src ./shared/src
-COPY worker/src ./worker/src
-
-# Recompile the release binary
-RUN rm -rf target/release/deps/libshared* target/release/deps/shared* target/release/deps/libworker* target/release/deps/worker* target/release/.fingerprint/shared* target/release/.fingerprint/worker* target/release/worker && cargo build --release -p worker
-
-# Runtime stage
+# Production Runtime for Precompiled ARM64 Binary
 FROM debian:trixie-slim
 
 RUN apt-get update && apt-get install -y ca-certificates libssl3 libstdc++6 && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-COPY --from=builder /usr/src/kepce/target/release/worker /app/kepce-worker
+COPY target/aarch64-unknown-linux-gnu/release/worker /app/kepce-worker
 
 USER nobody:nogroup
 CMD ["/app/kepce-worker"]

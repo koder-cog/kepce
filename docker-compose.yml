@@ -80,6 +80,7 @@ services:
       - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - menuler:/app/data/menuler
+      - ./config:/app/config:ro
     networks:
       - backend-net
     depends_on:
