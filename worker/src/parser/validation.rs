@@ -3,6 +3,7 @@ use chrono::{NaiveDate, Utc};
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum MealType {
     Breakfast,
+    Lunch,
     Dinner,
 }
 
@@ -13,7 +14,7 @@ const BREAKFAST_SIGNALS: &[&str] = &[
     "domates", "salatalık", "gevrek", "gözleme", "menemen", "sucuk",
 ];
 
-/// Dinner signal words — if these appear in item names, the sheet is likely dinner
+/// Dinner / Lunch signal words — if these appear in item names, the sheet is likely hot meal
 const DINNER_SIGNALS: &[&str] = &[
     "çorba", "pilav", "makarna", "köfte", "salata", "komposto", "ayran",
     "tatlı", "et ", "tavuk", "balık", "kızartma", "güveç", "sote", "dolma",
@@ -111,7 +112,14 @@ pub fn detect_meal_type(sheet_name: &str, sample_items: &[String]) -> Option<Mea
     if upper.contains("KAHVALTI") || upper.contains("SABAH") {
         return Some(MealType::Breakfast);
     }
-    if upper.contains("YEMEK") || upper.contains("AKŞAM") || upper.contains("AKSAM") || upper.contains("ÖĞLE") {
+    if upper.contains("ÖĞLE") || upper.contains("OGLE") {
+        return Some(MealType::Lunch);
+    }
+    if upper.contains("AKŞAM") || upper.contains("AKSAM") {
+        return Some(MealType::Dinner);
+    }
+    if upper.contains("YEMEK") {
+        // Generic "YEMEK" in dormitory context defaults to Dinner
         return Some(MealType::Dinner);
     }
 

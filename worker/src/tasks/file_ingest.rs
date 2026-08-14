@@ -106,7 +106,7 @@ pub async fn process_local_files(db: &DatabaseConnection, reqwest_client: &reqwe
 
                 // Move file
                 if success {
-                    let vault_base = PathBuf::from(&base_dir).parent().unwrap_or(std::path::Path::new(".")).join("vault");
+                    let vault_base = PathBuf::from(&base_dir).join("vault");
                     let vault_dir = vault_base.join(ext.to_lowercase()).join(folder).join(&city_slug);
                     let _ = tokio::fs::create_dir_all(&vault_dir).await;
                     let dest = vault_dir.join(format!("{}_{}", Local::now().format("%Y%m%d_%H%M%S"), filename));

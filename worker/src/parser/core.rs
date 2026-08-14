@@ -249,6 +249,12 @@ pub fn parse_grid(sheet: &SheetGrid, db: &mut MenuDatabase, file_name_hint: &str
                             }
                             &mut menu_ref.breakfast
                         }
+                        MealType::Lunch => {
+                            if menu_ref.lunch_kcal.is_none() {
+                                menu_ref.lunch_kcal = sheet_kcal.clone();
+                            }
+                            &mut menu_ref.lunch
+                        }
                         MealType::Dinner => {
                             if menu_ref.dinner_kcal.is_none() {
                                 menu_ref.dinner_kcal = sheet_kcal.clone();

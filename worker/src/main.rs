@@ -29,6 +29,10 @@ async fn main() -> anyhow::Result<()> {
         } else {
             tracing::info!("[BACKUP] Backup menü ingest tamamlandı.");
         }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[BACKUP] Tek seferlik yedek aktarımı tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
     }
 
     if std::env::var("WORKER_BACKUP_EXPORT").is_ok() {
@@ -40,6 +44,10 @@ async fn main() -> anyhow::Result<()> {
         } else {
             tracing::info!("[BACKUP] Backup menü export tamamlandı.");
         }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[BACKUP] Tek seferlik yedek dışa aktarımı tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
     }
     
     let gemini_api_key = env::var("GEMINI_API_KEY").ok();
@@ -48,6 +56,7 @@ async fn main() -> anyhow::Result<()> {
     }
     
     let reqwest_client = reqwest::Client::builder()
+        .cookie_store(true)
         .timeout(std::time::Duration::from_secs(600))
         .build()?;
 

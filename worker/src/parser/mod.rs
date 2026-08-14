@@ -32,11 +32,14 @@ pub async fn save_menu_database(
 
         // Convert day_data lists to Vec<Vec<MenuComponent>>
         let mut normal_breakfast: Vec<Vec<models::MenuComponent>> = Vec::new();
+        let mut normal_lunch: Vec<Vec<models::MenuComponent>> = Vec::new();
         let mut normal_dinner: Vec<Vec<models::MenuComponent>> = Vec::new();
         let mut colyak_breakfast: Vec<Vec<models::MenuComponent>> = Vec::new();
+        let mut colyak_lunch: Vec<Vec<models::MenuComponent>> = Vec::new();
         let mut colyak_dinner: Vec<Vec<models::MenuComponent>> = Vec::new();
         
         let mut takeaways_breakfast: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
+        let mut takeaways_lunch: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
         let mut takeaways_dinner: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
 
         type ProcessListResult = (Vec<Vec<models::MenuComponent>>, Vec<(String, Vec<Vec<models::MenuComponent>>)>);
@@ -64,17 +67,25 @@ pub async fn save_menu_database(
         normal_breakfast.extend(b_out);
         takeaways_breakfast.extend(b_take);
 
+        let (l_out, l_take) = process_list(&day_data.normal.lunch, false);
+        normal_lunch.extend(l_out);
+        takeaways_lunch.extend(l_take);
+
         let (d_out, d_take) = process_list(&day_data.normal.dinner, false);
         normal_dinner.extend(d_out);
         takeaways_dinner.extend(d_take);
         
         let (cb_out, _) = process_list(&day_data.colyak.breakfast, true);
         colyak_breakfast.extend(cb_out);
+
+        let (cl_out, _) = process_list(&day_data.colyak.lunch, false);
+        colyak_lunch.extend(cl_out);
         
         let (cd_out, _) = process_list(&day_data.colyak.dinner, false);
         colyak_dinner.extend(cd_out);
 
         takeaways_breakfast.dedup_by(|a, b| a.0 == b.0);
+        takeaways_lunch.dedup_by(|a, b| a.0 == b.0);
         takeaways_dinner.dedup_by(|a, b| a.0 == b.0);
 
         let source_type_str = source_type.to_string();
@@ -114,6 +125,24 @@ pub async fn save_menu_database(
                 normal_breakfast,
                 colyak_breakfast,
                 takeaways_breakfast,
+                target_status.clone(),
+                min_cal,
+                max_cal,
+            ).await?;
+        }
+
+        if !normal_lunch.is_empty() || !takeaways_lunch.is_empty() || !colyak_lunch.is_empty() {
+            let (min_cal, max_cal) = parse_calories(&day_data.normal.lunch_kcal);
+            crate::tasks::scraper::upsert_menu(
+                db,
+                city_id,
+                date,
+                shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch,
+                source_type_str.clone(),
+                None,
+                normal_lunch,
+                colyak_lunch,
+                takeaways_lunch,
                 target_status.clone(),
                 min_cal,
                 max_cal,

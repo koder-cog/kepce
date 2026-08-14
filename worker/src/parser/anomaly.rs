@@ -1,25 +1,30 @@
 use fastembed::{TextEmbedding, InitOptions, EmbeddingModel};
 use std::sync::{OnceLock, Mutex};
 
-static MODEL: OnceLock<Mutex<TextEmbedding>> = OnceLock::new();
-static BASELINE_VECTOR: OnceLock<Vec<f32>> = OnceLock::new();
+static MODEL: OnceLock<Option<Mutex<TextEmbedding>>> = OnceLock::new();
+static BASELINE_VECTOR: OnceLock<Option<Vec<f32>>> = OnceLock::new();
 
-pub fn get_model() -> &'static Mutex<TextEmbedding> {
+pub fn get_model() -> Option<&'static Mutex<TextEmbedding>> {
     MODEL.get_or_init(|| {
-        let model = TextEmbedding::try_new(InitOptions::new(EmbeddingModel::ParaphraseMLMiniLML12V2))
-            .expect("Failed to initialize text embedding model");
-        Mutex::new(model)
-    })
+        match TextEmbedding::try_new(InitOptions::new(EmbeddingModel::ParaphraseMLMiniLML12V2)) {
+            Ok(model) => Some(Mutex::new(model)),
+            Err(e) => {
+                tracing::warn!("Text embedding model yüklenemedi (çevrimdışı fallback aktif): {:?}", e);
+                None
+            }
+        }
+    }).as_ref()
 }
 
-pub fn get_baseline_vector() -> &'static Vec<f32> {
+pub fn get_baseline_vector() -> Option<&'static Vec<f32>> {
     BASELINE_VECTOR.get_or_init(|| {
-        let mut model = get_model().lock().unwrap();
+        let model_mutex = get_model()?;
+        let mut model = model_mutex.lock().ok()?;
         let dict = crate::parser::dictionary::get_dictionary();
         let baseline_text: String = dict.iter().copied().collect::<Vec<_>>().join(" ");
-        let mut embeddings = model.embed(vec![baseline_text], None).expect("Failed to compute baseline embedding");
-        embeddings.pop().unwrap()
-    })
+        let mut embeddings = model.embed(vec![baseline_text], None).ok()?;
+        embeddings.pop()
+    }).as_ref()
 }
 
 /// Calculate cosine distance between two vectors. Returns 1.0 - cosine_similarity.
@@ -45,8 +50,9 @@ pub fn calculate_menu_distance(text: &str) -> Option<f32> {
     if text.trim().is_empty() {
         return None;
     }
-    let baseline = get_baseline_vector();
-    let mut model = get_model().lock().unwrap();
+    let baseline = get_baseline_vector()?;
+    let model_mutex = get_model()?;
+    let mut model = model_mutex.lock().ok()?;
     
     if let Ok(mut embeddings) = model.embed(vec![text.to_string()], None) {
         if let Some(emb) = embeddings.pop() {

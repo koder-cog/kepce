@@ -56,8 +56,14 @@ mod tests {
         // Pre-populate TAKEAWAY_CACHE to simulate loaded config
         let key = "eskisehir_dinner".to_string();
         let mut mock_slots = HashMap::new();
-        mock_slots.insert(1, vec![vec![MenuComponent::from("Ekmek Arası Köfte")], vec![MenuComponent::from("Ayran")]]);
-        mock_slots.insert(2, vec![vec![MenuComponent::from("Ekmek Arası Tavuk")], vec![MenuComponent::from("Meyve Suyu")]]);
+        mock_slots.insert(1, crate::parser::takeaway::TakeawayParsedPackage {
+            name: "Al Götür 1".to_string(),
+            slots: vec![vec![MenuComponent::from("Ekmek Arası Köfte")], vec![MenuComponent::from("Ayran")]],
+        });
+        mock_slots.insert(2, crate::parser::takeaway::TakeawayParsedPackage {
+            name: "Al Götür 2".to_string(),
+            slots: vec![vec![MenuComponent::from("Ekmek Arası Tavuk")], vec![MenuComponent::from("Meyve Suyu")]],
+        });
 
         {
             let mut cache = TAKEAWAY_CACHE.write().unwrap();

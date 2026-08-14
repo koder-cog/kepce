@@ -58,6 +58,10 @@ pub struct DailyMenu {
     #[serde(default)]
     pub breakfast: Vec<MenuItem>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub lunch_kcal: Option<String>,
+    #[serde(default)]
+    pub lunch: Vec<MenuItem>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub dinner_kcal: Option<String>,
     #[serde(default)]
     pub dinner: Vec<MenuItem>,

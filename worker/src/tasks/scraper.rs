@@ -1,5 +1,5 @@
 use anyhow::Result;
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use reqwest::Client;
 use std::collections::HashMap;
 use std::sync::OnceLock;
@@ -17,6 +17,165 @@ async fn sleep_cancelable(ms: u64, shutdown_rx: &mut tokio::sync::watch::Receive
     }
 }
 
+pub async fn scrape_today_menus(
+    db: &DatabaseConnection,
+    client: &Client,
+    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+) -> Result<usize> {
+    let active_cities = [
+        "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum", 
+        "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk", 
+        "kirklareli", "konya", "sakarya", "sivas", "trabzon"
+    ];
+
+    let mut token_opt = match fetch_antiforgery_token(client).await {
+        Ok(t) => Some(t),
+        Err(e) => {
+            tracing::warn!("Kykyemek token alınamadı: {:?}", e);
+            None
+        }
+    };
+
+    let now = chrono::Local::now().naive_local().date();
+    let current_day = now.day() as i32;
+    let days_in_month = match now.month() {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => if now.year() % 4 == 0 && (now.year() % 100 != 0 || now.year() % 400 == 0) { 29 } else { 28 },
+        _ => 30,
+    };
+
+    let mut total_saved = 0;
+
+    for slug in active_cities {
+        if *shutdown_rx.borrow() {
+            return Ok(total_saved);
+        }
+
+        let city_opt = cities::Entity::find()
+            .filter(cities::Column::Slug.eq(slug))
+            .one(db)
+            .await?;
+
+        let city = match city_opt {
+            Some(c) => c,
+            None => continue,
+        };
+
+        tracing::info!("[TODAY] Şehir için günün menüleri taranıyor: {} (1..={})", city.name, days_in_month);
+
+        for day in 1..=days_in_month {
+            if *shutdown_rx.borrow() {
+                return Ok(total_saved);
+            }
+
+            let day_shift = day - current_day;
+            let url = "https://kykyemek.com/Menu/GetDailyMenu";
+
+            let mut req = client.get(url)
+                .query(&[
+                    ("city", city.slug.as_str()),
+                    ("mealType", "false"),
+                    ("isToday", "true"),
+                    ("dayShift", &day_shift.to_string()),
+                ])
+                .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("Accept", "application/json, text/javascript, */*; q=0.01")
+                .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
+                .header("Referer", "https://kykyemek.com/Menu/TodayMenu")
+                .timeout(std::time::Duration::from_secs(30));
+
+            if let Some(ref token) = token_opt {
+                req = req
+                    .header("RequestVerificationToken", token.as_str())
+                    .header("__RequestVerificationToken", token.as_str());
+            }
+
+            let res = match req.send().await {
+                Ok(r) if r.status().is_success() => r,
+                Ok(r) if r.status() == reqwest::StatusCode::UNAUTHORIZED => {
+                    if let Ok(new_token) = fetch_antiforgery_token(client).await {
+                        token_opt = Some(new_token);
+                    }
+                    continue;
+                }
+                _ => continue,
+            };
+
+            let body_text = match res.text().await {
+                Ok(b) => b,
+                Err(_) => continue,
+            };
+
+            let html_content = if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_text) {
+                json_val.get("html").and_then(|h| h.as_str()).unwrap_or(&body_text).to_string()
+            } else {
+                body_text
+            };
+
+            if html_content.contains("Menü bulunamadı") || !html_content.contains("cardStyle") {
+                continue;
+            }
+
+            let parsed_menus = parse_kyk_html(&html_content, &city.slug, "dinner");
+            for menu in parsed_menus {
+                upsert_menu(
+                    db,
+                    city.id,
+                    menu.date,
+                    MealTypeEnum::Dinner,
+                    "kykyemek".to_string(),
+                    None,
+                    menu.dishes,
+                    vec![],
+                    menu.takeaways,
+                    None,
+                    None,
+                    None,
+                ).await?;
+                total_saved += 1;
+            }
+
+            tokio::time::sleep(std::time::Duration::from_millis(150)).await;
+        }
+    }
+
+    tracing::info!("[TODAY] Günün menüsü taraması tamamlandı: {} menü kaydedildi.", total_saved);
+    Ok(total_saved)
+}
+
+async fn fetch_antiforgery_token(client: &Client) -> Result<String> {
+    let res = client.get("https://kykyemek.com/")
+        .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+        .send()
+        .await?;
+    let html = res.text().await?;
+
+    static TOKEN_REGEX: OnceLock<regex::Regex> = OnceLock::new();
+    let re = TOKEN_REGEX.get_or_init(|| {
+        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*value=["']([^"']+)["']"#).unwrap()
+    });
+
+    if let Some(caps) = re.captures(&html) {
+        if let Some(token) = caps.get(1) {
+            return Ok(token.as_str().to_string());
+        }
+    }
+
+    static TOKEN_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
+    let re_fb = TOKEN_FALLBACK.get_or_init(|| {
+        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#).unwrap()
+    });
+    if let Some(caps) = re_fb.captures(&html) {
+        if let Some(token) = caps.get(1) {
+            return Ok(token.as_str().to_string());
+        }
+    }
+
+    anyhow::bail!("__RequestVerificationToken HTML içinde bulunamadı")
+}
+
 pub async fn run_kykyemek_scraper(
     db: &DatabaseConnection,
     client: &Client,
@@ -24,6 +183,23 @@ pub async fn run_kykyemek_scraper(
 ) -> Result<()> {
     let all_cities = cities::Entity::find().all(db).await?;
     let mut total_fetched = 0;
+
+    // 1. Önce günün menülerini (aktif 16 ilin tüm Ağustos günlerini) hızlıca çek ve kaydet
+    if let Ok(today_count) = scrape_today_menus(db, client, shutdown_rx.clone()).await {
+        tracing::info!("Canlı günün menülerinden {} kayıt işlendi.", today_count);
+        total_fetched += today_count;
+    }
+
+    let mut token_opt = match fetch_antiforgery_token(client).await {
+        Ok(t) => {
+            tracing::info!("Kykyemek oturum token'ı başarıyla alındı.");
+            Some(t)
+        }
+        Err(e) => {
+            tracing::warn!("Kykyemek token alınamadı: {:?}. Düz istek deneniyor.", e);
+            None
+        }
+    };
 
     for city in all_cities {
         if *shutdown_rx.borrow() {
@@ -38,7 +214,7 @@ pub async fn run_kykyemek_scraper(
             }
 
             // Fetch breakfast
-            match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, month_shift, &mut shutdown_rx).await {
+            match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, month_shift, &mut token_opt, &mut shutdown_rx).await {
                 Ok(Some(count)) => total_fetched += count,
                 Ok(None) => return Ok(()), // Aborted via shutdown signal
                 Err(e) => tracing::error!(city = %city.slug, meal = "breakfast", month = month_shift, "Menü çekme hatası: {:?}", e),
@@ -54,7 +230,7 @@ pub async fn run_kykyemek_scraper(
             }
 
             // Fetch dinner
-            match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, month_shift, &mut shutdown_rx).await {
+            match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, month_shift, &mut token_opt, &mut shutdown_rx).await {
                 Ok(Some(count)) => total_fetched += count,
                 Ok(None) => return Ok(()), // Aborted via shutdown signal
                 Err(e) => tracing::error!(city = %city.slug, meal = "dinner", month = month_shift, "Menü çekme hatası: {:?}", e),
@@ -88,6 +264,7 @@ async fn fetch_and_save(
     kyk_meal_type: &str,
     meal_type_enum: MealTypeEnum,
     month_shift: &str,
+    token_opt: &mut Option<String>,
     shutdown_rx: &mut tokio::sync::watch::Receiver<bool>,
 ) -> Result<Option<usize>> {
     let is_dinner = if kyk_meal_type == "dinner" { "true" } else { "false" };
@@ -102,7 +279,7 @@ async fn fetch_and_save(
             return Ok(None);
         }
 
-        let req = client.get(&url)
+        let mut req = client.get(&url)
             .query(&[
                 ("city", city.slug.as_str()),
                 ("mealType", is_dinner),
@@ -113,14 +290,25 @@ async fn fetch_and_save(
             .header("X-Requested-With", "XMLHttpRequest")
             .header("Accept", "application/json, text/javascript, */*; q=0.01")
             .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
-            .header("Referer", &format!("https://kykyemek.com/{}", city.slug))
+            .header("Referer", "https://kykyemek.com/")
             .timeout(std::time::Duration::from_secs(30));
+
+        if let Some(ref token) = *token_opt {
+            req = req
+                .header("RequestVerificationToken", token.as_str())
+                .header("__RequestVerificationToken", token.as_str());
+        }
 
         match req.send().await {
             Ok(res) => {
                 if res.status().is_success() {
                     response = Some(res);
                     break;
+                } else if res.status() == reqwest::StatusCode::UNAUTHORIZED {
+                    tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
+                    if let Ok(new_token) = fetch_antiforgery_token(client).await {
+                        *token_opt = Some(new_token);
+                    }
                 } else {
                     tracing::warn!("HTTP durum kodu hatası: {}, Deneme: {}", res.status(), attempt + 1);
                 }
@@ -412,8 +600,11 @@ async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: 
     // XSS sanitization
     let sanitized = sanitize_dish_name(raw_name);
 
+    // Kategori belirtilmemişse akıllı kural motoruyla otomatik belirle
+    let final_category = category.or_else(|| shared::services::categorizer::categorize_dish(&sanitized));
+
     // Atomik işlem (Race Condition önleyici):
-    // 1. Ana dish (yemek) oluştur veya varsa IDsini döndür. Eğer mevcut kaydın kategorisi yoksa (NULL), LLM'den gelen kategoriyi yaz (COALESCE).
+    // 1. Ana dish (yemek) oluştur veya varsa IDsini döndür. Eğer mevcut kaydın kategorisi yoksa (NULL), tespit edilen kategoriyi yaz (COALESCE).
     // 2. Takma adı (alias) ana yemeğe bağlayarak oluştur veya güncelleyip idsini döndür.
     let stmt = sea_orm::Statement::from_sql_and_values(
         sea_orm::DbBackend::Postgres,
@@ -428,7 +619,7 @@ async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: 
         ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name, dish_id = COALESCE(dish_aliases.dish_id, EXCLUDED.dish_id)
         RETURNING id
         "#,
-        vec![sanitized.into(), category.into()],
+        vec![sanitized.into(), final_category.into()],
     );
 
     let query_res = txn.query_one(stmt).await?;
@@ -579,6 +770,31 @@ mod tests {
         let _ = cities::Entity::delete_by_id(city_id)
             .exec(&db)
             .await;
+    }
+
+    #[tokio::test]
+    async fn test_live_kyk_token() {
+        let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
+        let token = super::fetch_antiforgery_token(&client).await;
+        println!("Extracted token: {:?}", token);
+        assert!(token.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_live_get_menu() {
+        let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
+        let token = super::fetch_antiforgery_token(&client).await.unwrap();
+        let res = client.get("https://kykyemek.com/Menu/GetDailyMenu/istanbul")
+            .query(&[("city", "istanbul"), ("mealType", "true"), ("monthShift", "0"), ("hidePast", "false")])
+            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+            .header("X-Requested-With", "XMLHttpRequest")
+            .header("RequestVerificationToken", token.as_str())
+            .header("Referer", "https://kykyemek.com/")
+            .send().await.unwrap();
+        println!("Status: {}", res.status());
+        let body = res.text().await.unwrap();
+        println!("Body length: {}", body.len());
+        assert!(body.contains("Kremal"));
     }
 }
 
