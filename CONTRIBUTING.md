@@ -1,15 +1,15 @@
-# Kepçe Katkıda Bulunma Kılavuzu (Contributing Guide)
+# Kepçe Katkıda Bulunma Kılavuzu
 
-Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynaklı, şeffaf ve güvenilir bir topluluk inşa etmek için her türlü katkı (kod, dokümantasyon, hata bildirimi, menü verisi doğrulama) değerlidir.
+Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynaklı, şeffaf ve güvenilir bir topluluk inşa etmek için her türlü katkı değerlidir.
 
 ---
 
 ## Geliştirme Ortamı Kurulumu
 
 ### Gereksinimler
-* **Rust:** `1.80+` (Cargo, Clippy, Rustfmt)
-* **Node.js:** `20+` (npm)
-* **Veritabanı:** PostgreSQL `15+` (veya Docker / Podman)
+- **Rust:** `1.80+` (Cargo, Clippy, Rustfmt)
+- **Node.js:** `20+` (npm)
+- **Veritabanı:** PostgreSQL `15+` (veya Docker / Podman)
 
 ### Hızlı Başlangıç
 
@@ -32,19 +32,18 @@ Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık 
 ## Kod Standartları ve Prensipleri
 
 ### 1. Rust (Backend ve Worker)
-* Kodlama standartları için `cargo fmt --all` ve `cargo clippy --workspace --all-targets` kullanılmalıdır.
-* Güvenlik açıklarını ve panikleri önlemek adına production kodlarında kontrolsüz `unwrap()` yerine uygun `Result` / `Option` eşlemeleri (`?` operatörü) tercih edilmelidir.
-* Tüm iş mantığı ve kritik ayrıştırıcılar için birim testleri (`cargo test --workspace`) yazılmalıdır.
+- Kodlama standartları için `cargo fmt --all` ve `cargo clippy --workspace --all-targets` kullanılmalıdır.
+- Güvenlik açıklarını ve panikleri önlemek adına production kodlarında kontrolsüz `unwrap()` yerine uygun `Result` / `Option` eşlemeleri (`?` operatörü) tercih edilmelidir.
+- Tüm iş mantığı ve kritik ayrıştırıcılar için birim testleri (`cargo test --workspace`) yazılmalıdır.
 
-### 2. Frontend (SvelteKit ve Vanilla CSS)
-* Tasarım ve mimari kuralları için projenin tasarım rehberine sadık kalınmalıdır.
-* HTML elementlerinde inline statik `style="..."` tanımları kullanılmaz; CSS sınıfları ve CSS custom property pattern'i (`style="--var-name: {value}"`) kullanılır.
-* Sayfa geçişleri SPA mimarisini korumak adına SvelteKit router üzerinden yürütülür.
-* Kod kalitesi için `npm run check` ve `npm run test` çalıştırılmalıdır.
+### 2. SvelteKit ve Vanilla CSS (Frontend)
+- Yeni arayüz geliştirirken `webapp/src/styles/` altındaki mevcut CSS sınıfları ve değişkenler (`main.css`) kullanılmalıdır.
+- HTML elementlerinde inline statik `style="..."` tanımları kullanılmaz; CSS sınıfları ve CSS custom property pattern'i (`style="--var-name: {value}"`) kullanılır.
+- Kod kalitesi ve tip kontrolü için `cd webapp && npm run check` çalıştırılmalıdır.
 
 ---
 
-## Katkı ve PR (Pull Request) Süreci
+## Katkı ve PR Süreci
 
 1. Değişikliğiniz için anlamlı bir dal (branch) açın:
    ```bash
@@ -64,4 +63,4 @@ Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık 
 
 ## Yasal Uyarı ve Lisans Taahhüdü
 
-Gönderdiğiniz tüm katkılar projenin **GNU Affero General Public License v3.0 (AGPLv3)** lisansı altında lisanslanacaktır. PR göndererek kodunuzun bu şartlar altında dağıtılmasını kabul etmiş sayılırsınız.
+Gönderdiğiniz tüm katkılar projenin GNU Affero General Public License v3.0 (AGPLv3) lisansı altında lisanslanacaktır. PR göndererek kodunuzun bu şartlar altında dağıtılmasını kabul etmiş sayılırsınız.

@@ -10,20 +10,18 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağı
 
 ---
 
-## Yasal Sorumluluk Reddi (Legal Disclaimer)
+## Yasal Sorumluluk Reddi
 
-> **Önemli Not:** Kepçe, Gençlik ve Spor Bakanlığı (GSB) veya Kredi ve Yurtlar Kurumu (KYK) ile doğrudan veya dolaylı hiçbir kurumsal bağı bulunmayan, kâr amacı gütmeyen, bağımsız bir **açık kaynak topluluk projesidir**. Menü, gramaj ve fiyat verileri; kamusal yurt panoları, resmi duyurular ve açık kaynaklardan öğrencileri bilgilendirme ve şeffaflık amacıyla derlenmektedir.
+Kepçe, Gençlik ve Spor Bakanlığı veya Kredi ve Yurtlar Kurumu ile doğrudan veya dolaylı hiçbir kurumsal bağı bulunmayan, kâr amacı gütmeyen, bağımsız bir projedir. Menü, gramaj ve fiyat verileri; kamusal yurt panoları, resmi duyurular ve açık kaynaklardan öğrencileri bilgilendirme ve şeffaflık amacıyla derlenmektedir.
 
 ---
 
 ## Öne Çıkan Özellikler
 
-* **Resmi Fiyat ve Porsiyon Motoru:** Bakanlık onaylı porsiyon gramajları ve öğün bazlı fiyatlandırma kuralları ile otomatik eşleştirme.
-* **Akıllı Alternatif Yönetimi:** Seçenekli yemekleri (`/` veya `VEYA`) bağımsız porsiyon ve kalori değerleriyle ayrıştırma.
-* **Al-Götür ve Sahur Paketleri:** Standart tabldot haricindeki paket ve kumanya menülerini hiyerarşik paket yapısıyla sunma.
-* **Çölyak ve Diyet Menüleri:** Glütensiz beslenen öğrenciler için ayrı onay ve menü akışı.
-* **Kriptografik Veri Bütünlüğü:** Her menü kaydı SHA-256 hash zinciriyle doğrulanarak geçmişe dönük tahrifata karşı korunur.
-* **Dönem ve Şehir İzolasyonu:** Şehir bazlı fiyatlandırma ve tatil/nöbetçi yurt dönemlerinde (Temmuz ve Ağustos) dinamik kurallar.
+- Geliştiricilerin ve öğrencilerin kendi uygulamalarında kullanabileceği temiz, dokümante edilmiş JSON API desteği
+- Kullanıcı mahremiyetine saygılı, reklam veya üçüncü parti izleyici içermeyen minimalist web deneyimi
+- Türkiye genelindeki KYK yurtlarının günlük menülerini ve geçmişe dönük yemek arşivini görüntüleme
+- (Eğer mevcutsa) Glütensiz beslenen öğrenciler için ayrı menü
 
 ---
 
@@ -33,7 +31,7 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağı
 <table width="100%">
 <tr>
 <td align="center" width="76.5%">
-<img src="docs/images/masaüstü-koyu.png" alt="Kepçe Masaüstü (Karanlık Tema)" width="100%"/>
+<img src="docs/images/masaüstü-koyu.png" alt="Kepçe Masaüstü (Koyu Tema)" width="100%"/>
 </td>
 <td align="center" width="23.5%">
 <img src="docs/images/mobil-açık.png" alt="Kepçe Mobil (Açık Tema)" width="100%"/>
@@ -46,11 +44,11 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağı
 
 ## Dokümantasyon
 
-* [Sistem Mimarisi ve Veri Akışı](docs/ARCHITECTURE.md)
-* [REST API Referansı](docs/API.md)
-* [Katkıda Bulunma Rehberi](CONTRIBUTING.md)
-* [Güvenlik Politikası](SECURITY.md)
-* [Topluluk Kuralları](CODE_OF_CONDUCT.md)
+- [Sistem Mimarisi ve Veri Akışı](docs/ARCHITECTURE.md)
+- [REST API Referansı](docs/API.md)
+- [Katkıda Bulunma Rehberi](CONTRIBUTING.md)
+- [Güvenlik Politikası](SECURITY.md)
+- [Topluluk Kuralları](CODE_OF_CONDUCT.md)
 
 ---
 
@@ -59,7 +57,7 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağı
 Gereksinimler: Rust `1.80+` (cargo), Node.js `20+` ve Docker / Podman.  
 *Windows ortamında betikleri çalıştırmak için WSL2 önerilir.*
 
-### 1. Yerel Geliştirme (Local Dev)
+### 1. Yerel Geliştirme
 
 Sistemi tek komutla yerel olarak başlatmak için `manage.sh` yönetim betiğini kullanabilirsiniz:
 
@@ -82,8 +80,7 @@ cp .env.example .env
 ./manage.sh stop
 ```
 
-### 2. Konteynerli Dağıtım (Production Docker)
-
+### 2. Konteynerli Dağıtım
 ```bash
 # Konteynerleri derle ve arka planda çalıştır
 docker compose up -d --build
@@ -96,7 +93,7 @@ docker compose logs -f
 
 ## Katkıda Bulunma
 
-Kepçe, topluluk odaklı bir projedir. Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya [Pull Request](CONTRIBUTING.md) gönderebilirsiniz.
+Kepçe, topluluk odaklı bir projedir. Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya Pull Request gönderebilirsiniz.
 
 ---
 

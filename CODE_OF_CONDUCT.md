@@ -1,4 +1,4 @@
-# Kepçe Topluluk Kuralları (Code of Conduct)
+# Kepçe Topluluk Kuralları
 
 ## Taahhüdümüz
 
@@ -10,17 +10,17 @@ Kepçe topluluğunun üyeleri ve katkıda bulunanları olarak; yaş, beden ölç
 
 Topluluk için olumlu bir ortam yaratmaya katkıda bulunan davranışlar:
 
-* Karşılıklı saygı, empati ve nezaket göstermek
-* Farklı görüşlere, deneyimlere ve yapıcı eleştirilere açık olmak
-* Topluluk için en iyi olanı gözeterek iş birliği yapmak
-* Öğrencilerin ve kullanıcıların mahremiyetine ve veri güvenliğine saygı duymak
+- Karşılıklı saygı, empati ve nezaket göstermek
+- Farklı görüşlere, deneyimlere ve yapıcı eleştirilere açık olmak
+- Topluluk için en iyi olanı gözeterek iş birliği yapmak
+- Öğrencilerin ve kullanıcıların mahremiyetine ve veri güvenliğine saygı duymak
 
 Kabul edilemez davranışlar:
 
-* Cinsiyetçi, ırkçı, ayrımcı veya aşağılayıcı dil ve davranışlar
-* Trolling, hakaret, kişisel veya siyasi saldırılar
-* Kamu dışı kişisel verileri (PII) rızasız ifşa etmek (doxxing)
-* Proje süreçlerini veya topluluk üyelerini sabote edici eylemlerde bulunmak
+- Cinsiyetçi, ırkçı, ayrımcı veya aşağılayıcı dil ve davranışlar
+- Trolling, hakaret, kişisel veya siyasi saldırılar
+- Kamu dışı kişisel verileri (PII) rızasız ifşa etmek (doxxing)
+- Proje süreçlerini veya topluluk üyelerini sabote edici eylemlerde bulunmak
 
 ---
 
@@ -28,4 +28,4 @@ Kabul edilemez davranışlar:
 
 Proje yöneticileri bu Davranış Kuralları standartlarını açıklığa kavuşturmak ve uygunsuz durumlarda adil ve yapıcı yaptırımlar uygulamakla yükümlüdür.
 
-Kurallara aykırı bir durumla karşılaşırsanız lütfen **`iletisim@kepce.org`** adresinden proje yöneticileriyle iletişime geçiniz. Tüm bildirimler gizlilik içinde değerlendirilecektir.
+Kurallara aykırı bir durumla karşılaşırsanız lütfen `iletisim@kepce.org` adresinden proje yöneticileriyle iletişime geçiniz. Tüm bildirimler gizlilik içinde değerlendirilecektir.

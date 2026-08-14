@@ -1,11 +1,11 @@
-name: Özellik / İyileştirme Önerisi (Feature Request)
+name: Özellik / İyileştirme Önerisi
 description: Kepçe projesine yeni bir özellik, analiz veya arayüz iyileştirmesi önerin
 labels: ["enhancement", "proposal"]
 body:
   - type: markdown
     attributes:
       value: |
-        Yeni bir fikir paylaştığınız için teşekkürler! Topluluk odaklı geliştirmeler için önerileriniz bizim için çok kıymetli.
+        Topluluk odaklı geliştirmeler için önerileriniz bizim için çok kıymetli.
   - type: textarea
     id: problem
     attributes:

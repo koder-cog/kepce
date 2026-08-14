@@ -1,34 +1,15 @@
-# Güvenlik Politikası (Security Policy)
+# Güvenlik Politikası
 
-Kepçe projesi, öğrenci ve topluluk verilerinin güvenliğini, mahremiyetini ve kriptografik veri bütünlüğünü en yüksek öncelik olarak kabul eder.
-
-## Desteklenen Sürümler
-
-Aşağıdaki tabloda güvenlik güncellemeleri alan sürümler listelenmiştir:
-
-| Sürüm | Destek Durumu |
-| :--- | :--- |
-| `v0.1.x` (main) | Destekleniyor |
-| `< 0.1.0` | Desteklenmiyor |
+Kepçe projesinde kullanıcı gizliliği ve sistem güvenliği ciddiye alınır.
 
 ---
 
-## Güvenlik Açığı Bildirimi (Reporting a Vulnerability)
+## Güvenlik Açığı Bildirimi
 
-Eğer Kepçe altyapısında, API servislerinde, kimlik doğrulama katmanında veya veri madenciliği bileşenlerinde potansiyel bir güvenlik açığı tespit ettiyseniz:
+Kepçe altyapısında, API servislerinde veya web uygulamasında bir güvenlik açığı tespit ederseniz:
 
-1. **Lütfen Açığı Herkese Açık Olarak (Public Issue) Paylaşmayınız.**
-2. Açık bildirimlerinizi doğrudan **`guvenlik@kepce.org`** veya **`yasal@kepce.org`** adresine e-posta yoluyla iletiniz.
-3. Bildiriminizde lütfen aşağıdaki detaylara yer veriniz:
-   - Etkilenen bileşen veya API rotası
-   - Adım adım yeniden üretme (PoC) kılavuzu
-   - Açığın yaratabileceği potansiyel etki (veri sızıntısı, yetki yükseltme, DoS vb.)
-   - Varsa önerdiğiniz çözüm veya yama
+1. Açığı herkese açık GitHub Issue'larında paylaşmayınız.
+2. Bildirimi doğrudan `guvenlik@kepce.org` veya `destek@kepce.org` adresine e-posta ile iletiniz.
+3. E-postanızda açığın bulunduğu yeri, nasıl tetiklendiğini (PoC) ve olası etkisini kısaca belirtiniz.
 
----
-
-## Yanıt ve Süreç Taahhüdü
-
-* **İlk Yanıt:** Bildiriminiz en geç **48 saat** içerisinde incelenip tarafınıza teyit yanıtı verilir.
-* **Değerlendirme ve Yama:** Güvenlik açığı doğrulandıktan sonra kritiklik derecesine göre önceliklendirilerek hızlı yama geliştirilir ve yayına alınır.
-* **Açıklama (Coordinated Disclosure):** Düzeltme production ortamında yayınlandıktan sonra katkınız güvenlik teşekkür listesinde (Security Hall of Fame / Release Notes) memnuniyetle belirtilir.
+Bildirilen açıklar en kısa sürede incelenir, gerekli yama hazırlanıp canlıya alındıktan sonra katkınız sürüm notlarında teşekkürle belirtilir.
