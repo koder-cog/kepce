@@ -74,11 +74,18 @@ echo -e "\n${BLUE}--- Dağıtım Başlatılıyor ---${NC}"
 
 # 3. Dosyaların Senkronizasyonu (Rsync)
 echo -e "${YELLOW}[1/5] Proje dosyaları sunucuya aktarılıyor...${NC}"
-ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,static}"
+
+if [ ! -f "target/aarch64-unknown-linux-gnu/release/api" ]; then
+    echo -e "${YELLOW}İpucu: Henüz yerel ARM64 binary derlenmemiş.${NC}"
+    echo -e "${YELLOW}Yerel 16 çekirdek ile Podman üzerinden saniyeler içinde derlemek için: './manage.sh build-arm64' kullanabilirsiniz.${NC}"
+fi
+
+ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,static,target/aarch64-unknown-linux-gnu/release}"
 
 rsync -avz --delete \
     --exclude-from='.gitignore' \
-    --exclude='target' \
+    --exclude='target/debug' \
+    --exclude='target/release' \
     --exclude='node_modules' \
     --exclude='.git' \
     --exclude='.agents' \

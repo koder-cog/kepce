@@ -361,6 +361,11 @@ case "$COMMAND" in
     logs)
         show_logs "$TARGET"
         ;;
+    build-arm64)
+        echo -e "${BLUE}Yerel 16 çekirdek ile Podman üzerinden ARM64 (aarch64) derlemesi yapılıyor...${NC}"
+        podman run --rm -v "$(pwd)":/app -v "$HOME/.cargo/registry":/usr/local/cargo/registry -w /app rust:1-bookworm bash -c "apt-get update && apt-get install -y pkg-config libssl-dev && cargo build --release -p api -p worker && mkdir -p target/aarch64-unknown-linux-gnu/release && cp target/release/api target/aarch64-unknown-linux-gnu/release/api && cp target/release/worker target/aarch64-unknown-linux-gnu/release/worker"
+        echo -e "${GREEN}ARM64 derlemesi tamamlandı: target/aarch64-unknown-linux-gnu/release/{api,worker}${NC}"
+        ;;
     backup)
         ./scripts/backup_db.sh
         ;;
@@ -373,7 +378,7 @@ case "$COMMAND" in
         ./scripts/deploy.sh "$@"
         ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|logs|backup|ingest-backup|deploy} [api|worker|web|web-dev|web-preview|db|all]"
+        echo "Usage: $0 {start|stop|restart|status|logs|build-arm64|backup|ingest-backup|deploy} [api|worker|web|web-dev|web-preview|db|all]"
         exit 1
         ;;
 esac
