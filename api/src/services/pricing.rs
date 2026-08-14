@@ -102,13 +102,24 @@ pub async fn load_pricing_from_db(db: &DatabaseConnection) -> Result<(), anyhow:
     Ok(())
 }
 
-/// Belirtilen şehir ve öğün tipi için fiyat bilgisini döndürür.
-/// `city` verilmezse varsayılan olarak `"istanbul"` kullanılır.
-pub fn get_pricing_info(meal_type: &str, category: Option<&str>, name: &str) -> Option<PriceInfo> {
-    get_pricing_info_for_city("istanbul", meal_type, category, name)
-}
+/// Belirtilen şehir, tarih ve öğün tipi için fiyat bilgisini döndürür.
+/// Temmuz ve Ağustos aylarında (nöbetçi yurt / dönem dışı) veya şehir için tanımlı fiyat yoksa `None` döner.
+pub fn get_pricing_info_for_city(
+    city: &str,
+    serve_date: Option<chrono::NaiveDate>,
+    meal_type: &str,
+    category: Option<&str>,
+    name: &str,
+) -> Option<PriceInfo> {
+    use chrono::Datelike;
 
-pub fn get_pricing_info_for_city(city: &str, meal_type: &str, category: Option<&str>, name: &str) -> Option<PriceInfo> {
+    if let Some(date) = serve_date {
+        let month = date.month();
+        if month == 7 || month == 8 {
+            return None; // Temmuz ve Ağustos tatil/nöbetçi yurt dönemidir, fiyat gösterilmez
+        }
+    }
+
     if let Ok(cache) = PRICING_CACHE.read() {
         if let Some(pricing) = cache.get(city) {
             let meal_pricing = match meal_type {
@@ -119,14 +130,24 @@ pub fn get_pricing_info_for_city(city: &str, meal_type: &str, category: Option<&
             };
 
             if let Some(mp) = meal_pricing {
-                // Try items first (exact match)
-                if let Some(info) = mp.items.get(&name.to_uppercase()) {
+                let upper_name = name.to_uppercase();
+                // 1. Try exact item match
+                if let Some(info) = mp.items.get(&upper_name) {
                     return Some(info.clone());
                 }
                 
-                // Try categories
+                // 2. Try explicit category match
                 if let Some(cat) = category {
-                    if let Some(info) = mp.categories.get(&cat.to_uppercase()) {
+                    let upper_cat = cat.to_uppercase();
+                    if let Some(info) = mp.categories.get(&upper_cat) {
+                        return Some(info.clone());
+                    }
+                }
+
+                // 3. Fallback to dynamic rule-based categorizer
+                if let Some(detected_cat) = shared::services::categorizer::categorize_dish(name) {
+                    let upper_detected = detected_cat.to_uppercase();
+                    if let Some(info) = mp.categories.get(&upper_detected) {
                         return Some(info.clone());
                     }
                 }

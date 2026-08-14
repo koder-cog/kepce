@@ -1,0 +1,502 @@
+[
+  {
+    "category": "ÇORBA ÇEŞİTLERİ",
+    "keywords": ["çorba", "çorbası", "corba", "corbasi", "tarhana ç", "süzme mercimek", "dövmeli mercimek", "döğmeli mercimek", "terbiyeli şehriye", "un tarhanası", "sebzeli mercimek", "şiveydiz", "mercimek ç", "ezogelin ç", "domates ç", "mısır ç", "misir ç", "şehriye ç", "sehriye ç", "ayran aşı ç", "ayran asi ç", "düğün ç", "dugun ç", "tavuk ç", "köz biber ç", "yayla ç", "tarhana ç", "kelle paça ç", "paça ç", "işkembe ç", "mercimek ç.", "ezogelin ç.", "domates ç.", "şehriye ç.", "yayla ç."],
+    "excludes": []
+  },
+  {
+    "category": "PİRİNÇ PİLAVI ÇEŞİTLERİ",
+    "keywords": ["pirinç pilav", "pirinc pilav", "şehriyeli pilav", "sehriyeli pilav", "nohutlu pilav", "safranlı pilav", "perde pilav", "özbek pilav", "ozbek pilav", "garnitürlü pilav", "sebzeli pirinç pilav", "arpa şehriyeli", "tel şehriyeli", "şehriye pilav", "sehriye pilav", "bahar pilavı", "iç pilav", "pirinç p", "pirinç p.", "şehriyeli pirinç", "pirinç", "arpa şehriye", "pilavı", "pilavi", "pilav"],
+    "excludes": ["bulgur", "meyhane", "siyez", "firik", "salata"]
+  },
+  {
+    "category": "BULGUR PİLAVI ÇEŞİTLERİ",
+    "keywords": ["bulgur pilav", "meyhane pilav", "siyez pilav", "sebzeli bulgur pilav", "mercimekli bulgur pilav", "firik pilav", "bulgur"],
+    "excludes": ["pirinç", "pirinc", "köfte", "kofte", "kısır"]
+  },
+  {
+    "category": "FIRIN MAKARNA",
+    "keywords": ["fırın makarna", "firin makarna", "beşamel soslu makarna", "besamel soslu makarna", "makarna graten"],
+    "excludes": []
+  },
+  {
+    "category": "MAKARNA ÇEŞİTLERİ",
+    "keywords": ["makarna", "spagetti", "spaghetti", "erişte", "eriste", "penne", "burgu makarna", "kelebek makarna", "salçalı makarna", "peynirli makarna", "soslu makarna", "kuskus", "noodle", "fettuccine", "lazanya", "tagliatelle"],
+    "excludes": ["fırın makarna", "firin makarna", "boş mantı"]
+  },
+  {
+    "category": "MANTI",
+    "keywords": ["mantı", "manti", "kayseri mantı", "kıymalı mantı", "kiymali manti", "boş mantı", "bos manti", "soslu mantı", "tepsi mantı", "hingel", "hıngel"],
+    "excludes": []
+  },
+  {
+    "category": "BÖREK ÇEŞİTLERİ",
+    "keywords": ["börek", "borek", "su böreği", "kol böreği", "sigara böreği", "paçanga", "pacanga", "gül böreği", "kalem böreği", "muska böreği", "tepsi böreği", "talaş böreği", "avcı böreği", "kıymalı börek", "peynirli börek", "patatesli börek", "ıspanaklı börek", "milföy böreği", "boyoz"],
+    "excludes": []
+  },
+  {
+    "category": "ETLİ BAKLAGİLLER",
+    "keywords": ["etli kuru fasulye", "kıymalı kuru fasulye", "sucuklu kuru fasulye", "kavurmalı kuru fasulye", "pastırmalı kuru fasulye", "etli nohut", "kıymalı nohut", "sucuklu nohut", "pastırmalı nohut", "etli barbunya", "kıymalı yeşil mercimek", "etli mercimek yemeği", "etli kurufasulye"],
+    "excludes": []
+  },
+  {
+    "category": "ETSİZ BAKLAGİLLER",
+    "keywords": ["kuru fasulye", "kurufasulye", "nohut", "barbunya", "yeşil mercimek", "zeytinyağlı barbunya", "zeytinyağlı kuru fasulye", "zeytinyağlı nohut", "mercimek yemeği", "falafel"],
+    "excludes": ["etli", "kıymalı", "sucuklu", "kavurmalı", "pastırmalı", "tavuklu", "mercimek çorba", "mercimek corba", "mercimek köftesi", "mercimekli köfte", "mercimekli bulgur"]
+  },
+  {
+    "category": "ETLİ DOLMA VE SARMALAR",
+    "keywords": ["etli biber dolma", "etli yaprak sarma", "etli lahana sarma", "etli kabak dolma", "etli kuru dolma", "kıymalı dolma", "kıymalı sarma", "etli dolma", "etli sarma", "etli enginar", "lahana kapama"],
+    "excludes": []
+  },
+  {
+    "category": "ETSİZ DOLMA VE SARMALAR",
+    "keywords": ["zeytinyağlı biber dolma", "zeytinyağlı yaprak sarma", "zeytinyağlı lahana sarma", "zeytinyağlı dolma", "zeytinyağlı sarma", "biber dolma", "yaprak sarma", "lahana sarma", "kabak dolma", "kuru dolma", "dolma", "sarma"],
+    "excludes": ["etli", "kıymalı", "tavuklu", "tavuk sarması", "saray sarması", "fıstıklı sarma"]
+  },
+  {
+    "category": "ETLİ SEBZE YEMEKLERİ",
+    "keywords": ["etli taze fasulye", "etli türlü", "etli bamya", "etli bezelye", "etli kabak", "etli patates", "etli patlıcan", "etli karnıyarık", "karnıyarık", "karniyarik", "etli mantar", "etli ıspanak", "kıymalı bezelye", "kıymalı ıspanak", "kıymalı karnabahar", "kıymalı pırasa", "kıymalı patates", "kıymalı kabak", "kıymalı taze fasulye", "kıymalı türlü", "kıymalı bamya", "patlıcan musakka", "musakka", "kıymalı musakka", "patates oturtma"],
+    "excludes": ["tavuk", "piliç"]
+  },
+  {
+    "category": "ETSİZ SEBZE YEMEKLERİ",
+    "keywords": ["taze fasulye", "türlü", "turlu", "bamya", "bezelye", "zeytinyağlı kabak", "zeytinyağlı pırasa", "zeytinyağlı kereviz", "zeytinyağlı enginar", "zeytinyağlı taze fasulye", "zeytinyağlı bamya", "zeytinyağlı türlü", "zeytinyağlı bezelye", "imam bayıldı", "imambayıldı", "ıspanak borani", "ispanak borani", "mantar sote", "sebze tava", "yoğurtlu kızartma", "sebze sote", "kabak kalye", "ratatouille", "fırın sebze", "karnabahar kızartma", "brokoli", "ispanak yemeği", "ıspanak yemeği", "patates yemeği", "patlıcan yemeği", "kabak yemeği", "pırasa yemeği", "yeşil fasulye yemeği", "kereviz yemeği", "graten", "kızartma", "kizartma", "ratatuy", "kabak sandal", "patates sandal", "patlıcan çığırtma", "patlıcan sinkonta", "sandal sefası", "sebze dizme", "sebze güveç", "sebze haşlama", "dible", "diblesi", "kabak sıyırma", "karnabahar pane", "karnabahar sote", "karnabahar yemeği", "kaşarlı mantar", "patates sulusu", "soslu karışık kız", "z. yağlı ıspanak", "z. yağlı pırasa", "ekşimlikli biber", "kabak", "sebze", "domatesli", "ıspanaklı", "ispanaklı"],
+    "excludes": ["etli", "kıymalı", "sucuklu", "kavurmalı", "tavuk", "piliç", "patates kızartması", "sosisli patates"]
+  },
+  {
+    "category": "PİDELİ VEYA 1/2 EKMEKLİ ET DÖNER",
+    "keywords": ["et döner", "et doner", "yaprak döner", "pideli döner", "iskender", "bursa kebabı", "ekmek arası et döner", "dürümlü et döner", "dürüm et döner"],
+    "excludes": ["tavuk", "piliç"]
+  },
+  {
+    "category": "LAVAŞ VEYA 1/2 EKMEKLİ ET TANTUNİ",
+    "keywords": ["et tantuni", "biftek tantuni", "lavaş et tantuni"],
+    "excludes": ["tavuk", "piliç"]
+  },
+  {
+    "category": "KEMİKLİ ET YEMEKLERİ",
+    "keywords": ["et haşlama", "kuzu haşlama", "dana haşlama", "kuzu kapama", "dana kapama", "fırın et kızartma", "kuzu incik", "dana incik", "kuzu gerdan", "kuzu pirzola", "kuzu kaburga", "kuzu fırın", "kuzu tandır", "dana tandır", "tandır kebap", "kemikli et"],
+    "excludes": ["tavuk", "piliç"]
+  },
+  {
+    "category": "IZGARA KÖFTELER",
+    "keywords": ["ızgara köfte", "izgara kofte", "adana kebap", "urfa kebap", "inegöl köfte", "inegol kofte", "kaşarlı köfte", "kasarli kofte", "kadınbudu köfte", "kadinbudu kofte", "kuru köfte", "kuru kofte", "kasap köfte", "tekirdağ köfte", "akçaabat köfte", "cızbız köfte", "satır köfte", "balaban köfte", "aksu ızgara köfte", "altı ezmeli köfte", "köfte", "kofte"],
+    "excludes": ["tavuk", "piliç", "izmir köfte", "çiftlik köfte", "sulu köfte", "terbiyeli köfte", "ekşili köfte", "salçalı köfte", "köfteli bezelye", "köfteli patates", "içli köfte", "çiğ köfte", "mercimek köftesi"]
+  },
+  {
+    "category": "SULU SALÇALI ETLİ YEMEKLER VE TERBİYELİ SEBZELİ KÖFTELER",
+    "keywords": ["izmir köfte", "çiftlik köfte", "sulu köfte", "terbiyeli köfte", "ekşili köfte", "salçalı köfte", "dalyan köfte", "islim kebabı", "patlıcan kebabı", "köfteli bezelye", "köfteli patates", "köfteli türlü", "terbiyeli sebzeli köfte", "mitite köfte", "hasanpaşa köfte", "hünkari köfte", "sulu et yemeği", "yuvalama", "antepli yuvalama", "tirşik"],
+    "excludes": ["tavuk", "piliç"]
+  },
+  {
+    "category": "KEMİKSİZ ET YEMEKLERİ",
+    "keywords": ["tas kebabı", "tas kebabi", "orman kebabı", "orman kebabi", "çoban kavurma", "coban kavurma", "et sote", "dana sote", "et kavurma", "dana kavurma", "sac kavurma", "hünkar beğendi", "hunkar begendi", "dana gulaş", "dana biftek", "dana antrikot", "dana rosto", "sebzeli et", "püreli kebap", "ali nazik", "alinazik", "elbasan tava", "çökertme kebabı", "buğu kebabı", "belen tava", "macar gulaş", "ankara tava", "antep tava", "arap tava", "afşin tava", "bahçıvan kebabı", "balaban kebabı", "et fajita", "et güveç", "et güveci", "et çökertme", "et tandır", "et şiş", "eli böğründe", "et taco", "kıymalı çökertme", "somon", "fırında dilim somon", "tava", "kebap", "kebabı", "kavurma", "güveç", "guvec", "et"],
+    "excludes": ["tavuk", "piliç", "köfte", "kofte", "balık", "balik", "sebze güveç"]
+  },
+  {
+    "category": "PİDELİ VEYA 1/2 EKMEKLİ TAVUK DÖNER",
+    "keywords": ["tavuk döner", "tavuk doner", "piliç döner", "ekmek arası tavuk döner", "dürüm tavuk döner", "pideli tavuk döner"],
+    "excludes": []
+  },
+  {
+    "category": "LAVAŞ VEYA 1/2 EKMEKLİ TAVUK TANTUNİ",
+    "keywords": ["tavuk tantuni", "lavaş tavuk tantuni"],
+    "excludes": []
+  },
+  {
+    "category": "KEMİKLİ TAVUK YEMEKLERİ",
+    "keywords": ["tavuk baget", "fırın baget", "fırın tavuk baget", "tavuk pirzola", "fırın tavuk pirzola", "tavuk but", "fırın tavuk but", "tavuk haşlama", "kemikli tavuk", "fırın bütün tavuk", "piliç pirzola", "piliç baget", "fırın tavuk", "firinda tavuk", "tavuk incik", "sebzeli baget", "fırın incik kanat", "fırınlanmış but", "sebzeli fırınlanmış but"],
+    "excludes": ["tavuk sote", "tavuk şiş", "tavuk döner", "tavuk biftek"]
+  },
+  {
+    "category": "KEMİKSİZ IZGARA/KIZARTMA TAVUK YEMEKLERİ",
+    "keywords": ["tavuk şiş", "tavuk sis", "piliç şiş", "tavuk köfte", "tavuk kofte", "piliç köfte", "tavuk şinitzel", "şinitzel", "snitzel", "tavuk nugget", "nugget", "tavuk külbastı", "tavuk ızgara", "izgara tavuk", "piliç ızgara", "tavuk pirzola kemiksiz", "çıtır tavuk", "citir tavuk", "tavuk cordon bleu", "cordon bleu", "tavuk pane", "tavuk biftek", "fırında tavuk biftek"],
+    "excludes": ["tavuk döner", "tavuk doner", "tavuk baget", "tavuk but"]
+  },
+  {
+    "category": "KEMİKSİZ TAVUK YEMEKLERİ",
+    "keywords": ["tavuk sote", "piliç sote", "sebzeli tavuk", "tavuk kavurma", "tavuk fajita", "tavuk güveç", "köri soslu tavuk", "kori soslu tavuk", "kremalı tavuk", "mantarlı tavuk", "barbekü soslu tavuk", "soya soslu tavuk", "tatlı ekşi soslu tavuk", "tavuk sarması", "tavuk sarma", "tavuk kapama", "beğendili tavuk", "tavuk julyen", "tavuk", "piliç"],
+    "excludes": ["tavuk döner", "tavuk doner", "tavuk baget", "tavuk but", "tavuk şiş", "tavuk köfte", "tavuk şinitzel", "tavuk nugget", "tavuk çorbası", "tavuk corbasi", "tavuk göğsü tatlısı"]
+  },
+  {
+    "category": "DANA CİĞER",
+    "keywords": ["arnavut ciğeri", "arnavut cigeri", "ciğer tava", "ciger tava", "ciğer yahni", "dana ciğer", "yaprak ciğer"],
+    "excludes": []
+  },
+  {
+    "category": "MERCİMEKLİ KÖFTE - KISIR",
+    "keywords": ["mercimek köftesi", "mercimekli köfte", "kısır", "kisir"],
+    "excludes": []
+  },
+  {
+    "category": "ÇİĞ KÖFTE",
+    "keywords": ["çiğ köfte", "cig kofte", "dürüm çiğ köfte", "porsiyon çiğ köfte", "etsiz çiğ köfte"],
+    "excludes": []
+  },
+  {
+    "category": "SALATA-I",
+    "keywords": ["çoban salata", "coban salata", "gavurdağ salata", "gavurdağı salata", "gavurdagi", "kaşık salata", "kasik salata", "ege salata", "piyaz", "kuru fasulye piyazı", "tablacı salata"],
+    "excludes": []
+  },
+  {
+    "category": "SALATA-II",
+    "keywords": ["mevsim salata", "bahçe salata", "karışık salata", "akdeniz salata", "havuç salata", "lahana salata", "kırmızı lahana", "mor lahana", "pancar salata", "soğan salata", "rendelenmiş havuç", "söğüş", "sogus", "domates, salatalık", "domates-salatalık", "çeri domates", "coleslaw", "koslov", "marul salata", "arpa şehriye salata", "arpa şeh. salatası", "şehriye salatası", "kış salata", "yumurta salata", "biber", "açık büfe"],
+    "excludes": []
+  },
+  {
+    "category": "SALATA-III",
+    "keywords": ["kıvırcık salata", "kivircik salata", "roka salata", "tere salata", "göbek salata", "aysberg salata", "yeşil salata", "yesil salata"],
+    "excludes": []
+  },
+  {
+    "category": "TURŞU",
+    "keywords": ["turşu", "tursu", "karışık turşu", "salatalık turşusu", "lahana turşusu", "biber turşusu", "kornişon"],
+    "excludes": []
+  },
+  {
+    "category": "YOĞURT",
+    "keywords": ["yoğurt", "yogurt", "süzme yoğurt", "kase yoğurt", "kaymaklı yoğurt"],
+    "excludes": ["cacık", "ayran"]
+  },
+  {
+    "category": "CACIK",
+    "keywords": ["cacık", "cacik", "kuru cacık"],
+    "excludes": []
+  },
+  {
+    "category": "MEZELER",
+    "keywords": ["rus salatası", "amerikan salatası", "tarator", "mançi", "manci", "haydari", "lebeniye", "şakşuka", "saksuka", "mücver", "mucver", "patlıcan ezme", "havuç ezme", "fava", "börülce", "humus", "acılı ezme", "acili ezme", "yoğurtlu semizotu", "pembe sultan", "köz patlıcan", "köz biber", "köz salata", "babagannuş", "babaganus", "köpoğlu", "ezme"],
+    "excludes": []
+  },
+  {
+    "category": "KOMPOSTO - HOŞAF ÇEŞİTLERİ",
+    "keywords": ["komposto", "hoşaf", "hosaf", "kayısı kompostosu", "vişne kompostosu", "şeftali kompostosu", "üzüm hoşafı", "erik kompostosu", "elma kompostosu"],
+    "excludes": []
+  },
+  {
+    "category": "İÇLİ KÖFTE",
+    "keywords": ["içli köfte", "icli kofte", "kıymalı içli köfte", "haşlama içli köfte", "kızartma içli köfte"],
+    "excludes": []
+  },
+  {
+    "category": "PATATES KIZARTMASI-KAVURMASI-SALATASI-KÖFTESİ-YUMURTALI PATATES",
+    "keywords": ["patates kızartması", "patates kizartmasi", "patates kzıartma", "patates kavurması", "patates salatası", "patates salata", "patates köftesi", "yumurtalı patates", "patatesli yumurta", "patates püresi", "patates puresi", "elma dilim patates", "parmak patates", "fırın patates", "patatesli)"],
+    "excludes": ["patso", "sosisli patates kızartması"]
+  },
+  {
+    "category": "BAKLAVA-KADAYIF (FISTIKLI)",
+    "keywords": ["fıstıklı baklava", "fistikli baklava", "fıstıklı kadayıf", "fıstıklı şöbiyet", "fıstıklı sarma", "fıstıklı dolma tatlısı", "antep fıstıklı baklava"],
+    "excludes": []
+  },
+  {
+    "category": "BAKLAVA-KADAYIF (CEVİZLİ-FINDIKLI)",
+    "keywords": ["baklava", "kadayıf", "kadayif", "şöbiyet", "sobiyet", "cevizli baklava", "fındıklı baklava", "cevizli kadayıf", "fındıklı kadayıf", "tel kadayıf", "bülbül yuvası", "saray sarması", "sarı burma", "fındıklı)"],
+    "excludes": ["fıstıklı", "fistikli", "antep fıstıklı"]
+  },
+  {
+    "category": "AŞURE",
+    "keywords": ["aşure", "asure", "geleneksel aşure"],
+    "excludes": []
+  },
+  {
+    "category": "HELVA TATLISI ÇEŞİTLERİ",
+    "keywords": ["irmik helvası", "irmik helvasi", "un helvası", "un helvasi", "tahin helvası", "fıstıklı irmik helvası", "dondurmalı irmik helvası", "saray helvası", "sıcak helva", "helva"],
+    "excludes": ["piknik helva"]
+  },
+  {
+    "category": "HAMUR TATLILARI",
+    "keywords": ["şekerpare", "sekerpare", "revani", "kemalpaşa", "kemalpasa", "kalburabastı", "kalburabasti", "lokma", "tulumba", "hanımgöbeği", "vezir parmağı", "dilber dudağı", "kaymaklı ekmek kadayıfı", "ekmek kadayıfı", "halka tatlı", "şambali", "şam tatlısı", "hira tatlısı", "peynir tatlısı"],
+    "excludes": []
+  },
+  {
+    "category": "SÜTLÜ TATLILAR",
+    "keywords": ["sütlaç", "sutlac", "fırın sütlaç", "muhallebi", "kazandibi", "supangle", "güllaç", "gullac", "triliçe", "trileçe", "trilece", "puding", "keşkül", "keskul", "tavuk göğsü tatlısı", "tavukgöğsü", "magnolia", "magnolya", "profiterol", "krem karamel", "panna cotta", "sütlü irmik", "krem şokola", "kıbrıs tatlısı", "dondurma", "tatlı çeşitleri"],
+    "excludes": []
+  },
+  {
+    "category": "YAŞ PASTA",
+    "keywords": ["yaş pasta", "yas pasta", "çikolatalı pasta", "meyveli pasta", "karaorman pastası", "dilim pasta", "cheesecake", "tiramisu", "ekler", "ağlayan pasta", "bisküvili pasta", "browni", "brownie", "gelin pastası", "köstebek pasta", "pasta"],
+    "excludes": ["kuru pasta"]
+  },
+  {
+    "category": "KURU PASTA",
+    "keywords": ["kuru pasta", "tuzlu kuru pasta", "tatlı kuru pasta", "karışık kuru pasta", "kandil simidi", "kurabiye", "un kurabiyesi", "tuzlu kurabiye", "çikolatalı kurabiye", "elmalı kurabiye"],
+    "excludes": []
+  },
+  {
+    "category": "MEYVELİ TATLILAR",
+    "keywords": ["ayva tatlısı", "ayva tatlisi", "kabak tatlısı", "kabak tatlisi", "incir tatlısı", "armut tatlısı"],
+    "excludes": []
+  },
+  {
+    "category": "MEYVE ÇEŞİTLERİ",
+    "keywords": ["elma", "armut", "muz", "portakal", "mandalina", "karpuz", "kavun", "çilek", "cilek", "erik", "şeftali", "seftali", "kayısı", "kayisi", "kivi", "yeni dünya", "yenidünya", "üzüm", "uzum", "kiraz", "vişne", "meyve"],
+    "excludes": ["tatlı", "pasta", "kek", "meyveli tatlı", "komposto", "meyve suyu"]
+  },
+  {
+    "category": "SU",
+    "keywords": ["500 ml su", "şişe su", "pet su", "su"],
+    "excludes": ["sulu", "meyve suyu", "maden suyu", "madensuyu"]
+  },
+  {
+    "category": "AYRAN",
+    "keywords": ["ayran", "kutu ayran", "bardak ayran"],
+    "excludes": []
+  },
+  {
+    "category": "MEYVE SUYU",
+    "keywords": ["meyve suyu", "portakal suyu", "vişne suyu", "şeftali suyu", "elma suyu", "meyve nektarı", "cappy", "dimes", "limonata"],
+    "excludes": []
+  },
+  {
+    "category": "GAZOZ-KOLA-FANTA-SOĞUK ÇAY",
+    "keywords": ["kola", "cola", "coca cola", "fanta", "gazoz", "soğuk çay", "soguk cay", "fuse tea", "ice tea", "sprite"],
+    "excludes": []
+  },
+  {
+    "category": "ŞALGAM",
+    "keywords": ["şalgam", "salgam", "şalgam suyu"],
+    "excludes": []
+  },
+  {
+    "category": "MADEN SUYU",
+    "keywords": ["maden suyu", "soda", "kızılay soda", "meyveli soda"],
+    "excludes": []
+  },
+  {
+    "category": "SÜT",
+    "keywords": ["kutu süt", "süt", "kakaolu süt", "çilekli süt", "muzlu süt"],
+    "excludes": ["sütlaç", "sütlü", "tatlı"]
+  },
+  {
+    "category": "ÇAY",
+    "keywords": ["bardak çay", "demleme çay", "sıcak çay", "çay"],
+    "excludes": ["soğuk çay", "ice tea", "fuse tea"]
+  },
+  {
+    "category": "KAHVE",
+    "keywords": ["kahve", "türk kahvesi", "nescafe", "filtre kahve"],
+    "excludes": []
+  },
+  {
+    "category": "YÖRESEL PEYNİRLER",
+    "keywords": ["antep peyniri", "çeçil", "cecil", "dil peynir", "örgü peynir", "orgu peynir", "çerkez peynir", "tulum peynir", "burgu peynir", "çubuk peynir", "tel peynir", "top peynir", "yöresel peynir", "kuymak"],
+    "excludes": []
+  },
+  {
+    "category": "BEYAZ PEYNİR",
+    "keywords": ["beyaz peynir", "tam yağlı beyaz peynir", "süzme beyaz peynir", "süzme peynir", "ezine"],
+    "excludes": ["tost", "sandviç", "börek", "pide", "omlet", "gözleme"]
+  },
+  {
+    "category": "KREM PEYNİR",
+    "keywords": ["krem peynir"],
+    "excludes": []
+  },
+  {
+    "category": "ÜÇGEN PEYNİR",
+    "keywords": ["üçgen peynir", "ucgen peynir"],
+    "excludes": []
+  },
+  {
+    "category": "LABNE PEYNİR",
+    "keywords": ["labne peynir", "labne"],
+    "excludes": []
+  },
+  {
+    "category": "HAŞLANMIŞ YUMURTA",
+    "keywords": ["haşlanmış yumurta", "haslanmis yumurta", "katı yumurta", "rafadan yumurta"],
+    "excludes": []
+  },
+  {
+    "category": "MENEMEN",
+    "keywords": ["menemen", "kaşarlı menemen", "sucuklu menemen"],
+    "excludes": []
+  },
+  {
+    "category": "OMLET",
+    "keywords": ["omlet", "kaşarlı omlet", "peynirli omlet", "sebzeli omlet", "patatesli omlet", "mantarlı omlet"],
+    "excludes": []
+  },
+  {
+    "category": "SİMİT",
+    "keywords": ["simit", "susamlı simit", "gevrek"],
+    "excludes": ["kandil simidi"]
+  },
+  {
+    "category": "POĞAÇA",
+    "keywords": ["poğaça", "pogaca", "peynirli poğaça", "kaşarlı poğaça", "zeytinli poğaça", "patatesli poğaça", "kıymalı poğaça", "sade poğaça", "sakallı poğaça"],
+    "excludes": []
+  },
+  {
+    "category": "AÇMA",
+    "keywords": ["açma", "acma", "sade açma", "zeytinli açma", "çikolatalı açma", "kaşarlı açma"],
+    "excludes": []
+  },
+  {
+    "category": "PİŞİ",
+    "keywords": ["pişi", "pisi", "peynirli pişi", "kızarmış hamur"],
+    "excludes": []
+  },
+  {
+    "category": "KREP/PANKEK",
+    "keywords": ["krep", "pankek", "pancake", "akıtma"],
+    "excludes": []
+  },
+  {
+    "category": "KAŞARLI TOST",
+    "keywords": ["kaşarlı tost", "kasarli tost", "sade tost", "peynirli tost"],
+    "excludes": ["sucuklu", "karışık", "karisik"]
+  },
+  {
+    "category": "DANA ETLİ SUCUKLU TOST",
+    "keywords": ["dana sucuklu tost", "dana etli sucuklu tost", "sucuklu tost"],
+    "excludes": ["kaşarlı", "kasarli", "karışık", "karisik", "beyaz etli"]
+  },
+  {
+    "category": "BEYAZ ETLİ SUCUKLU TOST",
+    "keywords": ["beyaz etli sucuklu tost", "tavuk sucuklu tost", "piliç sucuklu tost"],
+    "excludes": ["kaşarlı", "kasarli", "karışık", "karisik"]
+  },
+  {
+    "category": "DANA ETLİ KAŞARLI KARIŞIK TOST",
+    "keywords": ["karışık tost", "karisik tost", "dana etli karışık tost", "sucuklu kaşarlı tost", "kaşarlı sucuklu tost"],
+    "excludes": ["beyaz etli"]
+  },
+  {
+    "category": "BEYAZ ETLİ KAŞARLI KARIŞIK TOST",
+    "keywords": ["beyaz etli karışık tost", "beyaz etli kaşarlı karışık tost", "tavuk sucuklu kaşarlı tost"],
+    "excludes": []
+  },
+  {
+    "category": "KAŞARLI SOĞUK SANDVİÇ",
+    "keywords": ["kaşarlı soğuk sandviç", "kasarli soguk sandvic", "peynirli sandviç", "soğuk sandviç"],
+    "excludes": ["salamlı", "salamli", "tavuk", "köfte"]
+  },
+  {
+    "category": "KAŞARLI SALAMLI SOĞUK SANDVİÇ",
+    "keywords": ["kaşarlı salamlı soğuk sandviç", "salamlı sandviç", "salamlı kaşarlı sandviç"],
+    "excludes": []
+  },
+  {
+    "category": "EKMEK ARASI IZGARA TAVUK",
+    "keywords": ["ekmek arası tavuk", "ekmek arası ızgara tavuk", "sandviç tavuk"],
+    "excludes": []
+  },
+  {
+    "category": "EKMEK ARASI KÖFTE",
+    "keywords": ["ekmek arası köfte", "ekmek arasi kofte", "sandviç köfte"],
+    "excludes": []
+  },
+  {
+    "category": "PATSO",
+    "keywords": ["patso", "ekmek arası patates"],
+    "excludes": []
+  },
+  {
+    "category": "HAMBURGER (BÜYÜK BOY)",
+    "keywords": ["büyük boy hamburger", "double burger", "büyük hamburger"],
+    "excludes": []
+  },
+  {
+    "category": "HAMBURGER (ORTA BOY)",
+    "keywords": ["hamburger", "burger", "cheeseburger", "köfte burger"],
+    "excludes": ["büyük boy", "double"]
+  },
+  {
+    "category": "KARIŞIK PİZZA-TEPSİ KUMPİR",
+    "keywords": ["karışık pizza", "karisik pizza", "tepsi kumpir", "kumpir", "dilim pizza", "pizza"],
+    "excludes": []
+  },
+  {
+    "category": "KUMRU",
+    "keywords": ["kumru", "çeşme kumru", "izmir kumru"],
+    "excludes": []
+  },
+  {
+    "category": "SOSİS KOKTEYL",
+    "keywords": ["sosis kokteyl", "salçalı sosis", "kızartma sosis", "haşlama sosis"],
+    "excludes": ["patates"]
+  },
+  {
+    "category": "SOSİSLİ PATATES KIZARTMASI",
+    "keywords": ["sosisli patates", "sosisli patates kızartması"],
+    "excludes": []
+  },
+  {
+    "category": "PATATES HAŞLAMA",
+    "keywords": ["patates haşlama", "patates haslama", "haşlanmış patates"],
+    "excludes": []
+  },
+  {
+    "category": "PATATES KROKET",
+    "keywords": ["patates kroket", "kroket"],
+    "excludes": []
+  },
+  {
+    "category": "SOĞAN HALKASI",
+    "keywords": ["soğan halkası", "sogan halkasi"],
+    "excludes": []
+  },
+  {
+    "category": "GÖZLEME ÇEŞİTLERİ",
+    "keywords": ["gözleme", "gozleme", "peynirli gözleme", "patatesli gözleme", "ıspanaklı gözleme", "kıymalı gözleme", "kaşarlı gözleme"],
+    "excludes": []
+  },
+  {
+    "category": "YUMURTALI EKMEK",
+    "keywords": ["yumurtalı ekmek", "yumurtali ekmek", "fransız tostu"],
+    "excludes": []
+  },
+  {
+    "category": "SAHANDA ÇİFT YUMURTA",
+    "keywords": ["sahanda çift yumurta", "çift yumurta", "sahanda 2 yumurta"],
+    "excludes": ["sucuklu", "kaşarlı"]
+  },
+  {
+    "category": "SAHANDA TEK YUMURTA",
+    "keywords": ["sahanda tek yumurta", "sahanda yumurta", "göz yumurta"],
+    "excludes": ["çift", "2 yumurta", "sucuklu", "kaşarlı"]
+  },
+  {
+    "category": "DANA ETLİ SUCUKLU ÇİFT YUMURTA",
+    "keywords": ["sucuklu çift yumurta", "dana sucuklu çift yumurta"],
+    "excludes": []
+  },
+  {
+    "category": "DANA ETLİ SUCUKLU TEK YUMURTA",
+    "keywords": ["sucuklu tek yumurta", "sucuklu yumurta", "dana sucuklu yumurta"],
+    "excludes": ["çift", "2 yumurta"]
+  },
+  {
+    "category": "KAŞARLI ÇİFT YUMURTA",
+    "keywords": ["kaşarlı çift yumurta", "peynirli çift yumurta"],
+    "excludes": []
+  },
+  {
+    "category": "KAŞARLI TEK YUMURTA",
+    "keywords": ["kaşarlı tek yumurta", "kaşarlı yumurta", "peynirli yumurta"],
+    "excludes": ["çift", "2 yumurta"]
+  },
+  {
+    "category": "KEK",
+    "keywords": ["kek", "kakaolu kek", "havuçlu kek", "ıslak kek", "meyveli kek", "mozaik pasta"],
+    "excludes": ["tuzlu", "kahvaltı keki"]
+  },
+  {
+    "category": "KAHVALTI KEKİ (TUZLU)",
+    "keywords": ["kahvaltı keki", "tuzlu kek", "peynirli kek", "sebzeli kek"],
+    "excludes": []
+  },
+  {
+    "category": "KAHVALTILIK GEVREK",
+    "keywords": ["kahvaltılık gevrek", "mısır gevreği", "yulaf ezmesi", "granola", "musli", "müsli", "corn flakes"],
+    "excludes": []
+  },
+  {
+    "category": "EKMEK",
+    "keywords": ["ekmek", "çeyrek ekmek", "somun ekmek", "tam buğday ekmeği", "çavdar ekmeği", "kepekli ekmek"],
+    "excludes": ["ekmek arası", "yumurtalı ekmek", "tost"]
+  }
+]

@@ -151,7 +151,9 @@ impl MenuService {
 
             let dish_name_for_pricing = alias.dish_id.and_then(|did| master_map.get(&did)).map(|d| d.name.as_str()).unwrap_or(alias.name.as_str());
 
-            let price_info = crate::services::pricing::get_pricing_info(
+            let price_info = crate::services::pricing::get_pricing_info_for_city(
+                &city.slug,
+                Some(menu.serve_date),
                 meal_type_str,
                 dish_category.as_deref(),
                 dish_name_for_pricing
@@ -355,7 +357,9 @@ impl MenuService {
 
                     let dish_name_for_pricing = dish_opt.as_ref().map(|d| d.name.as_str()).unwrap_or(alias.name.as_str());
 
-                    let price_info = crate::services::pricing::get_pricing_info(
+                    let price_info = crate::services::pricing::get_pricing_info_for_city(
+                        &city.slug,
+                        Some(date),
                         meal_type_str,
                         dish_category.as_deref(),
                         dish_name_for_pricing
@@ -608,7 +612,9 @@ impl MenuService {
 
                         let dish_name_for_pricing = dish_opt.as_ref().map(|d| d.name.as_str()).unwrap_or(alias.name.as_str());
 
-                        let price_info = crate::services::pricing::get_pricing_info(
+                        let price_info = crate::services::pricing::get_pricing_info_for_city(
+                            &city.slug,
+                            Some(menu.serve_date),
                             meal_type_str,
                             dish_category.as_deref(),
                             dish_name_for_pricing
