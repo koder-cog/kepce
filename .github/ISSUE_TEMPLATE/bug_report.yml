@@ -1,4 +1,4 @@
-name: 🐛 Hata Bildirimi (Bug Report)
+name: Hata Bildirimi (Bug Report)
 description: Kepçe sisteminde karşılaştığınız bir hatayı veya menü tutarsızlığını bildirin
 labels: ["bug", "triage"]
 body:

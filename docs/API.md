@@ -4,7 +4,7 @@ Kepçe REST API, `https://kepce.org/api/v1` taban URL'si üzerinden hizmet verir
 
 ---
 
-## 🍽️ Menü Endpoint'leri
+## Menü Endpoint'leri
 
 ### 1. Günün Menüsü
 ```http
@@ -41,7 +41,7 @@ Content-Type: application/json
 
 ---
 
-## 🏙️ Şehir Endpoint'leri
+## Şehir Endpoint'leri
 
 ### Tüm Şehirleri Listele
 ```http
@@ -51,7 +51,7 @@ GET /api/v1/public/cities
 
 ---
 
-## 💬 Yorumlar
+## Yorumlar
 
 ### Menü Yorumlarını Getir
 ```http
@@ -72,7 +72,7 @@ Content-Type: application/json
 
 ---
 
-## 📊 İstatistikler & Şeffaflık
+## İstatistikler ve Şeffaflık
 
 ### Genel Platform Metrikleri
 ```http

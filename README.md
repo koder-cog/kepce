@@ -10,24 +10,24 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağı
 
 ---
 
-## ⚖️ Yasal Sorumluluk Reddi (Legal Disclaimer)
+## Yasal Sorumluluk Reddi (Legal Disclaimer)
 
 > **Önemli Not:** Kepçe, Gençlik ve Spor Bakanlığı (GSB) veya Kredi ve Yurtlar Kurumu (KYK) ile doğrudan veya dolaylı hiçbir kurumsal bağı bulunmayan, kâr amacı gütmeyen, bağımsız bir **açık kaynak topluluk projesidir**. Menü, gramaj ve fiyat verileri; kamusal yurt panoları, resmi duyurular ve açık kaynaklardan öğrencileri bilgilendirme ve şeffaflık amacıyla derlenmektedir.
 
 ---
 
-## 🌟 Öne Çıkan Özellikler
+## Öne Çıkan Özellikler
 
 * **Resmi Fiyat ve Porsiyon Motoru:** Bakanlık onaylı porsiyon gramajları ve öğün bazlı fiyatlandırma kuralları ile otomatik eşleştirme.
 * **Akıllı Alternatif Yönetimi:** Seçenekli yemekleri (`/` veya `VEYA`) bağımsız porsiyon ve kalori değerleriyle ayrıştırma.
-* **Al-Götür & Sahur Paketleri:** Standart tabldot haricindeki paket ve kumanya menülerini hiyerarşik paket yapısıyla sunma.
+* **Al-Götür ve Sahur Paketleri:** Standart tabldot haricindeki paket ve kumanya menülerini hiyerarşik paket yapısıyla sunma.
 * **Çölyak ve Diyet Menüleri:** Glütensiz beslenen öğrenciler için ayrı onay ve menü akışı.
 * **Kriptografik Veri Bütünlüğü:** Her menü kaydı SHA-256 hash zinciriyle doğrulanarak geçmişe dönük tahrifata karşı korunur.
-* **Dönem & Şehir İzolasyonu:** Şehir bazlı fiyatlandırma ve tatil/nöbetçi yurt dönemlerinde (Temmuz & Ağustos) dinamik kurallar.
+* **Dönem ve Şehir İzolasyonu:** Şehir bazlı fiyatlandırma ve tatil/nöbetçi yurt dönemlerinde (Temmuz ve Ağustos) dinamik kurallar.
 
 ---
 
-## 📱 Ekran Görüntüleri
+## Ekran Görüntüleri
 
 <div align="center">
 <table width="100%">
@@ -44,17 +44,17 @@ Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağı
 
 ---
 
-## 📚 Dokümantasyon
+## Dokümantasyon
 
-* 🏛️ [Sistem Mimarisi ve Veri Akışı](docs/ARCHITECTURE.md)
-* 📡 [REST API Referansı](docs/API.md)
-* 🤝 [Katkıda Bulunma Rehberi](CONTRIBUTING.md)
-* 🛡️ [Güvenlik Politikası](SECURITY.md)
-* 📜 [Topluluk Kuralları](CODE_OF_CONDUCT.md)
+* [Sistem Mimarisi ve Veri Akışı](docs/ARCHITECTURE.md)
+* [REST API Referansı](docs/API.md)
+* [Katkıda Bulunma Rehberi](CONTRIBUTING.md)
+* [Güvenlik Politikası](SECURITY.md)
+* [Topluluk Kuralları](CODE_OF_CONDUCT.md)
 
 ---
 
-## 🛠️ Kurulum ve Çalıştırma
+## Kurulum ve Çalıştırma
 
 Gereksinimler: Rust `1.80+` (cargo), Node.js `20+` ve Docker / Podman.  
 *Windows ortamında betikleri çalıştırmak için WSL2 önerilir.*
@@ -94,13 +94,13 @@ docker compose logs -f
 
 ---
 
-## 🤝 Katkıda Bulunma
+## Katkıda Bulunma
 
 Kepçe, topluluk odaklı bir projedir. Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya [Pull Request](CONTRIBUTING.md) gönderebilirsiniz.
 
 ---
 
-## 📄 Lisans & Telif Hakkı
+## Lisans ve Telif Hakkı
 
 Telif Hakkı (C) 2026 Kepçe Katkıda Bulunanları.
 

@@ -4,7 +4,7 @@ Bu belge, Kepçe platformunun servis ayrımını, veri modellerini, güvenlik ka
 
 ---
 
-## 🏛️ Üst Düzey Mimari (High-Level Overview)
+## Üst Düzey Mimari (High-Level Overview)
 
 ```mermaid
 graph TD
@@ -21,7 +21,7 @@ graph TD
 
 ---
 
-## 🧩 Servisler ve Görev Dağılımı
+## Servisler ve Görev Dağılımı
 
 1. **`api` (Rust / Axum):**
    - Yüksek performanslı REST API servisi
@@ -49,7 +49,7 @@ graph TD
 
 ---
 
-## 🔒 Güvenlik ve Veri Bütünlüğü Prensipleri
+## Güvenlik ve Veri Bütünlüğü Prensipleri
 
 * **Kriptografik Zincir:** Onaylanan her menü bir önceki menünün hash değerini referans alarak SHA-256 hash zincirine eklenir. Geçmişe dönük veri tahrifatı anında tespit edilir.
 * **Kaynak Önceliği (Source Priority):** Yönetici (`kepce-admin`: 10) ve kullanıcı (`kepce-kullanici`: 8) onaylı menüleri, harici ham verilerin (`kykyemek`: 4) önüne geçer.

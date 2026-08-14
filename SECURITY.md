@@ -8,8 +8,8 @@ Aşağıdaki tabloda güvenlik güncellemeleri alan sürümler listelenmiştir:
 
 | Sürüm | Destek Durumu |
 | :--- | :--- |
-| `v0.1.x` (main) | :white_check_mark: Destekleniyor |
-| `< 0.1.0` | :x: Desteklenmiyor |
+| `v0.1.x` (main) | Destekleniyor |
+| `< 0.1.0` | Desteklenmiyor |
 
 ---
 

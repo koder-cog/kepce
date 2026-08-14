@@ -4,7 +4,7 @@ Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık 
 
 ---
 
-## 🛠️ Geliştirme Ortamı Kurulumu
+## Geliştirme Ortamı Kurulumu
 
 ### Gereksinimler
 * **Rust:** `1.80+` (Cargo, Clippy, Rustfmt)
@@ -29,14 +29,14 @@ Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık 
 
 ---
 
-## 📐 Kod Standartları ve Prensipleri
+## Kod Standartları ve Prensipleri
 
-### 1. Rust (Backend & Worker)
+### 1. Rust (Backend ve Worker)
 * Kodlama standartları için `cargo fmt --all` ve `cargo clippy --workspace --all-targets` kullanılmalıdır.
 * Güvenlik açıklarını ve panikleri önlemek adına production kodlarında kontrolsüz `unwrap()` yerine uygun `Result` / `Option` eşlemeleri (`?` operatörü) tercih edilmelidir.
 * Tüm iş mantığı ve kritik ayrıştırıcılar için birim testleri (`cargo test --workspace`) yazılmalıdır.
 
-### 2. Frontend (SvelteKit & Vanilla CSS)
+### 2. Frontend (SvelteKit ve Vanilla CSS)
 * Tasarım ve mimari kuralları için projenin tasarım rehberine sadık kalınmalıdır.
 * HTML elementlerinde inline statik `style="..."` tanımları kullanılmaz; CSS sınıfları ve CSS custom property pattern'i (`style="--var-name: {value}"`) kullanılır.
 * Sayfa geçişleri SPA mimarisini korumak adına SvelteKit router üzerinden yürütülür.
@@ -44,7 +44,7 @@ Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık 
 
 ---
 
-## 🔄 Katkı ve PR (Pull Request) Süreci
+## Katkı ve PR (Pull Request) Süreci
 
 1. Değişikliğiniz için anlamlı bir dal (branch) açın:
    ```bash
@@ -62,6 +62,6 @@ Kepçe projesine katkıda bulunmak istediğiniz için teşekkür ederiz! Açık 
 
 ---
 
-## ⚖️ Yasal Uyarı ve Lisans Taahhüdü
+## Yasal Uyarı ve Lisans Taahhüdü
 
 Gönderdiğiniz tüm katkılar projenin **GNU Affero General Public License v3.0 (AGPLv3)** lisansı altında lisanslanacaktır. PR göndererek kodunuzun bu şartlar altında dağıtılmasını kabul etmiş sayılırsınız.
