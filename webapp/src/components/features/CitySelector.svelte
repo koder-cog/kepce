@@ -1,7 +1,11 @@
 <script>
     import { globalState, authActions } from "../../state.svelte.js";
 
-    import { detectCitySilent, detectCityPrecise, detectCityIP } from "../../utils/geo.js";
+    import {
+        detectCitySilent,
+        detectCityPrecise,
+        detectCityIP,
+    } from "../../utils/geo.js";
     import { showToast } from "../../components/ui/toast.js";
     import Dropdown from "./Dropdown.svelte";
     import { createModal } from "./modal.js";
@@ -90,29 +94,37 @@
         }
 
         // Bulunamazsa direkt tarayıcı izni istemek yerine önce uyarı (toast) ile sor
-        showToast("Otomatik konum bulunamadı. Kesin tespit için tarayıcı izni gerekiyor.", {
-            timeout: 8000,
-            action: {
-                text: "İzin Ver",
-                callback: async () => {
-                    const detected = await detectCityPrecise(slugs);
-                    if (detected) {
-                        commit(detected);
-                        if (!localOnly) setCurrentCity(detected);
-                        showToast("Konumunuz güncellendi.", { timeout: 3000 });
-                    } else {
-                        showToast("Konum izni verilmedi veya şehir bulunamadı.", { type: "error" });
-                    }
-                }
-            }
-        });
+        showToast(
+            "Otomatik konum bulunamadı. Kesin tespit için tarayıcı izni gerekiyor.",
+            {
+                timeout: 8000,
+                action: {
+                    text: "İzin Ver",
+                    callback: async () => {
+                        const detected = await detectCityPrecise(slugs);
+                        if (detected) {
+                            commit(detected);
+                            if (!localOnly) setCurrentCity(detected);
+                            showToast("Konumunuz güncellendi.", {
+                                timeout: 3000,
+                            });
+                        } else {
+                            showToast(
+                                "Konum izni verilmedi veya şehir bulunamadı.",
+                                { type: "error" },
+                            );
+                        }
+                    },
+                },
+            },
+        );
     }
 
     function handleSpecialClick() {
         createModal({
             title: "Şehrinizi göremiyor musunuz?",
             contentHtml:
-                '<p>"Bizim şehir niye yok" diye dertlenmeden önce o ayki menüyü <a href="mailto:menugonder@kepce.org">menugonder@kepce.org</a> adresine ya da direkt <a href="/menu-gonder">şuradan</a> gönderiniz. Eğer menü yoksa bayinizden ısrarla isteyiniz..</p>',
+                '<p>"Bizim şehir niye yok" diye dertlenmeden önce o ayki menüyü <a href="/menu-gonder">şuradan</a> gönderiniz. Eğer menü yoksa bayinizden ısrarla isteyiniz.</p>',
             buttons: [{ label: "Anladım", variant: "primary" }],
         });
     }
