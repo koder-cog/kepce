@@ -498,5 +498,40 @@
     "category": "EKMEK",
     "keywords": ["ekmek", "çeyrek ekmek", "somun ekmek", "tam buğday ekmeği", "çavdar ekmeği", "kepekli ekmek"],
     "excludes": ["ekmek arası", "yumurtalı ekmek", "tost"]
+  },
+  {
+    "category": "KUŞBAŞILI VEYA SUCUKLU PİDE",
+    "keywords": ["kuşbaşılı pide", "kusbasili pide", "sucuklu pide", "kuşbaşı pide", "sucuk pide"],
+    "excludes": []
+  },
+  {
+    "category": "KIYMALI PİDE",
+    "keywords": ["kıymalı pide", "kiymali pide", "kıyma pide"],
+    "excludes": []
+  },
+  {
+    "category": "KAŞARLI PİDE",
+    "keywords": ["kaşarlı pide", "kasarli pide", "kaşar pide"],
+    "excludes": []
+  },
+  {
+    "category": "TAVUKLU PİDE",
+    "keywords": ["tavuklu pide", "tavuk pide"],
+    "excludes": []
+  },
+  {
+    "category": "KARIŞIK PİDE",
+    "keywords": ["karışık pide", "karisik pide"],
+    "excludes": []
+  },
+  {
+    "category": "YUMURTALI-BEYAZ PEYNİRLİ PİDE",
+    "keywords": ["peynirli pide", "yumurtalı pide", "yumurtali pide", "beyaz peynirli pide"],
+    "excludes": []
+  },
+  {
+    "category": "LAHMACUN",
+    "keywords": ["lahmacun", "fındık lahmacun"],
+    "excludes": []
   }
 ]

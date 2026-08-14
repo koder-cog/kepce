@@ -40,6 +40,15 @@ pub fn normalize_turkish(s: &str) -> String {
         .to_string()
 }
 
+fn matches_keyword(text: &str, keyword: &str) -> bool {
+    if keyword.chars().count() <= 2 {
+        text.split(|c: char| !c.is_alphanumeric())
+            .any(|w| w == keyword)
+    } else {
+        text.contains(keyword)
+    }
+}
+
 /// Verilen yemek adını analiz ederek bakanlığın resmi kategori adını döndürür.
 pub fn categorize_dish(dish_name: &str) -> Option<String> {
     let normalized = normalize_turkish(dish_name);
@@ -53,7 +62,7 @@ pub fn categorize_dish(dish_name: &str) -> Option<String> {
         // Excludes kontrolü: Eğer hariç tutulan kelimelerden biri varsa bu kuralı atla
         let excluded = rule.excludes.iter().any(|exc| {
             let exc_norm = normalize_turkish(exc);
-            !exc_norm.is_empty() && normalized.contains(&exc_norm)
+            !exc_norm.is_empty() && matches_keyword(&normalized, &exc_norm)
         });
 
         if excluded {
@@ -63,7 +72,7 @@ pub fn categorize_dish(dish_name: &str) -> Option<String> {
         // Keywords kontrolü: Eğer anahtar kelimelerden biri geçiyorsa eşleşti
         let matched = rule.keywords.iter().any(|kw| {
             let kw_norm = normalize_turkish(kw);
-            !kw_norm.is_empty() && normalized.contains(&kw_norm)
+            !kw_norm.is_empty() && matches_keyword(&normalized, &kw_norm)
         });
 
         if matched {
