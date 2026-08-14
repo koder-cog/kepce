@@ -21,6 +21,9 @@ const config = {
 			handleUnseenRoutes: 'ignore'
 		},
 		appDir: 'internal',
+		paths: {
+			relative: false
+		},
 		alias: {
 			'@': './src'
 		}

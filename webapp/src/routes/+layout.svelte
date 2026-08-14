@@ -137,13 +137,6 @@
 
 		await authActions.refreshUser();
 
-		if ("serviceWorker" in navigator) {
-			navigator.serviceWorker
-				.register("/service-worker.js")
-				.catch(function (err) {
-					console.warn("Service Worker kaydı yapılamadı:", err);
-				});
-		}
 	});
 </script>
 
