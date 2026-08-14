@@ -115,7 +115,7 @@ pub async fn ingest_backup_menus(db: &DatabaseConnection, base_dir: &str) -> Res
                     city_id,
                     date,
                     meal_type.clone(),
-                    "kepce-admin".to_string(), // Keep as admin since it's a manual backup restore
+                    "kykyemek".to_string(),
                     None,
                     dishes,
                     vec![],
