@@ -1,0 +1,43 @@
+name: 🐛 Hata Bildirimi (Bug Report)
+description: Kepçe sisteminde karşılaştığınız bir hatayı veya menü tutarsızlığını bildirin
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Hata bildirdiğiniz için teşekkürler! Lütfen sorunu en kısa sürede çözebilmemiz için detayları doldurunuz.
+  - type: input
+    id: city
+    attributes:
+      label: İlgili Şehir / Yurt
+      description: Hatanın gerçekleştiği şehir veya yurt (örn: İstanbul, Ankara, İzmir)
+      placeholder: İstanbul
+    validations:
+      required: false
+  - type: textarea
+    id: description
+    attributes:
+      label: Hata Açıklaması
+      description: Karşılaştığınız hatanın net ve kısa bir özeti
+      placeholder: Hatanın ne olduğunu detaylandırın...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Yeniden Üretme Adımları
+      description: Hatayı yeniden oluşturmak için izlenen adımlar
+      placeholder: |
+        1. '...' sayfasına gidin
+        2. '...' butonuna tıklayın
+        3. '...' hatasını görün
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Tarayıcı / Cihaz / İşletim Sistemi
+      description: Hatanın görüldüğü ortam (örn: Chrome 127 / Android, Safari / iOS, Firefox / Linux)
+      placeholder: Chrome 127 / Android 14
+    validations:
+      required: false

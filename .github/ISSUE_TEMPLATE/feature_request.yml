@@ -1,0 +1,31 @@
+name: 💡 Özellik / İyileştirme Önerisi (Feature Request)
+description: Kepçe projesine yeni bir özellik, analiz veya arayüz iyileştirmesi önerin
+labels: ["enhancement", "proposal"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Yeni bir fikir paylaştığınız için teşekkürler! Topluluk odaklı geliştirmeler için önerileriniz bizim için çok kıymetli.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Çözülmek İstenen Problem / İhtiyaç
+      description: Bu öneri hangi sorunu çözüyor veya kullanıcı deneyimini nasıl iyileştiriyor?
+      placeholder: Bir kullanıcı olarak ... yapmak istiyorum çünkü ...
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Önerilen Çözüm
+      description: Aklınızdaki çözümün veya özelliğin detaylı açıklaması
+      placeholder: Sistemde şu şekilde bir özellik eklenirse ...
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Düşünülen Alternatifler
+      description: Dikkate aldığınız alternatif yaklaşımlar var mı?
+    validations:
+      required: false

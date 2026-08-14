@@ -39,13 +39,19 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Initialize Database Schema
+      - name: Initialize Database Schema & Migrations
         run: |
-          PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f migrations/schema.sql
+          for f in $(ls db/migrations/*.sql | sort); do
+            echo "Applying migration: $f"
+            PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f "$f"
+          done
 
       - name: Seed Database
         run: |
-          PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f migrations/migration.sql
+          for f in $(ls db/seeds/dev/*.sql | sort); do
+            echo "Applying dev seed: $f"
+            PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f "$f"
+          done
 
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable

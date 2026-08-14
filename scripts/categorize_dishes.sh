@@ -12,8 +12,8 @@ if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs -0 -d '\n' 2>/dev/null || grep -v '^#' .env | xargs)
 fi
 
-DEPLOY_HOST="${KEPCE_DEPLOY_HOST:-ubuntu@130.110.247.87}"
-DEPLOY_KEY="${KEPCE_DEPLOY_KEY:-/home/omer/.ssh/kepce-ampere.key}"
+DEPLOY_HOST="${KEPCE_DEPLOY_HOST:-}"
+DEPLOY_KEY="${KEPCE_DEPLOY_KEY:-$HOME/.ssh/id_rsa}"
 
 echo "================================================================="
 echo " Kepçe - Yemekleri Otomatik Kategorize Etme"
