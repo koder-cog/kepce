@@ -362,7 +362,7 @@ case "$COMMAND" in
         show_logs "$TARGET"
         ;;
     build-arm64)
-        echo -e "${BLUE}Yerel 16 çekirdek ile Podman üzerinden ARM64 (aarch64) derlemesi yapılıyor...${NC}"
+        echo -e "${BLUE}Podman üzerinden yerel ARM64 (aarch64) derlemesi yapılıyor...${NC}"
         podman run --rm -v "$(pwd)":/app -v "$HOME/.cargo/registry":/usr/local/cargo/registry -w /app rust:1-bookworm bash -c "apt-get update && apt-get install -y pkg-config libssl-dev && cargo build --release -p api -p worker && mkdir -p target/aarch64-unknown-linux-gnu/release && cp target/release/api target/aarch64-unknown-linux-gnu/release/api && cp target/release/worker target/aarch64-unknown-linux-gnu/release/worker"
         echo -e "${GREEN}ARM64 derlemesi tamamlandı: target/aarch64-unknown-linux-gnu/release/{api,worker}${NC}"
         ;;
