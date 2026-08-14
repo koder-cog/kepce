@@ -1,0 +1,232 @@
+{
+  "city": "istanbul",
+  "meal_type": "dinner",
+  "valid_from": "2026-02-19",
+  "valid_to": "2026-03-19",
+  "packages": [
+    {
+      "id": 1,
+      "title": "Tavuk Burger",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Tavuk Burger", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Karışık Salata", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Tavuk Tantuni Dürüm",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Tavuk Tantuni Dürüm", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Karışık Salata", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Tavuklu Pilav",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Tavuklu Pilav", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Karışık Salata", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Ekmek Arası Köfte",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ekmek Arası Köfte+Patates Kızartması", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Karışık Salata", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Et Tantuni Dürüm",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Et Tantuni Dürüm", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Karışık Salata", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Pilav Üstü Kavurma",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Pilav Üstü Kavurma", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Karışık Salata", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Köfteli Akdeniz Salata",
+      "items": [
+        {
+          "alternatives": [
+            { "name": "Günün Çorbası", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Köfteli Akdeniz Salata(Akdeniz Yeşillikleri, Mısır, Havuç, Haşlanmış Nohut, Turp, Çeri Domates)", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Soslu Makarna", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Ayran", "gramaj": null }
+          ]
+        },
+        {
+          "alternatives": [
+            { "name": "Günün Tatlısı", "gramaj": null },
+            { "name": "Meyve", "gramaj": null }
+          ]
+        }
+      ]
+    }
+  ]
+}

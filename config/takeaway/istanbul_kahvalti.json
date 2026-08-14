@@ -1,0 +1,240 @@
+{
+  "city": "istanbul",
+  "meal_type": "breakfast",
+  "valid_from": "2025-09-01",
+  "valid_to": "2026-06-30",
+  "packages": [
+    {
+      "id": 1,
+      "title": "Soğuk Sandviç",
+      "items": [
+        {
+          "alternatives": [
+            {
+              "name": "Kaşarlı Soğuk Sandviç",
+              "gramaj": "1 Adet"
+            },
+            {
+              "name": "Kaşarlı Salamlı Soğuk Sandviç",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Süt",
+              "gramaj": "200 ml"
+            },
+            {
+              "name": "Meyve Suyu",
+              "gramaj": "200 ml"
+            },
+            {
+              "name": "Ayran",
+              "gramaj": "270-330 ml"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Meyve",
+              "gramaj": "150-200 g"
+            },
+            {
+              "name": "Kek",
+              "gramaj": "En az 35 g"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Çay",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Su",
+              "gramaj": "500 ml"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Gözleme",
+      "items": [
+        {
+          "alternatives": [
+            {
+              "name": "Gözleme Çeşidi",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Süt",
+              "gramaj": "200 ml"
+            },
+            {
+              "name": "Meyve Suyu",
+              "gramaj": "200 ml"
+            },
+            {
+              "name": "Ayran",
+              "gramaj": "270-330 ml"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Meyve",
+              "gramaj": "150-200 g"
+            },
+            {
+              "name": "Kek",
+              "gramaj": "En az 35 g"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Çay",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Su",
+              "gramaj": "500 ml"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Simit / Poğaça / Açma",
+      "items": [
+        {
+          "alternatives": [
+            {
+              "name": "Simit/Poğaça/Açma",
+              "gramaj": "2 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Süt",
+              "gramaj": "200 ml"
+            },
+            {
+              "name": "Meyve Suyu",
+              "gramaj": "200 ml"
+            },
+            {
+              "name": "Ayran",
+              "gramaj": "270-330 ml"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Krem/Labne Peynir",
+              "gramaj": "20 g"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Meyve",
+              "gramaj": "150-200 g"
+            },
+            {
+              "name": "Kek",
+              "gramaj": "En az 35 g"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Çay",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Su",
+              "gramaj": "500 ml"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Çorba & Hamur İşi",
+      "items": [
+        {
+          "alternatives": [
+            {
+              "name": "Çorba",
+              "gramaj": "250 ml"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Simit/Poğaça/Açma",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Meyve",
+              "gramaj": "150-200 g"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Çay",
+              "gramaj": "1 Adet"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Su",
+              "gramaj": "500 ml"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
