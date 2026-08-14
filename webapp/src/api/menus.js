@@ -68,10 +68,10 @@ function normalizeMenuList(payload) {
 
 
 export const menusApi = {
-  getCities: () => request('/public/cities'),
-  detectCity: () => request('/public/cities/detect'),
+  getCities: () => request('/cities'),
+  detectCity: () => request('/cities/detect'),
   getTodayMenu: async (city, dietary_type = 'standard') => {
-    const data = await request(`/menus/today/${city}${buildQuery({ dietary_type })}`);
+    const data = await request(`/menus${buildQuery({ city, date: 'today', dietary_type })}`);
     return Array.isArray(data) ? data.map(normalizeMenu) : normalizeMenu(data);
   },
   getMenusByDate: async (city, date, dietary_type = 'standard') => {
