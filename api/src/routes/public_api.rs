@@ -11,8 +11,6 @@ use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
 use shared::entities::cities;
 use crate::error::AppError;
 use crate::services::menu::MenuService;
-use crate::dto::menu::MenuResponseDto;
-
 use crate::services::city::CityService;
 
 #[derive(serde::Serialize)]
@@ -31,9 +29,16 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/menus/:id", get(get_single_menu))
 }
 
+pub fn cities_router() -> Router<crate::config::AppState> {
+    Router::new()
+        .route("/", get(get_cities))
+        .route("/detect", get(detect_city))
+}
+
 async fn get_cities(
     State(db): State<sea_orm::DatabaseConnection>,
-) -> Result<Json<Vec<CityResponseDto>>, AppError> {
+    headers: HeaderMap,
+) -> Result<axum::response::Response, AppError> {
     let cities_data = CityService::get_active_cities(&db)
         .await
         .map_err(|e| {
@@ -41,7 +46,7 @@ async fn get_cities(
             AppError::Internal("Database error".to_string())
         })?;
 
-    let response = cities_data
+    let response: Vec<CityResponseDto> = cities_data
         .into_iter()
         .map(|(c, has_celiac)| CityResponseDto {
             id: c.id,
@@ -51,10 +56,8 @@ async fn get_cities(
         })
         .collect();
 
-    Ok(Json(response))
+    crate::utils::response::cached_json_response(&headers, &response, 3600)
 }
-
-
 
 use axum::extract::Query;
 
@@ -66,12 +69,13 @@ pub struct MenuQuery {
 async fn get_today_menu(
     State(db): State<sea_orm::DatabaseConnection>,
     _key: crate::extractors::api_key::ValidApiKey,
+    headers: HeaderMap,
     Path(city_id): Path<i32>,
     Query(query): Query<MenuQuery>,
-) -> Result<Json<Vec<MenuResponseDto>>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let today = Utc::now().date_naive();
     let menus = MenuService::get_daily_menus(&db, city_id, today, query.dietary_type, None).await?;
-    Ok(Json(menus))
+    crate::utils::response::cached_json_response(&headers, &menus, 300)
 }
 
 /// GET /cities/detect
@@ -115,9 +119,10 @@ pub async fn detect_city(
 async fn get_single_menu(
     State(db): State<sea_orm::DatabaseConnection>,
     _key: crate::extractors::api_key::ValidApiKey,
+    headers: HeaderMap,
     Path(id): Path<i32>,
     Query(query): Query<MenuQuery>,
-) -> Result<Json<MenuResponseDto>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let menu = MenuService::get_menu_with_items(&db, id, query.dietary_type, None).await?;
-    Ok(Json(menu))
+    crate::utils::response::cached_json_response(&headers, &menu, 300)
 }

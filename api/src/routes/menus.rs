@@ -13,7 +13,6 @@ use serde::Deserialize;
 use chrono::{NaiveDate, Utc};
 use crate::services::menu::{MenuService, MenuError};
 use crate::services::vote::{VoteService, VoteError};
-use crate::dto::menu::MenuResponseDto;
 use crate::error::AppError;
 use crate::extractors::auth::{OptionalUser, AuthenticatedUser};
 use shared::entities::sea_orm_active_enums::SentimentEnum;
@@ -55,9 +54,14 @@ impl From<VoteError> for AppError {
 async fn get_today(
     State(db): State<sea_orm::DatabaseConnection>,
     OptionalUser(user): OptionalUser,
+    headers: http::HeaderMap,
     Query(filter): Query<MenuFilterQueryDto>,
-) -> Result<Json<Vec<MenuResponseDto>>, AppError> {
-    let today = filter.date.unwrap_or_else(|| Utc::now().date_naive());
+) -> Result<axum::response::Response, AppError> {
+    let today = match filter.date.as_deref() {
+        Some("today") | None => Utc::now().date_naive(),
+        Some(s) => NaiveDate::parse_from_str(s, "%Y-%m-%d")
+            .map_err(|_| AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string()))?,
+    };
     let user_id = user.map(|u| u.id);
     let menus = MenuService::get_menus_by_filter(
         &db,
@@ -68,13 +72,13 @@ async fn get_today(
         None,
         user_id,
     ).await?;
-    Ok(Json(menus))
+    crate::utils::response::cached_json_response(&headers, &menus, 300)
 }
 
 #[derive(Deserialize)]
 pub struct MenuFilterQueryDto {
     pub city: Option<String>,
-    pub date: Option<NaiveDate>,
+    pub date: Option<String>,
     pub dietary_type: Option<String>,
     pub year: Option<i32>,
     pub month: Option<u32>,
@@ -83,31 +87,42 @@ pub struct MenuFilterQueryDto {
 async fn get_menus(
     State(db): State<sea_orm::DatabaseConnection>,
     OptionalUser(user): OptionalUser,
+    headers: http::HeaderMap,
     Query(query): Query<MenuFilterQueryDto>,
-) -> Result<Json<Vec<MenuResponseDto>>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let user_id = user.map(|u| u.id);
+    let parsed_date = match query.date.as_deref() {
+        Some("today") => Some(Utc::now().date_naive()),
+        Some(s) => match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
+            Ok(d) => Some(d),
+            Err(_) => return Err(AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string())),
+        },
+        None => None,
+    };
+
     let menus = MenuService::get_menus_by_filter(
         &db,
         query.city,
-        query.date,
+        parsed_date,
         query.dietary_type,
         query.year,
         query.month,
         user_id,
     ).await?;
-    Ok(Json(menus))
+    crate::utils::response::cached_json_response(&headers, &menus, 300)
 }
 
 async fn get_today_city(
     State(db): State<sea_orm::DatabaseConnection>,
     OptionalUser(user): OptionalUser,
+    headers: http::HeaderMap,
     Path(city_slug): Path<String>,
     Query(query): Query<MenuFilterQueryDto>,
-) -> Result<Json<Vec<MenuResponseDto>>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let today = Utc::now().date_naive();
     let user_id = user.map(|u| u.id);
     let menus = MenuService::get_menus_by_filter(&db, Some(city_slug), Some(today), query.dietary_type, None, None, user_id).await?;
-    Ok(Json(menus))
+    crate::utils::response::cached_json_response(&headers, &menus, 300)
 }
 
 #[derive(Deserialize)]
@@ -117,10 +132,11 @@ pub struct ArchiveYearsQuery {
 
 async fn get_archive_years(
     State(db): State<sea_orm::DatabaseConnection>,
+    headers: http::HeaderMap,
     Query(query): Query<ArchiveYearsQuery>,
-) -> Result<Json<Vec<i32>>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let years = MenuService::get_archive_years(&db, query.city).await?;
-    Ok(Json(years))
+    crate::utils::response::cached_json_response(&headers, &years, 3600)
 }
 
 #[derive(Deserialize)]
@@ -131,12 +147,13 @@ pub struct MenuDetailQueryDto {
 async fn get_menu(
     State(db): State<sea_orm::DatabaseConnection>,
     OptionalUser(user): OptionalUser,
+    headers: http::HeaderMap,
     Path(menu_id): Path<i32>,
     Query(query): Query<MenuDetailQueryDto>,
-) -> Result<Json<MenuResponseDto>, AppError> {
+) -> Result<axum::response::Response, AppError> {
     let user_id = user.map(|u| u.id);
     let menu = MenuService::get_menu_with_items(&db, menu_id, query.dietary_type, user_id).await?;
-    Ok(Json(menu))
+    crate::utils::response::cached_json_response(&headers, &menu, 300)
 }
 
 #[derive(Deserialize)]
@@ -153,8 +170,7 @@ async fn vote_menu(
     let sentiment = match payload.sentiment.to_lowercase().as_str() {
         "positive" => SentimentEnum::Positive,
         "negative" => SentimentEnum::Negative,
-        "neutral" => SentimentEnum::Neutral,
-        _ => return Err(AppError::BadRequest("Invalid sentiment".to_string())),
+        _ => return Err(AppError::BadRequest("Geçersiz oy türü. Yalnızca 'positive' veya 'negative' kabul edilir.".to_string())),
     };
 
     VoteService::vote_menu(&db, menu_id, user.id, sentiment).await?;

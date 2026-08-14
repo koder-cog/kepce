@@ -43,6 +43,7 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
     Router::new()
         .nest("/api/v1/auth", routes::auth::router())
         .nest("/api/v1/menus", routes::menus::router())
+        .nest("/api/v1/cities", routes::public_api::cities_router())
         .nest("/api/v1/comments", routes::comments::router())
         .nest("/api/v1/profile", routes::profile::router())
         .nest("/api/v1/moderation", routes::moderation::router())
