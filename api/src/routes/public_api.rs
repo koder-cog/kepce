@@ -35,7 +35,7 @@ pub fn cities_router() -> Router<crate::config::AppState> {
         .route("/detect", get(detect_city))
 }
 
-async fn get_cities(
+pub async fn get_cities(
     State(db): State<sea_orm::DatabaseConnection>,
     headers: HeaderMap,
 ) -> Result<axum::response::Response, AppError> {
