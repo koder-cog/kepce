@@ -35,8 +35,12 @@ pub fn cached_json_response<T: serde::Serialize>(
 
     // Check If-None-Match conditional request
     if let Some(if_none_match) = headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()) {
-        let clean_match = if_none_match.trim();
-        if clean_match == etag || clean_match == "*" {
+        let clean_match = if_none_match
+            .trim()
+            .trim_start_matches("W/")
+            .trim_matches('"')
+            .trim_end_matches("-gzip");
+        if clean_match == hex_hash || if_none_match.trim() == "*" {
             return Ok(Response::builder()
                 .status(StatusCode::NOT_MODIFIED)
                 .header(header::CACHE_CONTROL, cache_control)
