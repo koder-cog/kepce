@@ -11,11 +11,13 @@ COPY Cargo.toml Cargo.lock ./
 COPY shared/Cargo.toml ./shared/
 COPY api/Cargo.toml ./api/
 COPY worker/Cargo.toml ./worker/
+COPY moderator/Cargo.toml ./moderator/
 
 # Build skeleton project to cache build dependencies
-RUN mkdir -p shared/src api/src worker/src && \
+RUN mkdir -p shared/src api/src worker/src moderator/src && \
     echo "fn main() {}" > api/src/main.rs && \
     echo "fn main() {}" > worker/src/main.rs && \
+    echo "fn main() {}" > moderator/src/main.rs && \
     touch shared/src/lib.rs
 
 RUN cargo build --release -p api

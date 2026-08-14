@@ -138,6 +138,15 @@ pub fn get_client_ip(headers: &HeaderMap, extensions: &Extensions) -> Option<IpA
     let trust_forwarded = peer_ip.map(|ip| is_trusted_proxy(&ip)).unwrap_or(false);
 
     if trust_forwarded {
+        // 0. CF-Connecting-IP (Cloudflare gerçek istemci IP'si)
+        if let Some(cf_ip) = headers.get("cf-connecting-ip") {
+            if let Ok(cf_ip_str) = cf_ip.to_str() {
+                if let Ok(ip) = cf_ip_str.trim().parse::<IpAddr>() {
+                    return Some(ip);
+                }
+            }
+        }
+
         // 1. X-Real-IP (Reverse proxy direkt ezer)
         if let Some(xri) = headers.get("x-real-ip") {
             if let Ok(xri_str) = xri.to_str() {

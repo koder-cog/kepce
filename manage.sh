@@ -364,8 +364,12 @@ case "$COMMAND" in
     backup)
         ./scripts/backup_db.sh
         ;;
+    deploy)
+        shift
+        ./scripts/deploy.sh "$@"
+        ;;
     *)
-        echo "Usage: $0 {start|stop|restart|status|logs|backup} [api|worker|web|web-dev|web-preview|db|all]"
+        echo "Usage: $0 {start|stop|restart|status|logs|backup|deploy} [api|worker|web|web-dev|web-preview|db|all]"
         exit 1
         ;;
 esac

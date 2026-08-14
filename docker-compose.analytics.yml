@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  umami:
+    image: ghcr.io/umami-software/umami:postgresql-latest
+    container_name: kepce-umami
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER tanimli olmali}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali}@db:5432/umami
+      - DATABASE_TYPE=postgresql
+      - APP_SECRET=${KEPCE_SECRET_KEY:?KEPCE_SECRET_KEY tanimli olmali}
+    expose:
+      - "3000"
+    networks:
+      - frontend-net
+      - backend-net
+    depends_on:
+      db:
+        condition: service_healthy

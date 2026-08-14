@@ -2,13 +2,23 @@ kepce.org, www.kepce.org {
     tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
     encode zstd gzip
 
+    # 5651 Sayılı Kanun Uyumlu Erişim Logları
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 50mb
+            roll_keep 365
+            roll_keep_for 8760h
+        }
+        format json
+    }
+
     # Güvenlik Başlıkları (Security Headers)
     header {
         X-Content-Type-Options "nosniff"
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Content-Security-Policy "default-src 'self'; font-src 'self' data:; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com; frame-ancestors 'none';"
+        Content-Security-Policy "default-src 'self'; font-src 'self' data:; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
         Cross-Origin-Opener-Policy "same-origin"
     }
 
@@ -30,10 +40,33 @@ kepce.org, www.kepce.org {
         reverse_proxy webapp:8080
     }
 
-    # 3. 502 / 503 hatasında Özel Bakım Sayfası ("Kepçeleri Yıkıyoruz")
+    # 4. 502 / 503 hatasında Özel Bakım Sayfası ("Kepçeleri Yıkıyoruz")
     handle_errors {
         @maintenance expression `{err.status_code} in [502, 503]`
         rewrite @maintenance /maintenance.html
         file_server
     }
+}
+
+analitik.kepce.org {
+    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "SAMEORIGIN"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    }
+
+    log {
+        output file /var/log/caddy/analitik_access.log {
+            roll_size 50mb
+            roll_keep 365
+            roll_keep_for 8760h
+        }
+        format json
+    }
+
+    reverse_proxy umami:3000
 }

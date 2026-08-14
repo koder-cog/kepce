@@ -18,6 +18,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./static:/srv/static:ro
       - ./certs:/etc/caddy/certs:ro
+      - ./logs/caddy:/var/log/caddy
       - caddy_data:/data
       - caddy_config:/config
     networks:
