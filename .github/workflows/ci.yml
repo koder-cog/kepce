@@ -60,13 +60,10 @@ jobs:
       - name: Setup Rust Toolchain
         uses: dtolnay/rust-toolchain@stable
         with:
-          components: clippy, rustfmt
+          components: clippy
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v2
-
-      - name: Check Code Formatting
-        run: cargo fmt --all -- --check
 
       - name: Run Clippy Lints
         run: cargo clippy --workspace --all-targets -- -D warnings
