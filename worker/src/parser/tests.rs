@@ -1,4 +1,5 @@
 #[cfg(test)]
+#[allow(clippy::module_inception)]
 mod tests {
     use chrono::NaiveDate;
     use std::collections::HashMap;

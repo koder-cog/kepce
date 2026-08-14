@@ -69,19 +69,12 @@ impl ContentGuard {
         // Türkçe karakter normalizasyonu ile küçük harfe çevirme
         let mut normalized = text_trimmed.to_string();
         normalized = normalized
-            .replace('İ', "i")
-            .replace('I', "i")
-            .replace('ı', "i")
-            .replace('ş', "s")
-            .replace('Ş', "s")
-            .replace('ğ', "g")
-            .replace('Ğ', "g")
-            .replace('ü', "u")
-            .replace('Ü', "u")
-            .replace('ö', "o")
-            .replace('Ö', "o")
-            .replace('ç', "c")
-            .replace('Ç', "c");
+            .replace(['İ', 'I', 'ı'], "i")
+            .replace(['ş', 'Ş'], "s")
+            .replace(['ğ', 'Ğ'], "g")
+            .replace(['ü', 'Ü'], "u")
+            .replace(['ö', 'Ö'], "o")
+            .replace(['ç', 'Ç'], "c");
         let normalized = normalized.to_lowercase();
 
         // Engellenecek kara liste kalıpları

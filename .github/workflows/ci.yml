@@ -48,6 +48,10 @@ jobs:
 
       - name: Seed Database
         run: |
+          for f in $(ls db/seeds/prod/*.sql | sort); do
+            echo "Applying prod seed: $f"
+            PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f "$f"
+          done
           for f in $(ls db/seeds/dev/*.sql | sort); do
             echo "Applying dev seed: $f"
             PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -f "$f"
@@ -88,6 +92,9 @@ jobs:
 
   frontend-test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: webapp
 
     steps:
       - uses: actions/checkout@v4
@@ -100,21 +107,13 @@ jobs:
           cache-dependency-path: webapp/package-lock.json
 
       - name: Install Frontend Dependencies
-        run: |
-          cd webapp
-          npm ci
+        run: npm ci
 
       - name: Run Frontend Code Checks
-        run: |
-          cd webapp
-          npm run check
+        run: npm run check
 
       - name: Run Frontend Tests
-        run: |
-          cd webapp
-          npm run test
+        run: npm run test
 
       - name: Build Frontend Production Bundle
-        run: |
-          cd webapp
-          npm run build
+        run: npm run build

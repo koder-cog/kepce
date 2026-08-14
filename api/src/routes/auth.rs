@@ -818,10 +818,7 @@ async fn google_callback(
         }
     });
 
-    let state_matches = match (query.state.as_deref(), expected_state) {
-        (Some(qs), Some(es)) if !qs.is_empty() && qs == es => true,
-        _ => false,
-    };
+    let state_matches = matches!((query.state.as_deref(), expected_state), (Some(qs), Some(es)) if !qs.is_empty() && qs == es);
 
     if !state_matches {
         tracing::warn!("Google OAuth state eşleşmedi veya state çerezi eksik");

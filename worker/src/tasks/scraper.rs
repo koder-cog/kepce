@@ -20,7 +20,7 @@ async fn sleep_cancelable(ms: u64, shutdown_rx: &mut tokio::sync::watch::Receive
 pub async fn scrape_today_menus(
     db: &DatabaseConnection,
     client: &Client,
-    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+    shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<usize> {
     let active_cities = [
         "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum", 
@@ -257,6 +257,7 @@ pub async fn run_kykyemek_scraper(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn fetch_and_save(
     db: &DatabaseConnection,
     client: &Client,

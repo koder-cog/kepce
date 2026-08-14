@@ -37,6 +37,7 @@ struct TakeawayPackageConfig {
 }
 
 #[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
 struct TakeawayConfigFile {
     #[serde(default)]
     city: Option<String>,
