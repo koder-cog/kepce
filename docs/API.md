@@ -1,64 +1,94 @@
-# Kepçe REST API Referansı (API Specification)
+# Kepçe REST API Referansı
 
-Kepçe REST API, `https://kepce.org/api/v1` taban URL'si üzerinden hizmet verir.
+Kepçe REST API, `https://kepce.org/api/v1` taban adresi üzerinden hizmet verir.
 
 ---
 
-## Menü Endpoint'leri
+## Erişim ve Hız Sınırları
 
-### 1. Günün Menüsü
+API uç noktaları herkese açıktır.
+
+- Anonim Erişim: IP başına saniyede en fazla 10, dakikada en fazla 240 istek yapılabilir.
+- Geliştirici Erişimi (`X-API-Key`): Bot veya uygulama geliştirenler `/gelistirici` sayfasından aldıkları anahtarı `X-API-Key` başlığı olarak göndererek yüksek kota ile çalışabilir ve kullanım istatistiklerini panelden takip edebilir.
+
+---
+
+## Önbellekleme ve ETag Desteği
+
+Menü ve şehir listeleme yanıtları `Cache-Control` ve `ETag` başlıkları içerir:
+- `Cache-Control: public, max-age=300, s-maxage=3600, stale-while-revalidate=86400`
+- `ETag: "<sha256-hash>"`
+
+İstemciler `If-None-Match: "<etag>"` başlığı gönderdiğinde veri değişmemişse gövdesiz `304 Not Modified` yanıtı döner.
+
+---
+
+## Hata Kodları
+
+Standart HTTP durum kodları kullanılır:
+
+- `400 Bad Request`: Geçersiz parametre veya istek gövdesi.
+- `401 Unauthorized`: Yetkilendirme token'ı veya API anahtarı eksik / geçersiz.
+- `403 Forbidden`: E-posta onayı yapılmamış hesap.
+- `404 Not Found`: İstenen kayıt bulunamadı.
+- `429 Too Many Requests`: Hız sınırı aşıldı. `Retry-After` başlığında belirtilen saniye kadar beklenmelidir.
+
+---
+
+## Uç Noktalar
+
+### 1. Menü Sorgulama ve Filtreleme
 ```http
-GET /api/v1/menus/today/:city_slug
+GET /api/v1/menus?city=:city_slug&date=today
 ```
-* **Açıklama:** Belirtilen şehir için bugünün onaylanmış menülerini getirir.
-* **Örnek:** `/api/v1/menus/today/istanbul`
+- Parametreler:
+  - `city` (string, opsiyonel): Şehir kısa adı (`istanbul`, `ankara` vb.)
+  - `date` (string, opsiyonel): Tarih sorgusu (`today` veya `YYYY-MM-DD`, örn: `2026-05-15`)
+  - `dietary_type` (string, opsiyonel): Diyet filtresi (`normal`, `colyak`)
+  - `year` (int, opsiyonel): Arşiv yılı (`2026`)
+  - `month` (int, opsiyonel): Arşiv ayı (1-12)
 
-### 2. Tarih Aralığı veya Şehir Menüleri
-```http
-GET /api/v1/menus?city=:city_slug&start_date=YYYY-MM-DD&end_date=YYYY-MM-DD
-```
-* **Parametreler:**
-  * `city` (string, zorunlu): Şehir kısa adı (örn: `istanbul`, `ankara`)
-  * `start_date` (date, opsiyonel): Başlangıç tarihi
-  * `end_date` (date, opsiyonel): Bitiş tarihi
-  * `date` (date, opsiyonel): Tekil tarih sorgusu
-
-### 3. Menü Detayı
+### 2. Tekil Menü Detayı
 ```http
 GET /api/v1/menus/:menu_id
 ```
 
-### 4. Menüye Oy Verme
+### 3. Arşiv Yılları
+```http
+GET /api/v1/menus/archive/years?city=:city_slug
+```
+
+### 4. Şehir Listesi
+```http
+GET /api/v1/cities
+```
+- Aktif menüsü bulunan şehirleri (`id`, `name`, `slug`, `has_celiac`) listeler.
+
+### 5. Genel İstatistikler
+```http
+GET /api/v1/statistics/overview
+```
+- Toplam menü sayısı, şehir kapsamı ve genel oylama metrikleri.
+
+---
+
+## Kullanıcı İşlemleri (Kimlik Doğrulama Zorunlu)
+
+Oy verme ve yorum yapma işlemleri için `Authorization: Bearer <JWT_TOKEN>` başlığı veya oturum çerezi gereklidir.
+
+### Menüye Oy Verme
 ```http
 POST /api/v1/menus/:menu_id/vote
 Authorization: Bearer <JWT_TOKEN>
 Content-Type: application/json
 
 {
-  "sentiment": "positive" | "negative"
+  "sentiment": "positive"
 }
 ```
+- `sentiment`: `"positive"` (beğendim) veya `"negative"` (beğenmedim).
 
----
-
-## Şehir Endpoint'leri
-
-### Tüm Şehirleri Listele
-```http
-GET /api/v1/public/cities
-```
-* **Dönen Alanlar:** `id`, `name`, `slug`, `plate_code`, `dormitory_count`, `active_menu_count`.
-
----
-
-## Yorumlar
-
-### Menü Yorumlarını Getir
-```http
-GET /api/v1/comments?menu_id=:menu_id&page=1&limit=20
-```
-
-### Yorum Ekle
+### Yorum Ekleme
 ```http
 POST /api/v1/comments
 Authorization: Bearer <JWT_TOKEN>
@@ -66,16 +96,11 @@ Content-Type: application/json
 
 {
   "menu_id": 1050,
-  "content": "Bugünkü yemek gayet lezzetliydi."
+  "content": "Yemek yorum metni."
 }
 ```
 
----
-
-## İstatistikler ve Şeffaflık
-
-### Genel Platform Metrikleri
+### Menü Yorumlarını Okuma (Herkese Açık)
 ```http
-GET /api/v1/statistics/overview
+GET /api/v1/comments?menu_id=:menu_id&page=1&limit=20
 ```
-* Toplam menü sayısı, kapsanan şehirler, oylama dağılımları ve veri madenciliği durumları.
