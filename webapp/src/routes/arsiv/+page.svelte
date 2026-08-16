@@ -12,6 +12,7 @@
   import Dropdown from "@/components/features/Dropdown.svelte";
   import Loader from "@/components/ui/Loader.svelte";
   import EmptyState from "@/components/ui/EmptyState.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
   import { onMount } from "svelte";
 
   const WEEKDAYS = [
@@ -196,6 +197,11 @@
     }
   });
 </script>
+
+<Seo
+  title="Geçmiş Menü Arşivi - Kepçe"
+  description="Geçmiş aylara ve yıllara ait KYK yurt yemek menüleri arşivi. Şehir ve tarih bazlı yemek listesi geçmişi."
+/>
 
 <div class="content-page__header">
   <h1 class="content-page__title">Arşiv</h1>

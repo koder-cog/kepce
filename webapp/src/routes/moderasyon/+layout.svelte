@@ -7,6 +7,7 @@
   import { icon } from '@/components/ui/icons.js';
   import { slide, fade } from 'svelte/transition';
   import { backOut, sineIn } from 'svelte/easing';
+  import Seo from '@/components/ui/Seo.svelte';
 
   function dropdownAnim(node, { duration = 200, easing = sineIn }) {
     return {
@@ -107,6 +108,8 @@
 </script>
 
 <svelte:window onclick={handleBodyClick} />
+
+<Seo title="Yönetim Paneli - Kepçe" noindex={true} />
 
 {#if globalState.isModerator}
   <div class="sidebar-layout">

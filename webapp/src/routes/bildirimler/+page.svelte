@@ -17,6 +17,7 @@
   import { globalState } from '@/state.svelte.js';
   import { slide } from 'svelte/transition';
   import { getDuration } from '@/lib/dom/motion.js';
+  import Seo from '@/components/ui/Seo.svelte';
 
   let user = $derived(globalState?.user);
   let notifications = $state([]);
@@ -135,9 +136,11 @@
   }
 </script>
 
-<svelte:head>
-  <title>Bildirimler - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Bildirimler - Kepçe"
+  description="Kullanıcı bildirimleri ve güncellemeler."
+  noindex={true}
+/>
 
 <div class="notification-page">
   <div class="notification-page__header">

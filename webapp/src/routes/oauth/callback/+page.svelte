@@ -1,13 +1,10 @@
-<svelte:head>
-  <title>Giriş Yapılıyor... - Kepçe</title>
-</svelte:head>
-
 <script>
   import { goto } from '$app/navigation';
   import { globalState, authActions } from '@/state.svelte.js';
 
   import Loader from '@/components/ui/Loader.svelte';
   import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
   import { onMount } from 'svelte';
 
   let isError = $state(false);
@@ -50,6 +47,8 @@
     }
   });
 </script>
+
+<Seo title="Giriş Yapılıyor... - Kepçe" noindex={true} />
 
 {#if isError}
   <EmptyState statusCode={400}

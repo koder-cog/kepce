@@ -5,6 +5,7 @@
   import { afterNavigate } from "$app/navigation";
   import { icon } from "@/components/ui/icons.js";
   import { onDestroy, tick } from "svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let current = $state(null);
   let history = $state(null);
@@ -287,6 +288,7 @@
   </div>
 </div>
 
-<svelte:head>
-  <title>Durum - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Sistem Durumu ve Çalışma Süresi - Kepçe"
+  description="Kepçe API, web uygulaması, veri tabanı ve arka plan servislerinin anlık çalışma durumu ve geçmiş kesinti raporları."
+/>

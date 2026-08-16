@@ -8,9 +8,9 @@
 
   import { CITY_MAP } from "@/utils/turkish.js";
   import { icon } from "@/components/ui/icons.js";
-  import * as ui from "@/components/ui/forms.js";
   import EmptyState from "@/components/ui/EmptyState.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   const cityOptions = Object.entries(CITY_MAP)
     .map(([slug, name]) => ({ value: slug, label: name }))
@@ -219,13 +219,10 @@
   }
 </script>
 
-<svelte:head>
-  <title>Kayıt - Kepçe</title>
-  <meta
-    name="description"
-    content="Hesap oluşturun ve Kepçe'ye katkıda bulunun."
-  />
-</svelte:head>
+<Seo
+  title="Kayıt Ol - Kepçe"
+  description="Ücretsiz Kepçe hesabı oluşturun; yurt yemeklerini değerlendirin, yorum yapın ve menü takibi yapın."
+/>
 
 {#if user}
   <div class="empty-state-container">

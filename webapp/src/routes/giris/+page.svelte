@@ -6,6 +6,7 @@
   import { api } from "@/api/index.js";
   import { icon } from "@/components/ui/icons.js";
   import EmptyState from "@/components/ui/EmptyState.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let username = $state("");
   let password = $state("");
@@ -66,13 +67,10 @@
   }
 </script>
 
-<svelte:head>
-  <title>Giriş - Kepçe</title>
-  <meta
-    name="description"
-    content="Hesabınıza giriş yapın ve günlük menüleri kaçırmayın."
-  />
-</svelte:head>
+<Seo
+  title="Giriş Yap - Kepçe"
+  description="Kepçe hesabınıza giriş yapın; favori yemeklerinizi kaydedin, menülere yorum yapın ve bildirimleri takip edin."
+/>
 
 {#if user}
   <div class="empty-state-container">

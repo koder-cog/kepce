@@ -1,5 +1,6 @@
 <script>
   import { showToast } from "@/components/ui/toast.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   const rssUrl = `https://kepce.org/rss.xml`;
   let buttonText = $state("Aynen öyle");
@@ -14,6 +15,11 @@
     });
   }
 </script>
+
+<Seo
+  title="RSS Akışı - Kepçe"
+  description="Kepçe KYK yurt yemek menüleri RSS besleme akışı bağlantısı ve kullanımı."
+/>
 
 <div class="content-page">
   <div class="content-page__header">
@@ -33,6 +39,3 @@
   </div>
 </div>
 
-<svelte:head>
-  <title>RSS - Kepçe</title>
-</svelte:head>

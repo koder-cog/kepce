@@ -11,6 +11,7 @@
   import Modal from "@/components/ui/Modal.svelte";
   import { initCharCounter } from "@/utils/char-counter.js";
   import { sanitizeText } from "@/utils/sanitize.js";
+  import Seo from "@/components/ui/Seo.svelte";
   import { onMount } from "svelte";
 
   let user = $derived(globalState?.user);
@@ -1131,9 +1132,11 @@
 
 </script>
 
-<svelte:head>
-  <title>Geliştirici Paneli - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Geliştirici Paneli ve API Yönetimi - Kepçe"
+  description="Kepçe API anahtarları, uygulama yönetimi ve geliştirici araçları."
+  noindex={true}
+/>
 
 {#if !user}
   <div class="content-page">

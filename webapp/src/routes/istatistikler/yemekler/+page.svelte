@@ -10,6 +10,7 @@
   import { getDuration } from "@/lib/dom/motion.js";
   import Dropdown from "@/components/features/Dropdown.svelte";
   import { getCitiesData } from "@/stores/city.svelte.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   const subTabs = [
     { id: "top_rated", label: "En Beğenilenler", icon: icon("starFilled", 18) },
@@ -163,9 +164,10 @@
   ]);
 </script>
 
-<svelte:head>
-  <title>İstatistikler - Yemek - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Yemek İstatistikleri ve Analizleri - Kepçe"
+  description="KYK yurtlarında en çok sevilen ve en az beğenilen yemekler, puanlamalar ve öğrenci oylama istatistikleri."
+/>
 
 <TabBar bind:activeId={activeSubTab} tabs={subTabs} onChange={loadContent} />
 

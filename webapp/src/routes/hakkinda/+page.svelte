@@ -1,11 +1,14 @@
 <script>
   import { icon } from "@/components/ui/icons.js";
   import ContentPage from "@/components/layout/ContentPage.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 </script>
 
-<svelte:head>
-  <title>Hakkında - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Hakkında - Kepçe"
+  description="Kepçe; KYK yurtlarında kalan öğrencilerin günlük yemek menülerine şeffaf, reklamsız ve hızlıca ulaşması için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur."
+/>
+
 
 <ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 2026.08.05">
   <p>

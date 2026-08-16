@@ -1,13 +1,15 @@
 <script>
   import { LEGAL_VERSIONS } from "$lib/data/legal/versions.js";
   import ContentPage from "@/components/layout/ContentPage.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   const versions = [...LEGAL_VERSIONS["gizlilik-politikasi"]].reverse();
 </script>
 
-<svelte:head>
-  <title>Gizlilik Politikası - Arşiv - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Gizlilik Politikası Arşivi - Kepçe"
+  description="Kepçe gizlilik politikası ve KVKK metni geçmiş sürümleri ve değişiklik kayıtları."
+/>
 
 <ContentPage title="Gizlilik Politikası Geçmiş Sürümler">
   <p>Aşağıda gizlilik politikamızın geçmiş sürümlerini bulabilirsiniz.</p>

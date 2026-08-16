@@ -4,6 +4,7 @@
   import { api } from "@/api/index.js";
   import { globalState, authActions } from "@/state.svelte.js";
   import { showToast } from "@/components/ui/toast.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let status = $state("loading"); // loading, success, error
   let errorMsg = $state("");
@@ -38,9 +39,11 @@
   });
 </script>
 
-<svelte:head>
-  <title>Şifresiz Giriş - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Şifresiz Giriş - Kepçe"
+  description="Kepçe şifresiz giriş bağlantısı doğrulanıyor."
+  noindex={true}
+/>
 
 <div class="auth-form-container">
   <h2 class="auth-page__title u-mb-lg">Şifresiz Giriş</h2>

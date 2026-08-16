@@ -1,13 +1,10 @@
-<svelte:head>
-  <title>E-Posta Doğrulanıyor... - Kepçe</title>
-</svelte:head>
-
 <script>
   import "@/styles/pages/_auth.css";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { api } from "@/api/index.js";
   import { globalState, authActions } from "@/state.svelte.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let status = $state("loading"); // loading, success, already_verified, error
   let errorMsg = $state("");
@@ -38,6 +35,8 @@
     }
   });
 </script>
+
+<Seo title="E-Posta Doğrulama - Kepçe" noindex={true} />
 
 <div class="auth-form-container">
   <h2 class="auth-page__title u-mb-lg">E-Posta Doğrulama</h2>

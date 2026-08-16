@@ -14,6 +14,7 @@
   import * as ui from "@/components/ui/forms.js";
   import Dropdown from "@/components/features/Dropdown.svelte";
   import SessionManagerModal from "@/components/features/SessionManagerModal.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let user = $derived(globalState?.user);
   let isResending = $state(false);
@@ -306,9 +307,11 @@
   }
 </script>
 
-<svelte:head>
-  <title>Ayarlar - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Ayarlar - Kepçe"
+  description="Kepçe hesap, bildirim ve görünüm ayarları."
+  noindex={true}
+/>
 
 <!-- Modallar tamamen aynı kalıyor -->
 {#if isNicknameModalOpen}

@@ -13,6 +13,7 @@
   import Dropdown from "@/components/features/Dropdown.svelte";
   import Modal from "@/components/ui/Modal.svelte";
   import { CITY_MAP } from "@/utils/turkish.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   const MONTHS = [
     "Ocak",
@@ -204,13 +205,10 @@
   }
 </script>
 
-<svelte:head>
-  <title>Menü Gönder - Kepçe</title>
-  <meta
-    name="description"
-    content="Yurdundaki menüyü sisteme yükle, diğer öğrencilerin de akşam ne yiyeceğini öğrenmesine yardımcı ol."
-  />
-</svelte:head>
+<Seo
+  title="Menü Gönder - Kepçe"
+  description="Yurdundaki aylık veya haftalık yemek menüsünü sisteme yükle, diğer öğrencilerin de ne yiyeceğini öğrenmesine yardımcı ol."
+/>
 
 {#if isSuccess}
   <div class="content-page__body contribution-page-body">

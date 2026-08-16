@@ -6,7 +6,7 @@
 	let status = $derived($page.status);
 </script>
 
-<Seo title="{status} - Kepçe" description="Kepçe'de bir hata oluştu." />
+<Seo title="{status} - Kepçe" description="Kepçe'de bir hata oluştu." noindex={true} />
 
 <div class="error-page">
 	<EmptyState statusCode={status}>

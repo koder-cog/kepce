@@ -13,9 +13,9 @@
   import { showToast } from "@/components/ui/toast.js";
   import Loader from "@/components/ui/Loader.svelte";
   import { sanitizeText } from "@/utils/sanitize.js";
-  import { initCharCounter } from "@/utils/char-counter.js";
   import { page } from "$app/stores";
   import TabBar from "@/components/ui/TabBar.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let { children } = $props();
 
@@ -479,15 +479,10 @@
   }
 </script>
 
-<svelte:head>
-  <title>{profile ? `${safeNickname} - Kepçe` : "Yükleniyor... - Kepçe"}</title>
-  {#if profile}
-    <meta
-      name="description"
-      content={safeBio || `${safeNickname} adlı kullanıcının Kepçe profili.`}
-    />
-  {/if}
-</svelte:head>
+<Seo
+  title={profile ? `@${safeNickname} - Kepçe` : "Kullanıcı Profili - Kepçe"}
+  description={safeBio || `${safeNickname} adlı kullanıcının Kepçe öğrenci profili ve yemek yorumları.`}
+/>
 
 {#if loading}
   <div class="loading-full">

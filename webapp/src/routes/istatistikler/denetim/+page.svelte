@@ -4,8 +4,8 @@
   import { icon } from "@/components/ui/icons.js";
   import EmptyState from "@/components/ui/EmptyState.svelte";
   import { sanitizeText } from "@/utils/sanitize.js";
-  import { onMount } from "svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let selectedTimeframe = $state("");
   let timeframes = [
@@ -57,9 +57,10 @@
   }
 </script>
 
-<svelte:head>
-  <title>İstatistikler - Denetim - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Denetim İstatistikleri - Kepçe"
+  description="Kepçe şeffaflık raporu, moderasyon hareketleri ve içerik denetim istatistikleri."
+/>
 
 <div class="c-tab-content">
   {#if isLoading}

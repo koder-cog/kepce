@@ -19,8 +19,9 @@ export const authActions = {
     globalState.hasSession = getCookie('kepce_logged_in') === 'true';
     if (!globalState.hasSession) {
       globalState.user = null;
-      globalState.isModerator = false;
-      document.body.classList.remove('is-logged-in');
+      if (typeof document !== 'undefined') {
+        document.body.classList.remove('is-logged-in');
+      }
       globalState.isReady = true;
       return;
     }
@@ -56,7 +57,9 @@ export const authActions = {
         }
       }
     } finally {
-      document.body.classList.toggle('is-logged-in', !!globalState.user);
+      if (typeof document !== 'undefined') {
+        document.body.classList.toggle('is-logged-in', !!globalState.user);
+      }
       globalState.isReady = true;
     }
   },
@@ -82,7 +85,7 @@ export const authActions = {
       globalState.favorites = [];
       globalState.hasSession = false;
       if (typeof window !== 'undefined') localStorage.removeItem('kepce_user_cache');
-      document.body.classList.remove('is-logged-in');
+      if (typeof document !== 'undefined') document.body.classList.remove('is-logged-in');
       goto('/');
     }
   }

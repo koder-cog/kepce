@@ -1,7 +1,3 @@
-<svelte:head>
-  <title>Profili Tamamla - Kepçe</title>
-</svelte:head>
-
 <script>
   import { goto } from '$app/navigation';
   import { globalState, authActions } from '@/state.svelte.js';
@@ -12,6 +8,7 @@
   import * as ui from '@/components/ui/forms.js';
   import Dropdown from '@/components/features/Dropdown.svelte';
   import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
   import { onMount } from 'svelte';
 
   const user = $derived(globalState?.user);
@@ -99,6 +96,8 @@
     }
   }
 </script>
+
+<Seo title="Profili Tamamla - Kepçe" noindex={true} />
 
 {#if !isInitializing}
   {#if !isNewOAuth}

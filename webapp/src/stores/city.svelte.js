@@ -1,6 +1,6 @@
 import { api } from '@/api/index.js';
 
-let currentCity = $state(localStorage.getItem('kepce_city') || '');
+let currentCity = $state(typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || '' : '');
 let onCityChangeListeners = [];
 
 // ── Şehir Listesi (Stale-While-Revalidate Önbellek) ──────────
@@ -18,16 +18,18 @@ export function getCitiesData() {
   if (citiesPromise) return citiesPromise;
 
   // 1. localStorage'dan hemen yükle (sıfır gecikme)
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        citiesData = parsed;
-        citiesLoaded = true;
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          citiesData = parsed;
+          citiesLoaded = true;
+        }
       }
-    }
-  } catch (_) { /* bozuk cache, yok say */ }
+    } catch (_) { /* bozuk cache, yok say */ }
+  }
 
   // 2. Arka planda API'den güncel listeyi çek
   citiesPromise = api.getCities()
@@ -35,7 +37,9 @@ export function getCitiesData() {
       if (Array.isArray(fresh) && fresh.length > 0) {
         citiesData = fresh;
         citiesLoaded = true;
-        localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
+        if (typeof window !== 'undefined') {
+          localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
+        }
       }
       return citiesData;
     })
@@ -76,6 +80,8 @@ export function setOnCityChange(callback) {
 
 export function setCurrentCity(slug) {
     currentCity = slug;
-    localStorage.setItem('kepce_city', slug);
+    if (typeof window !== 'undefined') {
+        localStorage.setItem('kepce_city', slug);
+    }
     onCityChangeListeners.forEach(cb => cb(slug));
 }

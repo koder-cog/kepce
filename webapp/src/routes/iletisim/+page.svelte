@@ -2,6 +2,7 @@
   import { api } from "@/api/index.js";
   import { showToast } from "@/components/ui/toast.js";
   import Dropdown from "@/components/features/Dropdown.svelte";
+  import Seo from "@/components/ui/Seo.svelte";
 
   const MAX_DESC = 2000;
   const MAX_SUBJ = 128;
@@ -66,9 +67,10 @@
   }
 </script>
 
-<svelte:head>
-  <title>İletişim - Kepçe</title>
-</svelte:head>
+<Seo
+  title="İletişim - Kepçe"
+  description="Kepçe geliştiricisi ile iletişime geçin. Hata bildirimleri, menü katkıları, öneriler ve sorularınız için iletişim formu."
+/>
 
 <div class="content-page">
   <div class="content-page__header">

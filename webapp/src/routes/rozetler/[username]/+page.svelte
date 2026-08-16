@@ -1,12 +1,9 @@
-<svelte:head>
-  <title>{profile ? `${profile.nickname} - Rozetler - Kepçe` : `Rozetler - Kepçe`}</title>
-</svelte:head>
-
 <script>
   import { api } from '@/api/index.js';
   import { icon, icons } from '@/components/ui/icons.js';
   import EmptyState from '@/components/ui/EmptyState.svelte';
   import { sanitizeText } from '@/utils/sanitize.js';
+  import Seo from '@/components/ui/Seo.svelte';
   import { onMount } from 'svelte';
 
   const CATEGORY_META = {
@@ -68,6 +65,11 @@
 
   let strokeDashOffset = $derived(414.69 * (1 - totalUnlocked / Math.max(totalBadges, 1)));
 </script>
+
+<Seo
+  title={profile ? `@${safeNickname} Rozetleri - Kepçe` : "Kullanıcı Rozetleri - Kepçe"}
+  description={profile ? `@${safeNickname} kullanıcısının kazandığı rozetler, başarımlar ve karma seviyesi.` : "Kepçe rozetler ve başarımlar."}
+/>
 
 {#if loading}
   <div class="loading-full">

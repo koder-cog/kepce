@@ -1,5 +1,6 @@
 <script>
   import { api } from '@/api/index.js';
+  import Seo from '@/components/ui/Seo.svelte';
 
   let email = $state('');
   let isLoading = $state(false);
@@ -35,10 +36,11 @@
   }
 </script>
 
-<svelte:head>
-  <title>Şifremi Unuttum - Kepçe</title>
-  <meta name="description" content="Şifrenizi sıfırlamak için e-posta adresinizi girin." />
-</svelte:head>
+<Seo
+  title="Şifremi Unuttum - Kepçe"
+  description="Kepçe şifre sıfırlama talebi."
+  noindex={true}
+/>
 
 <h2 class="auth-page__title">Şifre Yenileme</h2>
 

@@ -2,30 +2,73 @@
   import { page } from '$app/stores';
 
   let {
-    title = 'Kepçe - Yurt Yemek Menüsü',
-    description = 'KYK yurt menüleri için bağımsız, açık kaynaklı ve reklamsız platform.',
+    title = 'Kepçe - KYK Yurt Yemek Menüsü',
+    description = 'KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri. Bağımsız, açık kaynaklı ve reklamsız platform.',
     image = 'https://kepce.org/og_image.png',
-    type = 'website'
+    type = 'website',
+    noindex = false,
+    schema = null
   } = $props();
 
-  let url = $derived($page.url.href);
+  const BASE_URL = 'https://kepce.org';
+
+  let canonicalUrl = $derived(
+    $page.url.pathname ? `${BASE_URL}${$page.url.pathname}` : BASE_URL
+  );
+
+  let defaultSchema = $derived(
+    schema || {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'WebSite',
+          '@id': `${BASE_URL}/#website`,
+          'url': `${BASE_URL}/`,
+          'name': 'Kepçe',
+          'description': 'KYK Yurt Yemek Menüsü Platformu',
+          'inLanguage': 'tr-TR'
+        },
+        {
+          '@type': 'Organization',
+          '@id': `${BASE_URL}/#organization`,
+          'name': 'Kepçe',
+          'url': `${BASE_URL}/`,
+          'logo': `${BASE_URL}/favicon.svg`
+        }
+      ]
+    }
+  );
 </script>
 
 <svelte:head>
   <title>{title}</title>
   <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalUrl} />
+
+  <!-- Robots -->
+  {#if noindex}
+    <meta name="robots" content="noindex, nofollow" />
+  {:else}
+    <meta name="robots" content="index, follow" />
+  {/if}
 
   <!-- Open Graph / Facebook -->
+  <meta property="og:site_name" content="Kepçe" />
+  <meta property="og:locale" content="tr_TR" />
   <meta property="og:type" content={type} />
-  <meta property="og:url" content={url} />
+  <meta property="og:url" content={canonicalUrl} />
   <meta property="og:title" content={title} />
   <meta property="og:description" content={description} />
   <meta property="og:image" content={image} />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content={url} />
+  <meta property="twitter:url" content={canonicalUrl} />
   <meta property="twitter:title" content={title} />
   <meta property="twitter:description" content={description} />
   <meta property="twitter:image" content={image} />
+
+  <!-- Structured Data (JSON-LD) -->
+  {@html `<script type="application/ld+json">${JSON.stringify(defaultSchema)}</script>`}
 </svelte:head>
+

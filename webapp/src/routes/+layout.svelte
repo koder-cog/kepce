@@ -15,7 +15,6 @@
 	import { initTooltipManager } from "@/lib/dom/tooltips.js";
 	import { openMenuReportModal } from "@/components/features/report-modal.js";
 	import ExternalLinkWarningModal from "@/components/features/ExternalLinkWarningModal.svelte";
-	import Seo from "@/components/ui/Seo.svelte";
 	import OfflineBanner from "@/components/ui/OfflineBanner.svelte";
 
 	let { children } = $props();
@@ -141,8 +140,6 @@
 </script>
 
 <svelte:window onclick={handleGlobalClick} />
-
-<Seo />
 
 <div id="app">
 	<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->

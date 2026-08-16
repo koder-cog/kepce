@@ -1,10 +1,7 @@
-<svelte:head>
-  <title>Rozet Test - Kepçe</title>
-</svelte:head>
-
 <script>
     import { icon, icons } from '@/components/ui/icons.js';
     import { sanitizeText } from '@/utils/sanitize.js';
+    import Seo from '@/components/ui/Seo.svelte';
 
     const CATEGORY_META = {
         sadakat: { title: 'Sadakat ve İstikrar', subtitle: 'Çaresizlik Sınavı', icon: 'calendar' },
@@ -53,6 +50,8 @@
         }
     }
 </script>
+
+<Seo title="Rozet Test Atölyesi - Kepçe" noindex={true} />
 
 <div class="achievements-page fade-in">
     <header class="achievements-header achievements-header--centered">

@@ -4,6 +4,7 @@
   import { goto } from "$app/navigation";
   import { api } from "@/api/index.js";
   import { showToast } from "@/components/ui/toast.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let token = $state("");
   let password = $state("");
@@ -68,10 +69,11 @@
   }
 </script>
 
-<svelte:head>
-  <title>Şifre Belirleme - Kepçe</title>
-  <meta name="description" content="Yeni şifrenizi belirleyin." />
-</svelte:head>
+<Seo
+  title="Yeni Şifre Belirleme - Kepçe"
+  description="Yeni şifrenizi belirleyin."
+  noindex={true}
+/>
 
 <h2 class="auth-page__title">Yeni Şifre Belirleme</h2>
 
