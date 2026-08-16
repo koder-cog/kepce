@@ -6,6 +6,7 @@
   import { sanitizeText } from "@/utils/sanitize.js";
   import Dropdown from "@/components/features/Dropdown.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+  import { onMount } from "svelte";
 
   let selectedTimeframe = $state("");
   let timeframes = [
