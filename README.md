@@ -1,8 +1,5 @@
 # Kepçe - Önüne Hazır Konanı Yeme Sanatı
 
-[![Web Sitesi](https://img.shields.io/badge/Web_Sitesi-kepce.org-blue?style=flat-square)](https://kepce.org)
-[![CI Pipeline](https://img.shields.io/github/actions/workflow/status/koder-cog/kepce/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/koder-cog/kepce/actions)
-
 Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağınık yurt tabela listelerini, Excel tablolarını ve görsel menüleri otomatik toplayan, standartlaştıran ve temiz bir REST API ile öğrencilere sunan bir topluluk projesidir.
 
 ---
