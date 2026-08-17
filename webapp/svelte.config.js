@@ -26,7 +26,8 @@ const config = {
 		},
 		alias: {
 			'@': './src'
-		}
+		},
+		inlineStyleThreshold: Infinity
 		// CSP not configured here on purpose:
 		// - `ssr = false` + `prerender = true` (SPA fallback) means SvelteKit's
 		//   `csp.mode: 'hash'` cannot accurately enumerate inline scripts at build time,

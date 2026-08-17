@@ -8,6 +8,7 @@
         statusCode,
         className = '',
         compact = false,
+        headingLevel = 'h2',
         children
     } = $props();
 
@@ -73,7 +74,7 @@
     <div class="empty-state__icon">
         {@html icon(finalIcon, compact ? 28 : 64)}
     </div>
-    <h3 class="empty-state__title">{finalTitle}</h3>
+    <svelte:element this={headingLevel} class="empty-state__title">{finalTitle}</svelte:element>
     <p class="empty-state__desc">{finalDesc}</p>
     {#if children}
         <div class="empty-state__actions">

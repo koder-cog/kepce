@@ -56,7 +56,9 @@
   }
 
   .empty-state__title,
+  .empty-state h2.empty-state__title,
   .empty-state h3.empty-state__title,
+  .content-page__body h2.empty-state__title,
   .content-page__body h3.empty-state__title {
     font-family: var(--font-body);
     font-weight: var(--font-weight-black);
