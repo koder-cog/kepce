@@ -39,9 +39,8 @@ async function findHtmlFiles(dir) {
 async function main() {
 	const critters = new Critters({
 		path: DIST_DIR,
-		// HTML'deki seçicilere karşılık gelen CSS'i inline et
-		// Geriye kalanı async yükle (media="print" onload pattern)
-		preload: 'media',
+		// Harici CSS'e dokunma, blocking bırak (37KB CSS için async gereksiz)
+		preload: false,
 		// Inline edilen CSS'i minify et
 		compress: true,
 		// Font-face kurallarını da inline et (FCP için kritik)
