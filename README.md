@@ -2,13 +2,9 @@
 
 Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağınık yurt tabela listelerini, Excel tablolarını ve görsel menüleri otomatik toplayan, standartlaştıran ve temiz bir REST API ile öğrencilere sunan bir topluluk projesidir.
 
----
-
 ## Yasal Sorumluluk Reddi
 
 Kepçe, Gençlik ve Spor Bakanlığı veya Kredi ve Yurtlar Kurumu ile doğrudan veya dolaylı hiçbir kurumsal bağı bulunmayan, kâr amacı gütmeyen, bağımsız bir projedir. Menü, gramaj ve fiyat verileri; kamusal yurt panoları, resmi duyurular ve açık kaynaklardan öğrencileri bilgilendirme ve şeffaflık amacıyla derlenmektedir.
-
----
 
 ## Öne Çıkan Özellikler
 
@@ -17,7 +13,36 @@ Kepçe, Gençlik ve Spor Bakanlığı veya Kredi ve Yurtlar Kurumu ile doğrudan
 - Türkiye genelindeki KYK yurtlarının günlük menülerini ve geçmişe dönük yemek arşivini görüntüleme
 - (Eğer mevcutsa) Glütensiz beslenen öğrenciler için ayrı menü
 
----
+## Hızlı Başlangıç (REST API)
+
+Geliştiriciler ve bot/uygulama geliştirenler için doğrudan erişilebilir, açık ve ücretsiz JSON API:
+
+```bash
+# İstanbul için bugünün menüsünü getir
+curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
+```
+
+<details>
+<summary><b>Örnek JSON Yanıtı</b> (Görmek için tıklayın)</summary>
+
+```json
+[
+  {
+    "city_name": "İstanbul",
+    "serve_date": "2026-05-01",
+    "meal_type": "breakfast",
+    "items": [
+      { "raw_name": "Karışık Kızartma", "amount": "150 g", "price": "37.00 ₺" },
+      { "raw_name": "Haşlanmış Yumurta", "amount": "1 Adet", "price": "11.00 ₺" },
+      { "raw_name": "Kaşar Peynir", "amount": "40 g", "price": null },
+      { "raw_name": "500 ml Su", "amount": "500 ml", "price": "5.00 ₺" }
+    ]
+  }
+]
+```
+</details>
+
+Kota sınırları, filtreleme parametreleri ve yetkilendirme detayları için [REST API Referansı](docs/API.md) belgesini inceleyebilirsiniz.
 
 ## Ekran Görüntüleri
 
@@ -34,8 +59,6 @@ Kepçe, Gençlik ve Spor Bakanlığı veya Kredi ve Yurtlar Kurumu ile doğrudan
 </table>
 </div>
 
----
-
 ## Dokümantasyon
 
 - [Sistem Mimarisi ve Veri Akışı](docs/ARCHITECTURE.md)
@@ -43,8 +66,6 @@ Kepçe, Gençlik ve Spor Bakanlığı veya Kredi ve Yurtlar Kurumu ile doğrudan
 - [Katkıda Bulunma Rehberi](CONTRIBUTING.md)
 - [Güvenlik Politikası](SECURITY.md)
 - [Topluluk Kuralları](CODE_OF_CONDUCT.md)
-
----
 
 ## Kurulum ve Çalıştırma
 
@@ -83,13 +104,9 @@ docker compose up -d --build
 docker compose logs -f
 ```
 
----
-
 ## Katkıda Bulunma
 
 Kepçe, topluluk odaklı bir projedir. Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya Pull Request gönderebilirsiniz.
-
----
 
 ## Lisans ve Telif Hakkı
 
