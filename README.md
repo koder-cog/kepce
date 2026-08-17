@@ -2,9 +2,6 @@
 
 [![Web Sitesi](https://img.shields.io/badge/Web_Sitesi-kepce.org-blue?style=flat-square)](https://kepce.org)
 [![CI Pipeline](https://img.shields.io/github/actions/workflow/status/koder-cog/kepce/ci.yml?branch=main&label=CI&style=flat-square)](https://github.com/koder-cog/kepce/actions)
-[![AGPL v3](https://img.shields.io/badge/Lisans-AGPL%20v3-blue.svg?style=flat-square)](https://www.gnu.org/licenses/agpl-3.0#license-text)
-[![Rust](https://img.shields.io/badge/Rust-1.80+-orange?style=flat-square&logo=rust)](https://www.rust-lang.org/)
-[![SvelteKit](https://img.shields.io/badge/Frontend-SvelteKit%202%20(Svelte%205)-ff3e00?style=flat-square&logo=svelte)](https://svelte.dev/)
 
 Açık kaynaklı, şeffaf ve güvenilir KYK yemekhane veri ağı. Kepçe; dağınık yurt tabela listelerini, Excel tablolarını ve görsel menüleri otomatik toplayan, standartlaştıran ve temiz bir REST API ile öğrencilere sunan bir topluluk projesidir.
 
