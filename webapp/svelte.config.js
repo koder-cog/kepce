@@ -12,7 +12,7 @@ const config = {
 			// Netlify hem de çoğu static host tarafından SPA fallback
 			// olarak tanınır ve ana sayfayı ezinmez.
 			fallback: '200.html',
-			precompress: false,
+			precompress: true,
 			strict: false
 		}),
 		prerender: {

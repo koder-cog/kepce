@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
-    "build": "vite build",
+    "build": "vite build && node scripts/optimize-html.js",
     "preview": "vite preview",
     "check": "svelte-kit sync && svelte-check --tsconfig ./jsconfig.json",
     "test": "vitest run"
@@ -16,6 +16,7 @@
     "@sveltejs/kit": "^2.70.2",
     "@sveltejs/vite-plugin-svelte": "^7.1.2",
     "@testing-library/svelte": "^5.4.2",
+    "critters": "^0.0.23",
     "jsdom": "^29.1.1",
     "svelte-check": "^4.7.2",
     "vite": "^8.0.16",
