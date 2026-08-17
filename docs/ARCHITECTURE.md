@@ -2,8 +2,6 @@
 
 Bu belge, Kepçe platformunun ana servislerini, veri akışını ve temel kurallarını özetler.
 
----
-
 ## Genel Bakış
 
 ```mermaid
@@ -16,8 +14,6 @@ graph TD
     Worker --> DB[("PostgreSQL")]
     API --> DB
 ```
-
----
 
 ## Servisler
 
@@ -37,8 +33,6 @@ graph TD
 
 4. `db` (PostgreSQL):
    - Şehir, menü, yemek, fiyat tarifesi ve kullanıcı verilerini saklayan ilişkisel veritabanı.
-
----
 
 ## Veri Kuralları
 

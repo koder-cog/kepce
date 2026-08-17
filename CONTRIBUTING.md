@@ -2,8 +2,6 @@
 
 Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynaklı, şeffaf ve güvenilir bir topluluk inşa etmek için her türlü katkı değerlidir.
 
----
-
 ## Geliştirme Ortamı Kurulumu
 
 ### Gereksinimler
@@ -27,8 +25,6 @@ Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynakl
    ./manage.sh start
    ```
 
----
-
 ## Kod Standartları ve Prensipleri
 
 ### 1. Rust (Backend ve Worker)
@@ -40,8 +36,6 @@ Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynakl
 - Yeni arayüz geliştirirken `webapp/src/styles/` altındaki mevcut CSS sınıfları ve değişkenler (`main.css`) kullanılmalıdır.
 - HTML elementlerinde inline statik `style="..."` tanımları kullanılmaz; CSS sınıfları ve CSS custom property pattern'i (`style="--var-name: {value}"`) kullanılır.
 - Kod kalitesi ve tip kontrolü için `cd webapp && npm run check` çalıştırılmalıdır.
-
----
 
 ## Katkı ve PR Süreci
 
@@ -59,8 +53,6 @@ Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynakl
    ```
 4. PR açıklamanızda yapılan değişiklikleri, çözülen Issue numarasını ve test sonuçlarını özetleyin.
 
----
-
 ## Yasal Uyarı ve Lisans Taahhüdü
 
-Gönderdiğiniz tüm katkılar projenin GNU Affero General Public License v3.0 (AGPLv3) lisansı altında lisanslanacaktır. PR göndererek kodunuzun bu şartlar altında dağıtılmasını kabul etmiş sayılırsınız.
+Gönderdiğiniz tüm katkılar projenin GNU Affero General Public License v3.0 lisansı altında lisanslanacaktır. PR göndererek kodunuzun bu şartlar altında dağıtılmasını kabul etmiş sayılırsınız.

@@ -2,8 +2,6 @@
 
 Kepçe projesinde kullanıcı gizliliği ve sistem güvenliği ciddiye alınır.
 
----
-
 ## Güvenlik Açığı Bildirimi
 
 Kepçe altyapısında, API servislerinde veya web uygulamasında bir güvenlik açığı tespit ederseniz:

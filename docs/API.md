@@ -2,16 +2,12 @@
 
 Kepçe REST API, `https://kepce.org/api/v1` taban adresi üzerinden hizmet verir.
 
----
-
 ## Erişim ve Hız Sınırları
 
 API uç noktaları herkese açıktır.
 
 - Anonim Erişim: IP başına saniyede en fazla 10, dakikada en fazla 240 istek yapılabilir.
 - Geliştirici Erişimi (`X-API-Key`): Bot veya uygulama geliştirenler `/gelistirici` sayfasından aldıkları anahtarı `X-API-Key` başlığı olarak göndererek yüksek kota ile çalışabilir ve kullanım istatistiklerini panelden takip edebilir.
-
----
 
 ## Önbellekleme ve ETag Desteği
 
@@ -20,8 +16,6 @@ Menü ve şehir listeleme yanıtları `Cache-Control` ve `ETag` başlıkları i�
 - `ETag: "<sha256-hash>"`
 
 İstemciler `If-None-Match: "<etag>"` başlığı gönderdiğinde veri değişmemişse gövdesiz `304 Not Modified` yanıtı döner.
-
----
 
 ## Hata Kodları
 
@@ -32,8 +26,6 @@ Standart HTTP durum kodları kullanılır:
 - `403 Forbidden`: E-posta onayı yapılmamış hesap.
 - `404 Not Found`: İstenen kayıt bulunamadı.
 - `429 Too Many Requests`: Hız sınırı aşıldı. `Retry-After` başlığında belirtilen saniye kadar beklenmelidir.
-
----
 
 ## Uç Noktalar
 
@@ -69,8 +61,6 @@ GET /api/v1/cities
 GET /api/v1/statistics/overview
 ```
 - Toplam menü sayısı, şehir kapsamı ve genel oylama metrikleri.
-
----
 
 ## Kullanıcı İşlemleri (Kimlik Doğrulama Zorunlu)
 

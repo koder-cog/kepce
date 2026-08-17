@@ -4,8 +4,6 @@
 
 Kepçe topluluğunun üyeleri ve katkıda bulunanları olarak; yaş, beden ölçüsü, engellilik durumu, etnik köken, cinsiyet kimliği ve ifadesi, deneyim düzeyi, eğitim, sosyo-ekonomik durum, milliyet, kişisel görünüm, ırk, din veya cinsel kimlik ve yönelimden bağımsız olarak projemize ve topluluğumuza katılan herkes için tacizden ve ayrımcılıktan uzak, kapsayıcı bir deneyim sunmayı taahhüt ediyoruz.
 
----
-
 ## Standartlarımız
 
 Topluluk için olumlu bir ortam yaratmaya katkıda bulunan davranışlar:
@@ -21,8 +19,6 @@ Kabul edilemez davranışlar:
 - Trolling, hakaret, kişisel veya siyasi saldırılar
 - Kamu dışı kişisel verileri (PII) rızasız ifşa etmek (doxxing)
 - Proje süreçlerini veya topluluk üyelerini sabote edici eylemlerde bulunmak
-
----
 
 ## Sorumluluk ve Yaptırımlar
 

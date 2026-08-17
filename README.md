@@ -23,8 +23,7 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
 ```
 
 <details>
-<summary><b>Örnek JSON Yanıtı</b> (Görmek için tıklayın)</summary>
-
+<summary>Örnek JSON Yanıtı</summary>
 ```json
 [
   {
@@ -42,7 +41,7 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
 ```
 </details>
 
-Kota sınırları, filtreleme parametreleri ve yetkilendirme detayları için [REST API Referansı](docs/API.md) belgesini inceleyebilirsiniz.
+Kota sınırları, filtreleme parametreleri ve yetkilendirme detayları için [REST API referansı](docs/API.md)nı inceleyebilirsiniz.
 
 ## Ekran Görüntüleri
 
@@ -70,7 +69,7 @@ Kota sınırları, filtreleme parametreleri ve yetkilendirme detayları için [R
 ## Kurulum ve Çalıştırma
 
 Gereksinimler: Rust `1.80+` (cargo), Node.js `20+` ve Docker / Podman.  
-*Windows ortamında betikleri çalıştırmak için WSL2 önerilir.*
+*Windows ortamında betikleri çalıştırmak için WSL önerilir.*
 
 ### 1. Yerel Geliştirme
 
@@ -106,10 +105,10 @@ docker compose logs -f
 
 ## Katkıda Bulunma
 
-Kepçe, topluluk odaklı bir projedir. Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya Pull Request gönderebilirsiniz.
+Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya Pull Request gönderebilirsiniz.
 
 ## Lisans ve Telif Hakkı
 
 Telif Hakkı (C) 2026 Kepçe Katkıda Bulunanları.
 
-Bu proje **GNU Affero General Public License v3.0 (AGPLv3)** ile lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına veya [gayriresmi Türkçe çevirisine](LICENSE_TR) bakabilirsiniz.
+Bu proje **GNU Affero General Public License v3.0** ile lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına veya [gayriresmi Türkçe çevirisine](LICENSE_TR) bakabilirsiniz.
