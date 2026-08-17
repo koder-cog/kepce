@@ -68,11 +68,6 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://kepce.org/gelistirici</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.6</priority>
-  </url>
-  <url>
     <loc>https://kepce.org/rss</loc>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

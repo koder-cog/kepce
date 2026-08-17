@@ -2,13 +2,13 @@ User-agent: *
 Allow: /
 
 # Private & User-Specific Pages
-Disallow: /ayarlar/
-Disallow: /bildirimler/
-Disallow: /moderasyon/
-Disallow: /auth/
-Disallow: /gelistirici/
-Disallow: /oauth/
-Disallow: /sifre-yenile/
-Disallow: /profili-tamamla/
+Disallow: /ayarlar
+Disallow: /bildirimler
+Disallow: /moderasyon
+Disallow: /auth
+Disallow: /gelistirici
+Disallow: /oauth
+Disallow: /sifre-yenile
+Disallow: /profili-tamamla
 
 Sitemap: https://kepce.org/sitemap.xml
