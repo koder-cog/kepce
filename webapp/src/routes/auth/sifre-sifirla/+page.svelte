@@ -22,7 +22,8 @@
     token = urlParams.get("token") || "";
 
     if (!token) {
-      errorMsg = "Şifre sıfırlama anahtarı eksik veya geçersiz. Lütfen yeni bir bağlantı talep et.";
+      errorMsg =
+        "Şifre sıfırlama anahtarı eksik veya geçersiz. Lütfen yeni bir bağlantı talep et.";
       formError = true;
     }
   });
@@ -33,7 +34,8 @@
     formError = false;
 
     if (!token) {
-      errorMsg = "Şifre sıfırlama anahtarı eksik. Lütfen yeni bir bağlantı talep et.";
+      errorMsg =
+        "Şifre sıfırlama anahtarı eksik. Lütfen yeni bir bağlantı talep et.";
       formError = true;
       return;
     }
@@ -55,13 +57,17 @@
     try {
       await api.resetPassword(token, password);
       isSuccess = true;
-      showToast("Şifreniz başarıyla sıfırlandı. Giriş yapabilirsiniz!", "success");
-      
+      showToast(
+        "Şifreniz başarıyla sıfırlandı. Giriş yapabilirsiniz!",
+        "success",
+      );
+
       setTimeout(() => {
         goto("/giris");
       }, 2000);
     } catch (err) {
-      errorMsg = err.message || "Şifre sıfırlanamadı. Bağlantı süresi dolmuş olabilir.";
+      errorMsg =
+        err.message || "Şifre sıfırlanamadı. Bağlantı süresi dolmuş olabilir.";
       formError = true;
     } finally {
       isLoading = false;
@@ -91,18 +97,50 @@
 
   {#if !isSuccess}
     <form class="auth-form" onsubmit={handleSubmit}>
-      <div class="form-group form-group--floating" class:form-group--error={formError && errorMsg.includes("Şifre")} data-error={errorMsg}>
-        <input type={showPassword ? "text" : "password"} id="new-password" bind:value={password} required placeholder=" ">
-        <label class="form-label" for="new-password">Yeni Şifre<span class="form-required-mark">*</span></label>
-        <button type="button" class="btn-toggle-password" onclick={() => showPassword = !showPassword}>
+      <div
+        class="form-group form-group--floating"
+        class:form-group--error={formError && errorMsg.includes("Şifre")}
+        data-error={errorMsg}
+      >
+        <input
+          type={showPassword ? "text" : "password"}
+          id="new-password"
+          bind:value={password}
+          required
+          placeholder=" "
+        />
+        <label class="form-label" for="new-password"
+          >Yeni Şifre<span class="form-required-mark">*</span></label
+        >
+        <button
+          type="button"
+          class="btn-toggle-password"
+          onclick={() => (showPassword = !showPassword)}
+        >
           {#if showPassword}Gizle{:else}Göster{/if}
         </button>
       </div>
 
-      <div class="form-group form-group--floating" class:form-group--error={formError && errorMsg.includes("uyuş")} data-error={errorMsg}>
-        <input type={showRepeatPassword ? "text" : "password"} id="repeat-password" bind:value={repeatPassword} required placeholder=" ">
-        <label class="form-label" for="repeat-password">Yeni Şifre (Tekrar)<span class="form-required-mark">*</span></label>
-        <button type="button" class="btn-toggle-password" onclick={() => showRepeatPassword = !showRepeatPassword}>
+      <div
+        class="form-group form-group--floating"
+        class:form-group--error={formError && errorMsg.includes("uyuş")}
+        data-error={errorMsg}
+      >
+        <input
+          type={showRepeatPassword ? "text" : "password"}
+          id="repeat-password"
+          bind:value={repeatPassword}
+          required
+          placeholder=" "
+        />
+        <label class="form-label" for="repeat-password"
+          >Yeni Şifre (Tekrar)<span class="form-required-mark">*</span></label
+        >
+        <button
+          type="button"
+          class="btn-toggle-password"
+          onclick={() => (showRepeatPassword = !showRepeatPassword)}
+        >
           {#if showRepeatPassword}Gizle{:else}Göster{/if}
         </button>
       </div>
@@ -111,7 +149,11 @@
         <div class="auth-error u-mb-md">{errorMsg}</div>
       {/if}
 
-      <button type="submit" class="btn btn--primary auth-submit" disabled={isLoading || !token}>
+      <button
+        type="submit"
+        class="btn btn--primary auth-submit"
+        disabled={isLoading || !token}
+      >
         {isLoading ? "Güncelleniyor..." : "Şifremi Güncelle"}
       </button>
     </form>
@@ -119,7 +161,9 @@
 
   <div class="auth-footer">
     <div class="auth-footer__links">
-      <a href="/giris" class="auth-footer__link" data-link>Giriş sayfasına dön</a>
+      <a href="/giris" class="auth-footer__link" data-link
+        >Giriş sayfasına dön</a
+      >
     </div>
   </div>
 </div>

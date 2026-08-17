@@ -481,7 +481,8 @@
 
 <Seo
   title={profile ? `@${safeNickname} - Kepçe` : "Kullanıcı Profili - Kepçe"}
-  description={safeBio || `${safeNickname} adlı kullanıcının Kepçe öğrenci profili ve yemek yorumları.`}
+  description={safeBio ||
+    `${safeNickname} adlı kullanıcının Kepçe öğrenci profili ve yemek yorumları.`}
 />
 
 {#if loading}

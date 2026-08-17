@@ -1,42 +1,42 @@
 <script>
-  import { page } from '$app/stores';
+  import { page } from "$app/stores";
 
   let {
-    title = 'Kepçe - KYK Yurt Yemek Menüsü',
-    description = 'KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri. Bağımsız, açık kaynaklı ve reklamsız platform.',
-    image = 'https://kepce.org/og_image.png',
-    type = 'website',
+    title = "Kepçe - KYK Yurt Yemek Menüsü",
+    description = "KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri. Bağımsız, açık kaynaklı ve reklamsız platform.",
+    image = "https://kepce.org/og_image.png",
+    type = "website",
     noindex = false,
-    schema = null
+    schema = null,
   } = $props();
 
-  const BASE_URL = 'https://kepce.org';
+  const BASE_URL = "https://kepce.org";
 
   let canonicalUrl = $derived(
-    $page.url.pathname ? `${BASE_URL}${$page.url.pathname}` : BASE_URL
+    $page.url.pathname ? `${BASE_URL}${$page.url.pathname}` : BASE_URL,
   );
 
   let defaultSchema = $derived(
     schema || {
-      '@context': 'https://schema.org',
-      '@graph': [
+      "@context": "https://schema.org",
+      "@graph": [
         {
-          '@type': 'WebSite',
-          '@id': `${BASE_URL}/#website`,
-          'url': `${BASE_URL}/`,
-          'name': 'Kepçe',
-          'description': 'KYK Yurt Yemek Menüsü Platformu',
-          'inLanguage': 'tr-TR'
+          "@type": "WebSite",
+          "@id": `${BASE_URL}/#website`,
+          url: `${BASE_URL}/`,
+          name: "Kepçe",
+          description: "KYK Yurt Yemek Menüsü Platformu",
+          inLanguage: "tr-TR",
         },
         {
-          '@type': 'Organization',
-          '@id': `${BASE_URL}/#organization`,
-          'name': 'Kepçe',
-          'url': `${BASE_URL}/`,
-          'logo': `${BASE_URL}/favicon.svg`
-        }
-      ]
-    }
+          "@type": "Organization",
+          "@id": `${BASE_URL}/#organization`,
+          name: "Kepçe",
+          url: `${BASE_URL}/`,
+          logo: `${BASE_URL}/favicon.svg`,
+        },
+      ],
+    },
   );
 </script>
 
@@ -71,4 +71,3 @@
   <!-- Structured Data (JSON-LD) -->
   {@html `<script type="application/ld+json">${JSON.stringify(defaultSchema)}</script>`}
 </svelte:head>
-

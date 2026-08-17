@@ -23,7 +23,8 @@
       const result = await api.verifyEmail(token);
       await authActions.refreshUser();
 
-      status = result?.status === "already_verified" ? "already_verified" : "success";
+      status =
+        result?.status === "already_verified" ? "already_verified" : "success";
       setTimeout(() => {
         goto("/");
       }, 3000);
@@ -50,12 +51,17 @@
     {:else if status === "success"}
       <div class="auth-success passwordless-success">
         <p class="u-font-bold u-mb-xs">Doğrulama Başarılı!</p>
-        <p class="u-text-sm">E-posta adresiniz doğrulandı. Ana sayfaya yönlendiriliyorsunuz...</p>
+        <p class="u-text-sm">
+          E-posta adresiniz doğrulandı. Ana sayfaya yönlendiriliyorsunuz...
+        </p>
       </div>
     {:else if status === "already_verified"}
       <div class="auth-info passwordless-success">
         <p class="u-font-bold u-mb-xs">Zaten Onaylısınız!</p>
-        <p class="u-text-sm">E-postanız zaten onaylı, harika! Hiçbir işlem yapmanıza gerek yok. Ana sayfaya yönlendiriliyorsunuz...</p>
+        <p class="u-text-sm">
+          E-postanız zaten onaylı, harika! Hiçbir işlem yapmanıza gerek yok. Ana
+          sayfaya yönlendiriliyorsunuz...
+        </p>
       </div>
     {:else if status === "error"}
       <div class="auth-error passwordless-error" role="alert">

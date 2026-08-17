@@ -318,7 +318,7 @@
             Dosyayı buraya fırlat veya seç
           </div>
           <div class="u-text-xs u-color-muted u-mt-xs">
-            XLSX, XLS, PDF, PNG veya JPG (Dosya başı maks 10MB)
+            .xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)
           </div>
           <input
             type="file"

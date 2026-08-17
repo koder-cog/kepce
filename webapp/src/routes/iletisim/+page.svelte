@@ -191,7 +191,7 @@
     </section>
 
     <section class="contact-info-section">
-      <h2>Şirket / proje bilgileri (künye)</h2>
+      <h2>Proje bilgileri</h2>
       <p>
         5651 sayılı Kanun uyarınca yer sağlayıcıya ilişkin tanıtıcı bilgiler
         aşağıdadır:

@@ -8,45 +8,49 @@
    * 5. Web Push API: Sekme kapalıyken bile tarayıcı/işletim sistemi üzerinden "Yorumunuza yanıt geldi" bildirimi gönderilebilir.
    */
 
-  import { api } from '@/api/index.js';
-  import { icon } from '@/components/ui/icons.js';
-  import EmptyState from '@/components/ui/EmptyState.svelte';
-  import Loader from '@/components/ui/Loader.svelte';
-  import TabBar from '@/components/ui/TabBar.svelte';
-  import { onMount } from 'svelte';
-  import { globalState } from '@/state.svelte.js';
-  import { slide } from 'svelte/transition';
-  import { getDuration } from '@/lib/dom/motion.js';
-  import Seo from '@/components/ui/Seo.svelte';
+  import { api } from "@/api/index.js";
+  import { icon } from "@/components/ui/icons.js";
+  import EmptyState from "@/components/ui/EmptyState.svelte";
+  import Loader from "@/components/ui/Loader.svelte";
+  import TabBar from "@/components/ui/TabBar.svelte";
+  import { onMount } from "svelte";
+  import { globalState } from "@/state.svelte.js";
+  import { slide } from "svelte/transition";
+  import { getDuration } from "@/lib/dom/motion.js";
+  import Seo from "@/components/ui/Seo.svelte";
 
   let user = $derived(globalState?.user);
   let notifications = $state([]);
   let isLoading = $state(true);
   let errorMsg = $state(null);
-  
-  let activeTab = $state('all'); // 'all' | 'unread'
+
+  let activeTab = $state("all"); // 'all' | 'unread'
 
   // Derivated states
-  let unreadCount = $derived(notifications.filter(n => !n.is_read).length);
+  let unreadCount = $derived(notifications.filter((n) => !n.is_read).length);
   let filteredNotifications = $derived(
-    activeTab === 'unread' 
-      ? notifications.filter(n => !n.is_read) 
-      : notifications
+    activeTab === "unread"
+      ? notifications.filter((n) => !n.is_read)
+      : notifications,
   );
 
   // Grouping logic
   let groupedNotifications = $derived.by(() => {
     const groups = {
-      today: { label: 'Bugün', items: [] },
-      yesterday: { label: 'Dün', items: [] },
-      older: { label: 'Daha Eski', items: [] }
+      today: { label: "Bugün", items: [] },
+      yesterday: { label: "Dün", items: [] },
+      older: { label: "Daha Eski", items: [] },
     };
 
     const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+    const today = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+    ).getTime();
     const yesterday = today - 86400000;
 
-    filteredNotifications.forEach(n => {
+    filteredNotifications.forEach((n) => {
       const date = new Date(n.created_at).getTime();
       if (date >= today) {
         groups.today.items.push(n);
@@ -57,7 +61,9 @@
       }
     });
 
-    return [groups.today, groups.yesterday, groups.older].filter(g => g.items.length > 0);
+    return [groups.today, groups.yesterday, groups.older].filter(
+      (g) => g.items.length > 0,
+    );
   });
 
   let hasFetched = false;
@@ -69,7 +75,7 @@
         loadNotifications();
       } else {
         isLoading = false;
-        errorMsg = 'Bildirimleri görüntülemek için giriş yapmalısınız.';
+        errorMsg = "Bildirimleri görüntülemek için giriş yapmalısınız.";
       }
     }
   });
@@ -80,16 +86,16 @@
     try {
       notifications = await api.getNotifications();
     } catch (err) {
-      errorMsg = 'Bildirimler yüklenirken bir hata oluştu.';
+      errorMsg = "Bildirimler yüklenirken bir hata oluştu.";
     } finally {
       isLoading = false;
     }
   }
 
   async function handleMarkAsRead(id) {
-    const n = notifications.find(n => n.id === id);
+    const n = notifications.find((n) => n.id === id);
     if (!n || n.is_read) return;
-    
+
     n.is_read = true; // Optimistic update
     try {
       await api.markAsRead(id);
@@ -101,10 +107,10 @@
 
   async function handleMarkAllAsRead() {
     if (unreadCount === 0) return;
-    
-    const previousState = notifications.map(n => ({...n}));
-    notifications = notifications.map(n => ({...n, is_read: true}));
-    
+
+    const previousState = notifications.map((n) => ({ ...n }));
+    notifications = notifications.map((n) => ({ ...n, is_read: true }));
+
     try {
       await api.markAllAsRead();
     } catch (err) {
@@ -115,11 +121,16 @@
 
   function getIconForType(type) {
     switch (type) {
-      case 'system': return icon('info', 24);
-      case 'achievement': return icon('star', 24);
-      case 'comment': return icon('chat', 24);
-      case 'moderation': return icon('check', 24);
-      default: return icon('bell', 24);
+      case "system":
+        return icon("info", 24);
+      case "achievement":
+        return icon("star", 24);
+      case "comment":
+        return icon("chat", 24);
+      case "moderation":
+        return icon("check", 24);
+      default:
+        return icon("bell", 24);
     }
   }
 
@@ -130,9 +141,9 @@
 
     if (minutes < 60) return `${Math.max(1, minutes)} dk önce`;
     if (hours < 24) return `${hours} saat önce`;
-    
+
     const d = new Date(isoString);
-    return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
+    return `${d.getDate().toString().padStart(2, "0")}.${(d.getMonth() + 1).toString().padStart(2, "0")}.${d.getFullYear()}`;
   }
 </script>
 
@@ -157,8 +168,18 @@
   <TabBar
     bind:activeId={activeTab}
     tabs={[
-      { id: 'all', label: 'Tümü', icon: icon('bell', 18) },
-      { id: 'unread', label: 'Okunmayanlar', icon: icon('eyeSlash', 18), badge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined }
+      { id: "all", label: "Tümü", icon: icon("bell", 18) },
+      {
+        id: "unread",
+        label: "Okunmayanlar",
+        icon: icon("eyeSlash", 18),
+        badge:
+          unreadCount > 0
+            ? unreadCount > 99
+              ? "99+"
+              : unreadCount
+            : undefined,
+      },
     ]}
   />
 
@@ -167,39 +188,50 @@
       <Loader size={48} />
     </div>
   {:else if errorMsg}
-    <EmptyState 
-      statusCode={user ? 500 : 401} 
-      desc={errorMsg} 
+    <EmptyState
+      statusCode={user ? 500 : 401}
+      desc={errorMsg}
       actionLabel={!user ? "Giriş Yap" : "Tekrar Dene"}
-      onAction={!user ? () => window.location.href = '/giris' : loadNotifications}
+      onAction={!user
+        ? () => (window.location.href = "/giris")
+        : loadNotifications}
     />
   {:else if filteredNotifications.length === 0}
-    <EmptyState 
-      desc={activeTab === 'unread' ? "Okunmamış bildiriminiz bulunmuyor." : "Henüz hiç bildiriminiz yok."} 
-      iconHtml={icon('checkCircle', 48)}
+    <EmptyState
+      desc={activeTab === "unread"
+        ? "Okunmamış bildiriminiz bulunmuyor."
+        : "Henüz hiç bildiriminiz yok."}
+      iconHtml={icon("checkCircle", 48)}
     />
   {:else}
     {#each groupedNotifications as group (group.label)}
-      <div class="notification-group" transition:slide={{ duration: getDuration('standard') }}>
+      <div
+        class="notification-group"
+        transition:slide={{ duration: getDuration("standard") }}
+      >
         <h2 class="notification-group__title">{group.label}</h2>
         <div class="notification-list">
           {#each group.items as item (item.id)}
-            <div 
-              class="notification-card {item.is_read ? '' : 'notification-card--unread'}"
-              transition:slide={{ duration: getDuration('fast') }}
+            <div
+              class="notification-card {item.is_read
+                ? ''
+                : 'notification-card--unread'}"
+              transition:slide={{ duration: getDuration("fast") }}
             >
               <div class="notification-card__icon">
                 {@html getIconForType(item.type)}
               </div>
-              
+
               <div class="notification-card__content">
                 <div class="notification-card__header">
                   <h3 class="notification-card__title">{item.title}</h3>
-                  <span class="notification-card__time">{formatTimeAgo(item.created_at)}</span>
+                  <span class="notification-card__time"
+                    >{formatTimeAgo(item.created_at)}</span
+                  >
                 </div>
-                
+
                 <p class="notification-card__message">{item.message}</p>
-                
+
                 <div class="notification-card__actions">
                   {#if item.action}
                     <a href={item.action.href} class="btn btn--sm btn--primary">
@@ -207,7 +239,10 @@
                     </a>
                   {/if}
                   {#if !item.is_read}
-                    <button class="btn btn--sm btn--ghost" onclick={() => handleMarkAsRead(item.id)}>
+                    <button
+                      class="btn btn--sm btn--ghost"
+                      onclick={() => handleMarkAsRead(item.id)}
+                    >
                       Okundu işaretle
                     </button>
                   {/if}

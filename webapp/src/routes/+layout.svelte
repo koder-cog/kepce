@@ -20,8 +20,8 @@
 	let { children } = $props();
 
 	const today = new Date();
-	const month = String(today.getMonth() + 1).padStart(2, '0');
-	const day = String(today.getDate()).padStart(2, '0');
+	const month = String(today.getMonth() + 1).padStart(2, "0");
+	const day = String(today.getDate()).padStart(2, "0");
 	const year = today.getFullYear();
 
 	const mmdd = `${month}-${day}`;
@@ -35,22 +35,28 @@
 	let pendingExternalUrl = $state("");
 
 	function handleGlobalClick(e) {
-		const a = e.target.closest('a');
+		const a = e.target.closest("a");
 		if (!a || !a.href) return;
 
 		try {
 			const url = new URL(a.href);
-			if (url.protocol === 'http:' || url.protocol === 'https:') {
+			if (url.protocol === "http:" || url.protocol === "https:") {
 				if (url.hostname !== window.location.hostname) {
-					const warningEnabled = localStorage.getItem("kepce_external_link_warning") !== "false";
+					const warningEnabled =
+						localStorage.getItem("kepce_external_link_warning") !==
+						"false";
 					if (warningEnabled) {
 						e.preventDefault();
 						pendingExternalUrl = a.href;
 						externalLinkModalOpen = true;
 					} else {
-						if (a.target !== '_blank') {
+						if (a.target !== "_blank") {
 							e.preventDefault();
-							window.open(a.href, '_blank', 'noopener,noreferrer');
+							window.open(
+								a.href,
+								"_blank",
+								"noopener,noreferrer",
+							);
 						}
 					}
 				}
@@ -135,7 +141,6 @@
 		globalState.devMode = devMode;
 
 		await authActions.refreshUser();
-
 	});
 </script>
 
@@ -178,7 +183,7 @@
 		url={pendingExternalUrl}
 		onClose={() => (externalLinkModalOpen = false)}
 		onContinue={() => {
-			window.open(pendingExternalUrl, '_blank', 'noopener,noreferrer');
+			window.open(pendingExternalUrl, "_blank", "noopener,noreferrer");
 			externalLinkModalOpen = false;
 		}}
 	/>

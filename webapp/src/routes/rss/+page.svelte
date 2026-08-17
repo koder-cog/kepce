@@ -32,10 +32,13 @@
       Sınırlamalara tabidir.
     </p>
 
-    <div class="u-flex u-flex-wrap u-flex-justify-between u-flex-align-center u-flex-gap-md u-mb-md">
+    <div
+      class="u-flex u-flex-wrap u-flex-justify-between u-flex-align-center u-flex-gap-md u-mb-md"
+    >
       <h2 class="u-m-0">Bağlantıyı kopyala:</h2>
-      <button class="btn btn--primary u-flex-shrink-0" onclick={handleCopy}>{buttonText}</button>
+      <button class="btn btn--primary u-flex-shrink-0" onclick={handleCopy}
+        >{buttonText}</button
+      >
     </div>
   </div>
 </div>
-

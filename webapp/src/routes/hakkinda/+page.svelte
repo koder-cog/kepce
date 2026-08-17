@@ -9,7 +9,6 @@
   description="Kepçe; KYK yurtlarında kalan öğrencilerin günlük yemek menülerine şeffaf, reklamsız ve hızlıca ulaşması için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur."
 />
 
-
 <ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 2026.08.05">
   <p>
     Kepçe, temel olarak API sağlayıcı görevini üstlenen açık kaynaklı ve kâr

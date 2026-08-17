@@ -9,7 +9,6 @@
   description="Kepçe gizlilik politikası, KVKK aydınlatma metni, veri işleme ilkeleri ve çerez politikası."
 />
 
-
 <ContentPage
   title="Gizlilik Politikası (KVKK Aydınlatma Metni)"
   dateLabel="Son güncelleme: 2026.08.05"

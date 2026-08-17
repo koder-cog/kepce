@@ -34,29 +34,35 @@
         if (typeof menu?.city === "string") return menu.city;
         if (menu?.city?.name || menu?.city_name) {
             const nameToMatch = menu.city?.name || menu.city_name;
-            const entry = Object.entries(CITY_MAP).find(([_, name]) => name === nameToMatch);
+            const entry = Object.entries(CITY_MAP).find(
+                ([_, name]) => name === nameToMatch,
+            );
             if (entry) return entry[0];
         }
         return getCurrentCity();
     });
-    
+
     let targetCityName = $derived.by(() => {
         if (menu?.city?.name) return menu.city.name;
         if (menu?.city_name) return menu.city_name;
-        if (targetCitySlug && CITY_MAP[targetCitySlug]) return CITY_MAP[targetCitySlug];
+        if (targetCitySlug && CITY_MAP[targetCitySlug])
+            return CITY_MAP[targetCitySlug];
         if (targetCitySlug) {
-            return targetCitySlug.charAt(0).toLocaleUpperCase("tr-TR") + targetCitySlug.slice(1);
+            return (
+                targetCitySlug.charAt(0).toLocaleUpperCase("tr-TR") +
+                targetCitySlug.slice(1)
+            );
         }
         return "İstanbul";
     });
 
     function handleBack(e) {
         e.preventDefault();
-        
+
         if (targetCitySlug && targetCitySlug !== getCurrentCity()) {
             setCurrentCity(targetCitySlug);
         }
-        
+
         goto("/");
     }
 
@@ -208,11 +214,18 @@
                     SvelteKit 404 dönüyordu. Ana sayfa zaten seçili şehre göre
                     menüleri yüklüyor; şehir bilgisi yalnızca etiket olarak gösteriliyor.
                 -->
-                <a href="/" onclick={handleBack} data-link class="comments-page__back-link">
+                <a
+                    href="/"
+                    onclick={handleBack}
+                    data-link
+                    class="comments-page__back-link"
+                >
                     <span class="comments-page__back-icon">
                         {@html icon("chevronLeft", 24)}
                     </span>
-                    <span class="comments-page__back-text">{targetCityName}</span>
+                    <span class="comments-page__back-text"
+                        >{targetCityName}</span
+                    >
                 </a>
             </div>
 
@@ -261,6 +274,10 @@
 {/if}
 
 <Seo
-    title={menu ? `${menu.date || menuId} Yemek Menüsü Yorumları - Kepçe` : "Menü Yorumları - Kepçe"}
-    description={menu ? `${menu.date || menuId} tarihli KYK yurt yemek menüsü hakkında öğrenci değerlendirmeleri ve yorumları.` : "KYK yurt yemek menüsü yorumları ve değerlendirmeleri."}
+    title={menu
+        ? `${menu.date || menuId} Yemek Menüsü Yorumları - Kepçe`
+        : "Menü Yorumları - Kepçe"}
+    description={menu
+        ? `${menu.date || menuId} tarihli KYK yurt yemek menüsü hakkında öğrenci değerlendirmeleri ve yorumları.`
+        : "KYK yurt yemek menüsü yorumları ve değerlendirmeleri."}
 />

@@ -71,17 +71,17 @@ export function isCitiesLoaded() {
 
 // ── Seçili Şehir Yönetimi ─────────────────────────────────────
 export function getCurrentCity() {
-    return currentCity;
+  return currentCity;
 }
 
 export function setOnCityChange(callback) {
-    onCityChangeListeners.push(callback);
+  onCityChangeListeners.push(callback);
 }
 
 export function setCurrentCity(slug) {
-    currentCity = slug;
-    if (typeof window !== 'undefined') {
-        localStorage.setItem('kepce_city', slug);
-    }
-    onCityChangeListeners.forEach(cb => cb(slug));
+  currentCity = slug;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('kepce_city', slug);
+  }
+  onCityChangeListeners.forEach(cb => cb(slug));
 }

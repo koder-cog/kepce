@@ -121,7 +121,7 @@
   }
 
   .incidents-section {
-    margin-top: var(--space-4xl);
+    margin: var(--space-4xl) 0;
   }
 
   .incidents-title {

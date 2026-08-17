@@ -9,10 +9,9 @@
   description="Kepçe platformu kullanım koşulları, kullanıcı hakları, sorumluluklar ve yasal kurallar."
 />
 
-
-<ContentPage 
-  title="Kepçe Kullanım Koşulları" 
-  dateLabel="Son güncelleme: 2026.08.05" 
+<ContentPage
+  title="Kepçe Kullanım Koşulları"
+  dateLabel="Son güncelleme: 2026.08.05"
   archiveLink="/kullanim-kosullari/arsiv"
 >
   <CurrentContent />

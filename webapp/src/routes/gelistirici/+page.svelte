@@ -127,7 +127,10 @@
 
   function handleCreateProject() {
     if (!globalState?.user?.is_verified) {
-      showToast("Proje oluşturabilmek için e-postanızı onaylamalısınız.", "warning");
+      showToast(
+        "Proje oluşturabilmek için e-postanızı onaylamalısınız.",
+        "warning",
+      );
       return;
     }
     const modalInstance = createModal({
@@ -212,7 +215,10 @@
 
   function handleCreateApiKey() {
     if (!globalState?.user?.is_verified) {
-      showToast("API anahtarı oluşturabilmek için e-postanızı onaylamalısınız.", "warning");
+      showToast(
+        "API anahtarı oluşturabilmek için e-postanızı onaylamalısınız.",
+        "warning",
+      );
       return;
     }
     if (projects.length === 0) {
@@ -570,7 +576,10 @@
 
     // Accessibility attributes (Google Web / A11y Guidelines)
     node.setAttribute("role", "img");
-    node.setAttribute("aria-label", "Kullanım istatistikleri kombinasyon grafiği");
+    node.setAttribute(
+      "aria-label",
+      "Kullanım istatistikleri kombinasyon grafiği",
+    );
 
     function render() {
       if (animationReq) cancelAnimationFrame(animationReq);
@@ -1129,7 +1138,6 @@
       },
     };
   }
-
 </script>
 
 <Seo
@@ -1567,12 +1575,14 @@
           autocomplete="off"
           bind:value={newApiKeyState.name}
         />
-        <label for="api-key-name" class="form-label">Anahtar ismi (Örn: Telegram botu)</label>
+        <label for="api-key-name" class="form-label"
+          >Anahtar ismi (Örn: Telegram botu)</label
+        >
       </div>
       <div class="form-group u-mb-md">
-        <div class="u-display-block u-mb-xs u-text-sm u-color-muted"
-          >Proje seç</div
-        >
+        <div class="u-display-block u-mb-xs u-text-sm u-color-muted">
+          Proje seç
+        </div>
         <Dropdown
           options={projects.map((p) => ({
             value: p.id,

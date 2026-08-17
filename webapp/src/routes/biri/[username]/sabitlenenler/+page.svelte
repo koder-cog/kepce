@@ -60,7 +60,9 @@
         }
       }
       if (globalState.favorites) {
-        globalState.favorites = globalState.favorites.filter((id) => id !== dishId);
+        globalState.favorites = globalState.favorites.filter(
+          (id) => id !== dishId,
+        );
       }
       showToast("Sabitlenenlerden kaldırıldı");
     } catch (err) {
@@ -75,34 +77,32 @@
   <div class="profile-grid-loader">
     <Loader size={48} />
   </div>
-{:else}
-  {#if allMeals.length > 0}
-    <div class="profile-dish-grid">
-      {#each allMeals as dish}
-        <div class="profile-dish-card">
-          <div class="profile-dish-card__main">
-            <div class="profile-dish-card__icon">
-              {@html icon("starFilled", 18)}
-            </div>
-            <span class="profile-dish-card__name">{dish.name}</span>
+{:else if allMeals.length > 0}
+  <div class="profile-dish-grid">
+    {#each allMeals as dish}
+      <div class="profile-dish-card">
+        <div class="profile-dish-card__main">
+          <div class="profile-dish-card__icon">
+            {@html icon("starFilled", 18)}
           </div>
-          {#if isOwner}
-            <button
-              class="profile-dish-unpin-btn btn--squish"
-              title="Kaldır"
-              onclick={() => handleUnpin(dish.dish_id)}
-            >
-              {@html icon("close", 14)}
-            </button>
-          {/if}
+          <span class="profile-dish-card__name">{dish.name}</span>
         </div>
-      {/each}
-    </div>
-  {:else}
-    <EmptyState
-      iconName="star"
-      title="Sabitlenen Yemek Yok"
-      desc="Henüz bir yemek favorilenmemiş veya sabitlenmemiş."
-    />
-  {/if}
+        {#if isOwner}
+          <button
+            class="profile-dish-unpin-btn btn--squish"
+            title="Kaldır"
+            onclick={() => handleUnpin(dish.dish_id)}
+          >
+            {@html icon("close", 14)}
+          </button>
+        {/if}
+      </div>
+    {/each}
+  </div>
+{:else}
+  <EmptyState
+    iconName="star"
+    title="Sabitlenen Yemek Yok"
+    desc={`@${username} henüz bir yemeği beğenmemiş.`}
+  />
 {/if}

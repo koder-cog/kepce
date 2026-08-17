@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="tr">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,31 +8,56 @@
   <meta name="theme-color" content="#242828" media="(prefers-color-scheme: dark)">
 
   <!-- Font Preload Optimizasyonu (FCP & CLS İyileştirme) -->
-  <link rel="preload" href="/fonts/publicsans-ijwRs572Xtc6ZYQws9YVwnNGfJ4.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
-  <link rel="preload" href="/fonts/paytoneone-0nksC9P7MfYHj2oFtYm2ChTtgPs.woff2" as="font" type="font/woff2" crossorigin="anonymous" />
+  <link rel="preload" href="/fonts/publicsans-ijwRs572Xtc6ZYQws9YVwnNGfJ4.woff2" as="font" type="font/woff2"
+    crossorigin="anonymous" />
+  <link rel="preload" href="/fonts/paytoneone-0nksC9P7MfYHj2oFtYm2ChTtgPs.woff2" as="font" type="font/woff2"
+    crossorigin="anonymous" />
 
   <!-- PWA -->
   <link rel="manifest" href="%sveltekit.assets%/manifest.json" />
 
   <style>
     /* FOUC (Flash of Unstyled Content) / Flashbang önleyici */
-    html { background-color: #F9F5E5; color: #242828; color-scheme: light dark; }
-    html.dark { background-color: #242828; color: #F9F5E5; color-scheme: dark; }
-    html.light { background-color: #F9F5E5; color: #242828; color-scheme: light; }
+    html {
+      background-color: #F9F5E5;
+      color: #242828;
+      color-scheme: light dark;
+    }
+
+    html.dark {
+      background-color: #242828;
+      color: #F9F5E5;
+      color-scheme: dark;
+    }
+
+    html.light {
+      background-color: #F9F5E5;
+      color: #242828;
+      color-scheme: light;
+    }
+
     @media (prefers-color-scheme: dark) {
-      html:not(.light) { background-color: #242828; color: #F9F5E5; color-scheme: dark; }
+      html:not(.light) {
+        background-color: #242828;
+        color: #F9F5E5;
+        color-scheme: dark;
+      }
     }
   </style>
 
   <script src="%sveltekit.assets%/theme-init.js" defer></script>
-  <script defer src="https://analitik.kepce.org/script.js" data-website-id="6914d829-f2d1-45b5-bcb0-b790d831c1bd"></script>
+  <script defer src="https://analitik.kepce.org/script.js"
+    data-website-id="6914d829-f2d1-45b5-bcb0-b790d831c1bd"></script>
   <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
   <title>Kepçe - KYK Yurt Yemek Menüsü</title>
-  <meta name="description" content="KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri." />
+  <meta name="description"
+    content="KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri." />
   %sveltekit.head%
 </head>
+
 <body data-sveltekit-preload-data="hover">
   <div style="display: contents">%sveltekit.body%</div>
   <div id="tooltip-portal" class="tooltip-portal"></div>
 </body>
+
 </html>

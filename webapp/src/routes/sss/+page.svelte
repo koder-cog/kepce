@@ -12,7 +12,6 @@
   description="Kepçe platformu, KYK yurt yemek menüleri, verilerin doğruluğu ve topluluk kuralları hakkında sıkça sorulan sorular."
 />
 
-
 <ContentPage
   title="Sıkça Sorulabilecek Sorular"
   dateLabel="Yayımlanma tarihi: 2026.08.05"

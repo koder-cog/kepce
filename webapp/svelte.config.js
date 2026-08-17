@@ -34,9 +34,9 @@ const config = {
 		// - nginx.conf already provides a strict CSP for the production build.
 		// - Dev server is intentionally permissive (Vite injects inline scripts dynamically).
 	},
-    compilerOptions: {
-        css: 'external'
-    }
+	compilerOptions: {
+		css: 'external'
+	}
 };
 
 export default config;
