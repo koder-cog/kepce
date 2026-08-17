@@ -96,8 +96,11 @@ export function createTimelineStore() {
             }
         };
 
-        const delay = debounceMs > 0 ? debounceMs : 10;
-        loadDebounceTimer = setTimeout(executeLoad, delay);
+        if (debounceMs > 0) {
+            loadDebounceTimer = setTimeout(executeLoad, debounceMs);
+        } else {
+            executeLoad();
+        }
     }
 
     async function updateView(newMonth, newYear, newType, debounceMs = 0) {
@@ -239,6 +242,8 @@ export function createTimelineStore() {
     }
 
     async function init() {
+        loadMenus();
+
         try {
             cities = await getCitiesData();
         } catch {
@@ -251,7 +256,6 @@ export function createTimelineStore() {
              if (typeof window !== 'undefined') localStorage.setItem("kepce_diet_mode", "standard");
         }
 
-        loadMenus();
         probeCeliacMonth();
         scrollToActiveDay(true);
     }
