@@ -1,6 +1,6 @@
 import { api } from '@/api/index.js';
 
-let currentCity = $state(typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || '' : '');
+let currentCity = $state(typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || 'istanbul' : 'istanbul');
 let onCityChangeListeners = [];
 
 // ── Şehir Listesi (Stale-While-Revalidate Önbellek) ──────────

@@ -52,14 +52,16 @@
         onChange(newCity);
     }
 
-    onMount(async () => {
+    onMount(() => {
         const profileCity = globalState?.user?.default_city_slug;
 
         if (!value && !profileCity) {
-            const detected = await detectCitySilent();
-            if (detected && slugs.includes(detected)) {
-                commit(detected);
-            }
+            detectCitySilent().then((detected) => {
+                if (detected && slugs.includes(detected) && detected !== value) {
+                    commit(detected);
+                    if (!localOnly) setCurrentCity(detected);
+                }
+            }).catch(() => {});
         }
 
         const finalCity = value || profileCity || "istanbul";
