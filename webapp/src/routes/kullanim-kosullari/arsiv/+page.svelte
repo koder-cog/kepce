@@ -9,6 +9,7 @@
 <Seo
   title="Kullanım Koşulları Arşivi - Kepçe"
   description="Kepçe kullanım koşulları geçmiş sürümleri ve değişiklik kayıtları."
+  noindex={true}
 />
 
 <ContentPage title="Kullanım Koşulları Geçmiş Sürümler">

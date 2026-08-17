@@ -9,6 +9,7 @@
 <Seo
   title="Gizlilik Politikası Arşivi - Kepçe"
   description="Kepçe gizlilik politikası ve KVKK metni geçmiş sürümleri ve değişiklik kayıtları."
+  noindex={true}
 />
 
 <ContentPage title="Gizlilik Politikası Geçmiş Sürümler">
