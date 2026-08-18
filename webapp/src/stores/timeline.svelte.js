@@ -287,7 +287,12 @@ export function createTimelineStore() {
              if (typeof window !== 'undefined') localStorage.setItem("kepce_diet_mode", "standard");
         }
 
-        probeCeliacMonth();
+        // Açılışta ana içeriğin (LCP) boyanmasını engellememek için çölyak kontrolünü idle anına ertele
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            window.requestIdleCallback(() => probeCeliacMonth(), { timeout: 3000 });
+        } else {
+            setTimeout(() => probeCeliacMonth(), 1000);
+        }
         scrollToActiveDay(true);
     }
 

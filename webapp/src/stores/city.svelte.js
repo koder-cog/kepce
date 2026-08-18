@@ -1,23 +1,30 @@
 import { api } from '@/api/index.js';
+import { CITY_MAP } from '@/utils/turkish.js';
+
+const DEFAULT_CITIES = Object.entries(CITY_MAP).map(([slug, name], i) => ({
+  id: i + 1,
+  slug,
+  name,
+  has_celiac: false
+}));
 
 let currentCity = $state(typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || 'istanbul' : 'istanbul');
 let onCityChangeListeners = [];
 
 // ── Şehir Listesi (Stale-While-Revalidate Önbellek) ──────────
 const CACHE_KEY = 'kepce_cities_cache';
-let citiesData = $state([]);
-let citiesLoaded = $state(false);
+let citiesData = $state(DEFAULT_CITIES);
+let citiesLoaded = $state(true);
 let citiesPromise = null;
 
 /**
  * Şehir listesini önbellekten anında döndürür, arka planda API'den günceller.
- * İlk çağrıda önbellek yoksa API yanıtını bekler.
  * @returns {Promise<Array<{slug: string, name: string}>>}
  */
 export function getCitiesData() {
   if (citiesPromise) return citiesPromise;
 
-  // 1. localStorage'dan hemen yükle (sıfır gecikme)
+  // 1. localStorage'dan hemen yükle (varsa zenginleştir)
   if (typeof window !== 'undefined') {
     try {
       const cached = localStorage.getItem(CACHE_KEY);
@@ -25,38 +32,35 @@ export function getCitiesData() {
         const parsed = JSON.parse(cached);
         if (Array.isArray(parsed) && parsed.length > 0) {
           citiesData = parsed;
-          citiesLoaded = true;
         }
       }
     } catch (_) { /* bozuk cache, yok say */ }
   }
 
-  // 2. Arka planda API'den güncel listeyi çek
-  citiesPromise = api.getCities()
-    .then(fresh => {
-      if (Array.isArray(fresh) && fresh.length > 0) {
-        citiesData = fresh;
-        citiesLoaded = true;
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
-        }
-      }
-      return citiesData;
-    })
-    .catch(err => {
-      console.error('[CityStore] API çağrısı başarısız:', err);
-      // Cache varsa onu kullanmaya devam et
-      if (citiesData.length > 0) {
-        citiesLoaded = true;
-      }
-      return citiesData;
-    });
+  // 2. Arka planda (idle) API'den güncel listeyi çek
+  citiesPromise = new Promise((resolve) => {
+    const fetchFresh = () => {
+      api.getCities()
+        .then(fresh => {
+          if (Array.isArray(fresh) && fresh.length > 0) {
+            citiesData = fresh;
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(CACHE_KEY, JSON.stringify(fresh));
+            }
+          }
+          resolve(citiesData);
+        })
+        .catch(() => resolve(citiesData));
+    };
 
-  // 3. Eğer cache'den yüklenmişse anında dön, yoksa promise'i beklet
-  if (citiesLoaded) {
-    return Promise.resolve(citiesData);
-  }
-  return citiesPromise;
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(fetchFresh, { timeout: 3000 });
+    } else {
+      setTimeout(fetchFresh, 1500);
+    }
+  });
+
+  return Promise.resolve(citiesData);
 }
 
 /** Reaktif şehir listesine erişim. */
