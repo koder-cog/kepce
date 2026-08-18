@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_auth.css";
   import { goto } from "$app/navigation";
   import { globalState, authActions } from "@/state.svelte.js";
 

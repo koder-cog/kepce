@@ -47,19 +47,6 @@
 @import "components/_toast.css";
 @import "components/_comment.css";
 
-/* Pages */
-@import "pages/_achievements.css";
-@import "pages/_admin.css";
-@import "pages/_archive.css";
-@import "pages/_auth.css";
-@import "pages/_comments.css";
-@import "pages/_content.css";
-@import "pages/_developer.css";
-@import "pages/_menu-table.css";
-@import "pages/_profile.css";
-@import "pages/_settings.css";
-@import "pages/_statistics.css";
-@import "pages/_status.css";
 /* Utilities */
 @import "utilities/_animations.css";
 @import "utilities/_helpers.css";

@@ -1,4 +1,5 @@
 <script>
+  import '@/styles/pages/_statistics.css';
   import { page } from '$app/stores';
   import { icon } from '@/components/ui/icons.js';
   import { slide, fade } from 'svelte/transition';

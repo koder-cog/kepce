@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_content.css";
   /**
    * ContentPage — Görev #52 + #53
    *

@@ -1,4 +1,5 @@
 <script>
+    import "@/styles/pages/_comments.css";
     import { api } from "@/api/index.js";
     import { icon } from "@/components/ui/icons.js";
     import MenuCard from "@/components/features/MenuCard.svelte";

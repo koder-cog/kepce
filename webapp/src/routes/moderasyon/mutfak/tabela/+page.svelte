@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_menu-table.css";
   import { onMount } from "svelte";
   import { api } from '@/api/index.js';
   import { getCitiesData } from "@/stores/city.svelte.js";

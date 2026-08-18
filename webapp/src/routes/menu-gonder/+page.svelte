@@ -1,4 +1,6 @@
 <script>
+  import "@/styles/pages/_content.css";
+  import "@/styles/pages/_auth.css";
   import { globalState, authActions } from "@/state.svelte.js";
 
   import { API_BASE } from "@/api/client.js";

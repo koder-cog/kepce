@@ -1,4 +1,5 @@
 <script>
+    import "@/styles/pages/_achievements.css";
     import { icon, icons } from "@/components/ui/icons.js";
     import { sanitizeText } from "@/utils/sanitize.js";
     import Seo from "@/components/ui/Seo.svelte";

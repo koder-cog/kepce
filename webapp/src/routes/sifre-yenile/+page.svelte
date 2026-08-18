@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_auth.css";
   import { api } from "@/api/index.js";
   import Seo from "@/components/ui/Seo.svelte";
 

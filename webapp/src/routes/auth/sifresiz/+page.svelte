@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_auth.css";
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
   import { api } from "@/api/index.js";

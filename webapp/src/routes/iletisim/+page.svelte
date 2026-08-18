@@ -1,4 +1,6 @@
 <script>
+  import "@/styles/pages/_content.css";
+  import "@/styles/pages/_auth.css";
   import { api } from "@/api/index.js";
   import { showToast } from "@/components/ui/toast.js";
   import Dropdown from "@/components/features/Dropdown.svelte";
