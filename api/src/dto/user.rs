@@ -129,6 +129,18 @@ pub struct UserProfileDto {
     // Kullanıcının kazandığı rozetlerin listesi
     pub badges: Vec<UserBadgeDto>,
     pub opt_out_statistics: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_replies: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_interactions: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_system: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email_newsletter: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email_security: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email_updates: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -188,6 +200,12 @@ pub struct UpdateProfileDto {
     pub bio: Option<String>,
     pub default_city_slug: Option<String>,
     pub opt_out_statistics: Option<bool>,
+    pub notif_replies: Option<bool>,
+    pub notif_interactions: Option<bool>,
+    pub notif_system: Option<bool>,
+    pub email_newsletter: Option<bool>,
+    pub email_security: Option<bool>,
+    pub email_updates: Option<bool>,
 }
 
 /// Hesap silme isteği — step-up auth: mevcut şifre zorunlu (SA-12)

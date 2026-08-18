@@ -186,6 +186,12 @@ impl UserService {
             total_badges,
             badges: dto_badges,
             opt_out_statistics: user.opt_out_statistics,
+            notif_replies: if include_private { Some(user.notif_replies) } else { None },
+            notif_interactions: if include_private { Some(user.notif_interactions) } else { None },
+            notif_system: if include_private { Some(user.notif_system) } else { None },
+            email_newsletter: if include_private { Some(user.email_newsletter) } else { None },
+            email_security: if include_private { Some(user.email_security) } else { None },
+            email_updates: if include_private { Some(user.email_updates) } else { None },
         })
     }
 
@@ -406,6 +412,25 @@ impl UserService {
 
         if let Some(opt_out) = dto.opt_out_statistics {
             user_model.opt_out_statistics = Set(opt_out);
+        }
+
+        if let Some(val) = dto.notif_replies {
+            user_model.notif_replies = Set(val);
+        }
+        if let Some(val) = dto.notif_interactions {
+            user_model.notif_interactions = Set(val);
+        }
+        if let Some(val) = dto.notif_system {
+            user_model.notif_system = Set(val);
+        }
+        if let Some(val) = dto.email_newsletter {
+            user_model.email_newsletter = Set(val);
+        }
+        if let Some(val) = dto.email_security {
+            user_model.email_security = Set(val);
+        }
+        if let Some(val) = dto.email_updates {
+            user_model.email_updates = Set(val);
         }
 
         user_model.updated_at = Set(Some(Utc::now().into()));

@@ -222,6 +222,32 @@ impl CommentService {
 
         txn.commit().await.map_err(CommentError::DatabaseError)?;
         
+        // Yanıt bildirimi tetikleyici (Parent yorum sahibi kendisi değilse)
+        if let Some(p_id) = parent_id {
+            if let Ok(Some(parent_comment)) = Comments::find_by_id(p_id).one(db).await {
+                if let Some(parent_author_id) = parent_comment.user_id {
+                    if parent_author_id != user_id {
+                        let preview = inserted.content.as_deref().unwrap_or("Bir yanıt bıraktı");
+                        let truncated = if preview.chars().count() > 80 {
+                            format!("{}...", preview.chars().take(77).collect::<String>())
+                        } else {
+                            preview.to_string()
+                        };
+                        let action_href = format!("/yorumlar/{}?thread={}", dto.menu_id, p_id);
+                        let _ = crate::services::notification::NotificationService::send_notification(
+                            db,
+                            parent_author_id,
+                            "reply",
+                            &format!("@{} yorumuna yanıt verdi", author_username),
+                            &truncated,
+                            Some("Yanıta Git"),
+                            Some(&action_href),
+                        ).await;
+                    }
+                }
+            }
+        }
+
         Ok(CommentResponseDto {
             id: inserted.id,
             comment: inserted.content,

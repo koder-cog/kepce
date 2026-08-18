@@ -16,3 +16,4 @@ pub mod migration;
 pub mod vote;
 pub mod email;
 pub mod pricing;
+pub mod notification;
