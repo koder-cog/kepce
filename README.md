@@ -32,7 +32,7 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
     "city_name": "İstanbul",
     "serve_date": "2026-05-01",
     "meal_type": "dinner",
-    "source_type": "kykyemek",
+    "source_type": "kepce",
     "status": "approved",
     "items": [
       {
