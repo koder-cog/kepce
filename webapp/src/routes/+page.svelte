@@ -11,9 +11,9 @@
 
     // SSR / Init: data'dan gelen prerender menülerini hemen store'a aktar.
     // Senkron çağrı hem SSR prerender'da hem ilk client render'da çalışır.
-    if (data?.prerenderedMenus?.length > 0) {
+    if (data?.prerenderedCity) {
         timelineState.setPrerenderedData(
-            data.prerenderedMenus,
+            data.prerenderedMenus || [],
             data.prerenderedCity,
             data.prerenderedDate
         );

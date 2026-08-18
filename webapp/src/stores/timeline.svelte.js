@@ -249,8 +249,7 @@ export function createTimelineStore() {
      * Menü verisini store'a enjekte eder → HTML'de menü kartları render edilir.
      */
     function setPrerenderedData(menus, city, dateStr) {
-        if (!menus || menus.length === 0) return;
-        menusState = menus;
+        menusState = Array.isArray(menus) ? menus : [];
         prerenderedMeta = { city, date: dateStr };
         if (dateStr) {
             const parts = dateStr.split('-').map(Number);
@@ -263,18 +262,17 @@ export function createTimelineStore() {
     }
 
     async function init() {
-        // Prerender verisi mevcut city/date ile eşleşiyorsa tekrar API'ye gitme
+        // Prerender verisi mevcut city/date ile eşleşiyorsa ilk açılışta tekrar API'ye gitme
         const today = new Date();
         const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
         const skipInitialLoad = prerenderedMeta
             && prerenderedMeta.city === currentCity
-            && prerenderedMeta.date === todayStr
-            && menusState.length > 0;
+            && prerenderedMeta.date === todayStr;
 
         if (!skipInitialLoad) {
             loadMenus();
         }
-        // Prerender meta'yı temizle — sonraki navigasyonlarda tekrar çekilsin
+        // Prerender meta'yı temizle — sonraki tarih/şehir değişimlerinde tekrar çekilsin
         prerenderedMeta = null;
 
         try {
