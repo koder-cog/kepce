@@ -21,11 +21,18 @@ import DOMPurify from 'dompurify';
  */
 export function sanitize(dirty, config = {}) {
   if (dirty == null) return '';
-  return DOMPurify.sanitize(String(dirty), {
-    ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'span'],
-    ALLOWED_ATTR: ['class'],
-    ...config,
-  });
+  const str = String(dirty);
+  if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
+    return DOMPurify.sanitize(str, {
+      ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'span'],
+      ALLOWED_ATTR: ['class'],
+      ...config,
+    });
+  }
+  // SSR Fallback: Tehlikeli script ve handler'ları temizle
+  return str
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+    .replace(/\bon\w+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '');
 }
 
 /**
@@ -37,5 +44,11 @@ export function sanitize(dirty, config = {}) {
  */
 export function sanitizeText(dirty) {
   if (dirty == null) return '';
-  return DOMPurify.sanitize(String(dirty), { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  const str = String(dirty);
+  if (typeof DOMPurify !== 'undefined' && typeof DOMPurify.sanitize === 'function') {
+    return DOMPurify.sanitize(str, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] });
+  }
+  // SSR Fallback: Tüm HTML etiketlerini temizle
+  return str.replace(/<[^>]*>?/gm, '');
 }
+

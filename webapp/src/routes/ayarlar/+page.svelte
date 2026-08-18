@@ -62,6 +62,8 @@
   let showBot = $state(safeStorageGet("kepce_show_bot", "true") !== "false");
 
   if (
+    typeof window !== "undefined" &&
+    typeof localStorage !== "undefined" &&
     localStorage.getItem("kepce_show_empty_cards") === null &&
     localStorage.getItem("kepce_hide_empty_cards") !== null
   ) {

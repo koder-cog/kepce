@@ -16,6 +16,9 @@ export function createTimelineStore() {
     let isLoading = $state(false);
     let errorState = $state(null);
     let menusState = $state([]);
+    // Prerender sırasında enjekte edilen veriyi takip et:
+    // init() çağrıldığında aynı city/date ise tekrar API'ye gitmez.
+    let prerenderedMeta = null;
     let currentLoadToken = 0;
     let currentCity = $derived(getCurrentCity());
 
@@ -241,8 +244,38 @@ export function createTimelineStore() {
         });
     }
 
+    /**
+     * SSR/prerender sırasında çağrılır (onMount'tan ÖNCE).
+     * Menü verisini store'a enjekte eder → HTML'de menü kartları render edilir.
+     */
+    function setPrerenderedData(menus, city, dateStr) {
+        if (!menus || menus.length === 0) return;
+        menusState = menus;
+        prerenderedMeta = { city, date: dateStr };
+        if (dateStr) {
+            const parts = dateStr.split('-').map(Number);
+            if (parts.length === 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
+                selectedDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                viewMonth = parts[1] - 1;
+                viewYear = parts[0];
+            }
+        }
+    }
+
     async function init() {
-        loadMenus();
+        // Prerender verisi mevcut city/date ile eşleşiyorsa tekrar API'ye gitme
+        const today = new Date();
+        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+        const skipInitialLoad = prerenderedMeta
+            && prerenderedMeta.city === currentCity
+            && prerenderedMeta.date === todayStr
+            && menusState.length > 0;
+
+        if (!skipInitialLoad) {
+            loadMenus();
+        }
+        // Prerender meta'yı temizle — sonraki navigasyonlarda tekrar çekilsin
+        prerenderedMeta = null;
 
         try {
             cities = await getCitiesData();
@@ -309,6 +342,7 @@ export function createTimelineStore() {
         setPermanentDietMode,
         forceDietMode,
         updateView,
+        setPrerenderedData,
         scrollToActiveDay
     };
 }

@@ -7,6 +7,18 @@
     import Seo from "@/components/ui/Seo.svelte";
     import { onMount } from "svelte";
 
+    let { data } = $props();
+
+    // SSR / Init: data'dan gelen prerender menülerini hemen store'a aktar.
+    // Senkron çağrı hem SSR prerender'da hem ilk client render'da çalışır.
+    if (data?.prerenderedMenus?.length > 0) {
+        timelineState.setPrerenderedData(
+            data.prerenderedMenus,
+            data.prerenderedCity,
+            data.prerenderedDate
+        );
+    }
+
     onMount(() => {
         // Görev #24: URL üzerinden diyet modu zorlaması (?diyet=celiac).
         // Çölyaksız bir ayda bile mod korunur ve "çölyak menüsü yok"

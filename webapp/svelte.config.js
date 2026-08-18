@@ -16,7 +16,10 @@ const config = {
 			strict: false
 		}),
 		prerender: {
-			handleHttpError: 'warn',
+			entries: ['*', '/'],
+			handleHttpError: ({ path, referrer, message, status }) => {
+				console.error(`[PRERENDER ERROR] ${status} ${path} (from ${referrer}): ${message}`);
+			},
 			handleMissingId: 'warn',
 			handleUnseenRoutes: 'ignore'
 		},
