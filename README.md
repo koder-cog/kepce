@@ -24,18 +24,72 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
 
 <details>
 <summary>Örnek JSON Yanıtı</summary>
+
 ```json
 [
   {
+    "id": 1042,
     "city_name": "İstanbul",
     "serve_date": "2026-05-01",
-    "meal_type": "breakfast",
+    "meal_type": "dinner",
+    "source_type": "kykyemek",
+    "status": "approved",
     "items": [
-      { "raw_name": "Karışık Kızartma", "amount": "150 g", "price": "37.00 ₺" },
-      { "raw_name": "Haşlanmış Yumurta", "amount": "1 Adet", "price": "11.00 ₺" },
-      { "raw_name": "Kaşar Peynir", "amount": "40 g", "price": null },
-      { "raw_name": "500 ml Su", "amount": "500 ml", "price": "5.00 ₺" }
-    ]
+      {
+        "order_index": 0,
+        "raw_name": "Mercimek Çorbası",
+        "is_alternative": false,
+        "amount": "200 ml",
+        "calories": 140,
+        "price": "18.00 ₺",
+        "category": "ÇORBA ÇEŞİTLERİ",
+        "master_data": {
+          "dish_id": 10,
+          "name": "Mercimek Çorbası",
+          "is_celiac": false,
+          "is_vegan": true,
+          "is_vegetarian": true,
+          "estimated_calories": 140
+        }
+      },
+      {
+        "order_index": 1,
+        "raw_name": "Tavuk Sote",
+        "is_alternative": false,
+        "amount": "180 g",
+        "calories": 260,
+        "price": "45.00 ₺",
+        "category": "KEMİKSİZ TAVUK YEMEKLERİ",
+        "master_data": {
+          "dish_id": 16919,
+          "name": "Tavuk Sote",
+          "is_celiac": false,
+          "is_vegan": false,
+          "is_vegetarian": false,
+          "estimated_calories": 260
+        }
+      },
+      {
+        "order_index": 2,
+        "raw_name": "Pirinç Pilavı",
+        "is_alternative": false,
+        "amount": "150 g",
+        "calories": 220,
+        "price": "20.00 ₺",
+        "category": "PİRİNÇ PİLAVI ÇEŞİTLERİ",
+        "master_data": {
+          "dish_id": 311,
+          "name": "Pirinç Pilavı",
+          "is_celiac": false,
+          "is_vegan": true,
+          "is_vegetarian": true,
+          "estimated_calories": 220
+        }
+      }
+    ],
+    "comment_count": 12,
+    "rating_sum": 48,
+    "vote_count": 10
   }
 ]
 ```
