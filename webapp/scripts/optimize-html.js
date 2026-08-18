@@ -43,8 +43,8 @@ async function main() {
 		preload: 'media',
 		// Inline edilen CSS'i minify et
 		compress: true,
-		// Font-face kurallarını da inline et (FCP için kritik)
-		inlineFonts: true,
+		// Font-face kuralları zaten harici CSS'te ve link preload ile yönetiliyor
+		inlineFonts: false,
 		// Kullanılmayan CSS kurallarını çıkar
 		pruneSource: false,
 		// noscript fallback ekle
