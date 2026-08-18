@@ -217,7 +217,6 @@
           {/if}
         </button>
 
-        <!-- Şifresiz giriş mekanizması geçici olarak gizlendi
         <button
           type="button"
           class="btn btn--secondary auth-submit u-mt-sm"
@@ -230,7 +229,6 @@
         >
           {isPasswordlessMode ? "Şifre ile giriş yap" : "Şifresiz giriş yap"}
         </button>
-        -->
       {/if}
     </form>
 

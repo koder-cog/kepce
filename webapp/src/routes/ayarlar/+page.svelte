@@ -181,6 +181,18 @@
     }
   }
 
+  async function handlePreferenceChange(key, value, label) {
+    try {
+      await api.updateProfile({ [key]: value });
+      if (globalState.user) {
+        globalState.user[key] = value;
+      }
+      showToast(`${label} tercihiniz güncellendi.`, "success");
+    } catch (err) {
+      showToast(err.message || "Ayar güncellenirken bir hata oluştu.", "error");
+    }
+  }
+
   let isNicknameModalOpen = $state(false);
   let nicknameInput = $state("");
 
@@ -850,7 +862,13 @@
               type="checkbox"
               id="settings-notif-replies"
               class="c-input-hidden"
-              checked
+              checked={globalState.user?.notif_replies ?? true}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "notif_replies",
+                  e.target.checked,
+                  "Yanıt bildirimleri",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -867,7 +885,13 @@
               type="checkbox"
               id="settings-notif-interactions"
               class="c-input-hidden"
-              checked
+              checked={globalState.user?.notif_interactions ?? true}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "notif_interactions",
+                  e.target.checked,
+                  "Etkileşim bildirimleri",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -886,7 +910,13 @@
               type="checkbox"
               id="settings-notif-system"
               class="c-input-hidden"
-              checked
+              checked={globalState.user?.notif_system ?? true}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "notif_system",
+                  e.target.checked,
+                  "Sistem bildirimleri",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -905,6 +935,13 @@
               type="checkbox"
               id="settings-email-newsletter"
               class="c-input-hidden"
+              checked={globalState.user?.email_newsletter ?? false}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "email_newsletter",
+                  e.target.checked,
+                  "Yemek bülteni",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -923,7 +960,13 @@
               type="checkbox"
               id="settings-email-security"
               class="c-input-hidden"
-              checked
+              checked={globalState.user?.email_security ?? true}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "email_security",
+                  e.target.checked,
+                  "Güvenlik e-postaları",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -942,6 +985,13 @@
               type="checkbox"
               id="settings-email-updates"
               class="c-input-hidden"
+              checked={globalState.user?.email_updates ?? false}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "email_updates",
+                  e.target.checked,
+                  "Duyuru e-postaları",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
