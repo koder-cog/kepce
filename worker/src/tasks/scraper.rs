@@ -774,6 +774,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Live external network test"]
     async fn test_live_kyk_token() {
         let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
         let token = super::fetch_antiforgery_token(&client).await;
@@ -782,6 +783,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "Live external network test"]
     async fn test_live_get_menu() {
         let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
         let token = super::fetch_antiforgery_token(&client).await.unwrap();
