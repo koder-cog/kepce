@@ -40,6 +40,7 @@
     function updateIndicator() {
         if (!containerNode) return;
         requestAnimationFrame(() => {
+            if (!containerNode) return;
             const activeBtn = containerNode.querySelector(
                 `button[data-value="${value}"]`,
             );

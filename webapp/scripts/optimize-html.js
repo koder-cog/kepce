@@ -66,7 +66,18 @@ async function main() {
 		}
 
 		try {
-			const optimized = await critters.process(original);
+			let optimized = await critters.process(original);
+
+			// Mükerrer stylesheet linklerini temizle
+			const seenLinks = new Set();
+			optimized = optimized.replace(/<link\s+[^>]*rel="stylesheet"[^>]*>/gi, (match) => {
+				if (seenLinks.has(match)) {
+					return '';
+				}
+				seenLinks.add(match);
+				return match;
+			});
+
 			await writeFile(file, optimized, 'utf-8');
 
 			const originalSize = Buffer.byteLength(original, 'utf-8');

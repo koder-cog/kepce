@@ -48,22 +48,26 @@
     function handleScrollToActive(e) {
         const forceCenter = e.detail?.forceCenter;
         if (!daySelectorWrapper) return;
-        const activeItem = 
-            daySelectorWrapper.querySelector(".day-selector__item--active") ||
-            daySelectorWrapper.querySelector(".day-selector__item--today");
-        if (activeItem) {
-            if (forceCenter) {
-                activeItem.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
-            } else {
-                const container = activeItem.parentElement;
-                const rect = activeItem.getBoundingClientRect();
-                const containerRect = container.getBoundingClientRect();
-                const isVisible = rect.left >= containerRect.left && rect.right <= containerRect.right;
-                if (!isVisible) {
+        requestAnimationFrame(() => {
+            if (!daySelectorWrapper) return;
+            const activeItem = 
+                daySelectorWrapper.querySelector(".day-selector__item--active") ||
+                daySelectorWrapper.querySelector(".day-selector__item--today");
+            if (activeItem) {
+                if (forceCenter) {
                     activeItem.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                } else {
+                    const container = activeItem.parentElement;
+                    if (!container) return;
+                    const rect = activeItem.getBoundingClientRect();
+                    const containerRect = container.getBoundingClientRect();
+                    const isVisible = rect.left >= containerRect.left && rect.right <= containerRect.right;
+                    if (!isVisible) {
+                        activeItem.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    }
                 }
             }
-        }
+        });
     }
 </script>
 
