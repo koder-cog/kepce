@@ -14,12 +14,7 @@ import { browser } from '$app/environment';
 export const prerender = true;
 
 export async function load({ fetch }) {
-    // İstemcide çalışma — store zaten veriyi yönetiyor
-    if (browser) {
-        return { prerenderedMenus: null, prerenderedCity: null, prerenderedDate: null };
-    }
-
-    // SSR / Prerender: statik JSON dosyasından oku
+    // SSR / Prerender ve Client Hydration: statik JSON dosyasından veri aktarımı
     try {
         const res = await fetch('/data/prerender-menus.json');
         if (!res.ok) {
