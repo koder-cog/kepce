@@ -26,6 +26,7 @@ async fn setup_app() -> axum::Router {
 }
 
 #[tokio::test]
+#[ignore = "requires live postgres database"]
 async fn test_rate_limiter_triggers() {
     let app = setup_app().await;
 

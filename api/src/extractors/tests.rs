@@ -39,6 +39,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_validated_json_valid() {
         let payload = serde_json::json!({
             "email": "test@kepce.org",
@@ -58,6 +59,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_validated_json_invalid_email() {
         let payload = serde_json::json!({
             "email": "not_an_email",
@@ -76,6 +78,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_validated_json_invalid_name() {
         let payload = serde_json::json!({
             "email": "test@kepce.org",
@@ -94,6 +97,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_header() {
         let state = mock_app_state().await;
         let user_id = Uuid::new_v4();
@@ -126,6 +130,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_cookie() {
         let state = mock_app_state().await;
         let user_id = Uuid::new_v4();
@@ -158,6 +163,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_missing() {
         let state = mock_app_state().await;
         let req = Request::builder()
@@ -173,6 +179,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_api_key_extractor_missing() {
         let state = mock_app_state().await;
         let req = Request::builder()

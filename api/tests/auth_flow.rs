@@ -31,6 +31,7 @@ async fn setup_app() -> (axum::Router, AppState) {
 }
 
 #[tokio::test]
+#[ignore = "requires live postgres database"]
 async fn test_full_auth_flow() {
     let (app, state) = setup_app().await;
 

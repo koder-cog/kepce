@@ -664,6 +664,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "requires live postgres database"]
     async fn test_menu_cryptographic_chain_integrity() {
         dotenvy::dotenv().ok();
         let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
