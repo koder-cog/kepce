@@ -7,17 +7,21 @@
     import Seo from "@/components/ui/Seo.svelte";
     import { onMount } from "svelte";
 
+    import { untrack } from "svelte";
+
     let { data } = $props();
 
     // SSR / Init: data'dan gelen prerender menülerini hemen store'a aktar.
     // Senkron çağrı hem SSR prerender'da hem ilk client render'da çalışır.
-    if (data?.prerenderedCity) {
-        timelineState.setPrerenderedData(
-            data.prerenderedMenus || [],
-            data.prerenderedCity,
-            data.prerenderedDate
-        );
-    }
+    untrack(() => {
+        if (data?.prerenderedCity) {
+            timelineState.setPrerenderedData(
+                data.prerenderedMenus || [],
+                data.prerenderedCity,
+                data.prerenderedDate
+            );
+        }
+    });
 
     onMount(() => {
         // Görev #24: URL üzerinden diyet modu zorlaması (?diyet=celiac).
