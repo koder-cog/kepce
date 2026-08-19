@@ -342,6 +342,8 @@
         class="dropdown__trigger dropdown__trigger--{variant}"
         class:dropdown__trigger--open={isOpen}
         class:dropdown__trigger--disabled={disabled}
+        class:dropdown__trigger--placeholder={!value}
+        class:dropdown__trigger--has-value={!!value}
         type="button"
         {disabled}
         aria-haspopup="listbox"

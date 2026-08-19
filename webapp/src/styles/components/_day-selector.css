@@ -142,11 +142,14 @@
     color: var(--color-text-on-accent);
     font-weight: var(--font-weight-bold);
     box-shadow: var(--shadow-accent-sm);
+    --selection-bg: var(--color-text);
+    --selection-color: var(--color-background);
   }
 
-  .calendar-grid__day--selected::selection {
-    background: var(--color-text);
-    color: var(--color-card);
+  .calendar-grid__day--selected::selection,
+  .calendar-grid__day--selected *::selection {
+    background: var(--color-text) !important;
+    color: var(--color-background) !important;
   }
 
   .calendar-grid__day--today {

@@ -153,7 +153,7 @@
     background: transparent;
     border: 1px solid transparent;
     border-radius: var(--radius-md);
-    color: var(--color-text-secondary);
+    color: var(--color-muted);
     font-family: var(--font-body);
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
@@ -186,6 +186,12 @@
   .dropdown__trigger--ghost:focus-visible {
     border-color: var(--color-border);
     box-shadow: var(--shadow-focus);
+  }
+
+  button.dropdown__trigger.dropdown__trigger--ghost.dropdown__trigger--has-value,
+  .dropdown__trigger--ghost.dropdown__trigger--has-value {
+    color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
   }
 
   button.dropdown__trigger.dropdown__trigger--ghost.dropdown__trigger--open,

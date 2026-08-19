@@ -23,12 +23,14 @@
     background: var(--color-accent-primary);
     border-color: inherit;
     color: var(--color-text-on-accent);
+    --selection-bg: var(--color-text);
+    --selection-color: var(--color-background);
   }
 
   .chip.active::selection,
   .chip.active *::selection {
-    background: var(--color-text);
-    color: var(--color-card);
+    background: var(--color-text) !important;
+    color: var(--color-background) !important;
   }
 
   /* ── Disclaimer Card ───────────────────────────────────────── */
