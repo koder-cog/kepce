@@ -323,9 +323,9 @@
       width: 90vw !important;
       max-width: 380px;
       max-height: 85vh !important;
-      border-radius: 28px;
+      border-radius: var(--radius-xl);
       transform-origin: center center !important;
-      padding: 24px 16px !important;
+      padding: var(--space-lg) var(--space-md) !important;
       background: var(--color-surface-elevated);
       border: 1px solid var(--color-border-light);
       box-shadow: var(--shadow-xl);
