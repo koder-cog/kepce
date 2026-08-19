@@ -107,9 +107,9 @@
     outline-offset: 2px;
   }
 
-  /* Seçim rengi: Eşli bildirim kuralı (paired declarations) gereği background ve color birlikte tanımlanır. */
+  /* Seçim rengi: --color-info (pastel gök mavisi) ile hem normal hem turuncu yüzeylerde yüksek kontrast */
   ::selection {
-    background: var(--selection-bg, rgba(var(--color-accent-primary-rgb), 0.28));
+    background: var(--selection-bg, rgba(var(--color-info-rgb), 0.38));
     color: var(--selection-color, var(--color-text));
   }
 

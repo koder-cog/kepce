@@ -99,12 +99,6 @@
     opacity: 1;
   }
 
-  .c-tab--active::selection,
-  .c-tab--active *::selection {
-    background: var(--color-text);
-    color: var(--color-card);
-  }
-
   .c-tab__icon {
     display: flex;
     align-items: center;

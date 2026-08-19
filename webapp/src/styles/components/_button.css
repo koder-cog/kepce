@@ -59,14 +59,6 @@
   .btn--primary {
     background: var(--color-accent-primary);
     color: var(--color-text-on-accent);
-    --selection-bg: var(--color-text);
-    --selection-color: var(--color-background);
-  }
-
-  .btn--primary::selection,
-  .btn--primary *::selection {
-    background: var(--color-text) !important;
-    color: var(--color-background) !important;
   }
 
   @media (hover: hover) {
