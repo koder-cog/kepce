@@ -20,16 +20,16 @@ else
     CMD="podman"
 fi
 
-echo "🚀 pgBackRest Stanza (Profil) oluşturuluyor..."
+echo "[BİLGİ] pgBackRest Stanza (Profil) oluşturuluyor..."
 $CMD exec -u postgres "$DB_CONTAINER" pgbackrest --stanza=kepce-stanza stanza-create
 
-echo "✅ Stanza oluşturuldu. Konfigürasyon kontrol ediliyor..."
+echo "[BAŞARI] Stanza oluşturuldu. Konfigürasyon kontrol ediliyor..."
 $CMD exec -u postgres "$DB_CONTAINER" pgbackrest --stanza=kepce-stanza check
 
-echo "💾 İlk tam (FULL) yedekleme başlatılıyor..."
+echo "[BİLGİ] İlk tam (FULL) yedekleme başlatılıyor..."
 $CMD exec -u postgres "$DB_CONTAINER" pgbackrest --type=full --stanza=kepce-stanza backup
 
-echo "🎉 Kurulum tamamlandı! Her şey çalışıyor."
+echo "[BAŞARI] Kurulum tamamlandı! Her şey çalışıyor."
 echo "Not: Aşağıdaki crontab görevlerini sunucunuza eklemeyi unutmayın:"
 echo "--------------------------------------------------------"
 echo "0 3 * * 0 $CMD exec -u postgres $DB_CONTAINER pgbackrest --type=full --stanza=kepce-stanza backup"

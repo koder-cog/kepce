@@ -14,6 +14,6 @@ else
     exit 1
 fi
 
-echo "[$(date)] 🚀 Tam (FULL) pgBackRest yedeklemesi başlatılıyor..."
+echo "[$(date)] [BİLGİ] Tam (FULL) pgBackRest yedeklemesi başlatılıyor..."
 $CMD exec -u postgres "$DB_CONTAINER" pgbackrest --type=full --stanza=kepce-stanza backup
-echo "[$(date)] ✅ Tam yedekleme tamamlandı."
+echo "[$(date)] [BAŞARI] Tam yedekleme tamamlandı."

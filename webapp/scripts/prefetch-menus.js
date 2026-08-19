@@ -54,7 +54,7 @@ async function main() {
         }
 
         writeFileSync(OUTPUT_FILE, JSON.stringify(payload), 'utf-8');
-        console.log(`[prefetch] ✅ ${menus.length} menü → ${OUTPUT_FILE}`);
+        console.log(`[prefetch] [BAŞARI] ${menus.length} menü → ${OUTPUT_FILE}`);
     } catch (err) {
         console.warn(`[prefetch] API erişilemedi: ${err.message}. Boş JSON yazılıyor.`);
         writeEmptyPayload(dateStr);

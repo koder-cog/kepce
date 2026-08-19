@@ -25,7 +25,7 @@ impl AlertingService {
 
         let client = Client::new();
         let payload = json!({
-            "content": format!("🚨 **[KEPÇE ALARM]** {}", message)
+            "content": format!("[ALARM] **[KEPÇE ALARM]** {}", message)
         });
 
         tracing::info!("Webhook uyarısı gönderiliyor: {}", message);

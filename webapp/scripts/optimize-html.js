@@ -53,7 +53,7 @@ async function main() {
 
 	const htmlFiles = await findHtmlFiles(DIST_DIR);
 
-	console.log(`🔍 ${htmlFiles.length} HTML dosyası bulundu.`);
+	console.log(`[BİLGİ] ${htmlFiles.length} HTML dosyası bulundu.`);
 
 	for (const file of htmlFiles) {
 		const relPath = file.replace(DIST_DIR + '/', '');
@@ -61,7 +61,7 @@ async function main() {
 
 		// Stylesheet linki olmayan HTML'leri atla (oauth callback vb.)
 		if (!original.includes('rel="stylesheet"')) {
-			console.log(`  ⏭️  ${relPath}: stylesheet yok, atlandı.`);
+			console.log(`  [ATLANDI] ${relPath}: stylesheet yok, atlandı.`);
 			continue;
 		}
 
@@ -85,17 +85,17 @@ async function main() {
 			const diff = optimizedSize - originalSize;
 
 			console.log(
-				`  ✅ ${relPath}: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedSize / 1024).toFixed(1)}KB (critical CSS: +${(diff / 1024).toFixed(1)}KB)`
+				`  [BAŞARI] ${relPath}: ${(originalSize / 1024).toFixed(1)}KB → ${(optimizedSize / 1024).toFixed(1)}KB (critical CSS: +${(diff / 1024).toFixed(1)}KB)`
 			);
 		} catch (err) {
-			console.warn(`  ⚠️  ${relPath}: critters hatası, orijinal korundu. (${err.message})`);
+			console.warn(`  [UYARI] ${relPath}: critters hatası, orijinal korundu. (${err.message})`);
 		}
 	}
 
-	console.log(`\n🎉 Critical CSS inlining tamamlandı.`);
+	console.log(`\n[BAŞARI] Critical CSS inlining tamamlandı.`);
 }
 
 main().catch((err) => {
-	console.error('❌ Critical CSS inlining hatası:', err);
+	console.error('[HATA] Critical CSS inlining hatası:', err);
 	process.exit(1);
 });

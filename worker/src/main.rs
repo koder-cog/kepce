@@ -73,7 +73,7 @@ async fn main() -> anyhow::Result<()> {
             .await
         {
             Ok(res) if res.status().is_success() => {
-                tracing::info!("Gemini model '{}' erişilebilir ✓", model_name);
+                tracing::info!("Gemini model '{}' erişilebilir [OK]", model_name);
             }
             Ok(res) => {
                 tracing::warn!(

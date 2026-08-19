@@ -234,7 +234,7 @@
               </div>
               {#if badge.is_repeatable}
                 <div class="badge-item__repeatable" title="Tekrarlanabilir">
-                  🔁
+                  [TEKRAR]
                 </div>
               {/if}
             </div>

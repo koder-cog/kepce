@@ -261,7 +261,10 @@
   position: absolute;
   top: var(--space-sm);
   right: var(--space-sm);
-  font-size: var(--text-lg);
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-muted);
   opacity: 0.8;
 }
 

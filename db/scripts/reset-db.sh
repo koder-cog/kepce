@@ -16,20 +16,20 @@ else
     exit 1
 fi
 
-echo "⚠️  Lokal veritabanı sıfırlanıyor: $POSTGRES_DB..."
+echo "[UYARI] Lokal veritabanı sıfırlanıyor: $POSTGRES_DB..."
 
 $CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 
-echo "🔄 Migrasyonlar sırayla koşturuluyor..."
+echo "[BİLGİ] Migrasyonlar sırayla koşturuluyor..."
 for sql in $(ls db/migrations/*.sql | sort); do
     echo " -> $sql"
     $CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f - < "$sql"
 done
 
-echo "🌱 Prod seed verileri koşturuluyor..."
+echo "[BİLGİ] Prod seed verileri koşturuluyor..."
 for sql in $(ls db/seeds/prod/*.sql | sort); do
     echo " -> $sql"
     $CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f - < "$sql"
 done
 
-echo "✅ Veritabanı başarıyla sıfırlandı ve güncellendi!"
+echo "[BAŞARI] Veritabanı başarıyla sıfırlandı ve güncellendi!"
