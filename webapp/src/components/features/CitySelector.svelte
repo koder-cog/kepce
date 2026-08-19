@@ -11,6 +11,7 @@
     import { createModal } from "./modal.js";
     import { setCurrentCity } from "../../stores/city.svelte.js";
     import { onMount } from "svelte";
+    import { goto } from "$app/navigation";
 
     let {
         cities = [],
@@ -91,7 +92,7 @@
         if (detectedIP && slugs.includes(detectedIP)) {
             commit(detectedIP);
             if (!localOnly) setCurrentCity(detectedIP);
-            showToast("Konumunuz otomatik olarak bulundu.", { timeout: 3000 });
+            showToast("Konumunuz güncellendi.", { timeout: 3000 });
             return;
         }
 
@@ -103,16 +104,29 @@
                 action: {
                     text: "İzin Ver",
                     callback: async () => {
-                        const detected = await detectCityPrecise(slugs);
-                        if (detected) {
-                            commit(detected);
-                            if (!localOnly) setCurrentCity(detected);
+                        const result = await detectCityPrecise(slugs);
+                        if (result?.success && result.slug) {
+                            commit(result.slug);
+                            if (!localOnly) setCurrentCity(result.slug);
                             showToast("Konumunuz güncellendi.", {
                                 timeout: 3000,
                             });
+                        } else if (result?.unsupported) {
+                            showToast(
+                                "Bulunduğunuz şehir için henüz menü bulunmuyor.",
+                                {
+                                    timeout: 8000,
+                                    action: {
+                                        text: "Menü Gönder",
+                                        callback: () => {
+                                            goto("/menu-gonder");
+                                        },
+                                    },
+                                },
+                            );
                         } else {
                             showToast(
-                                "Konum izni verilmedi veya şehir bulunamadı.",
+                                "Konum izni verilmedi veya konum tespit edilemedi.",
                                 { type: "error" },
                             );
                         }
