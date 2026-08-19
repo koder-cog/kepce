@@ -310,7 +310,7 @@ pub fn parse_grid(sheet: &SheetGrid, db: &mut MenuDatabase, file_name_hint: &str
                         }
 
                         let mut alternatives = Vec::new();
-                        let names: Vec<String> = split_outside_parens(&item_name, '/');
+                        let names: Vec<String> = crate::parser::normalizer::split_smart_alternatives(&item_name);
                         
                         let amounts: Vec<String> = if let Some(ref a) = amount {
                             split_outside_parens(a, '/')
@@ -351,7 +351,7 @@ pub fn parse_grid(sheet: &SheetGrid, db: &mut MenuDatabase, file_name_hint: &str
 
                         if alternatives.is_empty() {
                             alternatives.push(MenuComponent {
-                                name: item_name.clone(),
+                                name: crate::parser::normalizer::normalize_food_name(&item_name),
                                 amount,
                                 calories,
                                 category: None,

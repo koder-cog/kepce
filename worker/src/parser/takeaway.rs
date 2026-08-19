@@ -142,10 +142,13 @@ pub fn get_takeaway_config(city_slug: &str, mapped_meal_type: &str) -> Option<Ha
         other => other,
     };
 
-    let candidates = vec![
-        format!("config/takeaway/{}_{}.json", city_slug, mapped_meal_type),
-        format!("config/takeaway/{}_{}.json", city_slug, turkish_meal_type),
-    ];
+    let periods = ["2025-2026", "2026-2027", "2024-2025"];
+    let mut candidates = Vec::new();
+
+    for period in &periods {
+        candidates.push(format!("config/takeaway/{}/{}/{}.json", city_slug, period, mapped_meal_type));
+        candidates.push(format!("config/takeaway/{}/{}/{}.json", city_slug, period, turkish_meal_type));
+    }
 
     for path in candidates {
         if let Some(loaded) = load_config_file(&path) {

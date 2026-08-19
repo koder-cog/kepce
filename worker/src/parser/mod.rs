@@ -1,11 +1,12 @@
+pub mod anomaly;
 pub mod core;
+pub mod dictionary;
 pub mod excel;
 pub mod kykyemek;
-pub mod takeaway;
-pub mod anomaly;
-pub mod dictionary;
 pub mod llm;
 pub mod models;
+pub mod normalizer;
+pub mod takeaway;
 pub mod validation;
 
 use sea_orm::DatabaseConnection;

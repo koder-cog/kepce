@@ -495,9 +495,14 @@
     "excludes": []
   },
   {
+    "category": "GLUTENSİZ ROLL EKMEK",
+    "keywords": ["glutensiz roll ekmek", "glutensiz roll", "glutensiz ekmek", "roll ekmek", "glutensiz paket ekmek", "çölyak ekmek"],
+    "excludes": []
+  },
+  {
     "category": "EKMEK",
     "keywords": ["ekmek", "çeyrek ekmek", "somun ekmek", "tam buğday ekmeği", "çavdar ekmeği", "kepekli ekmek"],
-    "excludes": ["ekmek arası", "yumurtalı ekmek", "tost"]
+    "excludes": ["ekmek arası", "yumurtalı ekmek", "tost", "ekmek kadayıfı", "glutensiz", "roll"]
   },
   {
     "category": "KUŞBAŞILI VEYA SUCUKLU PİDE",

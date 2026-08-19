@@ -1,5 +1,6 @@
 {
   "city": "istanbul",
+  "period": "2025-2026",
   "meal_type": "breakfast",
   "valid_from": "2025-09-01",
   "valid_to": "2026-06-30",

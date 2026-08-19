@@ -1,8 +1,9 @@
 {
   "city": "istanbul",
+  "period": "2025-2026",
   "meal_type": "dinner",
-  "valid_from": "2026-02-19",
-  "valid_to": "2026-03-19",
+  "valid_from": "2025-09-01",
+  "valid_to": "2026-06-30",
   "packages": [
     {
       "id": 1,
