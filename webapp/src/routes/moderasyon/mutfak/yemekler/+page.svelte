@@ -708,21 +708,3 @@
   {/snippet}
 </Modal>
 {/if}
-
-<style>
-  /* Native details element oklarını gizle */
-  .admin-aliases-expander summary::-webkit-details-marker {
-    display: none;
-  }
-
-  /* Özel Number Input oklarını gizle (Modal için global) */
-  :global(.hide-spinners::-webkit-inner-spin-button), 
-  :global(.hide-spinners::-webkit-outer-spin-button) { 
-    -webkit-appearance: none !important; 
-    margin: 0 !important; 
-  }
-  :global(.hide-spinners) {
-    -moz-appearance: textfield !important;
-    appearance: none !important;
-  }
-</style>

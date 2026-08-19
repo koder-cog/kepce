@@ -55,6 +55,18 @@
     outline: none;
   }
 
+  /* ── Number Input Spinner Reset ───────────────────────────── */
+  .hide-spinners::-webkit-inner-spin-button,
+  .hide-spinners::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .hide-spinners {
+    -moz-appearance: textfield;
+    appearance: none;
+  }
+
   /* Browser Autofill Override */
   input:-webkit-autofill,
   input:-webkit-autofill:hover {

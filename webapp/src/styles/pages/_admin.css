@@ -995,4 +995,9 @@
       text-align: left;
     }
   }
+
+  /* ── Native Details Element ────────────────────────────────── */
+  .admin-aliases-expander summary::-webkit-details-marker {
+    display: none;
+  }
 }
