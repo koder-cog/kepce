@@ -21,8 +21,40 @@ function kepceIconChecker() {
   };
 }
 
+function spaPreviewFallback() {
+  return {
+    name: 'spa-preview-fallback',
+    configurePreviewServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ? req.url.split('?')[0] : '';
+        if (
+          url.startsWith('/api') ||
+          url.startsWith('/static') ||
+          url.startsWith('/rss.xml') ||
+          url.startsWith('/internal')
+        ) {
+          return next();
+        }
+
+        const distPath = path.resolve('dist');
+        const exactFile = path.join(distPath, url);
+        const htmlFile = path.join(distPath, `${url}.html`);
+        const indexFile = path.join(distPath, url, 'index.html');
+
+        if (!fs.existsSync(exactFile) && !fs.existsSync(htmlFile) && !fs.existsSync(indexFile)) {
+          const fallback200 = path.join(distPath, '200.html');
+          if (fs.existsSync(fallback200)) {
+            req.url = '/200.html' + (req.url.includes('?') ? '?' + req.url.split('?')[1] : '');
+          }
+        }
+        next();
+      });
+    }
+  };
+}
+
 export default defineConfig({
-  plugins: [kepceIconChecker(), sveltekit()],
+  plugins: [kepceIconChecker(), spaPreviewFallback(), sveltekit()],
 
   server: {
     port: 5173,
