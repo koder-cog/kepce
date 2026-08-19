@@ -7,7 +7,6 @@
 
     let isOpen = $state(false);
     let triggerEl = $state(null);
-    let modalEl = $state(null);
     let currentPath = $derived($page.url.pathname);
 
     function isLinkActive(link) {
@@ -49,7 +48,7 @@
 
     function portal(node) {
         let parent = node.parentNode;
-        let placeholder = document.createComment('portal-sidebar-nav');
+        let placeholder = document.createComment('portal-sidebar-sheet');
         if (parent) parent.insertBefore(placeholder, node);
         document.body.appendChild(node);
         return {
@@ -98,63 +97,55 @@
             <span class="sidebar-mobile-trigger__label">{activeItem.linkTitle}</span>
         </div>
         <div class="sidebar-mobile-trigger__action">
-            <span class="sidebar-mobile-trigger__badge">Değiştir</span>
             <div class="sidebar-mobile-trigger__chevron" class:sidebar-mobile-trigger__chevron--rotated={isOpen}>
-                {@html icon('chevronDown')}
+                {@html icon('chevronDown', 18)}
             </div>
         </div>
     </button>
 </div>
 
-<!-- ─── Modal Sheet Portal ────────────────────────────────────── -->
+<!-- ─── Modal Sheet ───────────────────────────────────────────── -->
 {#if isOpen}
-    <div class="c-modal c-modal--open c-sheet-nav" use:portal role="dialog" aria-modal="true">
+    <div class="u-hidden">
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-            class="c-modal__backdrop"
+            class="c-menu__overlay c-menu__overlay--open"
+            use:portal
             onclick={close}
+            role="presentation"
         ></div>
+    </div>
 
+    <div class="u-hidden">
         <div
-            bind:this={modalEl}
-            class="c-modal__surface c-sheet-nav__surface"
+            class="c-menu c-menu--open c-menu--sheet"
+            role="dialog"
+            aria-modal="true"
+            use:portal
+            tabindex="-1"
         >
-            <div class="c-modal__header c-sheet-nav__header">
-                <div class="c-sheet-nav__title-group">
-                    <span class="c-sheet-nav__tag">Sayfa Gezintisi</span>
-                    <h3 class="c-sheet-nav__title">Bölüm Seçiniz</h3>
-                </div>
-                <button class="c-sheet-nav__close btn-icon" type="button" aria-label="Kapat" onclick={close}>
-                    {@html icon('crossSmall')}
-                </button>
-            </div>
-
-            <div class="c-modal__body c-sheet-nav__body">
+            <div class="c-menu__scroll-area">
                 {#each navConfig as group}
-                    <div class="c-sheet-nav__group">
-                        <div class="c-sheet-nav__group-header">
-                            <span class="c-sheet-nav__group-title">{group.title}</span>
-                        </div>
-                        <div class="c-sheet-nav__links">
-                            {#each group.links as link}
-                                {@const active = isLinkActive(link)}
-                                <a
-                                    href={link.href}
-                                    class="c-sheet-nav__link"
-                                    class:c-sheet-nav__link--active={active}
-                                    aria-current={active ? 'page' : undefined}
-                                    onclick={close}
-                                >
-                                    <span class="c-sheet-nav__link-label">{link.label}</span>
-                                    {#if active}
-                                        <span class="c-sheet-nav__check">
-                                            {@html icon('check')}
-                                        </span>
-                                    {/if}
-                                </a>
-                            {/each}
-                        </div>
+                    <div class="c-menu__group">
+                        <div class="c-menu__group-title">{group.title}</div>
+                        {#each group.links as link}
+                            {@const active = isLinkActive(link)}
+                            <a
+                                href={link.href}
+                                class="c-menu__item"
+                                class:c-menu__item--selected={active}
+                                aria-current={active ? 'page' : undefined}
+                                onclick={close}
+                            >
+                                <span class="c-menu__item-label">{link.label}</span>
+                                {#if active}
+                                    <span class="c-menu__item-check">
+                                        {@html icon('check', 18)}
+                                    </span>
+                                {/if}
+                            </a>
+                        {/each}
                     </div>
                 {/each}
             </div>
