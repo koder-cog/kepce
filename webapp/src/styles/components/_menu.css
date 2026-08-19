@@ -207,6 +207,19 @@
     font-style: italic;
   }
 
+  /* ── Ayırıcı ── */
+  .c-menu__divider {
+    height: 0;
+    border-top: 1px solid var(--color-border-light);
+    margin: var(--space-xs) var(--space-md);
+    flex-shrink: 0;
+  }
+
+  .c-menu__divider:first-child,
+  .c-menu__divider:last-child {
+    display: none;
+  }
+
   /* ── Bölüm / Section ── */
   .c-menu__section {
     display: flex;
