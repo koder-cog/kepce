@@ -124,9 +124,11 @@ echo -e "${YELLOW}[3/5] Veritabanı ve servisler hazırlanıyor...${NC}"
 ssh -i "$SSH_KEY" "$SERVER_HOST" "
     cd $REMOTE_DIR
     export \$(grep -v '^#' .env | xargs)
+    export COMPOSE_BAKE=false
+    export DOCKER_BUILDKIT=1
 
-    # 1. DB başlat
-    docker compose -f docker-compose.yml up -d db
+    # 1. DB başlat (Tüm compose dosyalarını kullanarak sahipsiz konteyner uyarısını engelle)
+    $COMPOSE_CMD up -d --no-deps db
     
     # 2. DB sağlık kontrolü bekle
     echo 'Veritabanının hazır olması bekleniyor...'
@@ -149,9 +151,9 @@ ssh -i "$SSH_KEY" "$SERVER_HOST" "
         fi
     done
 
-    # 5. Tüm servisleri ayağa kaldır
+    # 5. Tüm servisleri ayağa kaldır (Eski/artık servisleri otomatik temizle)
     echo 'Konteynerler başlatılıyor...'
-    $COMPOSE_CMD up -d --build
+    $COMPOSE_CMD up -d --build --remove-orphans
 
     # 6. Yetkisiz konteyner dosya izinlerini düzelt
     docker exec -u 0 kepce-api chown -R nobody:nogroup /app/static /app/uploads 2>/dev/null || true
