@@ -25,6 +25,7 @@ webapp/dist/
 webapp/.svelte-kit/
 webapp/.vite/
 webapp/static/*/index.html
+webapp/static/data/
 
 # 4. Python
 __pycache__/

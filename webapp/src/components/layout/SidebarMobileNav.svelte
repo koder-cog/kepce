@@ -1,12 +1,13 @@
 <script>
     import { page } from '$app/stores';
     import { icon } from '@/components/ui/icons.js';
-    import { fade, slide } from 'svelte/transition';
-    import { sineOut } from 'svelte/easing';
+    import { onMount } from 'svelte';
 
     let { navConfig = [] } = $props();
 
     let isOpen = $state(false);
+    let triggerEl = $state(null);
+    let modalEl = $state(null);
     let currentPath = $derived($page.url.pathname);
 
     function isLinkActive(link) {
@@ -28,9 +29,45 @@
         return { groupTitle: 'Menü', linkTitle: 'Sayfa Seçiniz', href: '#' };
     })());
 
-    function toggle(e) {
+    $effect(() => {
+        if (isOpen) {
+            document.documentElement.classList.add('dropdown-open');
+        } else {
+            document.documentElement.classList.remove('dropdown-open');
+        }
+    });
+
+    onMount(() => {
+        const onNavMenuOpen = () => { if (isOpen) close(); };
+        window.addEventListener('kepce:nav-menu-open', onNavMenuOpen);
+
+        return () => {
+            document.documentElement.classList.remove('dropdown-open');
+            window.removeEventListener('kepce:nav-menu-open', onNavMenuOpen);
+        };
+    });
+
+    function portal(node) {
+        let parent = node.parentNode;
+        let placeholder = document.createComment('portal-sidebar-nav');
+        if (parent) parent.insertBefore(placeholder, node);
+        document.body.appendChild(node);
+        return {
+            destroy() {
+                if (placeholder.parentNode) {
+                    placeholder.parentNode.insertBefore(node, placeholder);
+                    placeholder.parentNode.removeChild(placeholder);
+                } else if (node.parentNode) {
+                    node.parentNode.removeChild(node);
+                }
+            }
+        };
+    }
+
+    function open(e) {
         if (e) e.stopPropagation();
-        isOpen = !isOpen;
+        window.dispatchEvent(new CustomEvent('kepce:nav-menu-open'));
+        isOpen = true;
     }
 
     function close() {
@@ -44,70 +81,83 @@
     }
 </script>
 
-<svelte:window onclick={close} onkeydown={handleKeydown} />
+<svelte:window onkeydown={handleKeydown} />
 
-<div class="sidebar-mobile-dropdown dropdown" class:dropdown--open={isOpen}>
-    {#if isOpen}
-        <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-            class="dropdown__overlay"
-            transition:fade={{ duration: 150 }}
-            onclick={toggle}
-        ></div>
-    {/if}
-
+<div class="sidebar-mobile-dropdown">
     <button
-        class="dropdown__trigger sidebar-mobile-trigger"
+        bind:this={triggerEl}
+        class="sidebar-mobile-trigger"
         class:sidebar-mobile-trigger--open={isOpen}
         type="button"
-        aria-haspopup="true"
+        aria-haspopup="dialog"
         aria-expanded={isOpen}
-        onclick={toggle}
+        onclick={open}
     >
         <div class="sidebar-mobile-trigger__content">
             <span class="sidebar-mobile-trigger__group">{activeItem.groupTitle}</span>
             <span class="sidebar-mobile-trigger__label">{activeItem.linkTitle}</span>
         </div>
-        <div class="sidebar-mobile-trigger__chevron" class:sidebar-mobile-trigger__chevron--rotated={isOpen}>
-            {@html icon('chevronDown')}
+        <div class="sidebar-mobile-trigger__action">
+            <span class="sidebar-mobile-trigger__badge">Değiştir</span>
+            <div class="sidebar-mobile-trigger__chevron" class:sidebar-mobile-trigger__chevron--rotated={isOpen}>
+                {@html icon('chevronDown')}
+            </div>
         </div>
     </button>
+</div>
 
-    {#if isOpen}
-        <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+<!-- ─── Modal Sheet Portal ────────────────────────────────────── -->
+{#if isOpen}
+    <div class="c-modal c-modal--open c-sheet-nav" use:portal role="dialog" aria-modal="true">
         <!-- svelte-ignore a11y_click_events_have_key_events -->
-        <nav
-            class="dropdown__menu sidebar-mobile-menu"
-            aria-label="Mobil Sayfa Gezintisi"
-            transition:slide={{ duration: 180, easing: sineOut }}
-            onclick={(e) => e.stopPropagation()}
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+            class="c-modal__backdrop"
+            onclick={close}
+        ></div>
+
+        <div
+            bind:this={modalEl}
+            class="c-modal__surface c-sheet-nav__surface"
         >
-            <div class="dropdown__list sidebar-mobile-list">
-                {#each navConfig as group, i}
-                    {#if i > 0}
-                        <div class="sidebar-dropdown-divider"></div>
-                    {/if}
-                    <div class="sidebar-dropdown-title">{group.title}</div>
-                    {#each group.links as link}
-                        {@const active = isLinkActive(link)}
-                        <a
-                            href={link.href}
-                            class="dropdown__item sidebar-dropdown-item"
-                            class:sidebar-dropdown-item--selected={active}
-                            aria-current={active ? 'page' : undefined}
-                            onclick={close}
-                        >
-                            <span class="sidebar-dropdown-item__label">{link.label}</span>
-                            {#if active}
-                                <span class="sidebar-dropdown-item__check">
-                                    {@html icon('check')}
-                                </span>
-                            {/if}
-                        </a>
-                    {/each}
+            <div class="c-modal__header c-sheet-nav__header">
+                <div class="c-sheet-nav__title-group">
+                    <span class="c-sheet-nav__tag">Sayfa Gezintisi</span>
+                    <h3 class="c-sheet-nav__title">Bölüm Seçiniz</h3>
+                </div>
+                <button class="c-sheet-nav__close btn-icon" type="button" aria-label="Kapat" onclick={close}>
+                    {@html icon('crossSmall')}
+                </button>
+            </div>
+
+            <div class="c-modal__body c-sheet-nav__body">
+                {#each navConfig as group}
+                    <div class="c-sheet-nav__group">
+                        <div class="c-sheet-nav__group-header">
+                            <span class="c-sheet-nav__group-title">{group.title}</span>
+                        </div>
+                        <div class="c-sheet-nav__links">
+                            {#each group.links as link}
+                                {@const active = isLinkActive(link)}
+                                <a
+                                    href={link.href}
+                                    class="c-sheet-nav__link"
+                                    class:c-sheet-nav__link--active={active}
+                                    aria-current={active ? 'page' : undefined}
+                                    onclick={close}
+                                >
+                                    <span class="c-sheet-nav__link-label">{link.label}</span>
+                                    {#if active}
+                                        <span class="c-sheet-nav__check">
+                                            {@html icon('check')}
+                                        </span>
+                                    {/if}
+                                </a>
+                            {/each}
+                        </div>
+                    </div>
                 {/each}
             </div>
-        </nav>
-    {/if}
-</div>
+        </div>
+    </div>
+{/if}
