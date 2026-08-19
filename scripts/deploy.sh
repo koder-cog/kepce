@@ -124,8 +124,12 @@ echo -e "${YELLOW}[3/5] Veritabanı ve servisler hazırlanıyor...${NC}"
 ssh -i "$SSH_KEY" "$SERVER_HOST" "
     cd $REMOTE_DIR
     export \$(grep -v '^#' .env | xargs)
-    export COMPOSE_BAKE=false
-    export DOCKER_BUILDKIT=1
+
+    # Modern Buildx Bake motorunu garantiye al (Eksikse kur)
+    if ! docker buildx version >/dev/null 2>&1; then
+        echo 'Docker Buildx eklentisi eksik, kuruluyor...'
+        sudo apt-get update -qq && sudo apt-get install -y -qq docker-buildx-plugin || true
+    fi
 
     # 1. DB başlat (Tüm compose dosyalarını kullanarak sahipsiz konteyner uyarısını engelle)
     $COMPOSE_CMD up -d --no-deps db
