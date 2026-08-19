@@ -11,17 +11,21 @@
     display: flex;
     justify-content: flex-end;
     background: transparent;
-    pointer-events: auto;
+    pointer-events: none;
     opacity: 0;
     transition:
       opacity var(--motion-effects-default),
       transform var(--motion-effects-default);
   }
 
-  /* Hide custom scrollbar component on touch devices to favor native performance/UX */
-  @media (hover: none) {
+  /* Hide custom scrollbar and avoid dead gutter space on touch/mobile devices */
+  @media (hover: none), (max-width: 900px) {
     .c-scrollbar {
       display: none !important;
+    }
+
+    html, body {
+      scrollbar-gutter: auto !important;
     }
   }
 
@@ -74,6 +78,7 @@
     min-height: 40px;
     border-radius: var(--radius-full);
     background: var(--color-scrollbar-thumb);
+    pointer-events: auto;
     transition:
       width var(--motion-effects-default),
       background var(--motion-effects-default),
@@ -108,7 +113,7 @@
   }
 
   /* ── Native Scrollbar Overrides (Applied only to desktop/pointer devices) ── */
-  @media (hover: hover) {
+  @media (hover: hover) and (min-width: 901px) {
 
     /* Standard Scrollbar Properties (Baseline 2024) */
     html, body {

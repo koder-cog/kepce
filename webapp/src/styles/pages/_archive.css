@@ -1,6 +1,18 @@
 @layer components {
   /* ── Archive Page ───────────────────────────────────────── */
 
+  .archive-header {
+    margin-bottom: var(--space-xl);
+  }
+
+  .archive-title {
+    font-family: var(--font-display);
+    font-weight: var(--font-weight-regular);
+    font-size: var(--text-h1);
+    line-height: var(--leading-display);
+    color: var(--color-text-primary);
+  }
+
   .archive-date-title {
     font-family: var(--font-body);
     font-weight: var(--font-weight-bold);
@@ -36,7 +48,6 @@
     margin-bottom: var(--space-2xl);
     border-radius: var(--radius-lg);
     align-items: flex-end;
-    margin-top: -1rem;
   }
 
   .archive-controls .dropdown {

@@ -203,8 +203,8 @@
   description="Geçmiş aylara ve yıllara ait KYK yurt yemek menüleri arşivi. Şehir ve tarih bazlı yemek listesi geçmişi."
 />
 
-<div class="content-page__header">
-  <h1 class="content-page__title">Arşiv</h1>
+<div class="archive-header">
+  <h1 class="archive-title">Arşiv</h1>
 </div>
 
 <div class="archive-controls" id="archive-controls">

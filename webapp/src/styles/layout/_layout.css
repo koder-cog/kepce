@@ -47,7 +47,6 @@
     .page-container {
       padding: var(--space-md) var(--space-md);
       width: 100%;
-      overflow-x: hidden;
     }
   }
 
