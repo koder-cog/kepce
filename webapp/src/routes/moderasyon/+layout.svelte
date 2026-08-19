@@ -6,7 +6,8 @@
   import { slide } from "svelte/transition";
   import { backOut, sineIn } from "svelte/easing";
   import Seo from "@/components/ui/Seo.svelte";
-  import SidebarMobileNav from "@/components/layout/SidebarMobileNav.svelte";
+  import Dropdown from "@/components/features/Dropdown.svelte";
+  import { goto } from "$app/navigation";
 
   let { children } = $props();
 
@@ -83,7 +84,14 @@
 {#if globalState.isModerator}
   <div class="sidebar-layout">
     <!-- MOBİL COMBO-BOX MENÜSÜ -->
-    <SidebarMobileNav {navConfig} />
+    <div class="sidebar-mobile-nav">
+      <Dropdown
+        groups={navConfig}
+        value={currentPath}
+        onChange={(href) => goto(href)}
+        placeholder="Sayfa Seçiniz"
+      />
+    </div>
 
     <!-- MASAÜSTÜ ADA SİDEBAR -->
     <aside class="sidebar-island">

@@ -244,94 +244,17 @@
     transform: scale(var(--press-scale));
   }
 
-  /* ── Mobil Sidebar Sheet & Tetikleyici ───────────────── */
-  .sidebar-mobile-dropdown {
+  /* ── Mobil Sidebar Navigasyonu (Standard Dropdown) ──── */
+  .sidebar-mobile-nav {
     display: none;
     width: 100%;
-    margin-bottom: var(--space-md);
+    margin-bottom: var(--space-lg);
   }
 
-  .sidebar-mobile-trigger {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xs) var(--space-md);
-    min-height: 52px;
-    box-shadow: var(--shadow-sm);
-    cursor: pointer;
-    text-align: left;
-    transition: 
-      background var(--dur-fast) var(--ease-standard),
-      border-color var(--dur-fast) var(--ease-standard),
-      transform var(--dur-fast) var(--ease-standard);
-  }
-
-  .sidebar-mobile-trigger:active {
-    transform: scale(0.98);
-  }
-
-  .sidebar-mobile-trigger--open {
-    border-color: var(--color-accent-primary);
-  }
-
-  .sidebar-mobile-trigger__content {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 2px;
-    min-width: 0;
-  }
-
-  .sidebar-mobile-trigger__group {
-    font-size: var(--text-2xs);
-    font-weight: var(--font-weight-bold);
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-    color: var(--color-muted);
-  }
-
-  .sidebar-mobile-trigger__label {
-    font-size: var(--text-sm);
-    font-family: var(--font-body);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .sidebar-mobile-trigger__action {
-    display: flex;
-    align-items: center;
-    gap: var(--space-xs);
-    flex-shrink: 0;
-  }
-
-  .sidebar-mobile-trigger__badge {
-    font-size: var(--text-2xs);
-    font-weight: var(--font-weight-medium);
-    color: var(--color-accent-text);
-    background: var(--color-surface-sunken);
-    padding: 2px 8px;
-    border-radius: var(--radius-full);
-    border: 1px solid var(--color-border-light);
-  }
-
-  .sidebar-mobile-trigger__chevron {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-muted);
-    transition: transform var(--dur-fast) var(--ease-standard);
-  }
-
-  .sidebar-mobile-trigger__chevron--rotated {
-    transform: rotate(180deg);
-    color: var(--color-text);
+  @media (max-width: 900px) {
+    .sidebar-mobile-nav {
+      display: block;
+    }
   }
 
   /* ── İçerik ── */
