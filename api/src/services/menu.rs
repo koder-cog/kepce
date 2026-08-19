@@ -194,7 +194,8 @@ impl MenuService {
         }
         
         let mut takeaways = Vec::new();
-        for (name, t_items) in takeaway_map {
+        for (name, mut t_items) in takeaway_map {
+            t_items.sort_by_key(|i| (i.order_index, i.is_alternative));
             takeaways.push(crate::dto::menu::TakeawayMenuDto { name, items: t_items });
         }
         takeaways.sort_by(|a, b| a.name.cmp(&b.name));
@@ -403,7 +404,8 @@ impl MenuService {
             }
             
             let mut takeaways = Vec::new();
-            for (name, t_items) in takeaway_map {
+            for (name, mut t_items) in takeaway_map {
+                t_items.sort_by_key(|i| (i.order_index, i.is_alternative));
                 takeaways.push(crate::dto::menu::TakeawayMenuDto { name, items: t_items });
             }
             takeaways.sort_by(|a, b| a.name.cmp(&b.name));
@@ -661,7 +663,8 @@ impl MenuService {
                 }
                 
                 let mut takeaways = Vec::new();
-                for (name, t_items) in takeaway_map {
+                for (name, mut t_items) in takeaway_map {
+                    t_items.sort_by_key(|i| (i.order_index, i.is_alternative));
                     takeaways.push(crate::dto::menu::TakeawayMenuDto { name, items: t_items });
                 }
                 takeaways.sort_by(|a, b| a.name.cmp(&b.name));
