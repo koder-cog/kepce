@@ -43,12 +43,8 @@
         `.c-tab[data-id="${activeId}"]`,
       );
       if (activeBtn) {
-        const btnRect = activeBtn.getBoundingClientRect();
-        const tabsRow = containerNode.querySelector(".c-tabs");
-        if (!tabsRow) return;
-        const containerRect = tabsRow.getBoundingClientRect();
-        indicatorWidth = btnRect.width;
-        indicatorLeft = btnRect.left - containerRect.left;
+        indicatorWidth = activeBtn.offsetWidth;
+        indicatorLeft = activeBtn.offsetLeft;
       }
     });
   }

@@ -11,8 +11,7 @@
     ];
     const WEEKDAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
 
-    let daySelectorWrapper;
-    let contentHeight = $state(0);
+    let daySelectorWrapper = $state(null);
 
     const now = new Date();
 
@@ -74,9 +73,8 @@
 <div
     class="day-selector-wrapper"
     bind:this={daySelectorWrapper}
-    style={contentHeight ? `--content-height: ${contentHeight}px;` : ""}
 >
-    <div class="day-selector-inner" bind:clientHeight={contentHeight}>
+    <div class="day-selector-inner">
         <div class="day-selector {timelineState.viewType === 'calendar' ? 'day-selector--calendar' : ''}">
             {#if timelineState.viewType === "calendar"}
                 <div class="calendar-grid">

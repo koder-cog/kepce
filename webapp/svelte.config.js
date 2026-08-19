@@ -24,6 +24,7 @@ const config = {
 			handleUnseenRoutes: 'ignore'
 		},
 		appDir: 'internal',
+		inlineStyleThreshold: Infinity,
 		paths: {
 			relative: false
 		},

@@ -3,11 +3,10 @@
 
   .day-selector-wrapper {
     position: relative;
-    height: var(--content-height);
     margin-left: calc(var(--space-lg) * -1);
     margin-right: calc(var(--space-lg) * -1);
     margin-bottom: var(--space-2xl);
-    transition: opacity 0.15s ease-out 0.05s, height 0.25s cubic-bezier(0.2, 0, 0, 1);
+    transition: opacity 0.15s ease-out 0.05s;
     overflow: hidden;
   }
 

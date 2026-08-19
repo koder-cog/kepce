@@ -18,7 +18,7 @@ kepce.org, www.kepce.org {
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Content-Security-Policy "default-src 'self'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
         Cross-Origin-Opener-Policy "same-origin"
     }
 
