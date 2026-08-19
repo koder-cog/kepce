@@ -45,13 +45,8 @@
                 `button[data-value="${value}"]`,
             );
             if (activeBtn) {
-                const btnRect = activeBtn.getBoundingClientRect();
-                const containerRect = containerNode.getBoundingClientRect();
-                indicatorWidth = btnRect.width;
-                indicatorLeft =
-                    btnRect.left -
-                    containerRect.left -
-                    containerNode.clientLeft;
+                indicatorWidth = activeBtn.offsetWidth;
+                indicatorLeft = activeBtn.offsetLeft;
             }
         });
     }
@@ -65,9 +60,9 @@
 
     onMount(() => {
         updateIndicator();
-        setTimeout(() => {
+        requestAnimationFrame(() => {
             isReady = true;
-        }, 50);
+        });
 
         // Indicator'ın ekran boyutu değişimlerinde (responsive veya container query) senkronize kalması için
         const ro = new ResizeObserver(() => {

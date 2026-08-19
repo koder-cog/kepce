@@ -19,16 +19,24 @@
     position: absolute;
     top: 3px;
     bottom: 3px;
-    left: var(--indicator-left, 3px);
+    left: 0;
     width: var(--indicator-width, 0);
+    transform: translateX(var(--indicator-left, 3px));
     background: var(--color-card);
     border-radius: var(--radius-full);
     box-shadow: var(--shadow-sm);
     z-index: 0;
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, width;
   }
 
   .c-segmented-control.is-ready .c-segmented-control__indicator {
-    transition: all var(--motion-spatial-default);
+    opacity: 1;
+    transition: 
+      transform var(--dur-default) var(--ease-spring-bounce),
+      width var(--dur-default) var(--ease-spring-bounce),
+      opacity var(--dur-fast) var(--ease-standard);
   }
 
   .c-segmented-control__btn {

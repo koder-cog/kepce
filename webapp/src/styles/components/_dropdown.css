@@ -114,6 +114,7 @@
 }
 
 @layer components.modifiers {
+
   /* ── Varyant: Secondary (Hap / Pill) ── */
   .dropdown__trigger--secondary {
     background: var(--color-accent-primary);
@@ -150,18 +151,18 @@
   /* ── Varyant: Ghost (Hayalet) ── */
   button.dropdown__trigger.dropdown__trigger--ghost,
   .dropdown__trigger--ghost {
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--radius-md);
-    color: var(--color-muted);
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-medium);
-    padding: var(--space-2xs) var(--space-xs);
-    height: auto;
-    width: max-content;
-    box-shadow: none;
-    transition: 
+    background: transparent !important;
+    border: 1px solid transparent !important;
+    border-radius: var(--radius-md) !important;
+    color: var(--color-muted) !important;
+    font-family: var(--font-body) !important;
+    font-size: var(--text-sm) !important;
+    font-weight: var(--font-weight-medium) !important;
+    height: auto !important;
+    width: max-content !important;
+    box-shadow: none !important;
+    padding: var(--space-sm) var(--space-md) !important;
+    transition:
       background var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
       transform var(--dur-fast) var(--ease-standard);
@@ -169,36 +170,36 @@
 
   button.dropdown__trigger.dropdown__trigger--ghost:active,
   .dropdown__trigger--ghost:active {
-    transform: scale(0.98);
+    transform: scale(0.98) !important;
   }
 
   @media (hover: hover) {
 
     button.dropdown__trigger.dropdown__trigger--ghost:hover,
     .dropdown__trigger--ghost:hover {
-      background: var(--color-surface-sunken);
-      color: var(--color-text);
-      border-color: transparent;
+      background: var(--color-surface-sunken) !important;
+      color: var(--color-text) !important;
+      border-color: transparent !important;
     }
   }
 
   button.dropdown__trigger.dropdown__trigger--ghost:focus-visible,
   .dropdown__trigger--ghost:focus-visible {
-    border-color: var(--color-border);
-    box-shadow: var(--shadow-focus);
+    border-color: var(--color-border) !important;
+    box-shadow: var(--shadow-focus) !important;
   }
 
   button.dropdown__trigger.dropdown__trigger--ghost.dropdown__trigger--has-value,
   .dropdown__trigger--ghost.dropdown__trigger--has-value {
-    color: var(--color-text);
-    font-weight: var(--font-weight-semibold);
+    color: var(--color-text) !important;
+    font-weight: var(--font-weight-semibold) !important;
   }
 
   button.dropdown__trigger.dropdown__trigger--ghost.dropdown__trigger--open,
   .dropdown__trigger--ghost.dropdown__trigger--open {
-    border-color: transparent;
-    background: var(--color-surface-sunken);
-    color: var(--color-text);
+    border-color: transparent !important;
+    background: var(--color-surface-sunken) !important;
+    color: var(--color-text) !important;
   }
 
   /* ── Chevron ── */
