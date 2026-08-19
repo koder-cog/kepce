@@ -11,7 +11,7 @@ pub struct KykMenuParseResult {
 pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> Vec<KykMenuParseResult> {
     let document = Html::parse_document(html_content);
     let card_selector = Selector::parse(".cardStyle").unwrap();
-    let date_selector = Selector::parse("p.date").unwrap();
+    let date_selector = Selector::parse("p.date, p.cardDate, .cardDate, p[id^='date_']").unwrap();
     let fallback_date_selector = Selector::parse(".card-header span").unwrap();
     let body_selector = Selector::parse(".card-body").unwrap();
     let p_selector = Selector::parse("p").unwrap();
@@ -45,7 +45,11 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
                 continue;
             }
             
-            if text_lower.contains("al götür") || text_lower.contains("al-götür") {
+            if p.value().attr("data-fastmenus").is_some() || p.value().attr("onclick").map(|o| o.contains("showFastMenu")).unwrap_or(false) {
+                continue;
+            }
+            
+            if text_lower.contains("al götür") || text_lower.contains("al-götür") || text_lower.contains("algötür") || text_lower.contains("al gotur") {
                 if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(&text, city_slug, meal_type) {
                     takeaways.append(&mut pkgs);
                 }
@@ -59,6 +63,30 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
                 raw_dishes.push(dish_group);
             }
         }
+
+        // Fastmenu / Al Götür buton ve özniteliklerini de tara (data-fastmenus veya onclick)
+        let btn_selector = Selector::parse("[data-fastmenus], [onclick*='showFastMenu'], button, a, p").unwrap();
+        for btn in card.select(&btn_selector) {
+            if let Some(fast_json) = btn.value().attr("data-fastmenus") {
+                if let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json) {
+                    for item in items {
+                        let name_val = item.get("name").or_else(|| item.get("title")).and_then(|t| t.as_str()).unwrap_or("Al Götür");
+                        if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(name_val, city_slug, meal_type) {
+                            takeaways.append(&mut pkgs);
+                        }
+                    }
+                }
+            }
+            if let Some(onclick) = btn.value().attr("onclick") {
+                if onclick.contains("showFastMenu") {
+                    if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(onclick, city_slug, meal_type) {
+                        takeaways.append(&mut pkgs);
+                    }
+                }
+            }
+        }
+        let mut seen_takeaways = std::collections::HashSet::new();
+        takeaways.retain(|(pkg_name, _)| seen_takeaways.insert(pkg_name.clone()));
         
         if !raw_dishes.is_empty() {
             results.push(KykMenuParseResult {

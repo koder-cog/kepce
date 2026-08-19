@@ -87,4 +87,66 @@ mod tests {
         assert_eq!(packages_both[0].0, "Al Götür 1");
         assert_eq!(packages_both[1].0, "Al Götür 2");
     }
+
+    #[test]
+    fn test_parse_takeaway_menu_city_integrity() {
+        // İstanbul konfigürasyonundan gerçek paketleri okur
+        let result_ist = parse_takeaway_menu("Al Götür 1", "istanbul", "breakfast");
+        assert!(result_ist.is_some());
+        let pkgs = result_ist.unwrap();
+        assert_eq!(pkgs.len(), 1);
+        assert!(pkgs[0].0.contains("Soğuk Sandviç"));
+        assert!(!pkgs[0].1.is_empty());
+
+        // Konfigürasyonu olmayan bir il (örn: Bayburt) için uydurma veri üretilmez (None döner)
+        let result_bayburt = parse_takeaway_menu("Al Götür 1", "bayburt", "breakfast");
+        assert!(result_bayburt.is_none());
+    }
+
+    #[test]
+    fn test_parse_fast_menu_foods_html() {
+        let sample_html = r#"
+            <div class="pb-1">1 Adet Kaşarlı Soğuk Sandviç(Sandviç Ekmeği+70 G Kaşar)Veya 1 Adet Kaşarlı Salamlı Soğuk Sandviç(Sandviç Ekmeği+50 G Kaşar)</div>
+            <div class="pb-1">1 Paket Süt(200 Ml)Veya 1 Paket Meyve Suyu(200 Ml)Veya 1 Paket Ayran(270-330 Ml)</div>
+            <div class="pb-1">1 Adet Meyve(150-200 G)Veya 1 Paket Kek(En Az 35 G)</div>
+            <div class="pb-1">1 Adet Çay</div>
+            <div class="pb-1">1 Adet 500 Ml Su</div>
+        "#;
+
+        let slots = crate::parser::takeaway::parse_fast_menu_foods_html(sample_html);
+        assert_eq!(slots.len(), 5);
+        assert_eq!(slots[0].len(), 2);
+        assert_eq!(slots[0][0].name, "1 Adet Kaşarlı Soğuk Sandviç");
+        assert_eq!(slots[0][0].amount.as_deref(), Some("Sandviç Ekmeği+70 G Kaşar"));
+        assert_eq!(slots[1].len(), 3);
+        assert_eq!(slots[1][0].name, "1 Paket Süt");
+        assert_eq!(slots[1][0].amount.as_deref(), Some("200 Ml"));
+        assert_eq!(slots[3][0].name, "1 Adet Çay");
+        assert_eq!(slots[3][0].amount, None);
+    }
+
+    #[test]
+    fn test_parse_kyk_html_with_data_fastmenus() {
+        let card_html = r#"
+            <div class="card cardStyle">
+                <p class="cardDate">3 Haziran 2026 Çarşamba</p>
+                <div class="card-body">
+                    <div>
+                        <p>Peynirli Omlet</p>
+                        <p>Kaşar Peyniri</p>
+                        <p data-fastmenus='[{"id":"8f64a9ef","name":"Al Götür Menü 2"},{"id":"d03fe329","name":"Al Götür Menü 1"}]' onclick="showFastMenuGroup(this)">
+                            Al Götür Menü
+                        </p>
+                    </div>
+                </div>
+            </div>
+        "#;
+
+        let parsed = crate::parser::kykyemek::parse_kyk_html(card_html, "istanbul", "breakfast");
+        assert_eq!(parsed.len(), 1);
+        let menu = &parsed[0];
+        assert_eq!(menu.takeaways.len(), 2);
+        assert!(menu.takeaways[0].0.contains("Gözleme") || menu.takeaways[0].0.contains("Al Götür 2"));
+        assert!(menu.takeaways[1].0.contains("Soğuk Sandviç") || menu.takeaways[1].0.contains("Al Götür 1"));
+    }
 }
