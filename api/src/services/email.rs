@@ -117,4 +117,42 @@ impl EmailService {
 
         self.send_email(to_email, "Şifre Sıfırlama Talebi", html).await
     }
+
+    pub async fn send_security_alert(
+        &self,
+        to_email: &str,
+        username: &str,
+        event_title: &str,
+        details: &str,
+    ) -> Result<(), EmailError> {
+        let timestamp = chrono::Utc::now().format("%d.%m.%Y %H:%M (UTC)").to_string();
+        let html = format!(
+            r#"
+            <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
+                <div style="margin-bottom: 20px;">
+                    <h2 style="color: #ff8717; margin: 0 0 6px 0; font-size: 20px;">Kepçe Güvenlik Bildirimi</h2>
+                    <p style="color: #475569; font-size: 15px; margin: 0;">Merhaba <strong>@{}</strong>,</p>
+                </div>
+                <div style="background-color: #fff7ed; border-left: 4px solid #ff8717; padding: 14px 16px; margin-bottom: 20px; border-radius: 6px;">
+                    <h3 style="margin: 0 0 6px 0; color: #c2410c; font-size: 15px;">{}</h3>
+                    <p style="margin: 0; color: #7c2d12; font-size: 14px; line-height: 1.4;">{}</p>
+                    <p style="margin: 8px 0 0 0; color: #9a3412; font-size: 12px;">Zaman: {}</p>
+                </div>
+                <p style="color: #64748b; font-size: 13px; line-height: 1.5; margin: 0 0 16px 0;">
+                    Bu işlemi siz gerçekleştirdiyseniz ek bir işlem yapmanıza gerek yoktur. Eğer bu işlem bilginiz dışında gerçekleştiyse lütfen derhal şifrenizi sıfırlayın.
+                </p>
+                <div style="border-top: 1px solid #f1f5f9; padding-top: 14px; text-align: center;">
+                    <a href="{}/ayarlar" style="color: #ff8717; text-decoration: none; font-size: 13px; font-weight: 600;">Hesap Güvenlik Ayarlarına Git &rarr;</a>
+                </div>
+            </div>
+            "#,
+            username,
+            event_title,
+            details,
+            timestamp,
+            self.base_url
+        );
+
+        self.send_email(to_email, &format!("Kepçe Güvenlik Uyarısı: {}", event_title), html).await
+    }
 }

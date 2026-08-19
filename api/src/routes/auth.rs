@@ -407,9 +407,11 @@ async fn get_me(
 
 async fn update_me(
     State(db): State<sea_orm::DatabaseConnection>,
+    State(config): State<std::sync::Arc<Config>>,
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<crate::dto::user::UpdateProfileDto>,
 ) -> Result<Json<crate::dto::user::UserProfileDto>, AppError> {
+    let password_changed = payload.password.is_some();
     let profile = crate::services::user::UserService::update_user(&db, user.id, payload)
         .await
         .map_err(|e| match e {
@@ -417,6 +419,23 @@ async fn update_me(
             crate::services::auth::AuthError::InvalidCredentials => AppError::BadRequest("Mevcut şifre hatalı".to_string()),
             _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
         })?;
+
+    // Şifre değiştiyse ve güvenlik e-postaları tercihi açıksa e-posta bildirimi gönder
+    if password_changed && profile.email_security.unwrap_or(false) {
+        if let Some(ref email) = profile.email {
+            let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+            let to_email = email.clone();
+            let username = profile.username.clone();
+            tokio::spawn(async move {
+                let _ = email_service.send_security_alert(
+                    &to_email,
+                    &username,
+                    "Hesap Şifreniz Değiştirildi",
+                    "Hesabınızın giriş şifresi ayarlar sayfası üzerinden başarıyla güncellendi. Eski oturumlarınız güvenlik gereği sonlandırıldı.",
+                ).await;
+            });
+        }
+    }
 
     Ok(Json(profile))
 }
@@ -739,7 +758,23 @@ async fn reset_password(
     State(config): State<std::sync::Arc<Config>>,
     ValidatedJson(payload): ValidatedJson<ResetPasswordDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    AuthService::reset_password(&db, &config.jwt_secret, &payload.token, &payload.new_password).await?;
+    let user = AuthService::reset_password(&db, &config.jwt_secret, &payload.token, &payload.new_password).await?;
+    
+    // Şifre sıfırlandıktan sonra kullanıcıya güvenlik e-postası gönder
+    if user.email_security {
+        let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+        let to_email = user.email.clone();
+        let username = user.username.clone();
+        tokio::spawn(async move {
+            let _ = email_service.send_security_alert(
+                &to_email,
+                &username,
+                "Hesap Şifreniz Sıfırlandı",
+                "Hesabınızın giriş şifresi, şifre sıfırlama bağlantısı kullanılarak başarıyla yenilendi. Eski oturumlarınız güvenlik gereği sonlandırıldı.",
+            ).await;
+        });
+    }
+
     Ok(Json(serde_json::json!({ "status": "success" })))
 }
 

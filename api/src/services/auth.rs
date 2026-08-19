@@ -168,6 +168,17 @@ impl AuthService {
             role: Set(shared::entities::sea_orm_active_enums::UserRoleEnum::User),
             karma_score: Set(0),
             is_verified: Set(false),
+            default_city_slug: Set(dto.default_city_slug),
+            email_security: Set(dto.email_security.unwrap_or(false)),
+            notif_replies: Set(false),
+            notif_interactions: Set(false),
+            notif_system: Set(false),
+            notif_breakfast_enabled: Set(false),
+            notif_breakfast_time: Set("07:30".to_string()),
+            notif_dinner_enabled: Set(false),
+            notif_dinner_time: Set("17:30".to_string()),
+            email_newsletter: Set(false),
+            email_updates: Set(false),
             ..Default::default()
         };
 
@@ -462,7 +473,7 @@ impl AuthService {
         jwt_secret: &str,
         token: &str,
         new_password: &str,
-    ) -> Result<(), AuthError> {
+    ) -> Result<shared::entities::users::Model, AuthError> {
         let mut validation = jsonwebtoken::Validation::default();
         validation.set_issuer(&["kepce"]);
         validation.set_audience(&["kepce-reset"]);
@@ -505,7 +516,7 @@ impl AuthService {
         active.password_hash = Set(hashed_password);
         // SA-11: Şifre değiştiğinde token_version'ı artır (Kullanıcı tüm oturumlardan düşer, güvenlidir)
         active.token_version = Set(active.token_version.clone().unwrap() + 1);
-        active.update(db).await.map_err(AuthError::DatabaseError)?;
+        let updated_user = active.update(db).await.map_err(AuthError::DatabaseError)?;
 
         // Ayrıca aktif session'ları da sil (Refresh token'lar tamamen iptal)
         let _ = shared::entities::prelude::UserSessions::delete_many()
@@ -513,7 +524,7 @@ impl AuthService {
             .exec(db)
             .await;
 
-        Ok(())
+        Ok(updated_user)
     }
 
     /// OAuth Giriş veya Kayıt Akışı
@@ -610,6 +621,16 @@ impl AuthService {
             role: Set(shared::entities::sea_orm_active_enums::UserRoleEnum::User),
             karma_score: Set(0),
             is_verified: Set(true), // Google doğruladığı için true
+            email_security: Set(false),
+            notif_replies: Set(false),
+            notif_interactions: Set(false),
+            notif_system: Set(false),
+            notif_breakfast_enabled: Set(false),
+            notif_breakfast_time: Set("07:30".to_string()),
+            notif_dinner_enabled: Set(false),
+            notif_dinner_time: Set("17:30".to_string()),
+            email_newsletter: Set(false),
+            email_updates: Set(false),
             ..Default::default()
         };
         
