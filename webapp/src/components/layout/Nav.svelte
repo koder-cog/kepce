@@ -202,7 +202,6 @@
                         menuDropdownOpen = false;
                         if (activePath === l.path) {
                             e.preventDefault();
-                            shakeElement(e.currentTarget);
                         }
                     }}>{l.label}</a
                 >

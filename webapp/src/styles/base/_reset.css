@@ -107,11 +107,10 @@
     outline-offset: 2px;
   }
 
-  /* Seçim rengi: Turuncu yüzeylerde stabilite için css custom property kullanıyoruz.
-     Eğer override edilmezse varsayılan olarak accent-primary'nin şeffaf halidir. */
+  /* Seçim rengi: Eşli bildirim kuralı (paired declarations) gereği background ve color birlikte tanımlanır. */
   ::selection {
-    background: var(--selection-bg, rgba(var(--color-accent-primary-rgb), 0.3));
-    color: var(--selection-color, inherit);
+    background: var(--selection-bg, rgba(var(--color-accent-primary-rgb), 0.28));
+    color: var(--selection-color, var(--color-text));
   }
 
   .container {

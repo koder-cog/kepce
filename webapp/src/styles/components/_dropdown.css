@@ -151,22 +151,25 @@
   button.dropdown__trigger.dropdown__trigger--ghost,
   .dropdown__trigger--ghost {
     background: transparent;
-    border-color: transparent;
-    border-radius: var(--radius-sm);
-    color: var(--color-text-secondary, var(--color-muted));
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--color-text-secondary);
     font-family: var(--font-body);
     font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    padding: var(--space-xs) var(--space-sm);
+    font-weight: var(--font-weight-medium);
+    padding: var(--space-2xs) var(--space-xs);
     height: auto;
     width: max-content;
     box-shadow: none;
-    transition: all var(--dur-fast) var(--ease-tactile);
+    transition: 
+      background var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
   }
 
   button.dropdown__trigger.dropdown__trigger--ghost:active,
   .dropdown__trigger--ghost:active {
-    transform: scale(0.96);
+    transform: scale(0.98);
   }
 
   @media (hover: hover) {
