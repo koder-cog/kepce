@@ -89,8 +89,10 @@ diff_*.txt
 fix_*.js
 
 # 11. Uploads & Avatars (Runtime Data)
-/static/avatars/
-/api/static/avatars/
+/static/avatars/*
+!/static/avatars/.gitkeep
+/api/static/avatars/*
+!/api/static/avatars/.gitkeep
 /uploads/
 docs/.cache/
 docs/node_modules/
