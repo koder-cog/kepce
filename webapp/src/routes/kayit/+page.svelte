@@ -31,9 +31,8 @@
 
   let isCeliac = $state(false);
 
-  // Görev #39: Bildirim/e-posta tercihleri opt-in (varsayılan kapalı).
-  // Backend alanları hazır olana dek tercihler localStorage'da saklanır.
-  let wantsEmails = $state(false);
+  // Güvenlik e-postası bildirimi opt-in (varsayılan kapalı).
+  let emailSecurity = $state(false);
 
   let errors = $state({});
   let errorMsg = $state("");
@@ -181,17 +180,8 @@
         username.trim() || null,
         selectedCity || null,
         diet_mode,
+        emailSecurity,
       );
-      // #39: opt-in tercihler (backend bağlanınca API'ye taşınacak)
-      try {
-        localStorage.setItem(
-          "kepce_email_prefs",
-          JSON.stringify({
-            newsletter: wantsEmails,
-            updates: wantsEmails,
-          }),
-        );
-      } catch {}
       const { showToast } = await import("@/components/ui/toast.js");
       showToast(
         "Kayıt başarılı! Doğrulama linki e-postana gönderildi (Lütfen gereksiz/spam klasörünü de kontrol et).",
@@ -454,16 +444,16 @@
         <div class="c-boxed-list">
           <label class="c-list-row c-list-row--clickable">
             <div class="c-list-row__content">
-              <span class="c-list-row__title">İletişim İzinleri</span>
+              <span class="c-list-row__title">Güvenlik bildirimleri</span>
               <span class="c-list-row__desc"
-                >Aylık yemek bülteni ve platformdaki yenilikler</span
+                >Şifre değişiklikleri ve kritik güvenlik alarmlarında e-posta al</span
               >
             </div>
             <div class="c-list-row__control">
               <input
                 type="checkbox"
                 class="c-input-hidden"
-                bind:checked={wantsEmails}
+                bind:checked={emailSecurity}
               />
               <span class="c-switch"
                 ><span class="c-switch__handle"></span></span

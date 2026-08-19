@@ -862,7 +862,7 @@
               type="checkbox"
               id="settings-notif-replies"
               class="c-input-hidden"
-              checked={globalState.user?.notif_replies ?? true}
+              checked={globalState.user?.notif_replies ?? false}
               onchange={(e) =>
                 handlePreferenceChange(
                   "notif_replies",
@@ -885,7 +885,7 @@
               type="checkbox"
               id="settings-notif-interactions"
               class="c-input-hidden"
-              checked={globalState.user?.notif_interactions ?? true}
+              checked={globalState.user?.notif_interactions ?? false}
               onchange={(e) =>
                 handlePreferenceChange(
                   "notif_interactions",
@@ -910,7 +910,7 @@
               type="checkbox"
               id="settings-notif-system"
               class="c-input-hidden"
-              checked={globalState.user?.notif_system ?? true}
+              checked={globalState.user?.notif_system ?? false}
               onchange={(e) =>
                 handlePreferenceChange(
                   "notif_system",
@@ -922,37 +922,97 @@
           </div>
         </label>
       </div>
+
+      <h3>Öğün Hatırlatıcıları</h3>
+      <div class="c-boxed-list">
+        <!-- Kahvaltı menüsü bildirimi -->
+        <div class="c-list-row c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">Kahvaltı menüsü</div>
+            <div class="c-list-row__desc">Günün kahvaltı menüsü hatırlatıcısı</div>
+          </div>
+          <div class="c-list-row__actions">
+            {#if globalState.user?.notif_breakfast_enabled}
+              <input
+                type="time"
+                id="settings-notif-breakfast-time"
+                class="c-time-input"
+                value={globalState.user?.notif_breakfast_time || "07:30"}
+                onchange={(e) =>
+                  handlePreferenceChange(
+                    "notif_breakfast_time",
+                    e.target.value,
+                    "Kahvaltı saati",
+                  )}
+                title="Kahvaltı bildirim saati"
+              />
+            {/if}
+            <label class="c-list-row__control">
+              <input
+                type="checkbox"
+                id="settings-notif-breakfast"
+                class="c-input-hidden"
+                checked={globalState.user?.notif_breakfast_enabled ?? false}
+                onchange={(e) =>
+                  handlePreferenceChange(
+                    "notif_breakfast_enabled",
+                    e.target.checked,
+                    "Kahvaltı bildirimi",
+                  )}
+              />
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Akşam yemeği bildirimi -->
+        <div class="c-list-row c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">Akşam yemeği</div>
+            <div class="c-list-row__desc">Günün akşam yemeği menüsü hatırlatıcısı</div>
+          </div>
+          <div class="c-list-row__actions">
+            {#if globalState.user?.notif_dinner_enabled}
+              <input
+                type="time"
+                id="settings-notif-dinner-time"
+                class="c-time-input"
+                value={globalState.user?.notif_dinner_time || "17:30"}
+                onchange={(e) =>
+                  handlePreferenceChange(
+                    "notif_dinner_time",
+                    e.target.value,
+                    "Akşam yemeği saati",
+                  )}
+                title="Akşam yemeği bildirim saati"
+              />
+            {/if}
+            <label class="c-list-row__control">
+              <input
+                type="checkbox"
+                id="settings-notif-dinner"
+                class="c-input-hidden"
+                checked={globalState.user?.notif_dinner_enabled ?? false}
+                onchange={(e) =>
+                  handlePreferenceChange(
+                    "notif_dinner_enabled",
+                    e.target.checked,
+                    "Akşam yemeği bildirimi",
+                  )}
+              />
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
+            </label>
+          </div>
+        </div>
+      </div>
       <h3>E-posta</h3>
       <div class="c-boxed-list">
-        <!-- Yemek bülteni -->
-        <label class="c-list-row c-list-row--clickable c-list-row--tall">
-          <div class="c-list-row__info">
-            <div class="c-list-row__title">Yemek bülteni</div>
-            <div class="c-list-row__desc">Aylık menü özetleri</div>
-          </div>
-          <div class="c-list-row__control">
-            <input
-              type="checkbox"
-              id="settings-email-newsletter"
-              class="c-input-hidden"
-              checked={globalState.user?.email_newsletter ?? false}
-              onchange={(e) =>
-                handlePreferenceChange(
-                  "email_newsletter",
-                  e.target.checked,
-                  "Yemek bülteni",
-                )}
-            />
-            <span class="c-switch"><span class="c-switch__handle"></span></span>
-          </div>
-        </label>
-
         <!-- Güvenlik bildirimleri -->
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Güvenlik</div>
             <div class="c-list-row__desc">
-              Giriş denemeleri ve hesap değişiklikleri
+              Şifre değişiklikleri ve kritik güvenlik alarmları
             </div>
           </div>
           <div class="c-list-row__control">
@@ -960,37 +1020,12 @@
               type="checkbox"
               id="settings-email-security"
               class="c-input-hidden"
-              checked={globalState.user?.email_security ?? true}
+              checked={globalState.user?.email_security ?? false}
               onchange={(e) =>
                 handlePreferenceChange(
                   "email_security",
                   e.target.checked,
                   "Güvenlik e-postaları",
-                )}
-            />
-            <span class="c-switch"><span class="c-switch__handle"></span></span>
-          </div>
-        </label>
-
-        <!-- Duyurular -->
-        <label class="c-list-row c-list-row--clickable c-list-row--tall">
-          <div class="c-list-row__info">
-            <div class="c-list-row__title">Duyuru</div>
-            <div class="c-list-row__desc">
-              Yeni özellikler ve topluluk haberleri
-            </div>
-          </div>
-          <div class="c-list-row__control">
-            <input
-              type="checkbox"
-              id="settings-email-updates"
-              class="c-input-hidden"
-              checked={globalState.user?.email_updates ?? false}
-              onchange={(e) =>
-                handlePreferenceChange(
-                  "email_updates",
-                  e.target.checked,
-                  "Duyuru e-postaları",
                 )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>

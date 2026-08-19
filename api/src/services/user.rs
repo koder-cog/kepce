@@ -189,6 +189,10 @@ impl UserService {
             notif_replies: if include_private { Some(user.notif_replies) } else { None },
             notif_interactions: if include_private { Some(user.notif_interactions) } else { None },
             notif_system: if include_private { Some(user.notif_system) } else { None },
+            notif_breakfast_enabled: if include_private { Some(user.notif_breakfast_enabled) } else { None },
+            notif_breakfast_time: if include_private { Some(user.notif_breakfast_time) } else { None },
+            notif_dinner_enabled: if include_private { Some(user.notif_dinner_enabled) } else { None },
+            notif_dinner_time: if include_private { Some(user.notif_dinner_time) } else { None },
             email_newsletter: if include_private { Some(user.email_newsletter) } else { None },
             email_security: if include_private { Some(user.email_security) } else { None },
             email_updates: if include_private { Some(user.email_updates) } else { None },
@@ -422,6 +426,18 @@ impl UserService {
         }
         if let Some(val) = dto.notif_system {
             user_model.notif_system = Set(val);
+        }
+        if let Some(val) = dto.notif_breakfast_enabled {
+            user_model.notif_breakfast_enabled = Set(val);
+        }
+        if let Some(val) = dto.notif_breakfast_time {
+            user_model.notif_breakfast_time = Set(val);
+        }
+        if let Some(val) = dto.notif_dinner_enabled {
+            user_model.notif_dinner_enabled = Set(val);
+        }
+        if let Some(val) = dto.notif_dinner_time {
+            user_model.notif_dinner_time = Set(val);
         }
         if let Some(val) = dto.email_newsletter {
             user_model.email_newsletter = Set(val);

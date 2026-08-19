@@ -84,6 +84,10 @@ pub struct RegisterRequestDto {
     
     #[validate(length(min = 8, max = 128, message = "Şifre 8-128 karakter arasında olmalıdır"))]
     pub password: String,
+
+    pub default_city_slug: Option<String>,
+    pub diet_mode: Option<String>,
+    pub email_security: Option<bool>,
 }
 
 /// Dışarıya (Frontend'e) verilecek güvenli kullanıcı profili
@@ -135,6 +139,14 @@ pub struct UserProfileDto {
     pub notif_interactions: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notif_system: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_breakfast_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_breakfast_time: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_dinner_enabled: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notif_dinner_time: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email_newsletter: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -203,9 +215,28 @@ pub struct UpdateProfileDto {
     pub notif_replies: Option<bool>,
     pub notif_interactions: Option<bool>,
     pub notif_system: Option<bool>,
+    pub notif_breakfast_enabled: Option<bool>,
+    #[validate(custom(function = "validate_time_format"))]
+    pub notif_breakfast_time: Option<String>,
+    pub notif_dinner_enabled: Option<bool>,
+    #[validate(custom(function = "validate_time_format"))]
+    pub notif_dinner_time: Option<String>,
     pub email_newsletter: Option<bool>,
     pub email_security: Option<bool>,
     pub email_updates: Option<bool>,
+}
+
+fn validate_time_format(time_str: &str) -> Result<(), validator::ValidationError> {
+    let parts: Vec<&str> = time_str.split(':').collect();
+    if parts.len() != 2 {
+        return Err(validator::ValidationError::new("invalid_time_format"));
+    }
+    if let (Ok(h), Ok(m)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
+        if h < 24 && m < 60 && parts[0].len() == 2 && parts[1].len() == 2 {
+            return Ok(());
+        }
+    }
+    Err(validator::ValidationError::new("invalid_time_format"))
 }
 
 /// Hesap silme isteği — step-up auth: mevcut şifre zorunlu (SA-12)

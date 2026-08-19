@@ -244,4 +244,55 @@
     border-color: var(--color-accent-primary);
     box-shadow: 0 0 0 6px var(--color-accent-primary-light);
   }
+
+  /* ── Time Input Control ─────────────────────────────── */
+  .c-time-input {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 4px 10px;
+    height: 34px;
+    font-family: var(--font-body);
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-2xs);
+    cursor: pointer;
+    transition: 
+      border-color var(--dur-fast) var(--ease-standard),
+      background var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+    outline: none;
+    color-scheme: light dark;
+  }
+
+  .c-time-input:hover {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-sunken);
+  }
+
+  .c-time-input:focus {
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 2px var(--color-accent-primary-light);
+  }
+
+  .c-time-input:active {
+    transform: scale(0.98);
+  }
+
+  .c-time-input:disabled {
+    opacity: var(--opacity-disabled);
+    cursor: not-allowed;
+    background: var(--color-surface-sunken);
+  }
+
+  .c-list-row__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-shrink: 0;
+  }
 }

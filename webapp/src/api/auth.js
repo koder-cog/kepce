@@ -1,11 +1,11 @@
 import { request, HOST_BASE, buildQuery } from './client.js';
 
 export const authApi = {
-  register: async (email, password, username = null, default_city_slug = null, diet_mode = null) => {
+  register: async (email, password, username = null, default_city_slug = null, diet_mode = null, email_security = false) => {
     const cleanUsername = (username && typeof username === 'string' && username.trim()) ? username.trim() : null;
     return await request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, username: cleanUsername, default_city_slug, diet_mode }),
+      body: JSON.stringify({ email, password, username: cleanUsername, default_city_slug, diet_mode, email_security }),
     });
   },
   login: async (username, password, remember = false) => {
