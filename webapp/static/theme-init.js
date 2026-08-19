@@ -13,8 +13,16 @@
       }
     };
 
-    if (!isInit && document.startViewTransition) {
-      document.startViewTransition(updateDOM);
+    if (!isInit && typeof document.startViewTransition === 'function') {
+      try {
+        const transition = document.startViewTransition(updateDOM);
+        if (transition) {
+          if (transition.ready) transition.ready.catch(() => {});
+          if (transition.finished) transition.finished.catch(() => {});
+        }
+      } catch (_) {
+        updateDOM();
+      }
     } else {
       if (!isInit) {
         el.classList.add('theme-transitioning');
@@ -32,9 +40,19 @@
       }
     }
   };
-  const savedTheme = localStorage.getItem('renkTercihi') || 'sistem';
-  window.applyTheme(savedTheme, true);
-  if (localStorage.getItem('kepce_show_bot') === 'false') {
-    document.documentElement.classList.add('hide-ai');
-  }
+
+  const syncThemeState = function() {
+    const savedTheme = localStorage.getItem('renkTercihi') || 'sistem';
+    window.applyTheme(savedTheme, true);
+    if (localStorage.getItem('kepce_show_bot') === 'false') {
+      document.documentElement.classList.add('hide-ai');
+    } else {
+      document.documentElement.classList.remove('hide-ai');
+    }
+  };
+
+  syncThemeState();
+
+  window.addEventListener('popstate', syncThemeState);
+  window.addEventListener('pageshow', syncThemeState);
 })();

@@ -75,14 +75,18 @@
 	});
 
 	onNavigate((navigation) => {
-		if (!document.startViewTransition) return;
+		if (typeof document.startViewTransition !== "function") return;
 
 		return new Promise((resolve) => {
 			try {
-				document.startViewTransition(async () => {
+				const transition = document.startViewTransition(async () => {
 					resolve();
 					await navigation.complete;
 				});
+				if (transition) {
+					if (transition.ready) transition.ready.catch(() => {});
+					if (transition.finished) transition.finished.catch(() => {});
+				}
 			} catch (err) {
 				// Eşzamanlı (hızlı) geçişlerde viewTransition hata fırlatabilir.
 				resolve();
