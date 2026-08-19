@@ -223,10 +223,16 @@
     pointer-events: none;
     user-select: none;
     line-height: var(--leading-tight);
+    margin: var(--space-md) 0;
   }
 
   .c-menu__section:first-child .c-menu__section-title {
+    margin-top: 0;
     padding-top: 0;
+  }
+
+  .c-menu__section:last-child .c-menu__section-title {
+    margin-bottom: 0;
   }
 
   /* ═══ Combo Box / Arama Çubuğu ══════════════════════════════ */
