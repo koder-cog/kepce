@@ -196,6 +196,8 @@ impl UserService {
             email_newsletter: if include_private { Some(user.email_newsletter) } else { None },
             email_security: if include_private { Some(user.email_security) } else { None },
             email_updates: if include_private { Some(user.email_updates) } else { None },
+            is_blocked: None,
+            is_blocked_by: None,
         })
     }
 
@@ -290,7 +292,8 @@ impl UserService {
                 .await
                 .map_err(UserError::DatabaseError)?;
 
-            if let Ok(enriched) = crate::services::comment::CommentService::enrich_comments(db, raw_comments, Some(user_id), &[]).await {
+            let blocked_relations = crate::services::moderation::ModerationService::get_blocked_relations(db, user_id).await.unwrap_or_default();
+            if let Ok(enriched) = crate::services::comment::CommentService::enrich_comments(db, raw_comments, Some(user_id), &blocked_relations).await {
                 favorite_comments = enriched.into_iter().map(|(dto, _)| dto).collect();
             }
         }
@@ -299,18 +302,21 @@ impl UserService {
         #[derive(Debug, FromQueryResult)]
         struct AuthorCount {
             username: String,
+            avatar_url: Option<String>,
+            level: Option<i32>,
+            karma_score: Option<i32>,
             favorite_count: i64,
         }
         
         let authors_res = AuthorCount::find_by_statement(Statement::from_sql_and_values(
             db.get_database_backend(),
             r#"
-            SELECT u.username, COUNT(v.id) as favorite_count
+            SELECT u.username, u.avatar_url, u.level, u.karma_score, COUNT(v.id) as favorite_count
             FROM vote_reactions v
             JOIN comments c ON c.id = v.comment_id
             JOIN users u ON u.id = c.user_id
             WHERE v.user_id = $1 AND v.reaction_type = 'upvote'
-            GROUP BY u.username
+            GROUP BY u.username, u.avatar_url, u.level, u.karma_score
             ORDER BY favorite_count DESC
             LIMIT 5
             "#,
@@ -320,6 +326,9 @@ impl UserService {
         let favorite_authors = authors_res.into_iter().map(|r| crate::dto::user::FavoriteAuthorDto {
             username: r.username,
             favorite_count: r.favorite_count as i32,
+            avatar_url: r.avatar_url,
+            level: r.level,
+            karma_score: r.karma_score,
         }).collect();
 
         Ok(crate::dto::user::UserDashboardStatsDto {

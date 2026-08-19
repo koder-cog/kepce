@@ -101,30 +101,36 @@ export function getDativeSuffix(word, type = 'user') {
 }
 
 export function getCommentContextHtml(c) {
-  if (c.is_reply && c.target_user.username) {
-    const target = c.target_user.username;
-    
-    if (target === '@self') {
-      return `kendi yorumuna yanıt verdi`;
+  if (!c) return `menüye yorum yaptı`;
+
+  const authorUsername = c.user?.nickname || c.user?.username || c.author_username || '';
+  const parentUsername = c.parent_username || c.parent_user?.username || c.target_user?.username || (typeof c.target_user === 'string' ? c.target_user : null);
+
+  // If this comment is a reply to another comment
+  if (c.parent_id || c.is_reply || parentUsername) {
+    if (parentUsername) {
+      if (
+        parentUsername === '@self' ||
+        (authorUsername && parentUsername.toLowerCase() === authorUsername.toLowerCase())
+      ) {
+        return `kendine yanıt verdi`;
+      }
+
+      const cleanUsername = parentUsername.startsWith('@') ? parentUsername.slice(1) : parentUsername;
+      const dative = getDativeSuffix(cleanUsername, 'user');
+      const safeDisplay = sanitizeText(cleanUsername);
+      const safeUrl = encodeURIComponent(cleanUsername);
+
+      return `<a href="/biri/${safeUrl}" data-link class="comment-card__target"><strong>@${safeDisplay}</strong></a>'${dative} yanıt verdi`;
     }
 
-    const dative = getDativeSuffix(target, 'user');
-
-    // Görüntülenen metin için HTML sanitize işlemi yapıyoruz (XSS koruması)
-    const safeDisplay = sanitizeText(target);
-
-    // URL yapısı için boşlukları ve Türkçe karakterleri uygun formata çeviriyoruz
-    const safeUrl = encodeURIComponent(target);
-
-    return `<a href="/biri/${safeUrl}" data-link class="comment-card__target"><strong>${safeDisplay}</strong></a>'${dative} yanıt verdi`;
+    return `bir yoruma yanıt verdi`;
   }
 
-  if (c.dish && c.dish.name) {
-    const dishName = c.dish.name;
-    const dative = getDativeSuffix(dishName, 'dish');
+  const dishName = c.dish_name || c.dish?.name;
+  if (dishName) {
     const safeDisplay = sanitizeText(dishName);
-
-    return `<strong>${safeDisplay}</strong>'${dative} yorum yaptı`;
+    return `<strong>${safeDisplay}</strong> için yorum yaptı`;
   }
 
   return `menüye yorum yaptı`;

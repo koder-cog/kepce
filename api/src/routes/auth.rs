@@ -5,7 +5,7 @@
 use axum::{
     routing::{get, post, put, delete},
     Router,
-    extract::{State, Multipart, Query},
+    extract::{State, Multipart, Query, Path},
     Json,
     response::Redirect,
     http::{HeaderMap, header::SET_COOKIE},
@@ -36,7 +36,8 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/me/pinned/toggle", post(toggle_pinned))
         .route("/me/sessions", get(get_sessions))
         .route("/me/sessions/:id", delete(revoke_session))
-        .route("/me/notifications", get(get_notifications))
+        .route("/me/notifications", get(get_notifications).delete(delete_all_notifications))
+        .route("/me/notifications/:id", delete(delete_notification))
         .route("/me/notifications/mark-read", post(mark_notification_read))
         .route("/me/notifications/mark-all-read", post(mark_all_notifications_read))
         .route("/avatar", post(upload_avatar).delete(delete_avatar))
@@ -1115,6 +1116,38 @@ async fn mark_all_notifications_read(
 ) -> Result<Json<serde_json::Value>, AppError> {
     shared::entities::notifications::Entity::update_many()
         .col_expr(shared::entities::notifications::Column::IsRead, sea_orm::sea_query::Expr::value(true))
+        .filter(shared::entities::notifications::Column::UserId.eq(user.id))
+        .exec(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(serde_json::json!({ "status": "success" })))
+}
+
+async fn delete_notification(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    Path(id): Path<i32>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let notif = Notifications::find_by_id(id)
+        .filter(shared::entities::notifications::Column::UserId.eq(user.id))
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    if let Some(n) = notif {
+        let active: shared::entities::notifications::ActiveModel = n.into();
+        active.delete(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    }
+
+    Ok(Json(serde_json::json!({ "status": "success" })))
+}
+
+async fn delete_all_notifications(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+) -> Result<Json<serde_json::Value>, AppError> {
+    shared::entities::notifications::Entity::delete_many()
         .filter(shared::entities::notifications::Column::UserId.eq(user.id))
         .exec(&db)
         .await

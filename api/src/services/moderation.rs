@@ -16,6 +16,12 @@ use shared::entities::{
 };
 use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto};
 
+#[derive(Debug, Clone, Default)]
+pub struct BlockedRelations {
+    pub my_blocked_ids: Vec<Uuid>,
+    pub blocked_me_ids: Vec<Uuid>,
+}
+
 #[derive(Debug)]
 pub enum ModerationError {
     CommentNotFound,
@@ -173,6 +179,38 @@ impl ModerationService {
         ids.dedup();
 
         Ok(ids)
+    }
+
+    /// Çift taraflı engelleme ilişkilerini ayrıştırılmış olarak döner
+    pub async fn get_blocked_relations(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<BlockedRelations, ModerationError> {
+        let blocks = UserBlocks::find()
+            .filter(
+                sea_orm::Condition::any()
+                    .add(user_blocks::Column::BlockerId.eq(user_id))
+                    .add(user_blocks::Column::BlockedId.eq(user_id))
+            )
+            .all(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
+
+        let mut my_blocked_ids = Vec::new();
+        let mut blocked_me_ids = Vec::new();
+
+        for b in blocks {
+            if b.blocker_id == user_id {
+                my_blocked_ids.push(b.blocked_id);
+            } else if b.blocked_id == user_id {
+                blocked_me_ids.push(b.blocker_id);
+            }
+        }
+
+        Ok(BlockedRelations {
+            my_blocked_ids,
+            blocked_me_ids,
+        })
     }
 
     /// Kullanıcı hesap durumunu günceller (Admin/Mod).

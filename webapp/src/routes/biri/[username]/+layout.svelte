@@ -13,9 +13,11 @@
   import { showToast } from "@/components/ui/toast.js";
   import Loader from "@/components/ui/Loader.svelte";
   import { sanitizeText } from "@/utils/sanitize.js";
-  import { page } from "$app/stores";
+  import ActionMenu from "@/components/features/ActionMenu.svelte";
   import TabBar from "@/components/ui/TabBar.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+  import { initCharCounter } from "@/utils/char-counter.js";
+  import { page } from "$app/stores";
 
   let { children } = $props();
 
@@ -25,6 +27,7 @@
   let loading = $state(true);
   let profile = $state(null);
   let error = $state(null);
+  let avatarTimestamp = $state(Date.now());
 
   // Tabs state based on URL
   let currentPath = $derived($page.url.pathname);
@@ -36,17 +39,17 @@
       icon: icon("chat", 18),
     },
     sabitlenenler: {
-      label: "Sabitlenen yemekler",
+      label: "Favoriler",
       path: `/biri/${username}/sabitlenenler`,
       icon: icon("starFilled", 18),
     },
     begendikleri: {
-      label: "Beğendiği yorumlar",
+      label: "Beğeniler",
       path: `/biri/${username}/begendikleri`,
       icon: icon("voteUpFilled", 18),
     },
     yazarlar: {
-      label: "Favori yazarları",
+      label: "Sevilenler",
       path: `/biri/${username}/yazarlar`,
       icon: icon("user", 18),
     },
@@ -74,9 +77,9 @@
   );
 
   $effect(() => {
-    if (username) {
+    if (username && globalState.isReady) {
       loadProfile();
-    } else {
+    } else if (!username) {
       loading = false;
       error = {
         status: 404,
@@ -95,6 +98,39 @@
       error = err;
     } finally {
       loading = false;
+    }
+  }
+
+  async function handleBlock() {
+    if (!globalState?.user) {
+      authActions.triggerLogin();
+      return;
+    }
+    try {
+      await api.blockUser(profile.id);
+      profile.is_blocked = true;
+      showToast("Kullanıcı engellendi.", "success");
+    } catch (err) {
+      if (err.message && err.message.toLowerCase().includes("already blocked")) {
+        profile.is_blocked = true;
+        showToast("Kullanıcı zaten engellenmiş.", "info");
+      } else {
+        showToast(err.message || "Engellenemedi.", "error");
+      }
+    }
+  }
+
+  async function handleUnblock() {
+    if (!globalState?.user) {
+      authActions.triggerLogin();
+      return;
+    }
+    try {
+      await api.unblockUser(profile.id);
+      profile.is_blocked = false;
+      showToast("Engel kaldırıldı.", "success");
+    } catch (err) {
+      showToast(err.message || "Engel kaldırılamadı.", "error");
     }
   }
 
@@ -139,8 +175,8 @@
       iconHtml: icon("edit", 24),
       contentHtml: `
         <div class="c-modal__form-group">
-          <div class="form-group--relative">
-            <textarea id="edit-bio" class="comment-panel__textarea" rows="5"
+          <div class="form-group">
+            <textarea id="edit-bio" rows="5"
               placeholder="Kendinden bahset..." 
               maxlength="256">${sanitizeText(profile.bio || "")}</textarea>
           </div>
@@ -187,7 +223,7 @@
       contentHtml: `
         <div class="avatar-manage" id="avatar-manage-root">
           <div class="avatar-manage__preview">
-            ${profile.avatar_url ? `<img src="${api.getAvatarUrl(profile.avatar_url)}?t=${Date.now()}" alt="Önizleme">` : icon("avatarEmpty", 160)}
+            ${profile.avatar_url ? `<img src="${api.getAvatarUrl(profile.avatar_url)}?v=${avatarTimestamp}" alt="Önizleme">` : icon("avatarEmpty", 160)}
           </div>
           <input type="file" id="avatar-file-input" accept="image/*" hidden>
         </div>
@@ -227,6 +263,7 @@
                               globalState.user.avatar_url = null;
                             }
                             profile.avatar_url = null;
+                            avatarTimestamp = Date.now();
                             showToast("Profil fotoğrafın silindi.", "success");
                             modalObj.close();
                             return true;
@@ -342,6 +379,7 @@
           globalState.user.avatar_url = url;
         }
         profile.avatar_url = url;
+        avatarTimestamp = Date.now();
         showToast("Profil fotoğrafı güncellendi!", "success");
         modalObj.close();
       } catch (err) {
@@ -356,19 +394,6 @@
   function handleShare() {
     navigator.clipboard.writeText(window.location.href);
     showToast("Profil bağlantısı kopyalandı.", "success");
-  }
-
-  let dropdownOpen = $state(false);
-  function toggleDropdown(e) {
-    e.stopPropagation();
-    dropdownOpen = !dropdownOpen;
-    if (dropdownOpen) {
-      const closeDropdown = (ev) => {
-        dropdownOpen = false;
-        document.removeEventListener("click", closeDropdown);
-      };
-      setTimeout(() => document.addEventListener("click", closeDropdown), 0);
-    }
   }
 
   class AvatarCropper {
@@ -503,35 +528,49 @@
     <section class="profile-intro profile-card">
       <div class="profile-intro__header">
         <div class="profile-intro__avatar-group">
-          <button
-            class="profile-intro__avatar {isOwner
-              ? 'profile-intro__avatar--owner'
-              : 'profile-intro__avatar--guest'}"
-            id="avatar-trigger"
-            disabled={!isOwner}
-            onclick={openAvatarManageModal}
-          >
-            {#if profile.avatar_url}
-              <img
-                src={api.getAvatarUrl(profile.avatar_url)}
-                alt={safeNickname}
-                onerror={(e) => {
-                  e.target.onerror = null;
-                  e.target.outerHTML = icon("avatarEmpty", 160).replace(
-                    /[\r\n]+/g,
-                    "",
-                  );
-                }}
-              />
-            {:else}
-              {@html icon("avatarEmpty", 160)}
-            {/if}
-            {#if isOwner}
-              <div class="profile-intro__avatar-overlay">
-                <i class="ph ph-camera"></i>
-              </div>
-            {/if}
-          </button>
+          {#if isOwner}
+            <button
+              class="profile-intro__avatar profile-intro__avatar--owner"
+              id="avatar-trigger"
+              onclick={openAvatarManageModal}
+              aria-label="Profil fotoğrafını düzenle"
+            >
+              {#if profile.avatar_url}
+                <img
+                  src="{api.getAvatarUrl(profile.avatar_url)}?v={avatarTimestamp}"
+                  alt={safeNickname}
+                  onerror={(e) => {
+                    e.target.onerror = null;
+                    e.target.outerHTML = icon("avatarEmpty", 160).replace(
+                      /[\r\n]+/g,
+                      "",
+                    );
+                  }}
+                />
+              {:else}
+                {@html icon("avatarEmpty", 160)}
+              {/if}
+              <div class="profile-intro__avatar-overlay"></div>
+            </button>
+          {:else}
+            <div class="profile-intro__avatar" id="avatar-display">
+              {#if profile.avatar_url}
+                <img
+                  src="{api.getAvatarUrl(profile.avatar_url)}?v={avatarTimestamp}"
+                  alt={safeNickname}
+                  onerror={(e) => {
+                    e.target.onerror = null;
+                    e.target.outerHTML = icon("avatarEmpty", 160).replace(
+                      /[\r\n]+/g,
+                      "",
+                    );
+                  }}
+                />
+              {:else}
+                {@html icon("avatarEmpty", 160)}
+              {/if}
+            </div>
+          {/if}
         </div>
 
         <div class="profile-intro__info-stack">
@@ -540,7 +579,11 @@
               <h1 class="profile-intro__name" data-full-name="@{safeNickname}">
                 @{safeNickname}
               </h1>
-              {#if getFlairs(profile).length > 0}
+              {#if profile.is_blocked}
+                <div class="profile-intro__flairs">
+                  <span class="profile-flair profile-intro__badge--blocked">Engellendi</span>
+                </div>
+              {:else if getFlairs(profile).length > 0}
                 <div class="profile-intro__flairs">
                   {#each getFlairs(profile) as f}
                     <span class="profile-flair {f.cls}">{f.text}</span>
@@ -598,62 +641,79 @@
           >
             {@html icon("share", 16)}
           </button>
-          <div class="profile-intro__actions-more">
-            <button
-              class="btn btn--secondary btn--squish btn--icon-only"
-              onclick={toggleDropdown}
-              title="Daha fazla"
-            >
-              {@html icon("more", 16)}
-            </button>
-            {#if dropdownOpen}
-              <div class="c-menu profile-more-dropdown c-menu--open">
-                {#if isOwner}
-                  <button class="c-menu__item" onclick={openBioEditModal}
-                    >Biyografiyi düzenle</button
-                  >
-                {:else}
-                  <button
-                    class="c-menu__item"
-                    onclick={async () => {
-                      dropdownOpen = false;
-                      try {
-                        await api.blockUser(profile.id);
-                        showToast("Kullanıcı engellendi.", "success");
-                      } catch (err) {
-                        showToast(err.message || "Engellenemedi", "error");
-                      }
-                    }}>Engelle</button
-                  >
-                  <button
-                    class="c-menu__item c-menu__item--danger"
-                    onclick={() => {
-                      dropdownOpen = false;
-                      openUserReportModal(profile.id);
-                    }}>Şikayet et</button
-                  >
-                {/if}
-              </div>
-            {/if}
-          </div>
+          <ActionMenu
+            triggerClass="btn btn--secondary btn--squish btn--icon-only"
+            triggerTitle="Daha fazla"
+            items={[
+              ...(isOwner
+                ? [
+                    {
+                      label: "Biyografiyi düzenle",
+                      onClick: () => openBioEditModal(),
+                    },
+                  ]
+                : [
+                    ...(profile.is_blocked
+                      ? [
+                          {
+                            label: "Engeli kaldır",
+                            onClick: () => handleUnblock(),
+                          },
+                        ]
+                      : [
+                          {
+                            label: "Kullanıcıyı engelle",
+                            onClick: () => handleBlock(),
+                          },
+                        ]),
+                    {
+                      label: "Şikayet et",
+                      variant: "danger",
+                      onClick: () => openUserReportModal(profile.id),
+                    },
+                  ]),
+            ]}
+          />
         </div>
       </div>
     </section>
 
-    <!-- ── Tab Navigation ─────────────── -->
-    <TabBar
-      bind:activeId={activeTab}
-      tabs={Object.entries(tabStructure).map(([id, tab]) => ({
-        id,
-        label: tab.label,
-        href: tab.path,
-        icon: tab.icon,
-      }))}
-    />
+    {#if profile.is_blocked}
+      <div class="profile-blocked-notice">
+        <EmptyState
+          iconName="lock"
+          title="Bu Kullanıcıyı Engelledin"
+          desc="Engellediğin kullanıcıların yorumları ve profil aktiviteleri gizlenir."
+        >
+          <button class="btn btn--secondary btn--squish" onclick={handleUnblock}>
+            Engeli Kaldır
+          </button>
+        </EmptyState>
+      </div>
+    {:else if profile.is_blocked_by}
+      <div class="profile-blocked-notice">
+        <EmptyState
+          iconName="lock"
+          title="Bu Profile Erişim Kısıtlandı"
+          desc="Bu kullanıcının paylaşımlarını görüntüleyemezsin."
+        />
+      </div>
+    {:else}
+      <!-- ── Tab Navigation ─────────────── -->
+      <TabBar
+        bind:activeId={activeTab}
+        tabs={Object.entries(tabStructure).map(([id, tab]) => ({
+          id,
+          label: tab.label,
+          href: tab.path,
+          icon: tab.icon,
+        }))}
+      />
 
-    <!-- ── Content Grid ───────────────── -->
-    <div class="profile-grid">
-      {@render children()}
-    </div>
+      <!-- ── Content Grid ───────────────── -->
+      <div class="profile-grid">
+        {@render children()}
+      </div>
+    {/if}
   </div>
 {/if}

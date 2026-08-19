@@ -85,25 +85,32 @@
     display: inline-block;
   }
 
-  /* ── Responsive Variant ────────────────────────────── */
+  /* ── Responsive Variant (Apple HIG Compact Icon Mode) ── */
 
-  /* Masaüstünde: Sadece yazı göster, ikonu gizle (HIG: Mix yasak) */
-  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon {
+  /* Masaüstünde (>600px): Sadece yazı göster, ikonu gizle (HIG: Mix yasak) */
+  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon,
+  .c-segmented-control--responsive .c-segmented-control__icon {
     display: none;
   }
 
-  /* Mobilde / Dar ekranda (650px altı): Yazıyı gizle, ikonu göster */
-  @media (max-width: 650px) {
-    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label {
+  /* Mobilde (600px ve altı): Yazıyı gizle, ikonu göster (Kompakt Trailing Modu) */
+  @media (max-width: 600px) {
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label,
+    .c-segmented-control--responsive .c-segmented-control__label {
       display: none !important;
     }
 
-    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon {
-      display: block;
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon,
+    .c-segmented-control--responsive .c-segmented-control__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
 
-    .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn {
-      min-width: 0;
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn,
+    .c-segmented-control--responsive .c-segmented-control__btn {
+      min-width: 32px;
+      padding: var(--space-xs) var(--space-sm);
     }
   }
 }

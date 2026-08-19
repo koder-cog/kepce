@@ -126,6 +126,25 @@
   margin-top: var(--space-sm);
 }
 
+.notification-page__header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.notification-card__delete-btn {
+  margin-left: auto;
+  color: var(--color-text-dim);
+  opacity: 0.7;
+  transition: opacity var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+}
+
+.notification-card__delete-btn:hover {
+  color: var(--color-accent-negative);
+  opacity: 1;
+}
+
 /* Badge for tabs */
 .notification-tab__badge {
   display: inline-flex;

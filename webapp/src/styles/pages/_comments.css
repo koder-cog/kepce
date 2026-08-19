@@ -29,6 +29,7 @@
     .comments-section {
       display: flex;
       flex-direction: column;
+      margin-top: var(--space-xl);
     }
 
     #comment-input-container {
@@ -118,7 +119,7 @@
       display: flex;
       align-items: center;
       gap: var(--space-md);
-      margin-top: var(--space-xl);
+      margin-bottom: var(--space-md);
     }
 
     .comments-section-title h2 {
@@ -158,7 +159,7 @@
       }
 
       .comments-section-title {
-        margin-bottom: var(--space-xl);
+        margin-bottom: var(--space-md);
       }
     }
   }

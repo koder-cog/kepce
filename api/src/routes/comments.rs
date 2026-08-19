@@ -4,7 +4,7 @@
 // İnce zarf. CommentService (okuma) ve ReactionService (yazma) kullanır.
 //
 use axum::{
-    routing::{get, post, delete},
+    routing::{get, post, put},
     Router,
     extract::{State, Path, Query},
     Json,
@@ -12,7 +12,7 @@ use axum::{
 use uuid::Uuid;
 use crate::services::comment::{CommentService, CommentError};
 use crate::services::reaction::{ReactionService, ReactionError};
-use crate::dto::comment::{CreateCommentDto, CommentResponseDto};
+use crate::dto::comment::{CreateCommentDto, UpdateCommentDto, CommentResponseDto};
 use crate::dto::reaction::ReactionRequestDto;
 use crate::error::AppError;
 use crate::extractors::validated::ValidatedJson;
@@ -25,7 +25,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/menu/:menu_id", get(get_comments))
         .route("/", post(create_comment))
         .route("/react", post(toggle_reaction))
-        .route("/:hash", delete(delete_comment))
+        .route("/:hash", put(update_comment).delete(delete_comment))
 }
 
 impl From<CommentError> for AppError {
@@ -102,6 +102,16 @@ async fn toggle_reaction(
 ) -> Result<Json<()>, AppError> {
     ReactionService::toggle_reaction(&db, user.id, payload.vote_id, payload.reaction).await?;
     Ok(Json(()))
+}
+
+async fn update_comment(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    Path(hash): Path<Uuid>,
+    ValidatedJson(payload): ValidatedJson<UpdateCommentDto>,
+) -> Result<Json<CommentResponseDto>, AppError> {
+    let comment = CommentService::update_comment(&db, user.id, hash, payload.comment).await?;
+    Ok(Json(comment))
 }
 
 async fn delete_comment(

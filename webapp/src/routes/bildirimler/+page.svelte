@@ -17,6 +17,8 @@
   import { globalState } from "@/state.svelte.js";
   import { slide } from "svelte/transition";
   import { getDuration } from "@/lib/dom/motion.js";
+  import { showToast } from "@/components/ui/toast.js";
+  import { createModal } from "@/components/features/modal.js";
   import Seo from "@/components/ui/Seo.svelte";
 
   let user = $derived(globalState?.user);
@@ -113,10 +115,50 @@
 
     try {
       await api.markAllAsRead();
+      showToast("Tüm bildirimler okundu olarak işaretlendi.", "success");
     } catch (err) {
       notifications = previousState;
-      console.error(err);
+      showToast("Bildirimler güncellenemedi.", "error");
     }
+  }
+
+  async function handleDeleteNotification(id) {
+    const previousState = [...notifications];
+    notifications = notifications.filter((n) => n.id !== id);
+    try {
+      await api.deleteNotification(id);
+      showToast("Bildirim silindi.", "success");
+    } catch (err) {
+      notifications = previousState;
+      showToast(err.message || "Bildirim silinemedi.", "error");
+    }
+  }
+
+  function confirmDeleteAll() {
+    createModal({
+      title: "Bildirimleri Temizle",
+      iconHtml: icon("trash", 24),
+      contentHtml:
+        '<p class="modal-confirm-text">Tüm bildirimlerini silmek istediğine emin misin? Bu işlem geri alınamaz.</p>',
+      buttons: [
+        { label: "Vazgeç", variant: "secondary" },
+        {
+          label: "Tümünü Sil",
+          variant: "danger",
+          onClick: async () => {
+            try {
+              await api.deleteAllNotifications();
+              notifications = [];
+              showToast("Tüm bildirimler temizlendi.", "success");
+              return true;
+            } catch (err) {
+              showToast(err.message || "Bildirimler temizlenemedi.", "error");
+              return false;
+            }
+          },
+        },
+      ],
+    });
   }
 
   function getIconForType(type) {
@@ -158,11 +200,26 @@
     <div class="notification-page__header-left">
       <h1 class="notification-page__title">Bildirimler</h1>
     </div>
-    {#if unreadCount > 0}
-      <button class="btn btn--outline btn--sm" onclick={handleMarkAllAsRead}>
-        Tümünü okundu işaretle
-      </button>
-    {/if}
+    <div class="notification-page__header-actions">
+      {#if unreadCount > 0}
+        <button
+          class="btn btn--secondary btn--sm btn--squish"
+          onclick={handleMarkAllAsRead}
+        >
+          {@html icon("check", 14)}
+          Tümünü okundu işaretle
+        </button>
+      {/if}
+      {#if notifications.length > 0}
+        <button
+          class="btn btn--outline btn--sm btn--squish"
+          onclick={confirmDeleteAll}
+        >
+          {@html icon("trash", 14)}
+          Tümünü temizle
+        </button>
+      {/if}
+    </div>
   </div>
 
   <TabBar
@@ -233,19 +290,29 @@
                 <p class="notification-card__message">{item.message}</p>
 
                 <div class="notification-card__actions">
-                  {#if item.action}
-                    <a href={item.action.href} class="btn btn--sm btn--primary">
-                      {item.action.label}
+                  {#if item.action_href}
+                    <a
+                      href={item.action_href}
+                      class="btn btn--sm btn--primary btn--squish"
+                    >
+                      {item.action_label || "Görüntüle"}
                     </a>
                   {/if}
                   {#if !item.is_read}
                     <button
-                      class="btn btn--sm btn--ghost"
+                      class="btn btn--sm btn--secondary btn--squish"
                       onclick={() => handleMarkAsRead(item.id)}
                     >
                       Okundu işaretle
                     </button>
                   {/if}
+                  <button
+                    class="btn btn--sm btn--icon-only btn--ghost btn--squish notification-card__delete-btn"
+                    title="Bildirimi sil"
+                    onclick={() => handleDeleteNotification(item.id)}
+                  >
+                    {@html icon("trash", 14)}
+                  </button>
                 </div>
               </div>
             </div>

@@ -142,73 +142,7 @@
 
 
 
-  /* ── Responsive Theme Switcher ── */
-  .settings-theme-switcher .c-segmented-control__btn svg {
-    display: none;
-  }
-
   @media (max-width: 600px) {
-    .settings-theme-switcher .c-segmented-control__btn {
-      padding: var(--space-sm);
-      min-width: 44px;
-      justify-content: center;
-    }
-
-    /* On mobile, if we are fill-container, we show labels as well */
-    .settings-theme-switcher .c-segmented-control__btn span {
-      display: inline !important;
-    }
-  }
-
-  /* Buttons */
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: var(--space-sm);
-    padding: var(--space-sm) var(--space-xl);
-    border-radius: var(--radius-full);
-    border: none;
-    font-family: var(--font-body);
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-semibold);
-    cursor: pointer;
-    transition: all var(--motion-effects-fast);
-  }
-
-  .btn--primary {
-    background: var(--color-accent-primary);
-    color: var(--color-text-on-accent);
-  }
-
-  .btn--danger {
-    background: transparent;
-    color: var(--color-accent-negative);
-    border: 1px solid var(--color-accent-negative);
-  }
-
-  .btn--secondary {
-    background: var(--color-surface-sunken);
-    color: var(--color-text);
-    border: 1px solid var(--color-border);
-  }
-
-  @media (hover: hover) {
-    .btn--primary:hover {
-      background: var(--color-accent-primary-hover);
-    }
-
-    .btn--danger:hover {
-      background: rgba(var(--color-accent-negative-rgb), 0.08);
-    }
-
-    .btn--secondary:hover {
-      background: var(--color-border-light);
-    }
-  }
-
-  @media (max-width: 600px) {
-
     .settings-page {
       padding-top: var(--space-md);
     }

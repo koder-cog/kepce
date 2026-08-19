@@ -12,11 +12,11 @@
     import { sanitizeText } from "../../utils/sanitize.js";
     import { showToast } from "../ui/toast.js";
     import { timeAgo } from "../../utils/date.js";
-    import { goto } from "$app/navigation";
-    import { onMount } from "svelte";
     import CommentList from "./CommentList.svelte";
     import ActionMenu from "./ActionMenu.svelte";
     import { openSpamInfoModal } from "../../lib/dom/spam-modal.js";
+    import { createModal } from "./modal.js";
+    import { initCharCounter } from "../../utils/char-counter.js";
 
     let { comment, depth = 0, menuId, onloadData } = $props();
 
@@ -42,6 +42,13 @@
     );
 
     let isUserDeleted = $derived(isDeleted && !isAdminDeleted);
+    let isBlocked = $derived(
+        Boolean(
+            comment.is_blocked ||
+                comment.user?.nickname === "Engellenmiş" ||
+                comment.user?.nickname === "Engellemiş",
+        ),
+    );
     let rawNickname = $derived(isUserDeleted ? null : comment.user?.nickname);
     let userName = $derived(
         isUserDeleted ? "Silinmiş" : rawNickname || "Kepçe Kullanıcısı",
@@ -49,7 +56,9 @@
     let isLinkable = $derived(
         rawNickname &&
             rawNickname.toLowerCase() !== "silinmiş" &&
-            rawNickname.toLowerCase() !== "anonim",
+            rawNickname.toLowerCase() !== "anonim" &&
+            rawNickname !== "Engellenmiş" &&
+            rawNickname !== "Engellemiş",
     );
 
     // Avatar rendering snippet'a taşındı (XSS önlemi)
@@ -160,7 +169,14 @@
             });
             return;
         }
-        if (isOwn) return;
+        if (isOwn) {
+            showToast("Kendi yorumunuza oy veremezsiniz.", "warning");
+            return;
+        }
+        if (isBlocked) {
+            showToast("Engellenen içeriklere oy verilemez.", "warning");
+            return;
+        }
 
         const isRemoving = reaction.my_vote === type;
         const oppositeType = type === "up" ? "down" : "up";
@@ -218,6 +234,55 @@
         }
     }
 
+    function openEditCommentModal() {
+        const currentText = comment.comment || "";
+        const modalObj = createModal({
+            title: "Yorumu Düzenle",
+            iconHtml: icon("edit", 24),
+            contentHtml: `
+                <div class="c-modal__form-group">
+                    <div class="form-group">
+                        <textarea id="edit-comment-input" rows="5" maxlength="500" placeholder="Yorumunu güncelle...">${sanitizeText(currentText)}</textarea>
+                    </div>
+                </div>
+            `,
+            buttons: [
+                { label: "Vazgeç", variant: "secondary" },
+                {
+                    label: "Güncelle",
+                    variant: "primary",
+                    onClick: async (modalEl) => {
+                        const newText = modalEl.querySelector("#edit-comment-input").value.trim();
+                        if (!newText) {
+                            showToast("Yorum boş bırakılamaz.", "warning");
+                            return false;
+                        }
+                        try {
+                            const res = await api.updateComment(comment.id, newText);
+                            comment.comment = res.comment;
+                            comment.is_edited = res.is_edited;
+                            showToast("Yorumun güncellendi!", "success");
+                            if (onloadData) await onloadData();
+                            return true;
+                        } catch (err) {
+                            showToast(err.message || "Yorum güncellenemedi.", "error");
+                            return false;
+                        }
+                    },
+                },
+            ],
+        });
+
+        const textarea = modalObj.modal.querySelector("#edit-comment-input");
+        const saveBtn = modalObj.modal.querySelector(".btn--primary");
+        initCharCounter(textarea, {
+            onUpdate: (_count, _limit, isOver) => {
+                saveBtn.disabled = isOver || textarea.value.trim().length === 0;
+            },
+        });
+        textarea.focus();
+    }
+
     function countAllDescendants(node) {
         if (!node.children || node.children.length === 0) return 0;
         let count = node.children.length;
@@ -228,9 +293,6 @@
     }
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- svelte-ignore a11y_mouse_events_have_key_events -->
 <div
     class="comment-node {depth >= MAX_INDENT_DEPTH
         ? 'is-max-depth'
@@ -243,7 +305,7 @@
     data-depth={currentDepth}
 >
     {#snippet avatarSnippet()}
-        {#if comment.user?.avatar_url && !isUserDeleted}
+        {#if comment.user?.avatar_url && !isUserDeleted && !isBlocked}
             <img
                 src={api.getAvatarUrl(comment.user.avatar_url)}
                 alt=""
@@ -258,84 +320,101 @@
         {#if isLinkable}
             <a
                 href="/biri/{rawNickname}"
+                class="comment-node__avatar"
+                aria-label="{rawNickname} profilini görüntüle"
                 data-link
-                class="comment-node__avatar-link">{@render avatarSnippet()}</a
             >
+                {@render avatarSnippet()}
+            </a>
         {:else}
-            <div class="comment-node__avatar-link">
+            <div class="comment-node__avatar">
                 {@render avatarSnippet()}
             </div>
         {/if}
-        {#if hasChildren && depth < MAX_INDENT_DEPTH - 1}
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div class="comment-node__line-hitbox" onclick={toggleCollapse}>
-                <div class="comment-node__line"></div>
-            </div>
+        {#if hasChildren}
+            <button
+                class="comment-node__thread-line"
+                onclick={toggleCollapse}
+                aria-label={isCollapsed
+                    ? "Yorum yanıtlarını genişlet"
+                    : "Yorum yanıtlarını daralt"}
+            ></button>
         {/if}
     </div>
+
     <div class="comment-node__right">
         <div class="comment-node__header">
             {#if isLinkable}
                 <a
                     href="/biri/{rawNickname}"
+                    class="comment-node__author"
                     data-link
-                    class="comment-node__user">{userName}</a
                 >
+                    {userName}
+                </a>
             {:else}
-                <span class="comment-node__user">{userName}</span>
+                <span class="comment-node__author">{userName}</span>
             {/if}
-            {#if isStructured}
-                <span
-                    class="comment-node__badge--structured"
-                    data-tooltip="Bu yorum, kullanıcının klavye kullanacak kaloriye sahip olmaması sebebiyle el değmeden üretilmiştir."
-                    >{@html icon("puzzle", 12)}</span
+
+            {#if comment.user?.level}
+                <span class="comment-node__level"
+                    >Lvl {comment.user.level}</span
                 >
             {/if}
 
             <span class="comment-node__dot">·</span>
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <span class="comment-node__time" onclick={handleFocus}
-                >{timeAgo(comment.created_at)}</span
+            <button
+                class="comment-node__time comment-node__time-btn"
+                onclick={handleFocus}
+                title="Tartışmaya odaklan"
             >
-            <!-- svelte-ignore a11y_click_events_have_key_events -->
-            <!-- svelte-ignore a11y_no_static_element_interactions -->
-            <div
-                class="comment-node__header-toggle-area"
-                onclick={toggleCollapse}
-            ></div>
-        </div>
+                {timeAgo(comment.created_at)}
+            </button>
 
-        <div class="comment-node__body">
-            {#if isDeleted}
-                <div class="comment-node__content">
-                    <span class="u-opacity-dim italic text-sm"
-                        >[{isAdminDeleted
-                            ? "Yorum admin tarafından kaldırıldı"
-                            : "Yorum kullanıcı tarafından silindi"}]</span
-                    >
-                </div>
-            {:else}
-                <div class="comment-node__content">
-                    <div
-                        bind:this={textContainer}
-                        class="comment-node__text {isExpanded
-                            ? ''
-                            : 'comment-node__text--clamped'}"
-                    >
-                        {@html sanitizeText(comment.comment || "")}
-                    </div>
-                    {#if isOverflowing && !isExpanded}
-                        <button
-                            class="btn-read-more"
-                            onclick={(e) => {
-                                e.stopPropagation();
-                                isExpanded = true;
-                            }}>Devamını oku...</button
+            {#if comment.is_edited}
+                <span class="comment-node__edited" title="Bu yorum daha sonra düzenlendi">(düzenlendi)</span>
+            {/if}
+
+            {#if hasChildren}
+                <button
+                    class="comment-node__collapse-btn"
+                    onclick={toggleCollapse}
+                    title={isCollapsed ? "Genişlet" : "Daralt"}
+                >
+                    {@html icon(isCollapsed ? "plus" : "minus", 14)}
+                    {#if isCollapsed}
+                        <span class="collapsed-count"
+                            >({countAllDescendants(comment)} yanıt)</span
                         >
                     {/if}
-                    {#if comment.tags}
+                </button>
+            {/if}
+        </div>
+
+        {#if !isCollapsed}
+            <div class="comment-node__content">
+                <div
+                    class="comment-node__text-container {isExpanded
+                        ? 'is-expanded'
+                        : ''}"
+                    bind:this={textContainer}
+                >
+                    <p
+                        class="comment-node__text {isDeleted
+                            ? 'is-deleted'
+                            : ''} {isBlocked ? 'is-blocked-text' : ''}"
+                    >
+                        {comment.comment || ""}
+                    </p>
+                    {#if isOverflowing && !isExpanded}
+                        <button
+                            class="comment-node__more-btn"
+                            onclick={() => (isExpanded = true)}
+                        >
+                            Devamını oku
+                        </button>
+                    {/if}
+                    {#if comment.tags && Array.isArray(comment.tags) && comment.tags.length > 0}
                         <div class="comment-node__tags u-mt-xs">
                             {#each comment.tags as tag}
                                 {#if tag === "tabldot" || tag.tag_id === "tabldot"}
@@ -359,12 +438,15 @@
                         <button
                             class="vote-btn {reaction.my_vote === 'up'
                                 ? 'is-active'
-                                : ''} {isOwn ? 'is-disabled' : ''}"
+                                : ''} {isOwn || isBlocked ? 'is-disabled' : ''}"
                             data-vote="up"
+                            disabled={isOwn || isBlocked}
                             onclick={(e) => handleVote("up", e)}
                             title={isOwn
                                 ? "Kendi yorumunuza oy veremezsiniz"
-                                : ""}
+                                : isBlocked
+                                  ? "Engellenen içeriklere oy verilemez"
+                                  : "Beğen"}
                         >
                             {@html icon(
                                 reaction.my_vote === "up"
@@ -387,12 +469,15 @@
                         <button
                             class="vote-btn {reaction.my_vote === 'down'
                                 ? 'is-active'
-                                : ''} {isOwn ? 'is-disabled' : ''}"
+                                : ''} {isOwn || isBlocked ? 'is-disabled' : ''}"
                             data-vote="down"
+                            disabled={isOwn || isBlocked}
                             onclick={(e) => handleVote("down", e)}
                             title={isOwn
                                 ? "Kendi yorumunuza oy veremezsiniz"
-                                : ""}
+                                : isBlocked
+                                  ? "Engellenen içeriklere oy verilemez"
+                                  : "Beğenme"}
                         >
                             {@html icon(
                                 reaction.my_vote === "down"
@@ -402,14 +487,16 @@
                             )}
                         </button>
                     </div>
-                    <button
-                        class="action-btn"
-                        onclick={toggleReply}
-                        title="Yanıtla"
-                    >
-                        {@html icon("chat", 14)}
-                        <span class="action-btn__text">Yanıtla</span>
-                    </button>
+                    {#if !isBlocked}
+                        <button
+                            class="action-btn"
+                            onclick={toggleReply}
+                            title="Yanıtla"
+                        >
+                            {@html icon("chat", 14)}
+                            <span class="action-btn__text">Yanıtla</span>
+                        </button>
+                    {/if}
                     <button
                         class="action-btn"
                         onclick={handleShare}
@@ -422,9 +509,12 @@
                         triggerClass="action-btn"
                         triggerTitle="Daha fazla seçenek"
                         items={[
+                            ...(isOwn && !isDeleted ? [
+                                { label: "Düzenle", onClick: () => openEditCommentModal() }
+                            ] : []),
                             ...(!isOwn ? [
                                 { label: "Şikayet et", onClick: (e) => handleDropdownAction("report", e) },
-                                ...(comment.user?.nickname && comment.user?.nickname !== "anonim" && comment.user?.nickname !== "silinmiş" ? [
+                                ...(comment.user?.nickname && !["anonim", "silinmiş", "Engellenmiş", "Engellemiş"].includes(comment.user?.nickname) ? [
                                     { label: "Kullanıcıyı engelle", onClick: (e) => handleDropdownAction("block", e) }
                                 ] : [])
                             ] : []),
@@ -465,58 +555,34 @@
                         </div>
                     </div>
                 {/if}
-            {/if}
+            </div>
+        {/if}
 
-            {#if hasChildren}
-                {#if depth >= MAX_INDENT_DEPTH - 1}
-                    {#if countAllDescendants(comment) > 0}
-                        <div class="comment-node__more-replies">
-                            <button
-                                class="btn-more-replies"
-                                onclick={handleFocus}
+        {#if hasChildren}
+            {#if depth >= MAX_INDENT_DEPTH - 1}
+                {#if countAllDescendants(comment) > 0}
+                    <div class="comment-node__more-replies">
+                        <button
+                            class="btn-more-replies"
+                            onclick={handleFocus}
+                        >
+                            {@html icon("plusCircle", 16)}
+                            <span
+                                >{countAllDescendants(comment)} yanıtı daha gör</span
                             >
-                                {@html icon("plusCircle", 16)}
-                                <span
-                                    >{countAllDescendants(comment)} yanıtı daha gör</span
-                                >
-                            </button>
-                        </div>
-                    {/if}
-                {:else}
-                    <div class="comment-node__replies">
-                        <CommentList
-                            comments={comment.children}
-                            depth={depth + 1}
-                            {menuId}
-                            {onloadData}
-                        />
+                        </button>
                     </div>
                 {/if}
+            {:else}
+                <div class="comment-node__replies">
+                    <CommentList
+                        comments={comment.children}
+                        depth={depth + 1}
+                        {menuId}
+                        {onloadData}
+                    />
+                </div>
             {/if}
-        </div>
+        {/if}
     </div>
 </div>
-
-<style>
-    .comment-node__text--clamped {
-        display: -webkit-box;
-        line-clamp: 6;
-        -webkit-line-clamp: 6;
-        -webkit-box-orient: vertical;
-        overflow: hidden;
-    }
-    .btn-read-more {
-        background: none;
-        border: none;
-        color: var(--color-primary, #1d9bd1);
-        font-size: 0.85rem;
-        font-weight: 500;
-        cursor: pointer;
-        padding: 4px 0 0 0;
-        margin-top: 4px;
-        text-align: left;
-    }
-    .btn-read-more:hover {
-        text-decoration: underline;
-    }
-</style>

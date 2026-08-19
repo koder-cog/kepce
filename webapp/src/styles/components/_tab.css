@@ -1,12 +1,8 @@
 @layer components {
   /* ==========================================================================
-     Centralized & Modular Tabs Component
+     Centralized & Modular Tabs Component (TabBar)
      Supports Level 1, Level 2, Level 3+ recursive styling inside a wrapper.
      ========================================================================== */
-
-  /* ── Tab Layout & Keyframes ─────────────────────────── */
-
-
 
   /* ── Tab Container (Wrapper) ────────────────────────── */
   .c-tabs-container {
@@ -17,6 +13,7 @@
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    width: 100%;
   }
 
   /* ── Tab Row ────────────────────────────────────────── */
@@ -27,6 +24,14 @@
     padding: var(--space-xs);
     position: relative;
     z-index: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .c-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   /* The sliding indicator */
@@ -41,6 +46,7 @@
     border-radius: var(--radius-md);
     z-index: -1;
     opacity: 0;
+    pointer-events: none;
   }
 
   .c-tabs-container.is-ready .c-tabs__indicator {
@@ -61,11 +67,11 @@
 
   /* ── Tab Button ─────────────────────────────────────── */
   .c-tab {
-    flex: 1;
+    flex: 1 1 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: var(--space-sm);
+    gap: var(--space-xs);
     padding: var(--space-sm) var(--space-lg);
     border: none;
     background: transparent;
@@ -73,13 +79,17 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     color: var(--color-text);
-    opacity: 0.6;
+    opacity: 0.65;
     cursor: pointer;
     border-radius: var(--radius-sm);
     position: relative;
     z-index: 2;
+    white-space: nowrap;
+    min-width: max-content;
+    text-decoration: none;
     transition: color var(--dur-fast) var(--ease-standard),
                 opacity var(--dur-fast) var(--ease-standard),
+                background-color var(--dur-fast) var(--ease-standard),
                 transform var(--dur-fast) var(--ease-standard);
   }
 
@@ -89,7 +99,7 @@
   }
 
   .c-tab:active {
-    transform: scale(var(--press-scale, 0.98));
+    transform: scale(0.98);
   }
 
   /* Active State */
@@ -103,9 +113,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
   }
 
-  /* Masaüstü: İkon ve yazı birlikte varsa sadece yazıyı göster */
+  /* Masaüstü: İkon ve yazı birlikte varsa sadece yazıyı göster (HIG / GEMINI kuralı) */
   .c-tab__icon--responsive {
     display: none;
   }
@@ -134,20 +145,15 @@
     min-height: 400px;
   }
 
-  /* ── Responsive Mobile Scroll ───────────────────────── */
+  /* ── Responsive Mobile ──────────────────────────────── */
   @media (max-width: 600px) {
     .c-tabs {
       flex-wrap: nowrap;
     }
     .c-tab {
-      flex: 1;
-      padding: var(--space-sm);
-    }
-    .c-tab__label--responsive {
-      display: none; /* Sıkışınca yazıları gizle */
-    }
-    .c-tab__icon--responsive {
-      display: flex; /* İkonu geri getir */
+      flex: 1 0 auto;
+      padding: var(--space-xs) var(--space-md);
+      font-size: var(--text-xs);
     }
   }
 }

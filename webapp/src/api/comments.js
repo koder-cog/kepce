@@ -25,6 +25,11 @@ export const commentsApi = {
       method: 'POST',
       body: JSON.stringify({ vote_id: voteId, type: type }),
     }),
+  updateComment: (commentId, comment) =>
+    request(`/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ comment }),
+    }),
   deleteComment: (voteId) => request(`/comments/${voteId}`, { method: 'DELETE' }),
   purgeComment: (voteId) => request(`/moderation/votes/${voteId}/purge`, { method: 'DELETE' }),
 };

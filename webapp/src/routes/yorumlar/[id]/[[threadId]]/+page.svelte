@@ -26,8 +26,24 @@
     let errorState = $state(null);
     let menu = $state(null);
     let allComments = $state([]);
-    let finalComments = $state([]);
-    let focalNode = $state(null);
+    let focalNode = $derived(focusId ? findNode(allComments, focusId) : null);
+    let finalComments = $derived(focalNode ? [focalNode] : allComments);
+
+    $effect(() => {
+        if (focalNode && typeof document !== "undefined") {
+            setTimeout(() => {
+                const target = document.querySelector(
+                    `#comment-${focalNode.id}`,
+                );
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: isMotionEnabled() ? "smooth" : "auto",
+                        block: "start",
+                    });
+                }
+            }, 100);
+        }
+    });
 
     let targetCitySlug = $derived.by(() => {
         if (menu?.city?.slug) return menu.city.slug;
@@ -121,30 +137,7 @@
             // Oy event'leri yoruma dönüştüğü için (pure votes) ağaç doğrulamasında yer almalı,
             // bu yüzden render aşamasında gizliyoruz (filter ile).
             allComments = flattenPureVotes(fetchedComments || []);
-
-            if (focusId) {
-                focalNode = findNode(allComments, focusId);
-                finalComments = focalNode ? [focalNode] : allComments;
-            } else {
-                focalNode = null;
-                finalComments = allComments;
-            }
-
             isLoading = false;
-
-            if (focalNode) {
-                setTimeout(() => {
-                    const target = document.querySelector(
-                        `#comment-${focalNode.id}`,
-                    );
-                    if (target) {
-                        target.scrollIntoView({
-                            behavior: isMotionEnabled() ? "smooth" : "auto",
-                            block: "start",
-                        });
-                    }
-                }, 300);
-            }
         } catch (err) {
             isLoading = false;
             errorState = {

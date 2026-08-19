@@ -58,14 +58,14 @@
                                     {session.ip_address || "Bilinmeyen IP"} • {new Date(session.last_used_at).toLocaleDateString("tr-TR", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" })}
                                 </div>
                             </div>
-                            {#if !session.is_current}
-                                <div class="c-list-row__control session-control">
-                                    <button class="btn btn--danger btn--icon btn--squish" onclick={() => handleRevoke(session.id)} data-tooltip="Oturumu kapat">
-                                        {@html icon("log-out", 18)}
-                                    </button>
-                                </div>
-                            {/if}
                         </div>
+                        {#if !session.is_current}
+                            <div class="c-list-row__control session-control">
+                                <button class="btn btn--danger btn--icon btn--squish" onclick={() => handleRevoke(session.id)} data-tooltip="Oturumu kapat">
+                                    {@html icon("log-out", 18)}
+                                </button>
+                            </div>
+                        {/if}
                     </div>
                 {/each}
             {/if}
@@ -89,7 +89,8 @@
     }
     .session-row-info {
         align-items: center;
-        width: 100%;
+        flex: 1;
+        min-width: 0;
     }
     .session-icon-wrap {
         background: var(--color-surface-sunken);
@@ -100,14 +101,17 @@
         align-items: center;
         justify-content: center;
         margin-right: 8px;
+        flex-shrink: 0;
     }
     .session-details {
         flex: 1;
+        min-width: 0;
     }
     .session-title {
         display: flex;
         align-items: center;
         gap: 8px;
+        flex-wrap: wrap;
     }
     .session-badge {
         background: var(--color-accent-primary-light);
@@ -122,6 +126,7 @@
     }
     .session-control {
         margin-left: auto;
+        flex-shrink: 0;
     }
     .session-hint {
         margin-top: var(--space-md);

@@ -17,8 +17,22 @@ const markAllAsRead = async () => {
   });
 };
 
+const deleteNotification = async (id) => {
+  return request(`/auth/me/notifications/${id}`, {
+    method: 'DELETE'
+  });
+};
+
+const deleteAllNotifications = async () => {
+  return request('/auth/me/notifications', {
+    method: 'DELETE'
+  });
+};
+
 export const notificationsApi = {
   getNotifications,
   markAsRead,
-  markAllAsRead
+  markAllAsRead,
+  deleteNotification,
+  deleteAllNotifications
 };

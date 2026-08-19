@@ -125,29 +125,20 @@
   .profile-intro__avatar-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(0, 0, 0, 0.45);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
     opacity: 0;
     transition: opacity var(--dur-fast) var(--ease-standard);
     z-index: 3;
     pointer-events: none;
-  }
-
-  .profile-intro__avatar-overlay i {
-    color: var(--color-text-on-dark);
-    font-size: 28px;
-    opacity: 0;
-    transition: opacity var(--dur-fast) var(--ease-standard);
+    border-radius: var(--radius-full);
   }
 
   .profile-intro__avatar--owner:hover .profile-intro__avatar-overlay {
     opacity: 1;
   }
 
-  .profile-intro__avatar--owner:hover .profile-intro__avatar-overlay i {
-    opacity: 1;
+  .profile-intro__avatar--owner:hover {
+    border-color: var(--color-accent-primary);
   }
 
   /* ── 3. Info Stack ──────────────── */
@@ -369,12 +360,19 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xs);
-    transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
   }
 
-  .profile-dish-card:hover {
-    border-color: var(--color-accent-primary);
-    box-shadow: var(--shadow-sm);
+  .profile-intro__badge--blocked {
+    background: rgba(255, 77, 77, 0.12);
+    color: var(--color-danger);
+    border: 1px solid rgba(255, 77, 77, 0.3);
+  }
+
+  .profile-blocked-notice {
+    padding: var(--space-2xl) 0;
+    width: 100%;
+    display: flex;
+    justify-content: center;
   }
 
   .profile-dish-card__main {
@@ -558,7 +556,6 @@
     justify-content: space-between;
     padding-bottom: var(--space-md);
     border-bottom: 1px solid var(--color-border-light);
-    margin-bottom: var(--space-md);
   }
 
   .profile-comments-title {

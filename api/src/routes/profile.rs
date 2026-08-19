@@ -66,9 +66,33 @@ async fn get_my_profile(
 
 async fn get_profile(
     State(db): State<sea_orm::DatabaseConnection>,
+    user: OptionalUser,
     Path(username): Path<String>,
 ) -> Result<Json<UserProfileDto>, AppError> {
-    let profile = UserService::get_user_profile_by_username(&db, &username).await?;
+    use shared::entities::user_blocks;
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+
+    let mut profile = UserService::get_user_profile_by_username(&db, &username).await?;
+    if let Some(auth_user) = user.0 {
+        if auth_user.id != profile.id {
+            let is_blocked = user_blocks::Entity::find()
+                .filter(user_blocks::Column::BlockerId.eq(auth_user.id))
+                .filter(user_blocks::Column::BlockedId.eq(profile.id))
+                .one(&db)
+                .await
+                .map_err(|e| AppError::Internal(format!("Database error: {}", e)))?
+                .is_some();
+            let is_blocked_by = user_blocks::Entity::find()
+                .filter(user_blocks::Column::BlockerId.eq(profile.id))
+                .filter(user_blocks::Column::BlockedId.eq(auth_user.id))
+                .one(&db)
+                .await
+                .map_err(|e| AppError::Internal(format!("Database error: {}", e)))?
+                .is_some();
+            profile.is_blocked = Some(is_blocked);
+            profile.is_blocked_by = Some(is_blocked_by);
+        }
+    }
     Ok(Json(profile))
 }
 
@@ -98,18 +122,22 @@ async fn block_user(
     State(db): State<sea_orm::DatabaseConnection>,
     user: AuthenticatedUser,
     Path(blocked_id): Path<Uuid>,
-) -> Result<Json<()>, AppError> {
-    ModerationService::block_user(&db, user.id, BlockUserDto { blocked_user_id: blocked_id }).await?;
-    Ok(Json(()))
+) -> Result<Json<serde_json::Value>, AppError> {
+    match ModerationService::block_user(&db, user.id, BlockUserDto { blocked_user_id: blocked_id }).await {
+        Ok(_) | Err(ModerationError::AlreadyBlocked) => {
+            Ok(Json(serde_json::json!({ "status": "success", "is_blocked": true })))
+        }
+        Err(e) => Err(e.into()),
+    }
 }
 
 async fn unblock_user(
     State(db): State<sea_orm::DatabaseConnection>,
     user: AuthenticatedUser,
     Path(blocked_id): Path<Uuid>,
-) -> Result<Json<()>, AppError> {
+) -> Result<Json<serde_json::Value>, AppError> {
     ModerationService::unblock_user(&db, user.id, blocked_id).await?;
-    Ok(Json(()))
+    Ok(Json(serde_json::json!({ "status": "success", "is_blocked": false })))
 }
 
 async fn get_profile_dashboard_stats(

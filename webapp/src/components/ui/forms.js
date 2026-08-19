@@ -39,7 +39,7 @@ export function createListRow({ title, desc, tooltip, control, id, isLabel = tru
         <div class="c-list-row__title">${title}</div>
         ${desc ? `<div class="c-list-row__desc">${desc}</div>` : ''}
       </div>
-      <div class="settings-row__control">
+      <div class="c-list-row__control">
         ${tooltipHtml}
         ${control}
       </div>

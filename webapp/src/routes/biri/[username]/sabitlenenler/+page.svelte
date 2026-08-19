@@ -64,7 +64,7 @@
           (id) => id !== dishId,
         );
       }
-      showToast("Sabitlenenlerden kaldırıldı");
+      showToast("Favorilerden kaldırıldı");
     } catch (err) {
       showToast(err.message, "error");
     }
@@ -101,8 +101,8 @@
   </div>
 {:else}
   <EmptyState
-    iconName="star"
-    title="Sabitlenen Yemek Yok"
-    desc={`@${username} henüz bir yemeği beğenmemiş.`}
+    iconName="starFilled"
+    title="Favori Yemek Yok"
+    desc={`@${username} henüz bir yemeği favorilememiş.`}
   />
 {/if}

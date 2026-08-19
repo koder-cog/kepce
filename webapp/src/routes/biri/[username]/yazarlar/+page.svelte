@@ -43,17 +43,30 @@
         <div class="contributor-card">
           <div class="contributor-card__left">
             <div class="contributor-card__rank {idx < 3 ? `contributor-card__rank--${idx + 1}` : ''}">
-              {idx + 1}
+              {#if idx === 0 || idx === 1 || idx === 2}
+                {@html icon("trophy", 16)}
+              {:else}
+                {idx + 1}
+              {/if}
             </div>
-            <div class="contributor-card__avatar">
-              {@html icon("avatarEmpty", 24)}
-            </div>
+            <a href="/biri/{acc.username}" data-link class="contributor-card__avatar" title="@{acc.username}">
+              {#if acc.avatar_url}
+                <img
+                  src={api.getAvatarUrl(acc.avatar_url)}
+                  alt="@{acc.username}"
+                  onerror={(e) => {
+                    e.target.outerHTML = icon("avatarEmpty", 40);
+                  }}
+                />
+              {:else}
+                {@html icon("avatarEmpty", 40)}
+              {/if}
+            </a>
             <a href="/biri/{acc.username}" data-link class="contributor-card__name">
               @{acc.username || "Anonim"}
             </a>
           </div>
           <div class="contributor-card__value">
-            {@html icon("voteUpFilled", 14)}
             <span>{acc.favorite_count} Beğeni</span>
           </div>
         </div>

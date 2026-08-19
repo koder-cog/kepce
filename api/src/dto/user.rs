@@ -153,6 +153,10 @@ pub struct UserProfileDto {
     pub email_security: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email_updates: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_blocked: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_blocked_by: Option<bool>,
 }
 
 #[derive(Debug, Serialize)]
@@ -185,6 +189,9 @@ pub struct SimpleDishDto {
 pub struct FavoriteAuthorDto {
     pub username: String,
     pub favorite_count: i32,
+    pub avatar_url: Option<String>,
+    pub level: Option<i32>,
+    pub karma_score: Option<i32>,
 }
 
 #[derive(Debug, Serialize)]

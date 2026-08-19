@@ -22,6 +22,12 @@ pub struct CreateCommentDto {
     pub is_tabldot: Option<bool>,
 }
 
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateCommentDto {
+    #[validate(length(min = 1, max = 500, message = "Yorum 1 ile 500 karakter arasında olmalıdır"))]
+    pub comment: String,
+}
+
 #[derive(Clone, Debug, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum ReactionTypeDto {
@@ -46,6 +52,10 @@ pub struct ReactionSummaryDto {
 #[derive(Clone, Debug, Serialize)]
 pub struct CommentResponseDto {
     pub id: Uuid,
+    pub menu_id: i32,
+    pub parent_id: Option<Uuid>,
+    pub parent_username: Option<String>,
+    pub dish_name: Option<String>,
     pub comment: Option<String>,
     pub sentiment: Sentiment,
     pub is_tabldot: bool,
@@ -55,4 +65,7 @@ pub struct CommentResponseDto {
     pub created_at: DateTime<Utc>,
     pub is_deleted: bool,
     pub deletion_type: Option<String>,
+    pub is_blocked: bool,
+    pub is_edited: bool,
 }
+

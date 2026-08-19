@@ -52,7 +52,11 @@
   />
 {:else}
   <div class="profile-activity-list">
-    {#each dashboardStats.favorite_comments as c}
+    {#each dashboardStats.favorite_comments as c, idx}
+      {@const commentKey = c.id || c.hash || `comment-${idx}`}
+      {@const menuId = c.menu_id || c.menu?.id || ""}
+      {@const threadTarget = c.id ? c.id.substring(0, 7) : (c.hash || "")}
+      {@const commentHref = menuId ? `/yorumlar/${menuId}/${threadTarget}` : `/yorumlar?thread=${threadTarget}`}
       {@const score = c.reaction_summary
         ? c.reaction_summary.up - c.reaction_summary.down
         : 0}
@@ -69,10 +73,10 @@
                   src={api.getAvatarUrl(c.user.avatar_url)}
                   alt=""
                   onerror={(e) =>
-                    (e.target.outerHTML = icon("avatarEmpty", 32))}
+                    (e.target.outerHTML = icon("avatarEmpty", 40))}
                 />
               {:else}
-                {@html icon("avatarEmpty", 32)}
+                {@html icon("avatarEmpty", 40)}
               {/if}
             </a>
           </div>
@@ -93,7 +97,7 @@
                 {/if}
                 <span class="comment-card__dot">·</span>
                 <a
-                  href="/yorumlar/{c.menu?.id || c.menu_id || ''}/{c.hash}"
+                  href={commentHref}
                   data-link
                   class="comment-card__date">{timeAgo(c.created_at)}</a
                 >
@@ -101,24 +105,6 @@
             </div>
             <div class="comment-card__body">
               <p class="comment-card__text">{c.comment}</p>
-            </div>
-            <div class="comment-node__actions">
-              <div class="comment-node__vote">
-                <span
-                  class="vote-count {score > 0
-                    ? 'positive'
-                    : score < 0
-                      ? 'negative'
-                      : ''}">{score}</span
-                >
-              </div>
-              <button
-                class="action-btn btn--squish"
-                title="Yanıtla"
-                onclick={() => handleCommentAction("reply", c)}
-              >
-                {@html icon("chat", 14)}
-              </button>
             </div>
           </div>
         </div>

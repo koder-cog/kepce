@@ -523,7 +523,7 @@
         </label>
 
         <!-- E-posta adresi -->
-        <label class="c-list-row c-list-row--clickable c-list-row--tall">
+        <div class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               E-posta adresi
@@ -537,23 +537,27 @@
                 >
               {/if}
             </div>
-            <div class="c-list-row__desc">{user.email}</div>
+            <div class="c-list-row__desc">
+              {user.email}
+              {#if !user.is_verified}
+                &middot;
+                <button
+                  type="button"
+                  class="c-link u-text-xs"
+                  onclick={handleResendVerification}
+                  disabled={isResending}
+                >
+                  {isResending ? "Gönderiliyor..." : "Doğrulama Gönder"}
+                </button>
+              {/if}
+            </div>
           </div>
           <div class="c-list-row__control">
-            {#if !user.is_verified}
-              <button
-                class="btn btn--secondary btn--squish u-mr-xs"
-                onclick={handleResendVerification}
-                disabled={isResending}
-              >
-                {isResending ? "Gönderiliyor..." : "Tekrar Gönder"}
-              </button>
-            {/if}
             <button class="btn btn--secondary btn--squish" onclick={changeEmail}
               >Değiştir</button
             >
           </div>
-        </label>
+        </div>
 
         <!-- Şifre -->
         <label class="c-list-row c-list-row--clickable c-list-row--regular">
@@ -631,6 +635,7 @@
         <div class="c-list-row__control c-list-row__control--flexible">
           <SegmentedControl
             bind:value={currentTheme}
+            variant="responsive"
             options={[
               { value: "sistem", icon: icon("system", 18), label: "Sistem" },
               { value: "acik", icon: icon("sun", 18), label: "Açık" },
@@ -666,7 +671,7 @@
         <div class="c-list-row__control u-flex u-align-center u-gap-sm">
           <div
             class="c-list-row__info-icon"
-            data-tooltip="Bu ayar kapatılırsa hareketler tamamen kaldırılmak yerine azaltılır."
+            data-tooltip="Bu anahtar kapatılırsa hareketler tamamen kapatılmak yerine azaltılır."
           >
             {@html icon("info", 20)}
           </div>
@@ -690,7 +695,7 @@
         <div class="c-list-row__info">
           <div class="c-list-row__title">Açık/kapalı indikatörleri</div>
           <div class="c-list-row__desc">
-            Anahtar durumu için semboller kullanır
+            Anahtar durumu için semboller kullan
           </div>
         </div>
         <div class="c-list-row__control">
@@ -794,7 +799,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Geliştirici modu</div>
-            <div class="c-list-row__desc">Geliştirici panelini gösterir</div>
+            <div class="c-list-row__desc">Geliştirici panelini göster</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -925,11 +930,10 @@
 
       <h3>Öğün Hatırlatıcıları</h3>
       <div class="c-boxed-list">
-        <!-- Kahvaltı menüsü bildirimi -->
+        <!-- Kahvaltı bildirimi -->
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
-            <div class="c-list-row__title">Kahvaltı menüsü</div>
-            <div class="c-list-row__desc">Günün kahvaltı menüsü hatırlatıcısı</div>
+            <div class="c-list-row__title">Kahvaltı</div>
           </div>
           <div class="c-list-row__actions">
             {#if globalState.user?.notif_breakfast_enabled}
@@ -960,7 +964,9 @@
                     "Kahvaltı bildirimi",
                   )}
               />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
+              <span class="c-switch"
+                ><span class="c-switch__handle"></span></span
+              >
             </label>
           </div>
         </div>
@@ -969,7 +975,6 @@
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Akşam yemeği</div>
-            <div class="c-list-row__desc">Günün akşam yemeği menüsü hatırlatıcısı</div>
           </div>
           <div class="c-list-row__actions">
             {#if globalState.user?.notif_dinner_enabled}
@@ -1000,7 +1005,9 @@
                     "Akşam yemeği bildirimi",
                   )}
               />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
+              <span class="c-switch"
+                ><span class="c-switch__handle"></span></span
+              >
             </label>
           </div>
         </div>
@@ -1042,7 +1049,7 @@
           <div class="c-list-row__info">
             <div class="c-list-row__title">Dış bağlantı uyarısı</div>
             <div class="c-list-row__desc">
-              Kepçe dışındaki sitelere giderken uyarı gösterir
+              Kepçe dışındaki sitelere giderken uyarı göster
             </div>
           </div>
           <div class="c-list-row__control">
@@ -1062,7 +1069,7 @@
           <div class="c-list-row__info">
             <div class="c-list-row__title">İstatistikte gizlen</div>
             <div class="c-list-row__desc">
-              Tablolarda kullanıcı adı yerine "Anonim" yazar
+              Kullanıcı adı yerine "Anonim" yaz
             </div>
           </div>
           <div class="c-list-row__control">

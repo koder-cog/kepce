@@ -45,6 +45,11 @@
       if (activeBtn) {
         indicatorWidth = activeBtn.offsetWidth;
         indicatorLeft = activeBtn.offsetLeft;
+        activeBtn.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+          inline: "nearest",
+        });
       }
     });
   }
