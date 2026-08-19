@@ -69,21 +69,22 @@ export function initScrollbar() {
       }
     }
 
-    // Container spans end-to-end (except for navbar and bottom bars)
-    bar.style.top = `${navOffset}px`;
-    bar.style.bottom = `${bottomOffset}px`;
-
+    // Calculate available bar geometry purely from measured viewport & offsets (No forced reflow)
     const margin = 8; // Safety margin for the thumb only
-    const barHeight = bar.clientHeight - (margin * 2);
-    const scrollPercentage = scrollTop / (scrollHeight - clientHeight);
+    const availableHeight = Math.max(0, clientHeight - navOffset - bottomOffset);
+    const barHeight = Math.max(0, availableHeight - (margin * 2));
+    const scrollPercentage = Math.max(0, Math.min(1, scrollTop / Math.max(1, scrollHeight - clientHeight)));
     
     // Thumb height proportional to content
     const thumbHeight = Math.max(40, (clientHeight / scrollHeight) * barHeight);
-    const maxThumbTop = barHeight - thumbHeight;
+    const maxThumbTop = Math.max(0, barHeight - thumbHeight);
     const thumbTop = margin + (scrollPercentage * maxThumbTop);
 
+    // Apply all DOM styles in a single write batch
+    bar.style.top = `${navOffset}px`;
+    bar.style.bottom = `${bottomOffset}px`;
     thumb.style.height = `${thumbHeight}px`;
-    thumb.style.transform = `translateY(${thumbTop}px)`;
+    thumb.style.transform = `translate3d(0, ${thumbTop}px, 0)`;
   }
 
   // Handle Drag

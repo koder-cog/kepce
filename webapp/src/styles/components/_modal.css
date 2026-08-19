@@ -300,4 +300,45 @@
     margin: 0;
     line-height: var(--leading-normal);
   }
+
+  /* ── 12. Passwordless Success State ────────────────────────── */
+  .passwordless-success {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl) var(--space-lg);
+    text-align: center;
+    box-shadow: var(--shadow-sm);
+  }
+  
+  .passwordless-success__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    background-color: var(--color-success-soft);
+    color: var(--color-success);
+    border-radius: var(--radius-full);
+    margin-bottom: var(--space-md);
+  }
+
+  .passwordless-success__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+  }
+
+  .passwordless-success__desc {
+    color: var(--color-text);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    margin-bottom: var(--space-md);
+  }
+
+  .passwordless-success__note {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+  }
 }

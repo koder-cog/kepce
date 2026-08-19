@@ -120,11 +120,12 @@
         authActions.logout();
     }
 
-    // Direct DOM manipulation for the shake effect
+    // Direct DOM manipulation for the shake effect without forced reflow
     function shakeElement(node) {
         node.classList.remove("anim-shake"); // Reset if already shaking
-        void node.offsetWidth; // Trigger reflow to restart animation
-        node.classList.add("anim-shake");
+        requestAnimationFrame(() => {
+            node.classList.add("anim-shake");
+        });
 
         if (node._shakeTimeout) clearTimeout(node._shakeTimeout);
         node._shakeTimeout = setTimeout(() => {

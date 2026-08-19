@@ -28,7 +28,10 @@ export function popover(node, params) {
             return;
         }
 
+        // ── Phase 1: DOM Reads (Single Batch) ───────────────────
         const rect = triggerEl.getBoundingClientRect();
+        const nodeRect = node.getBoundingClientRect();
+        const nodeScrollHeight = node.scrollHeight;
         const scrollY = window.scrollY;
         const scrollX = window.scrollX;
         const vpH = window.innerHeight;
@@ -37,60 +40,60 @@ export function popover(node, params) {
         const spaceBelow = vpH - rect.bottom;
         const spaceAbove = rect.top;
 
-        // Yukarı mı aşağı mı açılmalı?
+        // ── Phase 2: Pure Calculations ──────────────────────────
         const shouldOpenUp = (spaceBelow - EDGE) < Math.min(MAX_H, 180) && spaceAbove > spaceBelow;
-
-        // Dinamik max-height: mevcut alan ile mutlak sınırın küçük olanı
         const availableSpace = shouldOpenUp ? spaceAbove - EDGE : spaceBelow - EDGE;
         const dynamicMaxHeight = Math.min(MAX_H, Math.max(120, availableSpace));
 
-        node.style.position = 'absolute';
-        node.style.maxHeight = `${dynamicMaxHeight}px`;
+        let topStyle = '';
+        let bottomStyle = 'auto';
+        let leftStyle = '';
+        let rightStyle = 'auto';
+        let minWidthStyle = '';
+        let transformOriginStyle = '';
+        let openingDir = shouldOpenUp ? 'up' : 'down';
 
-        // Dikey konum
-        node.style.bottom = 'auto';
         if (shouldOpenUp) {
-            // Üstte açılırken, menünün yüksekliğini bilmemiz gerekiyor
-            // Geçici olarak maxHeight'ı ayarlayıp offsetHeight okuyoruz
-            const menuH = Math.min(node.scrollHeight, dynamicMaxHeight);
-            node.style.top = `${rect.top + scrollY - menuH - GAP}px`;
-            node.style.transformOrigin = 'bottom left';
-            node.dataset.openingDirection = 'up';
+            const menuH = Math.min(nodeScrollHeight || nodeRect.height, dynamicMaxHeight);
+            topStyle = `${rect.top + scrollY - menuH - GAP}px`;
+            transformOriginStyle = 'bottom left';
         } else {
-            node.style.top = `${rect.bottom + scrollY + GAP}px`;
-            node.style.transformOrigin = 'top left';
-            node.dataset.openingDirection = 'down';
+            topStyle = `${rect.bottom + scrollY + GAP}px`;
+            transformOriginStyle = 'top left';
         }
 
-        // Yatay konum ve genişlik
+        const initialMenuW = Math.max(nodeRect.width, rect.width);
         if (align === 'center') {
             const triggerCenter = rect.left + (rect.width / 2);
-            const menuW = node.offsetWidth;
-            let idealLeft = triggerCenter - (menuW / 2);
+            let idealLeft = triggerCenter - (initialMenuW / 2);
 
             if (idealLeft < EDGE) idealLeft = EDGE;
-            else if (idealLeft + menuW > vpW - EDGE) idealLeft = vpW - menuW - EDGE;
+            else if (idealLeft + initialMenuW > vpW - EDGE) idealLeft = vpW - initialMenuW - EDGE;
 
-            node.style.left = `${idealLeft + scrollX}px`;
-            node.style.right = 'auto';
-            node.style.minWidth = '';
-
+            leftStyle = `${idealLeft + scrollX}px`;
             const originX = triggerCenter - idealLeft;
-            node.style.transformOrigin = `${originX}px ${shouldOpenUp ? 'bottom' : 'top'}`;
+            transformOriginStyle = `${originX}px ${shouldOpenUp ? 'bottom' : 'top'}`;
         } else {
-            // align = 'left' → Trigger genişliğiyle eşleş, sağdan taşmayı önle
-            node.style.minWidth = `${rect.width}px`;
-            node.style.left = `${rect.left + scrollX}px`;
-            node.style.right = 'auto';
-
-            // Sağdan taşıyor mu kontrol
-            const menuW = node.offsetWidth;
-            if (rect.left + menuW > vpW - EDGE) {
-                node.style.left = 'auto';
-                node.style.right = `${vpW - rect.right - scrollX}px`;
-                node.style.transformOrigin = shouldOpenUp ? 'bottom right' : 'top right';
+            minWidthStyle = `${rect.width}px`;
+            if (rect.left + initialMenuW > vpW - EDGE) {
+                leftStyle = 'auto';
+                rightStyle = `${vpW - rect.right - scrollX}px`;
+                transformOriginStyle = shouldOpenUp ? 'bottom right' : 'top right';
+            } else {
+                leftStyle = `${rect.left + scrollX}px`;
             }
         }
+
+        // ── Phase 3: DOM Writes (Single Batch) ──────────────────
+        node.style.position = 'absolute';
+        node.style.maxHeight = `${dynamicMaxHeight}px`;
+        node.style.top = topStyle;
+        node.style.bottom = bottomStyle;
+        node.style.left = leftStyle;
+        node.style.right = rightStyle;
+        node.style.minWidth = minWidthStyle;
+        node.style.transformOrigin = transformOriginStyle;
+        node.dataset.openingDirection = openingDir;
     }
 
     let positionTicking = false;

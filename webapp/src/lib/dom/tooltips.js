@@ -152,17 +152,10 @@ export function initTooltipManager() {
       tooltip.style.left = `${Math.round(finalLeft)}px`;
       tooltip.style.top = `${Math.round(finalTop)}px`;
       
-      // Force a synchronous layout calculation so the browser registers the starting transform
-      // without transition (because of --measuring class).
-      void tooltip.offsetWidth;
-      
-      // Remove measuring class to enable transitions
-      tooltip.classList.remove('tooltip-instance--measuring');
-      
-      // Force layout again so browser knows transitions are active
-      void tooltip.offsetWidth;
-      
-      tooltip.classList.add('tooltip-instance--visible');
+      requestAnimationFrame(() => {
+        tooltip.classList.remove('tooltip-instance--measuring');
+        tooltip.classList.add('tooltip-instance--visible');
+      });
     });
   };
 

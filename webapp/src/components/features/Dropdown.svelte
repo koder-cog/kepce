@@ -13,6 +13,8 @@
         groups = [],
         value = $bindable(),
         placeholder = 'Seçiniz',
+        ariaLabel = undefined,
+        id = null,
         disabled = false,
         variant = 'primary', // primary | secondary | ghost
         actionItem = null,
@@ -368,12 +370,17 @@
             }
         }
     }
+
+    let triggerAriaLabel = $derived(
+        ariaLabel || (displayLabel ? `${placeholder}: ${displayLabel}` : `${placeholder} seçiniz`)
+    );
     let menuId = 'c-menu-' + Math.random().toString(36).slice(2, 8);
 </script>
 
 <svelte:window onclick={onOutsideClick} onscrollcapture={onScrollClose} />
 
 <div
+    {id}
     class="dropdown dropdown--{variant}"
     class:dropdown--open={isOpen}
     class:dropdown--disabled={disabled}
@@ -390,11 +397,12 @@
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}
+        aria-label={triggerAriaLabel}
         onclick={toggle}
         onkeydown={handleKeyDown}
     >
         <span class="dropdown__label">{displayLabel}</span>
-        <div class="dropdown__chevron">{@html icon('chevronDown')}</div>
+        <div class="dropdown__chevron" aria-hidden="true">{@html icon('chevronDown')}</div>
     </button>
 </div>
 

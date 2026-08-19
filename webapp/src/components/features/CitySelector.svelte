@@ -156,6 +156,7 @@
     bind:value
     {variant}
     placeholder="Şehir"
+    ariaLabel="Şehir seçiniz"
     onChange={handleChange}
     actionItem={{ label: "Konumumu bul" }}
     onActionClick={handleActionClick}

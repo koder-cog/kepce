@@ -18,26 +18,24 @@ export async function load({ fetch }) {
     try {
         const res = await fetch('/data/prerender-menus.json');
         if (!res.ok) {
-            return { prerenderedMenus: null, prerenderedCity: null, prerenderedDate: null };
+            return { prerenderedMenus: [], prerenderedCity: 'istanbul', prerenderedDate: null };
         }
 
         const payload = await res.json();
         const menus = payload?.menus;
 
-        if (Array.isArray(menus) && menus.length > 0) {
-            console.log(`[prerender] ${payload.city} ${payload.date}: ${menus.length} menü yüklendi.`);
+        if (Array.isArray(menus)) {
             return {
                 prerenderedMenus: menus,
-                prerenderedCity: payload.city,
+                prerenderedCity: payload.city || 'istanbul',
                 prerenderedDate: payload.date
             };
         }
 
-        return { prerenderedMenus: null, prerenderedCity: payload?.city, prerenderedDate: payload?.date };
+        return { prerenderedMenus: [], prerenderedCity: payload?.city || 'istanbul', prerenderedDate: payload?.date };
     } catch (err) {
-        // Dosya yoksa sessizce boş dön (pre-build adımı çalışmamış olabilir)
-        console.warn(`[prerender] prerender-menus.json okunamadı: ${err.message}`);
-        return { prerenderedMenus: null, prerenderedCity: null, prerenderedDate: null };
+        // Dosya yoksa sessizce boş dön
+        return { prerenderedMenus: [], prerenderedCity: 'istanbul', prerenderedDate: null };
     }
 }
 

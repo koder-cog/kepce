@@ -33,7 +33,7 @@
     });
 
     let containerNode = $state(null);
-    let indicatorWidth = $state(0);
+    let indicatorScale = $state(0);
     let indicatorLeft = $state(0);
     let isReady = $state(false);
 
@@ -45,7 +45,7 @@
                 `button[data-value="${value}"]`,
             );
             if (activeBtn) {
-                indicatorWidth = activeBtn.offsetWidth;
+                indicatorScale = activeBtn.offsetWidth;
                 indicatorLeft = activeBtn.offsetLeft;
             }
         });
@@ -88,7 +88,7 @@
 >
     <div
         class="c-segmented-control__indicator"
-        style="--indicator-width: {indicatorWidth}px; --indicator-left: {indicatorLeft}px;"
+        style="--indicator-scale: {indicatorScale}; --indicator-left: {indicatorLeft}px;"
     ></div>
 
     {#each options as opt}
