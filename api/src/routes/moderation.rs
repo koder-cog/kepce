@@ -231,7 +231,7 @@ async fn warn_user(
     let warning = user_warnings::ActiveModel {
         id: sea_orm::ActiveValue::NotSet,
         user_id: Set(user_id),
-        message: Set(payload.message),
+        message: Set(payload.message.clone()),
         created_at: Set(Some(chrono::Utc::now().into())),
     };
     
@@ -239,6 +239,16 @@ async fn warn_user(
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
         
+    let _ = crate::services::notification::NotificationService::send_notification(
+        &db,
+        user_id,
+        "moderation",
+        "Moderasyon Uyarısı",
+        &payload.message,
+        None,
+        None,
+    ).await;
+
     Ok(Json(()))
 }
 
@@ -381,15 +391,30 @@ async fn approve_menu(
     Path(menu_id): Path<i32>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    let mut menu: menus::ActiveModel = Menus::find_by_id(menu_id)
+    let original_menu = Menus::find_by_id(menu_id)
         .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("Menu not found".into()))?.into();
+        .ok_or(AppError::NotFound("Menu not found".into()))?;
+    let submitter_id = original_menu.submitted_by;
+    let mut menu: menus::ActiveModel = original_menu.into();
     menu.status = Set(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved);
     menu.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
 
     shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    if let Some(sub_id) = submitter_id {
+        let action_url = format!("/menu/{}", menu_id);
+        let _ = crate::services::notification::NotificationService::send_notification(
+            &db,
+            sub_id,
+            "moderation",
+            "Menü Gönderin Onaylandı",
+            "Gönderdiğin menü moderatörler tarafından incelendi ve yayına alındı.",
+            Some("Menüyü Gör"),
+            Some(&action_url),
+        ).await;
+    }
 
     Ok(Json(()))
 }
@@ -400,11 +425,26 @@ async fn reject_menu(
     Path(menu_id): Path<i32>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    let mut menu: menus::ActiveModel = Menus::find_by_id(menu_id)
+    let original_menu = Menus::find_by_id(menu_id)
         .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("Menu not found".into()))?.into();
+        .ok_or(AppError::NotFound("Menu not found".into()))?;
+    let submitter_id = original_menu.submitted_by;
+    let mut menu: menus::ActiveModel = original_menu.into();
     menu.status = Set(shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected);
     menu.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+
+    if let Some(sub_id) = submitter_id {
+        let _ = crate::services::notification::NotificationService::send_notification(
+            &db,
+            sub_id,
+            "moderation",
+            "Menü Gönderin Reddedildi",
+            "Gönderdiğin menü inceleme sonucunda uygun bulunmadı.",
+            None,
+            None,
+        ).await;
+    }
+
     Ok(Json(()))
 }
 
