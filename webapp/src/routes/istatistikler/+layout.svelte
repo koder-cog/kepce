@@ -2,23 +2,12 @@
   import '@/styles/pages/_statistics.css';
   import { page } from '$app/stores';
   import { icon } from '@/components/ui/icons.js';
-  import { slide, fade } from 'svelte/transition';
+  import { slide } from 'svelte/transition';
   import { backOut, sineIn } from 'svelte/easing';
-
-  function dropdownAnim(node, { duration = 200, easing = sineIn }) {
-    return {
-      duration,
-      easing,
-      css: (t) => `
-        opacity: ${t};
-        transform: scale(${0.96 + (0.04 * t)}) translateY(${-4 + (4 * t)}px);
-      `
-    };
-  }
+  import SidebarMobileNav from '@/components/layout/SidebarMobileNav.svelte';
 
   let { children } = $props();
 
-  let mobileMenuOpen = $state(false);
   const navConfig = [
     {
       id: "yemekler",
@@ -55,66 +44,12 @@
   function isActive(href) {
     return currentPath === href || currentPath.startsWith(href + '/');
   }
-
-  let mobileMenuLabel = $derived((() => {
-    for (const group of navConfig) {
-      for (const link of group.links) {
-        if (link.isActive ? link.isActive(currentPath, $page.url) : isActive(link.href.split('?')[0])) {
-          return link.label;
-        }
-      }
-    }
-    return "Menü";
-  })());
-
-  function toggleMobileMenu(e) {
-    if (e) e.stopPropagation();
-    mobileMenuOpen = !mobileMenuOpen;
-  }
-
-  function handleBodyClick() {
-    if (mobileMenuOpen) mobileMenuOpen = false;
-  }
 </script>
-
-<svelte:window onclick={handleBodyClick} />
 
 <div class="sidebar-layout">
   
-  <!-- MOBİL İÇİN ÖZEL DROPDOWN (standart dropdown kullanılarak) -->
-  <div class="sidebar-mobile-dropdown dropdown" class:dropdown--open={mobileMenuOpen}>
-    {#if mobileMenuOpen}
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div class="dropdown__overlay" transition:fade={{ duration: 200 }} onclick={toggleMobileMenu}></div>
-    {/if}
-    <button class="dropdown__trigger sidebar-mobile-trigger" class:dropdown__trigger--open={mobileMenuOpen} onclick={toggleMobileMenu}>
-      <span>{mobileMenuLabel}</span>
-      <div class="dropdown__chevron">{@html icon('chevronDown')}</div>
-    </button>
-    
-    {#if mobileMenuOpen}
-      <div class="dropdown__menu" transition:dropdownAnim>
-        <div class="dropdown__list">
-          {#each navConfig as group, i}
-            {#if i > 0}
-              <div class="sidebar-dropdown-divider"></div>
-            {/if}
-            <div class="sidebar-dropdown-title">{group.title}</div>
-            {#each group.links as link}
-              <a 
-                href={link.href} 
-                class="dropdown__item sidebar-dropdown-item" 
-                class:dropdown__item--selected={link.isActive ? link.isActive(currentPath, $page.url) : isActive(link.href.split('?')[0])}
-              >
-                {link.label}
-              </a>
-            {/each}
-          {/each}
-        </div>
-      </div>
-    {/if}
-  </div>
+  <!-- MOBİL COMBO-BOX MENÜSÜ -->
+  <SidebarMobileNav {navConfig} />
   
   <!-- MASAÜSTÜ ADA SİDEBAR -->
   <aside class="sidebar-island">
