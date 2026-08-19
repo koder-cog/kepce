@@ -68,9 +68,9 @@ async fn get_worst_dishes(
 
 async fn get_moderation_stats(
     State(db): State<sea_orm::DatabaseConnection>,
-    _user: Option<AuthenticatedUser>,
+    Query(query): Query<LimitQuery>,
 ) -> Result<Json<ModerationStatsDto>, AppError> {
-    let stats = StatisticsService::get_moderation_stats(&db).await?;
+    let stats = StatisticsService::get_moderation_stats(&db, query.timeframe).await?;
     Ok(Json(stats))
 }
 

@@ -398,6 +398,43 @@
     letter-spacing: var(--tracking-wider);
   }
 
+  .audit-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--space-md);
+    margin-bottom: var(--space-2xl);
+  }
+
+  @media (max-width: 900px) {
+    .audit-metrics-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .audit-metrics-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .audit-metric-card {
+    background: var(--color-surface-elevated);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    display: flex;
+    flex-direction: column;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .audit-metric-card__label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
   .audit-metric-card__value {
     font-size: var(--text-3xl);
     font-weight: var(--font-weight-black);
@@ -437,33 +474,146 @@
     background-color: var(--color-error);
   }
 
-  .audit-sections {
+  .audit-grid-layout {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: var(--space-2xl);
+    grid-template-columns: 1fr 1.2fr;
+    gap: var(--space-xl);
+    align-items: stretch;
   }
 
-  .audit-panel-card {
-    background: var(--color-surface-elevated);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-lg);
-    padding: var(--space-xl);
+  @media (max-width: 900px) {
+    .audit-grid-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  /* ── Pie / Donut Chart Stilleri ────────────────────────── */
+  .pie-chart-wrapper {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-lg);
+    width: 100%;
     height: 100%;
+    padding: var(--space-xs) 0;
   }
 
-  .audit-panel-card__title {
-    font-size: var(--text-lg);
-    font-weight: var(--font-weight-black);
-    margin-bottom: var(--space-xl);
-    border-bottom: 2px solid var(--color-border);
-    padding-bottom: var(--space-sm);
+  .pie-chart-visual {
+    position: relative;
+    width: var(--pie-size, 180px);
+    height: var(--pie-size, 180px);
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
+    justify-content: center;
+    flex-shrink: 0;
   }
 
+  .pie-chart-svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+
+  .pie-chart-track {
+    stroke: var(--color-border-light);
+  }
+
+  .pie-chart-slice {
+    transition: stroke-width var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+    cursor: pointer;
+  }
+
+  .pie-chart-slice:hover,
+  .pie-chart-slice.is-active {
+    opacity: 1;
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.2));
+  }
+
+  .pie-chart-center {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  .pie-center-value {
+    font-size: var(--text-2xl);
+    font-weight: var(--font-weight-black);
+    color: var(--color-text);
+    line-height: 1.1;
+  }
+
+  .pie-center-label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-muted);
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-top: 2px;
+  }
+
+  .pie-chart-legend {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    width: 100%;
+    max-width: 320px;
+  }
+
+  .pie-legend-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    border: 1px solid transparent;
+    width: 100%;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+    font-family: var(--font-body);
+  }
+
+  .pie-legend-item:hover,
+  .pie-legend-item.is-active {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-light);
+  }
+
+  .pie-legend-item:active {
+    transform: scale(0.98);
+  }
+
+  .pie-legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-full);
+    flex-shrink: 0;
+  }
+
+  .pie-legend-name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-text);
+    flex: 1;
+    text-align: left;
+  }
+
+  .pie-legend-pct {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-secondary);
+  }
+
+  /* ── Denetim Günlüğü Stilleri ────────────────────────── */
   .audit-system-list {
     display: flex;
     flex-direction: column;
@@ -474,7 +624,8 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-md);
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
     background: var(--color-surface-sunken);
     border-radius: var(--radius-md);
     border: 1px solid var(--color-border-light);
@@ -484,47 +635,59 @@
     display: flex;
     flex-direction: column;
     gap: 2px;
+    flex: 1;
+    min-width: 0;
   }
 
-  .audit-system-item__info strong {
-    font-size: var(--text-base);
+  .audit-system-item__title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
     color: var(--color-text);
+    word-break: break-word;
   }
 
-  .audit-status-label {
-    display: inline-flex;
+  .audit-system-item__meta {
+    display: flex;
     align-items: center;
     gap: var(--space-xs);
-    padding: var(--space-xs) var(--space-md);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-full);
     font-size: var(--text-xs);
-    font-weight: var(--font-weight-bold);
     color: var(--color-muted);
   }
 
-  .audit-status-label.active {
-    color: var(--color-text);
-    border-color: var(--color-accent-primary-light);
-  }
-
-  .audit-status-dot {
-    width: 8px;
-    height: 8px;
+  .audit-system-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
     border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-bold);
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
   }
 
-  .audit-status-dot--ok {
-    background-color: var(--color-accent-primary);
+  .audit-system-badge--toxicity {
+    background: rgba(244, 63, 94, 0.12);
+    color: #f43f5e;
+    border: 1px solid rgba(244, 63, 94, 0.25);
   }
 
-  .audit-status-dot--error {
-    background-color: var(--color-error);
+  .audit-system-badge--spam {
+    background: rgba(245, 158, 11, 0.12);
+    color: #f59e0b;
+    border: 1px solid rgba(245, 158, 11, 0.25);
   }
 
-  .audit-status-dot--warning {
-    background-color: var(--color-warning);
+  .audit-system-badge--misinformation {
+    background: rgba(59, 130, 246, 0.12);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+  }
+
+  .audit-system-badge--general {
+    background: rgba(168, 85, 247, 0.12);
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.25);
   }
 
   /* ── Yorum İstatistikleri ───────────────────────────────── */

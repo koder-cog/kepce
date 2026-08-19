@@ -8,8 +8,7 @@ export const statisticsApi = {
     return request(`/statistics/worst-dishes${buildQuery({ limit, city_slug: citySlug, timeframe })}`);
   },
   getTrendingTags: (limit = 10) => request(`/statistics/trending-tags${buildQuery({ limit })}`),
-  getDishTags: (dishId) => request(`/statistics/dish/${dishId}/tags`),
-  getModerationActivity: () => request('/statistics/moderation').catch(() => ({})),
+  getModerationActivity: (timeframe = '') => request(`/statistics/moderation${buildQuery({ timeframe })}`).catch(() => ({})),
   // #46: timeframe parametresi backend desteği eklenene dek yok sayılır
   getHumanityStats: (timeframe = '') => request(`/statistics/humanity${buildQuery({ timeframe })}`).catch(() => ({})),
   getGlobalTopComments: (limit = 10, timeframe = '') => request(`/statistics/comments/top${buildQuery({ limit, timeframe })}`).catch(() => []),
