@@ -273,11 +273,11 @@
       color: var(--color-text);
       font-family: var(--font-body);
       font-size: var(--text-sm);
-      line-height: var(--leading-body);
-      padding: 10px 0;
+      line-height: var(--leading-relaxed);
+      padding: var(--space-2xs) 0;
       margin: 0;
       resize: none;
-      min-height: 40px;
+      min-height: 32px;
       max-height: 160px;
       overflow-y: auto;
     }
