@@ -217,6 +217,9 @@
 
   .c-menu__divider:first-child,
   .c-menu__divider:last-child {
+    display: none;
+  }
+
   /* ── Bölüm / Grup ── */
   .c-menu__section,
   .c-menu__group {
