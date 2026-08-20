@@ -38,11 +38,14 @@ export const nativeBridge = {
   /**
    * Tema, görsel efekt ve oturum durumunu yerel kabukla eşitler.
    */
-  sendState({ isDark, effectsEnabled, bgColorHex, unreadCount = 0 }) {
+  sendState({ isDark, effectsEnabled, bgColorHex, navBgOpacity = 0.8, colorSurface, colorBorder, unreadCount = 0 }) {
     this.send('STATE_CHANGED', {
       isDark,
       effectsEnabled,
       bgColorHex,
+      navBgOpacity,
+      colorSurface,
+      colorBorder,
       unreadCount
     });
   },

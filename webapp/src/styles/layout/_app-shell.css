@@ -33,15 +33,23 @@ body.is-app .page-container {
 
 /* 2. Yerel Toolbar Mevcut Olduğu İçin Yinelenen Web Başlıklarının Gizlenmesi */
 html.is-app .archive-header,
+html.is-app .archive-title,
 html.is-app .settings-page__title,
 html.is-app .notification-page__title,
 html.is-app .content-page__title,
 html.is-app .comments-page__header,
+html.is-app .auth-card__title,
+html.is-app .auth-page__title,
+html.is-app .statistics-page__title,
 body.is-app .archive-header,
+body.is-app .archive-title,
 body.is-app .settings-page__title,
 body.is-app .notification-page__title,
 body.is-app .content-page__title,
-body.is-app .comments-page__header {
+body.is-app .comments-page__header,
+body.is-app .auth-card__title,
+body.is-app .auth-page__title,
+body.is-app .statistics-page__title {
   display: none !important;
 }
 

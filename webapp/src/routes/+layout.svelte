@@ -85,7 +85,9 @@
 			return { title: "Bildirimler", isRoot: false };
 		}
 		if (pathname.startsWith("/biri/")) {
-			return { title: "Profil", isRoot: false };
+			const parts = pathname.split("/").filter(Boolean);
+			const username = parts[1] || "";
+			return { title: username ? `@${username}` : "Kullanıcı Profili", isRoot: false };
 		}
 		if (pathname.startsWith("/menu/")) {
 			return { title: "Menü Detayı", isRoot: false };
@@ -98,6 +100,36 @@
 		}
 		if (pathname.startsWith("/hakkinda")) {
 			return { title: "Hakkında", isRoot: false };
+		}
+		if (pathname.startsWith("/iletisim")) {
+			return { title: "İletişim", isRoot: false };
+		}
+		if (pathname.startsWith("/durum")) {
+			return { title: "Sistem Durumu", isRoot: false };
+		}
+		if (pathname.startsWith("/gelistirici")) {
+			return { title: "Geliştirici Panosu", isRoot: false };
+		}
+		if (pathname.startsWith("/istatistikler")) {
+			return { title: "İstatistikler", isRoot: false };
+		}
+		if (pathname.startsWith("/kullanim-kosullari")) {
+			return { title: "Kullanım Koşulları", isRoot: false };
+		}
+		if (pathname.startsWith("/gizlilik-politikasi")) {
+			return { title: "Gizlilik Politikası", isRoot: false };
+		}
+		if (pathname.startsWith("/menu-gonder")) {
+			return { title: "Menü Gönder", isRoot: false };
+		}
+		if (pathname.startsWith("/giris")) {
+			return { title: "Giriş Yap", isRoot: false };
+		}
+		if (pathname.startsWith("/kayit")) {
+			return { title: "Hesap Oluştur", isRoot: false };
+		}
+		if (pathname.startsWith("/sifre-yenile")) {
+			return { title: "Şifre Yenile", isRoot: false };
 		}
 		return { title: "Kepçe", isRoot: false };
 	}
@@ -130,10 +162,19 @@
 		const effectsEnabled = localStorage.getItem("kepce_effects") !== "false";
 		const bgColorHex = isDark ? "#242828" : "#F9F5E5";
 
+		const computed = getComputedStyle(document.documentElement);
+		const rawOpacity = computed.getPropertyValue("--nav-bg-opacity").trim();
+		const navBgOpacity = effectsEnabled ? (parseFloat(rawOpacity) || 0.8) : 1.0;
+		const colorSurface = computed.getPropertyValue("--color-surface").trim() || (isDark ? "#141414" : "#FFFFFF");
+		const colorBorder = computed.getPropertyValue("--color-border").trim() || (isDark ? "#3A3D3D" : "#E0DDD0");
+
 		nativeBridge.sendState({
 			isDark,
 			effectsEnabled,
-			bgColorHex
+			bgColorHex,
+			navBgOpacity,
+			colorSurface,
+			colorBorder
 		});
 	});
 
