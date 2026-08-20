@@ -35,6 +35,13 @@
         timelineState.init();
     });
 
+    const turkishMonths = [
+        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    ];
+    const now = new Date();
+    const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
+
     let cityName = $derived(
         CITY_MAP[timelineState.currentCity] || timelineState.currentCity,
     );
@@ -47,8 +54,8 @@
 
     let pageDescription = $derived(
         timelineState.currentCity
-            ? `${cityName} KYK yurtlarında bugün çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
-            : "Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
+            ? `${todayTurkishStr} ${cityName} KYK yemekhane menüsü, kalori değerleri ve beslenme yardımı detayları.`
+            : `${todayTurkishStr} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü, kalori değerleri ve beslenme yardımı detayları.`,
     );
     let ogImage = $derived(
         timelineState.currentCity
@@ -101,6 +108,8 @@
                     "@id": `https://kepce.org/?sehir=${timelineState.currentCity || "istanbul"}#menu`,
                     name: `${cityName} KYK Günlük Yemek Menüsü`,
                     inLanguage: "tr-TR",
+                    datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
+                    dateModified: now.toISOString(),
                     hasMenuSection: sections,
                 },
             ],

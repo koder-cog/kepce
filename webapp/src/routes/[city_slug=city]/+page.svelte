@@ -4,7 +4,7 @@
     import DailyHeader from "@/components/features/timeline/DailyHeader.svelte";
     import CalendarSelector from "@/components/features/timeline/CalendarSelector.svelte";
     import TimelineView from "@/components/features/timeline/TimelineView.svelte";
-    import { CITY_MAP } from "@/utils/turkish.js";
+    import { CITY_MAP, ACTIVE_CITIES } from "@/utils/turkish.js";
     import Seo from "@/components/ui/Seo.svelte";
     import { onMount } from "svelte";
 
@@ -20,15 +20,26 @@
         timelineState.init();
     });
 
+    const turkishMonths = [
+        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    ];
+    const now = new Date();
+    const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
+
     let pageTitle = $derived(`${cityName} KYK Yemek Menüsü | Kepçe`);
     let pageDescription = $derived(
-        `${cityName} KYK yurtlarında bugün çıkan kahvaltı ve akşam yemeği menüsü, kalori değerleri ve bütçe hesaplayıcı. Reklamsız, güncel yemek listeleri.`
+        `${todayTurkishStr} ${cityName} KYK yemekhane menüsü, kalori değerleri ve beslenme yardımı detayları.`
     );
     let canonicalUrl = $derived(`https://kepce.org/${citySlug}`);
     let ogImage = $derived(`https://kepce.org/api/v1/public/og/city/${citySlug}`);
 
+    // Menüsü henüz çekilmemiş veya aktif listesinde olmayan illerde soft 404 koruması (noindex, follow)
+    let isNoindex = $derived(!ACTIVE_CITIES.includes(citySlug) && (!timelineState.menusState || timelineState.menusState.length === 0));
+
     let menuSchema = $derived.by(() => {
         const menus = timelineState.menusState || [];
+        const isoNow = now.toISOString();
         const baseGraphs = [
             {
                 "@type": "WebSite",
@@ -67,6 +78,8 @@
                 "@id": `https://kepce.org/${citySlug}#menu`,
                 name: `${cityName} KYK Günlük Yemek Menüsü`,
                 inLanguage: "tr-TR",
+                datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
+                dateModified: isoNow,
                 hasMenuSection: sections,
             });
         }
@@ -83,6 +96,7 @@
     description={pageDescription}
     image={ogImage}
     canonical={canonicalUrl}
+    noindex={isNoindex}
     schema={menuSchema}
 />
 

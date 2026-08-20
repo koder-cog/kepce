@@ -25,6 +25,16 @@ export const CITY_MAP = {
 };
 
 /**
+ * Aktif olarak menü verisi çekilen ve doğrulanmış şehirler listesi.
+ * Dinamik sitemap ve SEO indeksleme politikası bu listeyi baz alır.
+ */
+export const ACTIVE_CITIES = [
+  "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum", 
+  "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk", 
+  "kirklareli", "konya", "sakarya", "sivas", "trabzon"
+];
+
+/**
  * Returns the correct ablative suffix for a Turkish word.
  * Ayrılma eki (-den, -dan, -ten, -tan)
  */

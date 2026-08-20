@@ -1,4 +1,4 @@
-import { CITY_MAP } from '@/utils/turkish.js';
+import { ACTIVE_CITIES } from '@/utils/turkish.js';
 
 export const prerender = true;
 
@@ -27,7 +27,7 @@ export function GET() {
     '/gizlilik-politikasi'
   ];
 
-  const cityPages = Object.keys(CITY_MAP).map((slug) => `/${slug}`);
+  const cityPages = ACTIVE_CITIES.map((slug) => `/${slug}`);
 
   const allPages = [...staticPages, ...cityPages];
 

@@ -52,7 +52,7 @@
 
   <!-- Robots -->
   {#if noindex}
-    <meta name="robots" content="noindex, nofollow" />
+    <meta name="robots" content="noindex, follow" />
   {:else}
     <meta name="robots" content="index, follow" />
   {/if}
