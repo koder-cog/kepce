@@ -215,29 +215,34 @@
     </div>
   </div>
 
-  <!-- Satır 2: Akıllı Kombinasyon ve Kategori Çipleri -->
-  <div class="pricing-calc__chips-scroll" role="tablist">
+  <!-- Hazır Kombinasyon / Menü Butonları (Ayrı bir preset grubu) -->
+  <div class="pricing-calc__presets-bar">
+    <span class="pricing-calc__presets-label">Hazır Menü:</span>
     <button
       type="button"
-      class="chip chip--preset"
+      class="btn btn--secondary btn--xs"
       onclick={() => applyPreset("zero")}
     >
       Sıfır Fark
     </button>
     <button
       type="button"
-      class="chip chip--preset"
+      class="btn btn--secondary btn--xs"
       onclick={() => applyPreset("protein")}
     >
       Protein
     </button>
     <button
       type="button"
-      class="chip chip--preset"
+      class="btn btn--secondary btn--xs"
       onclick={() => applyPreset("classic")}
     >
       Büfe Klasiği
     </button>
+  </div>
+
+  <!-- Kategori Filtre Çipleri (Yalnızca filtreler) -->
+  <div class="pricing-calc__chips-scroll" role="tablist">
     {#each pricingData.categories as cat}
       <button
         type="button"
@@ -251,7 +256,7 @@
     {/each}
   </div>
 
-  <!-- Ürün Listesi Grid -->
+  <!-- Ürün Listesi Grid (Masaüstü: 2, Mobil: 1 Sütun) -->
   <div class="pricing-calc__grid">
     {#if filteredItems.length === 0}
       <div class="pricing-calc__empty">
