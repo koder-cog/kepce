@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 # ==============================================================================
 # KEPÇE - Dağıtım ve Düğüm (Node) Kurulum Sihirbazı
@@ -96,6 +96,7 @@ rsync -avz --delete \
 # 4. Uzak Sunucuda Ortam Değişkenleri (.env) Kontrolü
 echo -e "${YELLOW}[2/5] Sunucu ortam değişkenleri doğrulanıyor...${NC}"
 ssh -i "$SSH_KEY" "$SERVER_HOST" "
+    set -euo pipefail
     if [ ! -f $REMOTE_DIR/.env ]; then
         if [ -f $REMOTE_DIR/.env.production ]; then
             cp $REMOTE_DIR/.env.production $REMOTE_DIR/.env
@@ -122,6 +123,7 @@ fi
 # 6. Sunucuda Konteynerlerin Başlatılması ve Veritabanı Hazırlığı
 echo -e "${YELLOW}[3/5] Veritabanı ve servisler hazırlanıyor...${NC}"
 ssh -i "$SSH_KEY" "$SERVER_HOST" "
+    set -euo pipefail
     cd $REMOTE_DIR
     export \$(grep -v '^#' .env | xargs)
 
@@ -149,8 +151,8 @@ ssh -i "$SSH_KEY" "$SERVER_HOST" "
         fi
     done
 
-    # 5. Tüm servisleri ayağa kaldır (Eski/artık servisleri otomatik temizle)
-    echo 'Konteynerler başlatılıyor...'
+    # 5. Tüm servisleri ayağa kaldır (Hata olursa derleme çıkış yapsın)
+    echo 'Konteynerler derleniyor ve başlatılıyor...'
     $COMPOSE_CMD up -d --build --remove-orphans
 
     # 6. Yetkisiz konteyner dosya izinlerini düzelt
@@ -160,7 +162,15 @@ ssh -i "$SSH_KEY" "$SERVER_HOST" "
 # 7. Sağlık Kontrolü
 echo -e "${YELLOW}[4/5] Canlı sağlık kontrolü yapılıyor...${NC}"
 sleep 3
-HEALTH_STATUS=$(curl -s --connect-timeout 5 https://kepce.org/api/v1/system/health || true)
+HEALTH_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 https://kepce.org/api/v1/system/health || echo "000")
+
+if [ "$HEALTH_CODE" != "200" ]; then
+    echo -e "${RED}${BOLD}Hata: Sağlık kontrolü başarısız oldu! (HTTP $HEALTH_CODE)${NC}"
+    echo -e "${RED}Lütfen sunucu loglarını kontrol edin: 'docker compose logs -f'${NC}"
+    exit 1
+fi
+
+HEALTH_STATUS=$(curl -s --connect-timeout 5 https://kepce.org/api/v1/system/health)
 
 echo -e "${YELLOW}[5/5] Tamamlandı.${NC}"
 echo -e "${GREEN}${BOLD}=====================================================${NC}"

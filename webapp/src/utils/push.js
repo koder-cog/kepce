@@ -1,7 +1,4 @@
-// Kepçe Web App — Web Push Bildirim Yardımcısı
-// =============================================
-
-import { API_BASE } from './api.js';
+import { API_BASE } from '@/api/client.js';
 
 function urlBase64ToUint8Array(base64String) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
