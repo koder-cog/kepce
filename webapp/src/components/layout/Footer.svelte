@@ -13,7 +13,7 @@
   </div>
 
   <div class="site-footer__col">
-    <div class="site-footer__col-title">Bağlantılar</div>
+    <div class="site-footer__col-title">Proje</div>
     <a href="/hakkinda" class="site-footer__link" data-link>Hakkında</a>
     <a
       href="https://github.com/koder-cog/kepce"
