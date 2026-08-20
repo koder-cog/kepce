@@ -286,7 +286,7 @@
 
 <svelte:window onclick={handleGlobalClick} />
 
-<div id="app">
+<div id="app" class:is-app={globalState.isApp}>
 	{#if !globalState.isApp}
 		<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
 		<a href="#page-content" class="skip-link">Ana içeriğe geç</a>
@@ -305,6 +305,8 @@
 			{/if}
 			<VerificationBanner />
 		</nav>
+	{:else}
+		<OfflineBanner />
 	{/if}
 	<div
 		id="page-wrapper"
