@@ -36,8 +36,8 @@
             bind:value={timelineState.viewType}
             variant="icons"
             options={[
-                { value: "timeline", icon: icon("cards", 18), tooltip: "Zaman çizelgesi" },
-                { value: "calendar", icon: icon("calendar", 18), tooltip: "Takvim görünümü" }
+                { value: "timeline", icon: icon("cards", 18), label: "Zaman Çizelgesi", tooltip: "Zaman çizelgesi" },
+                { value: "calendar", icon: icon("calendar", 18), label: "Takvim", tooltip: "Takvim görünümü" }
             ]}
         />
 

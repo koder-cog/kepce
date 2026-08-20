@@ -10,12 +10,35 @@
   import { showToast } from "@/components/ui/toast.js";
   import { page } from "$app/stores";
 
+  import Pagination from "@/components/ui/Pagination.svelte";
+
   let username = $derived($page.params.username);
+  let paginationMode = $derived(globalState.paginationMode || "sayfali");
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+
   let contentLoading = $state(true);
   let dashboardStats = $state(null);
+  let currentPage = $state(1);
+  let limit = 20;
+
+  let allFavorites = $derived(dashboardStats?.favorite_comments || []);
+  let totalItems = $derived(allFavorites.length);
+  let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
+
+  let paginatedFavorites = $derived.by(() => {
+    if (paginationMode === "sayfali") {
+      const start = (currentPage - 1) * limit;
+      return allFavorites.slice(start, start + limit);
+    }
+    return allFavorites;
+  });
 
   $effect(() => {
     if (username) loadDashboardStats();
+  });
+
+  $effect(() => {
+    currentPage = Math.max(1, Math.min(urlPage, totalPages));
   });
 
   async function loadDashboardStats() {
@@ -29,13 +52,24 @@
     }
   }
 
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
+  }
+
   function handleCommentAction(action, comment) {
     const commentId = comment.hash;
     const menuId = comment.menu?.id || comment.menu_id || "";
 
     if (action === "reply") {
       const shortId = commentId.substring(0, 7);
-      goto(`/yorumlar/${menuId}/${shortId}`);
+      goto(`/menu/${menuId}/${shortId}`);
     }
   }
 </script>
@@ -44,19 +78,31 @@
   <div class="profile-grid-loader">
     <Loader size={48} />
   </div>
-{:else if !dashboardStats?.favorite_comments?.length}
+{:else if !allFavorites.length}
   <EmptyState
     iconName="voteUpFilled"
     title="Henüz Beğeni Yok"
     desc={`@${username} henüz birilerinin yorumlarını beğenmemiş.`}
   />
 {:else}
+  {#if paginationMode === "sayfali" && totalPages > 1}
+    <div class="profile-comments-header u-mb-md u-flex u-flex-justify-end">
+      <Pagination
+        compact={true}
+        page={currentPage}
+        {totalPages}
+        {totalItems}
+        onPageChange={handlePageChange}
+      />
+    </div>
+  {/if}
+
   <div class="profile-activity-list">
-    {#each dashboardStats.favorite_comments as c, idx}
+    {#each paginatedFavorites as c, idx}
       {@const commentKey = c.id || c.hash || `comment-${idx}`}
       {@const menuId = c.menu_id || c.menu?.id || ""}
       {@const threadTarget = c.id ? c.id.substring(0, 7) : (c.hash || "")}
-      {@const commentHref = menuId ? `/yorumlar/${menuId}/${threadTarget}` : `/yorumlar?thread=${threadTarget}`}
+      {@const commentHref = menuId ? `/menu/${menuId}/${threadTarget}` : `/menu?thread=${threadTarget}`}
       {@const score = c.reaction_summary
         ? c.reaction_summary.up - c.reaction_summary.down
         : 0}
@@ -111,4 +157,13 @@
       </div>
     {/each}
   </div>
+
+  {#if paginationMode === "sayfali" && totalPages > 1}
+    <Pagination
+      page={currentPage}
+      {totalPages}
+      {totalItems}
+      onPageChange={handlePageChange}
+    />
+  {/if}
 {/if}

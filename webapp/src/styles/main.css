@@ -46,6 +46,7 @@
 @import "components/_timeline.css";
 @import "components/_toast.css";
 @import "components/_comment.css";
+@import "components/_pagination.css";
 
 /* Utilities */
 @import "utilities/_animations.css";

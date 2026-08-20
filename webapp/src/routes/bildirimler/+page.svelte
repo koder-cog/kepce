@@ -20,6 +20,9 @@
   import { showToast } from "@/components/ui/toast.js";
   import { createModal } from "@/components/features/modal.js";
   import Seo from "@/components/ui/Seo.svelte";
+  import Pagination from "@/components/ui/Pagination.svelte";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
 
   let user = $derived(globalState?.user);
   let notifications = $state([]);
@@ -27,6 +30,12 @@
   let errorMsg = $state(null);
 
   let activeTab = $state("all"); // 'all' | 'unread'
+  let paginationMode = $derived(globalState.paginationMode || "sayfali");
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+
+  // Pagination states
+  let limit = 20;
+  let currentPage = $state(1);
 
   // Derivated states
   let unreadCount = $derived(notifications.filter((n) => !n.is_read).length);
@@ -35,6 +44,20 @@
       ? notifications.filter((n) => !n.is_read)
       : notifications,
   );
+  let totalItems = $derived(filteredNotifications.length);
+  let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
+
+  $effect(() => {
+    currentPage = Math.max(1, Math.min(urlPage, totalPages));
+  });
+
+  let paginatedNotifications = $derived.by(() => {
+    if (paginationMode === "sayfali") {
+      const start = (currentPage - 1) * limit;
+      return filteredNotifications.slice(start, start + limit);
+    }
+    return filteredNotifications;
+  });
 
   // Grouping logic
   let groupedNotifications = $derived.by(() => {
@@ -52,7 +75,7 @@
     ).getTime();
     const yesterday = today - 86400000;
 
-    filteredNotifications.forEach((n) => {
+    paginatedNotifications.forEach((n) => {
       const date = new Date(n.created_at).getTime();
       if (date >= today) {
         groups.today.items.push(n);
@@ -67,6 +90,17 @@
       (g) => g.items.length > 0,
     );
   });
+
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
+  }
 
   let hasFetched = false;
 
@@ -219,6 +253,15 @@
           Tümünü temizle
         </button>
       {/if}
+      {#if paginationMode === "sayfali" && totalPages > 1}
+        <Pagination
+          compact={true}
+          page={currentPage}
+          {totalPages}
+          {totalItems}
+          onPageChange={handlePageChange}
+        />
+      {/if}
     </div>
   </div>
 
@@ -320,5 +363,14 @@
         </div>
       </div>
     {/each}
+
+    {#if paginationMode === "sayfali" && totalPages > 1}
+      <Pagination
+        page={currentPage}
+        {totalPages}
+        {totalItems}
+        onPageChange={handlePageChange}
+      />
+    {/if}
   {/if}
 </div>

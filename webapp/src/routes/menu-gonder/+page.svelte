@@ -210,6 +210,7 @@
 <Seo
   title="Menü Gönder - Kepçe"
   description="Yurdundaki aylık veya haftalık yemek menüsünü sisteme yükle, diğer öğrencilerin de ne yiyeceğini öğrenmesine yardımcı ol."
+  image="https://kepce.org/api/v1/public/og/page/menu-gonder"
 />
 
 {#if isSuccess}

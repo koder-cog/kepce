@@ -46,9 +46,14 @@
             ? `${CITY_MAP[timelineState.currentCity] || timelineState.currentCity} KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri.`
             : "KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri. Bağımsız, açık kaynaklı ve reklamsız platform.",
     );
+    let ogImage = $derived(
+        timelineState.currentCity
+            ? `https://kepce.org/api/v1/public/og/city/${timelineState.currentCity}`
+            : "https://kepce.org/og_image.png",
+    );
 </script>
 
-<Seo title={pageTitle} description={pageDescription} />
+<Seo title={pageTitle} description={pageDescription} image={ogImage} />
 
 <h1 class="sr-only">
     {timelineState.currentCity

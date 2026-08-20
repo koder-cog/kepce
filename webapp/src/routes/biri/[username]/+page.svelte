@@ -14,9 +14,13 @@
   import { getCommentContextHtml } from "@/utils/turkish.js";
   import { sanitizeText } from "@/utils/sanitize.js";
   import { initCharCounter } from "@/utils/char-counter.js";
+  import Pagination from "@/components/ui/Pagination.svelte";
   import { page } from "$app/stores";
 
   let username = $derived($page.params.username);
+  let paginationMode = $derived(globalState.paginationMode || "sayfali");
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+
   let contentLoading = $state(true);
   let contentError = $state(null);
   let commentsData = $state([]);
@@ -26,20 +30,30 @@
   // Pagination
   let limit = 20;
   let offset = $state(0);
+  let currentPage = $state(1);
+  let totalPages = $state(1);
+  let totalItems = $state(0);
   let hasMore = $state(false);
   let isLoadingMore = $state(false);
 
   $effect(() => {
     if (username) {
-      offset = 0;
-      loadTabContent();
+      if (paginationMode === "sayfali") {
+        currentPage = urlPage;
+        offset = (urlPage - 1) * limit;
+      } else {
+        offset = 0;
+      }
+      loadTabContent(false);
     }
   });
 
   async function loadTabContent(isLoadMore = false) {
     if (!isLoadMore) {
       contentLoading = true;
-      offset = 0;
+      if (paginationMode !== "sayfali") {
+        offset = 0;
+      }
       commentsData = [];
     } else {
       isLoadingMore = true;
@@ -57,15 +71,16 @@
       if (currentTabToken !== token) return;
 
       const newData = Array.isArray(res) ? res : res?.items || res?.data || [];
+      totalItems = res?.total_items ?? res?.total ?? (Array.isArray(res) ? res.length : 0);
+      totalPages = res?.total_pages ?? (Math.ceil(totalItems / limit) || 1);
+
       if (isLoadMore) {
         commentsData = [...commentsData, ...newData];
       } else {
         commentsData = newData;
       }
 
-      const total =
-        res?.total_items ?? res?.total ?? (Array.isArray(res) ? res.length : 0);
-      hasMore = commentsData.length < total && newData.length > 0;
+      hasMore = commentsData.length < totalItems && newData.length > 0;
     } catch (err) {
       if (currentTabToken !== token) return;
       contentError = err.message;
@@ -77,15 +92,30 @@
     }
   }
 
-  function loadMore() {
-    if (isLoadingMore || !hasMore) return;
-    offset += limit;
-    loadTabContent(true);
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
 
   function handleSortChange() {
     offset = 0;
-    loadTabContent();
+    currentPage = 1;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("sayfa");
+    goto(url.pathname + url.search, { keepFocus: true });
+    loadTabContent(false);
+  }
+
+  function loadMore() {
+    if (isLoadingMore || !hasMore) return;
+    offset += limit;
+    loadTabContent(true);
   }
 
   async function reactToComment(hash, type, commentObj) {
@@ -131,9 +161,9 @@
       typeof commentId === "string" ? commentId.substring(0, 7) : commentId;
 
     if (action === "reply") {
-      goto(`/yorumlar/${menuId}/${shortId}`);
+      goto(`/menu/${menuId}/${shortId}`);
     } else if (action === "share") {
-      const url = `${window.location.origin}/yorumlar/${menuId}/${shortId}`;
+      const url = `${window.location.origin}/menu/${menuId}/${shortId}`;
       navigator.clipboard
         .writeText(url)
         .then(() => showToast("Yorum linki kopyalandı!"));
@@ -257,7 +287,7 @@
   </div>
 {:else}
   <div class="profile-comments-list">
-    <div class="profile-comments-header u-mb-md u-flex u-flex-justify-end">
+    <div class="profile-comments-header u-mb-md u-flex u-flex-justify-between u-flex-align-center">
       <Dropdown
         bind:value={commentsSort}
         options={[
@@ -266,6 +296,15 @@
         ]}
         onchange={handleSortChange}
       />
+      {#if paginationMode === "sayfali" && totalPages > 1}
+        <Pagination
+          compact={true}
+          page={currentPage}
+          {totalPages}
+          {totalItems}
+          onPageChange={handlePageChange}
+        />
+      {/if}
     </div>
 
     <div class="comment-card-list">
@@ -274,8 +313,8 @@
         {@const menuId = c.menu_id || c.menu?.id || ""}
         {@const threadTarget = c.id ? c.id.substring(0, 7) : c.hash || ""}
         {@const commentHref = menuId
-          ? `/yorumlar/${menuId}/${threadTarget}`
-          : `/yorumlar?thread=${threadTarget}`}
+          ? `/menu/${menuId}/${threadTarget}`
+          : `/menu?thread=${threadTarget}`}
         {@const isOwnComment = globalState?.user?.id === c.user?.id}
         {@const isBlockedComment =
           c.is_blocked ||
@@ -415,7 +454,14 @@
           </div>
         </div>
       {/each}
-      {#if hasMore}
+      {#if paginationMode === "sayfali"}
+        <Pagination
+          page={currentPage}
+          {totalPages}
+          {totalItems}
+          onPageChange={handlePageChange}
+        />
+      {:else if hasMore}
         <div class="u-text-center u-mt-md">
           <button
             class="c-btn c-btn--secondary"

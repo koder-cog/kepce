@@ -19,6 +19,7 @@
 <Seo
   title="RSS Akışı - Kepçe"
   description="Kepçe KYK yurt yemek menüleri RSS besleme akışı bağlantısı ve kullanımı."
+  image="https://kepce.org/api/v1/public/og/page/rss"
 />
 
 <div class="content-page">

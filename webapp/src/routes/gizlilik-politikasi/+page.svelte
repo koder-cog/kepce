@@ -7,6 +7,7 @@
 <Seo
   title="Gizlilik Politikası (KVKK) - Kepçe"
   description="Kepçe gizlilik politikası, KVKK aydınlatma metni, veri işleme ilkeleri ve çerez politikası."
+  image="https://kepce.org/api/v1/public/og/page/gizlilik-politikasi"
 />
 
 <ContentPage

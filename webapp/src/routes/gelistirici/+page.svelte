@@ -1141,8 +1141,9 @@
 </script>
 
 <Seo
-  title="Geliştirici Paneli ve API Yönetimi - Kepçe"
-  description="Kepçe API anahtarları, uygulama yönetimi ve geliştirici araçları."
+  title="Geliştirici Portalı - Kepçe"
+  description="Proje Yönetimi ve API Anahtarları."
+  image="https://kepce.org/api/v1/public/og/page/gelistirici"
   noindex={true}
 />
 

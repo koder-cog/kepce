@@ -72,6 +72,7 @@
 <Seo
   title="İletişim - Kepçe"
   description="Kepçe geliştiricisi ile iletişime geçin. Hata bildirimleri, menü katkıları, öneriler ve sorularınız için iletişim formu."
+  image="https://kepce.org/api/v1/public/og/page/iletisim"
 />
 
 <div class="content-page">

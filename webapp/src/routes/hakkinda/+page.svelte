@@ -7,6 +7,7 @@
 <Seo
   title="Hakkında - Kepçe"
   description="Kepçe; KYK yurtlarında kalan öğrencilerin günlük yemek menülerine şeffaf, reklamsız ve hızlıca ulaşması için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur."
+  image="https://kepce.org/api/v1/public/og/page/hakkinda"
 />
 
 <ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 2026.08.05">

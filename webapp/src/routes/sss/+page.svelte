@@ -10,6 +10,7 @@
 <Seo
   title="Sıkça Sorulan Sorular (SSS) - Kepçe"
   description="Kepçe platformu, KYK yurt yemek menüleri, verilerin doğruluğu ve topluluk kuralları hakkında sıkça sorulan sorular."
+  image="https://kepce.org/api/v1/public/og/page/sss"
 />
 
 <ContentPage

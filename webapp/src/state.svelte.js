@@ -5,14 +5,25 @@ import { getCookie, clearLoggedCookie } from './utils/cookie.js';
 const initialHasSession = typeof document !== 'undefined' ? getCookie('kepce_logged_in') === 'true' : false;
 const cachedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('kepce_user_cache') || 'null') : null;
 
+const initialPaginationMode = typeof window !== 'undefined' ? (localStorage.getItem('sayfalamaModu') || 'sayfali') : 'sayfali';
+
 export const globalState = $state({
   user: cachedUser,
   isModerator: false,
   favorites: [],
   isReady: false,
   hasSession: initialHasSession,
-  devMode: false
+  devMode: false,
+  paginationMode: initialPaginationMode,
 });
+
+export function setPaginationMode(mode) {
+  const validMode = mode === 'akici' ? 'akici' : 'sayfali';
+  globalState.paginationMode = validMode;
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('sayfalamaModu', validMode);
+  }
+}
 
 export const authActions = {
   async refreshUser() {
