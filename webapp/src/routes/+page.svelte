@@ -18,7 +18,7 @@
             timelineState.setPrerenderedData(
                 data.prerenderedMenus || [],
                 data.prerenderedCity,
-                data.prerenderedDate
+                data.prerenderedDate,
             );
         }
     });
@@ -35,7 +35,9 @@
         timelineState.init();
     });
 
-    let cityName = $derived(CITY_MAP[timelineState.currentCity] || timelineState.currentCity);
+    let cityName = $derived(
+        CITY_MAP[timelineState.currentCity] || timelineState.currentCity,
+    );
 
     let pageTitle = $derived(
         timelineState.currentCity
@@ -45,8 +47,8 @@
 
     let pageDescription = $derived(
         timelineState.currentCity
-            ? `${cityName} KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
-            : "Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
+            ? `${cityName} KYK yurtlarında bugün çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
+            : "Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
     );
     let ogImage = $derived(
         timelineState.currentCity
@@ -60,8 +62,11 @@
 
         const sections = menus.map((m) => {
             const dishes = m.items || m.dishes || [];
-            const dishNames = dishes.map((d) => (typeof d === "string" ? d : d.name)).filter(Boolean);
-            const mealTitle = m.meal_type === "breakfast" ? "Sabah Kahvaltısı" : "Akşam Yemeği";
+            const dishNames = dishes
+                .map((d) => (typeof d === "string" ? d : d.name))
+                .filter(Boolean);
+            const mealTitle =
+                m.meal_type === "breakfast" ? "Kahvaltı" : "Akşam Yemeği";
             return {
                 "@type": "MenuSection",
                 name: mealTitle,
@@ -80,7 +85,8 @@
                     "@id": "https://kepce.org/#website",
                     url: "https://kepce.org/",
                     name: "Kepçe",
-                    description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
+                    description:
+                        "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
                     inLanguage: "tr-TR",
                 },
                 {
@@ -102,7 +108,12 @@
     });
 </script>
 
-<Seo title={pageTitle} description={pageDescription} image={ogImage} schema={menuSchema} />
+<Seo
+    title={pageTitle}
+    description={pageDescription}
+    image={ogImage}
+    schema={menuSchema}
+/>
 
 <h1 class="sr-only">
     {timelineState.currentCity

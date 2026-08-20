@@ -8,13 +8,13 @@ Bu belgede, arama motorlarında (Google, Bing, Yandex vb.) çıkacak olan günce
 
 ### 🏠 Ana Sayfa (`/`)
 * **Title:** `Bugün KYK'da Ne Yemek Var? | Kepçe`
-* **Description:** `Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.`
+* **Description:** `Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.`
 * **Canonical:** `https://kepce.org`
 * **Schema (JSON-LD):** `WebSite`, `Organization`, `Menu` (Günlük yemek listesi)
 
 ### 📍 81 Şehir Sayfası (Örn: `/istanbul` veya `/ankara`)
 * **Title:** `[Şehir Adı] KYK Yemek Menüsü | Kepçe` (Örn: `İstanbul KYK Yemek Menüsü | Kepçe`)
-* **Description:** `[Şehir Adı] KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
+* **Description:** `[Şehir Adı] KYK yurtlarında bugün çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
 * **Canonical:** `https://kepce.org/[sehir_slug]`
 * **Schema (JSON-LD):** `Menu` (İlgili şehrin güncel tabldot menüsü)
 
@@ -39,7 +39,7 @@ Bu belgede, arama motorlarında (Google, Bing, Yandex vb.) çıkacak olan günce
 
 ### ⏰ KYK Yemek Saatleri (`/kyk-yemek-saatleri`)
 * **Title:** `KYK Yemek Saatleri | Kepçe`
-* **Description:** `KYK yurtlarında sabah kahvaltısı ve akşam yemeği saatleri kaçta başlıyor, kaçta bitiyor? Hafta içi ve hafta sonu yemekhane saat tablosu.`
+* **Description:** `KYK yurtlarında kahvaltı ve akşam yemeği saatleri kaçta başlıyor, kaçta bitiyor? Hafta içi ve hafta sonu yemekhane saat tablosu.`
 * **Canonical:** `https://kepce.org/kyk-yemek-saatleri`
 * **Schema (JSON-LD):** `Article`
 

@@ -20,9 +20,9 @@
         timelineState.init();
     });
 
-    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü & Yemekhane Bilgileri | Kepçe`);
+    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü | Kepçe`);
     let pageDescription = $derived(
-        `${cityName} KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü, resmi yemek saatleri ve beslenme yardımı limitleri. Reklamsız, güncel yemek listeleri.`
+        `${cityName} KYK yurtlarında bugün çıkan kahvaltı ve akşam yemeği menüsü, kalori değerleri ve bütçe hesaplayıcı. Reklamsız, güncel yemek listeleri.`
     );
     let canonicalUrl = $derived(`https://kepce.org/${citySlug}`);
     let ogImage = $derived(`https://kepce.org/api/v1/public/og/city/${citySlug}`);
@@ -45,35 +45,13 @@
                 url: "https://kepce.org/",
                 logo: "https://kepce.org/icon-512.png",
             },
-            {
-                "@type": "FAQPage",
-                "@id": `https://kepce.org/${citySlug}#faq`,
-                mainEntity: [
-                    {
-                        "@type": "Question",
-                        name: `${cityName} KYK yurtlarında yemek saatleri kaçtır?`,
-                        acceptedAnswer: {
-                            "@type": "Answer",
-                            text: `${cityName} KYK yurtlarında hafta içi kahvaltı 06:30 - 12:00, akşam yemeği 16:00 - 22:30 saatleri arasındadır. Hafta sonu kahvaltı 12:30'a kadar devam eder.`
-                        }
-                    },
-                    {
-                        "@type": "Question",
-                        name: `${cityName} KYK beslenme yardımı ne kadar?`,
-                        acceptedAnswer: {
-                            "@type": "Answer",
-                            text: `2025-2026 dönemi için günlük toplam 150 TL (Kahvaltı 45 TL, Akşam Yemeği 105 TL) beslenme yardımı tanımlanmaktadır.`
-                        }
-                    }
-                ]
-            }
         ];
 
         if (menus && menus.length > 0) {
             const sections = menus.map((m) => {
                 const dishes = m.items || m.dishes || [];
                 const dishNames = dishes.map((d) => (typeof d === "string" ? d : d.name)).filter(Boolean);
-                const mealTitle = m.meal_type === "breakfast" ? "Sabah Kahvaltısı" : "Akşam Yemeği";
+                const mealTitle = m.meal_type === "breakfast" ? "Kahvaltı" : "Akşam Yemeği";
                 return {
                     "@type": "MenuSection",
                     name: mealTitle,
@@ -115,18 +93,3 @@
 <DailyHeader />
 <CalendarSelector />
 <TimelineView />
-
-<!-- Programmatic Evergreen City Guide (Thin Content Protection) -->
-<section class="disclaimer-card" style="margin-top: var(--space-2xl); margin-bottom: var(--space-2xl);" aria-label="{cityName} KYK Yemekhane Bilgileri">
-    <div style="display: flex; flex-direction: column; gap: var(--space-sm);">
-        <h2 style="font-size: var(--text-base); font-weight: var(--font-weight-bold); color: var(--color-text); margin: 0;">
-            {cityName} KYK Yemekhane ve Beslenme Rehberi
-        </h2>
-        <p style="font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.6; margin: 0;">
-            {cityName} genelindeki tüm Gençlik ve Spor Bakanlığı (GSB) KYK yurtlarında yemekhane hizmeti günlük beslenme yardımı kotasıyla sunulmaktadır. Hafta içi sabah kahvaltısı <strong>06:30 – 12:00</strong>, akşam yemeği ise <strong>16:00 – 22:30</strong> saatleri arasındadır. Hafta sonu kahvaltı servisi <strong>12:30</strong>'a kadar devam eder.
-        </p>
-        <p style="font-size: var(--text-xs); color: var(--color-text-secondary); line-height: 1.6; margin: 0;">
-            Günlük tanımlanan <strong>150 TL</strong> beslenme yardımını (Sabah 45 TL, Akşam 105 TL) ister standart fiks tabldot menüde 0 TL farkla kullanabilir, isterseniz <a href="/kyk-beslenme-yardimi" class="text-link" style="color: var(--color-accent-primary); font-weight: var(--font-weight-medium);">KYK Fiş Hesaplayıcı</a> ile alakart büfeden kendi tercihinize göre menü oluşturabilirsiniz. Detaylı çalışma düzeni için <a href="/kyk-yemek-saatleri" class="text-link" style="color: var(--color-accent-primary); font-weight: var(--font-weight-medium);">KYK Yemek Saatleri</a> sayfamızı inceleyebilirsiniz.
-        </p>
-    </div>
-</section>

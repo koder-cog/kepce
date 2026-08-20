@@ -57,8 +57,8 @@
   </style>
 
   <script>
-    (function() {
-      window.applyTheme = function(themeStr, isInit = false) {
+    (function () {
+      window.applyTheme = function (themeStr, isInit = false) {
         const el = document.documentElement;
         const updateDOM = () => {
           if (themeStr === 'koyu') {
@@ -75,8 +75,8 @@
           try {
             const transition = document.startViewTransition(updateDOM);
             if (transition) {
-              if (transition.ready) transition.ready.catch(() => {});
-              if (transition.finished) transition.finished.catch(() => {});
+              if (transition.ready) transition.ready.catch(() => { });
+              if (transition.finished) transition.finished.catch(() => { });
             }
           } catch (_) {
             updateDOM();
@@ -97,7 +97,7 @@
           }
         }
       };
-      const syncThemeState = function() {
+      const syncThemeState = function () {
         const savedTheme = localStorage.getItem('renkTercihi') || 'sistem';
         window.applyTheme(savedTheme, true);
         if (localStorage.getItem('kepce_show_bot') === 'false') {
@@ -121,7 +121,7 @@
   <link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
   <title>Kepçe - KYK Yurt Yemek Menüsü</title>
   <meta name="description"
-    content="KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri." />
+    content="KYK yurtları günlük kahvaltı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri." />
   %sveltekit.head%
 </head>
 

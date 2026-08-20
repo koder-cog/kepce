@@ -3,7 +3,7 @@
 
   let {
     title = "Bugün KYK'da Ne Yemek Var? Günlük Menüler | Kepçe",
-    description = "Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
+    description = "Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
     image = "https://kepce.org/og_image.png",
     type = "website",
     canonical = null,
