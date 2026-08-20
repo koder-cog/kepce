@@ -45,13 +45,38 @@
             icon: "info",
             class: "disclaimer",
         },
+        "kykyemek.com": {
+            label: "Kaynak: Kykyemek.com",
+            icon: "info",
+            class: "disclaimer",
+        },
         "kyk-yemek": {
-            label: "Kaynak: KYK Yemek",
+            label: "Kaynak: Kykyemek.com",
+            icon: "info",
+            class: "disclaimer",
+        },
+        yurtmenu: {
+            label: "Kaynak: Yurt Menü",
+            icon: "info",
+            class: "disclaimer",
+        },
+        "yurtmenu.net": {
+            label: "Kaynak: Yurt Menü",
+            icon: "info",
+            class: "disclaimer",
+        },
+        kykmenu: {
+            label: "Kaynak: Menü",
+            icon: "info",
+            class: "disclaimer",
+        },
+        "kykmenu.com.tr": {
+            label: "Kaynak: Menü",
             icon: "info",
             class: "disclaimer",
         },
         "kykmenulistesi.com.tr": {
-            label: "Kaynak: kykmenulistesi.com.tr",
+            label: "Kaynak: Menü",
             icon: "info",
             class: "disclaimer",
         },
@@ -65,6 +90,16 @@
             label: "Kaynak: Kepçe",
             icon: "verified",
             class: "positive",
+        },
+        "kepce-anonim": {
+            label: "Kaynak: Kepçe (Anonim)",
+            icon: "info",
+            class: "disclaimer",
+        },
+        anonim: {
+            label: "Kaynak: Kepçe (Anonim)",
+            icon: "info",
+            class: "disclaimer",
         },
         unknown: {
             label: "Kaynak: Bilinmiyor",
@@ -101,10 +136,20 @@
                 return `Bu ${nameObj}, KYK’nin derinliklerinden bilgi sızdıran isimsiz bir cengaverin yolladığı istihbarat ışığında, moderasyon ekibimiz tarafından deşifre edilip önünüze atılmıştır. Adeta bir KYK Leaks vakası.`;
             } else if (
                 menu.source_type === "kykyemek" ||
+                menu.source_type === "kykyemek.com" ||
                 menu.source_type === "kyk-yemek" ||
+                menu.source_type === "yurtmenu" ||
+                menu.source_type === "yurtmenu.net" ||
+                menu.source_type === "kykmenu" ||
+                menu.source_type === "kykmenu.com.tr" ||
                 menu.source_type === "kykmenulistesi.com.tr"
             ) {
-                return `Bu ${nameObj}, harici platformlardan bot marifetiyle devşirilmiştir. Mutfağa bizzat sızamadığımız için tutarlılık garantisi veremiyoruz; menü tutarsa mucize, tutmazsa KYK'nin fıtratıdır.`;
+                return `Bu ${nameObj}, harici platformlardan bot marifetiyle devşirilmiştir. Mutfağa bizzat sızamadığımız için tutarlılık garantisi veremiyoruz; menü tutarsa mucize tutmazsa fıtrat.`;
+            } else if (
+                menu.source_type === "kepce-anonim" ||
+                menu.source_type === "anonim"
+            ) {
+                return `Bu ${nameObj}, sisteme giriş yapmamış bir Kepçe kullanıcısı tarafından bildirilmiştir. Bilgiye güvenmek istiyoruz ama mutfakta her an her şey yaşanabilir, temkini elden bırakmayın.`;
             } else {
                 return `Bu ${nameGenitive} nereden geldiği, kimin hazırladığı veya bizim sisteme nasıl düştüğü hakkında en ufak bir fikrimiz yok. Muhtemelen deponun karanlık köşelerinde unutulan 3 yıllık salçaların hüznüyle kendi kendine spawn olmuş, boyut kapısı açılarak tepsinize düşmüş kozmik bir tabldot.`;
             }
@@ -516,11 +561,11 @@
         <div class="meal-card__actions">
             {#if !hideComment}
                 <a
-                    href="/yorumlar/{menu.id}"
+                    href="/menu/{menu.id}"
                     class="meal-card__action-btn"
                     data-link
-                    data-tooltip="Yorumları gör"
-                    aria-label="Yorumları gör"
+                    data-tooltip="Menü detayları ve yorumlar"
+                    aria-label="Menü detayları ve yorumlar"
                 >
                     {@html icon("chat", 18)}
                     {#if menu.comment_count > 0}

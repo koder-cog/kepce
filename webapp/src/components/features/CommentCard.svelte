@@ -101,13 +101,13 @@
     function handleFocus(e) {
         if (e) e.stopPropagation();
         const shortId = comment.id.substring(0, 7);
-        goto(`/yorumlar/${menuId}/${shortId}`);
+        goto(`/menu/${menuId}/${shortId}`);
     }
 
     function handleShare(e) {
         if (e) e.stopPropagation();
         const shortId = comment.id.substring(0, 7);
-        const url = `${window.location.origin}/yorumlar/${menuId}/${shortId}`;
+        const url = `${window.location.origin}/menu/${menuId}/${shortId}`;
         navigator.clipboard
             .writeText(url)
             .then(() => showToast("Yorum linki kopyalandı!"));

@@ -8,6 +8,10 @@
   import { showToast } from '@/components/ui/toast.js';
   import { createModal } from '@/components/features/modal.js';
 
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
   let searchQuery = $state('');
   let isLoading = $state(true);
   let users = $state([]);
@@ -15,6 +19,46 @@
   let sortState = $state({ column: 'date', asc: false });
   let searchTimeout;
   let currentLoadToken = 0;
+
+  // Pagination states
+  let limit = 20;
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let currentPage = $state(1);
+
+  let sortedUsers = $derived([...users].sort((a, b) => {
+    let valA, valB;
+    if (sortState.column === 'username') { valA = a.username.toLocaleLowerCase('tr-TR'); valB = b.username.toLocaleLowerCase('tr-TR'); }
+    else if (sortState.column === 'email') { valA = (a.email || '').toLocaleLowerCase('tr-TR'); valB = (b.email || '').toLocaleLowerCase('tr-TR'); }
+    else if (sortState.column === 'status') { valA = a.is_verified ? 1 : 0; valB = b.is_verified ? 1 : 0; }
+    else { valA = new Date(a.created_at).getTime(); valB = new Date(b.created_at).getTime(); }
+
+    if (valA < valB) return sortState.asc ? -1 : 1;
+    if (valA > valB) return sortState.asc ? 1 : -1;
+    return 0;
+  }));
+
+  let totalItems = $derived(sortedUsers.length);
+  let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
+
+  $effect(() => {
+    currentPage = Math.max(1, Math.min(urlPage, totalPages));
+  });
+
+  let paginatedUsers = $derived.by(() => {
+    const start = (currentPage - 1) * limit;
+    return sortedUsers.slice(start, start + limit);
+  });
+
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
+  }
 
   async function fetchUsers(query = '') {
     isLoading = true;
@@ -61,18 +105,6 @@
       sortState.asc = true;
     }
   }
-
-  let sortedUsers = $derived([...users].sort((a, b) => {
-    let valA, valB;
-    if (sortState.column === 'username') { valA = a.username.toLocaleLowerCase('tr-TR'); valB = b.username.toLocaleLowerCase('tr-TR'); }
-    else if (sortState.column === 'email') { valA = (a.email || '').toLocaleLowerCase('tr-TR'); valB = (b.email || '').toLocaleLowerCase('tr-TR'); }
-    else if (sortState.column === 'status') { valA = a.is_verified ? 1 : 0; valB = b.is_verified ? 1 : 0; }
-    else { valA = new Date(a.created_at).getTime(); valB = new Date(b.created_at).getTime(); }
-
-    if (valA < valB) return sortState.asc ? -1 : 1;
-    if (valA > valB) return sortState.asc ? 1 : -1;
-    return 0;
-  }));
 
   async function toggleVerify(user) {
     const newVal = !user.is_verified;
@@ -137,18 +169,29 @@
   <title>Kullanıcılar - Moderasyon - Kepçe</title>
 </svelte:head>
 
-    <div class="admin-search-bar u-flex-grow u-mb-md u-mt-md">
-      <span class="admin-search-bar__icon">
-        {@html icon('search', 16)}
-      </span>
-      <input 
-        type="text" 
-        class="admin-search-bar__input u-text-base" 
-        placeholder="Kullanıcı ara (Email veya Kullanıcı Adı)..." 
-        autocomplete="off"
-        value={searchQuery}
-        oninput={handleSearchInput}
-      >
+    <div class="u-flex u-flex-justify-between u-flex-align-center u-gap-md u-mb-md u-mt-md">
+      <div class="admin-search-bar u-flex-grow">
+        <span class="admin-search-bar__icon">
+          {@html icon('search', 16)}
+        </span>
+        <input 
+          type="text" 
+          class="admin-search-bar__input u-text-base" 
+          placeholder="Kullanıcı ara (Email veya Kullanıcı Adı)..." 
+          autocomplete="off"
+          value={searchQuery}
+          oninput={handleSearchInput}
+        >
+      </div>
+      {#if totalPages > 1}
+        <Pagination
+          compact={true}
+          page={currentPage}
+          {totalPages}
+          {totalItems}
+          onPageChange={handlePageChange}
+        />
+      {/if}
     </div>
 
 <div id="user-list-container" class="u-mt-md">
@@ -174,7 +217,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each sortedUsers as user (user.id)}
+          {#each paginatedUsers as user (user.id)}
             <tr class={user.is_banned ? 'u-opacity-50' : ''}>
               <td>
                 <div class="u-flex u-items-center u-gap-sm">
@@ -218,5 +261,14 @@
         </tbody>
       </table>
     </div>
+
+    {#if totalPages > 1}
+      <Pagination
+        page={currentPage}
+        {totalPages}
+        {totalItems}
+        onPageChange={handlePageChange}
+      />
+    {/if}
   {/if}
 </div>

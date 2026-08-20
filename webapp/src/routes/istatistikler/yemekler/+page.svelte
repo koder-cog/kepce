@@ -167,6 +167,7 @@
 <Seo
   title="Yemek İstatistikleri ve Analizleri - Kepçe"
   description="KYK yurtlarında en çok sevilen ve en az beğenilen yemekler, puanlamalar ve öğrenci oylama istatistikleri."
+  image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 
 <TabBar bind:activeId={activeSubTab} tabs={subTabs} onChange={loadContent} />

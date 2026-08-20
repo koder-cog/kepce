@@ -61,6 +61,7 @@
 <Seo
   title="En Beğenilen Öğrenci Yorumları - Kepçe"
   description="KYK yemekhaneleri hakkında en çok oy alan, öne çıkan öğrenci yorumları ve değerlendirmeleri."
+  image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 
 <div class="c-tab-content">
@@ -133,7 +134,7 @@
                       {@html icon("voteDown", 16)}
                     </button>
                   </div>
-                  <a class="action-btn" href="/yorumlar/{c.menu_id}/{c.id}"
+                  <a class="action-btn" href="/menu/{c.menu_id}/{c.id}"
                     >Yanıtla</a
                   >
                   <button
@@ -141,7 +142,7 @@
                     onclick={() => {
                       navigator.clipboard.writeText(
                         window.location.origin +
-                          "/yorumlar/" +
+                          "/menu/" +
                           c.menu_id +
                           "/" +
                           c.id,

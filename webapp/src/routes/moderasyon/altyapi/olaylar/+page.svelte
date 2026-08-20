@@ -10,6 +10,10 @@
   import Dropdown from '@/components/features/Dropdown.svelte';
   import Modal from '@/components/ui/Modal.svelte';
 
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
+
   let isIncidentsLoading = $state(true);
   let incidentsData = $state([]);
   let incidentsError = $state(null);
@@ -17,6 +21,33 @@
   
   let activeIncidents = $derived(incidentsData.filter(i => (i.status || i.durum) !== 'resolved'));
   let pastIncidents = $derived(incidentsData.filter(i => (i.status || i.durum) === 'resolved'));
+
+  // Pagination for past incidents
+  let limit = 20;
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let currentPage = $state(1);
+  let totalItems = $derived(pastIncidents.length);
+  let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
+
+  $effect(() => {
+    currentPage = Math.max(1, Math.min(urlPage, totalPages));
+  });
+
+  let paginatedPastIncidents = $derived.by(() => {
+    const start = (currentPage - 1) * limit;
+    return pastIncidents.slice(start, start + limit);
+  });
+
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
+  }
 
   async function loadIncidents() {
     isIncidentsLoading = true;
@@ -203,7 +234,18 @@
       </div>
     {/if}
 
-    <h2 class="u-text-sm u-font-bold u-color-muted u-mb-sm u-mt-lg">Geçmiş Olaylar</h2>
+    <div class="u-flex u-flex-justify-between u-flex-align-center u-mb-sm u-mt-lg">
+      <h2 class="u-text-sm u-font-bold u-color-muted">Geçmiş Olaylar</h2>
+      {#if totalPages > 1}
+        <Pagination
+          compact={true}
+          page={currentPage}
+          {totalPages}
+          {totalItems}
+          onPageChange={handlePageChange}
+        />
+      {/if}
+    </div>
     {#if pastIncidents.length === 0}
       <div class="u-color-muted u-text-sm">Geçmişte yaşanmış bir olay yok.</div>
     {:else}
@@ -219,7 +261,7 @@
             </tr>
           </thead>
           <tbody>
-            {#each pastIncidents as incident (incident.id)}
+            {#each paginatedPastIncidents as incident (incident.id)}
               <tr>
                 <td data-label="Bileşen">
                   <div class="admin-table-cell--primary">{incident.component}</div>
@@ -248,6 +290,15 @@
           </tbody>
         </table>
       </div>
+
+      {#if totalPages > 1}
+        <Pagination
+          page={currentPage}
+          {totalPages}
+          {totalItems}
+          onPageChange={handlePageChange}
+        />
+      {/if}
     {/if}
   {/if}
 </div>

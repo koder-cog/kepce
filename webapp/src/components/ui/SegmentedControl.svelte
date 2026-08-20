@@ -13,9 +13,15 @@
 
     const validateOptions = (opts, compId) => {
         for (const opt of opts) {
-            if (!opt.label || !opt.icon) {
+            const hasLabel = Boolean(opt.label || opt.tooltip);
+            const hasIcon = Boolean(opt.icon);
+            if (!hasLabel && !hasIcon) {
                 console.warn(
-                    `[Kepçe Uyarı] SegmentedControl (id: ${compId || "bilinmeyen"}) içinde "${opt.value}" değeri için ikon veya yazı eksik.`,
+                    `[Kepçe Uyarı] SegmentedControl (id: ${compId || "bilinmeyen"}) içinde "${opt.value}" değeri için hem ikon hem yazı eksik.`,
+                );
+            } else if (variant === "responsive" && (!hasLabel || !hasIcon)) {
+                console.warn(
+                    `[Kepçe Uyarı] SegmentedControl (id: ${compId || "bilinmeyen"}) responsive modda "${opt.value}" için ikon veya yazı eksik.`,
                 );
             }
         }

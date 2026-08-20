@@ -47,5 +47,5 @@
     <div class="archive-row__content">
     <span class="archive-row__items">{dishesText}</span>
     </div>
-    <a href="/yorumlar/{menu.id}" class="archive-row__btn" data-link>İncele</a>
+    <a href="/menu/{menu.id}" class="archive-row__btn" data-link>İncele</a>
 </div>

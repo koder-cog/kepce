@@ -213,6 +213,12 @@ export const icons = {
   refresh: chevronLeft,
   'refresh-cw': chevronLeft, // Fallback for refresh-cw
   arrowLeft: chevronLeft, // Fallback for code using 'arrowLeft' (maps to chevronLeft)
+  bell: mailUnread,
+  eyeSlash: eyeNotLooking,
+  'eye-slash': eyeNotLooking,
+  grid: cards,
+  layers: list,
+  timeline: cards,
 };
 
 /**

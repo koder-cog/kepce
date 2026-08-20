@@ -73,6 +73,7 @@
 <Seo
   title="İnsaniyet ve Topluluk Tablosu - Kepçe"
   description="Kepçe topluluğu insaniyet metrikleri, yardımseverlik ve etkileşim istatistikleri."
+  image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 
 <div class="c-tab-content">

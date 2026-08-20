@@ -1,0 +1,126 @@
+/* ==========================================================================
+   Kepçe — Sayfalama (Pagination) Bileşeni Stilleri
+   ========================================================================== */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs, 6px);
+  margin-top: var(--space-xl, 24px);
+  margin-bottom: var(--space-md, 16px);
+  user-select: none;
+}
+
+.pagination--compact {
+  margin: 0;
+  gap: var(--space-2xs, 4px);
+}
+
+.pagination__info {
+  font-size: var(--text-sm, 13px);
+  color: var(--color-text-muted, #8d9494);
+  font-weight: 500;
+  margin-right: var(--space-xs, 6px);
+}
+
+.pagination__list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs, 4px);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pagination__item {
+  display: inline-flex;
+}
+
+.pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  height: 38px;
+  padding: 0 var(--space-xs, 8px);
+  border-radius: var(--radius-md, 8px);
+  border: 1px solid var(--color-border, #3a4141);
+  background-color: var(--color-bg-surface, #242828);
+  color: var(--color-text-main, #f9f5e5);
+  font-family: inherit;
+  font-size: var(--text-sm, 14px);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard),
+              color var(--dur-fast) var(--ease-standard);
+  text-decoration: none;
+}
+
+.pagination__btn:hover:not(:disabled):not(.is-active) {
+  background-color: var(--color-bg-hover, #303535);
+  border-color: var(--color-border-hover, #4e5656);
+}
+
+.pagination__btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.pagination__btn.is-active {
+  background-color: var(--color-accent-primary, #ecbf7f);
+  border-color: var(--color-accent-primary, #ecbf7f);
+  color: var(--color-bg-app, #1b1e1e);
+  cursor: default;
+}
+
+.pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination__btn--nav {
+  padding: 0 var(--space-sm, 12px);
+  gap: var(--space-2xs, 4px);
+}
+
+.pagination__btn--compact {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-2xs, 6px);
+  font-size: var(--text-xs, 12px);
+}
+
+.pagination__ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 38px;
+  color: var(--color-text-muted, #8d9494);
+  font-weight: 700;
+  font-size: var(--text-sm, 14px);
+}
+
+.pagination__mobile-label {
+  display: none;
+  font-size: var(--text-sm, 13px);
+  font-weight: 600;
+  color: var(--color-text-main, #f9f5e5);
+  padding: 0 var(--space-xs, 8px);
+}
+
+/* ── Responsive & Breakpoints ── */
+@media (max-width: 600px) {
+  .pagination__list {
+    display: none;
+  }
+
+  .pagination__mobile-label {
+    display: inline-block;
+  }
+
+  .pagination__btn--nav .pagination__btn-text {
+    display: none;
+  }
+}

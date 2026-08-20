@@ -27,7 +27,13 @@
   let isLoading = $state(true);
   let allReports = $state([]);
   let contactMessages = $state([]);
+  import Pagination from "@/components/ui/Pagination.svelte";
+  import { goto } from "$app/navigation";
+
   let errorMsg = $state(null);
+  let limit = 20;
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let currentPage = $state(1);
 
   // Filter lists based on tab and status
   let items = $derived.by(() => {
@@ -40,6 +46,29 @@
     }
     return [];
   });
+
+  let totalItems = $derived(items.length);
+  let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
+
+  $effect(() => {
+    currentPage = Math.max(1, Math.min(urlPage, totalPages));
+  });
+
+  let paginatedItems = $derived.by(() => {
+    const start = (currentPage - 1) * limit;
+    return items.slice(start, start + limit);
+  });
+
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
+  }
 
   $effect(() => {
     let ignore = false;
@@ -129,7 +158,7 @@
 
 
 
-<div class="u-mb-lg">
+<div class="u-mb-lg u-flex u-flex-justify-between u-flex-align-center">
   <Dropdown
     options={[
       { label: "Bekleyenler", value: "pending" },
@@ -138,6 +167,15 @@
     ]}
     bind:value={activeReportFilter}
   />
+  {#if totalPages > 1}
+    <Pagination
+      compact={true}
+      page={currentPage}
+      {totalPages}
+      {totalItems}
+      onPageChange={handlePageChange}
+    />
+  {/if}
 </div>
 
 <div id="complaint-list-container">
@@ -155,7 +193,7 @@
     />
   {:else}
     <div class="comment-list">
-      {#each items as item (item.id)}
+      {#each paginatedItems as item (item.id)}
         <article class="comment-card" data-id={item.id} animate:flip={{ duration: getDuration(250) }} in:fade={{ duration: getDuration(200) }} out:slide={{ duration: getDuration(200) }}>
           <header class="comment-card__header-group u-mb-md">
             <div class="comment-card__meta">
@@ -207,5 +245,14 @@
         </article>
       {/each}
     </div>
+
+    {#if totalPages > 1}
+      <Pagination
+        page={currentPage}
+        {totalPages}
+        {totalItems}
+        onPageChange={handlePageChange}
+      />
+    {/if}
   {/if}
 </div>

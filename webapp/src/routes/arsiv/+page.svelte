@@ -275,6 +275,8 @@
   {/if}
 </div>
 
-<svelte:head>
-  <title>Arşiv - Kepçe</title>
-</svelte:head>
+<Seo
+  title="Menü Arşivi - Kepçe"
+  description="Geçmiş KYK yurt yemekhanesi menüleri, besin değerleri ve öğrenci değerlendirme arşivi."
+  image="https://kepce.org/api/v1/public/og/page/arsiv"
+/>

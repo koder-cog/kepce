@@ -160,6 +160,14 @@
     }
   }
 
+  import Pagination from "@/components/ui/Pagination.svelte";
+  import { page } from "$app/stores";
+  import { goto } from "$app/navigation";
+
+  let limit = 20;
+  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let currentPage = $state(1);
+
   let sortedDishes = $derived(
     [...dishes].sort((a, b) => {
       let valA, valB;
@@ -179,6 +187,29 @@
       return 0;
     }),
   );
+
+  let totalItems = $derived(sortedDishes.length);
+  let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
+
+  $effect(() => {
+    currentPage = Math.max(1, Math.min(urlPage, totalPages));
+  });
+
+  let paginatedDishes = $derived.by(() => {
+    const start = (currentPage - 1) * limit;
+    return sortedDishes.slice(start, start + limit);
+  });
+
+  function handlePageChange(newPage) {
+    currentPage = newPage;
+    const url = new URL(window.location.href);
+    if (newPage > 1) {
+      url.searchParams.set("sayfa", String(newPage));
+    } else {
+      url.searchParams.delete("sayfa");
+    }
+    goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
+  }
 
   function handleInfoModal(dish) {
     selectedDish = dish;
@@ -367,6 +398,15 @@
       oninput={handleSearchInput}
     />
   </div>
+  {#if totalPages > 1}
+    <Pagination
+      compact={true}
+      page={currentPage}
+      {totalPages}
+      {totalItems}
+      onPageChange={handlePageChange}
+    />
+  {/if}
   <button
     class="btn btn--primary u-flex-shrink-0 btn-admin-top-action"
     onclick={handleAddDish}
@@ -424,7 +464,7 @@
           </tr>
         </thead>
         <tbody>
-          {#each sortedDishes as dish (dish.id)}
+          {#each paginatedDishes as dish (dish.id)}
             <tr data-id={dish.id}>
               <td>
                 <div class="admin-table-cell--primary">{dish.name}</div>
@@ -478,6 +518,15 @@
         </tbody>
       </table>
     </div>
+
+    {#if totalPages > 1}
+      <Pagination
+        page={currentPage}
+        {totalPages}
+        {totalItems}
+        onPageChange={handlePageChange}
+      />
+    {/if}
   {/if}
 </div>
 
