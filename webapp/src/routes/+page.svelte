@@ -35,16 +35,18 @@
         timelineState.init();
     });
 
+    let cityName = $derived(CITY_MAP[timelineState.currentCity] || timelineState.currentCity);
+
     let pageTitle = $derived(
         timelineState.currentCity
-            ? `${CITY_MAP[timelineState.currentCity] || timelineState.currentCity} KYK Yurt Yemek Menüsü - Kepçe`
-            : "Kepçe - KYK Yurt Yemek Menüsü",
+            ? `${cityName} KYK Yemek Menüsü | Kepçe`
+            : "Kepçe | Bugün KYK'da Ne Yemek Var?",
     );
 
     let pageDescription = $derived(
         timelineState.currentCity
-            ? `${CITY_MAP[timelineState.currentCity] || timelineState.currentCity} KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri.`
-            : "KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri. Bağımsız, açık kaynaklı ve reklamsız platform.",
+            ? `${cityName} KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
+            : "Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
     );
     let ogImage = $derived(
         timelineState.currentCity

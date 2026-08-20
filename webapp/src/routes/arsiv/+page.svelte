@@ -199,8 +199,8 @@
 </script>
 
 <Seo
-  title="Geçmiş Menü Arşivi - Kepçe"
-  description="Geçmiş aylara ve yıllara ait KYK yurt yemek menüleri arşivi. Şehir ve tarih bazlı yemek listesi geçmişi."
+  title="KYK Yemek Menüsü Arşivi | Kepçe"
+  description="Geçmiş aylara ait KYK yurt yemekhane menüleri. Şehrinizi ve tarihi seçerek eski günlerde ne çıktığını inceleyin."
 />
 
 <div class="archive-header">

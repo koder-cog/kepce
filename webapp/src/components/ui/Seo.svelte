@@ -2,8 +2,8 @@
   import { page } from "$app/stores";
 
   let {
-    title = "Kepçe - KYK Yurt Yemek Menüsü",
-    description = "KYK yurtları günlük sabah kahvaltısı ve akşam yemeği menüleri, besin değerleri, öğrenci yorumları ve yemekhane istatistikleri. Bağımsız, açık kaynaklı ve reklamsız platform.",
+    title = "Kepçe | Bugün KYK'da Ne Yemek Var?",
+    description = "Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
     image = "https://kepce.org/og_image.png",
     type = "website",
     noindex = false,
@@ -25,7 +25,7 @@
           "@id": `${BASE_URL}/#website`,
           url: `${BASE_URL}/`,
           name: "Kepçe",
-          description: "KYK Yurt Yemek Menüsü Platformu",
+          description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
           inLanguage: "tr-TR",
         },
         {
@@ -33,7 +33,7 @@
           "@id": `${BASE_URL}/#organization`,
           name: "Kepçe",
           url: `${BASE_URL}/`,
-          logo: `${BASE_URL}/favicon.svg`,
+          logo: `${BASE_URL}/icon-512.png`,
         },
       ],
     },
