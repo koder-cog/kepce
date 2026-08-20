@@ -1,5 +1,5 @@
 /* ==========================================================================
-   Kepçe — Sayfalama (Pagination) Bileşeni Stilleri
+   Kepçe - Sayfalama (Pagination) Bileşeni Stilleri
    ========================================================================== */
 
 .pagination {
@@ -53,8 +53,8 @@
   font-weight: 600;
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-standard),
-              border-color var(--dur-fast) var(--ease-standard),
-              color var(--dur-fast) var(--ease-standard);
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
   text-decoration: none;
 }
 

@@ -1,4 +1,4 @@
-// Kepçe API — Kütüphane Giriş Noktası
+// Kepçe API - Kütüphane Giriş Noktası
 // ====================================
 
 pub mod config;

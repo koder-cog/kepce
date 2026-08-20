@@ -1,4 +1,4 @@
-// Kepçe API — Routes: Web Push Abonelik ve VAPID Endpoint'leri
+// Kepçe API - Routes: Web Push Abonelik ve VAPID Endpoint'leri
 // ============================================================
 
 use axum::{

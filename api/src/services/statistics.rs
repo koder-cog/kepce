@@ -1,4 +1,4 @@
-// Kepçe API — Service: İstatistik Servisi
+// Kepçe API - Service: İstatistik Servisi
 // =========================================
 //
 // Tüm istatistik hesaplamaları.
@@ -40,7 +40,7 @@ impl StatisticsService {
         timeframe: Option<String>,
     ) -> Result<Vec<TopDishDto>, StatsError> {
         // GÜVENLİK: ORDER BY yönü whitelist ile belirlenir, SQL injection riski yok.
-        // LIMIT parametresi bind variable ($1) ile geçirilir — string interpolation YASAK.
+        // LIMIT parametresi bind variable ($1) ile geçirilir - string interpolation YASAK.
         let order_clause = if is_top { "DESC" } else { "ASC" };
         
         // Pagination sınırı: DoS önlemi

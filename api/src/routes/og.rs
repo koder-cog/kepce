@@ -1,4 +1,4 @@
-// Kepçe API — Routes: Dinamik OG Image Endpoint'leri
+// Kepçe API - Routes: Dinamik OG Image Endpoint'leri
 // =======================================================
 
 use axum::{

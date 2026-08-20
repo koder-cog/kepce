@@ -1,4 +1,4 @@
-// Kepçe API — Routes: Kimlik Doğrulama Endpoint'leri
+// Kepçe API - Routes: Kimlik Doğrulama Endpoint'leri
 // ===================================================
 //
 // İnce zarf. AuthService kullanır.
@@ -446,7 +446,7 @@ async fn delete_me(
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<crate::dto::user::DeleteAccountDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    // SA-12: Hesap silme step-up auth ister — mevcut şifre doğrulanmadan silme yapılmaz.
+    // SA-12: Hesap silme step-up auth ister - mevcut şifre doğrulanmadan silme yapılmaz.
     let db_user = Users::find_by_id(user.id)
         .one(&db)
         .await
@@ -722,7 +722,7 @@ async fn forgot_password(
 
     if let Some(user) = user_opt {
         // SA-2: Reset token ASLA loglanmaz. Token üretilir ancak e-posta servisi
-        // (Faz 3A/3C — Resend) devreye girene kadar sadece bellekte tutulur.
+        // (Faz 3A/3C - Resend) devreye girene kadar sadece bellekte tutulur.
         // Token türü artık `kepce-reset` (SA-5): access/verify token'larıyla karışmaz.
         let reset_token = AuthService::generate_reset_token(user.id, &config.jwt_secret)?;
         

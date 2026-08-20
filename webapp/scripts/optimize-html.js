@@ -1,5 +1,5 @@
 /**
- * optimize-html.js — Post-build Critical CSS İnlining
+ * optimize-html.js - Post-build Critical CSS İnlining
  *
  * Google web.dev reçetesine göre:
  * 1. critters ile HTML'deki elementlere karşılık gelen CSS'i bulur

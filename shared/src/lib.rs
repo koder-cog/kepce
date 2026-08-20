@@ -1,4 +1,4 @@
-// Kepçe Shared Crate — Ortak Kütüphane
+// Kepçe Shared Crate - Ortak Kütüphane
 // ======================================
 //
 // api ve worker crate'leri tarafından paylaşılan kod.

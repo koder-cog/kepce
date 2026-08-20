@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 
-# init-db.sh — Docker PostgreSQL container startup init script
+# init-db.sh - Docker PostgreSQL container startup init script
 # Auto-runs migrations and prod seeds if initial startup.
 
 POSTGRES_USER="${POSTGRES_USER:-postgres}"

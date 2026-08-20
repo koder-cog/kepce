@@ -1,5 +1,5 @@
 #!/bin/bash
-# setup_hooks.sh — Links developer Git pre-commit hook
+# setup_hooks.sh - Links developer Git pre-commit hook
 
 HOOK_DIR=".git/hooks"
 HOOK_FILE="$HOOK_DIR/pre-commit"

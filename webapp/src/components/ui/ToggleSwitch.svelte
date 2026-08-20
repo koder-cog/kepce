@@ -1,5 +1,5 @@
 <!-- 
-  Kepçe Webapp — Bileşen: Switch (Toggle)
+  Kepçe Webapp - Bileşen: Switch (Toggle)
   =======================================
   
   Kural 2: "Daha fazla alan sağladığı için checkbox yerine switch kullanılır."
@@ -10,7 +10,7 @@
 </script>
 
 <label class="toggle-switch squish-effect">
-  <input type="checkbox" bind:checked class="c-input-hidden">
+  <input type="checkbox" bind:checked class="c-input-hidden" />
   <span class="slider"></span>
   <span class="label-text">{label}</span>
 </label>

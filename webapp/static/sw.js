@@ -1,4 +1,4 @@
-// Kepçe Service Worker — Web Push ve Çevrimdışı Bildirim Yönetimi
+// Kepçe Service Worker - Web Push ve Çevrimdışı Bildirim Yönetimi
 // ==============================================================
 
 self.addEventListener('install', (event) => {

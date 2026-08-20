@@ -1,4 +1,4 @@
-// Kepçe API — Routes: Profil Endpoint'leri
+// Kepçe API - Routes: Profil Endpoint'leri
 // ==========================================
 //
 // İnce zarf. UserService + CommentService kullanır.

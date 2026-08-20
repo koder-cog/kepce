@@ -98,7 +98,7 @@ import laptop from '../../assets/icons/laptop.svg?raw';
 
 
 /**
- * Kepçe Icon Module — Adwaita-style inline SVG icons.
+ * Kepçe Icon Module - Adwaita-style inline SVG icons.
  * GNOME symbolic icon aesthetic: 16×16 grid, monochrome, stroke-based.
  */
 

@@ -16,7 +16,7 @@ struct BackupMenuRecord {
 /// Idempotent (upsert via [`crate::tasks::scraper::upsert_menu`]). Each city
 /// folder name is the slug; the meal type is parsed from the filename token
 /// (`false` -> breakfast, `true` -> dinner). Unmatched city slugs are collected
-/// and reported — never silently skipped.
+/// and reported - never silently skipped.
 pub async fn ingest_backup_menus(db: &DatabaseConnection, base_dir: &str) -> Result<()> {
     let base = PathBuf::from(base_dir);
     if !base.exists() {

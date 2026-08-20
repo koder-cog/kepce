@@ -1,4 +1,4 @@
-// Kepçe API — Service: Kullanıcı Servisi
+// Kepçe API - Service: Kullanıcı Servisi
 // ========================================
 //
 // Kullanıcı profili, karma, rozetler ve hesap yönetimi.
@@ -479,7 +479,7 @@ impl UserService {
         Ok(())
     }
 
-    /// Kullanıcının oturum sürümünü artırır — tüm refresh token'ları geçersiz kılar (SA-4).
+    /// Kullanıcının oturum sürümünü artırır - tüm refresh token'ları geçersiz kılar (SA-4).
     /// Şifre değişimi, ban/suspend ve logout sırasında çağrılır.
     pub async fn bump_token_version(
         db: &DatabaseConnection,

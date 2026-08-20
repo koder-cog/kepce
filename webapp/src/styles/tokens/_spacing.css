@@ -1,10 +1,10 @@
 /*
- * kepçe design tokens — spacing & layout
+ * kepçe design tokens - spacing & layout
  *
  * Spacing scale, border radii, control height, z-index stack,
  * and layout constants (max-width, nav height, etc.).
  *
- * These tokens are theme-agnostic — no dark mode overrides needed.
+ * These tokens are theme-agnostic - no dark mode overrides needed.
  */
 
 :root {

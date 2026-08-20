@@ -101,7 +101,7 @@ pub async fn detect_city(
         }
     }
 
-    // 2) Fallback — ilk şehri döndür
+    // 2) Fallback - ilk şehri döndür
     let first = cities::Entity::find()
         .one(&db)
         .await

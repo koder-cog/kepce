@@ -1,5 +1,5 @@
 /**
- * Auth Gate yöneticisi — Görev #13-15
+ * Auth Gate yöneticisi - Görev #13-15
  *
  * `authActions.triggerLogin()` üzerinden çağrılır; sayfa yönlendirmesi
  * yapmak yerine AuthGateModal'i imperative olarak mount eder.

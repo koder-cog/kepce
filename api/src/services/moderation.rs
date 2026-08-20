@@ -237,7 +237,7 @@ impl ModerationService {
 
         user.account_status = Set(parsed_status.clone());
 
-        // SA-4: Ban/suspend sırasında oturum sürümünü artır — kullanıcının tüm
+        // SA-4: Ban/suspend sırasında oturum sürümünü artır - kullanıcının tüm
         // refresh token'ları anında geçersizleşir (access token'lar da extractor'daki
         // account_status kontrolüne takılır).
         if parsed_status != AccountStatusEnum::Active {

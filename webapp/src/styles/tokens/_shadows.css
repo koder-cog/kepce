@@ -1,5 +1,5 @@
 /*
- * kepçe design tokens — shadows & blur
+ * kepçe design tokens - shadows & blur
  *
  * Box-shadow tokens, blur/backdrop-filter tokens,
  * dark mode shadow overrides, and disable-effects utility.
@@ -30,7 +30,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DARK MODE — shadow overrides
+   DARK MODE - shadow overrides
    ═══════════════════════════════════════════════════════════════ */
 
 @media (prefers-color-scheme: dark) {
@@ -56,7 +56,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ACCESSIBILITY — disable all visual effects
+   ACCESSIBILITY - disable all visual effects
    ═══════════════════════════════════════════════════════════════ */
 
 :root.disable-effects {

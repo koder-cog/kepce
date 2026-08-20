@@ -1,4 +1,4 @@
-// Kepçe Worker — Task: Zamanlanmış Öğün Bildirim Görevcisi (Meal Notifier)
+// Kepçe Worker - Task: Zamanlanmış Öğün Bildirim Görevcisi (Meal Notifier)
 // ======================================================================
 
 use anyhow::Result;
@@ -141,30 +141,30 @@ pub fn build_meal_notification(
 
         if has_sicak {
             let variants = [
-                (format!("{} — Bugünün kahvaltısı", city_name), format!("Kahvaltıda {} var. Soğumadan koşun gelin.", main_dish)),
-                (format!("{} — Sıcak kahvaltı menüsü", city_name), format!("Aşağıda {} kokusu var. Olay yerinde olmak için menüye bak.", main_dish)),
+                (format!("{} - Bugünün kahvaltısı", city_name), format!("Kahvaltıda {} var. Soğumadan koşun gelin.", main_dish)),
+                (format!("{} - Sıcak kahvaltı menüsü", city_name), format!("Aşağıda {} kokusu var. Olay yerinde olmak için menüye bak.", main_dish)),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
         } else if has_yumurta {
             let variants = [
-                (format!("{} — Bugünün kahvaltısı", city_name), "Yine haşlanmış yumurta nöbeti. Ekmek arası yapmaya aşağı in.".to_string()),
-                (format!("{} — Sabah kahvaltı listesi", city_name), "Yumurta ve peynir ikilisi hazır. Aşağı inmeden önce listeye göz at.".to_string()),
+                (format!("{} - Bugünün kahvaltısı", city_name), "Yine haşlanmış yumurta nöbeti. Ekmek arası yapmaya aşağı in.".to_string()),
+                (format!("{} - Sabah kahvaltı listesi", city_name), "Yumurta ve peynir ikilisi hazır. Aşağı inmeden önce listeye göz at.".to_string()),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
         } else if has_hamuris {
             let variants = [
-                (format!("{} — Bugünün kahvaltısı", city_name), format!("Kahvaltıda {} var. Çayın yanına kapmak için menüye göz at.", main_dish)),
-                (format!("{} — Hamurişi kahvaltı günü", city_name), format!("Tepside {} bekliyor. Menü detaylarına dokun.", main_dish)),
+                (format!("{} - Bugünün kahvaltısı", city_name), format!("Kahvaltıda {} var. Çayın yanına kapmak için menüye göz at.", main_dish)),
+                (format!("{} - Hamurişi kahvaltı günü", city_name), format!("Tepside {} bekliyor. Menü detaylarına dokun.", main_dish)),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
         } else {
             let variants = [
-                (format!("{} — Bugünün kahvaltısı", city_name), "Yataktan çıkmaya değer mi? Menüye bakıp öyle karar ver.".to_string()),
-                (format!("{} — Sabah yoklaması", city_name), "Yemekhane sırası başlamadan önce bugünün kahvaltısına göz at.".to_string()),
-                (format!("{} — Günün ilk öğünü", city_name), format!("Kahvaltı tabldotu: {}. Detaylar için dokun.", dishes_str)),
+                (format!("{} - Bugünün kahvaltısı", city_name), "Yataktan çıkmaya değer mi? Menüye bakıp öyle karar ver.".to_string()),
+                (format!("{} - Sabah yoklaması", city_name), "Yemekhane sırası başlamadan önce bugünün kahvaltısına göz at.".to_string()),
+                (format!("{} - Günün ilk öğünü", city_name), format!("Kahvaltı tabldotu: {}. Detaylar için dokun.", dishes_str)),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
@@ -184,30 +184,30 @@ pub fn build_meal_notification(
 
         if has_tavuk_et {
             let variants = [
-                (format!("{} — Bugünün akşam yemeği", city_name), format!("Ana yemekte {} var, tam bir protein bombası. Olay yerinde ol.", main_dish)),
-                (format!("{} — Akşam menüsü açıklandı", city_name), format!("Tabldotta {} var. Sıra blokların arasına taşmadan yerini al.", main_dish)),
+                (format!("{} - Bugünün akşam yemeği", city_name), format!("Ana yemekte {} var, tam bir protein bombası. Olay yerinde ol.", main_dish)),
+                (format!("{} - Akşam menüsü açıklandı", city_name), format!("Tabldotta {} var. Sıra blokların arasına taşmadan yerini al.", main_dish)),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
         } else if has_sebze {
             let variants = [
-                (format!("{} — Bugünün akşam yemeği", city_name), format!("Ana yemekte {} var. Uzak durup dışarıdan mı söylesek?", main_dish)),
-                (format!("{} — Akşam menüsü yayında", city_name), format!("Bugün sebze günü: {} çıkmış. Beklentini ayarlamak için listeye bak.", main_dish)),
+                (format!("{} - Bugünün akşam yemeği", city_name), format!("Ana yemekte {} var. Uzak durup dışarıdan mı söylesek?", main_dish)),
+                (format!("{} - Akşam menüsü yayında", city_name), format!("Bugün sebze günü: {} çıkmış. Beklentini ayarlamak için listeye bak.", main_dish)),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
         } else if has_bakliyat {
             let variants = [
-                (format!("{} — Bugünün akşam yemeği", city_name), format!("Klasik menü devrede: {} ve pilav. Akşam menüsüne göz at.", main_dish)),
-                (format!("{} — Günün akşam tabldotu", city_name), format!("Pilavın yanına {} eşlik ediyor. Menü detaylarına dokun.", main_dish)),
+                (format!("{} - Bugünün akşam yemeği", city_name), format!("Klasik menü devrede: {} ve pilav. Akşam menüsüne göz at.", main_dish)),
+                (format!("{} - Günün akşam tabldotu", city_name), format!("Pilavın yanına {} eşlik ediyor. Menü detaylarına dokun.", main_dish)),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
         } else {
             let variants = [
-                (format!("{} — Bugünün akşam yemeği", city_name), "Dünkü yemeğin bugünkü evrimi ne oldu? Yemeğe inmeden önce menüye dokun.".to_string()),
-                (format!("{} — Akşam yemekhanesi hazır", city_name), format!("Akşam tabldotu: {}. Sıraya girmeden menüyü gör.", dishes_str)),
-                (format!("{} — Mutfaktan son durum", city_name), "Akşam tabldotunda ne olduğunu öğrenmek için dokun.".to_string()),
+                (format!("{} - Bugünün akşam yemeği", city_name), "Dünkü yemeğin bugünkü evrimi ne oldu? Yemeğe inmeden önce menüye dokun.".to_string()),
+                (format!("{} - Akşam yemekhanesi hazır", city_name), format!("Akşam tabldotu: {}. Sıraya girmeden menüyü gör.", dishes_str)),
+                (format!("{} - Mutfaktan son durum", city_name), "Akşam tabldotunda ne olduğunu öğrenmek için dokun.".to_string()),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
             PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }

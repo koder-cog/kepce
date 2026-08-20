@@ -286,7 +286,7 @@
     inset: 0;
     background-color: var(--scrim-medium);
     will-change: opacity;
-    /* Prefix MUST come before standard — esbuild deduplicates and keeps
+    /* Prefix MUST come before standard - esbuild deduplicates and keeps
        the last occurrence. If -webkit- is last, Firefox/Chromium lose blur. */
     -webkit-backdrop-filter: blur(var(--blur-md));
     backdrop-filter: blur(var(--blur-md));

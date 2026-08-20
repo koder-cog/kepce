@@ -1,4 +1,4 @@
-// Kepçe API — Routes: İstatistik Endpoint'leri
+// Kepçe API - Routes: İstatistik Endpoint'leri
 // ==============================================
 //
 // İnce zarf. StatisticsService kullanır.

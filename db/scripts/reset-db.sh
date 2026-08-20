@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# reset-db.sh — Lokal veritabanını sıfırlama ve baştan migrasyon/seed koşturma betiği
+# reset-db.sh - Lokal veritabanını sıfırlama ve baştan migrasyon/seed koşturma betiği
 
 set -euo pipefail
 

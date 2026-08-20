@@ -1,5 +1,5 @@
 /**
- * Kepçe Toast System — Svelte State Manager
+ * Kepçe Toast System - Svelte State Manager
  */
 
 const toastQueue = [];
@@ -29,13 +29,13 @@ function showNextToast() {
 
 function _render(item) {
   const timeoutMs = item.timeout || 4000;
-  
-  activeToast = { 
-    ...item, 
+
+  activeToast = {
+    ...item,
     timeoutMs,
-    isClosing: false 
+    isClosing: false
   };
-  
+
   notify();
 
   activeToast.timeoutId = setTimeout(() => {
@@ -67,18 +67,18 @@ export function dismissActiveToast() {
 // ---------------------------------------------------------------------------
 
 export function showToast(message, typeOrOptions = null, legacyAction = null) {
-  let type     = null;
-  let timeout  = 4000;
+  let type = null;
+  let timeout = 4000;
   let priority = 'normal';
-  let action   = null;
+  let action = null;
 
   if (typeof typeOrOptions === 'string') {
     type = typeOrOptions;
   } else if (typeOrOptions && typeof typeOrOptions === 'object') {
-    type     = typeOrOptions.type     ?? type;
-    timeout  = typeOrOptions.timeout  ?? timeout;
+    type = typeOrOptions.type ?? type;
+    timeout = typeOrOptions.timeout ?? timeout;
     priority = typeOrOptions.priority ?? priority;
-    action   = typeOrOptions.action   ?? null;
+    action = typeOrOptions.action ?? null;
   }
 
   if (!action && legacyAction && legacyAction.text && legacyAction.callback) {

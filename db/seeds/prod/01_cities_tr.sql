@@ -1,4 +1,4 @@
--- Kepçe — Seed all 81 Turkish provinces (plate code as id)
+-- Kepçe - Seed all 81 Turkish provinces (plate code as id)
 BEGIN;
 
 INSERT INTO cities (id, name, slug) VALUES

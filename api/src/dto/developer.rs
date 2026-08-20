@@ -44,7 +44,7 @@ pub struct ApiUsageDto {
     pub errors: i32,
 }
 
-// MenuSubmissionRequestDto kaldırıldı — multipart parse doğrudan route katmanında yapılır.
+// MenuSubmissionRequestDto kaldırıldı - multipart parse doğrudan route katmanında yapılır.
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MenuSubmissionResponseDto {

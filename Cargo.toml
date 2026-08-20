@@ -13,7 +13,7 @@ members = [
 ]
 resolver = "2"
 
-# Ortak bağımlılıklar — sürüm skew'ini önlemek için tek noktada tanımlanır.
+# Ortak bağımlılıklar - sürüm skew'ini önlemek için tek noktada tanımlanır.
 # Alt crate'ler `dependency.workspace = true` ile referans verir.
 [workspace.dependencies]
 sea-orm = { version = "1.1", features = ["sqlx-postgres", "runtime-tokio-rustls", "macros"] }

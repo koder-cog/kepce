@@ -1,5 +1,5 @@
 <!--
-  Kepçe — Sıkça Sorulabilecek Sorular (SSS) Sayfası
+  Kepçe - Sıkça Sorulabilecek Sorular (SSS) Sayfası
   İlk Svelte 5 bileşeni. Mevcut CSS sınıflarını (content-page) kullanır.
 -->
 <script>

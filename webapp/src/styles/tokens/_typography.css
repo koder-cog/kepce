@@ -1,10 +1,10 @@
 /*
- * kepçe design tokens — typography
+ * kepçe design tokens - typography
  *
  * Font families, text size scale, line heights, letter-spacing,
  * measure (max-width), and font weights.
  *
- * These tokens are theme-agnostic — no dark mode overrides needed.
+ * These tokens are theme-agnostic - no dark mode overrides needed.
  */
 
 :root {

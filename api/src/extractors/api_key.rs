@@ -1,4 +1,4 @@
-// Kepçe API — Extractors: Public API Key
+// Kepçe API - Extractors: Public API Key
 // ========================================
 //
 // 3. parti geliştiricilerin X-API-Key header'ı ile

@@ -1,18 +1,29 @@
 @layer base {
-  /* CSS Reset — modern, minimal */
-  *, *::before, *::after { box-sizing: border-box; }
-  * { margin: 0; padding: 0; }
-  html { 
-    font-size: 16px; 
-    -webkit-font-smoothing: antialiased; 
+
+  /* CSS Reset - modern, minimal */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
     scroll-padding-top: calc(var(--nav-height, 60px) + var(--space-md, 16px));
     overflow-x: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--color-scrollbar-thumb) transparent;
     accent-color: var(--color-accent-primary);
   }
-  body { 
-    min-height: 100vh; 
+
+  body {
+    min-height: 100vh;
     line-height: 1.6;
     overflow-x: hidden;
     font-family: var(--font-body);
@@ -21,10 +32,40 @@
     background-color: var(--color-background);
     line-height: var(--leading-body);
   }
-  img, picture, video, canvas, svg { display: block; max-width: 100%; }
-  input, button, textarea, select { font: inherit; background-clip: padding-box; box-shadow: none; outline: none; }
-  p, h1, h2, h3, h4, h5, h6 { overflow-wrap: break-word; }
-  a { color: inherit; text-decoration: none; }
+
+  img,
+  picture,
+  video,
+  canvas,
+  svg {
+    display: block;
+    max-width: 100%;
+  }
+
+  input,
+  button,
+  textarea,
+  select {
+    font: inherit;
+    background-clip: padding-box;
+    box-shadow: none;
+    outline: none;
+  }
+
+  p,
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    overflow-wrap: break-word;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
 
   /* ── merged from tokens/_tokens.css (base layer) ─────────── */
 

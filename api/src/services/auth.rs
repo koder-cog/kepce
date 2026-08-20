@@ -231,7 +231,7 @@ impl AuthService {
             .map_err(AuthError::DatabaseError)?
             .ok_or(AuthError::InvalidCredentials)?;
 
-        // 2b. Hesap durumu kontrolü (ban/suspend enforce — SA-3)
+        // 2b. Hesap durumu kontrolü (ban/suspend enforce - SA-3)
         if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
             return Err(AuthError::AccountDisabled);
         }
@@ -266,7 +266,7 @@ impl AuthService {
         Ok((access_token, refresh_token, profile))
     }
 
-    /// E-posta doğrulama token'ı (aud: kepce-verify — SA-5 token-type ayrımı)
+    /// E-posta doğrulama token'ı (aud: kepce-verify - SA-5 token-type ayrımı)
     pub fn generate_verification_token(user_id: Uuid, jwt_secret: &str) -> Result<String, AuthError> {
         let claims = VerificationClaims {
             sub: user_id,
@@ -282,7 +282,7 @@ impl AuthService {
         ).map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
-    /// Şifre sıfırlama token'ı (aud: kepce-reset — doğrulama token'ından farklı tür)
+    /// Şifre sıfırlama token'ı (aud: kepce-reset - doğrulama token'ından farklı tür)
     pub fn generate_reset_token(user_id: Uuid, jwt_secret: &str) -> Result<String, AuthError> {
         let claims = VerificationClaims {
             sub: user_id,
@@ -298,7 +298,7 @@ impl AuthService {
         ).map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
-    /// Şifresiz giriş token'ı (aud: kepce-passwordless — 15 dakika geçerli)
+    /// Şifresiz giriş token'ı (aud: kepce-passwordless - 15 dakika geçerli)
     pub fn generate_passwordless_token(user_id: Uuid, jwt_secret: &str) -> Result<String, AuthError> {
         let claims = VerificationClaims {
             sub: user_id,

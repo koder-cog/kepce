@@ -34,7 +34,7 @@ export function createTimelineStore() {
 
     const START_YEAR = 2026; // Kullanıcı isteği doğrultusunda başlangıç Ocak 2026
     const MAY_2026 = new Date(2026, 4, 1);
-    
+
     // Derived states
     let cityHasCeliac = $derived(cities.find(c => c.slug === currentCity)?.has_celiac ?? false);
     let viewMonthHasCeliac = $derived.by(() => {
@@ -63,12 +63,12 @@ export function createTimelineStore() {
 
         errorState = null;
         const token = ++currentLoadToken;
-        
+
         if (loadDebounceTimer) clearTimeout(loadDebounceTimer);
 
         const executeLoad = async () => {
             if (currentLoadToken !== token) return;
-            
+
             let timeoutId = setTimeout(() => {
                 if (currentLoadToken === token) {
                     isLoading = true;
@@ -152,7 +152,7 @@ export function createTimelineStore() {
         scrollToActiveDay(false);
     }
 
-    // Timeline selector'ı tarafından çağrılır — SESSION bazlıdır.
+    // Timeline selector'ı tarafından çağrılır - SESSION bazlıdır.
     // currentDietMode'u bellekte günceller ancak localStorage'a yazmaz;
     // sayfa yeniden yüklendiğinde kalıcı ayara (kepce_diet_mode) döner.
     function selectDietMode(mode) {
@@ -163,7 +163,7 @@ export function createTimelineStore() {
         return true;
     }
 
-    // Ayarlar sayfasındaki "Çölyak dostu mod" toggle'ı tarafından çağrılır —
+    // Ayarlar sayfasındaki "Çölyak dostu mod" toggle'ı tarafından çağrılır -
     // KALICIdır. currentDietMode'u günceller VE localStorage'a yazar.
     function setPermanentDietMode(mode) {
         dietForcedViaUrl = false;
@@ -272,7 +272,7 @@ export function createTimelineStore() {
         if (!skipInitialLoad) {
             loadMenus();
         }
-        // Prerender meta'yı temizle — sonraki tarih/şehir değişimlerinde tekrar çekilsin
+        // Prerender meta'yı temizle - sonraki tarih/şehir değişimlerinde tekrar çekilsin
         prerenderedMeta = null;
 
         try {
@@ -283,8 +283,8 @@ export function createTimelineStore() {
 
         const initialCityObj = cities.find(c => c.slug === currentCity);
         if (initialCityObj && !initialCityObj.has_celiac && currentDietMode === 'celiac') {
-             currentDietMode = 'standard';
-             if (typeof window !== 'undefined') localStorage.setItem("kepce_diet_mode", "standard");
+            currentDietMode = 'standard';
+            if (typeof window !== 'undefined') localStorage.setItem("kepce_diet_mode", "standard");
         }
 
         // Açılışta ana içeriğin (LCP) boyanmasını engellememek için çölyak kontrolünü idle anına ertele
@@ -298,14 +298,14 @@ export function createTimelineStore() {
 
     function setCity(slug) {
         setCurrentCity(slug);
-        
+
         const newCityObj = cities.find(c => c.slug === slug);
         if (newCityObj && !newCityObj.has_celiac && currentDietMode === 'celiac') {
-             selectDietMode('standard');
+            selectDietMode('standard');
         } else {
-             loadMenus();
+            loadMenus();
         }
-        
+
         probeCeliacMonth();
         scrollToActiveDay(true);
     }
@@ -336,7 +336,7 @@ export function createTimelineStore() {
 
         set currentCity(val) { setCity(val); },
         set viewType(val) { updateView(undefined, undefined, val); },
-        
+
         init,
         prevMonth,
         nextMonth,

@@ -1,4 +1,4 @@
-// Kepçe API — Dinamik OG Image Motoru (resvg + tiny-skia)
+// Kepçe API - Dinamik OG Image Motoru (resvg + tiny-skia)
 // =======================================================
 
 use std::sync::{Arc, OnceLock};
@@ -79,7 +79,7 @@ pub fn render_og_card(
             sub2_text = sub2_text
         )
     } else {
-        // TEK METİNLİ KART (Hakkında, SSS, Menü Gönder, vb. — 2 satıra sarma destekli)
+        // TEK METİNLİ KART (Hakkında, SSS, Menü Gönder, vb. - 2 satıra sarma destekli)
         if let Some(t_text) = safe_title {
             let words: Vec<&str> = sub1.split_whitespace().collect();
             let is_long = sub1.chars().count() > 40;

@@ -1,4 +1,4 @@
-// Kepçe API — Service: Bildirim Yönetimi ve Olay Dağıtımı
+// Kepçe API - Service: Bildirim Yönetimi ve Olay Dağıtımı
 // ========================================================
 //
 // Uygulama içi bildirimlerin kullanıcı tercihlerine göre filtrelenerek

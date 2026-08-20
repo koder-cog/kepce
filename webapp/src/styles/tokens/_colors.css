@@ -1,12 +1,12 @@
 /*
- * kepçe design tokens — colors
+ * kepçe design tokens - colors
  *
  * Color palette, surfaces, semantic states, opacity, interaction states,
  * and theme overrides (dark/light).
  *
  * Dark mode is split into two blocks due to pure CSS limitations:
- *   - @media (prefers-color-scheme: dark) — system-level auto dark
- *   - :root.dark — manual class toggle
+ *   - @media (prefers-color-scheme: dark) - system-level auto dark
+ *   - :root.dark - manual class toggle
  * Both define identical overrides so the theme is consistent regardless
  * of how dark mode is activated.
  */
@@ -15,12 +15,14 @@
     color-scheme: light;
 
     /* ── color palette ─────────────────────────────────────── */
-    --color-accent-primary: #db6f3f; /* Mathematically calculated to pass WCAG UI (3:1 vs bg) & Text (4.5:1 vs text) */
+    --color-accent-primary: #db6f3f;
+    /* Mathematically calculated to pass WCAG UI (3:1 vs bg) & Text (4.5:1 vs text) */
     --color-accent-primary-hover: #c97956;
     --color-accent-primary-light: rgba(219, 111, 63, 0.15);
     --color-accent-subtle: rgba(219, 111, 63, 0.12);
     --color-accent-text: #a85636;
-    --color-accent-text-hover: #b74f22; /* Calculated for link hover contrast */
+    --color-accent-text-hover: #b74f22;
+    /* Calculated for link hover contrast */
     --color-accent-primary-rgb: 219, 111, 63;
 
     /* ── backgrounds & surfaces ─────────────────────────────── */
@@ -139,7 +141,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   DARK MODE — consolidated overrides
+   DARK MODE - consolidated overrides
    Two blocks are required (pure CSS cannot alias @media + class).
    Both define identical values so the theme is consistent whether
    activated via system preference or manual .dark class toggle.

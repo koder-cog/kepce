@@ -1,6 +1,6 @@
 <script>
   /**
-   * PieChart.svelte — Zero-dependency SVG Donut/Pie Chart
+   * PieChart.svelte - Zero-dependency SVG Donut/Pie Chart
    * Props:
    *  - data: Array of { category: string, count: number, percentage: number, color: string }
    *  - title: Optional center title
@@ -31,11 +31,11 @@
     });
   });
 
-  let totalCount = $derived(data.reduce((acc, curr) => acc + (curr.count || 0), 0));
-
-  let activeItem = $derived(
-    hoveredIdx !== null ? slices[hoveredIdx] : null
+  let totalCount = $derived(
+    data.reduce((acc, curr) => acc + (curr.count || 0), 0),
   );
+
+  let activeItem = $derived(hoveredIdx !== null ? slices[hoveredIdx] : null);
 </script>
 
 <div class="pie-chart-wrapper" style="--pie-size: {size}px;">
@@ -85,7 +85,9 @@
         <span class="pie-center-value">%{activeItem.percentage}</span>
         <span class="pie-center-label">{activeItem.category}</span>
       {:else}
-        <span class="pie-center-value">{totalCount.toLocaleString("tr-TR")}</span>
+        <span class="pie-center-value"
+          >{totalCount.toLocaleString("tr-TR")}</span
+        >
         <span class="pie-center-label">{title}</span>
       {/if}
     </div>
@@ -101,7 +103,8 @@
         onmouseenter={() => (hoveredIdx = slice.idx)}
         onmouseleave={() => (hoveredIdx = null)}
       >
-        <span class="pie-legend-dot" style="background-color: {slice.color};"></span>
+        <span class="pie-legend-dot" style="background-color: {slice.color};"
+        ></span>
         <span class="pie-legend-name">{slice.category}</span>
         <span class="pie-legend-pct">%{slice.percentage}</span>
       </button>

@@ -91,7 +91,7 @@
     margin-bottom: var(--space-xl);
   }
 
-  /* v3 (görev #44): .stats-filters tanımsızdı — iki dropdown h2 içinde
+  /* v3 (görev #44): .stats-filters tanımsızdı - iki dropdown h2 içinde
      üst üste biniyordu. Yan yana, doğru aralıklı yerleşim. */
   .stats-filters {
     display: flex;

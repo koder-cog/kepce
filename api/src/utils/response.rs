@@ -1,4 +1,4 @@
-// Kepçe API — Utils: Response & HTTP Caching Helpers
+// Kepçe API - Utils: Response & HTTP Caching Helpers
 // ====================================================
 
 use axum::{

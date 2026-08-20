@@ -246,7 +246,7 @@ fn validate_time_format(time_str: &str) -> Result<(), validator::ValidationError
     Err(validator::ValidationError::new("invalid_time_format"))
 }
 
-/// Hesap silme isteği — step-up auth: mevcut şifre zorunlu (SA-12)
+/// Hesap silme isteği - step-up auth: mevcut şifre zorunlu (SA-12)
 #[derive(Debug, Deserialize, validator::Validate)]
 pub struct DeleteAccountDto {
     #[validate(length(min = 1, max = 128, message = "Lütfen şifrenizi giriniz"))]

@@ -79,7 +79,7 @@ pub async fn process_local_files(db: &DatabaseConnection, reqwest_client: &reqwe
                             Err(e) => Err(anyhow::anyhow!("PDF parse hatası: {}", e))
                         }
                     } else {
-                        tracing::warn!("{}: PDF parsing devre dışı — GEMINI_API_KEY ayarlanmamış, atlanıyor.", filename);
+                        tracing::warn!("{}: PDF parsing devre dışı - GEMINI_API_KEY ayarlanmamış, atlanıyor.", filename);
                         continue;
                     }
                 } else {

@@ -98,7 +98,7 @@
     {@const resolutionRate = contentData?.resolution_rate}
     {@const resolutionLabel =
       resolutionRate === null || resolutionRate === undefined
-        ? "—"
+        ? "-"
         : `%${resolutionRate}`}
     {@const contributors = contentData?.contributors || []}
 

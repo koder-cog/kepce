@@ -1,5 +1,5 @@
 <!-- 
-  Kepçe Webapp — Bileşen: CommentCard
+  Kepçe Webapp - Bileşen: CommentCard
   ===================================
   
   Tek bir yorumu ve ona ait reaksiyon/yanıt formunu gösterir.
@@ -252,20 +252,28 @@
                     label: "Güncelle",
                     variant: "primary",
                     onClick: async (modalEl) => {
-                        const newText = modalEl.querySelector("#edit-comment-input").value.trim();
+                        const newText = modalEl
+                            .querySelector("#edit-comment-input")
+                            .value.trim();
                         if (!newText) {
                             showToast("Yorum boş bırakılamaz.", "warning");
                             return false;
                         }
                         try {
-                            const res = await api.updateComment(comment.id, newText);
+                            const res = await api.updateComment(
+                                comment.id,
+                                newText,
+                            );
                             comment.comment = res.comment;
                             comment.is_edited = res.is_edited;
                             showToast("Yorumun güncellendi!", "success");
                             if (onloadData) await onloadData();
                             return true;
                         } catch (err) {
-                            showToast(err.message || "Yorum güncellenemedi.", "error");
+                            showToast(
+                                err.message || "Yorum güncellenemedi.",
+                                "error",
+                            );
                             return false;
                         }
                     },
@@ -357,8 +365,7 @@
             {/if}
 
             {#if comment.user?.level}
-                <span class="comment-node__level"
-                    >Lvl {comment.user.level}</span
+                <span class="comment-node__level">Lvl {comment.user.level}</span
                 >
             {/if}
 
@@ -372,7 +379,10 @@
             </button>
 
             {#if comment.is_edited}
-                <span class="comment-node__edited" title="Bu yorum daha sonra düzenlendi">(düzenlendi)</span>
+                <span
+                    class="comment-node__edited"
+                    title="Bu yorum daha sonra düzenlendi">(düzenlendi)</span
+                >
             {/if}
 
             {#if hasChildren}
@@ -509,22 +519,64 @@
                         triggerClass="action-btn"
                         triggerTitle="Daha fazla seçenek"
                         items={[
-                            ...(isOwn && !isDeleted ? [
-                                { label: "Düzenle", onClick: () => openEditCommentModal() }
-                            ] : []),
-                            ...(!isOwn ? [
-                                { label: "Şikayet et", onClick: (e) => handleDropdownAction("report", e) },
-                                ...(comment.user?.nickname && !["anonim", "silinmiş", "Engellenmiş", "Engellemiş"].includes(comment.user?.nickname) ? [
-                                    { label: "Kullanıcıyı engelle", onClick: (e) => handleDropdownAction("block", e) }
-                                ] : [])
-                            ] : []),
-                            ...(!isOwn && globalState?.user?.role === "admin" ? [{ divider: true }] : []),
-                            ...(isOwn || globalState?.user?.role === "admin" ? [
-                                { label: "Sil", variant: "danger", onClick: (e) => handleDropdownAction("delete", e) }
-                            ] : []),
-                            ...(globalState?.user?.role === "admin" ? [
-                                { label: "Kalıcı sil", variant: "danger", onClick: (e) => handleDropdownAction("purge", e) }
-                            ] : [])
+                            ...(isOwn && !isDeleted
+                                ? [
+                                      {
+                                          label: "Düzenle",
+                                          onClick: () => openEditCommentModal(),
+                                      },
+                                  ]
+                                : []),
+                            ...(!isOwn
+                                ? [
+                                      {
+                                          label: "Şikayet et",
+                                          onClick: (e) =>
+                                              handleDropdownAction("report", e),
+                                      },
+                                      ...(comment.user?.nickname &&
+                                      ![
+                                          "anonim",
+                                          "silinmiş",
+                                          "Engellenmiş",
+                                          "Engellemiş",
+                                      ].includes(comment.user?.nickname)
+                                          ? [
+                                                {
+                                                    label: "Kullanıcıyı engelle",
+                                                    onClick: (e) =>
+                                                        handleDropdownAction(
+                                                            "block",
+                                                            e,
+                                                        ),
+                                                },
+                                            ]
+                                          : []),
+                                  ]
+                                : []),
+                            ...(!isOwn && globalState?.user?.role === "admin"
+                                ? [{ divider: true }]
+                                : []),
+                            ...(isOwn || globalState?.user?.role === "admin"
+                                ? [
+                                      {
+                                          label: "Sil",
+                                          variant: "danger",
+                                          onClick: (e) =>
+                                              handleDropdownAction("delete", e),
+                                      },
+                                  ]
+                                : []),
+                            ...(globalState?.user?.role === "admin"
+                                ? [
+                                      {
+                                          label: "Kalıcı sil",
+                                          variant: "danger",
+                                          onClick: (e) =>
+                                              handleDropdownAction("purge", e),
+                                      },
+                                  ]
+                                : []),
                         ]}
                     />
                 </div>
@@ -562,10 +614,7 @@
             {#if depth >= MAX_INDENT_DEPTH - 1}
                 {#if countAllDescendants(comment) > 0}
                     <div class="comment-node__more-replies">
-                        <button
-                            class="btn-more-replies"
-                            onclick={handleFocus}
-                        >
+                        <button class="btn-more-replies" onclick={handleFocus}>
                             {@html icon("plusCircle", 16)}
                             <span
                                 >{countAllDescendants(comment)} yanıtı daha gör</span

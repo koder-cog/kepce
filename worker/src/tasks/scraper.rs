@@ -379,7 +379,7 @@ async fn fetch_and_save(
 // APPROVED yapılır ve önceliği kykyemek'ten yüksektir. Bu kaynak türü YALNIZCA
 // operatörün lokal drop-zone klasöründen (file_ingest) gelmelidir. Kullanıcı
 // kaynaklı API akışları (ingestion) bu fonksiyona bağlanırsa otomatik onay
-// moderation bypass'ına dönüşür — bu tabloyu değiştirirken bunu göz önünde tut.
+// moderation bypass'ına dönüşür - bu tabloyu değiştirirken bunu göz önünde tut.
 fn get_source_priority(source: &str) -> i32 {
     match source {
         "kepce-admin" => 10,

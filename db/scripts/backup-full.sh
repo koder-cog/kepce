@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# backup-full.sh — pgBackRest Tam Yedek Alım Betiği (Cron Uyumlu)
+# backup-full.sh - pgBackRest Tam Yedek Alım Betiği (Cron Uyumlu)
 
 set -euo pipefail
 

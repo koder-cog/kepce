@@ -7,7 +7,7 @@
  *
  * Textarea'nın `maxlength` attribute'u varsa sayacı otomatik gösterir.
  * Wrapper'ı `position: relative` olarak ayarlar veya zaten öyleyse kullanır.
- * Sayaç elemanı `data-char-counter` attribute'uyla işaretlenir — bu sayede
+ * Sayaç elemanı `data-char-counter` attribute'uyla işaretlenir - bu sayede
  * modal yeniden render edilse bile çift inject olmaz.
  *
  * @param {HTMLTextAreaElement} textarea
@@ -18,7 +18,7 @@
  */
 export function initCharCounter(textarea, opts = {}) {
   const limit = opts.limit ?? parseInt(textarea.getAttribute('maxlength'), 10);
-  if (!limit || isNaN(limit)) return { destroy: () => {} };
+  if (!limit || isNaN(limit)) return { destroy: () => { } };
 
   // Inject sadece bir kez yapılır
   let counter = textarea.parentElement?.querySelector('[data-char-counter]');

@@ -7,14 +7,14 @@ pub enum MealType {
     Dinner,
 }
 
-/// Breakfast signal words — if these appear in item names, the sheet is likely breakfast
+/// Breakfast signal words - if these appear in item names, the sheet is likely breakfast
 const BREAKFAST_SIGNALS: &[&str] = &[
     "çay", "peynir", "zeytin", "reçel", "yumurta", "bal", "tereyağı",
     "süt", "simit", "poğaça", "börek", "kahvaltılık", "kaşar", "beyaz peynir",
     "domates", "salatalık", "gevrek", "gözleme", "menemen", "sucuk",
 ];
 
-/// Dinner / Lunch signal words — if these appear in item names, the sheet is likely hot meal
+/// Dinner / Lunch signal words - if these appear in item names, the sheet is likely hot meal
 const DINNER_SIGNALS: &[&str] = &[
     "çorba", "pilav", "makarna", "köfte", "salata", "komposto", "ayran",
     "tatlı", "et ", "tavuk", "balık", "kızartma", "güveç", "sote", "dolma",

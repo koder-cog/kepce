@@ -2,7 +2,7 @@
   "name": "kepce-webapp",
   "private": true,
   "version": "0.1.0",
-  "description": "Kepçe — Açık Veri, Temiz Arayüz",
+  "description": "Kepçe - Açık Veri, Temiz Arayüz",
   "type": "module",
   "scripts": {
     "dev": "vite dev",

@@ -113,7 +113,7 @@
     {@const resolutionRate = contentData?.resolution_rate}
     {@const resolutionLabel =
       resolutionRate === null || resolutionRate === undefined
-        ? "—"
+        ? "-"
         : `%${resolutionRate}`}
     {@const categories = contentData?.category_distribution || []}
     {@const recentActions = contentData?.recent_actions || []}
@@ -124,7 +124,9 @@
       <div class="audit-metric-card" use:actionStagger={0}>
         <span class="audit-metric-card__label">Çözüm oranı</span>
         <span class="audit-metric-card__value">{resolutionLabel}</span>
-        <span class="audit-metric-card__desc">Çözümlenen / toplam şikayet oranı</span>
+        <span class="audit-metric-card__desc"
+          >Çözümlenen / toplam şikayet oranı</span
+        >
         {#if resolutionRate !== null}
           <div class="audit-progress-track">
             <div
@@ -138,17 +140,16 @@
       <!-- Metric 2: Müdahale Edilen -->
       <div class="audit-metric-card" use:actionStagger={1}>
         <span class="audit-metric-card__label">Müdahale edilen</span>
-        <span class="audit-metric-card__value">{resolvedCount.toLocaleString("tr-TR")}</span>
+        <span class="audit-metric-card__value"
+          >{resolvedCount.toLocaleString("tr-TR")}</span
+        >
         <span class="audit-metric-card__desc">İşlem yapılan şikayet</span>
       </div>
 
       <!-- Metric 3: İncelemede -->
       <div class="audit-metric-card" use:actionStagger={2}>
         <span class="audit-metric-card__label">İncelemede</span>
-        <span
-          class="audit-metric-card__value"
-          class:warning={pendingCount > 0}
-        >
+        <span class="audit-metric-card__value" class:warning={pendingCount > 0}>
           {pendingCount.toLocaleString("tr-TR")}
         </span>
         <span class="audit-metric-card__desc">Bekleyen aktif şikayet</span>
@@ -157,8 +158,12 @@
       <!-- Metric 4: Kaldırılan Yorumlar -->
       <div class="audit-metric-card" use:actionStagger={3}>
         <span class="audit-metric-card__label">Kaldırılan yorumlar</span>
-        <span class="audit-metric-card__value">{deletedComments.toLocaleString("tr-TR")}</span>
-        <span class="audit-metric-card__desc">Kural ihlali sebebiyle silinen</span>
+        <span class="audit-metric-card__value"
+          >{deletedComments.toLocaleString("tr-TR")}</span
+        >
+        <span class="audit-metric-card__desc"
+          >Kural ihlali sebebiyle silinen</span
+        >
       </div>
     </div>
 
@@ -184,12 +189,17 @@
             {#each recentActions as act, idx}
               <div class="audit-system-item" use:actionStagger={idx + 6}>
                 <div class="audit-system-item__info">
-                  <span class="audit-system-item__title">{sanitizeText(act.action)}</span>
+                  <span class="audit-system-item__title"
+                    >{sanitizeText(act.action)}</span
+                  >
                   <div class="audit-system-item__meta">
                     <span>{timeAgo(act.created_at)}</span>
                   </div>
                 </div>
-                <span class="audit-system-badge audit-system-badge--{act.category || 'general'}">
+                <span
+                  class="audit-system-badge audit-system-badge--{act.category ||
+                    'general'}"
+                >
                   {getCategoryLabel(act.category)}
                 </span>
               </div>

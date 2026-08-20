@@ -1,4 +1,4 @@
-// Kepçe API — Service: Menü Servisi
+// Kepçe API - Service: Menü Servisi
 // ===================================
 //
 // Menü verilerini okuma ve formatlama işlemleri.

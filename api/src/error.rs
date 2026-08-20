@@ -1,4 +1,4 @@
-// Kepçe API — Birleşik Hata Yönetimi
+// Kepçe API - Birleşik Hata Yönetimi
 // ====================================
 //
 // Tüm API genelinde tutarlı hata yanıtları sağlar.

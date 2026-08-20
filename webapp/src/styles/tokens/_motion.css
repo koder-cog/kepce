@@ -1,21 +1,21 @@
 /*
- * kepçe design tokens — motion
+ * kepçe design tokens - motion
  *
  * Easing curves, durations, motion shorthand composites,
  * reduced-motion accessibility utilities, and keyframe animations.
  *
- * These tokens are theme-agnostic — no dark mode overrides needed.
+ * These tokens are theme-agnostic - no dark mode overrides needed.
  */
 
 :root {
     /* ── easing curves ──────────────────────────────────────── */
 
-    /* spatial — for layout / position changes */
+    /* spatial - for layout / position changes */
     --ease-spatial-fast: cubic-bezier(0.42, 1.67, 0.21, 0.9);
     --ease-spatial-default: cubic-bezier(0.38, 1.21, 0.22, 1);
     --ease-spatial-slow: cubic-bezier(0.39, 1.29, 0.35, 0.98);
 
-    /* effects — for visual feedback (opacity, color, shadow) */
+    /* effects - for visual feedback (opacity, color, shadow) */
     --ease-effects-fast: cubic-bezier(0.31, 0.94, 0.34, 1);
     --ease-effects-default: cubic-bezier(0.25, 1, 0.35, 1);
     --ease-effects-slow: cubic-bezier(0.2, 1, 0.4, 1);
@@ -51,11 +51,12 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
-   ACCESSIBILITY — reduced motion & animation toggles
+   ACCESSIBILITY - reduced motion & animation toggles
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── respect system preference ─────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
+
     :root,
     :root.disable-animations {
         /* Soften all spatial and bouncy easings to simple fades/linear movements */
@@ -114,11 +115,21 @@
    ═══════════════════════════════════════════════════════════════ */
 
 @keyframes u-fade-in {
-    from { opacity: 0; }
-    to   { opacity: 1; }
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 @keyframes u-fade-out {
-    from { opacity: 1; }
-    to   { opacity: 0; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }

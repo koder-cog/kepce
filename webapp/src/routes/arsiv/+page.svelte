@@ -164,7 +164,7 @@
     } finally {
       clearTimeout(showLoadingTimeout);
       // Spinner gizlemeyi her zaman çalıştır; eğer arada yeni istek başladıysa
-      // onun `setTimeout`'ı tekrar `true` yapar — UI tutarlı kalır.
+      // onun `setTimeout`'ı tekrar `true` yapar - UI tutarlı kalır.
       if (currentLoadToken === token) {
         isLoading = false;
       }

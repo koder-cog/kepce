@@ -1,4 +1,4 @@
-// Kepçe API — Extractors: Doğrulanmış JSON
+// Kepçe API - Extractors: Doğrulanmış JSON
 // ============================================
 //
 // Axum'ın Json<T> extractor'ı sadece deserialization yapar.

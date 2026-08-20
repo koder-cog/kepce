@@ -1,4 +1,4 @@
-// Kepçe API — Middleware: Rate Limiter
+// Kepçe API - Middleware: Rate Limiter
 // =====================================
 //
 // IP, Cihaz (X-Client-ID) ve Kullanıcı bazlı çalışan in-memory rate limiter.

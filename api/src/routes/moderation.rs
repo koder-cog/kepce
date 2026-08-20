@@ -1,4 +1,4 @@
-// Kepçe API — Routes: Moderasyon Endpoint'leri
+// Kepçe API - Routes: Moderasyon Endpoint'leri
 // ==============================================
 //
 // İnce zarf. ModerationService kullanır.

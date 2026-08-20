@@ -1,7 +1,7 @@
-// Kepçe API — Routes: Menü Endpoint'leri
+// Kepçe API - Routes: Menü Endpoint'leri
 // ========================================
 //
-// İnce zarf. İş mantığı yok — MenuService'e delege eder.
+// İnce zarf. İş mantığı yok - MenuService'e delege eder.
 //
 use axum::{
     routing::get,

@@ -85,7 +85,7 @@
     background: rgba(var(--color-accent-primary-rgb), 0.02);
   }
 
-  /* Action columns — right-aligned by convention */
+  /* Action columns - right-aligned by convention */
   .admin-table .col-actions {
     text-align: right;
     width: 120px;

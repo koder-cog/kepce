@@ -1,4 +1,4 @@
-// Kepçe Shared — Servisler
+// Kepçe Shared - Servisler
 // =========================
 //
 // Veritabanı seviyesinde paylaşılan iş mantığı.

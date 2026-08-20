@@ -1,5 +1,5 @@
 /**
- * Yasal metin sürüm kaydı — Görev #53
+ * Yasal metin sürüm kaydı - Görev #53
  *
  * Koşullar/Gizlilik metinlerinde değişiklik 30 gün sonra yürürlüğe girdiği
  * için her değişiklik yeni bir girdi olarak eklenir:

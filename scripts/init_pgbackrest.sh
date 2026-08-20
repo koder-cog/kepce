@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Kepçe — pgBackRest İlk Kurulum ve Test Betiği
+# Kepçe - pgBackRest İlk Kurulum ve Test Betiği
 # Bu betik docker-compose up ile veritabanı ilk kez ayağa kalktıktan sonra 
 # bir kez (one-time) çalıştırılır.
 

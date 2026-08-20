@@ -1,4 +1,4 @@
-// Kepçe Shared — Service: Alerting (Webhook Uyarı Servisi)
+// Kepçe Shared - Service: Alerting (Webhook Uyarı Servisi)
 // ========================================================
 //
 // Scraper ve sistem hatalarında Discord veya Telegram webhook'larına

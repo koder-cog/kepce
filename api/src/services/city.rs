@@ -1,4 +1,4 @@
-// Kepçe API — Service: Şehir Servisi
+// Kepçe API - Service: Şehir Servisi
 // ===================================
 //
 // Şehir verilerini okuma işlemleri.

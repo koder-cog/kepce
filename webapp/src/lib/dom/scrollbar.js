@@ -1,5 +1,5 @@
 /**
- * Kepçe — Custom Scrollbar Logic
+ * Kepçe - Custom Scrollbar Logic
  * Handles a bespoke scrollbar that respects header/footer boundaries.
  */
 import { isMotionEnabled } from './motion.js';
@@ -7,15 +7,15 @@ import { isMotionEnabled } from './motion.js';
 export function initScrollbar() {
   // Do not initialize on touch devices to preserve native scroll momentum and performance
   if (window.matchMedia('(hover: none)').matches) {
-    return { update: () => {}, observer: null, bar: null };
+    return { update: () => { }, observer: null, bar: null };
   }
 
   const bar = document.createElement('div');
   bar.className = 'c-scrollbar';
-  
+
   const thumb = document.createElement('div');
   thumb.className = 'c-scrollbar__thumb';
-  
+
   bar.appendChild(thumb);
   document.body.appendChild(bar);
 
@@ -39,7 +39,7 @@ export function initScrollbar() {
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
     const scrollTop = window.scrollY;
-    
+
     // Hide if content fits in viewport
     if (scrollHeight <= clientHeight) {
       bar.classList.add('c-scrollbar--hidden');
@@ -59,7 +59,7 @@ export function initScrollbar() {
 
     const navBar = document.getElementById('main-nav');
     const navOffset = navBar ? navBar.clientHeight : 0;
-    
+
     // Mobil görünümde (genişlik <= 600) .ci-container fixed olduğu için bottom offset ekle
     let bottomOffset = 0;
     if (window.innerWidth <= 600) {
@@ -74,7 +74,7 @@ export function initScrollbar() {
     const availableHeight = Math.max(0, clientHeight - navOffset - bottomOffset);
     const barHeight = Math.max(0, availableHeight - (margin * 2));
     const scrollPercentage = Math.max(0, Math.min(1, scrollTop / Math.max(1, scrollHeight - clientHeight)));
-    
+
     // Thumb height proportional to content
     const thumbHeight = Math.max(40, (clientHeight / scrollHeight) * barHeight);
     const maxThumbTop = Math.max(0, barHeight - thumbHeight);
@@ -100,16 +100,16 @@ export function initScrollbar() {
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    
+
     const deltaY = e.clientY - startY;
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
     const barHeight = bar.clientHeight;
     const thumbHeight = parseFloat(thumb.style.height);
-    
+
     const scrollableRange = scrollHeight - clientHeight;
     const barRange = barHeight - thumbHeight;
-    
+
     const scrollDelta = (deltaY / barRange) * scrollableRange;
     window.scrollTo(0, startScrollTop + scrollDelta);
   });
@@ -119,7 +119,7 @@ export function initScrollbar() {
       isDragging = false;
       bar.classList.remove('is-active');
       document.body.classList.remove('is-scrolling-custom');
-      
+
       // Start hide timer after drag ends
       clearTimeout(scrollTimeout);
       scrollTimeout = setTimeout(() => {
@@ -136,7 +136,7 @@ export function initScrollbar() {
     const thumbHeight = parseFloat(thumb.style.height);
     const scrollHeight = document.documentElement.scrollHeight;
     const clientHeight = window.innerHeight;
-    
+
     const scrollPercentage = (clickY - thumbHeight / 2) / (bar.clientHeight - thumbHeight);
     const isEnabled = isMotionEnabled();
     window.scrollTo({
@@ -147,22 +147,22 @@ export function initScrollbar() {
 
   window.addEventListener('scroll', update, { passive: true });
   window.addEventListener('resize', update, { passive: true });
-  
+
   // Observer for dynamic content height changes
   const observer = new MutationObserver(update);
-  
+
   // Resize observer to track navbar height dynamically (especially during banner dismissal animations)
   const resizeObserver = new ResizeObserver(update);
 
   // Defer initial DOM measurement and observer to avoid "Layout was forced before page fully loaded"
   function attachObserver() {
     observer.observe(document.body, { childList: true, subtree: true });
-    
+
     const navBar = document.getElementById('main-nav');
     if (navBar) {
       resizeObserver.observe(navBar);
     }
-    
+
     update();
   }
 

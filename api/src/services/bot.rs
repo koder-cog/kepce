@@ -1,4 +1,4 @@
-// Kepçe API — Service: Bot Servisi
+// Kepçe API - Service: Bot Servisi
 // ==================================
 //
 // İsteğe bağlı AI yorum üretici.

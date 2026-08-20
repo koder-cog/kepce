@@ -5,7 +5,7 @@ services:
       dockerfile: Dockerfile
     container_name: kepce-db
     environment:
-      # SA-1: Secret'lar için varsayılan (fallback) değer YOK — env eksikse compose
+      # SA-1: Secret'lar için varsayılan (fallback) değer YOK - env eksikse compose
       # başlamaz. Public repodaki bilinen şifrelerle sessizce ayağa kalkma riski kaldırıldı.
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER tanimli olmali (.env)}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali (.env)}

@@ -85,7 +85,7 @@
     justify-content: center;
   }
 
-  /* Görev #19: Kompakt varyant — içeriksiz öğün/bot kartları gibi
+  /* Görev #19: Kompakt varyant - içeriksiz öğün/bot kartları gibi
      satır-içi durumlarda tam boyut empty-state yerine kullanılır. */
   .empty-state--compact {
     min-height: 0;
@@ -175,10 +175,10 @@
     color: var(--color-text);
   }
 
-.u-border {
-  border: 1px solid var(--border) !important;
-}
+  .u-border {
+    border: 1px solid var(--border) !important;
+  }
 
-.u-border-top {
-  border-top: 1px solid var(--border) !important;
-}
+  .u-border-top {
+    border-top: 1px solid var(--border) !important;
+  }

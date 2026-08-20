@@ -1,7 +1,7 @@
 @layer components {
   /* ── Layout ──────────────────────────────────────────────── */
 
-  /* Görev #70: "Ana içeriğe geç" bağlantısı — yalnızca klavye odağında
+  /* Görev #70: "Ana içeriğe geç" bağlantısı - yalnızca klavye odağında
      görünür olur. */
   .skip-link {
     position: absolute;

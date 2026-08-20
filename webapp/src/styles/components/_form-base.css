@@ -194,7 +194,7 @@
     padding-top: 0;
   }
 
-  /* Geriye dönük uyumluluk — eski sınıf isimleri */
+  /* Geriye dönük uyumluluk - eski sınıf isimleri */
   .char-counter-overlay {
     position: absolute;
     bottom: 8px;
