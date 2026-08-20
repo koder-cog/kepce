@@ -15,7 +15,7 @@
         name: "Menülere yaptığım yorumlar neden denetleniyor?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Platform güvenliğini sağlamak ve spam'i önlemek adına yorumlar yayın öncesinde otomatik/manuel denetimden geçer.",
+          text: "Tek kişi olduğum için işleri kolaylaştırmak adına ön denetim kararı aldım. Niyet web tabanlı 1984 değil, üşengeçlik.",
         },
       },
       {
@@ -23,7 +23,7 @@
         name: "Menü verilerini nereden alıyorsunuz?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "KYK yurtlarında kalan öğrencilerin gönderdiği menü belgelerinden, açık veri kaynaklarından ve öğrenci topluluklarının katkılarından derlenmektedir.",
+          text: "Kişisel olarak elde edebildiğim dosyalardan, veri erişimine olanak sağlayan diğer sitelerden ve diğer yurt öğrencilerinin gönderdiği menülerden derleniyor.",
         },
       },
       {
@@ -31,15 +31,31 @@
         name: "Site hata verirse veya menü yanlış çıkarsa ne yapmalıyım?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Menü kartındaki Hata Bildir butonu veya iletişim sayfası üzerinden menü düzeltmesi iletebilirsiniz.",
+          text: "Mutfaktaki kelebek etkileri menüyü değiştirebilir. Menü yanlışsa Hata Bildir butonu veya iletişim sayfası üzerinden bildirebilirsiniz.",
         },
       },
       {
         "@type": "Question",
-        name: "Kepçe açık kaynaklı mı?",
+        name: "Neden AGPL v3 lisansı?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Evet, Kepçe AGPL v3 lisansı altında tamamen açık kaynak kodlu ve kâr amacı gütmeyen bağımsız bir projedir.",
+          text: "Kimse kodu alıp kapatmasın diye en katı copyleft lisanslardan biri seçildi. Projenin açık kaynak olması geliştirilmesini ve bayrağın devredilmesini kolaylaştırır.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Kepçe Bot Nedir?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Projenin arka plandaki otomasyon araçlarının ve dil modeli kullanarak menüleri yorumlayan sistemin genel adıdır.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Kepçe Bot'u (YZ) Kapatabilir miyim?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Evet. Kepçe Bot varsayılan olarak açık gelse de ayarlardan tamamen kapatılabilir, opsiyoneldir.",
         },
       },
     ],
