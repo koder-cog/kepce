@@ -6,7 +6,8 @@
     "@context": "https://schema.org",
     "@type": "Article",
     headline: "KYK Beslenme Yardımı",
-    description: "KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.",
+    description:
+      "KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.",
     datePublished: "2026-08-20",
     dateModified: "2026-08-20",
     inLanguage: "tr-TR",
@@ -36,7 +37,9 @@
   dateLabel="Yayımlanma tarihi: 2026.08.20"
 >
   <p>
-    KYK yurtlarında kalan her öğrenciye kahvaltı ve akşam yemeği için günlük nakdi beslenme yardımı tanımlanır. Bu tutar öğrencinin hesabına para olarak yatmaz; doğrudan yemekhane kasalarında indirim fişi olarak kullanılır.
+    KYK yurtlarında kalan her öğrenciye kahvaltı ve akşam yemeği için günlük
+    nakdi beslenme yardımı tanımlanır. Bu tutar öğrencinin hesabına para olarak
+    yatmaz; doğrudan yemekhane kasalarında indirim fişi olarak kullanılır.
   </p>
 
   <h2>Tabldot ve Alakart Nedir?</h2>
@@ -44,30 +47,45 @@
     Yemekhaneye ilk kez girenlerin en çok karıştırdığı iki kavram şunlardır:
   </p>
   <p>
-    <strong>Tabldot:</strong> O gün mutfağın belirlediği standart fiks menüdür. Genellikle çorba, ana yemek, yan yemek (pilav/makarna) ve tamamlayıcı bir ürün (tatlı, meyve, yoğurt veya salata) olmak üzere 4 kaptan oluşur. Tabldot menünün toplam fiyatı, o öğün için tanımlanan devlet beslenme yardımına tam denk gelecek şekilde ayarlanır. Yani standart tabldot menü aldığınızda cebinizden ekstra para çıkmaz.
+    Tabldot: O gün mutfağın belirlediği standart fiks menüdür. Genellikle çorba,
+    ana yemek, yan yemek ve tamamlayıcı bir ürün (tatlı, meyve, yoğurt vb.)
+    olmak üzere 4 kaptan oluşur. Tabldot menünün toplam fiyatı, o öğün için
+    tanımlanan devlet beslenme yardımına tam denk gelecek şekilde ayarlanır.
+    Yani standart tabldot menü aldığınızda cebinizden ekstra para çıkmaz.
   </p>
   <p>
-    <strong>Alakart:</strong> Büfede sergilenen yemeklerden kendi isteğinize göre tek tek seçim yapmanızdır. Örneğin tabldot ana yemeği yerine tost, sandviç, pide, lahmacun veya ekstra tatlı/içecek seçebilirsiniz. Bu ürünlerin her birinin gramajına göre resmi birim fiyatı vardır.
+    Alakart: Büfede sergilenen yemeklerden kendi isteğinize göre tek tek seçim
+    yapmanızdır. Örneğin tabldot ana yemeği yerine tost, sandviç, pide, lahmacun
+    veya ekstra tatlı/içecek seçebilirsiniz. Bu ürünlerin her birinin gramajına
+    göre resmi birim fiyatı vardır.
   </p>
 
   <h2>Kota Nasıl İşler?</h2>
   <p>
-    Beslenme yardımı kahvaltı ve akşam yemeği için iki ayrı kota halinde tanımlanır. Kahvaltı kotasını yalnızca kahvaltı saatlerinde, akşam kotasını ise akşam yemeğinde harcayabilirsiniz.
+    Beslenme yardımı kahvaltı ve akşam yemeği için iki ayrı kota halinde
+    tanımlanır. Kahvaltı kotasını yalnızca kahvaltı saatlerinde, akşam kotasını
+    ise akşam yemeğinde harcayabilirsiniz.
   </p>
   <p>
-    Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanmadığınız yardım hakkı o gün bittiğinde sıfırlanır, birikmez veya nakit olarak geri alınamaz.
+    Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanmadığınız yardım
+    hakkı o gün bittiğinde sıfırlanır, birikmez veya nakit olarak geri alınamaz.
   </p>
 
   <h2>Limit Aşımı Durumunda Ne Olur?</h2>
   <p>
-    Alakart ürünler seçtiğinizde ve sepet tutarınız o öğünün beslenme yardım limitini aştığında, aradaki farkı kasada banka kartı, kredi kartı veya nakit ile ödeyerek alışverişinizi tamamlayabilirsiniz.
+    Alakart ürünler seçtiğinizde ve sepet tutarınız o öğünün beslenme yardım
+    limitini aştığında, aradaki farkı kasada banka kartı, kredi kartı veya nakit
+    ile ödeyerek alışverişinizi tamamlayabilirsiniz.
   </p>
 
   <h2>Yurttan İzinli Olduğunuz Günler</h2>
   <p>
-    Hafta sonu izne çıktığınızda veya tatil dönemlerinde yemekhaneyi kullanmadığınız günlerin beslenme yardımı kaybolur, geriye dönük hak talep edilemez.
+    Hafta sonu izne çıktığınızda veya tatil dönemlerinde yemekhaneyi
+    kullanmadığınız günlerin beslenme yardımı kaybolur, geriye dönük hak talep
+    edilemez.
   </p>
   <p>
-    Bugün yurdunuzda hangi tabldot menünün çıktığını ve besin değerlerini görmek için <a href="/" data-link>ana sayfaya</a> bakabilirsiniz.
+    Bugün şehrinizde hangi tabldot menünün çıktığını ve besin değerlerini görmek
+    için <a href="/" data-link>ana sayfaya</a> bakabilirsiniz.
   </p>
 </ContentPage>
