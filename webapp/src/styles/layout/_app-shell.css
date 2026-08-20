@@ -12,6 +12,7 @@ body.is-app .skip-link {
   display: none !important;
 }
 
+/* 1. Sayfa Düzeni & Boşluklar */
 html.is-app #page-wrapper,
 html.is-app .page-wrapper,
 body.is-app #page-wrapper,
@@ -26,23 +27,48 @@ html.is-app #page-content,
 html.is-app .page-container,
 body.is-app #page-content,
 body.is-app .page-container {
-  padding-top: max(env(safe-area-inset-top, 0px), 28px) !important;
+  padding-top: var(--space-sm, 12px) !important;
   padding-bottom: 110px !important;
 }
 
+/* 2. Yerel Toolbar Mevcut Olduğu İçin Yinelenen Web Başlıklarının Gizlenmesi */
+html.is-app .archive-header,
+html.is-app .settings-page__title,
+html.is-app .notification-page__title,
+html.is-app .content-page__title,
+html.is-app .comments-page__header,
+body.is-app .archive-header,
+body.is-app .settings-page__title,
+body.is-app .notification-page__title,
+body.is-app .content-page__title,
+body.is-app .comments-page__header {
+  display: none !important;
+}
+
+/* 3. Toast Bildirimlerinin Floating Tab Bar Üzerine Yükseltilmesi */
+html.is-app .c-toast-container,
+body.is-app .c-toast-container {
+  bottom: 84px !important;
+  z-index: 99999 !important;
+}
+
+/* 4. Menü Yorum Alanı & Mobil Yorum Giriş Kapsülü */
 html.is-app .comments-page,
 body.is-app .comments-page {
-  padding-bottom: 120px !important;
+  padding-top: var(--space-xs, 8px) !important;
+  padding-bottom: 160px !important;
 }
 
 @media (max-width: 600px) {
   html.is-app .ci-container,
   body.is-app .ci-container {
-    bottom: 80px !important;
+    bottom: 76px !important;
+    z-index: 100 !important;
     transition: bottom var(--dur-fast) var(--ease-standard) !important;
   }
 }
 
+/* 5. Dokunma & Vurgu İyileştirmeleri */
 html.is-app * {
   -webkit-tap-highlight-color: transparent !important;
 }
