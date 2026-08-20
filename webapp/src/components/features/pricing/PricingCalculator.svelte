@@ -71,29 +71,100 @@
     isDrawerOpen = false;
   }
 
-  // ── Smart Presets ──
+  // ── Dynamic Smart Presets (Knapsack & Heuristics) ──
   function applyPreset(type) {
+    const availableItems = pricingData.items.filter(
+      (i) => i.mealType === "all" || i.mealType === selectedMeal
+    );
+    const target = allowanceInput;
+
     if (type === "zero") {
-      if (selectedMeal === "breakfast") {
-        tray = { "kasarli-tost": 1, ayran: 1 };
-      } else {
-        tray = { "tavuk-doner": 1, ayran: 1, tursu: 1, su: 1 };
+      // Dynamic Knapsack / Subset Sum search to get exact target or closest <= target
+      let bestCombo = null;
+      let bestDiff = Infinity;
+
+      for (let i = 0; i < availableItems.length; i++) {
+        const a = availableItems[i];
+        if (a.price === target) {
+          bestCombo = { [a.id]: 1 };
+          bestDiff = 0;
+          break;
+        }
+        for (let j = i + 1; j < availableItems.length; j++) {
+          const b = availableItems[j];
+          const sum2 = a.price + b.price;
+          if (sum2 <= target && target - sum2 < bestDiff) {
+            bestDiff = target - sum2;
+            bestCombo = { [a.id]: 1, [b.id]: 1 };
+          }
+          for (let k = j + 1; k < availableItems.length; k++) {
+            const c = availableItems[k];
+            const sum3 = sum2 + c.price;
+            if (sum3 <= target && target - sum3 < bestDiff) {
+              bestDiff = target - sum3;
+              bestCombo = { [a.id]: 1, [b.id]: 1, [c.id]: 1 };
+            }
+            for (let l = k + 1; l < availableItems.length; l++) {
+              const d = availableItems[l];
+              const sum4 = sum3 + d.price;
+              if (sum4 <= target && target - sum4 < bestDiff) {
+                bestDiff = target - sum4;
+                bestCombo = { [a.id]: 1, [b.id]: 1, [c.id]: 1, [d.id]: 1 };
+              }
+            }
+          }
+        }
       }
-      showToast("Sıfır fark menüsü seçildi.", "success");
+      if (bestCombo) {
+        tray = bestCombo;
+        showToast("Sıfır farka en yakın menü oluşturuldu.", "success");
+      }
     } else if (type === "protein") {
-      if (selectedMeal === "breakfast") {
-        tray = { "sahanda-cift-yumurta": 1, sut: 1 };
-      } else {
-        tray = { "kemiksiz-tavuk-yemegi": 1, yogurt: 1, ayran: 1 };
+      // Dynamic Protein Focus: Filters high-protein items and fills up to quota
+      const proteinKeywords = ["tavuk", "köfte", "et", "yumurta", "yoğurt", "ayran", "süt", "peynir"];
+      const proteinItems = availableItems
+        .filter((i) =>
+          proteinKeywords.some((k) =>
+            i.name.toLocaleLowerCase("tr-TR").includes(k)
+          )
+        )
+        .sort((a, b) => b.price - a.price);
+
+      let currentTotal = 0;
+      const combo = {};
+      for (const item of proteinItems) {
+        if (currentTotal + item.price <= target && !combo[item.id]) {
+          combo[item.id] = 1;
+          currentTotal += item.price;
+        }
       }
-      showToast("Protein menüsü seçildi.", "success");
+      if (Object.keys(combo).length > 0) {
+        tray = combo;
+        showToast("Yüksek proteinli menü oluşturuldu.", "success");
+      }
     } else if (type === "classic") {
-      if (selectedMeal === "breakfast") {
-        tray = { gozleme: 1 };
-      } else {
-        tray = { lahmacun: 1, "baklava-cevizli": 1, ayran: 1 };
+      // Dynamic Classic Staples: Tost, Pide, Lahmacun, Gözleme, Baklava, Ayran
+      const classicKeywords = ["tost", "lahmacun", "pide", "gözleme", "baklava", "ayran", "tatlı"];
+      const classicItems = availableItems
+        .filter((i) =>
+          classicKeywords.some((k) =>
+            i.name.toLocaleLowerCase("tr-TR").includes(k)
+          )
+        )
+        .sort((a, b) => b.price - a.price);
+
+      let currentTotal = 0;
+      const combo = {};
+      for (const item of classicItems) {
+        if (currentTotal + item.price <= target && !combo[item.id]) {
+          combo[item.id] = 1;
+          currentTotal += item.price;
+        }
       }
-      showToast("Büfe klasiği menü seçildi.", "success");
+      if (Object.keys(combo).length > 0) {
+        tray = combo;
+        showToast("Büfe klasiği menü oluşturuldu.", "success");
+      }
     }
   }
 
@@ -188,11 +259,12 @@
   );
 </script>
 
-<section class="disclaimer-card pricing-calc-card" aria-labelledby="pricing-calc-title">
+<section
+  class="disclaimer-card pricing-calc-card"
+  aria-labelledby="pricing-calc-title"
+>
   <div class="pricing-calc__header">
-    <h2 id="pricing-calc-title" class="pricing-calc__title">
-      Resmi Fiyat Tarifesi ve Fiş Hesaplayıcı
-    </h2>
+    <h2 id="pricing-calc-title" class="pricing-calc__title">Fiş Hesaplayıcı</h2>
     <p class="pricing-calc__subtitle">
       {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan fiyatlarıdır.
     </p>
@@ -215,33 +287,32 @@
     </div>
   </div>
 
-  <!-- Hazır Kombinasyon / Menü Butonları (Ayrı bir preset grubu) -->
+  <!-- Hazır Kombinasyon / Menü Butonları -->
   <div class="pricing-calc__presets-bar">
-    <span class="pricing-calc__presets-label">Hazır Menü:</span>
     <button
       type="button"
-      class="btn btn--secondary btn--xs"
+      class="btn btn--secondary"
       onclick={() => applyPreset("zero")}
     >
       Sıfır Fark
     </button>
     <button
       type="button"
-      class="btn btn--secondary btn--xs"
+      class="btn btn--secondary"
       onclick={() => applyPreset("protein")}
     >
       Protein
     </button>
     <button
       type="button"
-      class="btn btn--secondary btn--xs"
+      class="btn btn--secondary"
       onclick={() => applyPreset("classic")}
     >
       Büfe Klasiği
     </button>
   </div>
 
-  <!-- Kategori Filtre Çipleri (Yalnızca filtreler) -->
+  <!-- Kategori Filtre Çipleri -->
   <div class="pricing-calc__chips-scroll" role="tablist">
     {#each pricingData.categories as cat}
       <button
@@ -333,7 +404,7 @@
               class="btn btn--secondary btn--sm"
               onclick={() => (isDrawerOpen = !isDrawerOpen)}
             >
-              {isDrawerOpen ? 'Kapat' : 'Detay'}
+              {isDrawerOpen ? "Kapat" : "Detay"}
             </button>
             <button
               type="button"
