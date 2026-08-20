@@ -79,48 +79,43 @@
 
 <section class="pricing-calc" aria-labelledby="pricing-calc-title">
   <div class="pricing-calc__header">
-    <div class="pricing-calc__title-group">
+    <div>
       <h2 id="pricing-calc-title" class="pricing-calc__title">
-        Resmi Alakart Fiyat Tarifesi & Fiş Hesaplayıcı
+        Resmi Fiyat Tarifesi ve Fiş Hesaplayıcı
       </h2>
       <p class="pricing-calc__subtitle">
-        {pricingData.cityName} KYK yurtları ({pricingData.period}) resmi tavan fiyatlarıdır. Ürünleri seçerek kasada ödeyeceğiniz ek farkı hesaplayabilirsiniz.
+        {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan fiyatlarıdır.
       </p>
     </div>
-    <div class="pricing-calc__badge">
-      <span>{pricingData.effectiveDate} Tarifesi</span>
-    </div>
+    <span class="pricing-calc__badge">{pricingData.effectiveDate}</span>
   </div>
 
   <!-- Öğün & Kota Ayarı -->
-  <div class="pricing-calc__controls-box">
-    <div class="pricing-calc__meal-toggle">
-      <span class="pricing-calc__control-label">Öğün Seçimi:</span>
-      <div class="pricing-calc__pill-group" role="tablist">
-        <button
-          type="button"
-          role="tab"
-          aria-selected={selectedMeal === "breakfast"}
-          class="pricing-calc__pill-btn {selectedMeal === 'breakfast' ? 'is-active' : ''}"
-          onclick={() => handleMealChange("breakfast")}
-        >
-          Kahvaltı (45 TL)
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={selectedMeal === "dinner"}
-          class="pricing-calc__pill-btn {selectedMeal === 'dinner' ? 'is-active' : ''}"
-          onclick={() => handleMealChange("dinner")}
-        >
-          Akşam Yemeği (105 TL)
-        </button>
-      </div>
+  <div class="pricing-calc__controls">
+    <div class="pricing-calc__meal-toggle" role="tablist">
+      <button
+        type="button"
+        role="tab"
+        aria-selected={selectedMeal === "breakfast"}
+        class="pricing-calc__pill-btn {selectedMeal === 'breakfast' ? 'is-active' : ''}"
+        onclick={() => handleMealChange("breakfast")}
+      >
+        Kahvaltı (45 TL)
+      </button>
+      <button
+        type="button"
+        role="tab"
+        aria-selected={selectedMeal === "dinner"}
+        class="pricing-calc__pill-btn {selectedMeal === 'dinner' ? 'is-active' : ''}"
+        onclick={() => handleMealChange("dinner")}
+      >
+        Akşam (105 TL)
+      </button>
     </div>
 
-    <div class="pricing-calc__allowance-input">
-      <label for="allowance-input" class="pricing-calc__control-label">
-        Fiş Kotanız (TL):
+    <div class="pricing-calc__quota">
+      <label for="allowance-input" class="pricing-calc__quota-label">
+        Kota
       </label>
       <input
         id="allowance-input"
@@ -129,21 +124,18 @@
         max="500"
         step="1"
         bind:value={allowanceInput}
-        class="pricing-calc__input"
+        class="pricing-calc__quota-input"
       />
+      <span class="pricing-calc__quota-unit">TL</span>
     </div>
   </div>
 
   <!-- Arama ve Kategori Filtresi -->
-  <div class="pricing-calc__filter-bar">
+  <div class="pricing-calc__filter">
     <div class="pricing-calc__search">
-      <svg class="pricing-calc__search-icon" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-        <circle cx="11" cy="11" r="8"></circle>
-        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-      </svg>
       <input
         type="text"
-        placeholder="Yemek veya içecek ara (Örn: Tost, Pide, Ayran)..."
+        placeholder="Yemek veya içecek ara (tost, pide, ayran...)"
         bind:value={searchQuery}
         class="pricing-calc__search-input"
       />
@@ -152,9 +144,8 @@
           type="button"
           class="pricing-calc__search-clear"
           onclick={() => (searchQuery = "")}
-          aria-label="Aramayı temizle"
         >
-          ✕
+          Temizle
         </button>
       {/if}
     </div>
@@ -185,8 +176,8 @@
         {@const qty = tray[item.id] || 0}
         <div class="pricing-calc__item {qty > 0 ? 'is-selected' : ''}">
           <div class="pricing-calc__item-info">
-            <div class="pricing-calc__item-name">{item.name}</div>
-            <div class="pricing-calc__item-portion">{item.portion}</div>
+            <span class="pricing-calc__item-name">{item.name}</span>
+            <span class="pricing-calc__item-portion">{item.portion}</span>
           </div>
           <div class="pricing-calc__item-action">
             <span class="pricing-calc__item-price">{item.price.toFixed(2)} TL</span>
@@ -194,7 +185,7 @@
               {#if qty > 0}
                 <button
                   type="button"
-                  class="pricing-calc__btn-count is-sub"
+                  class="pricing-calc__btn-count"
                   onclick={() => removeItem(item.id)}
                   aria-label="Bir azalt"
                 >
@@ -206,7 +197,7 @@
                 type="button"
                 class="pricing-calc__btn-count is-add"
                 onclick={() => addItem(item)}
-                aria-label="Tepsiye ekle"
+                aria-label="Ekle"
               >
                 +
               </button>
@@ -217,51 +208,52 @@
     {/if}
   </div>
 
-  <!-- Canlı Tepsi ve Hesaplama Paneli -->
+  <!-- Tepsi ve Hesaplama Paneli -->
   {#if totalTrayCount > 0}
     <div class="pricing-calc__summary">
       <div class="pricing-calc__summary-header">
-        <div class="pricing-calc__summary-title">
-          <span>🍽️ Seçilenler ({totalTrayCount} Ürün)</span>
-          <button type="button" class="pricing-calc__btn-clear" onclick={clearTray}>
-            Tepsiyi Sıfırla
-          </button>
-        </div>
-        <div class="pricing-calc__summary-chips">
-          {#each trayItems as item (item.id)}
-            <span class="pricing-calc__summary-chip">
-              {item.name} <strong class="chip-qty">x{item.qty}</strong> ({item.itemTotal.toFixed(2)} TL)
-              <button
-                type="button"
-                class="chip-remove"
-                onclick={() => removeItem(item.id)}
-                aria-label="Kaldır"
-              >
-                ✕
-              </button>
-            </span>
-          {/each}
-        </div>
+        <span class="pricing-calc__summary-title">Seçilen Ürünler ({totalTrayCount})</span>
+        <button type="button" class="pricing-calc__btn-clear" onclick={clearTray}>
+          Sıfırla
+        </button>
+      </div>
+
+      <div class="pricing-calc__summary-chips">
+        {#each trayItems as item (item.id)}
+          <span class="pricing-calc__summary-chip">
+            <span>{item.name}</span>
+            <span class="chip-qty">{item.qty} adet</span>
+            <span class="chip-price">{item.itemTotal.toFixed(2)} TL</span>
+            <button
+              type="button"
+              class="chip-remove"
+              onclick={() => removeItem(item.id)}
+            >
+              Sil
+            </button>
+          </span>
+        {/each}
       </div>
 
       <div class="pricing-calc__summary-footer">
-        <div class="pricing-calc__metric">
-          <span class="metric-label">Toplam Tutar:</span>
-          <strong class="metric-val">{totalTrayPrice.toFixed(2)} TL</strong>
+        <div class="pricing-calc__totals">
+          <div class="pricing-calc__total-line">
+            <span>Tutar:</span>
+            <strong>{totalTrayPrice.toFixed(2)} TL</strong>
+          </div>
+          <div class="pricing-calc__total-line is-muted">
+            <span>Kota:</span>
+            <span>{allowanceInput.toFixed(2)} TL</span>
+          </div>
         </div>
 
-        <div class="pricing-calc__metric">
-          <span class="metric-label">Fiş Kotası:</span>
-          <span class="metric-val">{allowanceInput.toFixed(2)} TL</span>
-        </div>
-
-        <div class="pricing-calc__metric-status {isUnderQuota ? 'is-success' : 'is-warning'}">
+        <div class="pricing-calc__result">
           {#if isUnderQuota}
-            <span class="status-badge is-green">✓ Fiş Limitiniz Karşılıyor</span>
-            <span class="status-sub">0.00 TL Ek Ödeme (Kalan: {Math.abs(difference).toFixed(2)} TL)</span>
+            <span class="pricing-calc__status-tag is-ok">Limit İçi</span>
+            <span class="pricing-calc__result-text">0.00 TL ek ödeme</span>
           {:else}
-            <span class="status-badge is-orange">⚠️ Limit Aşımı</span>
-            <span class="status-sub">Kasada Ödenecek Fark: <strong>+{difference.toFixed(2)} TL</strong></span>
+            <span class="pricing-calc__status-tag is-warn">Limit Aşımı</span>
+            <span class="pricing-calc__result-text">Fark: +{difference.toFixed(2)} TL</span>
           {/if}
         </div>
       </div>
@@ -272,11 +264,10 @@
 <style>
   .pricing-calc {
     margin-top: var(--space-2xl, 2.5rem);
-    padding: var(--space-xl, 1.5rem);
+    padding: var(--space-lg, 1.25rem);
     background: var(--color-card);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-card, 16px);
-    box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
     color: var(--color-text);
   }
 
@@ -285,77 +276,62 @@
     justify-content: space-between;
     align-items: flex-start;
     gap: var(--space-md, 1rem);
-    margin-bottom: var(--space-lg, 1.25rem);
+    margin-bottom: var(--space-md, 1rem);
     flex-wrap: wrap;
   }
 
   .pricing-calc__title {
     font-family: var(--font-body);
-    font-size: var(--text-h3, 1.25rem);
+    font-size: var(--text-h3, 1.125rem);
     font-weight: var(--font-weight-bold, 700);
-    margin: 0 0 0.35rem 0 !important;
+    margin: 0 0 0.25rem 0 !important;
     color: var(--color-text-primary);
   }
 
   .pricing-calc__subtitle {
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--text-xs, 0.8125rem);
     color: var(--color-text-secondary);
     margin: 0 !important;
-    line-height: var(--leading-normal, 1.4);
   }
 
   .pricing-calc__badge {
     background: var(--color-surface-sunken);
     border: 1px solid var(--color-border-light);
-    padding: 0.35rem 0.75rem;
+    padding: 0.25rem 0.6rem;
     border-radius: var(--radius-full, 9999px);
     font-size: var(--text-xs, 0.75rem);
-    font-weight: var(--font-weight-medium, 600);
-    color: var(--color-accent-text);
+    color: var(--color-text-secondary);
     white-space: nowrap;
   }
 
-  .pricing-calc__controls-box {
+  .pricing-calc__controls {
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: var(--space-md, 1rem);
     background: var(--color-surface-sunken);
-    padding: var(--space-md, 1rem);
+    padding: 0.5rem 0.75rem;
     border-radius: var(--radius-md, 10px);
-    border: 1px solid var(--color-border-light);
-    margin-bottom: var(--space-lg, 1.25rem);
+    margin-bottom: var(--space-md, 1rem);
     flex-wrap: wrap;
   }
 
-  .pricing-calc__meal-toggle,
-  .pricing-calc__allowance-input {
+  .pricing-calc__meal-toggle {
     display: flex;
-    align-items: center;
-    gap: var(--space-sm, 0.75rem);
-  }
-
-  .pricing-calc__control-label {
-    font-size: var(--text-sm, 0.875rem);
-    font-weight: var(--font-weight-medium, 600);
-    color: var(--color-text-primary);
-  }
-
-  .pricing-calc__pill-group {
-    display: flex;
+    gap: 4px;
     background: var(--color-card);
-    padding: 3px;
+    padding: 2px;
     border-radius: var(--radius-full, 9999px);
     border: 1px solid var(--color-border);
   }
 
   .pricing-calc__pill-btn {
-    padding: 0.35rem 0.85rem;
+    padding: 0.3rem 0.75rem;
     border-radius: var(--radius-full, 9999px);
     border: none;
     background: transparent;
     font-family: var(--font-body);
-    font-size: var(--text-xs, 0.8125rem);
+    font-size: var(--text-xs, 0.75rem);
     font-weight: var(--font-weight-medium, 600);
     color: var(--color-text-secondary);
     cursor: pointer;
@@ -365,33 +341,47 @@
   .pricing-calc__pill-btn.is-active {
     background: var(--color-accent-primary);
     color: var(--color-text-on-dark, #ffffff);
-    box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.15));
   }
 
-  .pricing-calc__input {
-    width: 84px;
-    padding: 0.4rem 0.6rem;
+  .pricing-calc__quota {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .pricing-calc__quota-label {
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--color-text-secondary);
+  }
+
+  .pricing-calc__quota-input {
+    width: 64px;
+    padding: 0.25rem 0.4rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-sm, 6px);
     font-family: var(--font-body);
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--text-xs, 0.8125rem);
     font-weight: var(--font-weight-bold, 700);
     text-align: center;
     background: var(--color-card);
     color: var(--color-text-primary);
     outline: none;
-    transition: border-color var(--dur-fast, 0.15s) ease;
   }
 
-  .pricing-calc__input:focus {
+  .pricing-calc__quota-input:focus {
     border-color: var(--color-accent-primary);
   }
 
-  .pricing-calc__filter-bar {
+  .pricing-calc__quota-unit {
+    font-size: var(--text-xs, 0.75rem);
+    color: var(--color-text-secondary);
+  }
+
+  .pricing-calc__filter {
     display: flex;
     flex-direction: column;
-    gap: var(--space-sm, 0.75rem);
-    margin-bottom: var(--space-lg, 1.25rem);
+    gap: 0.5rem;
+    margin-bottom: var(--space-md, 1rem);
   }
 
   .pricing-calc__search {
@@ -400,24 +390,16 @@
     align-items: center;
   }
 
-  .pricing-calc__search-icon {
-    position: absolute;
-    left: 0.85rem;
-    color: var(--color-text-secondary);
-    pointer-events: none;
-  }
-
   .pricing-calc__search-input {
     width: 100%;
-    padding: 0.65rem 2.2rem 0.65rem 2.5rem;
+    padding: 0.5rem 4.5rem 0.5rem 0.75rem;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md, 10px);
+    border-radius: var(--radius-md, 8px);
     font-family: var(--font-body);
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--text-xs, 0.8125rem);
     background: var(--color-surface-sunken);
     color: var(--color-text-primary);
     outline: none;
-    transition: border-color var(--dur-fast, 0.15s) ease;
   }
 
   .pricing-calc__search-input:focus {
@@ -426,39 +408,34 @@
 
   .pricing-calc__search-clear {
     position: absolute;
-    right: 0.75rem;
+    right: 0.6rem;
     background: none;
     border: none;
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-size: 0.875rem;
+    font-size: var(--text-xs, 0.75rem);
     padding: 0.2rem;
   }
 
   .pricing-calc__categories {
     display: flex;
-    gap: 0.4rem;
+    gap: 0.35rem;
     overflow-x: auto;
-    padding-bottom: 4px;
-    scrollbar-width: thin;
+    padding-bottom: 2px;
+    scrollbar-width: none;
   }
 
   .pricing-calc__category-btn {
-    padding: 0.35rem 0.75rem;
+    padding: 0.25rem 0.65rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius-full, 9999px);
     background: var(--color-surface-sunken);
     font-family: var(--font-body);
-    font-size: var(--text-xs, 0.8125rem);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--color-text-secondary);
     cursor: pointer;
     white-space: nowrap;
     transition: all var(--dur-fast, 0.15s) ease;
-  }
-
-  .pricing-calc__category-btn:hover {
-    border-color: var(--color-border-strong);
-    color: var(--color-text-primary);
   }
 
   .pricing-calc__category-btn.is-active {
@@ -469,23 +446,23 @@
 
   .pricing-calc__grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 0.75rem;
-    max-height: 480px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 0.5rem;
+    max-height: 380px;
     overflow-y: auto;
-    padding-right: 4px;
-    margin-bottom: var(--space-lg, 1.25rem);
+    padding-right: 2px;
+    margin-bottom: var(--space-md, 1rem);
   }
 
   .pricing-calc__item {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 0.9rem;
+    padding: 0.55rem 0.75rem;
     background: var(--color-surface-variant);
     border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md, 10px);
-    transition: border-color var(--dur-fast, 0.15s) ease, background var(--dur-fast, 0.15s) ease;
+    border-radius: var(--radius-sm, 8px);
+    transition: border-color var(--dur-fast, 0.15s) ease;
   }
 
   .pricing-calc__item.is-selected {
@@ -493,26 +470,35 @@
     background: var(--color-accent-subtle);
   }
 
+  .pricing-calc__item-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
   .pricing-calc__item-name {
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--text-xs, 0.8125rem);
     font-weight: var(--font-weight-medium, 600);
     color: var(--color-text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .pricing-calc__item-portion {
-    font-size: var(--text-xs, 0.75rem);
+    font-size: 0.7rem;
     color: var(--color-text-secondary);
-    margin-top: 2px;
   }
 
   .pricing-calc__item-action {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.5rem;
+    flex-shrink: 0;
   }
 
   .pricing-calc__item-price {
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--text-xs, 0.8125rem);
     font-weight: var(--font-weight-bold, 700);
     color: var(--color-accent-text);
   }
@@ -520,17 +506,17 @@
   .pricing-calc__counter {
     display: flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.25rem;
   }
 
   .pricing-calc__btn-count {
-    width: 28px;
-    height: 28px;
-    border-radius: var(--radius-sm, 6px);
+    width: 24px;
+    height: 24px;
+    border-radius: var(--radius-sm, 4px);
     border: 1px solid var(--color-border);
     background: var(--color-card);
     color: var(--color-text-primary);
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 700;
     display: flex;
     align-items: center;
@@ -545,62 +531,48 @@
     border-color: var(--color-accent-primary);
   }
 
-  .pricing-calc__btn-count.is-add:hover {
-    background: var(--color-accent-primary-hover);
-  }
-
-  .pricing-calc__btn-count.is-sub:hover {
-    border-color: var(--color-border-strong);
-    color: var(--color-error);
-  }
-
   .pricing-calc__count-badge {
-    font-size: var(--text-xs, 0.8125rem);
+    font-size: var(--text-xs, 0.75rem);
     font-weight: var(--font-weight-bold, 700);
-    min-width: 16px;
+    min-width: 14px;
     text-align: center;
     color: var(--color-accent-text);
   }
 
   .pricing-calc__empty {
     grid-column: 1 / -1;
-    padding: var(--space-2xl, 2rem);
+    padding: var(--space-xl, 1.5rem);
     text-align: center;
     color: var(--color-text-secondary);
-    font-size: var(--text-sm, 0.875rem);
+    font-size: var(--text-xs, 0.8125rem);
   }
 
-  /* Summary Drawer / Box */
+  /* Summary Box */
   .pricing-calc__summary {
-    background: var(--color-surface-elevated);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius-card, 14px);
-    padding: var(--space-lg, 1.25rem);
-    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0, 0, 0, 0.1));
+    background: var(--color-surface-sunken);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 10px);
+    padding: var(--space-md, 1rem);
   }
 
   .pricing-calc__summary-header {
-    margin-bottom: var(--space-md, 1rem);
-    border-bottom: 1px dashed var(--color-border);
-    padding-bottom: var(--space-sm, 0.75rem);
-  }
-
-  .pricing-calc__summary-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: var(--text-sm, 0.9375rem);
+    margin-bottom: 0.5rem;
+  }
+
+  .pricing-calc__summary-title {
+    font-size: var(--text-xs, 0.8125rem);
     font-weight: var(--font-weight-bold, 700);
     color: var(--color-text-primary);
-    margin-bottom: var(--space-sm, 0.65rem);
   }
 
   .pricing-calc__btn-clear {
     background: none;
     border: none;
     color: var(--color-error, #d2564a);
-    font-size: var(--text-xs, 0.8125rem);
-    font-weight: var(--font-weight-medium, 600);
+    font-size: var(--text-xs, 0.75rem);
     cursor: pointer;
     padding: 0;
   }
@@ -612,18 +584,19 @@
   .pricing-calc__summary-chips {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.35rem;
+    margin-bottom: 0.75rem;
   }
 
   .pricing-calc__summary-chip {
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
-    background: var(--color-surface-sunken);
+    gap: 0.3rem;
+    background: var(--color-card);
     border: 1px solid var(--color-border-light);
-    padding: 0.25rem 0.6rem;
-    border-radius: var(--radius-sm, 6px);
-    font-size: var(--text-xs, 0.8125rem);
+    padding: 0.2rem 0.45rem;
+    border-radius: var(--radius-sm, 4px);
+    font-size: var(--text-xs, 0.75rem);
     color: var(--color-text-primary);
   }
 
@@ -631,14 +604,17 @@
     color: var(--color-accent-text);
   }
 
+  .chip-price {
+    color: var(--color-text-secondary);
+  }
+
   .chip-remove {
     background: none;
     border: none;
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-size: 0.75rem;
-    padding: 0;
-    margin-left: 2px;
+    font-size: 0.7rem;
+    padding: 0 0 0 2px;
   }
 
   .chip-remove:hover {
@@ -649,76 +625,53 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: var(--space-md, 1rem);
+    padding-top: 0.5rem;
+    border-top: 1px solid var(--color-border-light);
     flex-wrap: wrap;
+    gap: 0.5rem;
   }
 
-  .pricing-calc__metric {
+  .pricing-calc__totals {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .metric-label {
-    font-size: var(--text-xs, 0.75rem);
-    color: var(--color-text-secondary);
-    font-weight: var(--font-weight-medium, 500);
-  }
-
-  .metric-val {
-    font-size: var(--text-lg, 1.125rem);
-    font-weight: var(--font-weight-bold, 700);
-    color: var(--color-text-primary);
-  }
-
-  .pricing-calc__metric-status {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 2px;
-  }
-
-  .status-badge {
+    gap: 1rem;
     font-size: var(--text-xs, 0.8125rem);
+  }
+
+  .pricing-calc__total-line {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .pricing-calc__total-line.is-muted {
+    color: var(--color-text-secondary);
+  }
+
+  .pricing-calc__result {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .pricing-calc__status-tag {
+    font-size: var(--text-xs, 0.75rem);
     font-weight: var(--font-weight-bold, 700);
-    padding: 0.25rem 0.65rem;
+    padding: 0.15rem 0.5rem;
     border-radius: var(--radius-full, 9999px);
   }
 
-  .status-badge.is-green {
-    background: rgba(173, 209, 138, 0.15);
+  .pricing-calc__status-tag.is-ok {
+    background: rgba(173, 209, 138, 0.2);
     color: var(--color-success-text);
-    border: 1px solid var(--color-success);
   }
 
-  .status-badge.is-orange {
-    background: rgba(236, 191, 127, 0.15);
+  .pricing-calc__status-tag.is-warn {
+    background: rgba(236, 191, 127, 0.2);
     color: var(--color-warning-text);
-    border: 1px solid var(--color-warning);
   }
 
-  .status-sub {
+  .pricing-calc__result-text {
     font-size: var(--text-xs, 0.8125rem);
-    color: var(--color-text-secondary);
-  }
-
-  .status-sub strong {
-    color: var(--color-accent-text);
-  }
-
-  @media (max-width: 640px) {
-    .pricing-calc {
-      padding: var(--space-md, 1rem);
-    }
-    .pricing-calc__controls-box,
-    .pricing-calc__summary-footer {
-      flex-direction: column;
-      align-items: flex-start;
-    }
-    .pricing-calc__metric-status {
-      align-items: flex-start;
-      margin-top: 0.5rem;
-      width: 100%;
-    }
+    font-weight: var(--font-weight-bold, 700);
+    color: var(--color-text-primary);
   }
 </style>

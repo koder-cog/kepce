@@ -87,7 +87,9 @@
   </p>
   <p>
     Bugün şehrinizde hangi tabldot menünün çıktığını ve besin değerlerini görmek
-    için <a href="/" data-link>ana sayfaya</a> bakabilirsiniz.
+    için <a href="/" data-link>ana sayfaya</a> bakabilir, alakart büfeden yapacağınız
+    seçimlerin resmi tavan fiyatlarını ve fiş farkını ise aşağıdaki hesaplayıcıdan
+    inceleyebilirsiniz.
   </p>
 
   <PricingCalculator />
