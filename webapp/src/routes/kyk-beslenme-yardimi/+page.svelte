@@ -1,6 +1,7 @@
 <script>
   import ContentPage from "@/components/layout/ContentPage.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+  import PricingCalculator from "@/components/features/pricing/PricingCalculator.svelte";
 
   const guideSchema = {
     "@context": "https://schema.org",
@@ -88,4 +89,6 @@
     Bugün şehrinizde hangi tabldot menünün çıktığını ve besin değerlerini görmek
     için <a href="/" data-link>ana sayfaya</a> bakabilirsiniz.
   </p>
+
+  <PricingCalculator />
 </ContentPage>
