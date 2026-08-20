@@ -66,12 +66,75 @@
 		}
 	}
 
+	import { nativeBridge } from "@/lib/native/bridge.js";
+
+	function getRouteMetadata(pathname) {
+		if (!pathname || pathname === "/" || pathname === "") {
+			return { title: "Kepçe", isRoot: true };
+		}
+		if (pathname === "/arsiv" || pathname.startsWith("/arsiv/")) {
+			return { title: "Menü Arşivi", isRoot: true };
+		}
+		if (pathname === "/ben") {
+			return { title: "Profilim", isRoot: true };
+		}
+		if (pathname === "/ayarlar") {
+			return { title: "Ayarlar", isRoot: true };
+		}
+		if (pathname === "/bildirimler") {
+			return { title: "Bildirimler", isRoot: false };
+		}
+		if (pathname.startsWith("/biri/")) {
+			return { title: "Profil", isRoot: false };
+		}
+		if (pathname.startsWith("/menu/")) {
+			return { title: "Menü Detayı", isRoot: false };
+		}
+		if (pathname.startsWith("/sehirler")) {
+			return { title: "Şehirler", isRoot: false };
+		}
+		if (pathname.startsWith("/sss")) {
+			return { title: "Sıkça Sorulan Sorular", isRoot: false };
+		}
+		if (pathname.startsWith("/hakkinda")) {
+			return { title: "Hakkında", isRoot: false };
+		}
+		return { title: "Kepçe", isRoot: false };
+	}
+
 	beforeNavigate(() => {
 		// Prepare for navigation if needed
 	});
 
-	afterNavigate(() => {
-		// Cleanup if needed
+	afterNavigate(({ to }) => {
+		if (typeof window !== "undefined") {
+			const path = to?.url?.pathname || window.location.pathname;
+			const { title, isRoot } = getRouteMetadata(path);
+			nativeBridge.sendRoute({
+				path,
+				title,
+				canGoBack: !isRoot,
+				isRoot
+			});
+		}
+	});
+
+	// Tema ve Görsel Efektler Durumunu Yerel Kabukla Senkronize Et
+	$effect(() => {
+		if (typeof document === "undefined") return;
+
+		const isDark = document.documentElement.classList.contains("dark") ||
+			(!document.documentElement.classList.contains("light") &&
+				window.matchMedia("(prefers-color-scheme: dark)").matches);
+
+		const effectsEnabled = localStorage.getItem("kepce_effects") !== "false";
+		const bgColorHex = isDark ? "#242828" : "#F9F5E5";
+
+		nativeBridge.sendState({
+			isDark,
+			effectsEnabled,
+			bgColorHex
+		});
 	});
 
 	onNavigate((navigation) => {
@@ -146,6 +209,15 @@
 
 		if (typeof window !== "undefined") {
 			window.__sveltekit_goto = (url) => goto(url);
+			window.KepceNative = {
+				goto: (url) => goto(url),
+				setTitle: (title) => nativeBridge.sendTitle(title),
+				onNativeEvent: (type, payload) => {
+					if (type === "NAVIGATE" && payload?.url) {
+						goto(payload.url);
+					}
+				}
+			};
 		}
 
 		await authActions.refreshUser();

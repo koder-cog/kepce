@@ -12,7 +12,7 @@ body.is-app .skip-link {
   display: none !important;
 }
 
-/* 1. Sayfa Düzeni & Boşluklar */
+/* 1. Sayfa Düzeni & Dinamik Yerel Çubuk Boşlukları (Safe Area Insets) */
 html.is-app #page-wrapper,
 html.is-app .page-wrapper,
 body.is-app #page-wrapper,
@@ -27,8 +27,8 @@ html.is-app #page-content,
 html.is-app .page-container,
 body.is-app #page-content,
 body.is-app .page-container {
-  padding-top: calc(56px + max(env(safe-area-inset-top, 0px), 28px)) !important;
-  padding-bottom: 110px !important;
+  padding-top: var(--native-header-height, calc(56px + max(env(safe-area-inset-top, 0px), 28px))) !important;
+  padding-bottom: calc(var(--native-tabbar-height, 76px) + 32px) !important;
 }
 
 /* 2. Yerel Toolbar Mevcut Olduğu İçin Yinelenen Web Başlıklarının Gizlenmesi */
@@ -48,7 +48,7 @@ body.is-app .comments-page__header {
 /* 3. Toast Bildirimlerinin Floating Tab Bar Üzerine Yükseltilmesi */
 html.is-app .c-toast-container,
 body.is-app .c-toast-container {
-  bottom: 84px !important;
+  bottom: calc(var(--native-tabbar-height, 76px) + 12px) !important;
   z-index: 99999 !important;
 }
 
@@ -56,13 +56,13 @@ body.is-app .c-toast-container {
 html.is-app .comments-page,
 body.is-app .comments-page {
   padding-top: var(--space-xs, 8px) !important;
-  padding-bottom: 160px !important;
+  padding-bottom: calc(var(--native-tabbar-height, 76px) + 90px) !important;
 }
 
 @media (max-width: 600px) {
   html.is-app .ci-container,
   body.is-app .ci-container {
-    bottom: 76px !important;
+    bottom: calc(var(--native-tabbar-height, 76px) + 8px) !important;
     z-index: 100 !important;
     transition: bottom var(--dur-fast) var(--ease-standard) !important;
   }
