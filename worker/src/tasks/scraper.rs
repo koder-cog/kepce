@@ -384,9 +384,11 @@ fn get_source_priority(source: &str) -> i32 {
     match source {
         "kepce-admin" => 10,
         "kepce-kullanici" => 8,
-        "kepce-anonim" => 6,
-        "kykyemek.com" | "kykyemek" => 4,
-        _ => 2,
+        "kykyemek.com" | "kykyemek" | "kyk-yemek" => 6,
+        "yurtmenu" | "yurtmenu.net" | "yurtmenu_live" => 5,
+        "kykmenu" | "kykmenu.com.tr" | "kykmenulistesi.com.tr" => 4,
+        "kepce-anonim" | "anonim" => 3,
+        _ => 1,
     }
 }
 
@@ -408,7 +410,7 @@ pub async fn upsert_menu(
     let target_status = match target_status_override {
         Some(status) => status,
         None => match source_type.as_str() {
-            "kepce-admin" | "kepce-kullanici" | "kykyemek" | "kykyemek.com" => MenuStatusEnum::Approved,
+            "kepce-admin" | "kepce-kullanici" | "kykyemek" | "kykyemek.com" | "yurtmenu" | "yurtmenu.net" | "kykmenu" | "kykmenu.com.tr" => MenuStatusEnum::Approved,
             _ => MenuStatusEnum::Pending,
         }
     };
