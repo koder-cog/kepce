@@ -1,5 +1,6 @@
 <script>
   import { onMount } from "svelte";
+  import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import pricingData from "@/lib/data/pricing/istanbul_2025_2026.json";
   import { showToast } from "@/components/ui/toast.js";
 
@@ -10,6 +11,11 @@
   let selectedCategory = $state("all");
   let tray = $state({}); // { [itemId]: quantity }
   let isDrawerOpen = $state(false);
+
+  const mealOptions = [
+    { value: "breakfast", label: "Kahvaltı (45 TL)" },
+    { value: "dinner", label: "Akşam (105 TL)" },
+  ];
 
   // Load from URL params if present
   onMount(() => {
@@ -182,7 +188,7 @@
   );
 </script>
 
-<section class="pricing-calc" aria-labelledby="pricing-calc-title">
+<section class="disclaimer-card pricing-calc-card" aria-labelledby="pricing-calc-title">
   <div class="pricing-calc__header">
     <h2 id="pricing-calc-title" class="pricing-calc__title">
       Resmi Fiyat Tarifesi ve Fiş Hesaplayıcı
@@ -192,67 +198,42 @@
     </p>
   </div>
 
-  <!-- Satır 1: Öğün Geçişi ve Arama Çubuğu -->
+  <!-- Satır 1: SegmentedControl + Arama -->
   <div class="pricing-calc__top-bar">
-    <div class="pricing-calc__meal-toggle" role="tablist">
-      <button
-        type="button"
-        role="tab"
-        aria-selected={selectedMeal === "breakfast"}
-        class="pricing-calc__pill-btn {selectedMeal === 'breakfast' ? 'is-active' : ''}"
-        onclick={() => handleMealChange("breakfast")}
-      >
-        Kahvaltı (45 TL)
-      </button>
-      <button
-        type="button"
-        role="tab"
-        aria-selected={selectedMeal === "dinner"}
-        class="pricing-calc__pill-btn {selectedMeal === 'dinner' ? 'is-active' : ''}"
-        onclick={() => handleMealChange("dinner")}
-      >
-        Akşam (105 TL)
-      </button>
-    </div>
+    <SegmentedControl
+      bind:value={selectedMeal}
+      options={mealOptions}
+      onChange={handleMealChange}
+    />
 
-    <div class="pricing-calc__search">
+    <div class="pricing-calc__search-wrap">
       <input
-        type="text"
+        type="search"
         placeholder="Yemek veya içecek ara..."
         bind:value={searchQuery}
-        class="pricing-calc__search-input"
       />
-      {#if searchQuery}
-        <button
-          type="button"
-          class="pricing-calc__search-clear"
-          onclick={() => (searchQuery = "")}
-        >
-          Temizle
-        </button>
-      {/if}
     </div>
   </div>
 
-  <!-- Satır 2: Akıllı Kombinasyonlar ve Kategoriler -->
-  <div class="pricing-calc__pills-row" role="tablist">
+  <!-- Satır 2: Akıllı Kombinasyon ve Kategori Çipleri -->
+  <div class="pricing-calc__chips-scroll" role="tablist">
     <button
       type="button"
-      class="pricing-calc__chip is-preset"
+      class="chip chip--preset"
       onclick={() => applyPreset("zero")}
     >
       Sıfır Fark
     </button>
     <button
       type="button"
-      class="pricing-calc__chip is-preset"
+      class="chip chip--preset"
       onclick={() => applyPreset("protein")}
     >
       Protein
     </button>
     <button
       type="button"
-      class="pricing-calc__chip is-preset"
+      class="chip chip--preset"
       onclick={() => applyPreset("classic")}
     >
       Büfe Klasiği
@@ -262,7 +243,7 @@
         type="button"
         role="tab"
         aria-selected={selectedCategory === cat.id}
-        class="pricing-calc__chip {selectedCategory === cat.id ? 'is-active' : ''}"
+        class="chip {selectedCategory === cat.id ? 'active' : ''}"
         onclick={() => (selectedCategory = cat.id)}
       >
         {cat.name}
@@ -286,21 +267,21 @@
           </div>
           <div class="pricing-calc__item-action">
             <span class="pricing-calc__item-price">{item.price.toFixed(2)} TL</span>
-            <div class="pricing-calc__counter">
+            <div class="pricing-calc__item-counter">
               {#if qty > 0}
                 <button
                   type="button"
-                  class="pricing-calc__btn-count"
+                  class="btn btn--secondary btn--sm btn--icon-only"
                   onclick={() => removeItem(item.id)}
                   aria-label="Azalt"
                 >
                   -
                 </button>
-                <span class="pricing-calc__count-badge">{qty}</span>
+                <span class="pricing-calc__item-qty">{qty}</span>
               {/if}
               <button
                 type="button"
-                class="pricing-calc__btn-count is-add"
+                class="btn btn--primary btn--sm btn--icon-only"
                 onclick={() => addItem(item)}
                 aria-label="Ekle"
               >
@@ -313,7 +294,7 @@
     {/if}
   </div>
 
-  <!-- Yapışkan Alt Bar (Tek ve Net Doğruluk Kaynağı) -->
+  <!-- Yapışkan Alt Bar -->
   {#if totalTrayCount > 0}
     <div class="pricing-calc__sticky-wrap">
       <aside class="pricing-calc__sticky-bar" aria-label="Seçim Özeti">
@@ -344,14 +325,14 @@
           <div class="pricing-calc__sticky-actions">
             <button
               type="button"
-              class="pricing-calc__btn-text-action"
+              class="btn btn--secondary btn--sm"
               onclick={() => (isDrawerOpen = !isDrawerOpen)}
             >
               {isDrawerOpen ? 'Kapat' : 'Detay'}
             </button>
             <button
               type="button"
-              class="pricing-calc__btn-icon"
+              class="btn btn--secondary btn--sm btn--icon-only"
               onclick={handleShare}
               aria-label="Paylaş"
               title="Paylaş"
@@ -366,7 +347,7 @@
             </button>
             <button
               type="button"
-              class="pricing-calc__btn-icon is-danger"
+              class="btn btn--danger btn--sm btn--icon-only"
               onclick={clearTray}
               aria-label="Sıfırla"
               title="Sıfırla"
