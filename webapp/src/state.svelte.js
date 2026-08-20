@@ -3,7 +3,7 @@ import { goto } from '$app/navigation';
 import { getCookie, clearLoggedCookie } from './utils/cookie.js';
 
 const initialHasSession = typeof document !== 'undefined' ? getCookie('kepce_logged_in') === 'true' : false;
-const cachedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('kepce_user_cache') || 'null') : null;
+const cachedUser = (typeof window !== 'undefined' && initialHasSession) ? JSON.parse(localStorage.getItem('kepce_user_cache') || 'null') : null;
 
 const initialPaginationMode = typeof window !== 'undefined' ? (localStorage.getItem('sayfalamaModu') || 'sayfali') : 'sayfali';
 const initialIsApp = typeof navigator !== 'undefined' ? navigator.userAgent.includes('KepceMobileApp') : false;
@@ -97,6 +97,7 @@ export const authActions = {
       globalState.isModerator = false;
       globalState.favorites = [];
       globalState.hasSession = false;
+      clearLoggedCookie();
       if (typeof window !== 'undefined') localStorage.removeItem('kepce_user_cache');
       if (typeof document !== 'undefined') document.body.classList.remove('is-logged-in');
       goto('/');

@@ -8,16 +8,8 @@
 
   let checked = $state(false);
 
-  $effect(() => {
-    if (globalState.user?.username) {
-      goto(`/biri/${globalState.user.username}`, { replaceState: true });
-    }
-  });
-
   onMount(async () => {
-    if (!globalState.user) {
-      await authActions.refreshUser();
-    }
+    await authActions.refreshUser();
     if (globalState.user?.username) {
       goto(`/biri/${globalState.user.username}`, { replaceState: true });
     } else {
@@ -40,33 +32,6 @@
         <a href="/kayit" class="btn btn--secondary">Hesap Oluştur</a>
       </div>
     </EmptyState>
-
-    <div class="c-boxed-list u-mt-xl" style="max-width: 480px; margin-left: auto; margin-right: auto; width: 100%;">
-      <a href="/ayarlar" class="c-list-row c-list-row--clickable c-list-row--regular">
-        <div class="c-list-row__info">
-          <div class="c-list-row__title">Ayarlar ve Tercihler</div>
-        </div>
-        <div class="c-list-row__control u-color-muted">
-          {@html icon("chevronRight", 18)}
-        </div>
-      </a>
-      <a href="/menu-gonder" class="c-list-row c-list-row--clickable c-list-row--regular">
-        <div class="c-list-row__info">
-          <div class="c-list-row__title">Menü Gönder</div>
-        </div>
-        <div class="c-list-row__control u-color-muted">
-          {@html icon("chevronRight", 18)}
-        </div>
-      </a>
-      <a href="/sss" class="c-list-row c-list-row--clickable c-list-row--regular">
-        <div class="c-list-row__info">
-          <div class="c-list-row__title">Sıkça Sorulan Sorular</div>
-        </div>
-        <div class="c-list-row__control u-color-muted">
-          {@html icon("chevronRight", 18)}
-        </div>
-      </a>
-    </div>
   {/if}
 </div>
 

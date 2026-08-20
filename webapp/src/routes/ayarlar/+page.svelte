@@ -771,38 +771,6 @@
         </div>
       </div>
 
-      <!-- Sayfalama Modu -->
-      <!-- svelte-ignore a11y_click_events_have_key_events -->
-      <!-- svelte-ignore a11y_no_static_element_interactions -->
-      <div
-        class="c-list-row c-list-row--clickable c-list-row--tall"
-        onclick={(e) => {
-          if (!e.target.closest(".c-segmented-control__btn")) {
-            paginationMode = paginationMode === "sayfali" ? "akici" : "sayfali";
-            handlePaginationModeChange(paginationMode);
-          }
-        }}
-      >
-        <div class="c-list-row__info">
-          <div class="c-list-row__title">Sayfalama modu</div>
-          <div class="c-list-row__desc">
-            {paginationMode === "sayfali"
-              ? "Numaralı (1, 2, 3...) butonlarla gezinme"
-              : "Aşağı kaydırdıkça otomatik yüklenen sonsuz akış"}
-          </div>
-        </div>
-        <div class="c-list-row__control c-list-row__control--flexible">
-          <SegmentedControl
-            bind:value={paginationMode}
-            variant="text"
-            options={[
-              { value: "sayfali", label: "Sayfalı" },
-              { value: "akici", label: "Sonsuz Akış" },
-            ]}
-            onChange={handlePaginationModeChange}
-          />
-        </div>
-      </div>
 
       <!-- Görsel efektler -->
       <label class="c-list-row c-list-row--clickable c-list-row--tall">

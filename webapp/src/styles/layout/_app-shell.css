@@ -27,7 +27,7 @@ html.is-app #page-content,
 html.is-app .page-container,
 body.is-app #page-content,
 body.is-app .page-container {
-  padding-top: var(--space-sm, 12px) !important;
+  padding-top: calc(56px + max(env(safe-area-inset-top, 0px), 28px)) !important;
   padding-bottom: 110px !important;
 }
 

@@ -287,14 +287,23 @@
     <div class="stats-placeholder">
       <Loader size={48} />
     </div>
+  {:else if !user}
+    <EmptyState
+      title="Oturum Açın"
+      desc="Bildirimlerinizi görüntülemek, yorumlarınıza gelen yanıtları ve kazandığınız rozetleri takip etmek için giriş yapın."
+      iconName="bell"
+    >
+      <div class="u-flex u-gap-md u-justify-center u-mt-md">
+        <a href="/giris" class="btn btn--primary">Giriş Yap</a>
+        <a href="/kayit" class="btn btn--secondary">Hesap Oluştur</a>
+      </div>
+    </EmptyState>
   {:else if errorMsg}
     <EmptyState
-      statusCode={user ? 500 : 401}
+      statusCode={500}
       desc={errorMsg}
-      actionLabel={!user ? "Giriş Yap" : "Tekrar Dene"}
-      onAction={!user
-        ? () => (window.location.href = "/giris")
-        : loadNotifications}
+      actionLabel="Tekrar Dene"
+      onAction={loadNotifications}
     />
   {:else if filteredNotifications.length === 0}
     <EmptyState
