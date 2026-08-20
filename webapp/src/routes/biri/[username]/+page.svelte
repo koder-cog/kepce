@@ -282,7 +282,7 @@
     <EmptyState
       iconName="chat"
       title="Henüz Yorum Yok"
-      desc="Bu kullanıcı henüz bir menüye veya yemeğe yorum yapmamış."
+      desc={`@${username} henüz bir yorum yapmamış.`}
     />
   </div>
 {:else}
