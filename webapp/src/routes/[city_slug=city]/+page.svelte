@@ -20,7 +20,7 @@
         timelineState.init();
     });
 
-    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü (Bugün Ne Çıktı?) | Kepçe`);
+    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü | Kepçe`);
     let pageDescription = $derived(
         `${cityName} KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
     );

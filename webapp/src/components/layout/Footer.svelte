@@ -22,20 +22,24 @@
       class="site-footer__link">Kaynak kodu</a
     >
     <a href="/menu-gonder" class="site-footer__link" data-link>Menü gönder</a>
-  </div>
-
-  <div class="site-footer__col">
-    <div class="site-footer__col-title">Rehber</div>
-    <a href="/kyk-yemek-saatleri" class="site-footer__link" data-link>Yemek Saatleri</a>
-    <a href="/kyk-beslenme-yardimi" class="site-footer__link" data-link>Beslenme Yardımı</a>
-    <a href="/sss" class="site-footer__link" data-link>Sıkça Sorulanlar</a>
-  </div>
-
-  <div class="site-footer__col">
-    <div class="site-footer__col-title">Hizmetler</div>
-    <a href="/istatistikler" class="site-footer__link" data-link>İstatistikler</a>
     <a href="/durum" class="site-footer__link" data-link>Sistem Durumu</a>
-    <a href="/rss" class="site-footer__link" data-link>RSS Akışı</a>
+    <a href="/rss" class="site-footer__link" data-link>RSS</a>
+  </div>
+
+  <div class="site-footer__col">
+    <div class="site-footer__col-title">Keşfet</div>
+    <a href="/sss" class="site-footer__link" data-link
+      >Sıkça Sorulabilecek Sorular</a
+    >
+    <a href="/istatistikler" class="site-footer__link" data-link
+      >İstatistikler</a
+    >
+    <a href="/kyk-yemek-saatleri" class="site-footer__link" data-link
+      >Yemek saatleri</a
+    >
+    <a href="/kyk-beslenme-yardimi" class="site-footer__link" data-link
+      >Beslenme yardımı</a
+    >
   </div>
 
   <div class="site-footer__col">

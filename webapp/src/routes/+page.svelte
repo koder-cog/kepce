@@ -39,8 +39,8 @@
 
     let pageTitle = $derived(
         timelineState.currentCity
-            ? `${cityName} KYK Yemek Menüsü (Bugün Ne Çıktı?) | Kepçe`
-            : "Bugün KYK'da Ne Yemek Var? Günlük Menüler | Kepçe",
+            ? `${cityName} KYK Yemek Menüsü | Kepçe`
+            : "Bugün KYK'da Ne Yemek Var? | Kepçe",
     );
 
     let pageDescription = $derived(

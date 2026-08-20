@@ -47,7 +47,7 @@
 </script>
 
 <Seo
-  title="Sıkça Sorulan Sorular (SSS) | Kepçe"
+  title="Sıkça Sorulabilecek Sorular | Kepçe"
   description="Kepçe platformu, KYK yurt yemek menüleri, verilerin doğruluğu ve topluluk kuralları hakkında sıkça sorulan sorular."
   image="https://kepce.org/api/v1/public/og/page/sss"
   schema={faqSchema}
