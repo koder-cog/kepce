@@ -135,3 +135,32 @@ export function getCommentContextHtml(c) {
 
   return `menüye yorum yaptı`;
 }
+
+export const TURKISH_MONTHS = [
+  "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+  "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+];
+
+export const TURKISH_DAYS = [
+  "Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi"
+];
+
+/**
+ * Formats a date string (YYYY-MM-DD or Date) into natural Turkish (e.g. "20 Ağustos 2026").
+ * @param {string | Date} input
+ * @param {boolean} includeDay
+ * @returns {string}
+ */
+export function formatFullTurkishDate(input, includeDay = false) {
+  if (!input) return "";
+  const d = typeof input === "string" ? new Date(input.includes("T") ? input : `${input}T12:00:00`) : input;
+  if (isNaN(d.getTime())) return String(input);
+  const day = d.getDate();
+  const month = TURKISH_MONTHS[d.getMonth()];
+  const year = d.getFullYear();
+  if (includeDay) {
+    const dayName = TURKISH_DAYS[d.getDay()];
+    return `${day} ${month} ${year} ${dayName}`;
+  }
+  return `${day} ${month} ${year}`;
+}

@@ -5,12 +5,52 @@
 <script>
   import ContentPage from "@/components/layout/ContentPage.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Menülere yaptığım yorumlar neden denetleniyor?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Platform güvenliğini sağlamak ve spam'i önlemek adına yorumlar yayın öncesinde otomatik/manuel denetimden geçer.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Menü verilerini nereden alıyorsunuz?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "KYK yurtlarında kalan öğrencilerin gönderdiği menü belgelerinden, açık veri kaynaklarından ve öğrenci topluluklarının katkılarından derlenmektedir.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Site hata verirse veya menü yanlış çıkarsa ne yapmalıyım?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Menü kartındaki Hata Bildir butonu veya iletişim sayfası üzerinden menü düzeltmesi iletebilirsiniz.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Kepçe açık kaynaklı mı?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Evet, Kepçe AGPL v3 lisansı altında tamamen açık kaynak kodlu ve kâr amacı gütmeyen bağımsız bir projedir.",
+        },
+      },
+    ],
+  };
 </script>
 
 <Seo
-  title="Sıkça Sorulan Sorular (SSS) - Kepçe"
+  title="Sıkça Sorulan Sorular (SSS) | Kepçe"
   description="Kepçe platformu, KYK yurt yemek menüleri, verilerin doğruluğu ve topluluk kuralları hakkında sıkça sorulan sorular."
   image="https://kepce.org/api/v1/public/og/page/sss"
+  schema={faqSchema}
 />
 
 <ContentPage

@@ -1,5 +1,6 @@
 <script>
     import { timelineState } from "@/stores/timeline.svelte.js";
+    import { setCurrentCity } from "@/stores/city.svelte.js";
     import DailyHeader from "@/components/features/timeline/DailyHeader.svelte";
     import CalendarSelector from "@/components/features/timeline/CalendarSelector.svelte";
     import TimelineView from "@/components/features/timeline/TimelineView.svelte";
@@ -7,52 +8,24 @@
     import Seo from "@/components/ui/Seo.svelte";
     import { onMount } from "svelte";
 
-    import { untrack } from "svelte";
-
     let { data } = $props();
 
-    // SSR / Init: data'dan gelen prerender menülerini hemen store'a aktar.
-    // Senkron çağrı hem SSR prerender'da hem ilk client render'da çalışır.
-    untrack(() => {
-        if (data?.prerenderedCity) {
-            timelineState.setPrerenderedData(
-                data.prerenderedMenus || [],
-                data.prerenderedCity,
-                data.prerenderedDate
-            );
-        }
-    });
+    let citySlug = $derived(data?.citySlug || "istanbul");
+    let cityName = $derived(CITY_MAP[citySlug] || citySlug);
 
     onMount(() => {
-        // Görev #24: URL üzerinden diyet modu zorlaması (?diyet=celiac).
-        // Çölyaksız bir ayda bile mod korunur ve "çölyak menüsü yok"
-        // empty-state'i gösterilir.
-        const params = new URLSearchParams(window.location.search);
-        const dietParam = params.get("diyet") || params.get("diet");
-        if (dietParam === "celiac" || dietParam === "colyak") {
-            timelineState.forceDietMode("celiac");
+        if (citySlug) {
+            setCurrentCity(citySlug);
         }
         timelineState.init();
     });
 
-    let cityName = $derived(CITY_MAP[timelineState.currentCity] || timelineState.currentCity);
-
-    let pageTitle = $derived(
-        timelineState.currentCity
-            ? `${cityName} KYK Yemek Menüsü (Bugün Ne Çıktı?) | Kepçe`
-            : "Bugün KYK'da Ne Yemek Var? Günlük Menüler | Kepçe",
-    );
-
+    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü (Bugün Ne Çıktı?) | Kepçe`);
     let pageDescription = $derived(
-        timelineState.currentCity
-            ? `${cityName} KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
-            : "Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
+        `${cityName} KYK yurtlarında bugün çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemek listeleri ve öğrenci yorumları.`
     );
-    let ogImage = $derived(
-        timelineState.currentCity
-            ? `https://kepce.org/api/v1/public/og/city/${timelineState.currentCity}`
-            : "https://kepce.org/og_image.png",
-    );
+    let canonicalUrl = $derived(`https://kepce.org/${citySlug}`);
+    let ogImage = $derived(`https://kepce.org/api/v1/public/og/city/${citySlug}`);
 
     let menuSchema = $derived.by(() => {
         const menus = timelineState.menusState || [];
@@ -92,7 +65,7 @@
                 },
                 {
                     "@type": "Menu",
-                    "@id": `https://kepce.org/?sehir=${timelineState.currentCity || "istanbul"}#menu`,
+                    "@id": `https://kepce.org/${citySlug}#menu`,
                     name: `${cityName} KYK Günlük Yemek Menüsü`,
                     inLanguage: "tr-TR",
                     hasMenuSection: sections,
@@ -102,12 +75,16 @@
     });
 </script>
 
-<Seo title={pageTitle} description={pageDescription} image={ogImage} schema={menuSchema} />
+<Seo
+    title={pageTitle}
+    description={pageDescription}
+    image={ogImage}
+    canonical={canonicalUrl}
+    schema={menuSchema}
+/>
 
 <h1 class="sr-only">
-    {timelineState.currentCity
-        ? `${CITY_MAP[timelineState.currentCity] || timelineState.currentCity} KYK Yurt Yemek Menüsü`
-        : "KYK Yurt Yemek Menüsü - Günlük Yemek Listesi"}
+    {cityName} KYK Yurt Yemek Menüsü - Günlük Yemek Listesi
 </h1>
 
 <DailyHeader />

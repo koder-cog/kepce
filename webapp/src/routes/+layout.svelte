@@ -95,6 +95,12 @@
 		if (pathname.startsWith("/sehirler")) {
 			return { title: "Şehirler", isRoot: false, hideBottomNav: false };
 		}
+		if (pathname.startsWith("/kyk-yemek-saatleri")) {
+			return { title: "KYK Yemek Saatleri", isRoot: false, hideBottomNav: false };
+		}
+		if (pathname.startsWith("/kyk-beslenme-yardimi")) {
+			return { title: "Beslenme Yardımı", isRoot: false, hideBottomNav: false };
+		}
 		if (pathname.startsWith("/sss")) {
 			return { title: "Sıkça Sorulan Sorular", isRoot: false, hideBottomNav: false };
 		}

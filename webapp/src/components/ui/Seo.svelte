@@ -2,19 +2,24 @@
   import { page } from "$app/stores";
 
   let {
-    title = "Kepçe | Bugün KYK'da Ne Yemek Var?",
+    title = "Bugün KYK'da Ne Yemek Var? Günlük Menüler | Kepçe",
     description = "Bugün KYK yurtlarında çıkan sabah kahvaltısı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
     image = "https://kepce.org/og_image.png",
     type = "website",
+    canonical = null,
     noindex = false,
     schema = null,
   } = $props();
 
   const BASE_URL = "https://kepce.org";
 
-  let canonicalUrl = $derived(
-    $page.url.pathname ? `${BASE_URL}${$page.url.pathname}` : BASE_URL,
-  );
+  let canonicalUrl = $derived.by(() => {
+    if (canonical) {
+      return canonical.replace(/\/+$/, "") || BASE_URL;
+    }
+    const path = ($page.url.pathname || "").replace(/\/+$/, "");
+    return path ? `${BASE_URL}${path}` : BASE_URL;
+  });
 
   let defaultSchema = $derived(
     schema || {

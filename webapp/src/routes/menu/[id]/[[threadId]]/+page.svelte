@@ -8,7 +8,7 @@
     import EmptyState from "@/components/ui/EmptyState.svelte";
     import { isMotionEnabled } from "@/lib/dom/motion.js";
     import { getCurrentCity, setCurrentCity } from "@/stores/city.svelte.js";
-    import { CITY_MAP } from "@/utils/turkish.js";
+    import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
     import { onMount, onDestroy } from "svelte";
     import CommentList from "@/components/features/CommentList.svelte";
     import Seo from "@/components/ui/Seo.svelte";
@@ -156,24 +156,49 @@
               : "https://kepce.org/og_image.png"
     );
 
+    let formattedDate = $derived(
+        menu?.date ? formatFullTurkishDate(menu.date, true) : ""
+    );
+
     let menuSchema = $derived.by(() => {
         if (!menu) return null;
         const dishes = menu.items || menu.dishes || [];
         const dishNames = dishes.map((d) => (typeof d === "string" ? d : d.name)).filter(Boolean);
         const cityName = CITY_MAP[targetCitySlug] || targetCitySlug || "KYK";
-        const dateStr = menu.date || "";
+        const dateLabel = formattedDate || menu.date || "";
 
-        return {
+        const votes = flattenPureVotes(allComments || []);
+        let ratingValue = null;
+        let reviewCount = votes.length;
+        if (reviewCount > 0) {
+            const scoreMap = { lezzetli: 5, guzel: 5, normal: 3.5, orta: 3, kotu: 2, berbat: 1, zehir: 1 };
+            const totalScore = votes.reduce((acc, v) => acc + (scoreMap[v.voteType] || 3.5), 0);
+            ratingValue = (totalScore / reviewCount).toFixed(1);
+        }
+
+        const schemaObj = {
             "@context": "https://schema.org",
             "@type": "Menu",
-            name: `${dateStr} ${cityName} KYK Yemek Menüsü`,
-            description: `${dateStr} tarihli ${cityName} KYK yurt menüsü: ${dishNames.join(", ")}`,
+            name: `${dateLabel} ${cityName} KYK Yemek Menüsü`,
+            description: `${dateLabel} tarihli ${cityName} KYK yurt menüsü: ${dishNames.join(", ")}`,
             inLanguage: "tr-TR",
             hasMenuItem: dishNames.map((name) => ({
                 "@type": "MenuItem",
                 name: name,
             })),
         };
+
+        if (reviewCount >= 1 && ratingValue) {
+            schemaObj.aggregateRating = {
+                "@type": "AggregateRating",
+                ratingValue: ratingValue,
+                bestRating: "5",
+                worstRating: "1",
+                ratingCount: reviewCount,
+            };
+        }
+
+        return schemaObj;
     });
 </script>
 
@@ -278,11 +303,12 @@
 
 <Seo
     title={menu
-        ? `${menu.date || menuId} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK Yemek Menüsü | Kepçe`
+        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK Yemek Menüsü | Kepçe`
         : "KYK Yemek Menüsü Detayı | Kepçe"}
     description={menu
-        ? `${menu.date || menuId} tarihli ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} yurt yemek menüsü detayları, besin değerleri ve öğrenci yorumları.`
+        ? `${formattedDate || menu.date} tarihli ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} yurt yemek menüsü detayları, besin değerleri ve öğrenci yorumları.`
         : "KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri."}
     image={ogImageUrl}
+    canonical={`https://kepce.org/menu/${menuId}`}
     schema={menuSchema}
 />
