@@ -178,6 +178,7 @@ pub fn get_client_ip(headers: &HeaderMap, extensions: &Extensions) -> Option<IpA
     None
 }
 
+#[allow(clippy::result_large_err)]
 pub async fn rate_limit_middleware(
     State(state): State<AppState>,
     req: Request<Body>,
