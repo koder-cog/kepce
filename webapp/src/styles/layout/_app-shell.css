@@ -70,7 +70,8 @@ body.is-app .comments-page {
 @media (max-width: 600px) {
   html.is-app .ci-container,
   body.is-app .ci-container {
-    bottom: max(env(safe-area-inset-bottom, 0px), 8px) !important;
+    bottom: 0 !important;
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px) !important;
     z-index: 100 !important;
     transition: bottom var(--dur-fast) var(--ease-standard) !important;
   }

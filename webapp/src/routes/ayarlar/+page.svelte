@@ -16,6 +16,7 @@
   import SessionManagerModal from "@/components/features/SessionManagerModal.svelte";
   import Seo from "@/components/ui/Seo.svelte";
   import { subscribeToPush, unsubscribeFromPush, sendTestPush, isPushSupported } from "@/utils/push.js";
+  import { nativeBridge } from "@/lib/native/bridge.js";
 
   let user = $derived(globalState?.user);
   let isResending = $state(false);
@@ -96,7 +97,6 @@
 
   function handlePaginationModeChange(val) {
     setPaginationMode(val);
-    showToast(val === "sayfali" ? "Numaralı sayfalama seçildi." : "Akıcı liste akışı seçildi.", { type: "info" });
   }
 
   let dietMode = $state(safeStorageGet("kepce_diet_mode", "standard"));
@@ -188,8 +188,9 @@
     try {
       await api.updateProfile({ default_city_slug: val || null });
       globalState.user.default_city_slug = val || null;
-      showToast("Varsayılan şehir tercihiniz güncellendi.", "success");
+      nativeBridge.triggerHaptic("success");
     } catch (err) {
+      nativeBridge.triggerHaptic("error");
       showToast(err.message, "error");
     }
   }
@@ -198,20 +199,26 @@
     try {
       await api.updateProfile({ opt_out_statistics: e.target.checked });
       globalState.user.opt_out_statistics = e.target.checked;
-      showToast("Gizlilik tercihiniz güncellendi.", "success");
+      nativeBridge.triggerHaptic("success");
     } catch (err) {
+      nativeBridge.triggerHaptic("error");
       showToast(err.message, "error");
     }
   }
 
+  let showNotifExplainModal = $state(false);
+  let pendingMealToggle = $state(null);
+
   async function handlePreferenceChange(key, value, label) {
     try {
+      nativeBridge.triggerHaptic("light");
       await api.updateProfile({ [key]: value });
       if (globalState.user) {
         globalState.user[key] = value;
       }
-      showToast(`${label} tercihiniz güncellendi.`, { type: "success" });
+      nativeBridge.triggerHaptic("success");
     } catch (err) {
+      nativeBridge.triggerHaptic("error");
       showToast(err.message || "Ayar güncellenirken bir hata oluştu.", { type: "error" });
     }
   }
@@ -262,7 +269,18 @@
     }
   }
 
-  async function handleMealNotifToggle(meal, checked) {
+  function handleMealNotifToggle(meal, checked) {
+    if (checked && globalState.isApp) {
+      pendingMealToggle = { meal, checked };
+      showNotifExplainModal = true;
+      nativeBridge.triggerHaptic("medium");
+      return;
+    }
+    executeMealNotifToggle(meal, checked);
+  }
+
+  async function executeMealNotifToggle(meal, checked) {
+    nativeBridge.triggerHaptic(checked ? "success" : "light");
     if (user) {
       const key = meal === "breakfast" ? "notif_breakfast_enabled" : "notif_dinner_enabled";
       await handlePreferenceChange(key, checked, meal === "breakfast" ? "Kahvaltı bildirimi" : "Akşam yemeği bildirimi");
@@ -279,8 +297,18 @@
         anonDinnerEnabled = checked;
         localStorage.setItem("kepce_notif_dinner_enabled", String(checked));
       }
-      showToast(`${meal === "breakfast" ? "Kahvaltı" : "Akşam yemeği"} bildirimi tercihiniz kaydedildi.`, { type: "success" });
       await syncPushSubscription(anonBreakfastEnabled, anonBreakfastTime, anonDinnerEnabled, anonDinnerTime);
+    }
+  }
+
+  function confirmNotifPermission() {
+    showNotifExplainModal = false;
+    if (pendingMealToggle) {
+      executeMealNotifToggle(pendingMealToggle.meal, pendingMealToggle.checked);
+      pendingMealToggle = null;
+    }
+    if (typeof window !== "undefined" && window.AndroidBridge?.requestNotificationPermission) {
+      window.AndroidBridge.requestNotificationPermission();
     }
   }
 
@@ -301,7 +329,6 @@
         anonDinnerTime = time;
         localStorage.setItem("kepce_notif_dinner_time", time);
       }
-      showToast("Bildirim saati güncellendi.", { type: "success" });
       await syncPushSubscription(anonBreakfastEnabled, anonBreakfastTime, anonDinnerEnabled, anonDinnerTime);
     }
   }
@@ -617,6 +644,32 @@
       <button class="btn btn--danger" onclick={confirmDeleteAccount}
         >Evet, Sil</button
       >
+    {/snippet}
+  </Modal>
+{/if}
+
+{#if showNotifExplainModal}
+  <Modal
+    options={{
+      title: "Öğün Bildirimleri",
+      iconHtml: icon("bell", 24)
+    }}
+    onClose={() => { showNotifExplainModal = false; pendingMealToggle = null; }}
+  >
+    {#snippet children()}
+      <p class="u-text-base" style="line-height: 1.6;">
+        Kahvaltı ve akşam yemeği menülerini tam vaktinde alabilmeniz ve günün tabldotunu kaçırmamanız için sistem bildirim izni gerekmektedir.
+      </p>
+      <p class="u-mt-sm u-text-sm u-color-muted">
+        İzin verdiğinizde belirlediğiniz saatlerde cihazınıza bildirim gönderilir. İstediğiniz an buradan kapatabilirsiniz.
+      </p>
+    {/snippet}
+    {#snippet footer()}
+      <button
+        class="btn btn--secondary"
+        onclick={() => { showNotifExplainModal = false; pendingMealToggle = null; }}>Vazgeç</button
+      >
+      <button class="btn btn--primary" onclick={confirmNotifPermission}>İzin Ver ve Aç</button>
     {/snippet}
   </Modal>
 {/if}
@@ -1346,7 +1399,7 @@
           </div>
         </a>
         <a
-          href="/yasal/gizlilik"
+          href="/gizlilik-politikasi"
           class="c-list-row c-list-row--clickable c-list-row--regular"
         >
           <div class="c-list-row__info">
@@ -1357,7 +1410,7 @@
           </div>
         </a>
         <a
-          href="/yasal/kullanim"
+          href="/kullanim-kosullari"
           class="c-list-row c-list-row--clickable c-list-row--regular"
         >
           <div class="c-list-row__info">
