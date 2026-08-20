@@ -53,9 +53,56 @@
             ? `https://kepce.org/api/v1/public/og/city/${timelineState.currentCity}`
             : "https://kepce.org/og_image.png",
     );
+
+    let menuSchema = $derived.by(() => {
+        const menus = timelineState.menusState || [];
+        if (!menus || menus.length === 0) return null;
+
+        const sections = menus.map((m) => {
+            const dishes = m.items || m.dishes || [];
+            const dishNames = dishes.map((d) => (typeof d === "string" ? d : d.name)).filter(Boolean);
+            const mealTitle = m.meal_type === "breakfast" ? "Sabah Kahvaltısı" : "Akşam Yemeği";
+            return {
+                "@type": "MenuSection",
+                name: mealTitle,
+                hasMenuItem: dishNames.map((name) => ({
+                    "@type": "MenuItem",
+                    name: name,
+                })),
+            };
+        });
+
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebSite",
+                    "@id": "https://kepce.org/#website",
+                    url: "https://kepce.org/",
+                    name: "Kepçe",
+                    description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
+                    inLanguage: "tr-TR",
+                },
+                {
+                    "@type": "Organization",
+                    "@id": "https://kepce.org/#organization",
+                    name: "Kepçe",
+                    url: "https://kepce.org/",
+                    logo: "https://kepce.org/icon-512.png",
+                },
+                {
+                    "@type": "Menu",
+                    "@id": `https://kepce.org/?sehir=${timelineState.currentCity || "istanbul"}#menu`,
+                    name: `${cityName} KYK Günlük Yemek Menüsü`,
+                    inLanguage: "tr-TR",
+                    hasMenuSection: sections,
+                },
+            ],
+        };
+    });
 </script>
 
-<Seo title={pageTitle} description={pageDescription} image={ogImage} />
+<Seo title={pageTitle} description={pageDescription} image={ogImage} schema={menuSchema} />
 
 <h1 class="sr-only">
     {timelineState.currentCity

@@ -155,6 +155,26 @@
               ? `https://kepce.org/api/v1/public/og/menu/${menuId}`
               : "https://kepce.org/og_image.png"
     );
+
+    let menuSchema = $derived.by(() => {
+        if (!menu) return null;
+        const dishes = menu.items || menu.dishes || [];
+        const dishNames = dishes.map((d) => (typeof d === "string" ? d : d.name)).filter(Boolean);
+        const cityName = CITY_MAP[targetCitySlug] || targetCitySlug || "KYK";
+        const dateStr = menu.date || "";
+
+        return {
+            "@context": "https://schema.org",
+            "@type": "Menu",
+            name: `${dateStr} ${cityName} KYK Yemek Menüsü`,
+            description: `${dateStr} tarihli ${cityName} KYK yurt menüsü: ${dishNames.join(", ")}`,
+            inLanguage: "tr-TR",
+            hasMenuItem: dishNames.map((name) => ({
+                "@type": "MenuItem",
+                name: name,
+            })),
+        };
+    });
 </script>
 
 {#if isLoading}
@@ -258,10 +278,11 @@
 
 <Seo
     title={menu
-        ? `${menu.date || menuId} Yemek Menüsü - Kepçe`
-        : "Menü Detayı - Kepçe"}
+        ? `${menu.date || menuId} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK Yemek Menüsü | Kepçe`
+        : "KYK Yemek Menüsü Detayı | Kepçe"}
     description={menu
-        ? `${menu.date || menuId} tarihli KYK yurt yemek menüsü, besin değerleri ve öğrenci değerlendirmeleri.`
+        ? `${menu.date || menuId} tarihli ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} yurt yemek menüsü detayları, besin değerleri ve öğrenci yorumları.`
         : "KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri."}
     image={ogImageUrl}
+    schema={menuSchema}
 />
