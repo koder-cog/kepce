@@ -36,24 +36,32 @@
   dateLabel="Yayımlanma tarihi: 2026.08.20"
 >
   <p>
-    KYK yurtlarında barınan öğrencilere her gün sabah kahvaltısı ve akşam yemeği için devlet tarafından nakdi beslenme yardımı tanımlanır. Bu tutar yemekhanelerde doğrudan harcanabilir.
+    KYK yurtlarında barınan her öğrenciye devlet tarafından sabah kahvaltısı ve akşam yemeği için günlük nakdi beslenme yardımı tanımlanır. Bu tutar yemekhanelerde geçerlidir ve tabldot ya da alakart yemeklerde kullanılabilir.
   </p>
 
   <h2>Beslenme Yardımı Nasıl Kullanılır?</h2>
   <p>
-    Yemekhanede tabldot veya alakart yemek seçtikten sonra kasada öğrenci kartınızı okutarak veya parmak izi / yüz tanıma ile yardım tutarını anında düşebilirsiniz.
+    Yemekhanede tabldot veya alakart yemeklerinizi seçtikten sonra kasada öğrenci kimlik kartınızı okutarak veya parmak izi / yüz tanıma sistemiyle yardım tutarınızı anında düşebilirsiniz.
   </p>
 
-  <h2>Bilinmesi Gerekenler</h2>
-  <ul>
-    <li><strong>Öğün Ayrımı:</strong> Beslenme yardımı sabah ve akşam için ayrıdır. Sabah hakkı sadece sabah kahvaltısında, akşam hakkı akşam yemeğinde geçerlidir.</li>
-    <li><strong>Limit Aşımı:</strong> Seçtiğiniz yemeklerin toplam tutarı yardımı aşarsa aradaki fark kartla kasada ödenir.</li>
-    <li><strong>Devir Yoktur:</strong> Kullanılmayan yardım sonraki güne devretmez, nakit paraya çevrilemez.</li>
-    <li><strong>İzin Durumu:</strong> İzinli veya yurtta olmadığınız günlerin yemek yardımı birikmez.</li>
-  </ul>
-
-  <h2>Günün Menüsü</h2>
+  <h2>Sabah ve Akşam Kotası</h2>
   <p>
-    Yurdunuzda bugün çıkan menüyü ve besin değerlerini kontrol etmek için <a href="/" data-link>Günün Menüsü</a> veya geçmiş yemekler için <a href="/arsiv" data-link>Arşiv</a> sayfamıza bakabilirsiniz.
+    Beslenme yardımı sabah kahvaltısı ve akşam yemeği için iki ayrı kota şeklinde verilir. Sabah için tanımlanan tutarı yalnızca sabah kahvaltısı saatlerinde, akşam tutarını ise akşam yemeğinde harcayabilirsiniz.
+  </p>
+  <p>
+    Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanılmayan hak gün bittiğinde sıfırlanır.
+  </p>
+
+  <h2>Limit Aşımı Durumunda Ne Olur?</h2>
+  <p>
+    Eğer seçtiğiniz yemeklerin toplam fiyatı o öğün için tanımlanan beslenme yardımını aşarsa, aradaki farkı banka kartı, kredi kartı veya nakit ile kasada ödeyebilirsiniz.
+  </p>
+
+  <h2>Yurtta Olmadığınız Günler</h2>
+  <p>
+    Hafta sonu izinli olduğunuzda veya tatillerde yemekhaneyi kullanmadığınız günlerin yemek yardımı birikmez veya nakit olarak talep edilemez.
+  </p>
+  <p>
+    Bugünkü yemek listesini ve besin değerlerini incelemek için <a href="/" data-link>Günün Menüsü</a> sayfasına bakabilirsiniz.
   </p>
 </ContentPage>
