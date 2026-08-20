@@ -2,7 +2,7 @@
 	import "../styles/main.css";
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
-	import { beforeNavigate, afterNavigate, onNavigate } from "$app/navigation";
+	import { beforeNavigate, afterNavigate, onNavigate, goto } from "$app/navigation";
 	import { page } from "$app/stores";
 	import { globalState, authActions } from "@/state.svelte.js";
 	import Nav from "@/components/layout/Nav.svelte";
@@ -143,6 +143,10 @@
 
 		const devMode = localStorage.getItem("kepce_dev_mode") === "true";
 		globalState.devMode = devMode;
+
+		if (typeof window !== "undefined") {
+			window.__sveltekit_goto = (url) => goto(url);
+		}
 
 		await authActions.refreshUser();
 	});
