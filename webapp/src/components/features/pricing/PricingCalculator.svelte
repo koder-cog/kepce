@@ -79,7 +79,6 @@
     const target = allowanceInput;
 
     if (type === "zero") {
-      // Dynamic Knapsack / Subset Sum search to get exact target or closest <= target
       let bestCombo = null;
       let bestDiff = Infinity;
 
@@ -120,7 +119,6 @@
         showToast("Sıfır farka en yakın menü oluşturuldu.", "success");
       }
     } else if (type === "protein") {
-      // Dynamic Protein Focus: Filters high-protein items and fills up to quota
       const proteinKeywords = ["tavuk", "köfte", "et", "yumurta", "yoğurt", "ayran", "süt", "peynir"];
       const proteinItems = availableItems
         .filter((i) =>
@@ -143,7 +141,6 @@
         showToast("Yüksek proteinli menü oluşturuldu.", "success");
       }
     } else if (type === "classic") {
-      // Dynamic Classic Staples: Tost, Pide, Lahmacun, Gözleme, Baklava, Ayran
       const classicKeywords = ["tost", "lahmacun", "pide", "gözleme", "baklava", "ayran", "tatlı"];
       const classicItems = availableItems
         .filter((i) =>
@@ -370,10 +367,10 @@
     {/if}
   </div>
 
-  <!-- Yapışkan Alt Bar -->
+  <!-- Yapışkan Alt Bar (Kart Sınıfı) -->
   {#if totalTrayCount > 0}
     <div class="pricing-calc__sticky-wrap">
-      <aside class="pricing-calc__sticky-bar" aria-label="Seçim Özeti">
+      <aside class="disclaimer-card pricing-calc__sticky-bar" aria-label="Seçim Özeti">
         <!-- 3px İnce İlerleme Çizgisi -->
         <div class="pricing-calc__progress-line">
           <div
@@ -436,7 +433,7 @@
           </div>
         </div>
 
-        <!-- Açılır/Kapanır Zarif Detay Çekmecesi (Grid Transition) -->
+        <!-- Açılır/Kapanır Zarif Detay Çekmecesi (Büyütülmüş & Ferah) -->
         <div class="pricing-calc__drawer {isDrawerOpen ? 'is-open' : ''}">
           <div class="pricing-calc__drawer-inner">
             <div class="pricing-calc__drawer-list">
@@ -444,13 +441,13 @@
                 <span class="pricing-calc__drawer-chip">
                   <span>{item.name}</span>
                   <strong>x{item.qty}</strong>
-                  <span>({item.itemTotal.toFixed(0)} TL)</span>
+                  <span class="chip-price">({item.itemTotal.toFixed(0)} TL)</span>
                   <button
                     type="button"
                     onclick={() => removeItem(item.id)}
                     aria-label="Kaldır"
                   >
-                    Sil
+                    ✕
                   </button>
                 </span>
               {/each}
