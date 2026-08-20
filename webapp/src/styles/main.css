@@ -48,6 +48,7 @@
 @import "components/_toast.css";
 @import "components/_comment.css";
 @import "components/_pagination.css";
+@import "components/_pricing-calculator.css";
 
 /* Utilities */
 @import "utilities/_animations.css";
