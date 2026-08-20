@@ -9,6 +9,7 @@
   let searchQuery = $state("");
   let selectedCategory = $state("all");
   let tray = $state({}); // { [itemId]: quantity }
+  let isDrawerOpen = $state(false);
 
   // Load from URL params if present
   onMount(() => {
@@ -39,13 +40,11 @@
     }
   });
 
-  // Change meal type and reset default allowance
   function handleMealChange(type) {
     selectedMeal = type;
     allowanceInput = pricingData.defaultAllowances[type];
   }
 
-  // Tray actions
   function addItem(item) {
     tray[item.id] = (tray[item.id] || 0) + 1;
   }
@@ -63,61 +62,33 @@
 
   function clearTray() {
     tray = {};
+    isDrawerOpen = false;
   }
 
-  // ── Knapsack / Smart Combination Generators ──
-  function applyZeroDiffCombo() {
-    if (selectedMeal === "breakfast") {
-      // 45 TL Breakfast: Kaşarlı Tost (36 TL) + Ayran (8 TL) = 44 TL
-      tray = {
-        "kasarli-tost": 1,
-        ayran: 1,
-      };
-    } else {
-      // 105 TL Dinner: Tavuk Döner (80 TL) + Ayran (8 TL) + Turşu (12 TL) + Su (5 TL) = 105.00 TL (Exact 0 TL diff!)
-      tray = {
-        "tavuk-doner": 1,
-        ayran: 1,
-        tursu: 1,
-        su: 1,
-      };
+  // ── Smart Presets ──
+  function applyPreset(type) {
+    if (type === "zero") {
+      if (selectedMeal === "breakfast") {
+        tray = { "kasarli-tost": 1, ayran: 1 };
+      } else {
+        tray = { "tavuk-doner": 1, ayran: 1, tursu: 1, su: 1 };
+      }
+      showToast("Sıfır fark menüsü seçildi.", "success");
+    } else if (type === "protein") {
+      if (selectedMeal === "breakfast") {
+        tray = { "sahanda-cift-yumurta": 1, sut: 1 };
+      } else {
+        tray = { "kemiksiz-tavuk-yemegi": 1, yogurt: 1, ayran: 1 };
+      }
+      showToast("Protein menüsü seçildi.", "success");
+    } else if (type === "classic") {
+      if (selectedMeal === "breakfast") {
+        tray = { gozleme: 1 };
+      } else {
+        tray = { lahmacun: 1, "baklava-cevizli": 1, ayran: 1 };
+      }
+      showToast("Büfe klasiği menü seçildi.", "success");
     }
-    showToast("Sıfır fark kombinasyonu tepsiye eklendi.", "success");
-  }
-
-  function applyProteinCombo() {
-    if (selectedMeal === "breakfast") {
-      // Breakfast protein: Dana Sucuklu Çift Yumurta (50 TL) or Sahanda Çift Yumurta (27 TL) + Süt (15 TL) = 42 TL
-      tray = {
-        "sahanda-cift-yumurta": 1,
-        sut: 1,
-      };
-    } else {
-      // Dinner protein: Kemiksiz Tavuk (80 TL) + Yoğurt (16 TL) + Ayran (8 TL) = 104 TL
-      tray = {
-        "kemiksiz-tavuk-yemegi": 1,
-        yogurt: 1,
-        ayran: 1,
-      };
-    }
-    showToast("Protein odaklı menü tepsiye eklendi.", "success");
-  }
-
-  function applyClassicCombo() {
-    if (selectedMeal === "breakfast") {
-      // Breakfast classic: Gözleme (47 TL)
-      tray = {
-        gozleme: 1,
-      };
-    } else {
-      // Dinner classic: Lahmacun (55 TL) + Cevizli Baklava (39 TL) + Ayran (8 TL) = 102 TL
-      tray = {
-        lahmacun: 1,
-        "baklava-cevizli": 1,
-        ayran: 1,
-      };
-    }
-    showToast("Büfe klasiği menü tepsiye eklendi.", "success");
   }
 
   // ── Share Actions ──
@@ -135,23 +106,32 @@
     return url.toString();
   }
 
-  function copyShareLink() {
+  async function handleShare() {
     const url = getShareUrl();
+    const itemsText = trayItems
+      .map((i) => `- ${i.name} (${i.qty} adet)`)
+      .join("\n");
+    const statusText = isUnderQuota
+      ? `Tam limittesin (0 TL fark)`
+      : `+${difference.toFixed(0)} TL cepten`;
+    const shareText = `Kepçe KYK Alakart Menüm:\n${itemsText}\nToplam: ${totalTrayPrice.toFixed(0)} TL (${statusText})\n${url}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Kepçe KYK Alakart Menüm",
+          text: shareText,
+          url,
+        });
+        return;
+      } catch {
+        // Fallback to clipboard
+      }
+    }
+
     navigator.clipboard.writeText(url).then(() => {
       showToast("Menü bağlantısı panoya kopyalandı.", "success");
     });
-  }
-
-  function shareWhatsApp() {
-    const itemsText = trayItems
-      .map((i) => `- ${i.name} (${i.qty} adet, ${i.itemTotal.toFixed(2)} TL)`)
-      .join("\n");
-    const statusText = isUnderQuota
-      ? `Limit içi (0 TL ek ödeme, Kalan: ${Math.abs(difference).toFixed(2)} TL)`
-      : `Kasada ödenecek fark: +${difference.toFixed(2)} TL`;
-    const message = `Kepçe Alakart Menü Setup'ım:\n${itemsText}\nToplam: ${totalTrayPrice.toFixed(2)} TL / Fiş Kotası: ${allowanceInput.toFixed(2)} TL\n${statusText}\n\n${getShareUrl()}`;
-    const waUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
-    window.open(waUrl, "_blank");
   }
 
   // Filtered items
@@ -204,27 +184,22 @@
 
 <section class="pricing-calc" aria-labelledby="pricing-calc-title">
   <div class="pricing-calc__header">
-    <div>
-      <h2 id="pricing-calc-title" class="pricing-calc__title">
-        Resmi Fiyat Tarifesi ve Fiş Hesaplayıcı
-      </h2>
-      <p class="pricing-calc__subtitle">
-        {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan
-        fiyatlarıdır.
-      </p>
-    </div>
+    <h2 id="pricing-calc-title" class="pricing-calc__title">
+      Resmi Fiyat Tarifesi ve Fiş Hesaplayıcı
+    </h2>
+    <p class="pricing-calc__subtitle">
+      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan fiyatlarıdır.
+    </p>
   </div>
 
-  <!-- Öğün & Kota Ayarı -->
-  <div class="pricing-calc__controls">
+  <!-- Satır 1: Öğün Geçişi ve Arama Çubuğu -->
+  <div class="pricing-calc__top-bar">
     <div class="pricing-calc__meal-toggle" role="tablist">
       <button
         type="button"
         role="tab"
         aria-selected={selectedMeal === "breakfast"}
-        class="pricing-calc__pill-btn {selectedMeal === 'breakfast'
-          ? 'is-active'
-          : ''}"
+        class="pricing-calc__pill-btn {selectedMeal === 'breakfast' ? 'is-active' : ''}"
         onclick={() => handleMealChange("breakfast")}
       >
         Kahvaltı (45 TL)
@@ -233,64 +208,17 @@
         type="button"
         role="tab"
         aria-selected={selectedMeal === "dinner"}
-        class="pricing-calc__pill-btn {selectedMeal === 'dinner'
-          ? 'is-active'
-          : ''}"
+        class="pricing-calc__pill-btn {selectedMeal === 'dinner' ? 'is-active' : ''}"
         onclick={() => handleMealChange("dinner")}
       >
         Akşam (105 TL)
       </button>
     </div>
 
-    <div class="pricing-calc__quota">
-      <label for="allowance-input" class="pricing-calc__quota-label">
-        Kota
-      </label>
-      <input
-        id="allowance-input"
-        type="number"
-        min="0"
-        max="500"
-        step="1"
-        bind:value={allowanceInput}
-        class="pricing-calc__quota-input"
-      />
-      <span class="pricing-calc__quota-unit">TL</span>
-    </div>
-  </div>
-
-  <!-- Hızlı Kombinasyon / Knapsack Butonları -->
-  <div class="pricing-calc__presets">
-    <span class="pricing-calc__presets-label">Hazır Menüler:</span>
-    <button
-      type="button"
-      class="pricing-calc__preset-btn"
-      onclick={applyZeroDiffCombo}
-    >
-      Sıfır Farkla Doldur
-    </button>
-    <button
-      type="button"
-      class="pricing-calc__preset-btn"
-      onclick={applyProteinCombo}
-    >
-      Maksimum Protein
-    </button>
-    <button
-      type="button"
-      class="pricing-calc__preset-btn"
-      onclick={applyClassicCombo}
-    >
-      Büfe Klasiği
-    </button>
-  </div>
-
-  <!-- Arama ve Kategori Filtresi -->
-  <div class="pricing-calc__filter">
     <div class="pricing-calc__search">
       <input
         type="text"
-        placeholder="Yemek veya içecek ara (tost, pide, ayran...)"
+        placeholder="Yemek veya içecek ara..."
         bind:value={searchQuery}
         class="pricing-calc__search-input"
       />
@@ -304,22 +232,42 @@
         </button>
       {/if}
     </div>
+  </div>
 
-    <div class="pricing-calc__categories" role="tablist">
-      {#each pricingData.categories as cat}
-        <button
-          type="button"
-          role="tab"
-          aria-selected={selectedCategory === cat.id}
-          class="pricing-calc__category-btn {selectedCategory === cat.id
-            ? 'is-active'
-            : ''}"
-          onclick={() => (selectedCategory = cat.id)}
-        >
-          {cat.name}
-        </button>
-      {/each}
-    </div>
+  <!-- Satır 2: Akıllı Kombinasyonlar ve Kategoriler -->
+  <div class="pricing-calc__pills-row" role="tablist">
+    <button
+      type="button"
+      class="pricing-calc__chip is-preset"
+      onclick={() => applyPreset("zero")}
+    >
+      Sıfır Fark
+    </button>
+    <button
+      type="button"
+      class="pricing-calc__chip is-preset"
+      onclick={() => applyPreset("protein")}
+    >
+      Protein
+    </button>
+    <button
+      type="button"
+      class="pricing-calc__chip is-preset"
+      onclick={() => applyPreset("classic")}
+    >
+      Büfe Klasiği
+    </button>
+    {#each pricingData.categories as cat}
+      <button
+        type="button"
+        role="tab"
+        aria-selected={selectedCategory === cat.id}
+        class="pricing-calc__chip {selectedCategory === cat.id ? 'is-active' : ''}"
+        onclick={() => (selectedCategory = cat.id)}
+      >
+        {cat.name}
+      </button>
+    {/each}
   </div>
 
   <!-- Ürün Listesi Grid -->
@@ -337,16 +285,14 @@
             <span class="pricing-calc__item-portion">{item.portion}</span>
           </div>
           <div class="pricing-calc__item-action">
-            <span class="pricing-calc__item-price"
-              >{item.price.toFixed(2)} TL</span
-            >
+            <span class="pricing-calc__item-price">{item.price.toFixed(2)} TL</span>
             <div class="pricing-calc__counter">
               {#if qty > 0}
                 <button
                   type="button"
                   class="pricing-calc__btn-count"
                   onclick={() => removeItem(item.id)}
-                  aria-label="Bir azalt"
+                  aria-label="Azalt"
                 >
                   -
                 </button>
@@ -367,124 +313,94 @@
     {/if}
   </div>
 
-  <!-- Sayfa İçi Tepsi ve Hesaplama Paneli -->
+  <!-- Yapışkan Alt Bar (Tek ve Net Doğruluk Kaynağı) -->
   {#if totalTrayCount > 0}
-    <div class="pricing-calc__summary">
-      <div class="pricing-calc__summary-header">
-        <span class="pricing-calc__summary-title"
-          >Seçilen Ürünler ({totalTrayCount})</span
-        >
-        <div class="pricing-calc__summary-actions">
-          <button
-            type="button"
-            class="pricing-calc__btn-share"
-            onclick={shareWhatsApp}
-          >
-            WhatsApp
-          </button>
-          <button
-            type="button"
-            class="pricing-calc__btn-share"
-            onclick={copyShareLink}
-          >
-            Linki Kopyala
-          </button>
-          <button
-            type="button"
-            class="pricing-calc__btn-clear"
-            onclick={clearTray}
-          >
-            Sıfırla
-          </button>
+    <div class="pricing-calc__sticky-wrap">
+      <aside class="pricing-calc__sticky-bar" aria-label="Seçim Özeti">
+        <!-- 3px İnce İlerleme Çizgisi -->
+        <div class="pricing-calc__progress-line">
+          <div
+            class="pricing-calc__progress-fill {isUnderQuota ? 'is-ok' : 'is-warn'}"
+            style="width: {progressPercent}%;"
+          ></div>
         </div>
-      </div>
 
-      <div class="pricing-calc__summary-chips">
-        {#each trayItems as item (item.id)}
-          <span class="pricing-calc__summary-chip">
-            <span>{item.name}</span>
-            <span class="chip-qty">{item.qty} adet</span>
-            <span class="chip-price">{item.itemTotal.toFixed(2)} TL</span>
+        <div class="pricing-calc__sticky-content">
+          <div class="pricing-calc__sticky-summary">
+            <span class="pricing-calc__sticky-count">{totalTrayCount} ürün</span>
+            <span class="pricing-calc__sticky-dot">•</span>
+            <span class="pricing-calc__sticky-total">{totalTrayPrice.toFixed(0)} TL</span>
+            {#if isUnderQuota}
+              {#if difference === 0}
+                <span class="pricing-calc__sticky-tag is-ok">Tam limittesin (0 TL fark)</span>
+              {:else}
+                <span class="pricing-calc__sticky-tag is-ok">{Math.abs(difference).toFixed(0)} TL kaldı</span>
+              {/if}
+            {:else}
+              <span class="pricing-calc__sticky-tag is-warn">+{difference.toFixed(0)} TL cepten</span>
+            {/if}
+          </div>
+
+          <div class="pricing-calc__sticky-actions">
             <button
               type="button"
-              class="chip-remove"
-              onclick={() => removeItem(item.id)}
+              class="pricing-calc__btn-text-action"
+              onclick={() => (isDrawerOpen = !isDrawerOpen)}
             >
-              Sil
+              {isDrawerOpen ? 'Kapat' : 'Detay'}
             </button>
-          </span>
-        {/each}
-      </div>
-
-      <!-- Kota Progress Bar -->
-      <div class="pricing-calc__progress-bar">
-        <div
-          class="pricing-calc__progress-fill {isUnderQuota
-            ? 'is-ok'
-            : 'is-warn'}"
-          style="width: {progressPercent}%;"
-        ></div>
-      </div>
-
-      <div class="pricing-calc__summary-footer">
-        <div class="pricing-calc__totals">
-          <div class="pricing-calc__total-line">
-            <span>Tutar:</span>
-            <strong>{totalTrayPrice.toFixed(2)} TL</strong>
-          </div>
-          <div class="pricing-calc__total-line is-muted">
-            <span>Kota:</span>
-            <span>{allowanceInput.toFixed(2)} TL</span>
+            <button
+              type="button"
+              class="pricing-calc__btn-icon"
+              onclick={handleShare}
+              aria-label="Paylaş"
+              title="Paylaş"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="18" cy="5" r="3"></circle>
+                <circle cx="6" cy="12" r="3"></circle>
+                <circle cx="18" cy="19" r="3"></circle>
+                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+              </svg>
+            </button>
+            <button
+              type="button"
+              class="pricing-calc__btn-icon is-danger"
+              onclick={clearTray}
+              aria-label="Sıfırla"
+              title="Sıfırla"
+            >
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
           </div>
         </div>
 
-        <div class="pricing-calc__result">
-          {#if isUnderQuota}
-            <span class="pricing-calc__status-tag is-ok">Limit İçi</span>
-            <span class="pricing-calc__result-text"
-              >0.00 TL ek ödeme ({Math.abs(difference).toFixed(2)} TL kaldı)</span
-            >
-          {:else}
-            <span class="pricing-calc__status-tag is-warn">Limit Aşımı</span>
-            <span class="pricing-calc__result-text"
-              >Fark: +{difference.toFixed(2)} TL</span
-            >
-          {/if}
-        </div>
-      </div>
-    </div>
-
-    <!-- Sticky Bottom Bar (Ekran Kaydırıldığında Kasada Sürpriz Rezillik Önleyici) -->
-    <aside class="pricing-calc__sticky-bar" aria-label="Seçim Özeti">
-      <div class="pricing-calc__sticky-info">
-        <span class="pricing-calc__sticky-count">{totalTrayCount} Ürün</span>
-        <span class="pricing-calc__sticky-total"
-          >{totalTrayPrice.toFixed(2)} TL</span
-        >
-        {#if isUnderQuota}
-          <span class="pricing-calc__status-tag is-ok">0 TL Fark</span>
-        {:else}
-          <span class="pricing-calc__status-tag is-warn"
-            >+{difference.toFixed(2)} TL</span
-          >
+        <!-- Açılır/Kapanır Zarif Detay Çekmecesi -->
+        {#if isDrawerOpen}
+          <div class="pricing-calc__drawer">
+            <div class="pricing-calc__drawer-list">
+              {#each trayItems as item (item.id)}
+                <span class="pricing-calc__drawer-chip">
+                  <span>{item.name}</span>
+                  <strong>x{item.qty}</strong>
+                  <span>({item.itemTotal.toFixed(0)} TL)</span>
+                  <button
+                    type="button"
+                    onclick={() => removeItem(item.id)}
+                    aria-label="Kaldır"
+                  >
+                    Sil
+                  </button>
+                </span>
+              {/each}
+            </div>
+          </div>
         {/if}
-      </div>
-      <div class="pricing-calc__sticky-actions">
-        <button
-          type="button"
-          class="pricing-calc__btn-pill-action"
-          onclick={shareWhatsApp}
-        >
-          WhatsApp
-        </button>
-        <button
-          type="button"
-          class="pricing-calc__btn-pill-action"
-          onclick={clearTray}
-        >
-          Sıfırla
-        </button>
-      </div>
-    </aside>
+      </aside>
+    </div>
   {/if}
 </section>
