@@ -13,8 +13,8 @@
   let isDrawerOpen = $state(false);
 
   const mealOptions = [
-    { value: "breakfast", label: "Kahvaltı (45 TL)" },
-    { value: "dinner", label: "Akşam (105 TL)" },
+    { value: "breakfast", label: "Kahvaltı" },
+    { value: "dinner", label: "Akşam" },
   ];
 
   // Load from URL params if present
@@ -74,7 +74,7 @@
   // ── Dynamic Smart Presets (Knapsack & Heuristics) ──
   function applyPreset(type) {
     const availableItems = pricingData.items.filter(
-      (i) => i.mealType === "all" || i.mealType === selectedMeal
+      (i) => i.mealType === "all" || i.mealType === selectedMeal,
     );
     const target = allowanceInput;
 
@@ -119,12 +119,21 @@
         showToast("Sıfır farka en yakın menü oluşturuldu.", "success");
       }
     } else if (type === "protein") {
-      const proteinKeywords = ["tavuk", "köfte", "et", "yumurta", "yoğurt", "ayran", "süt", "peynir"];
+      const proteinKeywords = [
+        "tavuk",
+        "köfte",
+        "et",
+        "yumurta",
+        "yoğurt",
+        "ayran",
+        "süt",
+        "peynir",
+      ];
       const proteinItems = availableItems
         .filter((i) =>
           proteinKeywords.some((k) =>
-            i.name.toLocaleLowerCase("tr-TR").includes(k)
-          )
+            i.name.toLocaleLowerCase("tr-TR").includes(k),
+          ),
         )
         .sort((a, b) => b.price - a.price);
 
@@ -141,12 +150,20 @@
         showToast("Yüksek proteinli menü oluşturuldu.", "success");
       }
     } else if (type === "classic") {
-      const classicKeywords = ["tost", "lahmacun", "pide", "gözleme", "baklava", "ayran", "tatlı"];
+      const classicKeywords = [
+        "tost",
+        "lahmacun",
+        "pide",
+        "gözleme",
+        "baklava",
+        "ayran",
+        "tatlı",
+      ];
       const classicItems = availableItems
         .filter((i) =>
           classicKeywords.some((k) =>
-            i.name.toLocaleLowerCase("tr-TR").includes(k)
-          )
+            i.name.toLocaleLowerCase("tr-TR").includes(k),
+          ),
         )
         .sort((a, b) => b.price - a.price);
 
@@ -263,7 +280,8 @@
   <div class="pricing-calc__header">
     <h2 id="pricing-calc-title" class="pricing-calc__title">Fiş Hesaplayıcı</h2>
     <p class="pricing-calc__subtitle">
-      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan fiyatlarıdır.
+      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan
+      fiyatlarıdır.
     </p>
   </div>
 
@@ -339,7 +357,9 @@
             <span class="pricing-calc__item-portion">{item.portion}</span>
           </div>
           <div class="pricing-calc__item-action">
-            <span class="pricing-calc__item-price">{item.price.toFixed(2)} TL</span>
+            <span class="pricing-calc__item-price"
+              >{item.price.toFixed(2)} TL</span
+            >
             <div class="pricing-calc__item-counter">
               {#if qty > 0}
                 <button
@@ -370,28 +390,42 @@
   <!-- Yapışkan Alt Bar (Kart Sınıfı) -->
   {#if totalTrayCount > 0}
     <div class="pricing-calc__sticky-wrap">
-      <aside class="disclaimer-card pricing-calc__sticky-bar" aria-label="Seçim Özeti">
+      <aside
+        class="disclaimer-card pricing-calc__sticky-bar"
+        aria-label="Seçim Özeti"
+      >
         <!-- 3px İnce İlerleme Çizgisi -->
         <div class="pricing-calc__progress-line">
           <div
-            class="pricing-calc__progress-fill {isUnderQuota ? 'is-ok' : 'is-warn'}"
+            class="pricing-calc__progress-fill {isUnderQuota
+              ? 'is-ok'
+              : 'is-warn'}"
             style="width: {progressPercent}%;"
           ></div>
         </div>
 
         <div class="pricing-calc__sticky-content">
           <div class="pricing-calc__sticky-summary">
-            <span class="pricing-calc__sticky-count">{totalTrayCount} ürün</span>
+            <span class="pricing-calc__sticky-count">{totalTrayCount} ürün</span
+            >
             <span class="pricing-calc__sticky-dot">•</span>
-            <span class="pricing-calc__sticky-total">{totalTrayPrice.toFixed(0)} TL</span>
+            <span class="pricing-calc__sticky-total"
+              >{totalTrayPrice.toFixed(0)} TL</span
+            >
             {#if isUnderQuota}
               {#if difference === 0}
-                <span class="pricing-calc__sticky-tag is-ok">Tam limittesin (0 TL fark)</span>
+                <span class="pricing-calc__sticky-tag is-ok"
+                  >Tam limittesin (0 TL fark)</span
+                >
               {:else}
-                <span class="pricing-calc__sticky-tag is-ok">{Math.abs(difference).toFixed(0)} TL kaldı</span>
+                <span class="pricing-calc__sticky-tag is-ok"
+                  >{Math.abs(difference).toFixed(0)} TL kaldı</span
+                >
               {/if}
             {:else}
-              <span class="pricing-calc__sticky-tag is-warn">+{difference.toFixed(0)} TL cepten</span>
+              <span class="pricing-calc__sticky-tag is-warn"
+                >+{difference.toFixed(0)} TL cepten</span
+              >
             {/if}
           </div>
 
@@ -410,7 +444,14 @@
               aria-label="Paylaş"
               title="Paylaş"
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <circle cx="18" cy="5" r="3"></circle>
                 <circle cx="6" cy="12" r="3"></circle>
                 <circle cx="18" cy="19" r="3"></circle>
@@ -425,9 +466,18 @@
               aria-label="Sıfırla"
               title="Sıfırla"
             >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <svg
+                viewBox="0 0 24 24"
+                width="14"
+                height="14"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
                 <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <path
+                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                ></path>
               </svg>
             </button>
           </div>
@@ -441,7 +491,9 @@
                 <span class="pricing-calc__drawer-chip">
                   <span>{item.name}</span>
                   <strong>x{item.qty}</strong>
-                  <span class="chip-price">({item.itemTotal.toFixed(0)} TL)</span>
+                  <span class="chip-price"
+                    >({item.itemTotal.toFixed(0)} TL)</span
+                  >
                   <button
                     type="button"
                     onclick={() => removeItem(item.id)}

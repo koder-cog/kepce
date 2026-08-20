@@ -8,6 +8,16 @@
     gap: var(--space-md);
     box-sizing: border-box;
     width: 100%;
+    overflow: hidden;
+  }
+
+  @media (max-width: 600px) {
+    .pricing-calc-card {
+      padding: var(--space-md) var(--space-sm) !important;
+      margin-top: var(--space-lg);
+      gap: var(--space-sm);
+      border-radius: var(--radius-md);
+    }
   }
 
   .pricing-calc__header {
@@ -47,7 +57,7 @@
 
   .pricing-calc__search-wrap {
     flex: 1;
-    min-width: 180px;
+    min-width: 160px;
   }
 
   .pricing-calc__search-wrap input[type="search"] {
@@ -63,6 +73,7 @@
     .pricing-calc__top-bar {
       flex-direction: column;
       align-items: stretch;
+      gap: var(--space-xs);
     }
 
     .pricing-calc__top-bar .c-segmented-control {
@@ -72,6 +83,8 @@
 
     .pricing-calc__top-bar .c-segmented-control__btn {
       flex: 1;
+      text-align: center;
+      justify-content: center;
     }
 
     .pricing-calc__search-wrap {
@@ -80,39 +93,36 @@
     }
   }
 
-  /* ── Hazır Menü Presets ── */
+  /* ── Hazır Menü Presets (Yatay Akıcı Kaydırma / Wrap) ── */
   .pricing-calc__presets-bar {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
-    flex-wrap: wrap;
     width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+
+  .pricing-calc__presets-bar::-webkit-scrollbar {
+    display: none;
   }
 
   .pricing-calc__presets-bar .btn {
     padding: var(--space-xs) var(--space-md);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
+    flex-shrink: 0;
   }
 
   @media (max-width: 480px) {
-    .pricing-calc__presets-bar {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: var(--space-2xs);
-    }
-
     .pricing-calc__presets-bar .btn {
-      width: 100%;
-      padding: var(--space-xs) 2px;
-      font-size: var(--text-2xs);
-      text-align: center;
-      justify-content: center;
-      white-space: nowrap;
+      padding: var(--space-xs) var(--space-sm);
+      font-size: var(--text-xs);
     }
   }
 
-  /* ── Category Filter Chips ── */
+  /* ── Category Filter Chips (Yatay Akıcı Kaydırma) ── */
   .pricing-calc__chips-scroll {
     display: flex;
     gap: var(--space-xs);
@@ -139,7 +149,7 @@
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: var(--space-xs);
-    max-height: 420px;
+    max-height: 400px;
     overflow-y: auto;
     padding-right: 2px;
     width: 100%;
@@ -148,6 +158,7 @@
   @media (max-width: 640px) {
     .pricing-calc__grid {
       grid-template-columns: 1fr;
+      max-height: 360px;
     }
   }
 
@@ -162,6 +173,12 @@
     gap: var(--space-xs);
     min-width: 0;
     transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+  }
+
+  @media (max-width: 480px) {
+    .pricing-calc__item {
+      padding: var(--space-xs) var(--space-sm);
+    }
   }
 
   .pricing-calc__item.is-selected {
@@ -235,10 +252,10 @@
     font-size: var(--text-xs);
   }
 
-  /* ── Sticky Bottom Bar (Kart Sınıfı ile Bütünleşik & İnce Elenmiş) ── */
+  /* ── Sticky Bottom Bar (Kusursuz Mobil Uyum) ── */
   .pricing-calc__sticky-wrap {
     position: sticky;
-    bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--space-sm) + env(safe-area-inset-bottom, 0px));
     z-index: var(--z-sticky, 100);
     margin-top: var(--space-xs);
     width: 100%;
@@ -247,7 +264,6 @@
   .pricing-calc__sticky-bar {
     padding: 0 !important;
     overflow: hidden;
-    box-shadow: var(--shadow-lg);
     border-radius: var(--radius-card);
   }
 
@@ -274,18 +290,17 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: var(--space-md) var(--space-lg);
-    gap: var(--space-md);
-    flex-wrap: wrap;
+    padding: var(--space-sm) var(--space-md);
+    gap: var(--space-xs);
   }
 
   .pricing-calc__sticky-summary {
     display: flex;
     align-items: center;
-    gap: var(--space-sm);
-    font-size: var(--text-sm);
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
     min-width: 0;
-    flex-wrap: wrap;
+    overflow: hidden;
   }
 
   .pricing-calc__sticky-count {
@@ -305,11 +320,13 @@
   }
 
   .pricing-calc__sticky-tag {
-    font-size: var(--text-xs);
+    font-size: 11px;
     font-weight: var(--font-weight-bold);
-    padding: 2px var(--space-sm);
+    padding: 1px var(--space-xs);
     border-radius: var(--radius-full);
     white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
   }
 
   .pricing-calc__sticky-tag.is-ok {
@@ -325,33 +342,28 @@
   .pricing-calc__sticky-actions {
     display: flex;
     align-items: center;
-    gap: var(--space-xs);
+    gap: var(--space-2xs);
     flex-shrink: 0;
   }
 
+  .pricing-calc__sticky-actions .btn {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+
   .pricing-calc__sticky-actions .btn--icon-only {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    padding: 0;
   }
 
   @media (max-width: 480px) {
     .pricing-calc__sticky-content {
       padding: var(--space-xs) var(--space-sm);
-      gap: var(--space-2xs);
-    }
-
-    .pricing-calc__sticky-summary {
-      width: 100%;
-      justify-content: space-between;
-    }
-
-    .pricing-calc__sticky-actions {
-      width: 100%;
-      justify-content: flex-end;
     }
   }
 
-  /* ── Drawer with CSS Grid Transition (Büyütülmüş & Rahat Okunur Çipler) ── */
+  /* ── Drawer with CSS Grid Transition ── */
   .pricing-calc__drawer {
     display: grid;
     grid-template-rows: 0fr;
@@ -372,9 +384,9 @@
   .pricing-calc__drawer-list {
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-sm);
-    padding: var(--space-md);
-    max-height: 220px;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    max-height: 200px;
     overflow-y: auto;
   }
 
@@ -384,9 +396,9 @@
     gap: var(--space-xs);
     background: var(--color-surface-variant);
     border: 1px solid var(--color-border);
-    padding: var(--space-xs) var(--space-md);
+    padding: var(--space-xs) var(--space-sm);
     border-radius: var(--radius-md);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     color: var(--color-text);
   }
 
@@ -397,7 +409,7 @@
 
   .pricing-calc__drawer-chip .chip-price {
     color: var(--color-text-secondary);
-    font-size: var(--text-xs);
+    font-size: var(--text-2xs);
   }
 
   .pricing-calc__drawer-chip button {
@@ -405,10 +417,10 @@
     border: none;
     color: var(--color-text-secondary);
     cursor: pointer;
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
     font-weight: var(--font-weight-bold);
     padding: 0 var(--space-2xs);
-    margin-left: var(--space-2xs);
+    margin-left: 2px;
     line-height: 1;
     transition: color var(--dur-fast) ease;
   }
