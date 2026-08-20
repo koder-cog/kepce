@@ -379,9 +379,9 @@
           </div>
         </div>
 
-        <!-- Açılır/Kapanır Zarif Detay Çekmecesi -->
-        {#if isDrawerOpen}
-          <div class="pricing-calc__drawer">
+        <!-- Açılır/Kapanır Zarif Detay Çekmecesi (Grid Transition) -->
+        <div class="pricing-calc__drawer {isDrawerOpen ? 'is-open' : ''}">
+          <div class="pricing-calc__drawer-inner">
             <div class="pricing-calc__drawer-list">
               {#each trayItems as item (item.id)}
                 <span class="pricing-calc__drawer-chip">
@@ -399,7 +399,7 @@
               {/each}
             </div>
           </div>
-        {/if}
+        </div>
       </aside>
     </div>
   {/if}
