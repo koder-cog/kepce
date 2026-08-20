@@ -51,14 +51,15 @@ export const nativeBridge = {
   },
 
   /**
-   * Sayfa rotası, başlığı ve geri dönülebilirlik durumunu yerel kabuğa bildirir.
+   * Sayfa rotası, başlığı, geri dönülebilirlik ve tab-bar gizleme durumunu yerel kabuğa bildirir.
    */
-  sendRoute({ path, title, canGoBack, isRoot = false }) {
+  sendRoute({ path, title, canGoBack, isRoot = false, hideBottomNav = false }) {
     this.send('ROUTE_CHANGED', {
       path,
       title,
       canGoBack,
-      isRoot
+      isRoot,
+      hideBottomNav
     });
   },
 

@@ -5,6 +5,7 @@
 import { icon } from '../ui/icons.js';
 import { mount, unmount } from 'svelte';
 import ModalComponent from '../ui/Modal.svelte';
+import { nativeBridge } from '../../lib/native/bridge.js';
 
 let activeModalController = null;
 
@@ -34,9 +35,12 @@ export function createModal(options) {
                 unmount(modalApp);
                 target.remove();
                 if (activeModalController === controller) activeModalController = null;
+                nativeBridge.sendOverlayToggle(false);
             }
         }
     });
+
+    nativeBridge.sendOverlayToggle(true);
 
     activeModalController = controller;
 

@@ -70,68 +70,68 @@
 
 	function getRouteMetadata(pathname) {
 		if (!pathname || pathname === "/" || pathname === "") {
-			return { title: "Kepçe", isRoot: true };
+			return { title: "Kepçe", isRoot: true, hideBottomNav: false };
 		}
 		if (pathname === "/arsiv" || pathname.startsWith("/arsiv/")) {
-			return { title: "Menü Arşivi", isRoot: true };
+			return { title: "Menü Arşivi", isRoot: true, hideBottomNav: false };
 		}
 		if (pathname === "/ben") {
-			return { title: "Profilim", isRoot: true };
+			return { title: "Profilim", isRoot: true, hideBottomNav: false };
 		}
 		if (pathname === "/ayarlar") {
-			return { title: "Ayarlar", isRoot: true };
+			return { title: "Ayarlar", isRoot: true, hideBottomNav: false };
 		}
 		if (pathname === "/bildirimler") {
-			return { title: "Bildirimler", isRoot: false };
+			return { title: "Bildirimler", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/biri/")) {
 			const parts = pathname.split("/").filter(Boolean);
 			const username = parts[1] || "";
-			return { title: username ? `@${username}` : "Kullanıcı Profili", isRoot: false };
+			return { title: username ? `@${username}` : "Kullanıcı Profili", isRoot: false, hideBottomNav: false };
 		}
-		if (pathname.startsWith("/menu/")) {
-			return { title: "Menü Detayı", isRoot: false };
+		if (pathname.startsWith("/menu/") || pathname.startsWith("/yorumlar/")) {
+			return { title: "Menü Detayı", isRoot: false, hideBottomNav: true };
 		}
 		if (pathname.startsWith("/sehirler")) {
-			return { title: "Şehirler", isRoot: false };
+			return { title: "Şehirler", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/sss")) {
-			return { title: "Sıkça Sorulan Sorular", isRoot: false };
+			return { title: "Sıkça Sorulan Sorular", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/hakkinda")) {
-			return { title: "Hakkında", isRoot: false };
+			return { title: "Hakkında", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/iletisim")) {
-			return { title: "İletişim", isRoot: false };
+			return { title: "İletişim", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/durum")) {
-			return { title: "Sistem Durumu", isRoot: false };
+			return { title: "Sistem Durumu", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/gelistirici")) {
-			return { title: "Geliştirici Panosu", isRoot: false };
+			return { title: "Geliştirici Panosu", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/istatistikler")) {
-			return { title: "İstatistikler", isRoot: false };
+			return { title: "İstatistikler", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/kullanim-kosullari")) {
-			return { title: "Kullanım Koşulları", isRoot: false };
+			return { title: "Kullanım Koşulları", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/gizlilik-politikasi")) {
-			return { title: "Gizlilik Politikası", isRoot: false };
+			return { title: "Gizlilik Politikası", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/menu-gonder")) {
-			return { title: "Menü Gönder", isRoot: false };
+			return { title: "Menü Gönder", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/giris")) {
-			return { title: "Giriş Yap", isRoot: false };
+			return { title: "Giriş Yap", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/kayit")) {
-			return { title: "Hesap Oluştur", isRoot: false };
+			return { title: "Hesap Oluştur", isRoot: false, hideBottomNav: false };
 		}
 		if (pathname.startsWith("/sifre-yenile")) {
-			return { title: "Şifre Yenile", isRoot: false };
+			return { title: "Şifre Yenile", isRoot: false, hideBottomNav: false };
 		}
-		return { title: "Kepçe", isRoot: false };
+		return { title: "Kepçe", isRoot: false, hideBottomNav: false };
 	}
 
 	beforeNavigate(() => {
@@ -141,13 +141,16 @@
 	afterNavigate(({ to }) => {
 		if (typeof window !== "undefined") {
 			const path = to?.url?.pathname || window.location.pathname;
-			const { title, isRoot } = getRouteMetadata(path);
+			const { title, isRoot, hideBottomNav } = getRouteMetadata(path);
 			nativeBridge.sendRoute({
 				path,
 				title,
 				canGoBack: !isRoot,
-				isRoot
+				isRoot,
+				hideBottomNav
 			});
+			// Sayfa geçişinde overlay durumunu sıfırla
+			nativeBridge.sendOverlayToggle(false);
 		}
 	});
 
@@ -259,6 +262,22 @@
 					}
 				}
 			};
+
+			// Çift Kilitli Modal / Overlay İzleyicisi (Tab-Bar senkronizasyonu)
+			let overlayDebounce;
+			const checkOverlays = () => {
+				clearTimeout(overlayDebounce);
+				overlayDebounce = setTimeout(() => {
+					const hasOpenOverlay = !!document.querySelector(
+						".c-modal--open, .modal.is-open, dialog[open], .modal-open, .c-dropdown--open"
+					);
+					nativeBridge.sendOverlayToggle(hasOpenOverlay);
+				}, 50);
+			};
+
+			const overlayObserver = new MutationObserver(checkOverlays);
+			overlayObserver.observe(document.body, { attributes: true, childList: true, subtree: true, attributeFilter: ["class", "open"] });
+			overlayObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
 		}
 
 		await authActions.refreshUser();

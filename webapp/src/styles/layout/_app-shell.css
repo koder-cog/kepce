@@ -60,17 +60,17 @@ body.is-app .c-toast-container {
   z-index: 99999 !important;
 }
 
-/* 4. Menü Yorum Alanı & Mobil Yorum Giriş Kapsülü */
+/* 4. Menü Yorum Alanı & Mobil Yorum Giriş Kapsülü (Tab-Bar gizli olduğundan doğrudan alt insets'e oturur) */
 html.is-app .comments-page,
 body.is-app .comments-page {
   padding-top: var(--space-xs, 8px) !important;
-  padding-bottom: calc(var(--native-tabbar-height, 76px) + 90px) !important;
+  padding-bottom: calc(max(env(safe-area-inset-bottom, 0px), 16px) + 72px) !important;
 }
 
 @media (max-width: 600px) {
   html.is-app .ci-container,
   body.is-app .ci-container {
-    bottom: calc(var(--native-tabbar-height, 76px) + 8px) !important;
+    bottom: max(env(safe-area-inset-bottom, 0px), 8px) !important;
     z-index: 100 !important;
     transition: bottom var(--dur-fast) var(--ease-standard) !important;
   }
