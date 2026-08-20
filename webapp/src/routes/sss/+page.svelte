@@ -67,7 +67,7 @@
   <p>
     Normalde yasalara göre ön denetimden geçirilme zorunluluğu bulunmamakta
     ancak tek kişi olduğum için işleri kolaylaştırmak adına böyle bir karar
-    aldım ama bu olay <a href="/kullanim-kosullari" data link
+    aldım ama bu olay <a href="/kullanim-kosullari" data-link
       >kullanım koşulları</a
     >nda da belirtildiği gibi editöryel değildir.
   </p>

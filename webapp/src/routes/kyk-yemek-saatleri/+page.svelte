@@ -45,17 +45,18 @@
   <h2>Kahvaltı</h2>
   <p>
     Hafta içi günlerde kahvaltı sabah 06:00'da başlar ve öğlen 12:00'ye kadar
-    devam eder. Hafta sonları ve resmi tatillerde ise 06:30 – 12:30 arasında
-    verilir. Saat 12:00'yi (hafta sonu 12:30'u) bir dakika bile geçseniz turnike ve
-    barkod sistemi otomatik kapanır, o günkü hakkınız yanar.
+    devam eder. Hafta sonlarında ise 12:30'a kadar verilir. Saat 12:00'yi (veya
+    12:30'u) bir dakika bile geçseniz turnike ve barkod sistemi otomatik
+    kapanır, o günkü hakkınız yanar.
   </p>
   <p>
-    Eğer yemekhanede oturup yemek istemiyorsanız veya okula/işe giderken yanınıza
-    almanız gerekiyorsa Al Götür Menüler adlı bir seçenek de bulunur. Ancak bu
-    paketler normal kahvaltı saatinden çok daha erken tükenir (örneğin İstanbul yurtlarında
-    genellikle 10:30 gibi biter). Yurttan yurda içerik değişmekle birlikte gözlemeli olanlar
-    genelde iyi çıkarken diğerleri eh işte seviyesindedir; kağıt üzerinde görünen çorbalı
-    varyantın ise fiilen verildiğine pek rastlanmaz.
+    Eğer yemekhanede oturup yemek istemiyorsanız veya okula giderken yanınıza
+    almanız gerekiyorsa Al Götür Menüler adlı bir seçenek de bulunur ancak bu
+    paketlerin servisi normal kahvaltı saatinden çok daha erken biter (örneğin
+    İstanbul yurtlarında 10:30 idi). Yurttan yurda içerik değişmekle birlikte
+    gözlemeli olanlar genelde iyi çıkarken diğerleri eh işte seviyesindedir,
+    kağıt üzerinde görünen çorbalı varyantın ise fiilen verildiğine pek
+    rastlanmaz.
   </p>
 
   <h2>Akşam Yemeği</h2>
@@ -80,17 +81,17 @@
 
   <h2>Ramazan Ayı Düzeni</h2>
   <p>
-    Ramazan boyunca akşam yemeği yine 16:00'da başlar ve isteyen erken saatte yiyebilir.
-    Ancak asıl devasa kuyruklar ve yoğunluk iftara dakikalar kala oluşur. Oruç tutuyor
-    olsanız bile iftardan en az 10-15 dakika sonra gitmeniz tavsiye edilir; çünkü tam
-    iftar anındaki izdihamda "herkese yetsin" telaşıyla porsiyonların biraz daha az
-    konulduğuna şahit olabilirsiniz.
+    Ramazan boyunca akşam yemeği yine 16:00'da başlar ve isteyen erken saatte
+    yiyebilir. Ancak asıl devasa kuyruklar ve yoğunluk iftara dakikalar kala
+    oluşur. Oruç tutuyor olsanız bile iftardan en az 10-15 dakika sonra gitmeniz
+    tavsiye edilir; çünkü tam iftar anındaki izdihamda "herkese yetsin"
+    telaşıyla porsiyonların biraz daha az konulduğuna şahit olabilirsiniz.
   </p>
   <p>
-    İftar için hazırlanan Al Götür menüler ise genellikle 17:00 – 18:00 civarında
-    çıkarılır. Net bir saati olmasa da iftara yakın dağıtılır ve miktarı oldukça azdır.
-    Bazı yurtların iftarda verdiği şerbet gibi ufak ikramlar da ilk günlerden sonra genelde
-    baymaya başlar.
+    İftar için hazırlanan Al Götür menüler ise genellikle 17:00 – 18:00
+    civarında çıkarılır. Net bir saati olmasa da iftara yakın dağıtılır ve
+    miktarı oldukça azdır. Bazı yurtların iftarda verdiği şerbet gibi ufak
+    ikramlar da ilk günlerden sonra genelde baymaya başlar.
   </p>
   <p>
     Gece sahura kalkacaklar için ayrı bir sahur servisi açılır ve kahvaltı hakkı
