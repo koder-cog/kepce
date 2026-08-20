@@ -6,6 +6,7 @@ const initialHasSession = typeof document !== 'undefined' ? getCookie('kepce_log
 const cachedUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('kepce_user_cache') || 'null') : null;
 
 const initialPaginationMode = typeof window !== 'undefined' ? (localStorage.getItem('sayfalamaModu') || 'sayfali') : 'sayfali';
+const initialIsApp = typeof navigator !== 'undefined' ? navigator.userAgent.includes('KepceMobileApp') : false;
 
 export const globalState = $state({
   user: cachedUser,
@@ -15,6 +16,7 @@ export const globalState = $state({
   hasSession: initialHasSession,
   devMode: false,
   paginationMode: initialPaginationMode,
+  isApp: initialIsApp,
 });
 
 export function setPaginationMode(mode) {

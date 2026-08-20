@@ -87,6 +87,10 @@ export const menusApi = {
     const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`);
     return normalizeMenu(data);
   },
+  getMenuDetail: async (menuId, dietary_type = 'standard') => {
+    const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`);
+    return normalizeMenu(data);
+  },
   voteMenu: (menuId, sentiment) => {
     return request(`/menus/${menuId}/vote`, {
       method: 'POST',

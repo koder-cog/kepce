@@ -116,29 +116,28 @@
         errorState = null;
 
         try {
-            const [menuRes, commentsRes] = await Promise.all([
-                api.getMenuDetail(menuId),
-                api.getComments(menuId),
+            const [menuData, commentsData] = await Promise.all([
+                api.getMenu(menuId),
+                api.getMenuComments(menuId).catch(() => []),
             ]);
 
-            if (menuRes.error) {
+            if (!menuData) {
                 errorState = {
-                    statusCode: menuRes.status || 404,
+                    statusCode: 404,
                     desc: "Menü bulunamadı veya silinmiş.",
                 };
-                isLoading = false;
                 return;
             }
 
-            menu = menuRes.data;
-
-            if (commentsRes.data) {
-                allComments = commentsRes.data.comments || [];
-            }
+            menu = menuData;
+            allComments = Array.isArray(commentsData)
+                ? commentsData
+                : (commentsData?.comments || []);
         } catch (err) {
+            console.error("Menü yüklenirken hata oluştu:", err);
             errorState = {
-                statusCode: 500,
-                desc: "Veriler yüklenirken bir sorun oluştu.",
+                statusCode: err.status || 500,
+                desc: err.message || "Menü verileri yüklenirken bir sorun oluştu.",
             };
         } finally {
             isLoading = false;

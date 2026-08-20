@@ -110,6 +110,20 @@
     } catch (e) {
       console.error(e);
     }
+
+    if (typeof window !== "undefined" && window.AndroidBridge && window.AndroidBridge.getNotificationSettings) {
+      try {
+        const notifJson = JSON.parse(window.AndroidBridge.getNotificationSettings());
+        if (notifJson && !user) {
+          anonBreakfastEnabled = Boolean(notifJson.breakfast_enabled);
+          anonBreakfastTime = notifJson.breakfast_time || "07:30";
+          anonDinnerEnabled = Boolean(notifJson.dinner_enabled);
+          anonDinnerTime = notifJson.dinner_time || "16:30";
+        }
+      } catch (err) {
+        console.warn("AndroidBridge ayar okuma hatası:", err);
+      }
+    }
   });
 
   $effect(() => {
@@ -211,6 +225,19 @@
   let anonDinnerTime = $state(safeStorageGet("kepce_notif_dinner_time", "17:00"));
 
   async function syncPushSubscription(breakfastEnabled, breakfastTime, dinnerEnabled, dinnerTime) {
+    if (typeof window !== "undefined" && window.AndroidBridge && window.AndroidBridge.updateNotificationSettings) {
+      try {
+        window.AndroidBridge.updateNotificationSettings(
+          Boolean(breakfastEnabled),
+          breakfastTime || "07:30",
+          Boolean(dinnerEnabled),
+          dinnerTime || "16:30"
+        );
+      } catch (err) {
+        console.warn("AndroidBridge bildirim senkronizasyon hatası:", err);
+      }
+    }
+
     if (!isPushSupported()) return;
     if (!breakfastEnabled && !dinnerEnabled) {
       await unsubscribeFromPush().catch(() => {});
@@ -759,16 +786,18 @@
         <div class="c-list-row__info">
           <div class="c-list-row__title">Sayfalama modu</div>
           <div class="c-list-row__desc">
-            Listelerde sayfa numaraları veya sonsuz akışla gezinme
+            {paginationMode === "sayfali"
+              ? "Numaralı (1, 2, 3...) butonlarla gezinme"
+              : "Aşağı kaydırdıkça otomatik yüklenen sonsuz akış"}
           </div>
         </div>
         <div class="c-list-row__control c-list-row__control--flexible">
           <SegmentedControl
             bind:value={paginationMode}
-            variant="responsive"
+            variant="text"
             options={[
-              { value: "sayfali", icon: icon("grid", 18), label: "Numaralı" },
-              { value: "akici", icon: icon("layers", 18), label: "Akıcı" },
+              { value: "sayfali", label: "Sayfalı" },
+              { value: "akici", label: "Sonsuz Akış" },
             ]}
             onChange={handlePaginationModeChange}
           />

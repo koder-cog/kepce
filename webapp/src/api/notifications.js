@@ -1,38 +1,32 @@
 import { request } from './client.js';
 
-const getNotifications = async () => {
-  return request('/auth/me/notifications');
-};
-
-const markAsRead = async (id) => {
-  return request('/auth/me/notifications/mark-read', {
-    method: 'POST',
-    body: JSON.stringify({ id })
-  });
-};
-
-const markAllAsRead = async () => {
-  return request('/auth/me/notifications/mark-all-read', {
-    method: 'POST'
-  });
-};
-
-const deleteNotification = async (id) => {
-  return request(`/auth/me/notifications/${id}`, {
-    method: 'DELETE'
-  });
-};
-
-const deleteAllNotifications = async () => {
-  return request('/auth/me/notifications', {
-    method: 'DELETE'
-  });
-};
-
 export const notificationsApi = {
-  getNotifications,
-  markAsRead,
-  markAllAsRead,
-  deleteNotification,
-  deleteAllNotifications
+  getNotifications: async () => {
+    try {
+      const data = await request('/auth/me/notifications');
+      return Array.isArray(data) ? data : [];
+    } catch (err) {
+      if (err.status === 401 || err.message?.includes('authorization') || err.message?.includes('401')) {
+        return [];
+      }
+      throw err;
+    }
+  },
+  markNotificationRead: (id) =>
+    request('/auth/me/notifications/mark-read', {
+      method: 'POST',
+      body: JSON.stringify({ notification_ids: [id] }),
+    }),
+  markAllNotificationsRead: () =>
+    request('/auth/me/notifications/mark-all-read', {
+      method: 'POST',
+    }),
+  deleteNotification: (id) =>
+    request(`/auth/me/notifications/${id}`, {
+      method: 'DELETE',
+    }),
+  clearAllNotifications: () =>
+    request('/auth/me/notifications', {
+      method: 'DELETE',
+    }),
 };

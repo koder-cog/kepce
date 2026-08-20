@@ -20,6 +20,7 @@ export const commentsApi = {
       }),
     }),
   getMenuComments: (menuId) => request(`/comments/menu/${menuId}`),
+  getComments: (menuId) => request(`/comments/menu/${menuId}`),
   voteComment: (voteId, type) =>
     request('/comments/react', {
       method: 'POST',

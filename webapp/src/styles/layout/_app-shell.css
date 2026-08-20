@@ -1,0 +1,48 @@
+/* ── Mobil Uygulama Kabuk Modu (.is-app / WebView Wrapper) ─── */
+html.is-app #main-nav,
+html.is-app .nav-bar,
+html.is-app #site-footer,
+html.is-app .site-footer,
+html.is-app .skip-link,
+body.is-app #main-nav,
+body.is-app .nav-bar,
+body.is-app #site-footer,
+body.is-app .site-footer,
+body.is-app .skip-link {
+  display: none !important;
+}
+
+html.is-app #page-wrapper,
+html.is-app .page-wrapper,
+body.is-app #page-wrapper,
+body.is-app .page-wrapper {
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  margin-top: 0 !important;
+  min-height: 100vh;
+}
+
+html.is-app #page-content,
+html.is-app .page-container,
+body.is-app #page-content,
+body.is-app .page-container {
+  padding-top: max(env(safe-area-inset-top, 0px), 28px) !important;
+  padding-bottom: 110px !important;
+}
+
+html.is-app .comments-page,
+body.is-app .comments-page {
+  padding-bottom: 120px !important;
+}
+
+@media (max-width: 600px) {
+  html.is-app .ci-container,
+  body.is-app .ci-container {
+    bottom: 80px !important;
+    transition: bottom var(--dur-fast) var(--ease-standard) !important;
+  }
+}
+
+html.is-app * {
+  -webkit-tap-highlight-color: transparent !important;
+}

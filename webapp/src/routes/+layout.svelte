@@ -151,34 +151,38 @@
 <svelte:window onclick={handleGlobalClick} />
 
 <div id="app">
-	<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
-	<a href="#page-content" class="skip-link">Ana içeriğe geç</a>
-	<nav id="main-nav" class="nav-bar" bind:clientHeight={navHeight}>
-		<div class="nav-bar__inner">
-			<Nav />
-		</div>
-		<OfflineBanner />
-		{#if currentHoliday}
-			<AnnouncementBanner
-				id={`holiday-banner-${year}-${mmdd}`}
-				text={currentHoliday.message}
-				ctaText=""
-				theme={currentHoliday.theme || "accent-primary"}
-			/>
-		{/if}
-		<VerificationBanner />
-	</nav>
+	{#if !globalState.isApp}
+		<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
+		<a href="#page-content" class="skip-link">Ana içeriğe geç</a>
+		<nav id="main-nav" class="nav-bar" bind:clientHeight={navHeight}>
+			<div class="nav-bar__inner">
+				<Nav />
+			</div>
+			<OfflineBanner />
+			{#if currentHoliday}
+				<AnnouncementBanner
+					id={`holiday-banner-${year}-${mmdd}`}
+					text={currentHoliday.message}
+					ctaText=""
+					theme={currentHoliday.theme || "accent-primary"}
+				/>
+			{/if}
+			<VerificationBanner />
+		</nav>
+	{/if}
 	<div
 		id="page-wrapper"
 		class="page-wrapper"
-		style="--nav-height: {navHeight}px"
+		style="--nav-height: {globalState.isApp ? 0 : navHeight}px"
 	>
 		<main id="page-content" class="page-container">
 			{@render children()}
 		</main>
-		<footer id="site-footer" class="site-footer">
-			<Footer />
-		</footer>
+		{#if !globalState.isApp}
+			<footer id="site-footer" class="site-footer">
+				<Footer />
+			</footer>
+		{/if}
 	</div>
 </div>
 
@@ -198,5 +202,9 @@
 <style>
 	#page-wrapper {
 		padding-top: var(--nav-height, 0);
+	}
+	:global(html.is-app) #page-wrapper,
+	:global(body.is-app) #page-wrapper {
+		padding-top: 0 !important;
 	}
 </style>

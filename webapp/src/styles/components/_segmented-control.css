@@ -20,22 +20,21 @@
     top: 3px;
     bottom: 3px;
     left: 0;
-    width: 1px;
+    width: var(--indicator-width, 0px);
     background: var(--color-card);
     border-radius: var(--radius-full);
     box-shadow: var(--shadow-sm);
     z-index: 0;
     opacity: 0;
     pointer-events: none;
-    transform-origin: left center;
-    transform: translate3d(var(--indicator-left, 3px), 0, 0) scaleX(var(--indicator-width, 0));
-    will-change: transform;
+    transform: translate3d(var(--indicator-left, 3px), 0, 0);
   }
 
   .c-segmented-control.is-ready .c-segmented-control__indicator {
     opacity: 1;
     transition: 
       transform var(--dur-default) cubic-bezier(0.25, 1, 0.5, 1),
+      width var(--dur-default) cubic-bezier(0.25, 1, 0.5, 1),
       opacity var(--dur-fast) var(--ease-standard);
   }
 
