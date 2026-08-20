@@ -60,6 +60,17 @@ impl NotificationService {
         notif.insert(db).await?;
         tracing::info!("Kullanıcıya ({}) yeni bildirim gönderildi: [{}] {}", user.username, notif_type, title);
 
+        // Kullanıcının kayıtlı cihazlarına Web Push bildirimi fırlat
+        let push_payload = crate::services::push::PushPayload {
+            title: title.to_string(),
+            body: message.to_string(),
+            icon: Some("/icons/icon-192.png".to_string()),
+            badge: Some("/icons/badge-72.png".to_string()),
+            tag: Some(format!("notif-{}", notif_type)),
+            url: action_href.map(|s| s.to_string()),
+        };
+        let _ = crate::services::push::PushService::send_to_user(db, user_id, &push_payload).await;
+
         Ok(true)
     }
 }

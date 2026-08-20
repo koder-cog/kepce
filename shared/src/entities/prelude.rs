@@ -28,5 +28,6 @@ pub use super::user_favorites::Entity as UserFavorites;
 pub use super::user_pinned_dishes::Entity as UserPinnedDishes;
 pub use super::user_sessions::Entity as UserSessions;
 pub use super::user_warnings::Entity as UserWarnings;
+pub use super::push_subscriptions::Entity as PushSubscriptions;
 pub use super::users::Entity as Users;
 pub use super::vote_reactions::Entity as VoteReactions;

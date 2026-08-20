@@ -2,3 +2,5 @@ pub mod scraper;
 pub mod file_ingest;
 pub mod backup_ingest;
 pub mod backup_export;
+pub mod historical_ingest;
+pub mod meal_notifier;

@@ -31,5 +31,6 @@ pub mod user_favorites;
 pub mod user_pinned_dishes;
 pub mod user_sessions;
 pub mod user_warnings;
+pub mod push_subscriptions;
 pub mod users;
 pub mod vote_reactions;

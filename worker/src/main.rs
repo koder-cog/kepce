@@ -35,6 +35,21 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    if std::env::var("WORKER_HISTORICAL_INGEST").is_ok() {
+        let historical_file = std::env::var("WORKER_HISTORICAL_FILE")
+            .unwrap_or_else(|_| ".scratch/archive/historical_menus/unified/master_historical_menus.json".to_string());
+        tracing::info!("[HISTORICAL] Tarihsel menü Worker ingest başlatılıyor: {}", historical_file);
+        if let Err(e) = tasks::historical_ingest::ingest_historical_menus(&db, &historical_file).await {
+            tracing::error!("[HISTORICAL] Tarihsel menü ingest hatası: {:?}", e);
+        } else {
+            tracing::info!("[HISTORICAL] Tarihsel menü ingest tamamlandı.");
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[HISTORICAL] Tek seferlik tarihsel menü aktarımı tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     if std::env::var("WORKER_BACKUP_EXPORT").is_ok() {
         let export_dir = std::env::var("WORKER_BACKUP_DIR")
             .unwrap_or_else(|_| "kykyemek-şmnmh-yedek-export".to_string());
@@ -158,6 +173,30 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    let db_notifier = db.clone();
+    let mut rx_notifier = shutdown_rx.clone();
+
+    // Öğün Bildirimi Döngüsü (Her 60 saniyede bir saat kontrolü)
+    let notifier_task = tokio::spawn(async move {
+        loop {
+            if *rx_notifier.borrow() {
+                tracing::info!("[NOTIFIER] Kapatma sinyali algılandı. Döngüden çıkılıyor.");
+                break;
+            }
+            if let Err(e) = tasks::meal_notifier::check_and_dispatch_meal_notifications(&db_notifier).await {
+                tracing::error!("[NOTIFIER] Öğün bildirimi tetiklemesinde hata: {:?}", e);
+            }
+
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(60)) => {},
+                _ = rx_notifier.changed() => {
+                    tracing::info!("[NOTIFIER] Uyku sırasında kapatma sinyali alındı. Döngüden çıkılıyor.");
+                    break;
+                }
+            }
+        }
+    });
+
     // Graceful Shutdown dinleyicisi
     let shutdown_signal = async {
         #[cfg(unix)]
@@ -188,7 +227,7 @@ async fn main() -> anyhow::Result<()> {
     let _ = shutdown_tx.send(true);
 
     // Görevlerin bitmesini bekle
-    let _ = tokio::join!(local_task, scraper_task);
+    let _ = tokio::join!(local_task, scraper_task, notifier_task);
     tracing::info!("Tüm görevler başarıyla durduruldu. Worker güvenli bir şekilde kapatıldı.");
 
     Ok(())

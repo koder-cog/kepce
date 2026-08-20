@@ -11,13 +11,14 @@
   import EmptyState from "@/components/ui/EmptyState.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+  import { subscribeToPush, isPushSupported } from "@/utils/push.js";
 
   const cityOptions = Object.entries(CITY_MAP)
     .map(([slug, name]) => ({ value: slug, label: name }))
     .sort((a, b) => a.label.localeCompare(b.label, "tr"));
   cityOptions.unshift({ value: "", label: "Belirtmek istemiyorum" });
 
-  const user = $derived(globalState?.user);
+  let user = $derived(globalState?.user);
 
   let username = $state("");
   let email = $state("");
@@ -33,6 +34,7 @@
 
   // Güvenlik e-postası bildirimi opt-in (varsayılan kapalı).
   let emailSecurity = $state(false);
+  let enablePushNotifications = $state(false);
 
   let errors = $state({});
   let errorMsg = $state("");
@@ -182,9 +184,24 @@
         diet_mode,
         emailSecurity,
       );
+      if (enablePushNotifications && isPushSupported()) {
+        try {
+          await subscribeToPush({
+            cityId: null,
+            breakfastEnabled: true,
+            breakfastTime: "07:30",
+            dinnerEnabled: true,
+            dinnerTime: "17:00",
+          });
+        } catch (pushErr) {
+          console.warn("Kayıt anında bildirim izni alınamadı:", pushErr);
+        }
+      }
+
       const { showToast } = await import("@/components/ui/toast.js");
       showToast(
         "Kayıt başarılı! Doğrulama linki e-postana gönderildi (Lütfen gereksiz/spam klasörünü de kontrol et).",
+        { type: "success" },
       );
       goto("/giris");
     } catch (err) {
@@ -454,6 +471,25 @@
                 type="checkbox"
                 class="c-input-hidden"
                 bind:checked={emailSecurity}
+              />
+              <span class="c-switch"
+                ><span class="c-switch__handle"></span></span
+              >
+            </div>
+          </label>
+
+          <label class="c-list-row c-list-row--clickable">
+            <div class="c-list-row__content">
+              <span class="c-list-row__title">Öğün bildirimleri (Web Push)</span>
+              <span class="c-list-row__desc"
+                >Günün menüsü açıklandığında tarayıcınıza anlık bildirim gelsin</span
+              >
+            </div>
+            <div class="c-list-row__control">
+              <input
+                type="checkbox"
+                class="c-input-hidden"
+                bind:checked={enablePushNotifications}
               />
               <span class="c-switch"
                 ><span class="c-switch__handle"></span></span

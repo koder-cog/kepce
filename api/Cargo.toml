@@ -35,6 +35,10 @@ dotenvy.workspace = true
 sha2.workspace = true
 http = "1.4.2"
 lazy_static = "1.5.0"
+# Dynamic OG Image Rendering
+resvg = "0.48"
+base64 = "0.22"
+web-push-native = "0.4"
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

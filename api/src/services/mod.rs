@@ -17,3 +17,5 @@ pub mod vote;
 pub mod email;
 pub mod pricing;
 pub mod notification;
+pub mod og_image;
+pub mod push;

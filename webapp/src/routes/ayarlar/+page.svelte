@@ -15,6 +15,7 @@
   import Dropdown from "@/components/features/Dropdown.svelte";
   import SessionManagerModal from "@/components/features/SessionManagerModal.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+  import { subscribeToPush, unsubscribeFromPush, sendTestPush, isPushSupported } from "@/utils/push.js";
 
   let user = $derived(globalState?.user);
   let isResending = $state(false);
@@ -90,6 +91,14 @@
   let showIndicators = $state(
     safeStorageGet("kepce_show_indicators", "false") === "true",
   );
+  import { setPaginationMode } from "@/state.svelte.js";
+  let paginationMode = $state(safeStorageGet("sayfalamaModu", "sayfali"));
+
+  function handlePaginationModeChange(val) {
+    setPaginationMode(val);
+    showToast(val === "sayfali" ? "Numaralı sayfalama seçildi." : "Akıcı liste akışı seçildi.", { type: "info" });
+  }
+
   let dietMode = $state(safeStorageGet("kepce_diet_mode", "standard"));
   let externalLinkWarning = $state(
     safeStorageGet("kepce_external_link_warning", "true") !== "false",
@@ -187,9 +196,99 @@
       if (globalState.user) {
         globalState.user[key] = value;
       }
-      showToast(`${label} tercihiniz güncellendi.`, "success");
+      showToast(`${label} tercihiniz güncellendi.`, { type: "success" });
     } catch (err) {
-      showToast(err.message || "Ayar güncellenirken bir hata oluştu.", "error");
+      showToast(err.message || "Ayar güncellenirken bir hata oluştu.", { type: "error" });
+    }
+  }
+
+  let isTestingPush = $state(false);
+
+  // Anonim öğün bildirim state'leri
+  let anonBreakfastEnabled = $state(safeStorageGet("kepce_notif_breakfast_enabled", "false") === "true");
+  let anonBreakfastTime = $state(safeStorageGet("kepce_notif_breakfast_time", "07:30"));
+  let anonDinnerEnabled = $state(safeStorageGet("kepce_notif_dinner_enabled", "false") === "true");
+  let anonDinnerTime = $state(safeStorageGet("kepce_notif_dinner_time", "17:00"));
+
+  async function syncPushSubscription(breakfastEnabled, breakfastTime, dinnerEnabled, dinnerTime) {
+    if (!isPushSupported()) return;
+    if (!breakfastEnabled && !dinnerEnabled) {
+      await unsubscribeFromPush().catch(() => {});
+      return;
+    }
+
+    try {
+      const activeCitySlug = globalState.user?.default_city_slug || timelineState.selectedCitySlug || "ankara";
+      const matchedCity = cities.find((c) => c.slug === activeCitySlug);
+      const cityId = matchedCity ? matchedCity.id : null;
+
+      await subscribeToPush({
+        cityId,
+        breakfastEnabled,
+        breakfastTime,
+        dinnerEnabled,
+        dinnerTime,
+      });
+    } catch (err) {
+      console.error("Push sync hatası:", err);
+      showToast(err.message || "Bildirim izni alınamadı.", { type: "error" });
+    }
+  }
+
+  async function handleMealNotifToggle(meal, checked) {
+    if (user) {
+      const key = meal === "breakfast" ? "notif_breakfast_enabled" : "notif_dinner_enabled";
+      await handlePreferenceChange(key, checked, meal === "breakfast" ? "Kahvaltı bildirimi" : "Akşam yemeği bildirimi");
+      const bEnabled = meal === "breakfast" ? checked : (user.notif_breakfast_enabled ?? false);
+      const bTime = user.notif_breakfast_time || "07:30";
+      const dEnabled = meal === "dinner" ? checked : (user.notif_dinner_enabled ?? false);
+      const dTime = user.notif_dinner_time || "17:00";
+      await syncPushSubscription(bEnabled, bTime, dEnabled, dTime);
+    } else {
+      if (meal === "breakfast") {
+        anonBreakfastEnabled = checked;
+        localStorage.setItem("kepce_notif_breakfast_enabled", String(checked));
+      } else {
+        anonDinnerEnabled = checked;
+        localStorage.setItem("kepce_notif_dinner_enabled", String(checked));
+      }
+      showToast(`${meal === "breakfast" ? "Kahvaltı" : "Akşam yemeği"} bildirimi tercihiniz kaydedildi.`, { type: "success" });
+      await syncPushSubscription(anonBreakfastEnabled, anonBreakfastTime, anonDinnerEnabled, anonDinnerTime);
+    }
+  }
+
+  async function handleMealTimeChange(meal, time) {
+    if (user) {
+      const key = meal === "breakfast" ? "notif_breakfast_time" : "notif_dinner_time";
+      await handlePreferenceChange(key, time, meal === "breakfast" ? "Kahvaltı saati" : "Akşam yemeği saati");
+      const bEnabled = user.notif_breakfast_enabled ?? false;
+      const bTime = meal === "breakfast" ? time : (user.notif_breakfast_time || "07:30");
+      const dEnabled = user.notif_dinner_enabled ?? false;
+      const dTime = meal === "dinner" ? time : (user.notif_dinner_time || "17:00");
+      await syncPushSubscription(bEnabled, bTime, dEnabled, dTime);
+    } else {
+      if (meal === "breakfast") {
+        anonBreakfastTime = time;
+        localStorage.setItem("kepce_notif_breakfast_time", time);
+      } else {
+        anonDinnerTime = time;
+        localStorage.setItem("kepce_notif_dinner_time", time);
+      }
+      showToast("Bildirim saati güncellendi.", { type: "success" });
+      await syncPushSubscription(anonBreakfastEnabled, anonBreakfastTime, anonDinnerEnabled, anonDinnerTime);
+    }
+  }
+
+  async function handleTestPushNotification() {
+    if (isTestingPush) return;
+    isTestingPush = true;
+    try {
+      await sendTestPush();
+      showToast("Test bildirimi cihazınıza gönderildi!", { type: "success" });
+    } catch (err) {
+      showToast(err.message || "Test bildirimi gönderilemedi.", { type: "error" });
+    } finally {
+      isTestingPush = false;
     }
   }
 
@@ -645,6 +744,37 @@
         </div>
       </div>
 
+      <!-- Sayfalama Modu -->
+      <!-- svelte-ignore a11y_click_events_have_key_events -->
+      <!-- svelte-ignore a11y_no_static_element_interactions -->
+      <div
+        class="c-list-row c-list-row--clickable c-list-row--tall"
+        onclick={(e) => {
+          if (!e.target.closest(".c-segmented-control__btn")) {
+            paginationMode = paginationMode === "sayfali" ? "akici" : "sayfali";
+            handlePaginationModeChange(paginationMode);
+          }
+        }}
+      >
+        <div class="c-list-row__info">
+          <div class="c-list-row__title">Sayfalama modu</div>
+          <div class="c-list-row__desc">
+            Listelerde sayfa numaraları veya sonsuz akışla gezinme
+          </div>
+        </div>
+        <div class="c-list-row__control c-list-row__control--flexible">
+          <SegmentedControl
+            bind:value={paginationMode}
+            variant="responsive"
+            options={[
+              { value: "sayfali", icon: icon("grid", 18), label: "Numaralı" },
+              { value: "akici", icon: icon("layers", 18), label: "Akıcı" },
+            ]}
+            onChange={handlePaginationModeChange}
+          />
+        </div>
+      </div>
+
       <!-- Görsel efektler -->
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
@@ -934,20 +1064,16 @@
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Kahvaltı</div>
+            <div class="c-list-row__desc">Sabah menüsü ve eğlenceli hatırlatma</div>
           </div>
           <div class="c-list-row__actions">
-            {#if globalState.user?.notif_breakfast_enabled}
+            {#if (user ? user.notif_breakfast_enabled : anonBreakfastEnabled)}
               <input
                 type="time"
                 id="settings-notif-breakfast-time"
                 class="c-time-input"
-                value={globalState.user?.notif_breakfast_time || "07:30"}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_breakfast_time",
-                    e.target.value,
-                    "Kahvaltı saati",
-                  )}
+                value={user ? (user.notif_breakfast_time || "07:30") : anonBreakfastTime}
+                onchange={(e) => handleMealTimeChange("breakfast", e.target.value)}
                 title="Kahvaltı bildirim saati"
               />
             {/if}
@@ -956,17 +1082,10 @@
                 type="checkbox"
                 id="settings-notif-breakfast"
                 class="c-input-hidden"
-                checked={globalState.user?.notif_breakfast_enabled ?? false}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_breakfast_enabled",
-                    e.target.checked,
-                    "Kahvaltı bildirimi",
-                  )}
+                checked={user ? (user.notif_breakfast_enabled ?? false) : anonBreakfastEnabled}
+                onchange={(e) => handleMealNotifToggle("breakfast", e.target.checked)}
               />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
             </label>
           </div>
         </div>
@@ -975,20 +1094,16 @@
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Akşam yemeği</div>
+            <div class="c-list-row__desc">Akşam menüsü ve anlık tabldot haberi</div>
           </div>
           <div class="c-list-row__actions">
-            {#if globalState.user?.notif_dinner_enabled}
+            {#if (user ? user.notif_dinner_enabled : anonDinnerEnabled)}
               <input
                 type="time"
                 id="settings-notif-dinner-time"
                 class="c-time-input"
-                value={globalState.user?.notif_dinner_time || "17:30"}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_dinner_time",
-                    e.target.value,
-                    "Akşam yemeği saati",
-                  )}
+                value={user ? (user.notif_dinner_time || "17:00") : anonDinnerTime}
+                onchange={(e) => handleMealTimeChange("dinner", e.target.value)}
                 title="Akşam yemeği bildirim saati"
               />
             {/if}
@@ -997,20 +1112,33 @@
                 type="checkbox"
                 id="settings-notif-dinner"
                 class="c-input-hidden"
-                checked={globalState.user?.notif_dinner_enabled ?? false}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_dinner_enabled",
-                    e.target.checked,
-                    "Akşam yemeği bildirimi",
-                  )}
+                checked={user ? (user.notif_dinner_enabled ?? false) : anonDinnerEnabled}
+                onchange={(e) => handleMealNotifToggle("dinner", e.target.checked)}
               />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
             </label>
           </div>
         </div>
+
+        <!-- Test Bildirimi Gönderme Satırı -->
+        {#if (user ? (user.notif_breakfast_enabled || user.notif_dinner_enabled) : (anonBreakfastEnabled || anonDinnerEnabled))}
+          <div class="c-list-row c-list-row--tall">
+            <div class="c-list-row__info">
+              <div class="c-list-row__title">Bildirimleri Test Et</div>
+              <div class="c-list-row__desc">Cihazınıza anlık bir deneme bildirimi gönderin</div>
+            </div>
+            <div class="c-list-row__actions">
+              <button
+                type="button"
+                class="c-button c-button--secondary c-button--compact"
+                onclick={handleTestPushNotification}
+                disabled={isTestingPush}
+              >
+                {isTestingPush ? "Gönderiliyor..." : "Test Bildirimi Gönder"}
+              </button>
+            </div>
+          </div>
+        {/if}
       </div>
       <h3>E-posta</h3>
       <div class="c-boxed-list">
