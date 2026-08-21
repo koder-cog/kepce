@@ -64,6 +64,8 @@
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 
+<h1 class="sr-only">En Beğenilen Öğrenci Yorumları</h1>
+
 <div class="c-tab-content">
   {#if isLoading}
     <div class="stats-placeholder">

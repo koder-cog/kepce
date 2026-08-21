@@ -90,6 +90,8 @@
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 
+<h1 class="sr-only">Denetim ve Moderasyon İstatistikleri</h1>
+
 <div class="c-tab-content">
   {#if isLoading}
     <div class="stats-placeholder">

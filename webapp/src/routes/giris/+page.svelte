@@ -87,7 +87,7 @@
   </div>
 {:else}
   <div class="auth-form-container">
-    <h2 class="auth-page__title u-mb-lg">Giriş</h2>
+    <h1 class="auth-page__title u-mb-lg">Giriş</h1>
 
     <div class="auth-social-buttons">
       <button

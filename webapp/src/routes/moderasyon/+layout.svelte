@@ -81,6 +81,8 @@
 
 <Seo title="Yönetim Paneli - Kepçe" noindex={true} />
 
+<h1 class="sr-only">Yönetim Paneli</h1>
+
 {#if globalState.isModerator}
   <div class="sidebar-layout">
     <!-- MOBİL COMBO-BOX MENÜSÜ -->

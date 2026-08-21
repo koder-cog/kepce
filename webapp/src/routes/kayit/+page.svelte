@@ -246,7 +246,7 @@
   </div>
 {:else}
   <div class="auth-form-container auth-form-container--wide">
-    <h2 class="auth-page__title u-mb-xs">Kayıt formu</h2>
+    <h1 class="auth-page__title u-mb-xs">Kayıt formu</h1>
     <div
       class="form-footer-hint u-mb-xl u-text-sm u-weight-semibold u-color-secondary"
     >

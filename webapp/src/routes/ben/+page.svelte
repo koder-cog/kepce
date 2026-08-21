@@ -20,6 +20,8 @@
 
 <Seo title="Ben • Kepçe" description="Kepçe kullanıcı profiliniz, favorileriniz ve ayarlarınız." />
 
+<h1 class="sr-only">Profilim</h1>
+
 <div class="ben-container">
   {#if checked && !globalState.user}
     <EmptyState

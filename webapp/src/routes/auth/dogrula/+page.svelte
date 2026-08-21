@@ -40,7 +40,7 @@
 <Seo title="E-Posta Doğrulama - Kepçe" noindex={true} />
 
 <div class="auth-form-container">
-  <h2 class="auth-page__title u-mb-lg">E-Posta Doğrulama</h2>
+  <h1 class="auth-page__title u-mb-lg">E-Posta Doğrulama</h1>
 
   <div class="c-card passwordless-card">
     {#if status === "loading"}

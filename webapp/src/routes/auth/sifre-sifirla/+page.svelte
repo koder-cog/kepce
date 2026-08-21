@@ -81,7 +81,7 @@
   noindex={true}
 />
 
-<h2 class="auth-page__title">Yeni Şifre Belirleme</h2>
+<h1 class="auth-page__title">Yeni Şifre Belirleme</h1>
 
 <div class="auth-form-container">
   <div id="reset-message-container">

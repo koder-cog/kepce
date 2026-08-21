@@ -43,7 +43,7 @@
   noindex={true}
 />
 
-<h2 class="auth-page__title">Şifre Yenileme</h2>
+<h1 class="auth-page__title">Şifre Yenileme</h1>
 
 <div class="auth-form-container">
   <div id="reset-message-container">

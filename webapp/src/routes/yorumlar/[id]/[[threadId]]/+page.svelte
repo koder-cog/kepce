@@ -3,6 +3,7 @@
     import { goto } from "$app/navigation";
     import { onMount } from "svelte";
     import Loader from "@/components/ui/Loader.svelte";
+    import Seo from "@/components/ui/Seo.svelte";
 
     let params = $derived(page.params);
 
@@ -14,6 +15,11 @@
     });
 </script>
 
+<Seo title="Yönlendiriliyorsunuz... - Kepçe" noindex={true} />
+
+<h1 class="sr-only">Yönlendiriliyorsunuz</h1>
+
 <div class="u-flex u-justify-center u-items-center" style="min-height: 40vh;">
     <Loader size={48} />
 </div>
+

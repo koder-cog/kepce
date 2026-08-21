@@ -116,7 +116,7 @@
       </EmptyState>
     </div>
   {:else}
-    <h2 class="auth-page__title u-mb-xs">Profilini Tamamla</h2>
+    <h1 class="auth-page__title u-mb-xs">Profilini Tamamla</h1>
     <div
       class="form-footer-hint u-mb-xl u-text-sm u-weight-semibold u-color-secondary"
     >

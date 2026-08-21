@@ -52,6 +52,8 @@
 
 <Seo title="Giriş Yapılıyor... - Kepçe" noindex={true} />
 
+<h1 class="sr-only">Giriş Yapılıyor</h1>
+
 {#if isError}
   <EmptyState
     statusCode={400}

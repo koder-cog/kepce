@@ -170,6 +170,8 @@
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 
+<h1 class="sr-only">KYK Yemek İstatistikleri ve Analizleri</h1>
+
 <TabBar bind:activeId={activeSubTab} tabs={subTabs} onChange={loadContent} />
 
 <div id="stats-tab-content" class="c-tab-content">

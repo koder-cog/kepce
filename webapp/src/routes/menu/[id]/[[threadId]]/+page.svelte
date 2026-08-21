@@ -202,6 +202,12 @@
     });
 </script>
 
+<h1 class="sr-only">
+    {menu
+        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK Yemek Menüsü Detayı`
+        : "KYK Yemek Menüsü Detayı ve Yorumları"}
+</h1>
+
 {#if isLoading}
     <div class="comments-page">
         <div id="menu-header-container">
