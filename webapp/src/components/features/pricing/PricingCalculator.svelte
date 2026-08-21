@@ -296,6 +296,9 @@
     <div class="pricing-calc__search-wrap">
       <input
         type="search"
+        id="pricing-search-input"
+        name="search"
+        aria-label="Yemek veya içecek ara"
         placeholder="Yemek veya içecek ara..."
         bind:value={searchQuery}
       />
@@ -328,7 +331,11 @@
   </div>
 
   <!-- Kategori Filtre Çipleri -->
-  <div class="pricing-calc__chips-scroll" role="tablist">
+  <div
+    class="pricing-calc__chips-scroll"
+    role="tablist"
+    aria-label="Yemek kategorileri"
+  >
     {#each pricingData.categories as cat}
       <button
         type="button"
