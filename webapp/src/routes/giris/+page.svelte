@@ -111,7 +111,9 @@
       <!-- Honeypot field for spam protection -->
       <input
         type="text"
+        id="login-website-honeypot"
         name="website"
+        aria-label="Website"
         tabindex="-1"
         autocomplete="off"
         class="u-honeypot"
@@ -233,7 +235,7 @@
     </form>
 
     <div class="auth-footer">
-      <h3 class="auth-footer__title">Giremeyiş</h3>
+      <h2 class="auth-footer__title">Giremeyiş</h2>
       <div class="auth-footer__links">
         <a href="/sifre-yenile" class="auth-footer__link" data-link
           >Şifremi unuttum</a

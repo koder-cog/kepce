@@ -263,7 +263,9 @@
       <!-- Honeypot field for spam protection -->
       <input
         type="text"
+        id="register-website-honeypot"
         name="website"
+        aria-label="Website"
         tabindex="-1"
         autocomplete="off"
         class="u-honeypot"
@@ -480,7 +482,8 @@
 
           <label class="c-list-row c-list-row--clickable">
             <div class="c-list-row__content">
-              <span class="c-list-row__title">Öğün bildirimleri (Web Push)</span>
+              <span class="c-list-row__title">Öğün bildirimleri (Web Push)</span
+              >
               <span class="c-list-row__desc"
                 >Günün menüsü açıklandığında tarayıcınıza anlık bildirim gelsin</span
               >

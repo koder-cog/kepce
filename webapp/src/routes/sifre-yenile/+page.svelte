@@ -89,7 +89,7 @@
   {/if}
 
   <div class="auth-footer">
-    <h3 class="auth-footer__title">Hatırladın mı:</h3>
+    <h2 class="auth-footer__title">Hatırladın mı:</h2>
     <div class="auth-footer__links">
       <a href="/giris" class="auth-footer__link" data-link>Giriş yapılası</a>
       <a href="/kayit" class="auth-footer__link" data-link

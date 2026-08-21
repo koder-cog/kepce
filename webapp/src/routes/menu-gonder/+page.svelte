@@ -325,6 +325,8 @@
           </div>
           <input
             type="file"
+            id="file-input"
+            aria-label="Menü Dosyası"
             bind:this={fileInput}
             accept=".xlsx,.xls,.pdf,image/*"
             class="u-hidden"
