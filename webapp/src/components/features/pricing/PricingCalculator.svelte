@@ -294,6 +294,11 @@
     />
 
     <div class="pricing-calc__search-wrap">
+      <label
+        for="pricing-search-input"
+        class="u-hidden"
+        style="display:none !important;">Yemek veya içecek ara</label
+      >
       <input
         type="search"
         id="pricing-search-input"
@@ -331,189 +336,174 @@
   </div>
 
   <!-- Kategori Filtre Çipleri -->
-  <div
-    class="pricing-calc__chips-scroll"
-    role="tablist"
-    aria-label="Yemek kategorileri"
-  >
-    {#each pricingData.categories as cat}
-      <button
-        type="button"
-        role="tab"
-        aria-selected={selectedCategory === cat.id}
-        class="chip {selectedCategory === cat.id ? 'active' : ''}"
-        onclick={() => (selectedCategory = cat.id)}
-      >
-        {cat.name}
-      </button>
-    {/each}
-  </div>
-
-  <!-- Ürün Listesi Grid (Masaüstü: 2, Mobil: 1 Sütun) -->
-  <div class="pricing-calc__grid">
-    {#if filteredItems.length === 0}
-      <div class="pricing-calc__empty">
-        <p>Aradığınız kriterlere uygun ürün bulunamadı.</p>
-      </div>
-    {:else}
-      {#each filteredItems as item (item.id)}
-        {@const qty = tray[item.id] || 0}
-        <div class="pricing-calc__item {qty > 0 ? 'is-selected' : ''}">
-          <div class="pricing-calc__item-info">
-            <span class="pricing-calc__item-name">{item.name}</span>
-            <span class="pricing-calc__item-portion">{item.portion}</span>
-          </div>
-          <div class="pricing-calc__item-action">
-            <span class="pricing-calc__item-price"
-              >{item.price.toFixed(2)} TL</span
-            >
-            <div class="pricing-calc__item-counter">
-              {#if qty > 0}
+  <div class="pricing-calc__chips-scroll" aria-label="Yemek kategorileri">
+    <!-- Ürün Listesi Grid (Masaüstü: 2, Mobil: 1 Sütun) -->
+    <div class="pricing-calc__grid">
+      {#if filteredItems.length === 0}
+        <div class="pricing-calc__empty">
+          <p>Aradığınız kriterlere uygun ürün bulunamadı.</p>
+        </div>
+      {:else}
+        {#each filteredItems as item (item.id)}
+          {@const qty = tray[item.id] || 0}
+          <div class="pricing-calc__item {qty > 0 ? 'is-selected' : ''}">
+            <div class="pricing-calc__item-info">
+              <span class="pricing-calc__item-name">{item.name}</span>
+              <span class="pricing-calc__item-portion">{item.portion}</span>
+            </div>
+            <div class="pricing-calc__item-action">
+              <span class="pricing-calc__item-price"
+                >{item.price.toFixed(2)} TL</span
+              >
+              <div class="pricing-calc__item-counter">
+                {#if qty > 0}
+                  <button
+                    type="button"
+                    class="btn btn--secondary btn--sm btn--icon-only"
+                    onclick={() => removeItem(item.id)}
+                    aria-label="Azalt"
+                  >
+                    -
+                  </button>
+                  <span class="pricing-calc__item-qty">{qty}</span>
+                {/if}
                 <button
                   type="button"
-                  class="btn btn--secondary btn--sm btn--icon-only"
-                  onclick={() => removeItem(item.id)}
-                  aria-label="Azalt"
+                  class="btn btn--primary btn--sm btn--icon-only"
+                  onclick={() => addItem(item)}
+                  aria-label="Ekle"
                 >
-                  -
+                  +
                 </button>
-                <span class="pricing-calc__item-qty">{qty}</span>
+              </div>
+            </div>
+          </div>
+        {/each}
+      {/if}
+    </div>
+
+    <!-- Yapışkan Alt Bar (Kart Sınıfı) -->
+    {#if totalTrayCount > 0}
+      <div class="pricing-calc__sticky-wrap">
+        <aside
+          class="disclaimer-card pricing-calc__sticky-bar"
+          aria-label="Seçim Özeti"
+        >
+          <!-- 3px İnce İlerleme Çizgisi -->
+          <div class="pricing-calc__progress-line">
+            <div
+              class="pricing-calc__progress-fill {isUnderQuota
+                ? 'is-ok'
+                : 'is-warn'}"
+              style="width: {progressPercent}%;"
+            ></div>
+          </div>
+
+          <div class="pricing-calc__sticky-content">
+            <div class="pricing-calc__sticky-summary">
+              <span class="pricing-calc__sticky-count"
+                >{totalTrayCount} ürün</span
+              >
+              <span class="pricing-calc__sticky-dot">•</span>
+              <span class="pricing-calc__sticky-total"
+                >{totalTrayPrice.toFixed(0)} TL</span
+              >
+              {#if isUnderQuota}
+                {#if difference === 0}
+                  <span class="pricing-calc__sticky-tag is-ok"
+                    >Tam limittesin (0 TL fark)</span
+                  >
+                {:else}
+                  <span class="pricing-calc__sticky-tag is-ok"
+                    >{Math.abs(difference).toFixed(0)} TL kaldı</span
+                  >
+                {/if}
+              {:else}
+                <span class="pricing-calc__sticky-tag is-warn"
+                  >+{difference.toFixed(0)} TL cepten</span
+                >
               {/if}
+            </div>
+
+            <div class="pricing-calc__sticky-actions">
               <button
                 type="button"
-                class="btn btn--primary btn--sm btn--icon-only"
-                onclick={() => addItem(item)}
-                aria-label="Ekle"
+                class="btn btn--secondary btn--sm"
+                onclick={() => (isDrawerOpen = !isDrawerOpen)}
               >
-                +
+                {isDrawerOpen ? "Kapat" : "Detay"}
+              </button>
+              <button
+                type="button"
+                class="btn btn--secondary btn--sm btn--icon-only"
+                onclick={handleShare}
+                aria-label="Paylaş"
+                title="Paylaş"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <circle cx="18" cy="5" r="3"></circle>
+                  <circle cx="6" cy="12" r="3"></circle>
+                  <circle cx="18" cy="19" r="3"></circle>
+                  <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                  <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="btn btn--danger btn--sm btn--icon-only"
+                onclick={clearTray}
+                aria-label="Sıfırla"
+                title="Sıfırla"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  width="14"
+                  height="14"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                >
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path
+                    d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
+                  ></path>
+                </svg>
               </button>
             </div>
           </div>
-        </div>
-      {/each}
-    {/if}
-  </div>
 
-  <!-- Yapışkan Alt Bar (Kart Sınıfı) -->
-  {#if totalTrayCount > 0}
-    <div class="pricing-calc__sticky-wrap">
-      <aside
-        class="disclaimer-card pricing-calc__sticky-bar"
-        aria-label="Seçim Özeti"
-      >
-        <!-- 3px İnce İlerleme Çizgisi -->
-        <div class="pricing-calc__progress-line">
-          <div
-            class="pricing-calc__progress-fill {isUnderQuota
-              ? 'is-ok'
-              : 'is-warn'}"
-            style="width: {progressPercent}%;"
-          ></div>
-        </div>
-
-        <div class="pricing-calc__sticky-content">
-          <div class="pricing-calc__sticky-summary">
-            <span class="pricing-calc__sticky-count">{totalTrayCount} ürün</span
-            >
-            <span class="pricing-calc__sticky-dot">•</span>
-            <span class="pricing-calc__sticky-total"
-              >{totalTrayPrice.toFixed(0)} TL</span
-            >
-            {#if isUnderQuota}
-              {#if difference === 0}
-                <span class="pricing-calc__sticky-tag is-ok"
-                  >Tam limittesin (0 TL fark)</span
-                >
-              {:else}
-                <span class="pricing-calc__sticky-tag is-ok"
-                  >{Math.abs(difference).toFixed(0)} TL kaldı</span
-                >
-              {/if}
-            {:else}
-              <span class="pricing-calc__sticky-tag is-warn"
-                >+{difference.toFixed(0)} TL cepten</span
-              >
-            {/if}
-          </div>
-
-          <div class="pricing-calc__sticky-actions">
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm"
-              onclick={() => (isDrawerOpen = !isDrawerOpen)}
-            >
-              {isDrawerOpen ? "Kapat" : "Detay"}
-            </button>
-            <button
-              type="button"
-              class="btn btn--secondary btn--sm btn--icon-only"
-              onclick={handleShare}
-              aria-label="Paylaş"
-              title="Paylaş"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <circle cx="18" cy="5" r="3"></circle>
-                <circle cx="6" cy="12" r="3"></circle>
-                <circle cx="18" cy="19" r="3"></circle>
-                <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-              </svg>
-            </button>
-            <button
-              type="button"
-              class="btn btn--danger btn--sm btn--icon-only"
-              onclick={clearTray}
-              aria-label="Sıfırla"
-              title="Sıfırla"
-            >
-              <svg
-                viewBox="0 0 24 24"
-                width="14"
-                height="14"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path
-                  d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"
-                ></path>
-              </svg>
-            </button>
-          </div>
-        </div>
-
-        <!-- Açılır/Kapanır Zarif Detay Çekmecesi (Büyütülmüş & Ferah) -->
-        <div class="pricing-calc__drawer {isDrawerOpen ? 'is-open' : ''}">
-          <div class="pricing-calc__drawer-inner">
-            <div class="pricing-calc__drawer-list">
-              {#each trayItems as item (item.id)}
-                <span class="pricing-calc__drawer-chip">
-                  <span>{item.name}</span>
-                  <strong>x{item.qty}</strong>
-                  <span class="chip-price"
-                    >({item.itemTotal.toFixed(0)} TL)</span
-                  >
-                  <button
-                    type="button"
-                    onclick={() => removeItem(item.id)}
-                    aria-label="Kaldır"
-                  >
-                    ✕
-                  </button>
-                </span>
-              {/each}
+          <!-- Açılır/Kapanır Zarif Detay Çekmecesi (Büyütülmüş & Ferah) -->
+          <div class="pricing-calc__drawer {isDrawerOpen ? 'is-open' : ''}">
+            <div class="pricing-calc__drawer-inner">
+              <div class="pricing-calc__drawer-list">
+                {#each trayItems as item (item.id)}
+                  <span class="pricing-calc__drawer-chip">
+                    <span>{item.name}</span>
+                    <strong>x{item.qty}</strong>
+                    <span class="chip-price"
+                      >({item.itemTotal.toFixed(0)} TL)</span
+                    >
+                    <button
+                      type="button"
+                      onclick={() => removeItem(item.id)}
+                      aria-label="Kaldır"
+                    >
+                      ✕
+                    </button>
+                  </span>
+                {/each}
+              </div>
             </div>
           </div>
-        </div>
-      </aside>
-    </div>
-  {/if}
+        </aside>
+      </div>
+    {/if}
+  </div>
 </section>
