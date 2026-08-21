@@ -18,9 +18,17 @@ kepce.org, www.kepce.org {
         X-Frame-Options "DENY"
         Referrer-Policy "strict-origin-when-cross-origin"
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
         Cross-Origin-Opener-Policy "same-origin"
+        Cross-Origin-Resource-Policy "same-origin"
+        Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
     }
+
+    # Statik meta ve simge dosyaları için önbellek kuralları (manifest.json, favicon vb.)
+    @static_meta {
+        path /manifest.json /favicon.ico /favicon.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png
+    }
+    header @static_meta Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
 
     # Statik bakım dosyası servisi
     root * /srv/static
@@ -40,7 +48,7 @@ kepce.org, www.kepce.org {
         reverse_proxy webapp:8080
     }
 
-    # 4. 502 / 503 hatasında Özel Bakım Sayfası ("Kepçeleri Yıkıyoruz")
+    # 4. 502 / 503 hatasında Özel Bakım Sayfası
     handle_errors {
         @maintenance expression `{err.status_code} in [502, 503]`
         rewrite @maintenance /maintenance.html
@@ -57,6 +65,7 @@ analitik.kepce.org {
         X-Frame-Options "SAMEORIGIN"
         Referrer-Policy "strict-origin-when-cross-origin"
         Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
     }
 
     log {
