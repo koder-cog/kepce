@@ -160,7 +160,9 @@ ssh -i "$SSH_KEY" "$SERVER_HOST" "
 
     # 7. Caddy config'i yeniden yükle: Caddyfile bind-mount olduğu için dosya
     #    değişimi 'up -d' tarafından algılanmaz; restart mount'ı yeniden çözer.
-    \$COMPOSE_CMD restart caddy
+    # NOT: $COMPOSE_CMD yerel kabukta genişletilir (156. satırdakiyle aynı desen);
+    # kaçış karakteri koymak uzak kabukta tanımsız değişken hatası verir.
+    $COMPOSE_CMD restart caddy
 "
 
 # 7. Sağlık Kontrolü
