@@ -55,7 +55,8 @@ function normalizeMenu(raw) {
     }
   }
 
-  return { ...raw, items: items || [] };
+  // API tekil menüde `serve_date` döndürür; sayfalar `date` alanını okur.
+  return { ...raw, date: raw.date ?? raw.serve_date, items: items || [] };
 }
 
 function normalizeMenuList(payload) {

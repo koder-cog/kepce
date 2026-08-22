@@ -171,6 +171,14 @@
         menu?.date ? formatFullTurkishDate(menu.date, true) : ""
     );
 
+    let mealLabel = $derived(
+        menu?.meal_type === "breakfast"
+            ? "Kahvaltı"
+            : menu?.meal_type === "dinner"
+              ? "Akşam Yemeği"
+              : "",
+    );
+
     let menuSchema = $derived.by(() => {
         if (!menu) return null;
         const dishes = menu.items || menu.dishes || [];
@@ -197,7 +205,7 @@
 
         const menuObj = {
             "@type": "Menu",
-            name: `${dateLabel} ${cityName} KYK Yemek Menüsü`,
+            name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü`,
             description: `${dateLabel} tarihli ${cityName} KYK yurt menüsü: ${dishEntries.map((d) => d.name).join(", ")}`,
             inLanguage: "tr-TR",
             hasMenuItem: dishEntries.map((d) => ({
@@ -227,7 +235,7 @@
                         ...(targetCitySlug
                             ? [{ "@type": "ListItem", position: 2, name: cityName, item: `https://kepce.org/${targetCitySlug}` }]
                             : []),
-                        { "@type": "ListItem", position: targetCitySlug ? 3 : 2, name: `${dateLabel} ${cityName} KYK Yemek Menüsü` },
+                        { "@type": "ListItem", position: targetCitySlug ? 3 : 2, name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü` },
                     ],
                 },
                 menuObj,
@@ -238,7 +246,7 @@
 
 <h1 class="sr-only">
     {menu
-        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK Yemek Menüsü Detayı`
+        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK ${mealLabel} Menüsü Detayı`
         : "KYK Yemek Menüsü Detayı ve Yorumları"}
 </h1>
 
@@ -343,10 +351,10 @@
 
 <Seo
     title={menu
-        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK Yemek Menüsü | Kepçe`
+        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK ${mealLabel} Menüsü | Kepçe`
         : "KYK Yemek Menüsü Detayı | Kepçe"}
     description={menu
-        ? `${formattedDate || menu.date} tarihli ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} yurt yemek menüsü detayları, besin değerleri ve öğrenci yorumları.`
+        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} ${mealLabel} menüsü detayları, besin değerleri ve öğrenci yorumları.`
         : "KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri."}
     image={ogImageUrl}
     canonical={`https://kepce.org/menu/${menuId}`}
