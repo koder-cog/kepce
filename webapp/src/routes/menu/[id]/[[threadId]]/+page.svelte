@@ -167,8 +167,9 @@
               : "https://kepce.org/og_image.png"
     );
 
+    // Haftanin gunu basligi kirletiyor; sade gun-ay-yil yeterli.
     let formattedDate = $derived(
-        menu?.date ? formatFullTurkishDate(menu.date, true) : ""
+        menu?.date ? formatFullTurkishDate(menu.date) : ""
     );
 
     let mealLabel = $derived(
