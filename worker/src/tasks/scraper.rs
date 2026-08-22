@@ -218,6 +218,25 @@ pub async fn run_kykyemek_scraper(
         Err(e) => tracing::error!("[FALLBACK] Alternatif kaynak taramasında hata: {:?}", e),
     }
 
+    // 1.6. Gecmis ay bosluk doldurma: kykyemek yalnizca son 2 ayi servis
+    // ettigi icin daha eski bosluklar acik kaynaklardan (yurtmenu.net +
+    // kykmenum.com) doldurulur. FALLBACK_HISTORY_MONTHS ile ayarlanir (0=kapali).
+    let hist_months: u32 = std::env::var("FALLBACK_HISTORY_MONTHS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(3);
+    if hist_months > 0 {
+        match super::fallback_scraper::run_historical_gap_fill(db, client, shutdown_rx.clone(), hist_months).await {
+            Ok(hist_count) => {
+                if hist_count > 0 {
+                    tracing::info!("Gecmis ay bosluklarindan {} menü dolduruldu.", hist_count);
+                }
+                total_fetched += hist_count;
+            }
+            Err(e) => tracing::error!("[HISTORY] Gecmis ay taramasında hata: {:?}", e),
+        }
+    }
+
     let mut token_opt = match fetch_antiforgery_token(client).await {
         Ok(t) => {
             tracing::info!("Kykyemek oturum token'ı başarıyla alındı.");

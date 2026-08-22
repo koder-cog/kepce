@@ -24,16 +24,19 @@ struct DayGaps {
     dinner: bool,
 }
 
+/// Fallback taramasinin kapsadigi aktif iller.
+const ACTIVE_CITIES: [&str; 16] = [
+    "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum",
+    "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk",
+    "kirklareli", "konya", "sakarya", "sivas", "trabzon",
+];
+
 pub async fn run_fallback_scrape(
     db: &DatabaseConnection,
     client: &Client,
     shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<usize> {
-    let active_cities = [
-        "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum",
-        "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk",
-        "kirklareli", "konya", "sakarya", "sivas", "trabzon",
-    ];
+    let active_cities = ACTIVE_CITIES;
 
     let now = chrono::Local::now().naive_local().date();
     let days_in_month = match now.month() {
@@ -92,6 +95,192 @@ pub async fn run_fallback_scrape(
 
     tracing::info!("[FALLBACK] Alternatif kaynak taraması tamamlandı: {} menü kaydedildi.", total_saved);
     Ok(total_saved)
+}
+
+/// Gecmis aylardaki eksik ogunleri doldurur.
+///
+/// kykyemek API'si yalnizca son 2 ayi servis ettigi icin daha eski bosluklar
+/// ancak acik kaynaklardan gelir: yurtmenu.net (?date=) ve kykmenum.com
+/// (/slug/YYYY-MM-DD). Her ikisi de eski tarihleri acikca servis eder.
+///
+/// months_back = kac ay geriye gidilecek (0 -> devre disi).
+pub async fn run_historical_gap_fill(
+    db: &DatabaseConnection,
+    client: &Client,
+    shutdown_rx: tokio::sync::watch::Receiver<bool>,
+    months_back: u32,
+) -> Result<usize> {
+    if months_back == 0 {
+        return Ok(0);
+    }
+
+    let today = chrono::Local::now().naive_local().date();
+    let mut total_saved = 0usize;
+
+    // Onceki aylar: bu ay haric (o zaten run_fallback_scrape'in isi), geriye dogru
+    for back in (1..=months_back).rev() {
+        let Some(target) = shift_month(today, -(back as i32)) else { continue };
+        let Some((start, end)) = month_bounds(target.year(), target.month()) else { continue };
+        tracing::info!(
+            "[HISTORY] {}-{:02} bosluk taramasi basliyor...",
+            target.year(),
+            target.month()
+        );
+
+        for slug in ACTIVE_CITIES {
+            if *shutdown_rx.borrow() {
+                return Ok(total_saved);
+            }
+            let Some(city) = cities::Entity::find()
+                .filter(cities::Column::Slug.eq(slug))
+                .one(db)
+                .await?
+            else {
+                continue;
+            };
+
+            // Ayin mevcut ogunlerini TEK sorguda cek; eksik gunleri hafizada hesapla
+            let rows = shared::entities::menus::Entity::find()
+                .filter(shared::entities::menus::Column::CityId.eq(city.id))
+                .filter(shared::entities::menus::Column::ServeDate.gte(start))
+                .filter(shared::entities::menus::Column::ServeDate.lt(end))
+                .all(db)
+                .await?;
+
+            for day in 1..=days_in_month(target.year(), target.month()) {
+                if *shutdown_rx.borrow() {
+                    return Ok(total_saved);
+                }
+                let Some(date) = NaiveDate::from_ymd_opt(target.year(), target.month(), day) else {
+                    continue;
+                };
+                let has_breakfast = rows.iter().any(|m| m.serve_date == date && m.meal_type == MealTypeEnum::Breakfast);
+                let has_dinner = rows.iter().any(|m| m.serve_date == date && m.meal_type == MealTypeEnum::Dinner);
+                if has_breakfast && has_dinner {
+                    continue;
+                }
+                let gaps = DayGaps { breakfast: !has_breakfast, dinner: !has_dinner };
+                let saved = fill_day_from_history(db, client, &city.slug, city.id, date, &gaps, &shutdown_rx).await?;
+                total_saved += saved;
+
+                // Kaynak sunuculara nazik ol
+                tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+            }
+        }
+    }
+
+    tracing::info!("[HISTORY] Gecmis ay bosluk doldurma tamamlandi: {} menü kaydedildi.", total_saved);
+    Ok(total_saved)
+}
+
+/// Eksik ogunleri once yurtmenu.net, sonra kykmenum.com'dan doldurmaya calisir.
+/// kykmenu.com.tr snapshot bazli oldugu icin gecmis tarihlerde verim yoktur.
+async fn fill_day_from_history(
+    db: &DatabaseConnection,
+    client: &Client,
+    slug: &str,
+    city_id: i32,
+    date: NaiveDate,
+    gaps: &DayGaps,
+    shutdown_rx: &tokio::sync::watch::Receiver<bool>,
+) -> Result<usize> {
+    let date_str = date.format("%Y-%m-%d").to_string();
+    let need_breakfast = gaps.breakfast;
+    let need_dinner = gaps.dinner;
+    let mut saved = 0usize;
+
+    // --- 1) yurtmenu.net (kalori bilgisi de var) ---
+    if need_breakfast || need_dinner {
+        if *shutdown_rx.borrow() {
+            return Ok(saved);
+        }
+        let url = format!("https://yurtmenu.net/{}?date={}", slug, date_str);
+        if let Ok(res) = client
+            .get(&url)
+            .header("User-Agent", UA)
+            .header("Referer", "https://yurtmenu.net/")
+            .timeout(std::time::Duration::from_secs(25))
+            .send()
+            .await
+        {
+            if let Ok(html) = res.text().await {
+                let menu = crate::parser::yurtmenu::parse_yurtmenu_html(&html);
+                if need_breakfast {
+                    if let Some(dishes) = menu.breakfast {
+                        let (min, max) = parse_kcal_range(menu.breakfast_kcal.as_deref());
+                        upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
+                        saved += 1;
+                    }
+                }
+                if need_dinner {
+                    if let Some(dishes) = menu.dinner {
+                        let (min, max) = parse_kcal_range(menu.dinner_kcal.as_deref());
+                        upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
+                        saved += 1;
+                    }
+                }
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
+    }
+
+    // --- 2) kykmenum.com (JSON-LD Menu) ---
+    if need_breakfast || need_dinner {
+        if *shutdown_rx.borrow() {
+            return Ok(saved);
+        }
+        let url = format!("https://kykmenum.com/{}/{}", slug, date_str);
+        if let Ok(res) = client
+            .get(&url)
+            .header("User-Agent", UA)
+            .timeout(std::time::Duration::from_secs(20))
+            .send()
+            .await
+        {
+            if let Ok(html) = res.text().await {
+                if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
+                    if need_breakfast {
+                        if let Some(dishes) = menu.breakfast {
+                            upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
+                            saved += 1;
+                        }
+                    }
+                    if need_dinner {
+                        if let Some(dishes) = menu.dinner {
+                            upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
+                            saved += 1;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(saved)
+}
+
+/// Verilen tarihi `months` kadar kaydirir (negatif = geriye).
+fn shift_month(base: NaiveDate, months: i32) -> Option<NaiveDate> {
+    use chrono::Months;
+    if months < 0 {
+        base.checked_sub_months(Months::new((-months) as u32))
+    } else {
+        base.checked_add_months(Months::new(months as u32))
+    }
+}
+
+/// (ay baslangici, sonraki ayin baslangici)
+fn month_bounds(year: i32, month: u32) -> Option<(NaiveDate, NaiveDate)> {
+    let start = NaiveDate::from_ymd_opt(year, month, 1)?;
+    let (next_year, next_month) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let end = NaiveDate::from_ymd_opt(next_year, next_month, 1)?;
+    Some((start, end))
+}
+
+fn days_in_month(year: i32, month: u32) -> u32 {
+    month_bounds(year, month)
+        .map(|(start, end)| (end - start).num_days() as u32)
+        .unwrap_or(30)
 }
 
 /// (breakfast_var_mi, dinner_var_mi)
