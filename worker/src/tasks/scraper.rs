@@ -184,10 +184,23 @@ pub async fn run_kykyemek_scraper(
     let all_cities = cities::Entity::find().all(db).await?;
     let mut total_fetched = 0;
 
-    // 1. Önce günün menülerini (aktif 16 ilin tüm Ağustos günlerini) hızlıca çek ve kaydet
+    // 1. Önce günün menülerini (aktif 16 ilin tüm ayın günlerini) hızlıca çek ve kaydet
     if let Ok(today_count) = scrape_today_menus(db, client, shutdown_rx.clone()).await {
         tracing::info!("Canlı günün menülerinden {} kayıt işlendi.", today_count);
         total_fetched += today_count;
+    }
+
+    // 1.5. Fallback zinciri: kykyemek'te eksik kalan şehir/günleri alternatif
+    // kaynaklardan (kykmenum.com > yurtmenu.net > kykmenu.com.tr) doldur.
+    // Sadece DB'de kayıt olmayan kombinasyonlar için istek atar.
+    match super::fallback_scraper::run_fallback_scrape(db, client, shutdown_rx.clone()).await {
+        Ok(fallback_count) => {
+            if fallback_count > 0 {
+                tracing::info!("Fallback kaynaklardan {} eksik menü dolduruldu.", fallback_count);
+            }
+            total_fetched += fallback_count;
+        }
+        Err(e) => tracing::error!("[FALLBACK] Alternatif kaynak taramasında hata: {:?}", e),
     }
 
     let mut token_opt = match fetch_antiforgery_token(client).await {
@@ -386,6 +399,7 @@ fn get_source_priority(source: &str) -> i32 {
         "kepce-kullanici" => 8,
         "kykyemek.com" | "kykyemek" | "kyk-yemek" => 6,
         "yurtmenu" | "yurtmenu.net" | "yurtmenu_live" => 5,
+        "kykmenum" | "kykmenum.com" => 5,
         "kykmenu" | "kykmenu.com.tr" | "kykmenulistesi.com.tr" => 4,
         "kepce-anonim" | "anonim" => 3,
         _ => 1,
@@ -410,7 +424,7 @@ pub async fn upsert_menu(
     let target_status = match target_status_override {
         Some(status) => status,
         None => match source_type.as_str() {
-            "kepce-admin" | "kepce-kullanici" | "kykyemek" | "kykyemek.com" | "yurtmenu" | "yurtmenu.net" | "kykmenu" | "kykmenu.com.tr" => MenuStatusEnum::Approved,
+            "kepce-admin" | "kepce-kullanici" | "kykyemek" | "kykyemek.com" | "yurtmenu" | "yurtmenu.net" | "kykmenum" | "kykmenum.com" | "kykmenu" | "kykmenu.com.tr" => MenuStatusEnum::Approved,
             _ => MenuStatusEnum::Pending,
         }
     };
