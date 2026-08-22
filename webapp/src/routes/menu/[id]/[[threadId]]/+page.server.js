@@ -17,11 +17,19 @@ export async function load({ params, setHeaders }) {
 		'cache-control': 'public, s-maxage=120, stale-while-revalidate=600'
 	});
 
-	const menu = await apiGet(`/api/v1/menus/${menuId}`);
+	const raw = await apiGet(`/api/v1/menus/${menuId}`);
 
-	if (!menu || !menu.id) {
+	if (!raw || !raw.id) {
 		error(404, 'Menü bulunamadı veya silinmiş.');
 	}
+
+	// API `serve_date` + `city_name` döndürür; sayfa bileşenleri `date`
+	// alanını beklediği için normalize edilir (client normalizer ile aynı sözleşme).
+	const menu = {
+		...raw,
+		date: raw.date ?? raw.serve_date,
+		city: raw.city ?? { name: raw.city_name }
+	};
 
 	return { menu };
 }

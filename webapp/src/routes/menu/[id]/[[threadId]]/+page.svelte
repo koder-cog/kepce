@@ -174,7 +174,15 @@
     let menuSchema = $derived.by(() => {
         if (!menu) return null;
         const dishes = menu.items || menu.dishes || [];
-        const dishNames = dishes.map((d) => (typeof d === "string" ? d : d.name)).filter(Boolean);
+        const dishEntries = dishes
+            .map((d) => {
+                if (typeof d === "string") return { name: d, calories: null };
+                return {
+                    name: d.raw_name ?? d.master_data?.name ?? d.name,
+                    calories: d.master_data?.estimated_calories ?? d.calories ?? null,
+                };
+            })
+            .filter((d) => d.name);
         const cityName = CITY_MAP[targetCitySlug] || targetCitySlug || "KYK";
         const dateLabel = formattedDate || menu.date || "";
 
@@ -187,20 +195,20 @@
             ratingValue = (totalScore / reviewCount).toFixed(1);
         }
 
-        const schemaObj = {
-            "@context": "https://schema.org",
+        const menuObj = {
             "@type": "Menu",
             name: `${dateLabel} ${cityName} KYK Yemek Menüsü`,
-            description: `${dateLabel} tarihli ${cityName} KYK yurt menüsü: ${dishNames.join(", ")}`,
+            description: `${dateLabel} tarihli ${cityName} KYK yurt menüsü: ${dishEntries.map((d) => d.name).join(", ")}`,
             inLanguage: "tr-TR",
-            hasMenuItem: dishNames.map((name) => ({
+            hasMenuItem: dishEntries.map((d) => ({
                 "@type": "MenuItem",
-                name: name,
+                name: d.name,
+                ...(d.calories ? { description: `Yaklaşık ${d.calories} kcal` } : {}),
             })),
         };
 
         if (reviewCount >= 1 && ratingValue) {
-            schemaObj.aggregateRating = {
+            menuObj.aggregateRating = {
                 "@type": "AggregateRating",
                 ratingValue: ratingValue,
                 bestRating: "5",
@@ -209,7 +217,22 @@
             };
         }
 
-        return schemaObj;
+        return {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "BreadcrumbList",
+                    itemListElement: [
+                        { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
+                        ...(targetCitySlug
+                            ? [{ "@type": "ListItem", position: 2, name: cityName, item: `https://kepce.org/${targetCitySlug}` }]
+                            : []),
+                        { "@type": "ListItem", position: targetCitySlug ? 3 : 2, name: `${dateLabel} ${cityName} KYK Yemek Menüsü` },
+                    ],
+                },
+                menuObj,
+            ],
+        };
     });
 </script>
 
