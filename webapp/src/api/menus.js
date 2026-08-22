@@ -68,8 +68,9 @@ function normalizeMenuList(payload) {
 
 
 export const menusApi = {
-  getCities: () => request('/cities'),
-  detectCity: () => request('/cities/detect'),
+  // Kanonik yol /public/cities (kökteki duplicate route 308 ile yönlendirir)
+  getCities: () => request('/public/cities'),
+  detectCity: () => request('/public/cities/detect'),
   getTodayMenu: async (city, dietary_type = 'standard') => {
     const data = await request(`/menus${buildQuery({ city, date: 'today', dietary_type })}`);
     return Array.isArray(data) ? data.map(normalizeMenu) : normalizeMenu(data);

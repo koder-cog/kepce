@@ -12,7 +12,8 @@ export const statisticsApi = {
   // #46: timeframe parametresi backend desteği eklenene dek yok sayılır
   getHumanityStats: (timeframe = '') => request(`/statistics/humanity${buildQuery({ timeframe })}`).catch(() => ({})),
   getGlobalTopComments: (limit = 10, timeframe = '') => request(`/statistics/comments/top${buildQuery({ limit, timeframe })}`).catch(() => []),
-  getGlobalRecentComments: (limit = 15) => request(`/statistics/comments/recent${buildQuery({ limit })}`).catch(() => []),
+  // Kanonik yol /comments/recent (statistics altındaki kopya kaldırıldı)
+  getGlobalRecentComments: (limit = 15) => request(`/comments/recent${buildQuery({ limit })}`).catch(() => []),
   getUserComments: (nickname, sort = 'new', limit = 20, offset = 0) => {
     const page = Math.floor(offset / limit) + 1;
     return request(`/profile/${nickname}/comments${buildQuery({ sort, limit, offset, page })}`);
