@@ -57,12 +57,18 @@
         const profileCity = globalState?.user?.default_city_slug;
 
         if (!value && !profileCity) {
-            detectCitySilent().then((detected) => {
-                if (detected && slugs.includes(detected) && detected !== value) {
-                    commit(detected);
-                    if (!localOnly) setCurrentCity(detected);
-                }
-            }).catch(() => {});
+            detectCitySilent()
+                .then((detected) => {
+                    if (
+                        detected &&
+                        slugs.includes(detected) &&
+                        detected !== value
+                    ) {
+                        commit(detected);
+                        if (!localOnly) setCurrentCity(detected);
+                    }
+                })
+                .catch(() => {});
         }
 
         const finalCity = value || profileCity || "istanbul";
@@ -97,43 +103,40 @@
         }
 
         // Bulunamazsa direkt tarayıcı izni istemek yerine önce uyarı (toast) ile sor
-        showToast(
-            "Otomatik konum bulunamadı. Kesin tespit için tarayıcı izni gerekiyor.",
-            {
-                timeout: 8000,
-                action: {
-                    text: "İzin Ver",
-                    callback: async () => {
-                        const result = await detectCityPrecise(slugs);
-                        if (result?.success && result.slug) {
-                            commit(result.slug);
-                            if (!localOnly) setCurrentCity(result.slug);
-                            showToast("Konumunuz güncellendi.", {
-                                timeout: 3000,
-                            });
-                        } else if (result?.unsupported) {
-                            showToast(
-                                "Bulunduğunuz şehir için henüz menü bulunmuyor.",
-                                {
-                                    timeout: 8000,
-                                    action: {
-                                        text: "Menü Gönder",
-                                        callback: () => {
-                                            goto("/menu-gonder");
-                                        },
+        showToast("Otomatik konum bulunamadı. Konum izni gerekiyor.", {
+            timeout: 8000,
+            action: {
+                text: "İzin Ver",
+                callback: async () => {
+                    const result = await detectCityPrecise(slugs);
+                    if (result?.success && result.slug) {
+                        commit(result.slug);
+                        if (!localOnly) setCurrentCity(result.slug);
+                        showToast("Konumunuz güncellendi.", {
+                            timeout: 3000,
+                        });
+                    } else if (result?.unsupported) {
+                        showToast(
+                            "Bulunduğunuz şehir için henüz menü bulunmuyor.",
+                            {
+                                timeout: 8000,
+                                action: {
+                                    text: "Menü Gönder",
+                                    callback: () => {
+                                        goto("/menu-gonder");
                                     },
                                 },
-                            );
-                        } else {
-                            showToast(
-                                "Konum izni verilmedi veya konum tespit edilemedi.",
-                                { type: "error" },
-                            );
-                        }
-                    },
+                            },
+                        );
+                    } else {
+                        showToast(
+                            "Konum izni verilmedi veya konum tespit edilemedi.",
+                            { type: "error" },
+                        );
+                    }
                 },
             },
-        );
+        });
     }
 
     function handleSpecialClick() {

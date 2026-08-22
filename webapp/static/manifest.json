@@ -1,11 +1,19 @@
 {
   "name": "Kepçe",
   "short_name": "Kepçe",
-  "description": "KYK'nin yemekhane menülerini sunan açık kaynak kodlu gayriresmi platform.",
+  "description": "KYK yemekhane menülerini sunan açık kaynak kodlu ve bağımsız öğrenci platformu.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait",
   "background_color": "#242828",
   "theme_color": "#242828",
+  "lang": "tr",
+  "categories": [
+    "food",
+    "education"
+  ],
+  "id": "/",
   "icons": [
     {
       "src": "/favicon.svg",
@@ -14,40 +22,48 @@
       "purpose": "any"
     },
     {
-      "src": "/favicon.svg",
+      "src": "/icon-192.png",
       "sizes": "192x192",
-      "type": "image/svg+xml",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "maskable"
     }
   ],
-  "orientation": "portrait",
-  "categories": [
-    "food",
-    "education"
-  ],
-  "id": "/",
   "shortcuts": [
     {
       "name": "Günlük Menüler",
       "short_name": "Günlük",
-      "description": "Günlük yemek menülerini gör",
+      "description": "Günün yemek menüsünü incele",
       "url": "/?source=pwa_shortcut",
       "icons": [
         {
-          "src": "/favicon.svg",
-          "sizes": "192x192"
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     },
     {
-      "name": "Geçmiş Menüler",
+      "name": "Menü Arşivi",
       "short_name": "Arşiv",
-      "description": "Geçmişteki menüleri yad et",
+      "description": "Geçmiş günlerin menülerine göz at",
       "url": "/arsiv?source=pwa_shortcut",
       "icons": [
         {
-          "src": "/favicon.svg",
-          "sizes": "192x192"
+          "src": "/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
         }
       ]
     }
