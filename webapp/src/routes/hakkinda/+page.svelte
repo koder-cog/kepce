@@ -2,12 +2,60 @@
   import { icon } from "@/components/ui/icons.js";
   import ContentPage from "@/components/layout/ContentPage.svelte";
   import Seo from "@/components/ui/Seo.svelte";
+
+  const aboutFaqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "Bu site kimin?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Kepçe, güncel olarak bir KYK yurdunda kalan ve yurt yemekhanesinden beslenen bir üniversite öğrencisi tarafından geliştirilmiş açık kaynaklı ve bağımsız bir projedir.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Kepçe güvenilir mi?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Proje, güncel güvenlik standartları üzerine inşa edilmiştir. Kaynak kodları açık olduğu için bağımsız olarak incelenebilir ve denetlenebilir.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Kepçe'nin bana ne faydası var?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Öğrenciler yurt menülerine reklamsız ve saniyeler içinde ulaşabilir; geliştiriciler ise ücretsiz API altyapısından faydalanarak kendi otomasyonlarını geliştirebilir.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Masraflar kimin cebinden çıkıyor? Gelir modeli nedir?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Sunucu ve alan adı gibi temel altyapı masrafları geliştiricinin kendi cebinden karşılanmaktadır. Sitede reklam veya kâr amacı güden bir gelir modeli bulunmamaktadır.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Projeye nasıl katkı sağlayabilirim?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Geliştiriciler GitHub deposu üzerinden kodlara katkıda bulunabilir ve hata bildirebilir; kullanıcılar ise menü paylaşarak veya uygulamayı kullanarak destek olabilir.",
+        },
+      },
+    ],
+  };
 </script>
 
 <Seo
-  title="Hakkında - Kepçe"
-  description="Kepçe; KYK yurtlarında kalan öğrencilerin günlük yemek menülerine şeffaf, reklamsız ve hızlıca ulaşması için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur."
+  title="Hakkında | Kepçe"
+  description="Kepçe, KYK yurtlarında çıkan yemekleri öğrencilerin kolayca takip edebilmesi için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur."
   image="https://kepce.org/api/v1/public/og/page/hakkinda"
+  schema={aboutFaqSchema}
 />
 
 <ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 2026.08.05">

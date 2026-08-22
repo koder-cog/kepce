@@ -64,7 +64,7 @@
 
 <Seo
   title="Sıkça Sorulabilecek Sorular | Kepçe"
-  description="Kepçe platformu, KYK yurt yemek menüleri, verilerin doğruluğu ve topluluk kuralları hakkında sıkça sorulan sorular."
+  description="Kepçe'nin çalışma mantığı, KYK yemek menüleri ve sistem hakkında merak edilebilecekler."
   image="https://kepce.org/api/v1/public/og/page/sss"
   schema={faqSchema}
 />

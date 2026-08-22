@@ -59,8 +59,8 @@
 </script>
 
 <Seo
-  title="En Beğenilen Öğrenci Yorumları - Kepçe"
-  description="KYK yemekhaneleri hakkında en çok oy alan, öne çıkan öğrenci yorumları ve değerlendirmeleri."
+  title="En Beğenilen Öğrenci Yorumları | Kepçe"
+  description="Yurt yemekleri hakkında öğrencilerin yaptığı en çok beğenilen değerlendirmeler."
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 

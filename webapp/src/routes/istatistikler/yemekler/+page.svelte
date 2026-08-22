@@ -165,8 +165,8 @@
 </script>
 
 <Seo
-  title="Yemek İstatistikleri ve Analizleri - Kepçe"
-  description="KYK yurtlarında en çok sevilen ve en az beğenilen yemekler, puanlamalar ve öğrenci oylama istatistikleri."
+  title="Yemek İstatistikleri | Kepçe"
+  description="KYK yurtlarında en beğenilen ve en eleştirilen yemekler, öğrenci oyları ve nefret tablosu."
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />
 

@@ -198,11 +198,6 @@
   });
 </script>
 
-<Seo
-  title="KYK Yemek Menüsü Arşivi | Kepçe"
-  description="Geçmiş aylara ait KYK yurt yemekhane menüleri. Şehrinizi ve tarihi seçerek eski günlerde ne çıktığını inceleyin."
-/>
-
 <div class="archive-header">
   <h1 class="archive-title">Arşiv</h1>
 </div>
@@ -276,7 +271,7 @@
 </div>
 
 <Seo
-  title="Menü Arşivi - Kepçe"
-  description="Geçmiş KYK yurt yemekhanesi menüleri, besin değerleri ve öğrenci değerlendirme arşivi."
+  title="KYK Menü Arşivi | Kepçe"
+  description="Geçmiş aylarda KYK yurtlarında çıkan yemek menüleri ve öğrenci değerlendirmeleri."
   image="https://kepce.org/api/v1/public/og/page/arsiv"
 />
