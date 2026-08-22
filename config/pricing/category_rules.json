@@ -232,7 +232,7 @@
   {
     "category": "MEYVE ÇEŞİTLERİ",
     "keywords": ["elma", "armut", "muz", "portakal", "mandalina", "karpuz", "kavun", "çilek", "cilek", "erik", "şeftali", "seftali", "kayısı", "kayisi", "kivi", "yeni dünya", "yenidünya", "üzüm", "uzum", "kiraz", "vişne", "meyve"],
-    "excludes": ["tatlı", "pasta", "kek", "meyveli tatlı", "komposto", "meyve suyu"]
+    "excludes": ["tatlı", "pasta", "kek", "meyveli tatlı", "komposto", "meyve suyu", "reçel", "recel"]
   },
   {
     "category": "SU",
@@ -538,5 +538,35 @@
     "category": "LAHMACUN",
     "keywords": ["lahmacun", "fındık lahmacun"],
     "excludes": []
+  },
+  {
+    "category": "ZEYTİN",
+    "keywords": ["zeytin", "siyah zeytin", "yeşil zeytin", "zeytin çeşit"],
+    "excludes": ["zeytinyağ"]
+  },
+  {
+    "category": "PİKNİK BAL",
+    "keywords": ["piknik bal", "bal"],
+    "excludes": ["balık", "balik", "balaban", "baldo"]
+  },
+  {
+    "category": "PİKNİK REÇEL",
+    "keywords": ["reçel", "recel", "piknik reçel", "piknik recel", "çilek reçeli", "kayısı reçeli", "vişne reçeli", "erik reçeli", "gül reçeli", "portakal reçeli", "reçel çeşit"],
+    "excludes": []
+  },
+  {
+    "category": "PİKNİK TEREYAĞI",
+    "keywords": ["tereyağ", "tereyag", "piknik tereyağı", "piknik tereyagi"],
+    "excludes": []
+  },
+  {
+    "category": "PİKNİK HELVA",
+    "keywords": ["piknik helva", "helva"],
+    "excludes": []
+  },
+  {
+    "category": "KAŞAR PEYNİRİ",
+    "keywords": ["kaşar peynir", "kaşar peyniri", "kasar peynir", "kaşar", "kasar"],
+    "excludes": ["tost", "sandviç", "börek", "pide", "omlet", "gözleme", "menemen", "yumurta", "makarna", "köfte", "mantar", "poğaça", "açma"]
   }
 ]
