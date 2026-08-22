@@ -26,7 +26,8 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/humanity", get(get_humanity_stats))
         .route("/dish/:dish_id/tags", get(get_dish_tags))
         .route("/comments/top", get(get_global_top_comments))
-        .route("/comments/recent", get(get_global_recent_comments))
+        // NOT: /comments/recent kaldırıldı — kanonik yol /api/v1/comments/recent
+        // (comments.rs). İki handler aynı servisi çağırıyordu (duplicate).
 }
 
 impl From<StatsError> for AppError {
@@ -106,16 +107,5 @@ async fn get_global_top_comments(
     let limit = query.limit.unwrap_or(10).min(100);
     let current_user_id = user.map(|u| u.id);
     let comments = CommentService::get_top_comments(&db, current_user_id, limit, query.timeframe).await?;
-    Ok(Json(comments))
-}
-
-async fn get_global_recent_comments(
-    State(db): State<sea_orm::DatabaseConnection>,
-    user: Option<AuthenticatedUser>,
-    Query(query): Query<LimitQuery>,
-) -> Result<Json<Vec<CommentResponseDto>>, AppError> {
-    let limit = query.limit.unwrap_or(15).min(100);
-    let current_user_id = user.map(|u| u.id);
-    let comments = CommentService::get_recent_comments(&db, current_user_id, limit).await?;
     Ok(Json(comments))
 }

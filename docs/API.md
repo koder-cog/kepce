@@ -52,9 +52,10 @@ GET /api/v1/menus/archive/years?city=:city_slug
 
 ### 4. Şehir Listesi
 ```http
-GET /api/v1/cities
+GET /api/v1/public/cities
 ```
 - Aktif menüsü bulunan şehirleri (`id`, `name`, `slug`, `has_celiac`) listeler.
+- Eski yol `GET /api/v1/cities` kalıcı olarak (308) bu adrese yönlendirir.
 
 ### 5. Genel İstatistikler
 ```http

@@ -43,8 +43,9 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
     Router::new()
         .nest("/api/v1/auth", routes::auth::router())
         .nest("/api/v1/menus", routes::menus::router())
-        .route("/api/v1/cities", axum::routing::get(routes::public_api::get_cities))
-        .route("/api/v1/cities/detect", axum::routing::get(routes::public_api::detect_city))
+        // Kanonik şehir endpoint'i /api/v1/public/cities; eski yollar 308 ile yönlendirilir.
+        .route("/api/v1/cities", axum::routing::get(|| async { axum::response::Redirect::permanent("/api/v1/public/cities") }))
+        .route("/api/v1/cities/detect", axum::routing::get(|| async { axum::response::Redirect::permanent("/api/v1/public/cities/detect") }))
         .nest("/api/v1/comments", routes::comments::router())
         .nest("/api/v1/profile", routes::profile::router())
         .nest("/api/v1/moderation", routes::moderation::router())
