@@ -29,11 +29,10 @@ kepce.org, www.kepce.org {
     header @api_paths X-Robots-Tag "noindex, nofollow"
 
     # SEO: Trailing-slash normalizasyonu (/ankara/ -> /ankara)
-    @trailing_slash {
-        path * /
-        not path /
-    }
-    redir @trailing_slash /{http.request.uri.path} 308
+    # NOT: path * / matcher'i "her sey OR /" anlamina geldigi icin tum istekleri
+    # //path seklinde protocol-relative URL'ye yonlendiriyordu; regexp kullanilir.
+    @trailing_slash path_regexp trailing ^/(.+)/$
+    redir @trailing_slash /{re.trailing.1} 308
 
     # Kullanıcıya özel sayfalar asla edge/cache'lenmez (güvenlik)
     @private_pages {
