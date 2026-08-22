@@ -8,10 +8,12 @@
 - [Yemek Arşivi](https://kepce.org/arsiv): Geçmiş ayların ve günlerin KYK yurt menü arşivi.
 - [Yemek İstatistikleri](https://kepce.org/istatistikler/yemekler): KYK yurtlarında en sık çıkan yemekler, besin analizi ve öğrenci değerlendirmeleri.
 - [Sıkça Sorulan Sorular](https://kepce.org/sss): Kepçe platformu ve menü verileri hakkında SSS.
-- [Geliştirici API ve Durum Paneli](https://kepce.org/api/v1/health): Açık kaynaklı REST API uç noktaları ve sistem sağlık durumu.
+- [Sistem Durumu](https://kepce.org/durum): Servislerin anlık çalışma durumu ve geçmiş kesinti raporları.
+- [Geliştirici Portalı](https://kepce.org/gelistirici): Açık kaynaklı REST API uç noktaları ve API anahtarı yönetimi.
 
 ## İsteğe Bağlı Kaynaklar
 
 - [Açık Kaynak Kod Deposu](https://github.com/koder-cog/kepce): Kepçe GitHub kaynak kodu ve AGPLv3 lisanslı altyapı.
-- [Gizlilik Politikası](https://kepce.org/gizlilik): Veri saklama ve gizlilik politikası.
+- [Gizlilik Politikası](https://kepce.org/gizlilik-politikasi): Veri saklama ve gizlilik politikası.
+- [Kullanım Koşulları](https://kepce.org/kullanim-kosullari): Topluluk kuralları ve hizmet şartları.
 
