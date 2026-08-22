@@ -1,28 +1,13 @@
-import adapter from '@sveltejs/adapter-static';
+import adapter from '@sveltejs/adapter-node';
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	kit: {
 		adapter: adapter({
-			pages: 'dist',
-			assets: 'dist',
-			// `index.html` fallback olarak ayarlanırsa ana sayfa prerender
-			// çıktısının üzerine yazılıyor ("Overwriting dist/index.html with
-			// fallback page" uyarısı). `200.html` hem Cloudflare Pages hem
-			// Netlify hem de çoğu static host tarafından SPA fallback
-			// olarak tanınır ve ana sayfayı ezinmez.
-			fallback: '200.html',
-			precompress: true,
-			strict: false
+			// `node build/index.js` ile çalışır; PORT ve HOST env değişkenleriyle kontrol edilir.
+			// SSR: her istekte taze HTML — prerender/prefetch/rebuild altyapısı yoktur.
+			precompress: true
 		}),
-		prerender: {
-			entries: ['*', '/'],
-			handleHttpError: ({ path, referrer, message, status }) => {
-				console.error(`[PRERENDER ERROR] ${status} ${path} (from ${referrer}): ${message}`);
-			},
-			handleMissingId: 'warn',
-			handleUnseenRoutes: 'ignore'
-		},
 		appDir: 'internal',
 		inlineStyleThreshold: Infinity,
 		paths: {
@@ -32,10 +17,7 @@ const config = {
 			'@': './src'
 		}
 		// CSP not configured here on purpose:
-		// - `ssr = false` + `prerender = true` (SPA fallback) means SvelteKit's
-		//   `csp.mode: 'hash'` cannot accurately enumerate inline scripts at build time,
-		//   causing false-positive blocks of Vite HMR / SvelteKit hydration scripts in dev.
-		// - nginx.conf already provides a strict CSP for the production build.
+		// - nginx.conf kaldırıldı; production CSP artık Caddyfile'da yönetiliyor.
 		// - Dev server is intentionally permissive (Vite injects inline scripts dynamically).
 	},
 	compilerOptions: {

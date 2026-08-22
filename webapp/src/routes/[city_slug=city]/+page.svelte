@@ -4,14 +4,26 @@
     import DailyHeader from "@/components/features/timeline/DailyHeader.svelte";
     import CalendarSelector from "@/components/features/timeline/CalendarSelector.svelte";
     import TimelineView from "@/components/features/timeline/TimelineView.svelte";
-    import { CITY_MAP, ACTIVE_CITIES } from "@/utils/turkish.js";
+    import { CITY_MAP } from "@/utils/turkish.js";
     import Seo from "@/components/ui/Seo.svelte";
-    import { onMount } from "svelte";
+    import { onMount, untrack } from "svelte";
 
     let { data } = $props();
 
     let citySlug = $derived(data?.citySlug || "istanbul");
     let cityName = $derived(CITY_MAP[citySlug] || citySlug);
+
+    // SSR: load()'un sunucuda çektiği menüleri hemen store'a aktar.
+    // Yemek isimleri ve Menu JSON-LD ilk HTML'de hazır olur.
+    untrack(() => {
+        if (data?.menus) {
+            timelineState.setPrerenderedData(
+                data.menus,
+                citySlug,
+                data.date,
+            );
+        }
+    });
 
     onMount(() => {
         if (citySlug) {
@@ -33,9 +45,6 @@
     );
     let canonicalUrl = $derived(`https://kepce.org/${citySlug}`);
     let ogImage = $derived(`https://kepce.org/api/v1/public/og/city/${citySlug}`);
-
-    // Menüsü henüz çekilmemiş veya aktif listesinde olmayan illerde soft 404 koruması (noindex, follow)
-    let isNoindex = $derived(!ACTIVE_CITIES.includes(citySlug) && (!timelineState.menusState || timelineState.menusState.length === 0));
 
     let menuSchema = $derived.by(() => {
         const menus = timelineState.menusState || [];
@@ -96,7 +105,6 @@
     description={pageDescription}
     image={ogImage}
     canonical={canonicalUrl}
-    noindex={isNoindex}
     schema={menuSchema}
 />
 

@@ -9,13 +9,14 @@
     import { isMotionEnabled } from "@/lib/dom/motion.js";
     import { getCurrentCity, setCurrentCity } from "@/stores/city.svelte.js";
     import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
-    import { onMount, onDestroy } from "svelte";
+    import { onMount, onDestroy, untrack } from "svelte";
     import CommentList from "@/components/features/CommentList.svelte";
     import Seo from "@/components/ui/Seo.svelte";
 
     import { page } from "$app/state";
     import { goto } from "$app/navigation";
     let params = $derived(page.params);
+    let { data } = $props();
 
     let menuId = $derived(params?.id);
     let focusId = $derived(
@@ -28,6 +29,15 @@
     let allComments = $state([]);
     let focalNode = $derived(focusId ? findNode(allComments, focusId) : null);
     let finalComments = $derived(focalNode ? [focalNode] : allComments);
+
+    // SSR: +page.js load()'un sunucuda çektiği menüyü hemen state'e aktar.
+    // Böylece yemek isimleri, title ve Menu JSON-LD ilk HTML'de hazır olur.
+    untrack(() => {
+        if (data?.menu) {
+            menu = data.menu;
+            isLoading = false;
+        }
+    });
 
     $effect(() => {
         if (focalNode && typeof document !== "undefined") {
@@ -112,7 +122,8 @@
 
     async function loadData() {
         if (!menuId) return;
-        isLoading = true;
+        // SSR'da menü zaten gömülüyse loader gösterme; sessizce tazele.
+        if (!menu) isLoading = true;
         errorState = null;
 
         try {
