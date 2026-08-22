@@ -24,6 +24,23 @@ kepce.org, www.kepce.org {
         Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'unsafe-inline' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
     }
 
+    # SEO: Arama motorları JSON API'yi indekslemesin
+    @api_paths path /api/*
+    header @api_paths X-Robots-Tag "noindex, nofollow"
+
+    # SEO: Trailing-slash normalizasyonu (/ankara/ -> /ankara)
+    @trailing_slash {
+        path * /
+        not path /
+    }
+    redir @trailing_slash /{http.request.uri.path} 308
+
+    # Kullanıcıya özel sayfalar asla edge/cache'lenmez (güvenlik)
+    @private_pages {
+        path /ben /ben/* /ayarlar /ayarlar/* /bildirimler /bildirimler/* /moderasyon /moderasyon/* /giris /kayit /oauth /oauth/* /auth /auth/* /sifre-yenile /profili-tamamla /gelistirici /gelistirici/*
+    }
+    header @private_pages Cache-Control "private, no-store"
+
     # Statik meta ve simge dosyaları için önbellek kuralları (manifest.json, favicon vb.)
     @static_meta {
         path /manifest.json /favicon.ico /favicon.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png
@@ -43,9 +60,9 @@ kepce.org, www.kepce.org {
         reverse_proxy api:8000
     }
 
-    # 3. Ön yüz (Svelte WebApp) -> Frontend container'ı (webapp:8080)
+    # 3. Ön yüz (SvelteKit SSR) -> Node container'ı (webapp:3000)
     handle {
-        reverse_proxy webapp:8080
+        reverse_proxy webapp:3000
     }
 
     # 4. 502 / 503 hatasında Özel Bakım Sayfası

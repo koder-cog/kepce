@@ -90,12 +90,22 @@ services:
       context: ./webapp
       dockerfile: Dockerfile
     container_name: kepce-webapp
+    environment:
+      # SSR: webapp, container içinden Rust API'ye doğrudan bağlanır
+      - API_INTERNAL=http://api:8000
+      - PORT=3000
+      - HOST=0.0.0.0
     expose:
-      - "8080"
+      - "3000"
     networks:
       - frontend-net
     depends_on:
       - api
+    restart: unless-stopped
+    # SSR Node process'i icin bellek siniri: sizinti durumunda OOM killer'in
+    # diger servisleri (api/db) oldurmesini engeller; container yeniden baslar.
+    mem_limit: 512m
+    memswap_limit: 512m
 
 volumes:
   pgdata:
