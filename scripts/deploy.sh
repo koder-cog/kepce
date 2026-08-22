@@ -157,6 +157,10 @@ ssh -i "$SSH_KEY" "$SERVER_HOST" "
 
     # 6. Yetkisiz konteyner dosya izinlerini düzelt
     docker exec -u 0 kepce-api chown -R nobody:nogroup /app/static /app/uploads 2>/dev/null || true
+
+    # 7. Caddy config'i yeniden yükle: Caddyfile bind-mount olduğu için dosya
+    #    değişimi 'up -d' tarafından algılanmaz; restart mount'ı yeniden çözer.
+    \$COMPOSE_CMD restart caddy
 "
 
 # 7. Sağlık Kontrolü
@@ -171,6 +175,20 @@ if [ "$HEALTH_CODE" != "200" ]; then
 fi
 
 HEALTH_STATUS=$(curl -s --connect-timeout 5 https://kepce.org/api/v1/system/health)
+
+# Webapp (SSR) kontrolu: ana sayfa 200 donmeli
+WEB_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 https://kepce.org/ || echo "000")
+if [ "$WEB_CODE" != "200" ]; then
+    echo -e "${RED}${BOLD}Hata: Webapp ana sayfa kontrolu basarisiz! (HTTP $WEB_CODE)${NC}"
+    echo -e "${RED}Kontrol: docker compose logs webapp${NC}"
+    exit 1
+fi
+
+# Soft-404 gerileme testi: bilinmeyen rota GERCEK 404 donmeli
+SOFT404_CODE=$(curl -s -o /dev/null -w "%{http_code}" --connect-timeout 10 https://kepce.org/seo-404-dogrulama-testi || echo "000")
+if [ "$SOFT404_CODE" = "200" ]; then
+    echo -e "${YELLOW}Uyari: Bilinmeyen rota 200 dondu (soft-404 gerilemesi). Caddy config'ini kontrol edin.${NC}"
+fi
 
 echo -e "${YELLOW}[5/5] Tamamlandı.${NC}"
 echo -e "${GREEN}${BOLD}=====================================================${NC}"
