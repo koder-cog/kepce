@@ -21,9 +21,16 @@ use crate::services::og_image::{render_og_card, render_og_profile};
 
 pub fn router() -> Router<AppState> {
     Router::new()
+        // URL kalıpları webapp sayfa ağacıyla birebir hizalıdır:
+        //   /menu/:id            <-> /menu/[id]
+        //   /city/:city_slug     <-> /[city_slug]
+        //   /thread/:thread_id   <-> yorum derin linki
+        //   /biri/:username      <-> /biri/[username]  (eski /user/ yolu da aynı handler'da)
+        //   /page/:page_slug     <-> statik sayfalar
         .route("/menu/:id", get(get_menu_og))
         .route("/city/:city_slug", get(get_city_og))
         .route("/thread/:thread_id", get(get_thread_og))
+        .route("/biri/:username", get(get_user_og))
         .route("/user/:username", get(get_user_og))
         .route("/page/:page_slug", get(get_page_og))
 }
@@ -161,7 +168,7 @@ async fn get_city_og(
     ).into_response())
 }
 
-/// 3. Tartışma Akışı OG Kartı (/menu/:id/:thread_id)
+/// 3. Tartışma Akışı OG Kartı (/thread/:thread_id)
 async fn get_thread_og(
     State(state): State<AppState>,
     Path(thread_id): Path<uuid::Uuid>,
@@ -225,7 +232,7 @@ async fn get_thread_og(
     ).into_response())
 }
 
-/// 4. Kullanıcı Profili OG Kartı (/biri/:username)
+/// 4. Kullanıcı Profili OG Kartı (/biri/:username) — eski /user/:username yolu da desteklenir
 async fn get_user_og(
     State(state): State<AppState>,
     Path(username): Path<String>,
@@ -292,6 +299,13 @@ async fn get_page_og(
     Path(page_slug): Path<String>,
 ) -> Result<Response, StatusCode> {
     let (title, sub1, badge, cache_control) = match page_slug.as_str() {
+        // Webapp /kyk-yemek-saatleri ve /kyk-beslenme-yardimi sayfaları "rehber" kartını kullanır
+        "rehber" => (
+            Some("KYK Rehberi"),
+            "Yemek Saatleri ve Beslenme Yardımı",
+            Some("Bilgi"),
+            "public, max-age=86400, s-maxage=604800",
+        ),
         "hakkinda" => (
             Some("Hakkında"),
             "Proje hakkında genel bilgiler",
