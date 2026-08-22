@@ -2,7 +2,12 @@ use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use reqwest::Client;
 use std::collections::HashMap;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::OnceLock;
+
+/// Ard arda gelen 429 sayaci: kaynak sunucu bizi hizlandiriyorsa
+/// geri cekilmek icin kullanilir (kibar tarama politikasi).
+static KYK_429_STREAK: AtomicU32 = AtomicU32::new(0);
 use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, Set, TransactionTrait};
 use shared::entities::{cities, menus, menu_dishes, sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum}};
 use crate::parser::kykyemek::parse_kyk_html;
@@ -93,7 +98,17 @@ pub async fn scrape_today_menus(
             }
 
             let res = match req.send().await {
-                Ok(r) if r.status().is_success() => r,
+                Ok(r) if r.status().is_success() => {
+                    KYK_429_STREAK.store(0, Ordering::Relaxed);
+                    r
+                }
+                Ok(r) if r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
+                    // Kaynak sunucu hiz siniri uyguluyor: geri cekil, sakin ısrar etme
+                    let streak = KYK_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
+                    tracing::warn!("HTTP 429 (hiz siniri) - {} kesinti/streak, 45sn bekleniyor...", streak);
+                    tokio::time::sleep(std::time::Duration::from_secs(45)).await;
+                    continue;
+                }
                 Ok(r) if r.status() == reqwest::StatusCode::UNAUTHORIZED => {
                     if let Ok(new_token) = fetch_antiforgery_token(client).await {
                         token_opt = Some(new_token);
@@ -233,10 +248,11 @@ pub async fn run_kykyemek_scraper(
                 Err(e) => tracing::error!(city = %city.slug, meal = "breakfast", month = month_shift, "Menü çekme hatası: {:?}", e),
             }
 
-            // Sleep between requests (random 1500 to 3000 ms)
+            // Sleep between requests (random 2500 to 5000 ms)
+            // 81 il x 3 ay x 2 ogun = ~486 istek; kaynak sunucuya kibar ol.
             let delay_ms = {
                 use rand::Rng;
-                rand::thread_rng().gen_range(1500..=3000)
+                rand::thread_rng().gen_range(2500..=5000)
             };
             if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
                 return Ok(());
@@ -249,10 +265,10 @@ pub async fn run_kykyemek_scraper(
                 Err(e) => tracing::error!(city = %city.slug, meal = "dinner", month = month_shift, "Menü çekme hatası: {:?}", e),
             }
 
-            // Sleep between requests (random 1500 to 3000 ms)
+            // Sleep between requests (random 2500 to 5000 ms)
             let delay_ms = {
                 use rand::Rng;
-                rand::thread_rng().gen_range(1500..=3000)
+                rand::thread_rng().gen_range(2500..=5000)
             };
             if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
                 return Ok(());
@@ -315,16 +331,30 @@ async fn fetch_and_save(
 
         match req.send().await {
             Ok(res) => {
-                if res.status().is_success() {
+                let status = res.status();
+                if status.is_success() {
+                    KYK_429_STREAK.store(0, Ordering::Relaxed);
                     response = Some(res);
                     break;
-                } else if res.status() == reqwest::StatusCode::UNAUTHORIZED {
+                } else if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                    // 429: kaynak bizi hizlandiriyor. Kibarca geri cekil,
+                    // ust uste binen 429'larda bekleme suresini katla.
+                    let streak = KYK_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
+                    let wait_secs = 30u64.saturating_mul(u64::from(streak)).min(180);
+                    tracing::warn!(
+                        "HTTP 429 (hiz siniri) {} - {} icin {}sn bekleniyor (deneme {}/{})",
+                        streak, city.name, wait_secs, attempt + 1, max_retries
+                    );
+                    if sleep_cancelable(wait_secs * 1000, shutdown_rx).await {
+                        return Ok(None);
+                    }
+                } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
                     if let Ok(new_token) = fetch_antiforgery_token(client).await {
                         *token_opt = Some(new_token);
                     }
                 } else {
-                    tracing::warn!("HTTP durum kodu hatası: {}, Deneme: {}", res.status(), attempt + 1);
+                    tracing::warn!("HTTP durum kodu hatası: {}, Deneme: {}", status, attempt + 1);
                 }
             }
             Err(e) => {
