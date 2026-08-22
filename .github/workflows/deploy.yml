@@ -1,0 +1,84 @@
+name: Deploy
+
+# main'e push -> ARM64 imajlari derle -> GHCR'a gonder -> sunucuda pull + restart
+# Gereken repo secret'lari:
+#   DEPLOY_HOST  (orn. ubuntu@130.110.247.87)
+#   DEPLOY_USER  (orn. ubuntu)
+#   DEPLOY_KEY   (SSH private key, PEM icerigi)
+# Sunucuda bir kerelik: ghcr.io login (public paket icin gerekmez) +
+#   docker compose pull'in calisabilmesi icin compose dosyalari scp ile guncellenir.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  build-images:
+    # Native aarch64 runner: QEMU cross-compile derdi yok.
+    # NOT: ubuntu-24.04-arm runner'i public repolarda ucretsizdir.
+    runs-on: ubuntu-24.04-arm
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Native aarch64 binary derle (rust:trixie + g++)
+        run: |
+          docker run --rm -v "$PWD":/app -w /app rust:trixie bash -c "
+            set -euo pipefail
+            apt-get update -qq && apt-get install -y -qq pkg-config libssl-dev g++ >/dev/null
+            cargo build --release -p api -p worker
+            mkdir -p target/aarch64-unknown-linux-gnu/release
+            cp target/release/api target/release/worker target/aarch64-unknown-linux-gnu/release/
+          "
+
+      - name: GHCR login
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Imajlari derle ve gonder
+        env:
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          docker build -f api/Dockerfile    -t ghcr.io/$OWNER/kepce-api:latest    .
+          docker build -f worker/Dockerfile -t ghcr.io/$OWNER/kepce-worker:latest .
+          docker build -f webapp/Dockerfile -t ghcr.io/$OWNER/kepce-webapp:latest ./webapp
+          docker push ghcr.io/$OWNER/kepce-api:latest
+          docker push ghcr.io/$OWNER/kepce-worker:latest
+          docker push ghcr.io/$OWNER/kepce-webapp:latest
+
+  deploy-server:
+    needs: build-images
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compose ve config dosyalarini sunucuya gonder
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "Caddyfile,docker-compose.yml,docker-compose.prod.yml,static/maintenance.html"
+          target: ~/kepce/
+          overwrite: true
+
+      - name: Sunucuda pull + yeniden baslat
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          script: |
+            set -euo pipefail
+            cd ~/kepce
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull api webapp worker
+            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+            docker restart kepce-caddy
+            docker image prune -f
+            echo "DEPLOY_OK"

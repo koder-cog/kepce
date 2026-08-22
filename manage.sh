@@ -361,7 +361,7 @@ case "$COMMAND" in
     logs)
         show_logs "$TARGET"
         ;;
-    build-arm64)
+    build-native|build-arm64)
         # ONNX Runtime (ort_sys) statik kütüphanesi glibc 2.38+ sembolleri ve
         # libstdc++ istediği için trixie tabanı + g++ ZORUNLUDUR; bookworm'da
         # link hatası verir. Ayrıca binary yalnızca aarch64 makinede anlamlıdır:

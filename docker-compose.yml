@@ -39,6 +39,9 @@ services:
     build:
       context: .
       dockerfile: api/Dockerfile
+    # CI/CD: imajlar GitHub Actions'ta derlenip GHCR'a gonderilir;
+    # sunucuda 'docker compose pull' ile alinir (yerel build yedegi).
+    image: ghcr.io/koder-cog/kepce-api:latest
     container_name: kepce-api
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER tanimli olmali}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali}@db:5432/${POSTGRES_DB:-kepce}
@@ -70,6 +73,7 @@ services:
     build:
       context: .
       dockerfile: worker/Dockerfile
+    image: ghcr.io/koder-cog/kepce-worker:latest
     container_name: kepce-worker
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER:?POSTGRES_USER tanimli olmali}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD tanimli olmali}@db:5432/${POSTGRES_DB:-kepce}
@@ -89,6 +93,7 @@ services:
     build:
       context: ./webapp
       dockerfile: Dockerfile
+    image: ghcr.io/koder-cog/kepce-webapp:latest
     container_name: kepce-webapp
     environment:
       # SSR: webapp, container içinden Rust API'ye doğrudan bağlanır
