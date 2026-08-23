@@ -19,6 +19,14 @@
     let hideComment = $derived(options.hideComment || false);
     let takeaways = $derived(options.takeaways || []);
 
+    // Gün sayfası konsolidasyonu: kart bağlantısı varsa kanonik gün sayfasına,
+    // alanlar eksikse (eski veri/normalize edilmemiş nesne) /menu/[id]'ye düşer.
+    let dayUrl = $derived.by(() => {
+        const slug = menu?.city_slug;
+        const day = menu?.date ?? menu?.serve_date;
+        return slug && day ? `/${slug}/${day}` : `/menu/${menu?.id}`;
+    });
+
     let isBreakfast = $derived(menu.meal_type === "breakfast");
     let title = $derived(isBreakfast ? "Kahvaltı" : "Akşam yemeği");
 
@@ -561,7 +569,7 @@
         <div class="meal-card__actions">
             {#if !hideComment}
                 <a
-                    href="/menu/{menu.id}"
+                    href={dayUrl}
                     class="meal-card__action-btn"
                     data-link
                     data-tooltip="Menü detayları ve yorumlar"

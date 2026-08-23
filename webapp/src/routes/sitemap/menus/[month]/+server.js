@@ -2,8 +2,10 @@ import { error } from '@sveltejs/kit';
 import { apiGet } from '@/lib/server/api.js';
 
 /**
- * Aylık menü sitemap parçası: /sitemap/menus/YYYY-MM.xml
- * API'den yalnızca id + serve_date çekilir (ucuz, indeksli sorgu).
+ * Aylık gün sitemap parçası: /sitemap/menus/YYYY-MM.xml
+ * Gün sayfası konsolidasyonu: parçalar artık /{sehir}/{tarih} gün URL'lerini
+ * listeler (URL sayısı ~yarıya iner, sayfa başına içerik 2x).
+ * API'den yalnızca DISTINCT city_slug + serve_date çekilir (ucuz, indeksli sorgu).
  */
 const BASE_URL = 'https://kepce.org';
 
@@ -29,17 +31,17 @@ export async function GET({ params, setHeaders }) {
 		'Cache-Control': `public, max-age=0, s-maxage=${ttl}`
 	});
 
-	const items = await apiGet(
-		`/api/v1/public/menus/index?month=${encodeURIComponent(month)}`,
+	const days = await apiGet(
+		`/api/v1/public/menus/days?month=${encodeURIComponent(month)}`,
 		{ fallback: [], timeout: 15000 }
 	);
 
-	const urls = (Array.isArray(items) ? items : [])
+	const urls = (Array.isArray(days) ? days : [])
 		.map(
-			(item) => `  <url>
-    <loc>${BASE_URL}/menu/${item.id}</loc>
-    <lastmod>${item.serve_date}</lastmod>
-  </url>`
+			(day) => `  <url>
+	   <loc>${BASE_URL}/${day.city_slug}/${day.date}</loc>
+	   <lastmod>${day.date}</lastmod>
+	 </url>`
 		)
 		.join('\n');
 

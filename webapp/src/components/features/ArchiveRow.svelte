@@ -25,6 +25,14 @@
 
     let rawItems = $derived(normalizeItems(menu));
     let items = $derived(groupItems(rawItems));
+
+    // Gün sayfası konsolidasyonu: alanlar varsa kanonik gün sayfası,
+    // yoksa eski /menu/[id] bağlantısına düş (geriye uyumlu).
+    let dayUrl = $derived.by(() => {
+        const slug = menu?.city_slug;
+        const day = menu?.date ?? menu?.serve_date;
+        return slug && day ? `/${slug}/${day}` : `/menu/${menu?.id}`;
+    });
     
     let dishesText = $derived(
         items.map(item => {
@@ -47,5 +55,5 @@
     <div class="archive-row__content">
     <span class="archive-row__items">{dishesText}</span>
     </div>
-    <a href="/menu/{menu.id}" class="archive-row__btn" data-link>İncele</a>
+    <a href={dayUrl} class="archive-row__btn" data-link>İncele</a>
 </div>
