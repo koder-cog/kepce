@@ -31,5 +31,22 @@ export async function load({ params, setHeaders }) {
 		city: raw.city ?? { name: raw.city_name }
 	};
 
-	return { menu };
+	// Gün sayfası konsolidasyonu: /menu/[id] ikincil sayfadır; canonical
+	// sinyalleri /{sehir}/{tarih} gün sayfasına devreder.
+	const citySlug = raw.city_slug ?? null;
+	const menuDate = menu.date ?? null;
+	const shiftDate = (iso, days) => {
+		if (!iso) return null;
+		const d = new Date(`${iso}T00:00:00Z`);
+		if (Number.isNaN(d.getTime())) return null;
+		d.setUTCDate(d.getUTCDate() + days);
+		return d.toISOString().slice(0, 10);
+	};
+
+	return {
+		menu,
+		dayUrl: citySlug && menuDate ? `/${citySlug}/${menuDate}` : null,
+		prevDate: shiftDate(menuDate, -1),
+		nextDate: shiftDate(menuDate, 1)
+	};
 }

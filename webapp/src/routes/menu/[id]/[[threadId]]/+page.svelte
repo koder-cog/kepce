@@ -172,6 +172,21 @@
         menu?.date ? formatFullTurkishDate(menu.date) : ""
     );
 
+    // Gün sayfası konsolidasyonu: canonical sinyalleri /{sehir}/{tarih}'e gider.
+    let dayUrl = $derived(
+        data?.dayUrl || (targetCitySlug && menu?.date ? `/${targetCitySlug}/${menu.date}` : null),
+    );
+
+    // Görünür özet paragrafı (FAQ JSON-LD bilinçli olarak kullanılmıyor).
+    let summaryText = $derived.by(() => {
+        if (!menu) return "";
+        const dishes = (menu.items || menu.dishes || [])
+            .map((d) => (typeof d === "string" ? d : d.raw_name ?? d.master_data?.name ?? d.name))
+            .filter(Boolean);
+        if (!dishes.length) return "";
+        return `${formattedDate || menu.date} ${targetCityName} KYK ${mealLabel} menüsünde ${dishes.join(", ")} var.`;
+    });
+
     let mealLabel = $derived(
         menu?.meal_type === "breakfast"
             ? "Kahvaltı"
@@ -250,6 +265,36 @@
         ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK ${mealLabel} Menüsü Detayı`
         : "KYK Yemek Menüsü Detayı ve Yorumları"}
 </h1>
+
+{#if menu && summaryText}
+    <p class="day-summary">{summaryText}</p>
+{/if}
+
+{#if menu && dayUrl}
+    <div class="day-link-row">
+        <a href={dayUrl} data-link class="btn btn--secondary btn--sm">
+            {@html icon("cards", 16)} Tüm öğünleri gör
+        </a>
+        {#if data?.prevDate && targetCitySlug}
+            <a
+                href="/{targetCitySlug}/{data.prevDate}"
+                data-link
+                class="btn btn--secondary btn--sm"
+            >
+                {@html icon("chevronLeft", 16)} Önceki Gün
+            </a>
+        {/if}
+        {#if data?.nextDate && targetCitySlug}
+            <a
+                href="/{targetCitySlug}/{data.nextDate}"
+                data-link
+                class="btn btn--secondary btn--sm"
+            >
+                Sonraki Gün {@html icon("chevronRight", 16)}
+            </a>
+        {/if}
+    </div>
+{/if}
 
 {#if isLoading}
     <div class="comments-page">
@@ -358,6 +403,24 @@
         ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} ${mealLabel} menüsü detayları, besin değerleri ve öğrenci yorumları.`
         : "KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri."}
     image={ogImageUrl}
-    canonical={`https://kepce.org/menu/${menuId}`}
+    canonical={dayUrl ? `https://kepce.org${dayUrl}` : `https://kepce.org/menu/${menuId}`}
     schema={menuSchema}
 />
+
+<style>
+    .day-summary {
+        margin: 0 0 var(--spacing-sm, 12px);
+        padding: var(--spacing-sm, 12px) var(--spacing-md, 16px);
+        border-radius: 12px;
+        background: var(--bg-elevated, rgba(255, 255, 255, 0.04));
+        color: var(--text-secondary, inherit);
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+
+    .day-link-row {
+        display: flex;
+        gap: var(--spacing-sm, 12px);
+        margin: 0 0 var(--spacing-md, 16px);
+    }
+</style>
