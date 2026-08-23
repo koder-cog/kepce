@@ -14,6 +14,7 @@ pub enum MealType {
 pub struct MenuResponseDto {
     pub id: i32,
     pub city_name: String,
+    pub city_slug: String,
     pub serve_date: NaiveDate,
     pub meal_type: MealType,
     pub source_type: String,

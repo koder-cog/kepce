@@ -44,6 +44,8 @@ GET /api/v1/menus?city=:city_slug&date=today
 ```http
 GET /api/v1/menus/:menu_id
 ```
+- Yanıttaki `city_slug` alanı, gün sayfası kanonik URL'ini
+  (`/{city_slug}/{serve_date}`) üretmek için kullanılır.
 
 ### 3. Arşiv Yılları
 ```http
@@ -56,6 +58,15 @@ GET /api/v1/public/cities
 ```
 - Aktif menüsü bulunan şehirleri (`id`, `name`, `slug`, `has_celiac`) listeler.
 - Eski yol `GET /api/v1/cities` kalıcı olarak (308) bu adrese yönlendirir.
+
+### 5. Gün Index (Sitemap Veri Kaynağı)
+```http
+GET /api/v1/public/menus/days?month=YYYY-MM
+```
+- Belirtilen aydaki onaylı menülerin tekil `{ city_slug, date }` gün listesi.
+- Gün sayfası (`/{sehir}/{tarih}`) sitemap parçalarını besler; item join'i yoktur.
+- Cache: güncel ay `s-maxage=3600`, geçmiş aylar `s-maxage=86400`.
+- Kardeş endpoint'ler: `/api/v1/public/menus/months`, `/api/v1/public/menus/index?month=`.
 
 ### 5. Genel İstatistikler
 ```http

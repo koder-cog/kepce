@@ -245,6 +245,7 @@ impl MenuService {
         Ok(MenuResponseDto {
             id: menu.id,
             city_name: city.name,
+            city_slug: city.slug.clone(),
             serve_date: menu.serve_date,
             meal_type: Self::map_meal_type(&menu.meal_type),
             source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),
@@ -416,6 +417,7 @@ impl MenuService {
             result.push(MenuResponseDto {
                 id: menu.id,
                 city_name: city.name.clone(),
+                city_slug: city.slug.clone(),
                 serve_date: menu.serve_date,
                 meal_type: Self::map_meal_type(&menu.meal_type),
                 source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),
@@ -675,6 +677,7 @@ impl MenuService {
                 result.push(MenuResponseDto {
                     id: menu.id,
                     city_name: city.name,
+                    city_slug: city.slug.clone(),
                     serve_date: menu.serve_date,
                     meal_type: Self::map_meal_type(&menu.meal_type),
                     source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),

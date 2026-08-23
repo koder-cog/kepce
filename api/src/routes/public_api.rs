@@ -27,6 +27,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/cities/detect", get(detect_city))
         .route("/menus/months", get(get_menu_months))
         .route("/menus/index", get(get_menu_index))
+        .route("/menus/days", get(get_menu_days))
         .route("/menus/today/:city", get(get_today_menu))
         .route("/menus/:id", get(get_single_menu))
 }
@@ -231,4 +232,55 @@ pub async fn get_menu_index(
     let now_month = chrono::Utc::now().format("%Y-%m").to_string();
     let ttl: u32 = if query.month == now_month { 3600 } else { 86400 };
     crate::utils::response::cached_json_response(&headers, &items, ttl)
+}
+
+/// GET /api/v1/public/menus/days?month=YYYY-MM
+/// Belirtilen aydaki onaylı menülerin tekil { city_slug, date } gün listesi.
+/// Gün sayfası (/sehir/tarih) sitemap parçalarının veri kaynağı; item join'i YOKTUR.
+pub async fn get_menu_days(
+    State(db): State<sea_orm::DatabaseConnection>,
+    headers: HeaderMap,
+    Query(query): Query<MenuIndexQuery>,
+) -> Result<axum::response::Response, AppError> {
+    use sea_orm::{ConnectionTrait, Statement, DatabaseBackend};
+
+    let parts: Vec<&str> = query.month.split('-').collect();
+    if parts.len() != 2 {
+        return Err(AppError::BadRequest("Ay formatı YYYY-MM olmalıdır.".to_string()));
+    }
+    // Yıl bileşeni yalnızca format doğrulaması için ayrıştırılır (sorgu ay bazlı).
+    let _year: i32 = parts[0].parse().map_err(|_| AppError::BadRequest("Geçersiz yıl.".to_string()))?;
+    let month: u32 = parts[1].parse().map_err(|_| AppError::BadRequest("Geçersiz ay.".to_string()))?;
+    if !(1..=12).contains(&month) {
+        return Err(AppError::BadRequest("Geçersiz ay.".to_string()));
+    }
+
+    let rows = db
+        .query_all(Statement::from_sql_and_values(
+            DatabaseBackend::Postgres,
+            "SELECT DISTINCT c.slug AS city_slug, TO_CHAR(m.serve_date, 'YYYY-MM-DD') AS day \
+             FROM menus m JOIN cities c ON m.city_id = c.id \
+             WHERE m.status = 'approved' AND TO_CHAR(m.serve_date, 'YYYY-MM') = $1 \
+             ORDER BY day ASC, city_slug ASC",
+            [query.month.clone().into()],
+        ))
+        .await
+        .map_err(|e| {
+            tracing::error!("DB error fetching menu days: {}", e);
+            AppError::Internal("DB Error".to_string())
+        })?;
+
+    let days: Vec<serde_json::Value> = rows
+        .iter()
+        .filter_map(|r| {
+            let city_slug = r.try_get::<String>("", "city_slug").ok()?;
+            let day = r.try_get::<String>("", "day").ok()?;
+            Some(serde_json::json!({ "city_slug": city_slug, "date": day }))
+        })
+        .collect();
+
+    // Geçmiş aylar değişmez → uzun cache; güncel ay kısa cache
+    let now_month = chrono::Utc::now().format("%Y-%m").to_string();
+    let ttl: u32 = if query.month == now_month { 3600 } else { 86400 };
+    crate::utils::response::cached_json_response(&headers, &days, ttl)
 }
