@@ -1,4 +1,5 @@
 import { ACTIVE_CITIES } from '@/utils/turkish.js';
+import { withEtag } from '@/lib/server/etag.js';
 
 /**
  * Statik sayfalar + 81 şehir sayfası (~100 URL).
@@ -36,12 +37,8 @@ const staticPages = [
 ];
 
 /** @type {import('./$types').RequestHandler} */
-export async function GET({ setHeaders }) {
+export async function GET({ request }) {
 	const today = istanbulToday();
-	setHeaders({
-		'Content-Type': 'application/xml; charset=utf-8',
-		'Cache-Control': 'public, max-age=0, s-maxage=3600'
-	});
 
 	const paths = [...staticPages, ...ACTIVE_CITIES.map((slug) => `/${slug}`)];
 
@@ -57,5 +54,8 @@ ${paths
 	.join('\n')}
 </urlset>`;
 
-	return new Response(xml);
+	return withEtag(request, xml, {
+		'Content-Type': 'application/xml; charset=utf-8',
+		'Cache-Control': 'public, max-age=0, s-maxage=3600'
+	});
 }

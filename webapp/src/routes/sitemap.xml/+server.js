@@ -1,4 +1,5 @@
 import { apiGet } from '@/lib/server/api.js';
+import { withEtag } from '@/lib/server/etag.js';
 
 /**
  * Sitemap INDEX — aylık bölünmüş parçaları dizer.
@@ -8,11 +9,7 @@ import { apiGet } from '@/lib/server/api.js';
 const BASE_URL = 'https://kepce.org';
 
 /** @type {import('./$types').RequestHandler} */
-export async function GET({ setHeaders }) {
-	setHeaders({
-		'Content-Type': 'application/xml; charset=utf-8',
-		'Cache-Control': 'public, max-age=0, s-maxage=3600'
-	});
+export async function GET({ request }) {
 
 	const months = await apiGet('/api/v1/public/menus/months', {
 		fallback: [],
@@ -31,5 +28,8 @@ export async function GET({ setHeaders }) {
 ${parts.map((loc) => `  <sitemap><loc>${loc}</loc></sitemap>`).join('\n')}
 </sitemapindex>`;
 
-	return new Response(xml);
+	return withEtag(request, xml, {
+		'Content-Type': 'application/xml; charset=utf-8',
+		'Cache-Control': 'public, max-age=0, s-maxage=3600'
+	});
 }

@@ -1,5 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { apiGet } from '@/lib/server/api.js';
+import { withEtag } from '@/lib/server/etag.js';
 
 /**
  * Aylık gün sitemap parçası: /sitemap/menus/YYYY-MM.xml
@@ -10,7 +11,7 @@ import { apiGet } from '@/lib/server/api.js';
 const BASE_URL = 'https://kepce.org';
 
 /** @type {import('./$types').RequestHandler} */
-export async function GET({ params, setHeaders }) {
+export async function GET({ params, request }) {
 	// Route segmenti dosya adını da kapsar: "2026-08.xml" → "2026-08"
 	const month = params.month.replace(/\.xml$/, '');
 
@@ -26,10 +27,6 @@ export async function GET({ params, setHeaders }) {
 
 	// Geçmiş aylar değişmez → uzun cache; güncel ay kısa cache
 	const ttl = month === nowMonth ? 3600 : 86400;
-	setHeaders({
-		'Content-Type': 'application/xml; charset=utf-8',
-		'Cache-Control': `public, max-age=0, s-maxage=${ttl}`
-	});
 
 	const days = await apiGet(
 		`/api/v1/public/menus/days?month=${encodeURIComponent(month)}`,
@@ -50,5 +47,8 @@ export async function GET({ params, setHeaders }) {
 ${urls}
 </urlset>`;
 
-	return new Response(xml);
+	return withEtag(request, xml, {
+		'Content-Type': 'application/xml; charset=utf-8',
+		'Cache-Control': `public, max-age=0, s-maxage=${ttl}`
+	});
 }
