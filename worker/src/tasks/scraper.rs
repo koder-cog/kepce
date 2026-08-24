@@ -1,13 +1,36 @@
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
 use reqwest::Client;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU32, Ordering};
-use std::sync::OnceLock;
+use std::sync::{Mutex, OnceLock};
 
 /// Ard arda gelen 429 sayaci: kaynak sunucu bizi hizlandiriyorsa
 /// geri cekilmek icin kullanilir (kibar tarama politikasi).
 static KYK_429_STREAK: AtomicU32 = AtomicU32::new(0);
+
+/// Bu turda yeni INSERT edilen menülerin (city_id, serve_date) kaydı.
+/// IndexNow otomasyonu (Faz 1.6) döngü sonunda bu kaydı kanonik
+/// /{sehir}/{tarih} gün URL'lerine çevirip bildirir. Upsert'in tüm
+/// çağıranları (scraper + fallback + gap-fill) buradan otomatik geçer.
+static INSERTED_MENUS: OnceLock<Mutex<HashSet<(i32, NaiveDate)>>> = OnceLock::new();
+
+fn inserted_registry() -> &'static Mutex<HashSet<(i32, NaiveDate)>> {
+    INSERTED_MENUS.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+fn record_inserted_menu(city_id: i32, date: NaiveDate) {
+    if let Ok(mut set) = inserted_registry().lock() {
+        set.insert((city_id, date));
+    }
+}
+
+pub fn take_inserted_menus() -> Vec<(i32, NaiveDate)> {
+    match inserted_registry().lock() {
+        Ok(mut set) => set.drain().collect(),
+        Err(_) => Vec::new(),
+    }
+}
 use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, Set, TransactionTrait};
 use shared::entities::{cities, menus, menu_dishes, sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum}};
 use crate::parser::kykyemek::parse_kyk_html;
@@ -295,6 +318,14 @@ pub async fn run_kykyemek_scraper(
         }
     }
 
+    // Faz 1.6: bu turda yeni açılan gün URL'lerini IndexNow'a bildir.
+    // INDEXNOW_KEY atanmamışsa no-op; hata durumunda yalnızca warn loglanır,
+    // asla döngüyü düşürmez. Yalnızca kanonik /{sehir}/{tarih} URL'leri
+    // gönderilir (/menu/{id} ASLA gönderilmez).
+    if let Some(config) = super::indexnow::IndexNowConfig::from_env() {
+        super::indexnow::ping_new_day_urls(db, client, &config).await;
+    }
+
     if total_fetched == 0 {
         let alert_msg = "Kykyemek taraması tamamlandı ancak 81 il genelinde HİÇBİR menü çekilemedi (Global Ingestion Blackout)!";
         tracing::error!("{}", alert_msg);
@@ -571,6 +602,8 @@ pub async fn upsert_menu(
             ..Default::default()
         };
         let res = new_menu.insert(&txn).await?;
+        // Faz 1.6: yeni insert'i IndexNow bildirim kaydına yaz
+        record_inserted_menu(city_id, date);
         res.id
     };
     
