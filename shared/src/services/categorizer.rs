@@ -147,4 +147,30 @@ mod tests {
         // "bal" substring'i balık/balaban'a sıçramamalı
         assert_ne!(categorize_dish("Balık"), Some("PİKNİK BAL".to_string()));
     }
+
+    /// Faz 1 (1.5): kalan fiyat kategori kuralları — SALAM (HİNDİ/PİLİÇ),
+    /// SÜRÜLEBİLİR ÇİKOLATA, TAHİNLİ PEKMEZ. Resmi kategori adları
+    /// db/seeds/prod/02_pricing_2025_2026.sql ile birebir uyumlu olmalı.
+    #[test]
+    fn test_remaining_pricing_categories() {
+        // Pozitif eşleşmeler
+        assert_eq!(categorize_dish("Hindi Salam"), Some("SALAM (HİNDİ)".to_string()));
+        assert_eq!(categorize_dish("Salam"), Some("SALAM (PİLİÇ)".to_string()));
+        assert_eq!(categorize_dish("Dana Salam"), Some("SALAM (PİLİÇ)".to_string()));
+        assert_eq!(categorize_dish("Salamlı Kahvaltı"), Some("SALAM (PİLİÇ)".to_string()));
+        assert_eq!(categorize_dish("Sürülebilir Çikolata"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
+        assert_eq!(categorize_dish("Çikolata Krem"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
+        assert_eq!(categorize_dish("Tahinli Pekmez"), Some("TAHİNLİ PEKMEZ".to_string()));
+        assert_eq!(categorize_dish("Pekmez"), Some("TAHİNLİ PEKMEZ".to_string()));
+
+        // Regresyon: çıplak "salam" keyword'ü önce gelen spesifik blokları gölgelememeli
+        assert_eq!(
+            categorize_dish("Kaşarlı Salamlı Soğuk Sandviç"),
+            Some("KAŞARLI SALAMLI SOĞUK SANDVİÇ".to_string())
+        );
+
+        // Regresyon: çikolatalı tatlılar SÜRÜLEBİLİR ÇİKOLATA'ya düşmemeli
+        assert_ne!(categorize_dish("Çikolatalı Pasta"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
+        assert_ne!(categorize_dish("Çikolatalı Kurabiye"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
+    }
 }

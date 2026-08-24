@@ -250,6 +250,11 @@
     "excludes": []
   },
   {
+    "category": "SÜRÜLEBİLİR ÇİKOLATA",
+    "keywords": ["sürülebilir çikolata", "surulebilir cikolata", "çikolata krem", "çikolatalı sürme", "kakaolu krem"],
+    "excludes": ["pasta", "kurabiye", "kek", "tatlı"]
+  },
+  {
     "category": "GAZOZ-KOLA-FANTA-SOĞUK ÇAY",
     "keywords": ["kola", "cola", "coca cola", "fanta", "gazoz", "soğuk çay", "soguk cay", "fuse tea", "ice tea", "sprite"],
     "excludes": []
@@ -568,5 +573,20 @@
     "category": "KAŞAR PEYNİRİ",
     "keywords": ["kaşar peynir", "kaşar peyniri", "kasar peynir", "kaşar", "kasar"],
     "excludes": ["tost", "sandviç", "börek", "pide", "omlet", "gözleme", "menemen", "yumurta", "makarna", "köfte", "mantar", "poğaça", "açma"]
+  },
+  {
+    "category": "SALAM (HİNDİ)",
+    "keywords": ["hindi salam", "hindili salam", "salam (hindi)", "hindi salamlı"],
+    "excludes": []
+  },
+  {
+    "category": "SALAM (PİLİÇ)",
+    "keywords": ["salam", "piliç salam", "dana salam", "salamlı"],
+    "excludes": ["hindi salam", "hindili salam", "sucuk"]
+  },
+  {
+    "category": "TAHİNLİ PEKMEZ",
+    "keywords": ["tahinli pekmez", "tahin pekmez", "pekmez"],
+    "excludes": []
   }
 ]
