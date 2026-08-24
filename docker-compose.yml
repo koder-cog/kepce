@@ -80,6 +80,10 @@ services:
       - WORKER_INTERVAL_SECS=${WORKER_INTERVAL_SECS:-3600}
       - WORKER_MENU_DIR=/app/data/menuler
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      # IndexNow otomasyonu (Faz 1.6): boş/atanmamışsa özellik kapalı
+      - INDEXNOW_KEY=${INDEXNOW_KEY:-}
+      - INDEXNOW_HOST=${INDEXNOW_HOST:-kepce.org}
+      - INDEXNOW_ENDPOINT=${INDEXNOW_ENDPOINT:-https://api.indexnow.org/indexnow}
     volumes:
       - menuler:/app/data/menuler
       - ./config:/app/config:ro
