@@ -1,0 +1,45 @@
+name: Bağımlılık Audit
+
+# Faz 1 (1.4): haftalık bağımlılık güvenlik taraması.
+# Başarısızlıkta Actions sekmesinde kırmızı işaret yeterlidir
+# (bildirim entegrasyonu yok). Manuel tetikleme de mümkündür.
+on:
+  schedule:
+    - cron: '0 6 * * 1' # Her Pazartesi 06:00 UTC (09:00 TR)
+  workflow_dispatch:
+
+jobs:
+  npm-audit:
+    name: webapp npm audit (high+)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: webapp/package-lock.json
+
+      - name: Bağımlılıkları kur
+        working-directory: webapp
+        run: npm ci
+
+      - name: npm audit (--audit-level=high)
+        working-directory: webapp
+        run: npm audit --audit-level=high
+
+  cargo-audit:
+    name: cargo audit (Rust workspace)
+    runs-on: ubuntu-latest
+    # Kurulum maliyeti nedeniyle bilgilendirici: başarısızlık job'u kırmızı
+    # yapar ama deploy'u engellemez (deploy.yml'den bağımsız).
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: cargo-audit kur
+        run: cargo install cargo-audit --locked
+
+      - name: cargo audit
+        run: cargo audit
