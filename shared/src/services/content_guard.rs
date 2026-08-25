@@ -77,6 +77,12 @@ impl ContentGuard {
             .replace(['ç', 'Ç'], "c");
         let normalized = normalized.to_lowercase();
 
+        // Site navigasyon/başlık kalıntıları: ok karakteriyle başlayan satırlar
+        // (örn. "←İstanbul KYK Menüsü") yemek değildir.
+        if text_trimmed.starts_with(['←', '→', '«', '»', '‹', '›']) {
+            return true;
+        }
+
         // Engellenecek kara liste kalıpları
         let blocked_keywords = [
             "il muduru",
@@ -110,12 +116,55 @@ impl ContentGuard {
             "kullanim kosullari",
             "fiyat listesi",
             "tabldot ucreti",
+            // Kaynak sitelerdeki "menü yok" placeholder mesajları
+            // (örn. "Veri yok. Menüye sahipseniz ... mail atabilirsiniz")
+            // yemek satırı sanılıp veritabanına yutulmasın.
+            "veri yok",
+            "menuye sahipseniz",
+            "sahipseniz",
+            "mail atabilirsiniz",
+            "eposta",
+            "e-posta",
+            // Sayfa başlığı/navigasyon kalıntıları (kykmenu.com.tr scrape'ında
+            // yemek sanılıp DB'ye yutulmuştu): "Kahvaltı Yemek Listesi",
+            // "Gün Menüsü", "←İstanbul KYK Menüsü" vb.
+            "yemek listesi",
+            "gun menusu",
+            "kyk menu",
+            "kykmenusu",
+            "menu listesi",
+            // Reklam, sponsorluk ve site şablonu kalıntıları
+            "reklam alani",
+            "reklam",
+            "sponsor",
+            "telif hakki",
+            "tum haklari saklidir",
+            "iletisim:",
+            "web sitemiz",
+            "gunun corbasi:",
+            "gunun tatlisi:",
+            "alternatif menuler",
+            // Birleşik öğün adları: parser'a boşlukları yutulmuş başlık
+            // kalıntıları ("KahvaltıAkşam" vb.) yemek olarak girmesin.
+            "kahvaltiaksam",
+            "kahvaltiogle",
+            "ogleaksam",
         ];
 
         for kw in blocked_keywords {
             if normalized.contains(kw) {
                 return true;
             }
+        }
+
+        // Yalnızca öğün/başlık kelimelerinden oluşan satırlar (örn.
+        // "Kahvaltı Öğle", "Akşam Yemeği") yemek değil, başlık kalıntısıdır.
+        let meal_header_words = [
+            "kahvalti", "ogle", "aksam", "yemegi", "yemek", "listesi", "menu", "gun",
+        ];
+        let tokens: Vec<&str> = normalized.split_whitespace().collect();
+        if !tokens.is_empty() && tokens.iter().all(|t| meal_header_words.contains(t)) {
+            return true;
         }
 
         // Harf içermeyen (sadece sayı veya sembol) metinler
@@ -166,6 +215,19 @@ mod tests {
         assert!(ContentGuard::is_junk_dish_text("450 kcal"));
         assert!(ContentGuard::is_junk_dish_text("12345"));
         assert!(ContentGuard::is_junk_dish_text(""));
+        assert!(ContentGuard::is_junk_dish_text(
+            "Veri yok. Menüye sahipseniz destek@kepce.org adresine mail atabilirsiniz, teşekkür ederiz."
+        ));
+        assert!(ContentGuard::is_junk_dish_text("Menüye sahipseniz bize bildirin"));
+
+        // Site navigasyon/başlık kalıntıları (kykmenu.com.tr scrape kazıntısı)
+        assert!(ContentGuard::is_junk_dish_text("←İstanbul KYK Menüsü"));
+        assert!(ContentGuard::is_junk_dish_text("→ Kayseri KYK Menüsü"));
+        assert!(ContentGuard::is_junk_dish_text("- Kahvaltı Yemek Listesi"));
+        assert!(ContentGuard::is_junk_dish_text("- Akşam Yemeği Yemek Listesi"));
+        assert!(ContentGuard::is_junk_dish_text("Gün Menüsü"));
+        assert!(ContentGuard::is_junk_dish_text("KahvaltıAkşam"));
+        assert!(ContentGuard::is_junk_dish_text("Kahvaltı Öğle"));
 
         // Valid dishes
         assert!(!ContentGuard::is_junk_dish_text("Pideli Soslu Izgara Köfte"));

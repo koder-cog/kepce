@@ -29,17 +29,6 @@
     will-change: transform;
   }
 
-  .meal-card--sunken {
-    background: var(--color-surface-sunken);
-    border-color: rgba(0,0,0,0.02);
-  }
-
-  .meal-card--accent-disclaimer {
-    border-color: var(--color-accent-disclaimer);
-    box-shadow: 0 4px 12px rgba(var(--color-accent-disclaimer-rgb), 0.15);
-  }
-
-
   .meal-card__header {
     display: flex;
     align-items: center;
@@ -63,21 +52,6 @@
     gap: var(--space-sm);
     margin-left: auto;
     /* Push to the right */
-  }
-
-  .meal-card__calories-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-xs);
-    padding: var(--space-sm) var(--space-md);
-    background: var(--color-surface-variant);
-    border-radius: var(--radius-full);
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text);
-    white-space: nowrap;
-    cursor: default;
-    border: 1px solid var(--color-border-subtle);
   }
 
   @media (hover: hover) {
@@ -363,7 +337,6 @@
 
   .meal-card__takeaways-row {
     padding-top: var(--space-md);
-    margin-top: var(--space-md);
     border-top: 1px dashed var(--color-border-light);
   }
 
@@ -430,9 +403,9 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--dur-default) var(--ease-spring-bounce), 
-                color var(--dur-fast) var(--ease-standard), 
-                filter var(--dur-fast) var(--ease-standard);
+    transition: transform var(--dur-default) var(--ease-spring-bounce),
+      color var(--dur-fast) var(--ease-standard),
+      filter var(--dur-fast) var(--ease-standard);
   }
 
   @media (hover: hover) {
@@ -454,8 +427,13 @@
   }
 
   @keyframes star-burst {
-    0% { transform: scale(0.9); }
-    40% { transform: scale(1.25); }
+    0% {
+      transform: scale(0.9);
+    }
+
+    40% {
+      transform: scale(1.25);
+    }
   }
 
   .meal-card__star-btn.active {
@@ -724,12 +702,14 @@
     font-family: var(--font-mono, monospace);
     font-size: var(--text-xs);
   }
+
   .meal-card__debug summary {
     cursor: pointer;
     color: var(--color-warning);
     font-weight: var(--font-weight-bold);
     user-select: none;
   }
+
   .meal-card__debug pre {
     margin: var(--space-sm) 0 0;
     white-space: pre-wrap;
@@ -817,9 +797,7 @@
 .weight-info {
   margin-top: 2px;
 }
-.calorie-info {
-  margin-top: 8px;
-}
+
 .calorie-info span {
   font-weight: var(--font-weight-medium);
 }

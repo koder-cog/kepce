@@ -31,6 +31,7 @@ pub struct IncidentDto {
     pub message: String,
     pub started_at: String,
     pub ended_at: Option<String>,
+    pub resolved_at: Option<String>,
     pub status: String,
 }
 

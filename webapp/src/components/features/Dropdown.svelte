@@ -6,6 +6,7 @@
     import { icon } from '../ui/icons.js';
     import { animate, getDuration } from '../../lib/dom/motion.js';
     import { popover } from '../../lib/dom/popover.js';
+    import { lockScroll, unlockScroll } from '../../lib/dom/scroll-lock.js';
     import { onMount, tick } from 'svelte';
 
     let {
@@ -88,11 +89,12 @@
     );
 
     // ── Global Scroll Lock ─────────────────────────────────────
+    // Sayaç tabanlı merkezi kilit; modal içinde açılan sheet'lerde
+    // kapanınca modalın kilidini düşürmez.
     $effect(() => {
         if (isOpen && useModal) {
-            document.documentElement.classList.add('dropdown-open');
-        } else {
-            document.documentElement.classList.remove('dropdown-open');
+            lockScroll();
+            return () => unlockScroll();
         }
     });
 
@@ -187,9 +189,10 @@
             if (!menuEl) return;
 
             if (useModal) {
+                // Bottom sheet: alttan kayarak açılır (klavye güvenli).
                 animation = animate(menuEl, [
-                    { opacity: 0, transform: 'translate(-50%, -50%) scale(0.95)' },
-                    { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' }
+                    { opacity: 0, transform: 'translateY(100%)' },
+                    { opacity: 1, transform: 'translateY(0)' }
                 ], { duration: getDuration(450), easing: 'cubic-bezier(0.34, 1.56, 0.64, 1)' });
 
                 if (overlayAnimation) overlayAnimation.cancel();
@@ -216,8 +219,8 @@
 
         if (useModal && menuEl) {
             animation = animate(menuEl, [
-                { opacity: 1, transform: 'translate(-50%, -50%) scale(1)' },
-                { opacity: 0, transform: 'translate(-50%, -50%) scale(0.95)' }
+                { opacity: 1, transform: 'translateY(0)' },
+                { opacity: 0, transform: 'translateY(100%)' }
             ], { duration: getDuration(220), easing: 'ease-in' });
 
             if (overlayAnimation && overlayEl) {
@@ -432,7 +435,7 @@
             use:portal
             use:popover={{ triggerEl, align: 'left' }}
         >
-        {#if isLongList && !useModal}
+        {#if isLongList}
             <div class="c-menu__search">
                 <input
                     bind:this={searchInputEl}

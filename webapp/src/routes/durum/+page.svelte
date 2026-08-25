@@ -243,19 +243,20 @@
               <div class="incident-day">
                 <div class="incident-date">{dateStr}</div>
                 {#each incidents as incident}
+                  {@const resolvedDate = incident.resolved_at || incident.ended_at}
                   <div class="incident-card incident-card--{incident.status}">
                     <div class="incident-title">{incident.title}</div>
 
-                    {#if incident.resolved_at}
+                    {#if resolvedDate}
                       <div class="incident-event">Düzeltildi</div>
                       <div class="incident-update-time">
-                        {new Date(incident.resolved_at).toLocaleTimeString(
+                        {new Date(resolvedDate).toLocaleTimeString(
                           "tr-TR",
                           { hour: "2-digit", minute: "2-digit" },
                         )}
                         ({formatDuration(
                           incident.started_at,
-                          incident.resolved_at,
+                          resolvedDate,
                         )} sürdü)
                       </div>
                     {/if}

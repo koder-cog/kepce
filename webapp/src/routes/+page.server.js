@@ -3,7 +3,7 @@ import { ACTIVE_CITIES } from '@/utils/turkish.js';
 
 /**
  * Ana sayfa: SSR'da bugünün menülerini API'den (container içi) çekip
- * HTML'e gömer. Veri sözleşmesi aynı kalır — +page.svelte
+ * HTML'e gömer. Veri sözleşmesi aynı kalır - +page.svelte
  * `prerenderedMenus/prerenderedCity/prerenderedDate` alanlarını tüketir.
  */
 export async function load({ url, setHeaders }) {

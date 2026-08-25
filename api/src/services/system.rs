@@ -178,17 +178,13 @@ impl SystemService {
     }
 
     pub async fn get_system_status(db: &DatabaseConnection) -> Result<SystemStatusDto, DbErr> {
-        let today = Utc::now();
-        let thirty_days_ago = today - Duration::days(30);
-
-        let recent_incidents = shared::entities::system_incidents::Entity::find()
-            .filter(shared::entities::system_incidents::Column::CreatedAt.gte(thirty_days_ago.with_timezone(&chrono::FixedOffset::east_opt(0).unwrap())))
+        let all_incidents = shared::entities::system_incidents::Entity::find()
             .order_by_desc(shared::entities::system_incidents::Column::CreatedAt)
             .all(db)
             .await?;
 
         let mut genel_durum = "aktif".to_string();
-        for inc in &recent_incidents {
+        for inc in &all_incidents {
             if inc.status != "resolved" {
                 if inc.impact == "kesinti" {
                     genel_durum = "kesinti".to_string();
@@ -198,14 +194,18 @@ impl SystemService {
             }
         }
 
-        let incidents_list: Vec<crate::dto::system::IncidentDto> = recent_incidents.into_iter().map(|i| crate::dto::system::IncidentDto {
-            id: Some(i.id),
-            component: i.component,
-            title: i.title,
-            message: i.message,
-            started_at: i.created_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
-            ended_at: i.resolved_at.map(|d| d.to_rfc3339()),
-            status: i.impact,
+        let incidents_list: Vec<crate::dto::system::IncidentDto> = all_incidents.into_iter().map(|i| {
+            let resolved = i.resolved_at.map(|d| d.to_rfc3339());
+            crate::dto::system::IncidentDto {
+                id: Some(i.id),
+                component: i.component,
+                title: i.title,
+                message: i.message,
+                started_at: i.created_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
+                ended_at: resolved.clone(),
+                resolved_at: resolved,
+                status: i.impact,
+            }
         }).collect();
 
         // Fetch son_aktivite from menus

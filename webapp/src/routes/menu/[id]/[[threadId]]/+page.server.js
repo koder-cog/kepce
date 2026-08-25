@@ -3,7 +3,7 @@ import { apiGet } from '@/lib/server/api.js';
 
 /**
  * Menü detay sayfası: SSR'da menüyü API'den (container içi) çekip HTML'e
- * gömer — yemek isimleri, title ve Menu JSON-LD sunucuda üretilir.
+ * gömer - yemek isimleri, title ve Menu JSON-LD sunucuda üretilir.
  * Yorumlar client-side yüklenmeye devam eder (kullanıcı üretimi içerik).
  */
 export async function load({ params, setHeaders }) {

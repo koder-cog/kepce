@@ -1,8 +1,8 @@
 use anyhow::Result;
 use chrono::NaiveDate;
-use sea_orm::{DatabaseConnection, EntityTrait};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
 use serde::Deserialize;
-use shared::entities::{cities, sea_orm_active_enums::MealTypeEnum};
+use shared::entities::{cities, dishes, sea_orm_active_enums::MealTypeEnum};
 use std::path::PathBuf;
 
 #[derive(Debug, Deserialize)]
@@ -176,5 +176,30 @@ pub async fn ingest_historical_menus(db: &DatabaseConnection, file_path: &str) -
     }
 
     tracing::info!("Tarihsel menü ingest tamamlandı. Toplam {} menü güncellendi.", total);
+
+    // Tüm yemeklerin kategorilerini güncel kural motoruyla senkronize et
+    let _ = recategorize_all_dishes(db).await;
+
     Ok(())
+}
+
+/// Mevcut veritabanındaki tüm yemeklerin kategorilerini güncel kural motoruna göre yeniden sınıflandırır.
+pub async fn recategorize_all_dishes(db: &DatabaseConnection) -> Result<usize> {
+    tracing::info!("Yemek kategorileri güncel kural setiyle taranıyor...");
+    let all_dishes = dishes::Entity::find().all(db).await?;
+    let mut updated = 0usize;
+
+    for dish in all_dishes {
+        if let Some(cat) = shared::services::categorizer::categorize_dish(&dish.name) {
+            if dish.category.as_deref() != Some(&cat) {
+                let mut active: dishes::ActiveModel = dish.into();
+                active.category = Set(Some(cat));
+                active.update(db).await?;
+                updated += 1;
+            }
+        }
+    }
+
+    tracing::info!("Kategori güncellemesi tamamlandı: {} yemek güncellendi.", updated);
+    Ok(updated)
 }

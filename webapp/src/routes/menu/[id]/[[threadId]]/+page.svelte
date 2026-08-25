@@ -177,16 +177,6 @@
         data?.dayUrl || (targetCitySlug && menu?.date ? `/${targetCitySlug}/${menu.date}` : null),
     );
 
-    // Görünür özet paragrafı (FAQ JSON-LD bilinçli olarak kullanılmıyor).
-    let summaryText = $derived.by(() => {
-        if (!menu) return "";
-        const dishes = (menu.items || menu.dishes || [])
-            .map((d) => (typeof d === "string" ? d : d.raw_name ?? d.master_data?.name ?? d.name))
-            .filter(Boolean);
-        if (!dishes.length) return "";
-        return `${formattedDate || menu.date} ${targetCityName} KYK ${mealLabel} menüsünde ${dishes.join(", ")} var.`;
-    });
-
     let mealLabel = $derived(
         menu?.meal_type === "breakfast"
             ? "Kahvaltı"
@@ -266,36 +256,6 @@
         : "KYK Yemek Menüsü Detayı ve Yorumları"}
 </h1>
 
-{#if menu && summaryText}
-    <p class="day-summary">{summaryText}</p>
-{/if}
-
-{#if menu && dayUrl}
-    <div class="day-link-row">
-        <a href={dayUrl} data-link class="btn btn--secondary btn--sm">
-            {@html icon("cards", 16)} Tüm öğünleri gör
-        </a>
-        {#if data?.prevDate && targetCitySlug}
-            <a
-                href="/{targetCitySlug}/{data.prevDate}"
-                data-link
-                class="btn btn--secondary btn--sm"
-            >
-                {@html icon("chevronLeft", 16)} Önceki Gün
-            </a>
-        {/if}
-        {#if data?.nextDate && targetCitySlug}
-            <a
-                href="/{targetCitySlug}/{data.nextDate}"
-                data-link
-                class="btn btn--secondary btn--sm"
-            >
-                Sonraki Gün {@html icon("chevronRight", 16)}
-            </a>
-        {/if}
-    </div>
-{/if}
-
 {#if isLoading}
     <div class="comments-page">
         <div id="menu-header-container">
@@ -349,9 +309,45 @@
                         >{targetCityName}</span
                     >
                 </a>
-            </div>
 
-            <MenuCard bind:menu options={{ hideComment: true }} />
+                {#if menu}
+                    <p class="comments-page__date-sub">
+                        {formattedDate || menu.date}{mealLabel
+                            ? ` · ${mealLabel}`
+                            : ""}
+                    </p>
+                {/if}
+
+                {#if menu && dayUrl}
+                    <nav class="day-nav" aria-label="Gün navigasyonu">
+                        {#if data?.prevDate && targetCitySlug}
+                            <a
+                                href="/{targetCitySlug}/{data.prevDate}"
+                                data-link
+                                class="btn btn--secondary btn--sm"
+                                aria-label="Önceki gün"
+                            >
+                                {@html icon("chevronLeft", 16)}
+                            </a>
+                        {/if}
+                        <a href={dayUrl} data-link class="btn btn--secondary btn--sm">
+                            {@html icon("cards", 16)} Tüm öğünler
+                        </a>
+                        {#if data?.nextDate && targetCitySlug}
+                            <a
+                                href="/{targetCitySlug}/{data.nextDate}"
+                                data-link
+                                class="btn btn--secondary btn--sm"
+                                aria-label="Sonraki gün"
+                            >
+                                {@html icon("chevronRight", 16)}
+                            </a>
+                        {/if}
+                    </nav>
+                {/if}
+
+                <MenuCard bind:menu options={{ hideComment: true }} />
+            </div>
         </div>
 
         <div class="comments-section">
@@ -408,19 +404,16 @@
 />
 
 <style>
-    .day-summary {
-        margin: 0 0 var(--spacing-sm, 12px);
-        padding: var(--spacing-sm, 12px) var(--spacing-md, 16px);
-        border-radius: 12px;
-        background: var(--bg-elevated, rgba(255, 255, 255, 0.04));
-        color: var(--text-secondary, inherit);
-        font-size: 0.95rem;
-        line-height: 1.6;
+    .comments-page__date-sub {
+        margin: calc(var(--space-lg) * -1) 0 var(--space-md);
+        color: var(--color-muted);
+        font-size: var(--text-lg);
     }
 
-    .day-link-row {
+    .day-nav {
         display: flex;
-        gap: var(--spacing-sm, 12px);
-        margin: 0 0 var(--spacing-md, 16px);
+        align-items: center;
+        gap: var(--space-sm);
+        margin-bottom: var(--space-md);
     }
 </style>

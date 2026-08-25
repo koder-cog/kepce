@@ -2,7 +2,7 @@ import { apiGet } from '@/lib/server/api.js';
 import { withEtag } from '@/lib/server/etag.js';
 
 /**
- * Sitemap INDEX — aylık bölünmüş parçaları dizer.
+ * Sitemap INDEX - aylık bölünmüş parçaları dizer.
  * Parçalar: /sitemap/static.xml + /sitemap/menus/YYYY-MM.xml
  * Yapı ilk günden ölçeklenir; menü sayısı büyüdükçe yalnızca parça sayısı artar.
  */

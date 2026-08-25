@@ -2,6 +2,7 @@
     import { onMount, tick } from "svelte";
     import { icon } from "./icons.js";
     import { enhanceSelects } from "../../lib/dom/dropdown_enhancer.js";
+    import { lockScroll, unlockScroll } from "../../lib/dom/scroll-lock.js";
 
     let { options = {}, onClose, controller, children, footer } = $props();
 
@@ -27,7 +28,7 @@
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 isOpen = true;
-                document.body.style.overflow = "hidden";
+                lockScroll();
 
                 if (modalContainer) {
                     enhanceSelects(modalContainer);
@@ -57,7 +58,7 @@
     export function close(fromPopState = false) {
         if (isClosing) return;
         isClosing = true;
-        document.body.style.overflow = "";
+        unlockScroll();
 
         if (!fromPopState && pushedState && history.state?.kepceModal) {
             history.back();

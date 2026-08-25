@@ -3,6 +3,7 @@
     import MenuCard from "@/components/features/MenuCard.svelte";
     import { icon } from "@/components/ui/icons.js";
     import { sanitizeText } from "@/utils/sanitize.js";
+    import { normalizeItems } from "@/utils/menu.js";
     import { showToast } from "@/components/ui/toast.js";
     import { openBotReportModal } from "@/components/features/report-modal.js";
     import Skeleton from "@/components/ui/Skeleton.svelte";
@@ -24,8 +25,16 @@
 
     // Runes modunda each-blok argümanına bind geçersiz; indeks bazlı
     // binding için yerel derived referanslar.
-    let breakfasts = $derived(timelineState.breakfastData);
-    let dinners = $derived(timelineState.dinnerData);
+    // Render edilebilir içeriği olmayan menüler (items/dishes/foods boş ya da
+    // tamamen placeholder) kart olarak çizilmez; slot wrapper'daki kompakt
+    // empty-state devreye girer (#19 mimarisi: empty-state yalnızca
+    // timeline__meal-wrapper içinde yaşar, meal-card içinde değil).
+    let breakfasts = $derived(
+        timelineState.breakfastData.filter((m) => normalizeItems(m).length > 0),
+    );
+    let dinners = $derived(
+        timelineState.dinnerData.filter((m) => normalizeItems(m).length > 0),
+    );
 
     // Görev #20: "Boş içerik kartlarını göster" ayarı kapalıyken,
     // tamamen boş olan slotları (ve içindeki timeline__time elementini)
@@ -82,7 +91,7 @@
             statusCode={timelineState.errorState.statusCode}
             desc={timelineState.errorState.desc}
         />
-    {:else if timelineState.breakfastData.length === 0 && timelineState.dinnerData.length === 0}
+    {:else if breakfasts.length === 0 && dinners.length === 0}
         <div class="empty-state-container">
             <EmptyState
                 statusCode={404}

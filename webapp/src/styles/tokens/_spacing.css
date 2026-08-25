@@ -38,10 +38,10 @@
     --z-dropdown: 200;
     --z-overlay: 500;
     --z-navbar: 1000;
-    --z-popover: 1100;
-    --z-modal: 9999;
-    --z-toast: 10000;
-    --z-max: 11000;
+    --z-modal: 9000;
+    --z-popover: 10000;
+    --z-toast: 11000;
+    --z-max: 12000;
 
     /* ── layout ─────────────────────────────────────────────── */
     --max-width: 1100px;

@@ -4,7 +4,7 @@ import { createHash } from 'node:crypto';
  * Sitemap (ve benzeri XML) yanıtları için ETag/304 desteği.
  *
  * Gövdeden SHA-256 üretip ETag header'ı set eder; isteğin If-None-Match'i
- * eşleşirse 304 Not Modified döner (gövdesiz) — botlar bayat parçaları
+ * eşleşirse 304 Not Modified döner (gövdesiz) - botlar bayat parçaları
  * yeniden indirmek zorunda kalmaz, sunucu band genişliği tasarruf eder.
  *
  * @param {Request} request

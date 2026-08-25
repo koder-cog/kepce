@@ -18,7 +18,10 @@
   });
 </script>
 
-<Seo title="Ben • Kepçe" description="Kepçe kullanıcı profiliniz, favorileriniz ve ayarlarınız." />
+<Seo
+  title="Ben • Kepçe"
+  description="Kepçe kullanıcı profiliniz, favorileriniz ve ayarlarınız."
+/>
 
 <h1 class="sr-only">Profilim</h1>
 
@@ -26,7 +29,7 @@
   {#if checked && !globalState.user}
     <EmptyState
       title="Oturum Açın"
-      desc="Yorum yapmak, menüleri puanlamak, favori yemeklerinizi kaydetmek ve rozetler kazanmak için Kepçe hesabınıza giriş yapın."
+      desc="Yorum yapmak, menüleri puanlamak ve favori yemeklerinizi kaydetmek için Kepçe hesabınıza giriş yapın."
       iconName="user"
     >
       <div class="ben-actions">

@@ -19,8 +19,6 @@ concurrency:
 
 jobs:
   build-images:
-    # Native aarch64 runner: QEMU cross-compile derdi yok.
-    # NOT: ubuntu-24.04-arm runner'i public repolarda ucretsizdir.
     runs-on: ubuntu-24.04-arm
     permissions:
       contents: read

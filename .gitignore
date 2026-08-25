@@ -68,6 +68,7 @@ Thumbs.db
 .roo/
 /.agents/
 *-preview-*.md
+AGENTS.md
 
 # 9. Project Specific Data & Backups
 /backups/

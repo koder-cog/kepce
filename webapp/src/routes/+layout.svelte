@@ -1,9 +1,9 @@
 <script>
 	import "../styles/main.css";
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { fade } from "svelte/transition";
 	import { beforeNavigate, afterNavigate, onNavigate, goto } from "$app/navigation";
-	import { page } from "$app/stores";
+	import { page, updated } from "$app/stores";
 	import { globalState, authActions } from "@/state.svelte.js";
 	import Nav from "@/components/layout/Nav.svelte";
 	import Footer from "@/components/layout/Footer.svelte";
@@ -43,6 +43,7 @@
 			if (url.protocol === "http:" || url.protocol === "https:") {
 				if (url.hostname !== window.location.hostname) {
 					const warningEnabled =
+						!globalState.isApp &&
 						localStorage.getItem("kepce_external_link_warning") !==
 						"false";
 					if (warningEnabled) {
@@ -208,7 +209,21 @@
 	});
 
 	// Handle initial mount effects
+	beforeNavigate(({ willUnload, to }) => {
+		if ($updated && !willUnload && to?.url) {
+			location.href = to.url.href;
+		}
+	});
+
+	let updateCheckTimer;
+	onDestroy(() => {
+		if (updateCheckTimer) clearInterval(updateCheckTimer);
+	});
+
 	onMount(async () => {
+		updateCheckTimer = setInterval(() => {
+			updated.check().catch(() => {});
+		}, 15 * 60 * 1000);
 		// Remove disabled state on load
 		document.documentElement.classList.remove("no-js");
 

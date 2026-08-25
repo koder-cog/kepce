@@ -127,6 +127,25 @@ fn load_config_file(file_path: &str) -> Option<HashMap<u32, TakeawayParsedPackag
     }
 }
 
+fn get_candidate_periods() -> Vec<String> {
+    let now = chrono::Utc::now();
+    let year = now.format("%Y").to_string().parse::<i32>().unwrap_or(2026);
+    let month = now.format("%m").to_string().parse::<u32>().unwrap_or(8);
+
+    let (base_year_start, base_year_end) = if month >= 9 {
+        (year, year + 1)
+    } else {
+        (year - 1, year)
+    };
+
+    vec![
+        format!("{}-{}", base_year_start, base_year_end),
+        format!("{}-{}", base_year_start + 1, base_year_end + 1),
+        format!("{}-{}", base_year_start - 1, base_year_end - 1),
+        format!("{}-{}", base_year_start - 2, base_year_end - 2),
+    ]
+}
+
 pub fn get_takeaway_config(city_slug: &str, mapped_meal_type: &str) -> Option<HashMap<u32, TakeawayParsedPackage>> {
     let key = format!("{}_{}", city_slug, mapped_meal_type);
     
@@ -142,7 +161,7 @@ pub fn get_takeaway_config(city_slug: &str, mapped_meal_type: &str) -> Option<Ha
         other => other,
     };
 
-    let periods = ["2025-2026", "2026-2027", "2024-2025"];
+    let periods = get_candidate_periods();
     let mut candidates = Vec::new();
 
     for period in &periods {

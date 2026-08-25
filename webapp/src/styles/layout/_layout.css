@@ -23,19 +23,21 @@
   }
 
   .page-wrapper {
-    min-height: 100vh;
+    min-height: 100dvh;
     display: flex;
     flex-direction: column;
     width: 100%;
+    box-sizing: border-box;
   }
 
   .page-container {
-    flex: 1;
+    flex: 1 0 auto;
     width: 100%;
     max-width: 1000px;
     margin: 0 auto;
     padding: var(--space-xl) var(--space-xl);
     box-sizing: border-box;
+    min-height: calc(100dvh - var(--nav-height, 64px) - 80px);
     /* Responsive (600px, 900px vb.) genişlik/alan geçişlerini pürüzsüz yapmak için */
     transition:
       padding var(--dur-slow) var(--ease-standard),

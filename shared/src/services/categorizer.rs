@@ -148,7 +148,7 @@ mod tests {
         assert_ne!(categorize_dish("Balık"), Some("PİKNİK BAL".to_string()));
     }
 
-    /// Faz 1 (1.5): kalan fiyat kategori kuralları — SALAM (HİNDİ/PİLİÇ),
+    /// Faz 1 (1.5): kalan fiyat kategori kuralları - SALAM (HİNDİ/PİLİÇ),
     /// SÜRÜLEBİLİR ÇİKOLATA, TAHİNLİ PEKMEZ. Resmi kategori adları
     /// db/seeds/prod/02_pricing_2025_2026.sql ile birebir uyumlu olmalı.
     #[test]

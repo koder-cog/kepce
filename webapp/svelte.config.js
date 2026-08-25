@@ -5,7 +5,7 @@ const config = {
 	kit: {
 		adapter: adapter({
 			// `node build/index.js` ile çalışır; PORT ve HOST env değişkenleriyle kontrol edilir.
-			// SSR: her istekte taze HTML — prerender/prefetch/rebuild altyapısı yoktur.
+			// SSR: her istekte taze HTML - prerender/prefetch/rebuild altyapısı yoktur.
 			precompress: true
 		}),
 		appDir: 'internal',

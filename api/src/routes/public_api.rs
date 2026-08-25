@@ -150,7 +150,7 @@ async fn get_single_menu(
 }
 
 // ============================================================
-// Sitemap veri kaynakları — aylık bölünmüş sitemap index yapısı
+// Sitemap veri kaynakları - aylık bölünmüş sitemap index yapısı
 // Yalnızca id + serve_date döner; item join'i YOKTUR (ucuz sorgu).
 // ============================================================
 

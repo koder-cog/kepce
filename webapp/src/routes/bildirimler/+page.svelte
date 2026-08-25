@@ -29,21 +29,55 @@
   let isLoading = $state(true);
   let errorMsg = $state(null);
 
-  let activeTab = $state("all"); // 'all' | 'unread'
+  let activeTab = $state("inbox"); // 'inbox' | 'unread' | 'archived'
+  let archivedIds = $state(new Set());
+
+  onMount(() => {
+    try {
+      const stored = localStorage.getItem("kepce_archived_notifications");
+      if (stored) {
+        archivedIds = new Set(JSON.parse(stored));
+      }
+    } catch {}
+  });
+
+  function toggleArchive(id) {
+    const next = new Set(archivedIds);
+    if (next.has(id)) {
+      next.delete(id);
+      showToast("Bildirim arşivden çıkarıldı.");
+    } else {
+      next.add(id);
+      showToast("Bildirim arşivlendi.");
+    }
+    archivedIds = next;
+    try {
+      localStorage.setItem("kepce_archived_notifications", JSON.stringify([...archivedIds]));
+    } catch {}
+  }
+
   let paginationMode = $derived(globalState.paginationMode || "sayfali");
-  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let urlPage = $derived(
+    parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1,
+  );
 
   // Pagination states
   let limit = 20;
   let currentPage = $state(1);
 
-  // Derivated states
-  let unreadCount = $derived(notifications.filter((n) => !n.is_read).length);
-  let filteredNotifications = $derived(
-    activeTab === "unread"
-      ? notifications.filter((n) => !n.is_read)
-      : notifications,
+  // Derived states
+  let unreadCount = $derived(
+    notifications.filter((n) => !n.is_read && !archivedIds.has(n.id)).length,
   );
+  let filteredNotifications = $derived.by(() => {
+    if (activeTab === "unread") {
+      return notifications.filter((n) => !n.is_read && !archivedIds.has(n.id));
+    }
+    if (activeTab === "archived") {
+      return notifications.filter((n) => archivedIds.has(n.id));
+    }
+    return notifications.filter((n) => !archivedIds.has(n.id));
+  });
   let totalItems = $derived(filteredNotifications.length);
   let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
 
@@ -240,16 +274,14 @@
           class="btn btn--secondary btn--sm btn--squish"
           onclick={handleMarkAllAsRead}
         >
-          {@html icon("check", 14)}
-          Tümünü okundu işaretle
+          Tümünü okundu yap
         </button>
       {/if}
       {#if notifications.length > 0}
         <button
-          class="btn btn--outline btn--sm btn--squish"
+          class="btn btn--secondary btn--sm btn--squish"
           onclick={confirmDeleteAll}
         >
-          {@html icon("trash", 14)}
           Tümünü temizle
         </button>
       {/if}
@@ -268,7 +300,7 @@
   <TabBar
     bind:activeId={activeTab}
     tabs={[
-      { id: "all", label: "Tümü", icon: icon("bell", 18) },
+      { id: "inbox", label: "Gelen Kutusu", icon: icon("inbox", 18) || icon("bell", 18) },
       {
         id: "unread",
         label: "Okunmayanlar",
@@ -280,6 +312,7 @@
               : unreadCount
             : undefined,
       },
+      { id: "archived", label: "Arşiv", icon: icon("archive", 18) || icon("folder", 18) },
     ]}
   />
 
@@ -290,7 +323,7 @@
   {:else if !user}
     <EmptyState
       title="Oturum Açın"
-      desc="Bildirimlerinizi görüntülemek, yorumlarınıza gelen yanıtları ve kazandığınız rozetleri takip etmek için giriş yapın."
+      desc="Bildirimlerinizi görüntülemek ve yorumlarınıza gelen yanıtları takip etmek için giriş yapın."
       iconName="bell"
     >
       <div class="u-flex u-gap-md u-justify-center u-mt-md">
@@ -309,6 +342,8 @@
     <EmptyState
       desc={activeTab === "unread"
         ? "Okunmamış bildiriminiz bulunmuyor."
+        : activeTab === "archived"
+        ? "Arşivlenmiş bildiriminiz bulunmuyor."
         : "Henüz hiç bildiriminiz yok."}
       iconHtml={icon("checkCircle", 48)}
     />
@@ -355,9 +390,16 @@
                       class="btn btn--sm btn--secondary btn--squish"
                       onclick={() => handleMarkAsRead(item.id)}
                     >
-                      Okundu işaretle
+                      Okundu yap
                     </button>
                   {/if}
+                  <button
+                    class="btn btn--sm btn--ghost btn--squish"
+                    onclick={() => toggleArchive(item.id)}
+                    title={archivedIds.has(item.id) ? "Arşivden Çıkar" : "Arşive Al"}
+                  >
+                    {archivedIds.has(item.id) ? "Arşivden Çıkar" : "Arşive Al"}
+                  </button>
                   <button
                     class="btn btn--sm btn--icon-only btn--ghost btn--squish notification-card__delete-btn"
                     title="Bildirimi sil"

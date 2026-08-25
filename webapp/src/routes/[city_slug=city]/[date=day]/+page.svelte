@@ -58,13 +58,13 @@
     }
 
     // Görünür özet paragrafı: yemek listesinden üretilen doğal metin.
-    // (FAQ JSON-LD bilinçli olarak KULLANILMIYOR — şablonik schema spam riski.)
+    // (FAQ JSON-LD bilinçli olarak KULLANILMIYOR - şablonik schema spam riski.)
     let summaryText = $derived.by(() => {
         if (!menus.length) return "";
         const parts = menus.map(
             (m) => `${mealLabel(m)}: ${dishNames(m).join(", ")}`,
         );
-        return `${formattedDate} ${cityName} KYK yurt menüsü — ${parts.join(" | ")}.`;
+        return `${formattedDate} ${cityName} KYK yurt menüsü - ${parts.join(" | ")}.`;
     });
 
     let daySchema = $derived.by(() => {
@@ -136,11 +136,11 @@
                 </span>
                 <span class="comments-page__back-text">{cityName}</span>
             </a>
-        </div>
 
-        {#if summaryText}
-            <p class="day-summary">{summaryText}</p>
-        {/if}
+            {#if formattedDate}
+                <p class="comments-page__date-sub">{formattedDate}</p>
+            {/if}
+        </div>
 
         {#each menus as menu, mi (menu.id)}
             <MenuCard bind:menu={menus[mi]} options={{ hideComment: true }} />
@@ -194,14 +194,10 @@
 </div>
 
 <style>
-    .day-summary {
-        margin: 0 0 var(--spacing-md, 16px);
-        padding: var(--spacing-sm, 12px) var(--spacing-md, 16px);
-        border-radius: 12px;
-        background: var(--bg-elevated, rgba(255, 255, 255, 0.04));
-        color: var(--text-secondary, inherit);
-        font-size: 0.95rem;
-        line-height: 1.6;
+    .comments-page__date-sub {
+        margin: calc(var(--space-lg) * -1) 0 var(--space-md);
+        color: var(--color-muted);
+        font-size: var(--text-lg);
     }
 
     .day-nav {

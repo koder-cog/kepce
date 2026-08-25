@@ -26,7 +26,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/humanity", get(get_humanity_stats))
         .route("/dish/:dish_id/tags", get(get_dish_tags))
         .route("/comments/top", get(get_global_top_comments))
-        // NOT: /comments/recent kaldırıldı — kanonik yol /api/v1/comments/recent
+        // NOT: /comments/recent kaldırıldı - kanonik yol /api/v1/comments/recent
         // (comments.rs). İki handler aynı servisi çağırıyordu (duplicate).
 }
 

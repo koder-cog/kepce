@@ -86,11 +86,14 @@
   }
 
   /* Görev #19: Kompakt varyant - içeriksiz öğün/bot kartları gibi
-     satır-içi durumlarda tam boyut empty-state yerine kullanılır. */
+     satır-içi durumlarda tam boyut empty-state yerine kullanılır.
+     translateY(0): satır-içi kullanımda giriş animasyonunun dikey
+     sıçraması istenmez; element akışta sabit durur. */
   .empty-state--compact {
     min-height: 0;
     padding: 0;
     max-width: none;
+    transform: translateY(0);
   }
 
   .empty-state--compact p.empty-state__desc {

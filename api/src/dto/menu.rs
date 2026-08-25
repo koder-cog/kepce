@@ -28,8 +28,8 @@ pub struct MenuResponseDto {
     pub my_vote: Option<String>,
     pub calorie_range_min: Option<i32>,
     pub calorie_range_max: Option<i32>,
-    pub official_calorie_range: Option<String>, // Çift Kalori: Resmi KYK açıklaması (örn: "600 - 800 kcal")
-    pub calculated_calories: Option<i32>,        // Çift Kalori: Yemeklerin estimated_calories toplamı
+    pub calorie_range: Option<String>, // Menü kalori aralığı (örn: "600 - 800 kcal")
+    pub calculated_calories: Option<i32>, // Yemeklerin estimated_calories toplamı
 }
 
 /// Al Götür paketinin detayı

@@ -9,7 +9,7 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-# Production stage — @sveltejs/adapter-node çıktısı (`build/`)
+# Production stage - @sveltejs/adapter-node çıktısı (`build/`)
 FROM node:20-slim
 
 WORKDIR /app

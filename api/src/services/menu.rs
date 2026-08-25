@@ -48,7 +48,7 @@ impl MenuService {
         }
     }
 
-    fn format_official_calorie_range(min: Option<i32>, max: Option<i32>) -> Option<String> {
+    fn format_calorie_range(min: Option<i32>, max: Option<i32>) -> Option<String> {
         match (min, max) {
             (Some(min_val), Some(max_val)) => Some(format!("{} - {} kcal", min_val, max_val)),
             (Some(min_val), None) => Some(format!("{} kcal", min_val)),
@@ -239,7 +239,7 @@ impl MenuService {
         let rating_sum = vote_stats.map(|v| v.2 as i32).unwrap_or(0);
         let vote_count = vote_stats.map(|v| v.1 as i32).unwrap_or(0);
 
-        let official_calorie_range = Self::format_official_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
+        let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
         let calculated_calories = Self::calculate_total_calories(&items);
 
         Ok(MenuResponseDto {
@@ -259,7 +259,7 @@ impl MenuService {
             takeaways,
             calorie_range_min: menu.calorie_range_min,
             calorie_range_max: menu.calorie_range_max,
-            official_calorie_range,
+            calorie_range,
             calculated_calories,
         })
     }
@@ -306,7 +306,8 @@ impl MenuService {
         let dishes_opts = flat_dish_aliases.load_one(dishes::Entity, db)
             .await.map_err(MenuError::DatabaseError)?;
 
-        // 4. Comments load
+        // 4. Comments and Votes load
+        let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
         let mut comment_counts = Vec::with_capacity(menus.len());
         for m in &menus {
             let c = comments::Entity::find()
@@ -316,6 +317,46 @@ impl MenuService {
                 .await.unwrap_or(0);
             comment_counts.push(c as i32);
         }
+
+        let vote_stats_list: Vec<(i32, i64, i64)> = menu_votes::Entity::find()
+            .select_only()
+            .column(menu_votes::Column::MenuId)
+            .column_as(menu_votes::Column::Id.count(), "vote_count")
+            .column_as(
+                Expr::cust("COALESCE(SUM(CASE WHEN sentiment = 'positive' THEN 1 WHEN sentiment = 'negative' THEN -1 ELSE 0 END), 0)"),
+                "rating_sum",
+            )
+            .filter(menu_votes::Column::MenuId.is_in(menu_ids.clone()))
+            .group_by(menu_votes::Column::MenuId)
+            .into_tuple()
+            .all(db)
+            .await
+            .unwrap_or_default();
+
+        let mut vote_stats_map: HashMap<i32, (i32, i32)> = HashMap::new();
+        for (m_id, count, sum) in vote_stats_list {
+            vote_stats_map.insert(m_id, (count as i32, sum as i32));
+        }
+
+        let my_votes_map: HashMap<i32, String> = if let Some(uid) = _user_id {
+            let user_votes = menu_votes::Entity::find()
+                .filter(menu_votes::Column::MenuId.is_in(menu_ids.clone()))
+                .filter(menu_votes::Column::UserId.eq(uid))
+                .all(db)
+                .await
+                .unwrap_or_default();
+
+            user_votes.into_iter().map(|v| {
+                let sent_str = match v.sentiment {
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Positive => "positive".to_string(),
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Negative => "negative".to_string(),
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => "neutral".to_string(),
+                };
+                (v.menu_id, sent_str)
+            }).collect()
+        } else {
+            HashMap::new()
+        };
 
         let mut result = Vec::with_capacity(menus.len());
         let mut alias_idx = 0;
@@ -411,8 +452,11 @@ impl MenuService {
             }
             takeaways.sort_by(|a, b| a.name.cmp(&b.name));
             
-            let official_calorie_range = Self::format_official_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
+            let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
             let calculated_calories = Self::calculate_total_calories(&items);
+
+            let (vote_count, rating_sum) = vote_stats_map.get(&menu.id).copied().unwrap_or((0, 0));
+            let my_vote = my_votes_map.get(&menu.id).cloned();
 
             result.push(MenuResponseDto {
                 id: menu.id,
@@ -424,14 +468,14 @@ impl MenuService {
                 status: Self::map_menu_status(&menu.status),
                 bot_commentary: menu.bot_commentary.clone(),
                 comment_count: comment_counts[i],
-                rating_sum: 0,
-                vote_count: 0,
-                my_vote: None,
+                rating_sum,
+                vote_count,
+                my_vote,
                 items,
                 takeaways,
                 calorie_range_min: menu.calorie_range_min,
                 calorie_range_max: menu.calorie_range_max,
-                official_calorie_range,
+                calorie_range,
                 calculated_calories,
             });
         }
@@ -671,7 +715,7 @@ impl MenuService {
                 }
                 takeaways.sort_by(|a, b| a.name.cmp(&b.name));
                 
-                let official_calorie_range = Self::format_official_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
+                let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
                 let calculated_calories = Self::calculate_total_calories(&items);
 
                 result.push(MenuResponseDto {
@@ -691,7 +735,7 @@ impl MenuService {
                     takeaways,
                     calorie_range_min: menu.calorie_range_min,
                     calorie_range_max: menu.calorie_range_max,
-                    official_calorie_range,
+                    calorie_range,
                     calculated_calories,
                 });
             } else {

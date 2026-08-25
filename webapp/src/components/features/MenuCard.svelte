@@ -9,7 +9,6 @@
     import { openReportModal, openMenuReportModal } from "./report-modal.js";
     import { openTakeawayModal } from "../../lib/dom/takeaway-modal.js";
     import { getCurrentCity } from "../../stores/city.svelte.js";
-    import { getDayTheme } from "../../lib/utils/calendar.js";
 
     let { menu = $bindable(), options = {} } = $props();
 
@@ -19,21 +18,34 @@
     let hideComment = $derived(options.hideComment || false);
     let takeaways = $derived(options.takeaways || []);
 
-    // Gün sayfası konsolidasyonu: kart bağlantısı varsa kanonik gün sayfasına,
-    // alanlar eksikse (eski veri/normalize edilmemiş nesne) /menu/[id]'ye düşer.
-    let dayUrl = $derived.by(() => {
-        const slug = menu?.city_slug;
-        const day = menu?.date ?? menu?.serve_date;
-        return slug && day ? `/${slug}/${day}` : `/menu/${menu?.id}`;
-    });
+    // Yorum aksiyonu doğrudan menünün yorum akışına gider (/menu/[id]);
+    // gün sayfası zaten tüm öğünleri tek yerde sunar.
+    let commentUrl = $derived(menu?.id ? `/menu/${menu.id}` : null);
 
     let isBreakfast = $derived(menu.meal_type === "breakfast");
     let title = $derived(isBreakfast ? "Kahvaltı" : "Akşam yemeği");
 
+    // Kart altındaki tek satırlık kalori bilgisi: menüye ait VERİLEN ARALIK
+    // esas alınır, uçlar eşitse "a - a" yerine "~a".
+    let calorieText = $derived.by(() => {
+        const min = menu.calorie_range_min;
+        const max = menu.calorie_range_max;
+        if (min && max) {
+            return Number(min) === Number(max)
+                ? `~${min} kcal`
+                : `${min} - ${max} kcal`;
+        }
+        if (min) return `${min} kcal`;
+        if (max) return `${max} kcal`;
+        if (menu.calorie_range) return menu.calorie_range;
+        if (menu.calculated_calories) return `~${menu.calculated_calories} kcal`;
+        if (menu.total_calories) return `${sanitizeText(menu.total_calories)} kcal`;
+        return "";
+    });
+
     let ratingSum = $derived(menu.rating_sum || 0);
     let voteCount = $derived(menu.vote_count || 0);
     let myVote = $derived(menu.my_vote);
-    let cardTheme = $derived(menu.date ? getDayTheme(menu.date) : "default");
 
     let scoreClass = $derived(
         myVote === "positive"
@@ -322,24 +334,10 @@
     }
 </script>
 
-<div
-    class="meal-card {cardTheme !== 'default' ? `meal-card--${cardTheme}` : ''}"
-    id="meal-card-{menu.id}"
->
+<div class="meal-card" id="meal-card-{menu.id}">
     <div class="meal-card__header">
         <h2 class="meal-card__title">{title}</h2>
         <div class="meal-card__source-wrapper">
-            {#if menu.calorie_range_min && menu.calorie_range_max}
-                <div
-                    class="meal-card__calories-badge"
-                    data-tooltip="Aylık ortalama menü kalorisi"
-                >
-                    {@html icon("activity", 14)}
-                    <span
-                        >{menu.calorie_range_min} - {menu.calorie_range_max} kcal</span
-                    >
-                </div>
-            {/if}
             <div
                 class="meal-card__source {sourceClass}"
                 data-tooltip={richTooltip}
@@ -351,19 +349,11 @@
     </div>
 
     <div class="meal-card__items">
-        <!-- Boş durum fallback: API `items` ve `dishes` döndürmediğinde
-             (örn. /yorumlar sayfası ile ana sayfa arasındaki farklı response
-             şekli, ya da henüz master_data eşleşmesi yapılmamış menüler)
-             kart tamamen boş kalıyordu. Burada bilgilendirici bir mesaj
-             göstererek hem kullanıcıya geri bildirim veriyoruz hem de
-             console'a debug bilgisi düşürüyoruz. -->
-        {#if items.length === 0}
-            <div class="meal-card__empty-items">
-                <span class="text-sm color-muted">
-                    Bu öğün için yemek listesi henüz yüklenemedi.
-                </span>
-            </div>
-        {:else}
+        <!-- NOT: Boş menü durumu kart içinde render edilmez. İçeriği olmayan
+             menüler TimelineView tarafından filtrelenir; empty-state yalnızca
+             timeline__meal-wrapper içindeki kompakt EmptyState olarak çizilir
+             (#19 mimarisi). -->
+        {#if items.length > 0}
             {#each items as item}
                 <!-- Master verisi olmayan (raw) yemekler için `raw-<id>` öneki
                      yerine doğrudan `item.id` (veya undefined) kullanıyoruz; hem
@@ -480,35 +470,10 @@
             {/each}
         {/if}
 
-        {#if menu.official_calorie_range}
-            <div
-                class="text-xs color-muted u-flex u-flex-align-center calorie-info"
-                data-tooltip="Devletin ilan ettiği resmi aylık menü kalorisi"
-            >
-                <span>Resmi Kalori: {menu.official_calorie_range}</span>
-            </div>
-        {:else if menu.calorie_range_min && menu.calorie_range_max}
-            <div
-                class="text-xs color-muted u-flex u-flex-align-center calorie-info"
-            >
-                <span
-                    >Resmi Kalori: {menu.calorie_range_min} - {menu.calorie_range_max}
-                    kcal</span
-                >
-            </div>
-        {:else if menu.calorie_range_min}
-            <div
-                class="text-xs color-muted u-flex u-flex-align-center calorie-info"
-            >
-                <span>Resmi Kalori: {menu.calorie_range_min} kcal</span>
-            </div>
-        {:else if menu.total_calories}
-            <div
-                class="text-xs color-muted u-flex u-flex-align-center calorie-info"
-            >
-                <span
-                    >Resmi Kalori: {sanitizeText(menu.total_calories)} kcal</span
-                >
+        {#if calorieText}
+            <!-- "Kalori:" öneki yok; kcal birimi anlamı tek başına taşır. -->
+            <div class="text-sm color-muted u-flex u-flex-align-center calorie-info">
+                <span>{calorieText}</span>
             </div>
         {/if}
 
@@ -567,13 +532,13 @@
         </div>
 
         <div class="meal-card__actions">
-            {#if !hideComment}
+            {#if !hideComment && commentUrl}
                 <a
-                    href={dayUrl}
+                    href={commentUrl}
                     class="meal-card__action-btn"
                     data-link
-                    data-tooltip="Menü detayları ve yorumlar"
-                    aria-label="Menü detayları ve yorumlar"
+                    data-tooltip="Yorumlar"
+                    aria-label="Yorumlar"
                 >
                     {@html icon("chat", 18)}
                     {#if menu.comment_count > 0}

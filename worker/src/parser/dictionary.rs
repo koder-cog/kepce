@@ -34,7 +34,11 @@ pub fn get_dictionary() -> &'static HashSet<&'static str> {
             "karnıyarık", "terbiyeli", "erişte", "baget", "magnolia", "kalem", "salam", "piknik", "grubu", "sürebilir", 
             "jülyen", "ispanaklı", "çanak", "mercimekli", "kemalpaşa", "kıymalı", "tirit", "trileçe", "kağıt", "ankara", 
             "tatlı", "sinitzel", "pırasa", "izmir", "yumurtalı", "tavukburger", "dondurma", "pankek", "tahin", 
-            "semizotu", "kavun", "et", "tas", "fırın", "fırında", "balık", "levrek", "sos", "özel", "harçlı", "somon", "fırınlanmış"
+            "semizotu", "kavun", "et", "tas", "fırın", "fırında", "balık", "levrek", "sos", "özel", "harçlı", "somon", "fırınlanmış",
+            "döner", "kadınbudu", "hasanpaşa", "güveç", "güveçte", "kadayıf", "künefe", "kazandibi", "tavukgöğsü", "keşkül",
+            "muhallebi", "profiterol", "lahmacun", "pide", "cantık", "sandviç", "tost", "krep", "kruvasan", "waffle",
+            "şalgam", "meyvesuyu", "madensuyu", "soda", "arpa", "nane", "kekik", "kimyon", "sumak", "çörekotu", "bafra",
+            "menemenlik", "lor", "tulum", "çökelek", "tahin", "pekmezli", "tahinli", "kuşbaşı", "kıyma", "dana", "kuzu"
         ];
         for w in words {
             set.insert(w);

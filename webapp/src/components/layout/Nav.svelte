@@ -251,15 +251,18 @@
             aria-hidden={!dropdownOpen}
         >
             {#if !globalState.hasSession}
+                {@const currentFullUrl = $page.url.pathname + $page.url.search + $page.url.hash}
+                {@const isAuthRoute = $page.url.pathname.startsWith("/giris") || $page.url.pathname.startsWith("/kayit")}
+                {@const redirectQuery = isAuthRoute ? "" : `?redirect=${encodeURIComponent(currentFullUrl)}`}
                 <a
-                    href="/giris"
+                    href={`/giris${redirectQuery}`}
                     class="c-menu__item"
                     id="dropdown-login"
                     data-link
                     onclick={() => (dropdownOpen = false)}>Giriş yap</a
                 >
                 <a
-                    href="/kayit"
+                    href={`/kayit${redirectQuery}`}
                     class="c-menu__item"
                     id="dropdown-register"
                     data-link

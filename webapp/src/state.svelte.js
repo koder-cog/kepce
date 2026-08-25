@@ -1,5 +1,5 @@
 import { api } from './api/index.js';
-import { goto } from '$app/navigation';
+import { goto, invalidateAll } from '$app/navigation';
 import { getCookie, clearLoggedCookie } from './utils/cookie.js';
 
 const initialHasSession = typeof document !== 'undefined' ? getCookie('kepce_logged_in') === 'true' : false;
@@ -100,6 +100,9 @@ export const authActions = {
       clearLoggedCookie();
       if (typeof window !== 'undefined') localStorage.removeItem('kepce_user_cache');
       if (typeof document !== 'undefined') document.body.classList.remove('is-logged-in');
+      try {
+        await invalidateAll();
+      } catch (err) {}
       goto('/');
     }
   }

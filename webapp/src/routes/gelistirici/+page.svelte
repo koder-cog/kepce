@@ -23,6 +23,7 @@
 
   let usageProjectFilter = $state("all");
   let usageTimeFilter = $state("28");
+  let isCommercialModalOpen = $state(false);
 
   let limitsProjectFilter = $state("all");
   let limitsTimeFilter = $state("28");
@@ -1150,7 +1151,16 @@
 {#if !user}
   <div class="content-page">
     <div class="content-page__header">
-      <h1 class="content-page__title">Geliştirici Panosu</h1>
+      <div>
+        <h1 class="content-page__title">Geliştirici Panosu</h1>
+        <button
+          type="button"
+          class="content-page__archive-link"
+          onclick={() => (isCommercialModalOpen = true)}
+        >
+          Ticari API nedir?
+        </button>
+      </div>
     </div>
     <div class="content-page__body">
       <div class="empty-state-container">
@@ -1158,7 +1168,11 @@
           statusCode={401}
           desc={"API anahtarlarınızı ve projelerinizi yönetebilmek için giriş yapmanız gerekmektedir."}
         >
-          <a href="/giris" class="btn btn--primary" data-link>Giriş yap</a>
+          <a
+            href="/giris?redirect=%2Fgelistirici"
+            class="btn btn--primary btn--squish"
+            data-link>Giriş yap</a
+          >
         </EmptyState>
       </div>
     </div>
@@ -1166,7 +1180,16 @@
 {:else}
   <div class="content-page">
     <div class="content-page__header">
-      <h1 class="content-page__title">Geliştirici Panosu</h1>
+      <div class="u-flex u-flex-justify-between u-flex-align-center u-w-full">
+        <h1 class="content-page__title">Geliştirici Panosu</h1>
+        <button
+          type="button"
+          class="content-page__archive-link btn--squish"
+          onclick={() => (isCommercialModalOpen = true)}
+        >
+          Ticari API nedir?
+        </button>
+      </div>
     </div>
 
     <div class="content-page__body">
@@ -1175,7 +1198,7 @@
         <div class="u-flex u-flex-justify-between u-flex-align-center u-mb-md">
           <h2>Projeler</h2>
           <button
-            class="btn btn--primary btn--sm"
+            class="btn btn--primary btn--sm btn--squish"
             id="btn-create-project"
             onclick={handleCreateProject}>Proje oluştur</button
           >
@@ -1558,6 +1581,56 @@
       </section>
     </div>
   </div>
+{/if}
+
+{#if isCommercialModalOpen}
+  <Modal
+    options={{ title: "Ticari API Nedir?" }}
+    onClose={() => (isCommercialModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="u-flex u-flex-column u-gap-md">
+        <p class="u-text-sm u-color-muted">
+          Kepçe API; öğrenci projeleri, kulüpler ve açık kaynak geliştiriciler
+          için tamamen ücretsizdir ancak yüksek hacimli veya ticari kullanım
+          gerektiren durumlarda da nakit ücret yerine <strong
+            >kazan-kazan veri ortaklığı</strong
+          > modelini uyguluyoruz.
+        </p>
+        <div class="card u-p-md u-bg-surface-sunken">
+          <h4 class="u-font-bold u-text-sm u-mb-xs">Ortaklık İlkeleri</h4>
+          <ul
+            class="u-text-xs u-color-muted"
+            style="padding-left: 1.25rem; line-height: 1.6;"
+          >
+            <li>
+              <strong>Marka Görünürlüğü:</strong> Platformunuzda "Veriler Kepçe (kepce.org)
+              tarafından sağlanmaktadır" bağlantısı yer almalıdır.
+            </li>
+            <li>
+              <strong>Veri Besleme:</strong> Toplanan menü veya fiyat fotoğraflarının
+              doğrudan Kepçe veri tabanına iletilmesi.
+            </li>
+            <li>
+              <strong>Önbellek & Node Koruma:</strong> Sunucularımızın korunması
+              için backend seviyesinde önbellek tutulması.
+            </li>
+          </ul>
+        </div>
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <a href="/menu-gonder" class="btn btn--secondary btn--squish" data-link>
+        Menü Katkısı Sağla
+      </a>
+      <a
+        href="mailto:iletisim@kepce.org?subject=Ticari%20API%20ve%20Veri%20Ortakligi%20Basvurusu"
+        class="btn btn--primary btn--squish"
+      >
+        Ortaklık Başvurusu (E-posta)
+      </a>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isCreateApiKeyModalOpen}

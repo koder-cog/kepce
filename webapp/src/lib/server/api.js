@@ -2,14 +2,14 @@
  * Server-only API istemcisi.
  *
  * SvelteKit `src/lib/server` altında bulunduğu için yalnızca load()/+server.js
- * tarafından import edilebilir — client bundle'a girmez.
+ * tarafından import edilebilir - client bundle'a girmez.
  *
  * Container içinden Rust API'ye doğrudan bağlanır (Caddy/nginx atlanır),
  * böylece SSR render ekstra network hop ödemez.
  */
 
-const API_INTERNAL = env('API_INTERNAL', 'http://api:8000');
-const DEFAULT_TIMEOUT_MS = 8000;
+const API_INTERNAL = env('API_INTERNAL', 'http://127.0.0.1:8000');
+const DEFAULT_TIMEOUT_MS = 1500;
 
 function env(key, fallback) {
 	try {

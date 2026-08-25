@@ -750,7 +750,7 @@ async fn forgot_password(
 pub struct ResetPasswordDto {
     pub token: String,
     
-    #[validate(length(min = 8, max = 128, message = "Şifre 8-128 karakter arasında olmalıdır"))]
+    #[validate(length(min = 8, max = 72, message = "Şifre 8-72 karakter arasında olmalıdır"))]
     pub new_password: String,
 }
 

@@ -18,6 +18,27 @@ async fn main() -> anyhow::Result<()> {
     let db: DbConn = Database::connect(&db_url).await?;
     tracing::info!("Veritabanı bağlantısı başarılı.");
 
+    // One-shot lokal dosya ingest (admin/kullanıcı Excel-PDF drop-zone).
+    // Triggered only when WORKER_LOCAL_INGEST is set; safe to re-run.
+    // Başarılı dosyalar vault'a taşınır, hatalılar hatali/ klasörüne düşer.
+    if std::env::var("WORKER_LOCAL_INGEST").is_ok() {
+        tracing::info!("[LOKAL] Tek seferlik lokal dosya ingest başlatılıyor...");
+        let client = reqwest::Client::builder()
+            .cookie_store(true)
+            .timeout(std::time::Duration::from_secs(600))
+            .build()?;
+        let gemini_key = env::var("GEMINI_API_KEY").ok();
+        if let Err(e) = tasks::file_ingest::process_local_files(&db, &client, gemini_key.as_deref())
+            .await
+        {
+            tracing::error!("[LOKAL] Lokal dosya ingest hatası: {:?}", e);
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[LOKAL] Tek seferlik lokal dosya aktarımı tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     // One-shot backup ingestion (kykyemek-şmnmh-yedek/). Idempotent upsert.
     // Triggered only when WORKER_BACKUP_INGEST is set; safe to re-run.
     if std::env::var("WORKER_BACKUP_INGEST").is_ok() {
@@ -31,6 +52,17 @@ async fn main() -> anyhow::Result<()> {
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
             tracing::info!("[BACKUP] Tek seferlik yedek aktarımı tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
+    if std::env::var("WORKER_RECATEGORIZE").is_ok() {
+        tracing::info!("[RECATEGORIZE] Yemek kategorileri yeniden sınıflandırılıyor...");
+        if let Err(e) = tasks::historical_ingest::recategorize_all_dishes(&db).await {
+            tracing::error!("[RECATEGORIZE] Kategori güncelleme hatası: {:?}", e);
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() && std::env::var("WORKER_HISTORICAL_INGEST").is_err() {
+            tracing::info!("[RECATEGORIZE] Tek seferlik kategori güncellemesi tamamlandı. Çıkış yapılıyor.");
             return Ok(());
         }
     }

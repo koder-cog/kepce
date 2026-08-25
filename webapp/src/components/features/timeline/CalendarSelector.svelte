@@ -22,6 +22,8 @@
         };
     });
 
+    // Takvim seçimi yalnızca client-side filtre; URL değişmez. Gün sayfalarına
+    // yalnızca link üzerinden gidilir (/[sehir]/[tarih] menüsüz günde 404).
     function selectDate(day) {
         timelineState.selectDate(day);
     }

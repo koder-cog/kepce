@@ -163,8 +163,8 @@
       return;
     }
 
-    if (password.length < 8) {
-      newErrors.password = "Şifre en az 8 karakter olmalı.";
+    if (password.length < 8 || password.length > 72) {
+      newErrors.password = "Şifre 8-72 karakter arasında olmalı.";
       errors = newErrors;
       scrollToFirstError();
       return;
@@ -360,16 +360,16 @@
               <div
                 class="u-flex u-flex-gap-sm u-flex-align-center"
                 class:u-color-positive={password.length >= 8 &&
-                  password.length <= 64}
+                  password.length <= 72}
                 class:u-color-negative={password.length < 8 ||
-                  password.length > 64}
+                  password.length > 72}
               >
                 {@html icon(
-                  password.length >= 8 && password.length <= 64
+                  password.length >= 8 && password.length <= 72
                     ? "checkCircle"
                     : "circle",
                   16,
-                )} 8-64 karakter uzunluğunda
+                )} 8-72 karakter uzunluğunda
               </div>
               <div
                 class="u-flex u-flex-gap-sm u-flex-align-center u-mt-2xs"

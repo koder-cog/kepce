@@ -6,6 +6,126 @@ mod tests {
     use crate::parser::kykyemek::{parse_kyk_html, parse_turkish_date};
     use crate::parser::takeaway::{parse_takeaway_menu, TAKEAWAY_CACHE};
     use crate::parser::models::MenuComponent;
+    use crate::parser::core::{parse_grid, SheetGrid, DateTokenOrder, infer_sheet_date_order, parse_date_with_order};
+    use crate::parser::models::MenuDatabase;
+
+    #[test]
+    fn test_infer_sheet_date_order_anchors() {
+        // Tabloda 15.06.2026 hücresi var -> p1 > 12 -> kesinlikle DayMonth
+        let grid_standard = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![
+                vec!["01.06.2026".into(), "04.06.2026".into(), "15.06.2026".into()],
+            ],
+        };
+        assert_eq!(infer_sheet_date_order(&grid_standard, "dosya.xlsx"), DateTokenOrder::DayMonth);
+
+        // Tabloda 06.15.2026 hücresi var -> p2 > 12 -> kesinlikle MonthDay
+        let grid_inverted = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![
+                vec!["06.01.2026".into(), "06.04.2026".into(), "06.15.2026".into()],
+            ],
+        };
+        assert_eq!(infer_sheet_date_order(&grid_inverted, "dosya.xlsx"), DateTokenOrder::MonthDay);
+    }
+
+    #[test]
+    fn test_infer_sheet_date_order_variance_without_anchors() {
+        // Tüm sayılar <= 12 (örn. ayın ilk 5 günü): p1 (1..=5) artıyor, p2 (6) sabit -> DayMonth
+        let grid_small_dm = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![
+                vec!["01.06.2026".into(), "02.06.2026".into(), "03.06.2026".into(), "04.06.2026".into()],
+            ],
+        };
+        assert_eq!(infer_sheet_date_order(&grid_small_dm, "bilinmeyen.xlsx"), DateTokenOrder::DayMonth);
+
+        // Ters format: p1 (6) sabit, p2 (1..=4) artıyor -> MonthDay
+        let grid_small_md = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![
+                vec!["06.01.2026".into(), "06.02.2026".into(), "06.03.2026".into(), "06.04.2026".into()],
+            ],
+        };
+        assert_eq!(infer_sheet_date_order(&grid_small_md, "bilinmeyen.xlsx"), DateTokenOrder::MonthDay);
+    }
+
+    #[test]
+    fn test_date_inference_ignores_manipulated_filename() {
+        // Yanıltıcı dosya adı "Agustos_Menusu.xlsx" ama içerikte açıkça Haziran (06) tarihleri var
+        let grid = SheetGrid {
+            name: "AKSAM".to_string(),
+            rows: vec![
+                vec!["01.06.2026".into(), "04.06.2026".into(), "20.06.2026".into()],
+                vec!["Mercimek Çorbası".into(), "Ezogelin Çorbası".into(), "Yayla Çorbası".into()],
+            ],
+        };
+        let mut db = MenuDatabase::new();
+        parse_grid(&grid, &mut db, "Agustos_Menusu.xlsx");
+
+        // Ground truth (Haziran) baz alınmalı, dosya adındaki Ağustos tarihi ezmemeli
+        assert!(db.contains_key("2026-06-01"));
+        assert!(db.contains_key("2026-06-04"));
+        assert!(db.contains_key("2026-06-20"));
+        assert!(!db.contains_key("2026-08-01"));
+
+        // parse_date_with_order doğrudan testleri
+        assert_eq!(parse_date_with_order("04.06.2026", DateTokenOrder::DayMonth), Some("2026-06-04".to_string()));
+        assert_eq!(parse_date_with_order("06.04.2026", DateTokenOrder::MonthDay), Some("2026-06-04".to_string()));
+        // Geçersiz ay/gün self-healing
+        assert_eq!(parse_date_with_order("15.06.2026", DateTokenOrder::MonthDay), Some("2026-06-15".to_string()));
+    }
+
+    #[test]
+    fn test_parse_grid_long_format() {
+        // LLM üretimi "Tarih | Yemek | Gramaj" uzun formatı: tarih ve yemek
+        // aynı satırda yatay dizilir (Nisan_2026_Kahvaltı_LLM.xlsx vakası).
+        let grid = SheetGrid {
+            name: "KAHVALTI".to_string(),
+            rows: vec![
+                vec!["Tarih".into(), "Yemek".into(), "Gramaj".into()],
+                vec![
+                    String::new(),
+                    String::new(),
+                    "01.04.2026".into(),
+                    String::new(),
+                    "Patates Kızartması".into(),
+                    String::new(),
+                ],
+                vec![
+                    String::new(),
+                    String::new(),
+                    "01.04.2026".into(),
+                    String::new(),
+                    "Haşlanmış Yumurta".into(),
+                    "1 adet L boy".into(),
+                ],
+                vec![
+                    String::new(),
+                    String::new(),
+                    "02.04.2026".into(),
+                    String::new(),
+                    "Kaşarlı Omlet".into(),
+                    String::new(),
+                ],
+            ],
+        };
+        let mut db = MenuDatabase::new();
+        parse_grid(&grid, &mut db, "Nisan_2026_Kahvaltı_LLM.xlsx");
+
+        let day = db.get("2026-04-01").expect("01.04 günü bulunamadı");
+        assert_eq!(day.normal.breakfast.len(), 2, "01.04 iki yemek içermeli");
+        assert_eq!(day.normal.breakfast[0].alternatives[0].name, "Patates Kızartması");
+        assert_eq!(day.normal.breakfast[1].alternatives[0].name, "Haşlanmış Yumurta");
+        // Betimsel gramaj ("1 adet L boy") sayısal olmadığı için amount
+        // alınmaz - wide formatındaki validate_numeric_value davranışıyla tutarlı.
+        assert_eq!(day.normal.breakfast[1].alternatives[0].amount, None);
+
+        let day2 = db.get("2026-04-02").expect("02.04 günü bulunamadı");
+        assert_eq!(day2.normal.breakfast.len(), 1);
+        assert_eq!(day2.normal.breakfast[0].alternatives[0].name, "Kaşarlı Omlet");
+    }
 
     #[test]
     fn test_parse_turkish_date() {

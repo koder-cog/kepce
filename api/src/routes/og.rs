@@ -232,7 +232,7 @@ async fn get_thread_og(
     ).into_response())
 }
 
-/// 4. Kullanıcı Profili OG Kartı (/biri/:username) — eski /user/:username yolu da desteklenir
+/// 4. Kullanıcı Profili OG Kartı (/biri/:username) - eski /user/:username yolu da desteklenir
 async fn get_user_og(
     State(state): State<AppState>,
     Path(username): Path<String>,
@@ -365,6 +365,30 @@ async fn get_page_og(
             "Proje Yönetimi ve API Anahtarları",
             Some("Geliştirici"),
             "public, max-age=86400, s-maxage=604800",
+        ),
+        "kyk-yemek-saatleri" => (
+            Some("KYK Yemek Saatleri"),
+            "Aç Kalmamak için Zaman Çizelgesi",
+            Some("Rehber"),
+            "public, max-age=86400, s-maxage=604800",
+        ),
+        "kyk-beslenme-yardimi" => (
+            Some("KYK Beslenme Yardımı"),
+            "Günlük Yemekhane Yardımı ve Limitler",
+            Some("Rehber"),
+            "public, max-age=86400, s-maxage=604800",
+        ),
+        "rozetler" => (
+            Some("Rozetler"),
+            "Kepçe Topluluk Rozetleri ve Seviyeler",
+            Some("Topluluk"),
+            "public, max-age=86400, s-maxage=604800",
+        ),
+        "yorumlar" => (
+            Some("Son Yorumlar"),
+            "Menülere Gelen Güncel Tepkiler",
+            Some("Topluluk"),
+            "public, max-age=3600, s-maxage=86400",
         ),
         "durum" => {
             // Canlı veritabanı / servis kontrolü

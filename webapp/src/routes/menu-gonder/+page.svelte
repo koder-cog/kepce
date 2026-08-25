@@ -17,6 +17,8 @@
   import { CITY_MAP } from "@/utils/turkish.js";
   import Seo from "@/components/ui/Seo.svelte";
 
+  import TabBar from "@/components/ui/TabBar.svelte";
+
   const MONTHS = [
     "Ocak",
     "Şubat",
@@ -33,6 +35,55 @@
   ];
 
   const MAX_FILES = 5;
+
+  const tabs = [
+    { id: "menu", label: "Aylık Menü", icon: icon("calendar", 18) },
+    { id: "al-gotur", label: "Al Götür", icon: icon("takeaway", 18) || icon("box", 18) },
+    { id: "fiyat-listesi", label: "Fiyat Listesi", icon: icon("tag", 18) },
+  ];
+
+  let contributionType = $state("menu");
+
+  function handleTypeChange(val) {
+    contributionType = val;
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      if (val === "menu") {
+        url.searchParams.delete("tur");
+      } else {
+        url.searchParams.set("tur", val);
+      }
+      window.history.replaceState({}, "", url.toString());
+    }
+  }
+
+  let typeMeta = $derived.by(() => {
+    if (contributionType === "al-gotur") {
+      return {
+        title: "Menü Gönder",
+        subtitle:
+          "Yurdunda verilen Al Götür kahvaltı/öğün paketlerinin içeriğini veya fotoğraflarını paylaş.",
+        fileLabel: "Al Götür Belgesi veya Fotoğrafı",
+        fileHint: ".png, .jpg, .pdf veya .xlsx (Dosya başı maks 10MB)",
+      };
+    }
+    if (contributionType === "fiyat-listesi") {
+      return {
+        title: "Menü Gönder",
+        subtitle:
+          "Yurt kantininde asılı olan resmi tavan fiyat listesinin fotoğrafını veya tablosunu paylaş.",
+        fileLabel: "Kantin Fiyat Panosu veya Belgesi",
+        fileHint: ".png, .jpg, .pdf veya .xlsx (Dosya başı maks 10MB)",
+      };
+    }
+    return {
+      title: "Menü Gönder",
+      subtitle:
+        "Yurdunun yemek listesini paylaş, arkadaşlarının cebi rahat etsin.",
+      fileLabel: "Menü Dosyası (Excel, PDF veya Resim)",
+      fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
+    };
+  });
 
   let user = $derived(globalState?.user);
   let now = new Date();
@@ -93,6 +144,17 @@
   });
 
   onMount(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const turParam = params.get("tur");
+      if (
+        turParam &&
+        ["menu", "al-gotur", "fiyat-listesi"].includes(turParam)
+      ) {
+        contributionType = turParam;
+      }
+    } catch {}
+
     if (notesTextarea) {
       initCharCounter(notesTextarea);
     }
@@ -176,9 +238,19 @@
       formData.append("city_slug", selectedCity);
       formData.append("year", selectedYear);
       formData.append("month", selectedMonth);
-      if (notes.trim()) {
-        formData.append("notes", notes);
-      }
+      formData.append("category", contributionType);
+
+      const typeLabel =
+        contributionType === "al-gotur"
+          ? "Al Götür Menüsü"
+          : contributionType === "fiyat-listesi"
+            ? "Kantin Fiyat Listesi"
+            : "Aylık Menü";
+      const finalNotes = notes.trim()
+        ? `[${typeLabel}] ${notes.trim()}`
+        : `[${typeLabel}]`;
+      formData.append("notes", finalNotes);
+
       for (const file of selectedFiles) {
         formData.append("files", file);
       }
@@ -208,8 +280,8 @@
 </script>
 
 <Seo
-  title="Menü Gönder | Kepçe"
-  description="Yurdunuzun yemek listesini yükleyerek diğer öğrencilerin menüyü görmesine yardımcı olun."
+  title={`${typeMeta.title} | Kepçe`}
+  description={typeMeta.subtitle}
   image="https://kepce.org/api/v1/public/og/page/menu-gonder"
 />
 
@@ -218,7 +290,7 @@
     <EmptyState
       iconName={"check"}
       title={"Gönderim Başarılı"}
-      desc={"Menü dosyası ekibimizce incelenip kısa sürede yayına alınacaktır."}
+      desc={"Gönderdiğiniz dosya ekibimizce incelenip kısa sürede sisteme işlenecektir. Katkınız için teşekkürler!"}
     >
       <a href="/" data-link class="btn btn--primary">Ana sayfaya dön</a>
     </EmptyState>
@@ -228,20 +300,29 @@
     <h1 class="content-page__title">Menü Gönder</h1>
     <div class="content-page__date">
       {#if user}
-        Yurdundaki menüyü sisteme yükle, millet akşam ne yiyeceğini bilsin.
+        {typeMeta.subtitle}
       {:else}
         <span class="u-color-disclaimer u-font-bold"
-          >Uyarı: Giriş yapmaya üşendiğin için bu menü veri tabanına anonim
-          olarak fırlatılacaktır.</span
+          >Giriş yapmadığın için bu katkı veri tabanına anonim olarak iletilecektir.</span
         >
       {/if}
     </div>
+
     <div class="form-footer-hint">
       <span class="form-required-mark">*</span>: Zorunlu
     </div>
   </div>
 
   <div class="content-page__body contribution-page-body">
+    <!-- Katkı Türü Sekmeleri (Form Üstü) -->
+    <div class="u-mb-lg u-w-full" style="max-width: 760px; margin-left: auto; margin-right: auto;">
+      <TabBar
+        {tabs}
+        bind:activeId={contributionType}
+        onChange={handleTypeChange}
+      />
+    </div>
+
     <form class="card contribution-form" onsubmit={handleSubmit}>
       <!-- Ana Form Alanları -->
       <div
@@ -284,11 +365,11 @@
       <div
         class="form-group {hasFileError ? 'form-group--error' : ''}"
         data-error={hasFileError
-          ? "Lütfen en az bir menü dosyası yükleyiniz."
+          ? "Lütfen en az bir dosya yükleyiniz."
           : ""}
       >
         <label class="form-label" for="file-input"
-          >Menü Dosyası (Excel, PDF veya Resim) <span class="form-required-mark"
+          >{typeMeta.fileLabel} <span class="form-required-mark"
             >*</span
           ></label
         >
@@ -321,12 +402,12 @@
             Dosyayı buraya fırlat veya seç
           </div>
           <div class="u-text-xs u-color-muted u-mt-xs">
-            .xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)
+            {typeMeta.fileHint}
           </div>
           <input
             type="file"
             id="file-input"
-            aria-label="Menü Dosyası"
+            aria-label="{typeMeta.fileLabel}"
             bind:this={fileInput}
             accept=".xlsx,.xls,.pdf,image/*"
             class="u-hidden"
@@ -370,7 +451,7 @@
           bind:value={notes}
           id="notes-textarea"
           name="notes"
-          placeholder="Özel bir durum veya belirtmek istediğin şeyler..."
+          placeholder=""
           rows="4"
           maxlength="1024"
           class="contribution-notes-area"
@@ -383,10 +464,10 @@
 
       <button
         type="submit"
-        class="btn btn--primary btn--large u-w-full"
+        class="btn btn--primary btn--large u-w-full btn--squish"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Gönderiliyor..." : "Menüyü Gönder"}
+        {isSubmitting ? "Gönderiliyor..." : "Gönderimi Tamamla"}
       </button>
       <div class="form-footer__links">
         <button

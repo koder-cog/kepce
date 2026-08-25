@@ -20,8 +20,49 @@
 
   let isPasswordlessMode = $state(false);
   let isPasswordlessSuccess = $state(false);
+  let isRedirecting = $state(false);
 
   const user = $derived(globalState?.user);
+
+  function getSafeRedirectUrl() {
+    if (typeof window === "undefined") return "/";
+    const urlParams = new URLSearchParams(window.location.search);
+    const redirectParam = urlParams.get("redirect");
+
+    // Sadece güvenli iç yollara izin ver (// veya javascript: engelle)
+    if (
+      redirectParam &&
+      redirectParam.startsWith("/") &&
+      !redirectParam.startsWith("//") &&
+      !redirectParam.toLowerCase().startsWith("/\\")
+    ) {
+      return redirectParam;
+    }
+
+    // document.referrer aynı origin ise ve auth sayfası değilse
+    if (document.referrer) {
+      try {
+        const refUrl = new URL(document.referrer);
+        if (
+          refUrl.origin === window.location.origin &&
+          !refUrl.pathname.startsWith("/giris") &&
+          !refUrl.pathname.startsWith("/kayit")
+        ) {
+          return refUrl.pathname + refUrl.search + refUrl.hash;
+        }
+      } catch (e) {}
+    }
+
+    return "/";
+  }
+
+  function handleGoBack() {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      window.history.back();
+    } else {
+      goto("/");
+    }
+  }
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -46,15 +87,16 @@
 
     try {
       await api.login(username, password, remember);
+      isRedirecting = true;
       await authActions.refreshUser();
 
       formError = false;
       errorMsg = "";
 
-      const urlParams = new URLSearchParams(window.location.search);
-      const redirectPath = urlParams.get("redirect") || "/";
-      goto(redirectPath);
+      const targetPath = getSafeRedirectUrl();
+      goto(targetPath);
     } catch (err) {
+      isRedirecting = false;
       errorMsg =
         err.message || "Bir şeyleri hatalı girdin, tekrar dene istersen?";
       formError = true;
@@ -72,15 +114,16 @@
   description="Kepçe hesabınıza giriş yapın; favori yemeklerinizi kaydedin, menülere yorum yapın ve bildirimleri takip edin."
 />
 
-{#if user}
+{#if globalState.isReady && user && !isRedirecting}
   <div class="empty-state-container">
     <EmptyState
       statusCode={403}
       title={"403: Zaten Buradasın"}
       desc={`@${user.username} olarak zaten giriş yapmış durumdasın. Başka bir hesapla girmek istiyorsan önce çıkış yapmalısın.`}
     >
-      <a href="/" data-link class="btn btn--secondary">Ana sayfaya sığın</a>
-      <button type="button" class="btn btn--primary" onclick={handleLogout}
+      <button type="button" class="btn btn--secondary btn--squish" onclick={handleGoBack}>Önceki sayfaya dön</button>
+      <a href="/" data-link class="btn btn--secondary btn--squish">Ana sayfa</a>
+      <button type="button" class="btn btn--primary btn--squish" onclick={handleLogout}
         >Çıkış yap</button
       >
     </EmptyState>

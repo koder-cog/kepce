@@ -505,7 +505,7 @@
           class="form-input"
           placeholder=" "
           bind:value={nicknamePasswordInput}
-          maxlength="128"
+          maxlength="72"
         />
         <label class="form-label" for="nickname-password">Mevcut şifre</label>
       </div>
@@ -515,10 +515,10 @@
     {/snippet}
     {#snippet footer()}
       <button
-        class="btn btn--secondary"
+        class="btn btn--secondary btn--squish"
         onclick={() => (isNicknameModalOpen = false)}>İptal</button
       >
-      <button class="btn btn--primary" onclick={saveNickname}>Güncelle</button>
+      <button class="btn btn--primary btn--squish" onclick={saveNickname}>Güncelle</button>
     {/snippet}
   </Modal>
 {/if}
@@ -546,6 +546,7 @@
           class="form-input"
           placeholder=" "
           bind:value={emailPasswordInput}
+          maxlength="72"
         />
         <label class="form-label" for="current-password-email"
           >Mevcut şifre</label
@@ -554,10 +555,10 @@
     {/snippet}
     {#snippet footer()}
       <button
-        class="btn btn--secondary"
+        class="btn btn--secondary btn--squish"
         onclick={() => (isEmailModalOpen = false)}>İptal</button
       >
-      <button class="btn btn--primary" onclick={saveEmail}>Güncelle</button>
+      <button class="btn btn--primary btn--squish" onclick={saveEmail}>Güncelle</button>
     {/snippet}
   </Modal>
 {/if}
@@ -575,6 +576,7 @@
           class="form-input"
           placeholder=" "
           bind:value={currentPasswordInput}
+          maxlength="72"
         />
         <label class="form-label" for="current-password">Mevcut şifre</label>
       </div>
@@ -585,6 +587,7 @@
           class="form-input"
           placeholder=" "
           bind:value={newPasswordInput}
+          maxlength="72"
         />
         <label class="form-label" for="new-password">Yeni şifre</label>
       </div>
@@ -595,18 +598,22 @@
           class="form-input"
           placeholder=" "
           bind:value={confirmPasswordInput}
+          maxlength="72"
         />
         <label class="form-label" for="confirm-password"
           >Yeni şifre (Tekrar)</label
         >
       </div>
+      <span class="form-help"
+        >Şifreniz en az 8, en fazla 72 karakter olmalıdır.</span
+      >
     {/snippet}
     {#snippet footer()}
       <button
-        class="btn btn--secondary"
+        class="btn btn--secondary btn--squish"
         onclick={() => (isPasswordModalOpen = false)}>İptal</button
       >
-      <button class="btn btn--primary" onclick={savePassword}
+      <button class="btn btn--primary btn--squish" onclick={savePassword}
         >Şifreyi güncelle</button
       >
     {/snippet}
@@ -631,7 +638,7 @@
           class="form-input"
           placeholder=" "
           bind:value={deletePasswordInput}
-          maxlength="128"
+          maxlength="72"
         />
         <label class="form-label" for="delete-password">Mevcut şifre</label>
       </div>
@@ -1305,7 +1312,7 @@
           </div>
         </a>
         <a
-          href="/moderasyon/altyapi/sistem-sagligi"
+          href="/durum"
           class="c-list-row c-list-row--clickable c-list-row--regular"
         >
           <div class="c-list-row__info">
@@ -1324,7 +1331,7 @@
             <div class="c-list-row__title">RSS akışı</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrow-right", 20)}
+            {@html icon("external-link", 20)}
           </div>
         </a>
       </div>
@@ -1379,7 +1386,7 @@
           <div class="c-list-row__info">
             <div class="c-list-row__title">Subreddit</div>
           </div>
-          <div class="c-list-row__control">
+          <div class="c-list-row__control u-color-muted">
             {@html icon("external-link", 20)}
           </div>
         </a>

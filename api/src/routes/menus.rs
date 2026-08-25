@@ -170,7 +170,8 @@ async fn vote_menu(
     let sentiment = match payload.sentiment.to_lowercase().as_str() {
         "positive" => SentimentEnum::Positive,
         "negative" => SentimentEnum::Negative,
-        _ => return Err(AppError::BadRequest("Geçersiz oy türü. Yalnızca 'positive' veya 'negative' kabul edilir.".to_string())),
+        "neutral" | "" => SentimentEnum::Neutral,
+        _ => return Err(AppError::BadRequest("Geçersiz oy türü. Yalnızca 'positive', 'negative' veya 'neutral' kabul edilir.".to_string())),
     };
 
     VoteService::vote_menu(&db, menu_id, user.id, sentiment).await?;
