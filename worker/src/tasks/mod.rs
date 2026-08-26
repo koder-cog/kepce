@@ -6,3 +6,4 @@ pub mod backup_export;
 pub mod historical_ingest;
 pub mod meal_notifier;
 pub mod indexnow;
+pub mod enrich_takeaway;

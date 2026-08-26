@@ -880,7 +880,7 @@ pub async fn upsert_menu(
     Ok(())
 }
 
-async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<i32> {
+pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<i32> {
     // XSS sanitization
     let sanitized = sanitize_dish_name(raw_name);
 

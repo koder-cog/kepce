@@ -67,6 +67,19 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    if std::env::var("WORKER_ENRICH_TAKEAWAY").is_ok() {
+        tracing::info!("[TAKEAWAY] Al-Götür menüleri şablonlardan zenginleştiriliyor...");
+        if let Err(e) = tasks::enrich_takeaway::enrich_all_takeaways(&db).await {
+            tracing::error!("[TAKEAWAY] Al-Götür zenginleştirme hatası: {:?}", e);
+        } else {
+            tracing::info!("[TAKEAWAY] Al-Götür zenginleştirme tamamlandı.");
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[TAKEAWAY] Tek seferlik Al-Götür zenginleştirme tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     if std::env::var("WORKER_HISTORICAL_INGEST").is_ok() {
         let historical_file = std::env::var("WORKER_HISTORICAL_FILE")
             .unwrap_or_else(|_| ".scratch/archive/historical_menus/unified/master_historical_menus.json".to_string());
