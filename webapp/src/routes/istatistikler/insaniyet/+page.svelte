@@ -145,12 +145,12 @@
       {#if contributors.length === 0}
         <EmptyState
           iconName={"menuMissing"}
-          title={"Yok Bişii"}
-          desc={"Henüz bir açık bulan da çıkmadı."}
+          title={"Kayıt Yok"}
+          desc={"Henüz onaylanmış bir güvenlik veya hata bildirimi bulunmuyor."}
         />
       {:else}
         <section class="stat-card">
-          <h2 class="stats-section-title">Hata çözen cengaverler</h2>
+          <h2 class="stats-section-title">Katkıda Bulunanlar</h2>
           <div class="contributor-list">
             {#each contributors as c, idx}
               <div class="contributor-card" use:actionStagger={idx + 3}>

@@ -79,7 +79,7 @@
     return {
       title: "Menü Gönder",
       subtitle:
-        "Yurdunun yemek listesini paylaş, arkadaşlarının cebi rahat etsin.",
+        "Yurdunun yemek listesini paylaş, diğer öğrenciler de menüden haberdar olsun.",
       fileLabel: "Menü Dosyası (Excel, PDF veya Resim)",
       fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
     };
@@ -290,7 +290,7 @@
     <EmptyState
       iconName={"check"}
       title={"Gönderim Başarılı"}
-      desc={"Gönderdiğiniz dosya ekibimizce incelenip kısa sürede sisteme işlenecektir. Katkınız için teşekkürler!"}
+      desc={"Gönderdiğin dosya incelenip kısa sürede sisteme işlenecektir. Katkın için teşekkürler!"}
     >
       <a href="/" data-link class="btn btn--primary">Ana sayfaya dön</a>
     </EmptyState>

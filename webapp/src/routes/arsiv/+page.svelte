@@ -249,7 +249,7 @@
       <div class="empty-state-container u-fade-in">
         <EmptyState
           statusCode={404}
-          title={"Yok böyle bişii."}
+          title={"Menü Bulunamadı"}
           desc={"Seçtiğiniz tarih aralığı için arşivde herhangi bir menü kaydı bulunamadı."}
         />
       </div>

@@ -9,22 +9,22 @@
   const CATEGORY_META = {
     sadakat: {
       title: "Sadakat ve İstikrar",
-      subtitle: "Çaresizlik Sınavı",
+      subtitle: "Giriş ve Takip Başarımları",
       icon: "calendar",
     },
     sosyal: {
       title: "Sosyal Etkileşim",
-      subtitle: "Yemekhane Dedikodusu",
+      subtitle: "Yorum ve Oylama Başarımları",
       icon: "chat",
     },
     denetim: {
-      title: "Denetim ve Kalite",
-      subtitle: "Sistemin Bedava Bekçileri",
+      title: "Denetim ve Düzen",
+      subtitle: "Geri Bildirim ve Moderasyon",
       icon: "search",
     },
     veri: {
       title: "Veri Katkısı",
-      subtitle: "Tedarikçi Manyaklar",
+      subtitle: "Menü ve Fiyat Gönderimleri",
       icon: "plus",
     },
   };

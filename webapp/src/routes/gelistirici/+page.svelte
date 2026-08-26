@@ -1585,35 +1585,35 @@
 
 {#if isCommercialModalOpen}
   <Modal
-    options={{ title: "Ticari API Nedir?" }}
+    options={{ title: "Yüksek Hacimli ve Ticari API" }}
     onClose={() => (isCommercialModalOpen = false)}
   >
     {#snippet children()}
       <div class="u-flex u-flex-column u-gap-md">
         <p class="u-text-sm u-color-muted">
-          Kepçe API; öğrenci projeleri, kulüpler ve açık kaynak geliştiriciler
-          için tamamen ücretsizdir ancak yüksek hacimli veya ticari kullanım
-          gerektiren durumlarda da nakit ücret yerine <strong
-            >kazan-kazan veri ortaklığı</strong
+          Kepçe API; öğrenci projeleri, topluluklar ve açık kaynak geliştiriciler
+          için tamamen ücretsizdir. Yüksek hacimli veya ticari projelerde ise
+          sunucu yükünü karşılamak ve ekosistemi büyütmek için ücret yerine <strong
+            >açık veri dayanışması ve kaynak atfı</strong
           > modelini uyguluyoruz.
         </p>
         <div class="card u-p-md u-bg-surface-sunken">
-          <h4 class="u-font-bold u-text-sm u-mb-xs">Ortaklık İlkeleri</h4>
+          <h4 class="u-font-bold u-text-sm u-mb-xs">İş Birliği Koşulları</h4>
           <ul
             class="u-text-xs u-color-muted"
             style="padding-left: 1.25rem; line-height: 1.6;"
           >
             <li>
-              <strong>Marka Görünürlüğü:</strong> Platformunuzda "Veriler Kepçe (kepce.org)
-              tarafından sağlanmaktadır" bağlantısı yer almalıdır.
+              <strong>Kaynak Atfı:</strong> Uygulamanızda veya sitenizde "Veriler Kepçe (kepce.org)
+              tarafından sağlanmaktadır" ibaresine ve bağlantısına yer verilmesi.
             </li>
             <li>
-              <strong>Veri Besleme:</strong> Toplanan menü veya fiyat fotoğraflarının
+              <strong>Veri Paylaşımı:</strong> Toplanan menü veya fiyat fotoğraflarının
               doğrudan Kepçe veri tabanına iletilmesi.
             </li>
             <li>
-              <strong>Önbellek & Node Koruma:</strong> Sunucularımızın korunması
-              için backend seviyesinde önbellek tutulması.
+              <strong>Önbellek Kullanımı:</strong> Sunucu yükünü makul seviyede tutmak
+              için uygulamanızda uygun bir önbellek mekanizması işletilmesi.
             </li>
           </ul>
         </div>
@@ -1627,7 +1627,7 @@
         href="mailto:iletisim@kepce.org?subject=Ticari%20API%20ve%20Veri%20Ortakligi%20Basvurusu"
         class="btn btn--primary btn--squish"
       >
-        Ortaklık Başvurusu (E-posta)
+        İş Birliği Başvurusu (E-posta)
       </a>
     {/snippet}
   </Modal>
