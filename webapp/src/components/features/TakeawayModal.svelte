@@ -17,15 +17,14 @@
   let normalizedItems = $derived.by(() => {
     if (!takeawayMenu) return [];
     const items = normalizeItems(takeawayMenu);
-    // Eğer gelen veri sadece jenerik bir "Al-Götür Menü X" başlığıysa, bunu gerçek yemek saymayıp boş duruma düşür
-    return items.filter((i) => {
-      const name = (i.name || "").trim().toLowerCase();
-      const isGenericPlaceholder =
-        /^al[- ]?g[öo]t[üu]r\s*(men[üu])?\s*\d*$/i.test(name) ||
-        name === (takeawayLabel || "").trim().toLowerCase() ||
-        name === (takeawayMenu.name || "").trim().toLowerCase();
-      return !isGenericPlaceholder;
-    });
+    // Eğer tüm menü sadece 1 satırdan ibaretse ve o da jenerik bir "Al Götür Menü X" başlığıysa boş duruma düşür
+    if (items.length === 1) {
+      const singleName = (items[0].name || "").trim().toLowerCase();
+      if (/^al[- ]?g[öo]t[üu]r\s*(men[üu])?\s*\d*$/i.test(singleName)) {
+        return [];
+      }
+    }
+    return items;
   });
 
   let groupedItems = $derived(groupItems(normalizedItems));

@@ -267,7 +267,7 @@
                     class="comments-page__back-link"
                 >
                     <span class="comments-page__back-icon">
-                        {@html icon("chevronLeft", 24)}
+                        {@html icon("chevronLeft", 18)}
                     </span>
                     <span class="comments-page__back-text"
                         >{targetCityName}</span
@@ -295,59 +295,58 @@
 {:else}
     <div class="comments-page">
         <div id="menu-header-container">
-            <div class="comments-page__header">
-                <a
-                    href="/"
-                    onclick={handleBack}
-                    data-link
-                    class="comments-page__back-link"
-                >
-                    <span class="comments-page__back-icon">
-                        {@html icon("chevronLeft", 24)}
-                    </span>
-                    <span class="comments-page__back-text"
-                        >{targetCityName}</span
+            <header class="comments-page__header">
+                <div class="comments-page__header-top">
+                    <a
+                        href={dayUrl || "/"}
+                        onclick={handleBack}
+                        data-link
+                        class="comments-page__back-link"
                     >
-                </a>
+                        <span class="comments-page__back-icon">
+                            {@html icon("chevronLeft", 18)}
+                        </span>
+                        <span class="comments-page__back-text">{targetCityName}</span>
+                    </a>
 
-                {#if menu}
-                    <p class="comments-page__date-sub">
-                        {formattedDate || menu.date}{mealLabel
-                            ? ` · ${mealLabel}`
-                            : ""}
-                    </p>
-                {/if}
-
-                {#if menu && dayUrl}
-                    <nav class="day-nav" aria-label="Gün navigasyonu">
-                        {#if data?.prevDate && targetCitySlug}
-                            <a
-                                href="/{targetCitySlug}/{data.prevDate}"
-                                data-link
-                                class="btn btn--secondary btn--sm"
-                                aria-label="Önceki gün"
-                            >
-                                {@html icon("chevronLeft", 16)}
+                    {#if menu && dayUrl}
+                        <nav class="day-nav" aria-label="Gün navigasyonu">
+                            {#if data?.prevDate && targetCitySlug}
+                                <a
+                                    href="/{targetCitySlug}/{data.prevDate}"
+                                    data-link
+                                    class="day-nav__btn"
+                                    title="Önceki Gün"
+                                    aria-label="Önceki Gün"
+                                >
+                                    {@html icon("chevronLeft", 14)}
+                                    <span class="day-nav__btn-text">Önceki Gün</span>
+                                </a>
+                            {/if}
+                            <a href={dayUrl} data-link class="day-nav__btn" title="Tüm Gün Menüsü">
+                                {@html icon("cards", 14)}
+                                <span class="day-nav__btn-text">Tüm Gün</span>
                             </a>
-                        {/if}
-                        <a href={dayUrl} data-link class="btn btn--secondary btn--sm">
-                            {@html icon("cards", 16)} Tüm öğünler
-                        </a>
-                        {#if data?.nextDate && targetCitySlug}
-                            <a
-                                href="/{targetCitySlug}/{data.nextDate}"
-                                data-link
-                                class="btn btn--secondary btn--sm"
-                                aria-label="Sonraki gün"
-                            >
-                                {@html icon("chevronRight", 16)}
-                            </a>
-                        {/if}
-                    </nav>
-                {/if}
+                            {#if data?.nextDate && targetCitySlug}
+                                <a
+                                    href="/{targetCitySlug}/{data.nextDate}"
+                                    data-link
+                                    class="day-nav__btn"
+                                    title="Sonraki Gün"
+                                    aria-label="Sonraki Gün"
+                                >
+                                    <span class="day-nav__btn-text">Sonraki Gün</span>
+                                    {@html icon("chevronRight", 14)}
+                                </a>
+                            {/if}
+                        </nav>
+                    {/if}
+                </div>
 
-                <MenuCard bind:menu options={{ hideComment: true }} />
-            </div>
+                <h1 class="comments-page__title">{formattedDate || menu?.date || ""}</h1>
+            </header>
+
+            <MenuCard bind:menu options={{ hideComment: true }} />
         </div>
 
         <div class="comments-section">
@@ -402,18 +401,3 @@
     canonical={dayUrl ? `https://kepce.org${dayUrl}` : `https://kepce.org/menu/${menuId}`}
     schema={menuSchema}
 />
-
-<style>
-    .comments-page__date-sub {
-        margin: calc(var(--space-lg) * -1) 0 var(--space-md);
-        color: var(--color-muted);
-        font-size: var(--text-lg);
-    }
-
-    .day-nav {
-        display: flex;
-        align-items: center;
-        gap: var(--space-sm);
-        margin-bottom: var(--space-md);
-    }
-</style>

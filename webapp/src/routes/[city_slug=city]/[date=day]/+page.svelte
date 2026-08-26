@@ -125,22 +125,51 @@
 
 <div class="comments-page">
     <div id="menu-header-container">
-        <div class="comments-page__header">
-            <a
-                href="/{citySlug}"
-                data-link
-                class="comments-page__back-link"
-            >
-                <span class="comments-page__back-icon">
-                    {@html icon("chevronLeft", 24)}
-                </span>
-                <span class="comments-page__back-text">{cityName}</span>
-            </a>
+        <header class="comments-page__header">
+            <div class="comments-page__header-top">
+                <a
+                    href="/{citySlug}"
+                    data-link
+                    class="comments-page__back-link"
+                >
+                    <span class="comments-page__back-icon">
+                        {@html icon("chevronLeft", 18)}
+                    </span>
+                    <span class="comments-page__back-text">{cityName}</span>
+                </a>
+
+                <nav class="day-nav" aria-label="Gün navigasyonu">
+                    {#if data?.prevDate && citySlug}
+                        <a
+                            href="/{citySlug}/{data.prevDate}"
+                            data-link
+                            class="day-nav__btn"
+                            title="Önceki Gün"
+                            aria-label="Önceki Gün"
+                        >
+                            {@html icon("chevronLeft", 14)}
+                            <span class="day-nav__btn-text">Önceki Gün</span>
+                        </a>
+                    {/if}
+                    {#if data?.nextDate && citySlug}
+                        <a
+                            href="/{citySlug}/{data.nextDate}"
+                            data-link
+                            class="day-nav__btn"
+                            title="Sonraki Gün"
+                            aria-label="Sonraki Gün"
+                        >
+                            <span class="day-nav__btn-text">Sonraki Gün</span>
+                            {@html icon("chevronRight", 14)}
+                        </a>
+                    {/if}
+                </nav>
+            </div>
 
             {#if formattedDate}
-                <p class="comments-page__date-sub">{formattedDate}</p>
+                <h1 class="comments-page__title">{formattedDate}</h1>
             {/if}
-        </div>
+        </header>
 
         {#each menus as menu, mi (menu.id)}
             <MenuCard bind:menu={menus[mi]} options={{ hideComment: true }} />
