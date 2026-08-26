@@ -370,7 +370,7 @@ case "$COMMAND" in
         if [ "$ARCH" != "aarch64" ]; then
             echo -e "${RED}Hata: Bu komut yalnızca aarch64 makinede çalışır (siz: $ARCH).${NC}"
             echo -e "${YELLOW}Sunucuda derlemek için:${NC}"
-            echo "  ssh <sunucu> 'cd ~/kepce && docker run --rm -v \$PWD:/app -w /app rust:trixie bash -c \"apt-get update && apt-get install -y pkg-config libssl-dev g++ && cargo build --release -p api -p worker\"'"
+            echo "  ssh <sunucu> 'cd ~/kepce && docker run --rm -v \$PWD:/app -w /app rust:trixie bash -c \"apt-get update && apt-get install -y pkg-config libssl-dev g++ && cargo build --release -p api -p worker -p moderator\"'"
             exit 1
         fi
 
@@ -378,17 +378,18 @@ case "$COMMAND" in
         podman run --rm -v "$(pwd)":/app -w /app rust:trixie bash -c "
             set -euo pipefail
             apt-get update -qq && apt-get install -y -qq pkg-config libssl-dev g++ >/dev/null
-            cargo build --release -p api -p worker
+            cargo build --release -p api -p worker -p moderator
             mkdir -p target/aarch64-unknown-linux-gnu/release
             cp target/release/api target/aarch64-unknown-linux-gnu/release/api
             cp target/release/worker target/aarch64-unknown-linux-gnu/release/worker
+            cp target/release/moderator target/aarch64-unknown-linux-gnu/release/moderator
         " || { echo -e "${RED}Hata: Derleme başarısız oldu.${NC}"; exit 1; }
 
-        if [ ! -x target/aarch64-unknown-linux-gnu/release/api ] || [ ! -x target/aarch64-unknown-linux-gnu/release/worker ]; then
+        if [ ! -x target/aarch64-unknown-linux-gnu/release/api ] || [ ! -x target/aarch64-unknown-linux-gnu/release/worker ] || [ ! -x target/aarch64-unknown-linux-gnu/release/moderator ]; then
             echo -e "${RED}Hata: Binary'ler üretilmedi.${NC}"
             exit 1
         fi
-        echo -e "${GREEN}ARM64 derlemesi tamamlandı: target/aarch64-unknown-linux-gnu/release/{api,worker}${NC}"
+        echo -e "${GREEN}ARM64 derlemesi tamamlandı: target/aarch64-unknown-linux-gnu/release/{api,worker,moderator}${NC}"
         ;;
     backup)
         ./scripts/backup_db.sh

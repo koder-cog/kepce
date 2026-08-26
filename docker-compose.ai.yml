@@ -1,6 +1,6 @@
 services:
   moderator:
-    image: kepce-moderator:latest
+    image: ghcr.io/koder-cog/kepce-moderator:latest
     build:
       context: .
       dockerfile: moderator/Dockerfile

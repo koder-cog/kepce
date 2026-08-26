@@ -59,15 +59,13 @@ fi
 echo -e "${GREEN}Bağlantı başarılı.${NC}\n"
 
 # 2. Modül Tercihleri
-echo -e "${BOLD}--- Modül Seçimleri ---${NC}"
+echo -e "${BOLD}--- Modül ve Servis Durumu ---${NC}"
+echo -e "• 5651 Uyumlu Loglama:       ${GREEN}Caddy seviyesinde aktif (/var/log/caddy/access.log)${NC}"
 
-read -r -p "1. 5651 Sayılı Kanun Uyumlu IP & Erişim Loglaması aktif edilsin mi? [E/h]: " OPT_LOGS || true
-OPT_LOGS="${OPT_LOGS:-E}"
-
-read -r -p "2. Umami Web Analitiği (Self-Hosted) kurulsun mu? [E/h]: " OPT_UMAMI || true
+read -r -p "1. Umami Web Analitiği (Self-Hosted) kurulsun mu? [E/h]: " OPT_UMAMI || true
 OPT_UMAMI="${OPT_UMAMI:-E}"
 
-read -r -p "3. Yerel Türkçe BERT Moderasyon Modeli aktif edilsin mi? [E/h]: " OPT_BERT || true
+read -r -p "2. Yerel Türkçe BERT Moderasyon Modeli aktif edilsin mi? [E/h]: " OPT_BERT || true
 OPT_BERT="${OPT_BERT:-E}"
 
 echo -e "\n${BLUE}--- Dağıtım Başlatılıyor ---${NC}"
@@ -75,12 +73,19 @@ echo -e "\n${BLUE}--- Dağıtım Başlatılıyor ---${NC}"
 # 3. Dosyaların Senkronizasyonu (Rsync)
 echo -e "${YELLOW}[1/5] Proje dosyaları sunucuya aktarılıyor...${NC}"
 
-if [ ! -f "target/aarch64-unknown-linux-gnu/release/api" ]; then
-    echo -e "${YELLOW}İpucu: Henüz yerel ARM64 binary derlenmemiş.${NC}"
+MISSING_BINARIES=()
+[ ! -f "target/aarch64-unknown-linux-gnu/release/api" ] && MISSING_BINARIES+=("api")
+[ ! -f "target/aarch64-unknown-linux-gnu/release/worker" ] && MISSING_BINARIES+=("worker")
+if [[ "$OPT_BERT" =~ ^[EeYy]$ ]] && [ ! -f "target/aarch64-unknown-linux-gnu/release/moderator" ]; then
+    MISSING_BINARIES+=("moderator")
+fi
+
+if [ ${#MISSING_BINARIES[@]} -gt 0 ]; then
+    echo -e "${YELLOW}İpucu: Yerel ARM64 binary eksik (${MISSING_BINARIES[*]}).${NC}"
     echo -e "${YELLOW}Yerel makinenizde cross-compile yapmak derlemeyi hızlandırabilir: './manage.sh build-arm64'${NC}"
 fi
 
-ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,static,target/aarch64-unknown-linux-gnu/release}"
+ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,moderator,static,target/aarch64-unknown-linux-gnu/release}"
 
 rsync -avz --delete \
     --exclude-from='.gitignore' \

@@ -31,9 +31,9 @@ jobs:
           docker run --rm -v "$PWD":/app -w /app rust:trixie bash -c "
             set -euo pipefail
             apt-get update -qq && apt-get install -y -qq pkg-config libssl-dev g++ >/dev/null
-            cargo build --release -p api -p worker
+            cargo build --release -p api -p worker -p moderator
             mkdir -p target/aarch64-unknown-linux-gnu/release
-            cp target/release/api target/release/worker target/aarch64-unknown-linux-gnu/release/
+            cp target/release/api target/release/worker target/release/moderator target/aarch64-unknown-linux-gnu/release/
           "
 
       - name: GHCR login
@@ -43,11 +43,13 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
         run: |
-          docker build -f api/Dockerfile    -t ghcr.io/$OWNER/kepce-api:latest    .
-          docker build -f worker/Dockerfile -t ghcr.io/$OWNER/kepce-worker:latest .
-          docker build -f webapp/Dockerfile -t ghcr.io/$OWNER/kepce-webapp:latest ./webapp
+          docker build -f api/Dockerfile       -t ghcr.io/$OWNER/kepce-api:latest       .
+          docker build -f worker/Dockerfile    -t ghcr.io/$OWNER/kepce-worker:latest    .
+          docker build -f moderator/Dockerfile -t ghcr.io/$OWNER/kepce-moderator:latest .
+          docker build -f webapp/Dockerfile    -t ghcr.io/$OWNER/kepce-webapp:latest    ./webapp
           docker push ghcr.io/$OWNER/kepce-api:latest
           docker push ghcr.io/$OWNER/kepce-worker:latest
+          docker push ghcr.io/$OWNER/kepce-moderator:latest
           docker push ghcr.io/$OWNER/kepce-webapp:latest
 
   deploy-server:
@@ -62,7 +64,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          source: "Caddyfile,docker-compose.yml,docker-compose.prod.yml,static/maintenance.html"
+          source: "Caddyfile,docker-compose.yml,docker-compose.prod.yml,docker-compose.analytics.yml,docker-compose.ai.yml,static/maintenance.html"
           target: ~/kepce/
           overwrite: true
 
@@ -75,8 +77,15 @@ jobs:
           script: |
             set -euo pipefail
             cd ~/kepce
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml pull api webapp worker
-            docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --remove-orphans
+            export $(grep -v '^#' .env | xargs) 2>/dev/null || true
+
+            # Umami veritabani hazirligi (varsa dokunmaz)
+            docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'umami'" 2>/dev/null | grep -q 1 || \
+            docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -c "CREATE DATABASE umami;" 2>/dev/null || true
+
+            COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.analytics.yml -f docker-compose.ai.yml"
+            docker compose $COMPOSE_FILES pull api webapp worker moderator umami || true
+            docker compose $COMPOSE_FILES up -d --remove-orphans
             docker restart kepce-caddy
             docker image prune -f
             echo "DEPLOY_OK"
