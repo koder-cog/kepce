@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_achievements.css";
   import { api } from "@/api/index.js";
   import { icon, icons } from "@/components/ui/icons.js";
   import EmptyState from "@/components/ui/EmptyState.svelte";

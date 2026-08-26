@@ -1,3 +1,4 @@
+@layer components {
 /* SSR (Static Site Generation) Specific Styles */
 
 .ssr-page-title {
@@ -52,4 +53,5 @@
 
 .ssr-text-muted {
   color: var(--color-text-secondary);
+}
 }

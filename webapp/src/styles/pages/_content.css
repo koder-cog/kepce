@@ -36,10 +36,16 @@
   }
 
   .content-page__archive-link {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: inherit;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     color: var(--color-accent-primary);
     text-decoration: none;
+    text-align: left;
     transition: color var(--dur-fast) var(--ease-standard),
                 filter var(--dur-fast) var(--ease-standard),
                 opacity var(--dur-fast) var(--ease-standard);

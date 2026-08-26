@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_content.css";
   import { showToast } from "@/components/ui/toast.js";
   import Seo from "@/components/ui/Seo.svelte";
 

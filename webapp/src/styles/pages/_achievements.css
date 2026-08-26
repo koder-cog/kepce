@@ -1,3 +1,4 @@
+@layer components {
 /* 
  * Benmari: Achievements & Badges System
  * Modern, industrial, and high-fidelity.
@@ -315,4 +316,5 @@
   .badge-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
+}
 }

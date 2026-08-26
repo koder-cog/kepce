@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_content.css";
   import "@/styles/pages/_status.css";
   import { api } from "@/api/index.js";
   import Loader from "@/components/ui/Loader.svelte";

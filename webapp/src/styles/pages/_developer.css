@@ -1,3 +1,4 @@
+@layer components {
 /* 
  * DEVELOPER PORTAL & TECHNICAL DOCUMENTATION STYLES
  * Scoped for API dashboard and component catalog.
@@ -637,4 +638,5 @@
   margin-bottom: 8px;
   border-bottom: 1px solid var(--color-border-light);
   padding-bottom: 4px;
+}
 }

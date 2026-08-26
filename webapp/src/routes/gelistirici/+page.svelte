@@ -1,4 +1,5 @@
 <script>
+  import "@/styles/pages/_content.css";
   import "@/styles/pages/_developer.css";
   import { globalState, authActions } from "@/state.svelte.js";
 
@@ -1150,18 +1151,18 @@
 
 {#if !user}
   <div class="content-page">
-    <div class="content-page__header">
-      <div>
-        <h1 class="content-page__title">Geliştirici Panosu</h1>
+    <header class="content-page__header">
+      <h1 class="content-page__title">Geliştirici Panosu</h1>
+      <div class="content-page__meta">
         <button
           type="button"
           class="content-page__archive-link"
           onclick={() => (isCommercialModalOpen = true)}
         >
-          Ticari API nedir?
+          Ticari / Yüksek hacimli API nedir?
         </button>
       </div>
-    </div>
+    </header>
     <div class="content-page__body">
       <div class="empty-state-container">
         <EmptyState
@@ -1179,18 +1180,18 @@
   </div>
 {:else}
   <div class="content-page">
-    <div class="content-page__header">
-      <div class="u-flex u-flex-justify-between u-flex-align-center u-w-full">
-        <h1 class="content-page__title">Geliştirici Panosu</h1>
+    <header class="content-page__header">
+      <h1 class="content-page__title">Geliştirici Panosu</h1>
+      <div class="content-page__meta">
         <button
           type="button"
-          class="content-page__archive-link btn--squish"
+          class="content-page__archive-link"
           onclick={() => (isCommercialModalOpen = true)}
         >
-          Ticari API nedir?
+          Ticari / Yüksek hacimli API nedir?
         </button>
       </div>
-    </div>
+    </header>
 
     <div class="content-page__body">
       <!-- PROJELER -->
@@ -1617,18 +1618,23 @@
             </li>
           </ul>
         </div>
+        <p class="u-text-xs u-color-muted">
+          Özel bir entegrasyon veya yüksek hacimli kullanım talebiniz varsa <a
+            href="/iletisim"
+            class="u-font-bold"
+            data-link>iletişim sayfası</a
+          > üzerinden bize yazabilirsiniz.
+        </p>
       </div>
     {/snippet}
     {#snippet footer()}
-      <a href="/menu-gonder" class="btn btn--secondary btn--squish" data-link>
-        Menü Katkısı Sağla
-      </a>
-      <a
-        href="mailto:iletisim@kepce.org?subject=Ticari%20API%20ve%20Veri%20Ortakligi%20Basvurusu"
+      <button
+        type="button"
         class="btn btn--primary btn--squish"
+        onclick={() => (isCommercialModalOpen = false)}
       >
-        İş Birliği Başvurusu (E-posta)
-      </a>
+        Anladım
+      </button>
     {/snippet}
   </Modal>
 {/if}
