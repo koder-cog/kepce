@@ -68,7 +68,7 @@ GET /api/v1/public/menus/days?month=YYYY-MM
 - Cache: güncel ay `s-maxage=3600`, geçmiş aylar `s-maxage=86400`.
 - Kardeş endpoint'ler: `/api/v1/public/menus/months`, `/api/v1/public/menus/index?month=`.
 
-### 5. Genel İstatistikler
+### 6. Genel İstatistikler
 ```http
 GET /api/v1/statistics/overview
 ```

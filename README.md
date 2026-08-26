@@ -95,7 +95,7 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
 ```
 </details>
 
-Kota sınırları, filtreleme parametreleri ve yetkilendirme detayları için [REST API referansı](docs/API.md)nı inceleyebilirsiniz.
+Kota sınırları, filtreleme parametreleri ve yetkilendirme detayları için [REST API Referansı](docs/API.md) sayfasını inceleyebilirsiniz.
 
 ## Ekran Görüntüleri
 

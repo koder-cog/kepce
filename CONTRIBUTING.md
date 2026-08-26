@@ -48,6 +48,10 @@ Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynakl
 2. Conventional Commits standardına uygun, açıklayıcı commit mesajları yazın (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `build:`).
 3. PR açmadan önce testlerin geçtiğinden emin olun:
    ```bash
+   # Tüm kontrolleri (Clippy, Rust testleri, svelte-check, vitest, SSR smoke) tek seferde çalıştırmak için:
+   bash scripts/ci-local.sh
+
+   # Veya ayrı ayrı:
    cargo test --workspace
    cd webapp && npm run check && npm run test
    ```
