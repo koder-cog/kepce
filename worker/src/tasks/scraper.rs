@@ -43,15 +43,16 @@ fn is_banned() -> bool {
     until > 0 && (chrono::Utc::now().timestamp().max(0) as u64) < until
 }
 
-/// Chrome 126 (Windows) User-Agent. Tek noktadan yönetilir.
-const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+/// Chrome 144 (LTS) User-Agent. Tek noktadan yönetilir.
+pub const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36";
+pub const SEC_CH_UA: &str = "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"";
 
-/// Chrome 126'nın XHR/fetch isteklerinde gönderdiği Client Hints +
+/// Chrome 144 (LTS) XHR/fetch isteklerinde gönderdiği Client Hints +
 /// Fetch Metadata başlık seti. Sadece User-Agent taklidi yetmez; bu
 /// başlıklar eksikse sunucu tarafı "kütüphane" kokusunu alır.
-fn with_xhr_headers(req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
+pub fn with_xhr_headers(req: reqwest::RequestBuilder) -> reqwest::RequestBuilder {
     req.header("User-Agent", BROWSER_UA)
-        .header("sec-ch-ua", "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"")
+        .header("sec-ch-ua", SEC_CH_UA)
         .header("sec-ch-ua-mobile", "?0")
         .header("sec-ch-ua-platform", "\"Windows\"")
         .header("sec-fetch-dest", "empty")
@@ -202,97 +203,107 @@ pub async fn scrape_today_menus(
             let day_shift = day - current_day;
             let url = "https://kykyemek.com/Menu/GetDailyMenu";
 
-            let mut req = with_xhr_headers(client.get(url)
-                .query(&[
-                    ("city", city.slug.as_str()),
-                    ("mealType", "false"),
-                    ("isToday", "true"),
-                    ("dayShift", &day_shift.to_string()),
-                ]))
-                .header("X-Requested-With", "XMLHttpRequest")
-                .header("Accept", "application/json, text/javascript, */*; q=0.01")
-                .header("Referer", "https://kykyemek.com/Menu/TodayMenu")
-                .timeout(std::time::Duration::from_secs(30));
+            let meal_configs = [
+                ("false", "breakfast", MealTypeEnum::Breakfast),
+                ("true", "dinner", MealTypeEnum::Dinner),
+            ];
 
-            if let Some(ref token) = token_opt {
-                req = req
-                    .header("RequestVerificationToken", token.as_str())
-                    .header("__RequestVerificationToken", token.as_str());
-            }
-
-            let res = match req.send().await {
-                Ok(r) if r.status().is_success() => {
-                    KYK_429_STREAK.store(0, Ordering::Relaxed);
-                    r
-                }
-                Ok(r) if r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
-                    // Kaynak sunucu hiz siniri uyguluyor: geri cekil, sakin ısrar etme.
-                    // Israrci 429 serisi ban'a evrilir -> esik asilinca devreyi kes.
-                    let streak = KYK_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
-                    if streak >= 5 {
-                        trip_ban(&format!("art arda {} kez HTTP 429 ([TODAY] taraması)", streak)).await;
-                        return Ok(total_saved);
-                    }
-                    let wait_secs = 30u64.saturating_mul(u64::from(streak)).min(300);
-                    tracing::warn!("HTTP 429 (hiz siniri) - {} kesinti/streak, {}sn bekleniyor...", streak, wait_secs);
-                    tokio::time::sleep(std::time::Duration::from_secs(wait_secs)).await;
-                    continue;
-                }
-                Ok(r) if r.status() == reqwest::StatusCode::FORBIDDEN => {
-                    // 403: büyük olasılıkla IP ban. Israr etmeden devreyi kes.
-                    trip_ban(&format!("HTTP 403 ([TODAY] taraması, şehir: {})", city.slug)).await;
+            for (meal_param, kyk_meal_type, meal_enum) in meal_configs {
+                if *shutdown_rx.borrow() || is_banned() {
                     return Ok(total_saved);
                 }
-                Ok(r) if r.status() == reqwest::StatusCode::UNAUTHORIZED => {
-                    if let Ok(new_token) = fetch_antiforgery_token(client).await {
-                        token_opt = Some(new_token);
+
+                let mut req = with_xhr_headers(client.get(url)
+                    .query(&[
+                        ("city", city.slug.as_str()),
+                        ("mealType", meal_param),
+                        ("isToday", "true"),
+                        ("dayShift", &day_shift.to_string()),
+                    ]))
+                    .header("X-Requested-With", "XMLHttpRequest")
+                    .header("Accept", "application/json, text/javascript, */*; q=0.01")
+                    .header("Referer", "https://kykyemek.com/Menu/TodayMenu")
+                    .timeout(std::time::Duration::from_secs(30));
+
+                if let Some(ref token) = token_opt {
+                    req = req
+                        .header("RequestVerificationToken", token.as_str())
+                        .header("__RequestVerificationToken", token.as_str());
+                }
+
+                let res = match req.send().await {
+                    Ok(r) if r.status().is_success() => {
+                        KYK_429_STREAK.store(0, Ordering::Relaxed);
+                        r
                     }
+                    Ok(r) if r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
+                        // Kaynak sunucu hiz siniri uyguluyor: geri cekil, sakin ısrar etme.
+                        // Israrci 429 serisi ban'a evrilir -> esik asilinca devreyi kes.
+                        let streak = KYK_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
+                        if streak >= 5 {
+                            trip_ban(&format!("art arda {} kez HTTP 429 ([TODAY] taraması)", streak)).await;
+                            return Ok(total_saved);
+                        }
+                        let wait_secs = 30u64.saturating_mul(u64::from(streak)).min(300);
+                        tracing::warn!("HTTP 429 (hiz siniri) - {} kesinti/streak, {}sn bekleniyor...", streak, wait_secs);
+                        tokio::time::sleep(std::time::Duration::from_secs(wait_secs)).await;
+                        continue;
+                    }
+                    Ok(r) if r.status() == reqwest::StatusCode::FORBIDDEN => {
+                        // 403: büyük olasılıkla IP ban. Israr etmeden devreyi kes.
+                        trip_ban(&format!("HTTP 403 ([TODAY] taraması, şehir: {})", city.slug)).await;
+                        return Ok(total_saved);
+                    }
+                    Ok(r) if r.status() == reqwest::StatusCode::UNAUTHORIZED => {
+                        if let Ok(new_token) = fetch_antiforgery_token(client).await {
+                            token_opt = Some(new_token);
+                        }
+                        continue;
+                    }
+                    _ => continue,
+                };
+
+                let body_text = match res.text().await {
+                    Ok(b) => b,
+                    Err(_) => continue,
+                };
+
+                let html_content = if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_text) {
+                    json_val.get("html").and_then(|h| h.as_str()).unwrap_or(&body_text).to_string()
+                } else {
+                    body_text
+                };
+
+                if html_content.contains("Menü bulunamadı") || !html_content.contains("cardStyle") {
                     continue;
                 }
-                _ => continue,
-            };
 
-            let body_text = match res.text().await {
-                Ok(b) => b,
-                Err(_) => continue,
-            };
+                let parsed_menus = parse_kyk_html(&html_content, &city.slug, kyk_meal_type);
+                for menu in parsed_menus {
+                    upsert_menu(
+                        db,
+                        city.id,
+                        menu.date,
+                        meal_enum.clone(),
+                        "kykyemek".to_string(),
+                        None,
+                        menu.dishes,
+                        vec![],
+                        menu.takeaways,
+                        None,
+                        None,
+                        None,
+                    ).await?;
+                    total_saved += 1;
+                }
 
-            let html_content = if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_text) {
-                json_val.get("html").and_then(|h| h.as_str()).unwrap_or(&body_text).to_string()
-            } else {
-                body_text
-            };
-
-            if html_content.contains("Menü bulunamadı") || !html_content.contains("cardStyle") {
-                continue;
+                // Kibar tarama: istekler arası 1.5-3sn rastgele gecikme
+                let delay_ms = {
+                    use rand::Rng;
+                    rand::thread_rng().gen_range(1500..=3000)
+                };
+                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
             }
-
-            let parsed_menus = parse_kyk_html(&html_content, &city.slug, "dinner");
-            for menu in parsed_menus {
-                upsert_menu(
-                    db,
-                    city.id,
-                    menu.date,
-                    MealTypeEnum::Dinner,
-                    "kykyemek".to_string(),
-                    None,
-                    menu.dishes,
-                    vec![],
-                    menu.takeaways,
-                    None,
-                    None,
-                    None,
-                ).await?;
-                total_saved += 1;
-            }
-
-            // Kibar tarama: eski sabit 150ms'lik patlama (~500 istek/dk) IP ban
-            // yedirdi. Artık istekler arası 1.5-3sn rastgele gecikme uygulanır.
-            let delay_ms = {
-                use rand::Rng;
-                rand::thread_rng().gen_range(1500..=3000)
-            };
-            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
         }
     }
 
@@ -306,7 +317,7 @@ async fn fetch_antiforgery_token(client: &Client) -> Result<String> {
     let res = client.get("https://kykyemek.com/")
         .header("User-Agent", BROWSER_UA)
         .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
-        .header("sec-ch-ua", "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"Google Chrome\";v=\"126\"")
+        .header("sec-ch-ua", SEC_CH_UA)
         .header("sec-ch-ua-mobile", "?0")
         .header("sec-ch-ua-platform", "\"Windows\"")
         .header("sec-fetch-dest", "document")
@@ -1073,7 +1084,10 @@ mod tests {
         let token = super::fetch_antiforgery_token(&client).await.unwrap();
         let res = client.get("https://kykyemek.com/Menu/GetDailyMenu/istanbul")
             .query(&[("city", "istanbul"), ("mealType", "true"), ("monthShift", "0"), ("hidePast", "false")])
-            .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36")
+            .header("User-Agent", super::BROWSER_UA)
+            .header("sec-ch-ua", super::SEC_CH_UA)
+            .header("sec-ch-ua-mobile", "?0")
+            .header("sec-ch-ua-platform", "\"Windows\"")
             .header("X-Requested-With", "XMLHttpRequest")
             .header("RequestVerificationToken", token.as_str())
             .header("Referer", "https://kykyemek.com/")

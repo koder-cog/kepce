@@ -17,7 +17,7 @@ use crate::tasks::scraper::upsert_menu;
 /// Bu task SADECE birincil kaynakta (kykyemek) o şehir/o gün için kayıt
 /// bulunamadığında devreye girer ("boşa debelenme"yi önler). Kayıt zaten
 /// varsa hiçbir HTTP isteği yapılmaz.
-const UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+const UA: &str = crate::tasks::scraper::BROWSER_UA;
 
 struct DayGaps {
     breakfast: bool,
