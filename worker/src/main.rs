@@ -123,27 +123,29 @@ async fn main() -> anyhow::Result<()> {
     // Gemini model erişilebilirlik kontrolü (startup)
     if let Some(ref api_key) = gemini_api_key {
         let model_name = env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-flash-latest".to_string());
-        let check_url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/{}",
-            model_name
-        );
-        match reqwest_client.get(&check_url)
+        let check_url = "https://generativelanguage.googleapis.com/v1beta/interactions";
+        let check_payload = serde_json::json!({
+            "model": model_name,
+            "input": "ping"
+        });
+        match reqwest_client.post(check_url)
             .header("x-goog-api-key", api_key)
+            .json(&check_payload)
             .send()
             .await
         {
             Ok(res) if res.status().is_success() => {
-                tracing::info!("Gemini model '{}' erişilebilir [OK]", model_name);
+                tracing::info!("Gemini Interactions API ('{}') erişilebilir [OK]", model_name);
             }
             Ok(res) => {
                 tracing::warn!(
-                    "Gemini model '{}' erişilebilirlik kontrolü başarısız (HTTP {}). PDF parsing çalışmayabilir.",
+                    "Gemini Interactions API ('{}') erişilebilirlik kontrolü başarısız (HTTP {}). PDF parsing çalışmayabilir.",
                     model_name, res.status()
                 );
             }
             Err(e) => {
                 tracing::warn!(
-                    "Gemini model '{}' erişilebilirlik kontrolü başarısız: {:?}. PDF parsing çalışmayabilir.",
+                    "Gemini Interactions API ('{}') erişilebilirlik kontrolü başarısız: {:?}. PDF parsing çalışmayabilir.",
                     model_name, e
                 );
             }

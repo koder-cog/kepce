@@ -291,8 +291,8 @@ pub async fn scrape_today_menus(
                         vec![],
                         menu.takeaways,
                         None,
-                        None,
-                        None,
+                        menu.min_calories,
+                        menu.max_calories,
                     ).await?;
                     total_saved += 1;
                 }
@@ -622,8 +622,8 @@ async fn fetch_and_save(
             vec![], // celiac_dishes
             menu.takeaways,
             None,
-            None,
-            None,
+            menu.min_calories,
+            menu.max_calories,
         ).await?;
         count += 1;
     }

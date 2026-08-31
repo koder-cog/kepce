@@ -44,6 +44,70 @@ fn menu_response_schema() -> serde_json::Value {
         "required": ["sheets"]
     })
 }
+fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
+    // 1. Doğrudan output_text veya text
+    if let Some(t) = json_res.get("output_text").and_then(|t| t.as_str()) {
+        return Some(t.to_string());
+    }
+    if let Some(t) = json_res.get("text").and_then(|t| t.as_str()) {
+        return Some(t.to_string());
+    }
+    // 2. Interactions API steps dizisi (son output adımı)
+    if let Some(steps) = json_res.get("steps").and_then(|s| s.as_array()) {
+        for step in steps.iter().rev() {
+            if let Some(t) = step.get("text").and_then(|t| t.as_str()) {
+                return Some(t.to_string());
+            }
+            if let Some(parts) = step.get("parts").and_then(|p| p.as_array()) {
+                if let Some(t) = parts.first().and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
+                    return Some(t.to_string());
+                }
+            }
+            if let Some(output) = step.get("output") {
+                if let Some(t) = output.as_str() {
+                    return Some(t.to_string());
+                }
+                if let Some(t) = output.get("text").and_then(|t| t.as_str()) {
+                    return Some(t.to_string());
+                }
+            }
+        }
+    }
+    // 3. outputs / candidates uyumluluğu
+    if let Some(outputs) = json_res.get("outputs").and_then(|o| o.as_array()) {
+        if let Some(t) = outputs.first().and_then(|o| o.get("text")).and_then(|t| t.as_str()) {
+            return Some(t.to_string());
+        }
+    }
+    if let Some(candidates) = json_res.get("candidates").and_then(|c| c.as_array()) {
+        if let Some(t) = candidates.first()
+            .and_then(|c| c.get("content"))
+            .and_then(|c| c.get("parts"))
+            .and_then(|p| p.as_array())
+            .and_then(|a| a.first())
+            .and_then(|p| p.get("text"))
+            .and_then(|t| t.as_str())
+        {
+            return Some(t.to_string());
+        }
+    }
+    None
+}
+
+fn clean_json_markdown(raw: &str) -> &str {
+    let trimmed = raw.trim();
+    if let Some(stripped) = trimmed.strip_prefix("```json") {
+        if let Some(inner) = stripped.strip_suffix("```") {
+            return inner.trim();
+        }
+    }
+    if let Some(stripped) = trimmed.strip_prefix("```") {
+        if let Some(inner) = stripped.strip_suffix("```") {
+            return inner.trim();
+        }
+    }
+    trimmed
+}
 
 pub async fn parse_pdf_with_llm(client: &Client, api_key: &str, pdf_path: &Path) -> Result<MenuDatabase> {
     tracing::info!("PDF dosyası Gemini Interactions API ile okunuyor: {:?}", pdf_path);
@@ -67,22 +131,21 @@ For the sheet 'name', combine the month, year and the meal type (e.g. 'Nisan 202
 
     let model_name = std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-flash-latest".to_string());
     
-    // GenerateContent API Payload
+    // Interactions API Payload
     let payload = json!({
-        "contents": [{
-            "parts": [
-                {"text": prompt},
-                {"inlineData": {"mimeType": "application/pdf", "data": base64_pdf}}
-            ]
-        }],
-        "generationConfig": {
-            "temperature": 0.1,
-            "responseMimeType": "application/json",
-            "responseSchema": menu_response_schema()
+        "model": model_name,
+        "input": [
+            {"text": prompt},
+            {"inlineData": {"mimeType": "application/pdf", "data": base64_pdf}}
+        ],
+        "response_format": {
+            "type": "text",
+            "mime_type": "application/json",
+            "schema": menu_response_schema()
         }
     });
 
-    let url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent", model_name);
+    let url = "https://generativelanguage.googleapis.com/v1beta/interactions";
 
     let max_retries = 2;
     let mut last_error = String::new();
@@ -90,7 +153,7 @@ For the sheet 'name', combine the month, year and the meal type (e.g. 'Nisan 202
     for attempt in 1..=max_retries {
         tracing::info!("  Interactions API Denemesi {}/{}...", attempt, max_retries);
 
-        match client.post(&url)
+        match client.post(url)
             .header("x-goog-api-key", api_key)
             .json(&payload)
             .send()
@@ -107,38 +170,13 @@ For the sheet 'name', combine the month, year and the meal type (e.g. 'Nisan 202
                     continue;
                 }
 
-                // Parse Interactions API response
                 if let Ok(json_res) = serde_json::from_str::<serde_json::Value>(&text_res) {
-                    let text = if let Some(t) = json_res.get("text").and_then(|t| t.as_str()) {
-                         t.to_string()
-                    } else if let Some(parts) = json_res.pointer("/output/parts") {
-                        if let Some(t) = parts.as_array().and_then(|a| a.first()).and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
-                            t.to_string()
-                        } else {
-                            last_error = format!("Unexpected LLM response structure: {}", text_res);
-                            tracing::warn!("  Hata: {}", last_error);
-                            continue;
-                        }
-                    } else if let Some(candidates) = json_res.get("candidates") {
-                         if let Some(t) = candidates.as_array().and_then(|a| a.first())
-                            .and_then(|c| c.get("content"))
-                            .and_then(|c| c.get("parts"))
-                            .and_then(|a| a.as_array())
-                            .and_then(|a| a.first())
-                            .and_then(|p| p.get("text"))
-                            .and_then(|t| t.as_str()) {
-                             t.to_string()
-                         } else {
-                             last_error = format!("Unexpected fallback structure: {}", text_res);
-                             continue;
-                         }
-                    } else {
-                        text_res.clone()
-                    };
+                    let extracted = extract_response_text(&json_res).unwrap_or_else(|| text_res.clone());
+                    let cleaned = clean_json_markdown(&extracted);
 
-                    tracing::info!("LLM Raw Response: {}", text);
+                    tracing::info!("LLM Raw Response: {}", cleaned);
 
-                    match serde_json::from_str::<LlmMenuResponse>(&text) {
+                    match serde_json::from_str::<LlmMenuResponse>(cleaned) {
                         Ok(response) => {
                             let mut db = MenuDatabase::new();
                             let file_name_hint = pdf_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown_pdf").to_string();
@@ -155,20 +193,6 @@ For the sheet 'name', combine the month, year and the meal type (e.g. 'Nisan 202
                             return Ok(db);
                         }
                         Err(e) => {
-                            if let Ok(response) = serde_json::from_str::<LlmMenuResponse>(&text_res) {
-                                let mut db = MenuDatabase::new();
-                                let file_name_hint = pdf_path.file_name().and_then(|n| n.to_str()).unwrap_or("unknown_pdf").to_string();
-
-                                for sheet in response.sheets {
-                                    parse_grid(&sheet, &mut db, &file_name_hint);
-                                }
-                                
-                                for day_data in db.values_mut() {
-                                    crate::parser::validation::finalize_day_metadata(day_data);
-                                }
-                                return Ok(db);
-                            }
-                            
                             tracing::warn!("  Deserialization failed (attempt {}): {}", attempt, e);
                             last_error = format!("Deserialization error: {}", e);
                             continue;

@@ -6,6 +6,26 @@ pub struct KykMenuParseResult {
     pub date: NaiveDate,
     pub dishes: Vec<Vec<crate::parser::models::MenuComponent>>,
     pub takeaways: Vec<(String, Vec<Vec<crate::parser::models::MenuComponent>>)>,
+    pub min_calories: Option<i32>,
+    pub max_calories: Option<i32>,
+}
+
+/// "1100-1500 kalori" veya "850 kcal" -> (Some(1100), Some(1500))
+pub fn parse_kcal_range(meta: Option<&str>) -> (Option<i32>, Option<i32>) {
+    static NUM_RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re = NUM_RE.get_or_init(|| regex::Regex::new(r"\d+").unwrap());
+    let Some(meta) = meta else {
+        return (None, None);
+    };
+    let nums: Vec<i32> = re
+        .find_iter(meta)
+        .filter_map(|m| m.as_str().parse().ok())
+        .collect();
+    match nums.as_slice() {
+        [min, max] => (Some(*min), Some(*max)),
+        [single] => (Some(*single), Some(*single)),
+        _ => (None, None),
+    }
 }
 
 pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> Vec<KykMenuParseResult> {
@@ -15,6 +35,7 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
     let fallback_date_selector = Selector::parse(".card-header span").unwrap();
     let body_selector = Selector::parse(".card-body").unwrap();
     let p_selector = Selector::parse("p").unwrap();
+    let cal_selector = Selector::parse(".card-body p, p.text-end, p").unwrap();
     
     let mut results = Vec::new();
     
@@ -34,6 +55,20 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
             None => continue,
         };
         
+        let mut min_calories = None;
+        let mut max_calories = None;
+        for p in card.select(&cal_selector) {
+            let p_text = p.text().collect::<String>().to_lowercase();
+            if p_text.contains("kalori") || p_text.contains("kcal") {
+                let (min_c, max_c) = parse_kcal_range(Some(&p_text));
+                if min_c.is_some() || max_c.is_some() {
+                    min_calories = min_c;
+                    max_calories = max_c;
+                    break;
+                }
+            }
+        }
+
         let mut raw_dishes = Vec::new();
         let mut takeaways = Vec::new();
         for p in body.select(&p_selector) {
@@ -93,6 +128,8 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
                 date: date_val,
                 dishes: raw_dishes,
                 takeaways,
+                min_calories,
+                max_calories,
             });
         }
     }
