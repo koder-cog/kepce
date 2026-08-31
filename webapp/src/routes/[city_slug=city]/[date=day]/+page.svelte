@@ -203,32 +203,34 @@
             </div>
         {/each}
 
-        <nav class="day-nav" aria-label="Gün navigasyonu">
-            <a
-                href="/{citySlug}/{data.prevDate}"
-                data-link
-                class="btn btn--secondary btn--sm"
-            >
-                {@html icon("chevronLeft", 16)} Önceki Gün
-            </a>
-            <a
-                href="/{citySlug}/{data.nextDate}"
-                data-link
-                class="btn btn--secondary btn--sm"
-            >
-                Sonraki Gün {@html icon("chevronRight", 16)}
-            </a>
-        </nav>
+        {#if data?.prevDate || data?.nextDate}
+            <nav class="day-nav" aria-label="Gün navigasyonu">
+                {#if data?.prevDate}
+                    <a
+                        href="/{citySlug}/{data.prevDate}"
+                        data-link
+                        class="btn btn--secondary btn--sm"
+                    >
+                        {@html icon("chevronLeft", 16)} Önceki Gün
+                    </a>
+                {:else}
+                    <div></div>
+                {/if}
+                {#if data?.nextDate}
+                    <a
+                        href="/{citySlug}/{data.nextDate}"
+                        data-link
+                        class="btn btn--secondary btn--sm"
+                    >
+                        Sonraki Gün {@html icon("chevronRight", 16)}
+                    </a>
+                {/if}
+            </nav>
+        {/if}
     </div>
 </div>
 
 <style>
-    .comments-page__date-sub {
-        margin: calc(var(--space-lg) * -1) 0 var(--space-md);
-        color: var(--color-muted);
-        font-size: var(--text-lg);
-    }
-
     .day-nav {
         display: flex;
         justify-content: space-between;

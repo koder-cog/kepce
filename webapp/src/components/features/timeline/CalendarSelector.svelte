@@ -24,8 +24,17 @@
 
     // Takvim seçimi yalnızca client-side filtre; URL değişmez. Gün sayfalarına
     // yalnızca link üzerinden gidilir (/[sehir]/[tarih] menüsüz günde 404).
-    function selectDate(day) {
+    function selectDate(day, e) {
+        if (e && (e.ctrlKey || e.metaKey || e.shiftKey)) return;
+        if (e) e.preventDefault();
         timelineState.selectDate(day);
+    }
+
+    function getDayHref(day) {
+        const city = timelineState.currentCity || "istanbul";
+        const m = String(timelineState.viewMonth + 1).padStart(2, '0');
+        const d = String(day).padStart(2, '0');
+        return `/${city}/${timelineState.viewYear}-${m}-${d}`;
     }
 
     function getHolidays(year, month, day) {
@@ -104,13 +113,13 @@
                             timelineState.viewYear === new Date().getFullYear()}
                         {@const dayHols = getHolidays(timelineState.viewYear, timelineState.viewMonth, day)}
                         {@const tooltipText = dayHols.length > 0 ? dayHols.map(h => h.name).join(', ') : undefined}
-                        <div
+                        <a
+                            href={getDayHref(day)}
+                            data-link
                             class="calendar-grid__day {isSelected ? 'calendar-grid__day--selected' : ''} {isToday ? 'calendar-grid__day--today' : ''} {isWeekend ? 'calendar-grid__day--weekend' : ''} {dayHols.length > 0 ? 'calendar-grid__day--holiday' : ''}"
                             data-tooltip={tooltipText}
-                            role="button"
-                            tabindex="0"
-                            onclick={() => selectDate(day)}
-                            onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDate(day); } }}
+                            onclick={(e) => selectDate(day, e)}
+                            onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { selectDate(day, e); } }}
                         >
                             <span class="calendar-grid__date">{day}</span>
                             {#if dayHols.length > 0 || isWeekend}
@@ -123,7 +132,7 @@
                                     {/if}
                                 </div>
                             {/if}
-                        </div>
+                        </a>
                     {/each}
                 </div>
             {:else}
@@ -141,13 +150,13 @@
                         timelineState.viewYear === now.getFullYear()}
                     {@const dayHols = getHolidays(timelineState.viewYear, timelineState.viewMonth, day)}
                     {@const tooltipText = dayHols.length > 0 ? dayHols.map(h => h.name).join(', ') : undefined}
-                    <div
+                    <a
+                        href={getDayHref(day)}
+                        data-link
                         class="day-selector__item {isSelected ? 'day-selector__item--active' : ''} {isToday ? 'day-selector__item--today' : ''} {isWeekend ? 'day-selector__item--weekend' : ''} {dayHols.length > 0 ? 'day-selector__item--holiday' : ''}"
                         data-tooltip={tooltipText}
-                        role="button"
-                        tabindex="0"
-                        onclick={() => selectDate(day)}
-                        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectDate(day); } }}
+                        onclick={(e) => selectDate(day, e)}
+                        onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { selectDate(day, e); } }}
                     >
                         <span class="day-selector__weekday">{WEEKDAYS[d.getDay()]}</span>
                         <span class="day-selector__date">{day}</span>
@@ -159,7 +168,7 @@
                                 <span class="indicator-dot indicator-dot--weekend"></span>
                             {/if}
                         </div>
-                    </div>
+                    </a>
                 {/each}
             {/if}
         </div>

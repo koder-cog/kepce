@@ -8,7 +8,12 @@
     import { openBotReportModal } from "@/components/features/report-modal.js";
     import Skeleton from "@/components/ui/Skeleton.svelte";
     import EmptyState from "@/components/ui/EmptyState.svelte";
-    import { fade } from "svelte/transition";
+    import EmptyMenuHub from "@/components/features/timeline/EmptyMenuHub.svelte";
+
+    let {
+        lastMenuDay = null,
+        isSummer = false
+    } = $props();
 
     // Görev #20: Ayarlar'daki "Boş içerik kartlarını göster" tercihi.
     // (ssr=false olduğu için bileşen yalnızca istemcide kurulur.)
@@ -92,13 +97,12 @@
             desc={timelineState.errorState.desc}
         />
     {:else if breakfasts.length === 0 && dinners.length === 0}
-        <div class="empty-state-container">
-            <EmptyState
-                statusCode={404}
-                title={"Bugün bişii yok"}
-                desc={"Seçtiğin tarih için herhangi bir menü bilgisi bulamadık. Belki de aşçı abla tatile çıkmıştır."}
-            />
-        </div>
+        <EmptyMenuHub
+            citySlug={timelineState.currentCity}
+            date={timelineState.selectedDateString}
+            isSummer={isSummer || (timelineState.selectedDate && [6, 7].includes(timelineState.selectedDate.getMonth()))}
+            {lastMenuDay}
+        />
     {:else if timelineState.currentDietMode === "celiac" && !timelineState.breakfastData.some((m) => m.items?.length > 0) && !timelineState.dinnerData.some((m) => m.items?.length > 0)}
         <div class="empty-state-container">
             <EmptyState

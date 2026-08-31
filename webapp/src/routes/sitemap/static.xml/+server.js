@@ -16,39 +16,50 @@ function istanbulToday() {
 	}).format(new Date());
 }
 
-const staticPages = [
-	'',
-	'/kyk-yemek-saatleri',
-	'/kyk-beslenme-yardimi',
-	'/arsiv',
-	'/istatistikler',
-	'/istatistikler/yemekler',
-	'/istatistikler/yorumlar',
-	'/istatistikler/insaniyet',
-	'/istatistikler/denetim',
-	'/durum',
-	'/menu-gonder',
-	'/hakkinda',
-	'/sss',
-	'/iletisim',
-	'/rss',
-	'/kullanim-kosullari',
-	'/gizlilik-politikasi'
+// Statik sayfalar ve gerçek içerik güncellenme tarihleri (lastmod dürüstlüğü)
+const staticPagesWithLastmod = [
+	{ path: '', lastmod: null }, // Dinamik (bugün)
+	{ path: '/kyk-yemek-saatleri', lastmod: '2026-08-20' },
+	{ path: '/kyk-beslenme-yardimi', lastmod: '2026-08-20' },
+	{ path: '/arsiv', lastmod: '2026-08-15' },
+	{ path: '/istatistikler', lastmod: null },
+	{ path: '/istatistikler/yemekler', lastmod: null },
+	{ path: '/istatistikler/yorumlar', lastmod: null },
+	{ path: '/istatistikler/insaniyet', lastmod: null },
+	{ path: '/istatistikler/denetim', lastmod: null },
+	{ path: '/durum', lastmod: null },
+	{ path: '/menu-gonder', lastmod: '2026-08-10' },
+	{ path: '/hakkinda', lastmod: '2026-08-10' },
+	{ path: '/sss', lastmod: '2026-08-20' },
+	{ path: '/iletisim', lastmod: '2026-08-10' },
+	{ path: '/rss', lastmod: '2026-08-30' },
+	{ path: '/kullanim-kosullari', lastmod: '2026-08-01' },
+	{ path: '/gizlilik-politikasi', lastmod: '2026-08-01' }
 ];
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ request }) {
 	const today = istanbulToday();
 
-	const paths = [...staticPages, ...ACTIVE_CITIES.map((slug) => `/${slug}`)];
+	const staticEntries = staticPagesWithLastmod.map(({ path, lastmod }) => ({
+		loc: `${BASE_URL}${path}`,
+		lastmod: lastmod || today
+	}));
+
+	const cityEntries = ACTIVE_CITIES.map((slug) => ({
+		loc: `${BASE_URL}/${slug}`,
+		lastmod: today
+	}));
+
+	const allEntries = [...staticEntries, ...cityEntries];
 
 	const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-${paths
+${allEntries
 	.map(
-		(path) => `  <url>
-    <loc>${BASE_URL}${path}</loc>
-    <lastmod>${today}</lastmod>
+		(entry) => `  <url>
+    <loc>${entry.loc}</loc>
+    <lastmod>${entry.lastmod}</lastmod>
   </url>`
 	)
 	.join('\n')}

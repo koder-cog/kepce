@@ -7,6 +7,7 @@
     import { animate, getDuration } from '../../lib/dom/motion.js';
     import { popover } from '../../lib/dom/popover.js';
     import { lockScroll, unlockScroll } from '../../lib/dom/scroll-lock.js';
+    import { nativeBridge } from '../../lib/native/bridge.js';
     import { onMount, tick } from 'svelte';
 
     let {
@@ -43,6 +44,7 @@
     let isProgrammaticScroll = false;
     let animation = null;
     let overlayAnimation = null;
+    let pushedState = false;
 
     // ── Derived ────────────────────────────────────────────────
     let allOptions = $derived(
@@ -175,6 +177,12 @@
         isOpen = true;
         openTime = Date.now();
 
+        if (useModal) {
+            history.pushState({ kepceDropdown: true }, "");
+            pushedState = true;
+            nativeBridge.sendOverlayToggle(true);
+        }
+
         highlightedIndex = filteredOptions.findIndex(o => o.value === value || (o.isActive && typeof o.isActive === 'function' && o.isActive(value)));
         if (highlightedIndex === -1 && filteredOptions.length > 0) highlightedIndex = 0;
 
@@ -212,10 +220,18 @@
         });
     }
 
-    function close() {
+    function close(fromPopState = false) {
         if (!isOpen) return;
         if (activeDropdownClose === close) activeDropdownClose = null;
         if (animation) animation.cancel();
+
+        if (useModal) {
+            if (!fromPopState && pushedState && history.state?.kepceDropdown) {
+                history.back();
+            }
+            pushedState = false;
+            nativeBridge.sendOverlayToggle(false);
+        }
 
         if (useModal && menuEl) {
             animation = animate(menuEl, [
@@ -243,6 +259,12 @@
             animation.onfinish = () => { isOpen = false; };
         } else {
             isOpen = false;
+        }
+    }
+
+    function handlePopState(e) {
+        if (isOpen && useModal) {
+            close(true);
         }
     }
 
@@ -380,7 +402,7 @@
     let menuId = 'c-menu-' + Math.random().toString(36).slice(2, 8);
 </script>
 
-<svelte:window onclick={onOutsideClick} onscrollcapture={onScrollClose} />
+<svelte:window onclick={onOutsideClick} onscrollcapture={onScrollClose} onpopstate={handlePopState} />
 
 <div
     {id}

@@ -38,7 +38,11 @@
 
   const tabs = [
     { id: "menu", label: "Aylık Menü", icon: icon("calendar", 18) },
-    { id: "al-gotur", label: "Al Götür", icon: icon("takeaway", 18) || icon("box", 18) },
+    {
+      id: "al-gotur",
+      label: "Al Götür",
+      icon: icon("takeaway", 18) || icon("box", 18),
+    },
     { id: "fiyat-listesi", label: "Fiyat Listesi", icon: icon("tag", 18) },
   ];
 
@@ -303,7 +307,8 @@
         {typeMeta.subtitle}
       {:else}
         <span class="u-color-disclaimer u-font-bold"
-          >Giriş yapmadığın için bu katkı veri tabanına anonim olarak iletilecektir.</span
+          >Giriş yapmadığın için bu katkı veri tabanına anonim olarak
+          iletilecektir.</span
         >
       {/if}
     </div>
@@ -315,7 +320,7 @@
 
   <div class="content-page__body contribution-page-body">
     <!-- Katkı Türü Sekmeleri (Form Üstü) -->
-    <div class="u-mb-lg u-w-full" style="max-width: 760px; margin-left: auto; margin-right: auto;">
+    <div class="contribution-tabs-wrapper u-mb-lg u-w-full">
       <TabBar
         {tabs}
         bind:activeId={contributionType}
@@ -364,14 +369,10 @@
 
       <div
         class="form-group {hasFileError ? 'form-group--error' : ''}"
-        data-error={hasFileError
-          ? "Lütfen en az bir dosya yükleyiniz."
-          : ""}
+        data-error={hasFileError ? "Lütfen en az bir dosya yükleyiniz." : ""}
       >
         <label class="form-label" for="file-input"
-          >{typeMeta.fileLabel} <span class="form-required-mark"
-            >*</span
-          ></label
+          >{typeMeta.fileLabel} <span class="form-required-mark">*</span></label
         >
 
         <!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -407,7 +408,7 @@
           <input
             type="file"
             id="file-input"
-            aria-label="{typeMeta.fileLabel}"
+            aria-label={typeMeta.fileLabel}
             bind:this={fileInput}
             accept=".xlsx,.xls,.pdf,image/*"
             class="u-hidden"
@@ -467,7 +468,7 @@
         class="btn btn--primary btn--large u-w-full btn--squish"
         disabled={isSubmitting}
       >
-        {isSubmitting ? "Gönderiliyor..." : "Gönderimi Tamamla"}
+        {isSubmitting ? "Gönderiliyor..." : "Gönder"}
       </button>
       <div class="form-footer__links">
         <button
@@ -522,3 +523,11 @@
     {/snippet}
   </Modal>
 {/if}
+
+<style>
+  .contribution-tabs-wrapper {
+    max-width: 760px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+</style>

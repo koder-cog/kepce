@@ -40,18 +40,36 @@ export async function load({ params, setHeaders }) {
 	// Kahvaltı önce (API zaten meal_type'a göre sıralı; yine de garantiye al).
 	menus.sort((a, b) => (a.meal_type === 'breakfast' ? -1 : 1) - (b.meal_type === 'breakfast' ? -1 : 1));
 
-	// Önceki/sonraki gün navigasyonu (iç link ağı).
-	const shiftDate = (iso, days) => {
-		const d = new Date(`${iso}T00:00:00Z`);
-		d.setUTCDate(d.getUTCDate() + days);
-		return d.toISOString().slice(0, 10);
-	};
+	// Gerçek komşu menü günleri navigasyonu (404 zincirini önler).
+	const monthStr = date.slice(0, 7);
+	let prevDate = null;
+	let nextDate = null;
+
+	try {
+		const monthDays = await apiGet(
+			`/api/v1/public/menus/days?month=${encodeURIComponent(monthStr)}`,
+			{ fallback: [], timeout: 5000 }
+		);
+		const cityDays = (Array.isArray(monthDays) ? monthDays : [])
+			.filter((d) => d.city_slug === city_slug)
+			.map((d) => d.date);
+
+		const currentIndex = cityDays.indexOf(date);
+		if (currentIndex > 0) {
+			prevDate = cityDays[currentIndex - 1];
+		}
+		if (currentIndex >= 0 && currentIndex < cityDays.length - 1) {
+			nextDate = cityDays[currentIndex + 1];
+		}
+	} catch {
+		// Fallback sessizce null bırakır
+	}
 
 	return {
 		citySlug: city_slug,
 		date,
-		prevDate: shiftDate(date, -1),
-		nextDate: shiftDate(date, 1),
+		prevDate,
+		nextDate,
 		menus
 	};
 }

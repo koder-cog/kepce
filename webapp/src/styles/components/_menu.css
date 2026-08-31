@@ -156,17 +156,40 @@
   /* Alt kısımdaki özel buton (örn: Şehrinizi göremiyor musunuz?) */
   .c-menu__item.c-menu__item--special {
     color: var(--color-muted);
-    font-size: var(--text-sm);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
     justify-content: center;
-    margin-top: var(--space-2xs);
+    text-align: center;
+    margin: var(--space-xs) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1);
+    width: calc(100% + var(--space-xs) * 2);
+    padding: var(--space-sm) var(--space-md);
+    border: none;
+    border-top: 1px solid var(--color-border-light);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-    border: 1px solid var(--color-border);
-    transition: color var(--motion-effects-default);
+    background: none;
+    transition:
+      background var(--motion-effects-fast),
+      color var(--motion-effects-fast);
+  }
+
+  .c-menu__item.c-menu__item--special:active {
+    transform: none;
+  }
+
+  .c-menu__item.c-menu__item--special .c-menu__item-label {
+    text-align: center;
+    display: inline-block;
+    transition: transform var(--dur-instant) var(--ease-tactile);
+    will-change: transform;
+  }
+
+  .c-menu__item.c-menu__item--special:active .c-menu__item-label {
+    transform: scale(0.97);
   }
 
   @media (hover: hover) {
     .c-menu__item.c-menu__item--special:hover {
-      background: none;
+      background-color: var(--color-surface-variant);
       color: var(--color-accent-primary);
       text-decoration: underline;
     }
@@ -339,10 +362,12 @@
       transform: translateY(0) !important;
     }
 
-    .c-menu--modal .c-menu__search .c-menu__item--special {
+    .c-menu--modal .c-menu__item--special {
       padding: var(--space-md);
-      margin-bottom: 0;
-      border-bottom: 1px solid var(--color-border-light);
+      margin-top: var(--space-sm);
+      border-top: 1px solid var(--color-border-light);
+      font-size: var(--text-sm);
+      min-height: 44px;
     }
 
     .c-menu--modal .c-menu__search input {

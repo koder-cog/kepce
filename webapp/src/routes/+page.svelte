@@ -105,7 +105,7 @@
                 },
                 {
                     "@type": "Menu",
-                    "@id": `https://kepce.org/?sehir=${timelineState.currentCity || "istanbul"}#menu`,
+                    "@id": "https://kepce.org/#menu",
                     name: `${cityName} KYK Günlük Yemek Menüsü`,
                     inLanguage: "tr-TR",
                     datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
@@ -121,6 +121,7 @@
     title={pageTitle}
     description={pageDescription}
     image={ogImage}
+    noindex={data?.noindex}
     schema={menuSchema}
 />
 
@@ -132,4 +133,7 @@
 
 <DailyHeader />
 <CalendarSelector />
-<TimelineView />
+<TimelineView
+    lastMenuDay={data?.lastMenuDay}
+    isSummer={data?.isSummer}
+/>

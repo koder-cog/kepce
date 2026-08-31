@@ -105,6 +105,7 @@
     description={pageDescription}
     image={ogImage}
     canonical={canonicalUrl}
+    noindex={data?.noindex}
     schema={menuSchema}
 />
 
@@ -114,4 +115,7 @@
 
 <DailyHeader />
 <CalendarSelector />
-<TimelineView />
+<TimelineView
+    lastMenuDay={data?.lastMenuDay}
+    isSummer={data?.isSummer}
+/>

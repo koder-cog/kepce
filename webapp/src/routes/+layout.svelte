@@ -284,13 +284,35 @@
 				}
 			};
 
+			window.__kepceHandleBack = () => {
+				// 1. Standart Modal / Lightbox / Dialog kontrolü
+				const openModal = document.querySelector(".c-modal--open, .modal.is-open, dialog[open]");
+				if (openModal) {
+					const escEvent = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });
+					document.dispatchEvent(escEvent);
+					window.dispatchEvent(escEvent);
+					return true;
+				}
+
+				// 2. Mobil Dropdown / Bottom Sheet kontrolü
+				const openSheet = document.querySelector(".c-menu--modal.c-menu--open, .c-menu__overlay--open, .c-menu--open");
+				if (openSheet) {
+					const escEvent = new KeyboardEvent("keydown", { key: "Escape", code: "Escape", bubbles: true, cancelable: true });
+					document.dispatchEvent(escEvent);
+					window.dispatchEvent(escEvent);
+					return true;
+				}
+
+				return false;
+			};
+
 			// Çift Kilitli Modal / Overlay İzleyicisi (Tab-Bar senkronizasyonu)
 			let overlayDebounce;
 			const checkOverlays = () => {
 				clearTimeout(overlayDebounce);
 				overlayDebounce = setTimeout(() => {
 					const hasOpenOverlay = !!document.querySelector(
-						".c-modal--open, .modal.is-open, dialog[open], .modal-open, .c-dropdown--open"
+						".c-modal--open, .modal.is-open, dialog[open], .modal-open, .c-menu--modal.c-menu--open, .c-menu__overlay--open"
 					);
 					nativeBridge.sendOverlayToggle(hasOpenOverlay);
 				}, 50);

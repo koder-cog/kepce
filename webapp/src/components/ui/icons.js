@@ -95,6 +95,7 @@ import upload from '../../assets/icons/upload.svg?raw';
 import trophy from '../../assets/icons/trophy.svg?raw';
 import menuHamburger from '../../assets/icons/menu-hamburger.svg?raw';
 import laptop from '../../assets/icons/laptop.svg?raw';
+import icecream from '../../assets/icons/icecream.svg?raw';
 
 
 /**
@@ -208,6 +209,8 @@ export const icons = {
   upload,
   trophy,
   menuHamburger,
+  icecream,
+  'ice-cream': icecream,
   alert: warning, // Fallback for code using 'alert' (maps to warning)
   alertTriangle: warning,
   'alert-triangle': warning,

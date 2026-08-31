@@ -75,6 +75,8 @@
     font-family: var(--font-body);
     font-weight: var(--font-weight-medium);
     font-size: var(--text-sm);
+    color: var(--color-text);
+    text-decoration: none;
     position: relative;
     transition: transform var(--dur-default) var(--ease-spatial-default),
       background-color var(--dur-fast) var(--ease-standard),
@@ -170,6 +172,8 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-lg);
     background: var(--color-card);
+    color: var(--color-text);
+    text-decoration: none;
     cursor: pointer;
     transition: transform var(--dur-default) var(--ease-spatial-default),
       background-color var(--dur-fast) var(--ease-standard),
