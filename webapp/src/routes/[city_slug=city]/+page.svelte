@@ -105,7 +105,7 @@
     description={pageDescription}
     image={ogImage}
     canonical={canonicalUrl}
-    noindex={data?.noindex}
+    noindex={false}
     schema={menuSchema}
 />
 

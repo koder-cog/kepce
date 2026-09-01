@@ -63,56 +63,61 @@
             : "https://kepce.org/og_image.png",
     );
 
+    let canonicalUrl = "https://kepce.org";
+
     let menuSchema = $derived.by(() => {
         const menus = timelineState.menusState || [];
-        if (!menus || menus.length === 0) return null;
+        const baseGraphs = [
+            {
+                "@type": "WebSite",
+                "@id": "https://kepce.org/#website",
+                url: "https://kepce.org/",
+                name: "Kepçe",
+                description:
+                    "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
+                inLanguage: "tr-TR",
+            },
+            {
+                "@type": "Organization",
+                "@id": "https://kepce.org/#organization",
+                name: "Kepçe",
+                url: "https://kepce.org/",
+                logo: "https://kepce.org/icon-512.png",
+            },
+        ];
 
-        const sections = menus.map((m) => {
-            const dishes = m.items || m.dishes || [];
-            const dishNames = dishes
-                .map((d) => (typeof d === "string" ? d : d.name))
-                .filter(Boolean);
-            const mealTitle =
-                m.meal_type === "breakfast" ? "Kahvaltı" : "Akşam Yemeği";
-            return {
-                "@type": "MenuSection",
-                name: mealTitle,
-                hasMenuItem: dishNames.map((name) => ({
-                    "@type": "MenuItem",
-                    name: name,
-                })),
-            };
-        });
+        if (menus && menus.length > 0) {
+            const sections = menus.map((m) => {
+                const dishes = m.items || m.dishes || [];
+                const dishNames = dishes
+                    .map((d) => (typeof d === "string" ? d : d.name))
+                    .filter(Boolean);
+                const mealTitle =
+                    m.meal_type === "breakfast" ? "Kahvaltı" : "Akşam Yemeği";
+                return {
+                    "@type": "MenuSection",
+                    name: mealTitle,
+                    hasMenuItem: dishNames.map((name) => ({
+                        "@type": "MenuItem",
+                        name: name,
+                    })),
+                };
+            });
+
+            baseGraphs.push({
+                "@type": "Menu",
+                "@id": "https://kepce.org/#menu",
+                name: `${cityName} KYK Günlük Yemek Menüsü`,
+                inLanguage: "tr-TR",
+                datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
+                dateModified: now.toISOString(),
+                hasMenuSection: sections,
+            });
+        }
 
         return {
             "@context": "https://schema.org",
-            "@graph": [
-                {
-                    "@type": "WebSite",
-                    "@id": "https://kepce.org/#website",
-                    url: "https://kepce.org/",
-                    name: "Kepçe",
-                    description:
-                        "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
-                    inLanguage: "tr-TR",
-                },
-                {
-                    "@type": "Organization",
-                    "@id": "https://kepce.org/#organization",
-                    name: "Kepçe",
-                    url: "https://kepce.org/",
-                    logo: "https://kepce.org/icon-512.png",
-                },
-                {
-                    "@type": "Menu",
-                    "@id": "https://kepce.org/#menu",
-                    name: `${cityName} KYK Günlük Yemek Menüsü`,
-                    inLanguage: "tr-TR",
-                    datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
-                    dateModified: now.toISOString(),
-                    hasMenuSection: sections,
-                },
-            ],
+            "@graph": baseGraphs,
         };
     });
 </script>
@@ -121,7 +126,8 @@
     title={pageTitle}
     description={pageDescription}
     image={ogImage}
-    noindex={data?.noindex}
+    canonical={canonicalUrl}
+    noindex={false}
     schema={menuSchema}
 />
 

@@ -28,9 +28,16 @@ export async function load({ params, setHeaders }) {
 		'cache-control': 'public, s-maxage=120, stale-while-revalidate=600'
 	});
 
-	const payload = await apiGet(
-		`/api/v1/menus?city=${encodeURIComponent(city_slug)}&date=${date}`
-	);
+	const monthStr = date.slice(0, 7);
+
+	const [payload, monthDays] = await Promise.all([
+		apiGet(`/api/v1/menus?city=${encodeURIComponent(city_slug)}&date=${date}`),
+		apiGet(
+			`/api/v1/public/menus/days?month=${encodeURIComponent(monthStr)}`,
+			{ fallback: [], timeout: 3000 }
+		).catch(() => [])
+	]);
+
 	const menus = normalizeMenuList(payload);
 
 	if (!Array.isArray(menus) || menus.length === 0) {
@@ -41,28 +48,19 @@ export async function load({ params, setHeaders }) {
 	menus.sort((a, b) => (a.meal_type === 'breakfast' ? -1 : 1) - (b.meal_type === 'breakfast' ? -1 : 1));
 
 	// Gerçek komşu menü günleri navigasyonu (404 zincirini önler).
-	const monthStr = date.slice(0, 7);
 	let prevDate = null;
 	let nextDate = null;
 
-	try {
-		const monthDays = await apiGet(
-			`/api/v1/public/menus/days?month=${encodeURIComponent(monthStr)}`,
-			{ fallback: [], timeout: 5000 }
-		);
-		const cityDays = (Array.isArray(monthDays) ? monthDays : [])
-			.filter((d) => d.city_slug === city_slug)
-			.map((d) => d.date);
+	const cityDays = (Array.isArray(monthDays) ? monthDays : [])
+		.filter((d) => d.city_slug === city_slug)
+		.map((d) => d.date);
 
-		const currentIndex = cityDays.indexOf(date);
-		if (currentIndex > 0) {
-			prevDate = cityDays[currentIndex - 1];
-		}
-		if (currentIndex >= 0 && currentIndex < cityDays.length - 1) {
-			nextDate = cityDays[currentIndex + 1];
-		}
-	} catch {
-		// Fallback sessizce null bırakır
+	const currentIndex = cityDays.indexOf(date);
+	if (currentIndex > 0) {
+		prevDate = cityDays[currentIndex - 1];
+	}
+	if (currentIndex >= 0 && currentIndex < cityDays.length - 1) {
+		nextDate = cityDays[currentIndex + 1];
 	}
 
 	return {

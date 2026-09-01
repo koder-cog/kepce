@@ -57,7 +57,7 @@ export async function load({ url, setHeaders }) {
 		prerenderedCity: city,
 		prerenderedDate: date,
 		isSummer,
-		noindex: !hasMenus,
+		noindex: false,
 		lastMenuDay
 	};
 }

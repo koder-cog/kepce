@@ -63,7 +63,7 @@ export async function load({ params, setHeaders }) {
 		date,
 		menus,
 		isSummer,
-		noindex: !hasMenus,
+		noindex: false,
 		lastMenuDay
 	};
 }
