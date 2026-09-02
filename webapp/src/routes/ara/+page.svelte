@@ -1576,7 +1576,7 @@
               </a>
               <p class="c-search-item__content">
                 {#if dateBadge}
-                  <span class="c-search-item__date-badge">{dateBadge} —</span>
+                  <span class="c-search-item__date-badge">{dateBadge} -</span>
                 {/if}
                 {@html highlightQuery(item.content, data.query)}
               </p>

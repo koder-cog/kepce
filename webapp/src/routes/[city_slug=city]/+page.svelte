@@ -39,7 +39,7 @@
     const now = new Date();
     const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
 
-    let pageTitle = $derived(`Bugünkü ${cityName} KYK Yemek Menüsü (2026-2027) — Güncel Tabldot | Kepçe`);
+    let pageTitle = $derived(`Bugünkü ${cityName} KYK Yemek Menüsü (2026-2027) - Güncel Tabldot | Kepçe`);
     let pageDescription = $derived(
         `Bugünkü ${cityName} KYK yurt yemekhane menüsü: ${todayTurkishStr} kahvaltı ve akşam yemeği tabldot listesi, kalori ve beslenme yardımı detayları.`
     );

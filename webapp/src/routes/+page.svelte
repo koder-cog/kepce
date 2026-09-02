@@ -48,14 +48,14 @@
 
     let pageTitle = $derived(
         timelineState.currentCity
-            ? `${cityName} KYK Yemek Menüsü | Kepçe`
-            : "Bugün KYK'da Ne Yemek Var? | Kepçe",
+            ? `${cityName} KYK Yemek Menüsü (Günlük Tabldot) | Kepçe`
+            : "KYK Yemek Menüsü - Bugün KYK'da Ne Yemek Var? | Kepçe",
     );
 
     let pageDescription = $derived(
         timelineState.currentCity
-            ? `${todayTurkishStr} ${cityName} KYK yemekhane menüsü, kalori değerleri ve beslenme yardımı detayları.`
-            : `${todayTurkishStr} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü, kalori değerleri ve beslenme yardımı detayları.`,
+            ? `${todayTurkishStr} ${cityName} KYK yurt yemekhane menüsü: Güncel kahvaltı ve akşam tabldot listesi, kalori ve beslenme yardımı detayları.`
+            : `${todayTurkishStr} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il güncel tabldot listeleri, kalori ve beslenme yardımı detayları.`,
     );
     let ogImage = $derived(
         timelineState.currentCity
@@ -152,6 +152,11 @@
                 {name}
             </a>
         {/each}
+    </div>
+    <div class="city-seo-directory__about">
+        <p>
+            Kepçe; 81 ildeki Gençlik ve Spor Bakanlığı (GSB) KYK yurtlarında çıkan günlük kahvaltı ve akşam yemeği tabldot menülerini, kalori değerlerini ve beslenme yardımı detaylarını reklamsız olarak sunar.
+        </p>
     </div>
     <div class="city-seo-directory__guides">
         <a href="/kyk-yemek-saatleri" class="city-seo-directory__guide-link">

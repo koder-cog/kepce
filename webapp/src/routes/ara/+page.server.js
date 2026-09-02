@@ -130,7 +130,7 @@ function matchKepceIntent(query) {
   if (clean === "kepce" || clean === "kepçe" || clean === "kepce nedir" || clean === "kepçe nedir") {
     return {
       type: "module",
-      title: "Kepçe — Açık Menü ve Yemekhane Platformu",
+      title: "Kepçe - Açık Menü ve Yemekhane Platformu",
       subtitle: "Hakkında",
       description: "81 ilin KYK yurt yemekhanesi menüleri, beslenme saatleri, öğrenci yorumları ve şeffaf beslenme yardımı takibi.",
       href: "/hakkinda",

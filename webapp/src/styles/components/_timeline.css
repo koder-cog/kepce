@@ -431,6 +431,14 @@
   transform: scale(0.98);
 }
 
+.city-seo-directory__about {
+  margin-bottom: var(--space-sm);
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  line-height: var(--line-height-relaxed);
+}
+
 .city-seo-directory__guides {
   display: flex;
   flex-wrap: wrap;

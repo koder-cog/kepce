@@ -2,8 +2,8 @@
   import { page } from "$app/stores";
 
   let {
-    title = "Bugün KYK'da Ne Yemek Var? Günlük Menüler | Kepçe",
-    description = "Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. Reklamsız, güncel yemekhane listeleri ve öğrenci değerlendirmeleri.",
+    title = "KYK Yemek Menüsü - Bugün KYK'da Ne Yemek Var? | Kepçe",
+    description = "Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il reklamsız, güncel tabldot listeleri, kalori ve beslenme yardımı detayları.",
     image = "https://kepce.org/og_image.png",
     type = "website",
     canonical = null,
@@ -30,8 +30,14 @@
           "@id": `${BASE_URL}/#website`,
           url: `${BASE_URL}/`,
           name: "Kepçe",
+          alternateName: ["Kepçe KYK", "KYK Yemek Menüsü", "KYK Yemek Listesi"],
           description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
           inLanguage: "tr-TR",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: `${BASE_URL}/ara?q={search_term_string}`,
+            "query-input": "required name=search_term_string",
+          },
         },
         {
           "@type": "Organization",
@@ -58,7 +64,7 @@
   {/if}
 
   <!-- Open Graph / Facebook -->
-  <meta property="og:site_name" content="Kepçe" />
+  <meta property="og:site_name" content="Kepçe - KYK Yemek Menüsü" />
   <meta property="og:locale" content="tr_TR" />
   <meta property="og:type" content={type} />
   <meta property="og:url" content={canonicalUrl} />
