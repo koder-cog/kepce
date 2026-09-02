@@ -119,14 +119,49 @@ function isRelevantInfobox(query, title) {
   return false;
 }
 
-// Wikidata P-kodu ve gereksiz URL temizliği
+// Gereksiz dış bağlantıları filtreleme ve sadeleştirme
 const JUNK_URL_PATTERNS = [/^P\d+$/, /^Q\d+$/, /musicbrainz/i];
 
 function cleanUrls(urls) {
-  return (urls || []).filter((link) => {
-    const t = (link.title || "").trim();
-    return !JUNK_URL_PATTERNS.some((p) => p.test(t));
-  });
+  if (!urls || urls.length === 0) return [];
+
+  const hasTrWiki = urls.some(
+    (u) =>
+      (u.url || "").includes("tr.wikipedia.org") ||
+      (u.title || "").toLowerCase() === "vikipedi",
+  );
+
+  return urls
+    .filter((link) => {
+      const t = (link.title || "").trim().toLowerCase();
+      const u = (link.url || "").toLowerCase();
+
+      if (JUNK_URL_PATTERNS.some((p) => p.test(t))) return false;
+      if (t === "wikidata" || u.includes("wikidata.org")) return false;
+      if (t.includes("musicbrainz") || u.includes("musicbrainz.org")) return false;
+
+      // Türkçe Vikipedi varsa İngilizce Vikipedi kopyasını gösterme
+      if (hasTrWiki && (u.includes("en.wikipedia.org") || t.includes("(en)"))) {
+        return false;
+      }
+
+      return true;
+    })
+    .map((link) => {
+      let title = link.title || "Kaynak";
+      const tLower = title.toLowerCase();
+      if (tLower.includes("official") || tLower.includes("resmî") || tLower.includes("resmi")) {
+        title = "Resmî site";
+      } else if (tLower.includes("wikipedia") || tLower.includes("vikipedi")) {
+        title = "Vikipedi";
+      } else if (tLower.includes("openstreetmap")) {
+        title = "Harita";
+      }
+      return {
+        ...link,
+        title,
+      };
+    });
 }
 
 // Nitelik etiketlerini insan diline ve kısa forma dönüştürme

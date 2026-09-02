@@ -574,31 +574,6 @@
   margin: 0;
 }
 
-.c-knowledge-badges {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
-}
-
-.c-knowledge-badge {
-  font-size: 0.75rem;
-  font-weight: 700;
-  color: var(--color-accent-primary);
-  background-color: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-accent-primary) 25%, transparent);
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.c-knowledge-badge--type {
-  color: var(--color-text-muted);
-  background-color: var(--color-surface-sunken);
-  border-color: var(--color-border);
-}
-
 /* 2A. Coğrafi Yer Vitrini (3'lü Vitrin) */
 .c-knowledge-showcase {
   display: grid;
@@ -628,6 +603,7 @@
 }
 
 @media (min-width: 680px) {
+
   .c-knowledge-tile--photo,
   .c-knowledge-tile--org-media {
     height: 100%;
@@ -640,11 +616,6 @@
   object-fit: cover;
   display: block;
   transition: transform var(--dur-normal) var(--ease-standard);
-}
-
-.c-knowledge-tile--photo:hover .c-knowledge-tile__img,
-.c-knowledge-tile--org-media:hover .c-knowledge-tile__img {
-  transform: scale(1.03);
 }
 
 .c-knowledge-tile__fallback {
@@ -993,38 +964,38 @@
   text-decoration: underline;
 }
 
-/* Nitelik Çipleri */
-.c-knowledge-chips {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 8px;
-  padding-top: var(--space-2xs);
-}
-
-.c-knowledge-chip {
-  background-color: var(--color-surface-sunken);
-  border: 1px solid var(--color-border);
-  border-radius: 14px;
-  padding: 8px 12px;
+/* Nitelik Listesi (Editoryal Tanım Listesi) */
+.c-knowledge-meta-list {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs) var(--space-lg);
+  margin: 0;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border);
 }
 
-.c-knowledge-chip__label {
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+.c-knowledge-meta-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--text-sm);
+  line-height: 1.4;
+}
+
+.c-knowledge-meta-label {
   color: var(--color-text-dim);
+  font-weight: 500;
 }
 
-.c-knowledge-chip__value {
-  font-size: 0.875rem;
-  font-weight: 700;
+.c-knowledge-meta-label::after {
+  content: ":";
+}
+
+.c-knowledge-meta-value {
   color: var(--color-text);
-  word-break: break-word;
-  line-height: 1.25;
+  font-weight: 600;
+  margin: 0;
 }
 
 /* 4. Dış Bağlantı Hapları Footer */

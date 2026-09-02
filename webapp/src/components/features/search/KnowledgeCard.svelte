@@ -33,19 +33,12 @@
   let hasValidPlace = $derived(entityType === "place" && !!place?.lat && !!place?.lon);
   let hasValidOrgMap = $derived(entityType === "organization" && !!place?.lat && !!place?.lon);
 
-  let typeBadgeLabel = $derived.by(() => {
-    if (entityType === "place") return "Coğrafi Konum";
-    if (entityType === "person") return "Biyografi";
-    if (entityType === "organization") return "Kurum";
-    return "Bilgi";
-  });
-
   // Dinamik alt başlık / unvan
   let subtitle = $derived.by(() => {
     if (entityType === "place") {
       if (place?.country) return place.country;
       const match = (infobox.content || "").match(/^([^,.]+)/);
-      return match ? match[1].trim() : "Coğrafi Konum";
+      return match ? match[1].trim() : "";
     }
     if (entityType === "person") {
       const text = infobox.content || "";
@@ -53,41 +46,26 @@
       if (parts.length > 1 && parts[1].trim().length > 3 && parts[1].trim().length < 60) {
         return parts[1].trim();
       }
-      return "Tarihî Şahsiyet / Biyografi";
+      return "";
     }
-    if (entityType === "organization") {
-      return "Kurum / Kuruluş";
-    }
-    return "Kavram / Nesne";
+    return "";
   });
 
-  // Kişi için en önemli 4 özet nitelik
-  let personQuickStats = $derived.by(() => {
-    if (entityType !== "person" || !infobox?.attributes) return [];
+  // En önemli 4 nitelik
+  let topAttributes = $derived.by(() => {
+    if (!infobox?.attributes) return [];
     return infobox.attributes.slice(0, 4);
   });
 </script>
 
 {#if infobox}
-  <article class="c-knowledge-panel c-knowledge-panel--{entityType}" aria-label="Bilgi Kartı">
+  <article class="c-knowledge-panel" aria-label="Bilgi Kartı">
     <!-- ── 1. ÜST BAŞLIK ────────────────────────────────────────── -->
     <header class="c-knowledge-header">
       <div class="c-knowledge-title-group">
         <h1 class="c-knowledge-title">{infobox.title}</h1>
-        <p class="c-knowledge-subtitle">{subtitle}</p>
-      </div>
-      <div class="c-knowledge-badges">
-        <span class="c-knowledge-badge c-knowledge-badge--type">
-          {typeBadgeLabel}
-        </span>
-        {#if infobox.engine}
-          <span class="c-knowledge-badge">
-            {infobox.engine === "wikipedia"
-              ? "Vikipedi"
-              : infobox.engine === "wikidata"
-                ? "Wikidata"
-                : infobox.engine}
-          </span>
+        {#if subtitle}
+          <p class="c-knowledge-subtitle">{subtitle}</p>
         {/if}
       </div>
     </header>
@@ -108,7 +86,7 @@
             />
           {:else}
             <div class="c-knowledge-tile__fallback">
-              <svg class="c-knowledge-fallback-svg" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+              <svg viewBox="0 0 24 24" width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5">
                 <path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 3L2 10h20L12 3z" />
               </svg>
             </div>
@@ -154,32 +132,32 @@
                 <span class="c-knowledge-widget__title">Hava durumu</span>
                 <span class="c-knowledge-weather-icon">
                   {#if getWeatherInfo(weather.weatherCode).iconType === "sun"}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-sun">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                       <circle cx="12" cy="12" r="4" />
                       <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
                     </svg>
                   {:else if getWeatherInfo(weather.weatherCode).iconType === "cloudSun"}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-cloud-sun">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2M17.66 6.34l1.41-1.41" />
                       <path d="M17.5 19H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 12 4.5 4.5 0 0 1 17.5 19z" />
                     </svg>
                   {:else if getWeatherInfo(weather.weatherCode).iconType === "rain"}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-rain">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M17.5 14H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 7 4.5 4.5 0 0 1 17.5 14z" />
                       <path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3" />
                     </svg>
                   {:else if getWeatherInfo(weather.weatherCode).iconType === "snow"}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-snow">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M17.5 14H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 7 4.5 4.5 0 0 1 17.5 14z" />
                       <path d="M8 18h.01M12 18h.01M16 18h.01M10 21h.01M14 21h.01" />
                     </svg>
                   {:else if getWeatherInfo(weather.weatherCode).iconType === "storm"}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-storm">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M17.5 13H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 6 4.5 4.5 0 0 1 17.5 13z" />
                       <path d="M13 13l-3 5h4l-2 5" />
                     </svg>
                   {:else}
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-fog">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                       <path d="M4 14h16M4 18h16M6 10h12" />
                     </svg>
                   {/if}
@@ -221,7 +199,7 @@
         </div>
       </div>
 
-      <!-- Altta Detaylar -->
+      <!-- Altta Doğal Metin ve Nitelikler -->
       <div class="c-knowledge-details">
         {#if infobox.content}
           <p class="c-knowledge-details__summary">
@@ -239,15 +217,15 @@
           </p>
         {/if}
 
-        {#if infobox.attributes && infobox.attributes.length > 0}
-          <div class="c-knowledge-chips">
-            {#each infobox.attributes.slice(0, 6) as attr}
-              <div class="c-knowledge-chip">
-                <span class="c-knowledge-chip__label">{attr.label}</span>
-                <span class="c-knowledge-chip__value">{attr.value}</span>
+        {#if topAttributes.length > 0}
+          <dl class="c-knowledge-meta-list">
+            {#each topAttributes as attr}
+              <div class="c-knowledge-meta-item">
+                <dt class="c-knowledge-meta-label">{attr.label}</dt>
+                <dd class="c-knowledge-meta-value">{attr.value}</dd>
               </div>
             {/each}
-          </div>
+          </dl>
         {/if}
       </div>
 
@@ -283,21 +261,21 @@
             </p>
           {/if}
 
-          {#if personQuickStats.length > 0}
-            <div class="c-knowledge-chips">
-              {#each personQuickStats as stat}
-                <div class="c-knowledge-chip">
-                  <span class="c-knowledge-chip__label">{stat.label}</span>
-                  <span class="c-knowledge-chip__value">{stat.value}</span>
+          {#if topAttributes.length > 0}
+            <dl class="c-knowledge-meta-list">
+              {#each topAttributes as attr}
+                <div class="c-knowledge-meta-item">
+                  <dt class="c-knowledge-meta-label">{attr.label}</dt>
+                  <dd class="c-knowledge-meta-value">{attr.value}</dd>
                 </div>
               {/each}
-            </div>
+            </dl>
           {/if}
         </div>
       </div>
 
     {:else if hasValidOrgMap}
-      <!-- 2C. Kurum / Üniversite: Logo/Kampüs + Yerleşke Haritası -->
+      <!-- 2C. Kurum: Medya + Harita -->
       <div class="c-knowledge-org-showcase">
         {#if infobox.imgSrc && !imgError}
           <div class="c-knowledge-tile c-knowledge-tile--org-media">
@@ -321,7 +299,8 @@
           <div class="c-knowledge-tile__map-overlay">
             <span class="c-knowledge-tile__map-pin">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 3L2 10h20L12 3z" />
+                <path d="M12 21s-6-5.33-6-10a6 6 0 0 1 12 0c0 4.67-6 10-6 10z" />
+                <circle cx="12" cy="11" r="2.5" />
               </svg>
               <span>{infobox.title}</span>
             </span>
@@ -344,15 +323,15 @@
         {#if infobox.content}
           <p class="c-knowledge-details__summary">{infobox.content}</p>
         {/if}
-        {#if infobox.attributes && infobox.attributes.length > 0}
-          <div class="c-knowledge-chips">
-            {#each infobox.attributes.slice(0, 6) as attr}
-              <div class="c-knowledge-chip">
-                <span class="c-knowledge-chip__label">{attr.label}</span>
-                <span class="c-knowledge-chip__value">{attr.value}</span>
+        {#if topAttributes.length > 0}
+          <dl class="c-knowledge-meta-list">
+            {#each topAttributes as attr}
+              <div class="c-knowledge-meta-item">
+                <dt class="c-knowledge-meta-label">{attr.label}</dt>
+                <dd class="c-knowledge-meta-value">{attr.value}</dd>
               </div>
             {/each}
-          </div>
+          </dl>
         {/if}
       </div>
 
@@ -386,31 +365,31 @@
               {/if}
             </p>
           {/if}
-          {#if infobox.attributes && infobox.attributes.length > 0}
-            <div class="c-knowledge-chips">
-              {#each infobox.attributes.slice(0, 6) as attr}
-                <div class="c-knowledge-chip">
-                  <span class="c-knowledge-chip__label">{attr.label}</span>
-                  <span class="c-knowledge-chip__value">{attr.value}</span>
+          {#if topAttributes.length > 0}
+            <dl class="c-knowledge-meta-list">
+              {#each topAttributes as attr}
+                <div class="c-knowledge-meta-item">
+                  <dt class="c-knowledge-meta-label">{attr.label}</dt>
+                  <dd class="c-knowledge-meta-value">{attr.value}</dd>
                 </div>
               {/each}
-            </div>
+            </dl>
           {/if}
         </div>
       </div>
     {/if}
 
     <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI ───────────────────────────── -->
-    {#if infobox.urls && infobox.urls.length > 0}
+    {#if infobox.urls && infobox.urls.length > 1}
       <footer class="c-knowledge-footer">
-        {#each infobox.urls.slice(0, 5) as link}
+        {#each infobox.urls.slice(1, 4) as link}
           <a
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
             class="c-knowledge-pill-btn"
           >
-            <span>{link.title || "Kaynak"}</span>
+            <span>{link.title}</span>
             <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" class="c-knowledge-pill-arrow">
               <path d="M7 17L17 7M7 7h10v10" />
             </svg>
