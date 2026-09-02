@@ -5,6 +5,8 @@
   let { infobox } = $props();
 
   let imgError = $state(false);
+  let mapExpanded = $state(false);
+  let orgMapExpanded = $state(false);
 
   function handleImgError() {
     imgError = true;
@@ -76,7 +78,7 @@
     <!-- ── 2. VİTRİN VE İÇERİK DÜZENİ ───────────────────────────── -->
     {#if hasValidPlace}
       <!-- 2A. Coğrafi Yer: 3 Parçalı Vitrin (Resim + Retina Harita + Hava Durumu) -->
-      <div class="c-knowledge-showcase">
+      <div class="c-knowledge-showcase" class:is-map-expanded={mapExpanded}>
         <!-- Fotoğraf -->
         <div class="c-knowledge-tile c-knowledge-tile--photo">
           {#if infobox.imgSrc && !imgError}
@@ -94,8 +96,8 @@
           {/if}
         </div>
 
-        <!-- Yüksek Çözünürlüklü Vektör Harita -->
-        <MapCard lat={place.lat} lon={place.lon} zoom={12} />
+        <!-- Yüksek Çözünürlüklü Morfoz Vektör Harita -->
+        <MapCard lat={place.lat} lon={place.lon} zoom={12} bind:isExpanded={mapExpanded} />
 
         <!-- Sağ İkili Yığın (Hava Durumu + Nasıl Gidilir) -->
         <div class="c-knowledge-stack">
@@ -223,7 +225,7 @@
 
     {:else if hasValidOrgMap}
       <!-- 2C. Kurum: Medya + Yerleşke Haritası -->
-      <div class="c-knowledge-org-showcase">
+      <div class="c-knowledge-org-showcase" class:is-map-expanded={orgMapExpanded}>
         {#if infobox.imgSrc && !imgError}
           <div class="c-knowledge-tile c-knowledge-tile--org-media">
             <img
@@ -235,7 +237,7 @@
             />
           </div>
         {/if}
-        <MapCard lat={place.lat} lon={place.lon} zoom={14} />
+        <MapCard lat={place.lat} lon={place.lon} zoom={14} bind:isExpanded={orgMapExpanded} />
       </div>
 
       <div class="c-knowledge-details">
