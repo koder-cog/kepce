@@ -51,10 +51,10 @@
     return "";
   });
 
-  // En önemli 4 nitelik
-  let topAttributes = $derived.by(() => {
+  // En önemli 4 ila 6 özet nitelik
+  let displayAttributes = $derived.by(() => {
     if (!infobox?.attributes) return [];
-    return infobox.attributes.slice(0, 4);
+    return infobox.attributes.slice(0, 6);
   });
 </script>
 
@@ -170,8 +170,40 @@
               {#if weather.daily && weather.daily.length > 0}
                 <div class="c-knowledge-widget__forecast">
                   {#each weather.daily as day}
+                    {@const dayWeather = getWeatherInfo(day.code)}
                     <div class="c-knowledge-forecast-item">
                       <span class="f-day">{formatDayName(day.date)}</span>
+                      <span class="f-icon" title={dayWeather.label}>
+                        {#if dayWeather.iconType === "sun"}
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="4" />
+                            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2" />
+                          </svg>
+                        {:else if dayWeather.iconType === "cloudSun"}
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.5 19H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 12 4.5 4.5 0 0 1 17.5 19z" />
+                          </svg>
+                        {:else if dayWeather.iconType === "rain"}
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.5 14H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 7 4.5 4.5 0 0 1 17.5 14z" />
+                            <path d="M8 17l-1 2M12 17l-1 2M16 17l-1 2" />
+                          </svg>
+                        {:else if dayWeather.iconType === "snow"}
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.5 14H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 7 4.5 4.5 0 0 1 17.5 14z" />
+                            <path d="M9 18h.01M15 18h.01" />
+                          </svg>
+                        {:else if dayWeather.iconType === "storm"}
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M17.5 13H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 6 4.5 4.5 0 0 1 17.5 13z" />
+                            <path d="M13 13l-2 4h3l-1 4" />
+                          </svg>
+                        {:else}
+                          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 14h16M6 10h12" />
+                          </svg>
+                        {/if}
+                      </span>
                       <span class="f-temp">{day.maxTemp}°</span>
                     </div>
                   {/each}
@@ -199,7 +231,7 @@
         </div>
       </div>
 
-      <!-- Altta Doğal Metin ve Nitelikler -->
+      <!-- Altta Detaylar ve Sindirilebilir Hap Bilgiler -->
       <div class="c-knowledge-details">
         {#if infobox.content}
           <p class="c-knowledge-details__summary">
@@ -217,15 +249,15 @@
           </p>
         {/if}
 
-        {#if topAttributes.length > 0}
-          <dl class="c-knowledge-meta-list">
-            {#each topAttributes as attr}
-              <div class="c-knowledge-meta-item">
-                <dt class="c-knowledge-meta-label">{attr.label}</dt>
-                <dd class="c-knowledge-meta-value">{attr.value}</dd>
+        {#if displayAttributes.length > 0}
+          <div class="c-knowledge-facts-grid">
+            {#each displayAttributes as attr}
+              <div class="c-knowledge-fact-item">
+                <span class="c-knowledge-fact-label">{attr.label}</span>
+                <span class="c-knowledge-fact-value">{attr.value}</span>
               </div>
             {/each}
-          </dl>
+          </div>
         {/if}
       </div>
 
@@ -261,15 +293,15 @@
             </p>
           {/if}
 
-          {#if topAttributes.length > 0}
-            <dl class="c-knowledge-meta-list">
-              {#each topAttributes as attr}
-                <div class="c-knowledge-meta-item">
-                  <dt class="c-knowledge-meta-label">{attr.label}</dt>
-                  <dd class="c-knowledge-meta-value">{attr.value}</dd>
+          {#if displayAttributes.length > 0}
+            <div class="c-knowledge-facts-grid">
+              {#each displayAttributes as attr}
+                <div class="c-knowledge-fact-item">
+                  <span class="c-knowledge-fact-label">{attr.label}</span>
+                  <span class="c-knowledge-fact-value">{attr.value}</span>
                 </div>
               {/each}
-            </dl>
+            </div>
           {/if}
         </div>
       </div>
@@ -323,15 +355,15 @@
         {#if infobox.content}
           <p class="c-knowledge-details__summary">{infobox.content}</p>
         {/if}
-        {#if topAttributes.length > 0}
-          <dl class="c-knowledge-meta-list">
-            {#each topAttributes as attr}
-              <div class="c-knowledge-meta-item">
-                <dt class="c-knowledge-meta-label">{attr.label}</dt>
-                <dd class="c-knowledge-meta-value">{attr.value}</dd>
+        {#if displayAttributes.length > 0}
+          <div class="c-knowledge-facts-grid">
+            {#each displayAttributes as attr}
+              <div class="c-knowledge-fact-item">
+                <span class="c-knowledge-fact-label">{attr.label}</span>
+                <span class="c-knowledge-fact-value">{attr.value}</span>
               </div>
             {/each}
-          </dl>
+          </div>
         {/if}
       </div>
 
@@ -365,21 +397,21 @@
               {/if}
             </p>
           {/if}
-          {#if topAttributes.length > 0}
-            <dl class="c-knowledge-meta-list">
-              {#each topAttributes as attr}
-                <div class="c-knowledge-meta-item">
-                  <dt class="c-knowledge-meta-label">{attr.label}</dt>
-                  <dd class="c-knowledge-meta-value">{attr.value}</dd>
+          {#if displayAttributes.length > 0}
+            <div class="c-knowledge-facts-grid">
+              {#each displayAttributes as attr}
+                <div class="c-knowledge-fact-item">
+                  <span class="c-knowledge-fact-label">{attr.label}</span>
+                  <span class="c-knowledge-fact-value">{attr.value}</span>
                 </div>
               {/each}
-            </dl>
+            </div>
           {/if}
         </div>
       </div>
     {/if}
 
-    <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI ───────────────────────────── -->
+    <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI (Yalnızca Resmî Site / Harita) ── -->
     {#if infobox.urls && infobox.urls.length > 1}
       <footer class="c-knowledge-footer">
         {#each infobox.urls.slice(1, 4) as link}

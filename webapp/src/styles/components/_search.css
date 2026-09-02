@@ -808,6 +808,14 @@
   text-transform: capitalize;
 }
 
+.c-knowledge-forecast-item .f-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-dim);
+  height: 16px;
+}
+
 .c-knowledge-forecast-item .f-temp {
   font-size: 0.7rem;
   font-weight: 700;
@@ -964,38 +972,37 @@
   text-decoration: underline;
 }
 
-/* Nitelik Listesi (Editoryal Tanım Listesi) */
-.c-knowledge-meta-list {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--space-xs) var(--space-lg);
-  margin: 0;
+/* Sindirilebilir Hap Bilgi Kartları (Facts Grid) */
+.c-knowledge-facts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
   padding-top: var(--space-xs);
-  border-top: 1px solid var(--color-border);
 }
 
-.c-knowledge-meta-item {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: var(--text-sm);
-  line-height: 1.4;
+.c-knowledge-fact-item {
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
-.c-knowledge-meta-label {
-  color: var(--color-text-dim);
+.c-knowledge-fact-label {
+  font-size: 0.75rem;
   font-weight: 500;
+  color: var(--color-text-dim);
+  line-height: 1.2;
 }
 
-.c-knowledge-meta-label::after {
-  content: ":";
-}
-
-.c-knowledge-meta-value {
+.c-knowledge-fact-value {
+  font-size: 0.9rem;
+  font-weight: 700;
   color: var(--color-text);
-  font-weight: 600;
-  margin: 0;
+  word-break: break-word;
+  line-height: 1.25;
 }
 
 /* 4. Dış Bağlantı Hapları Footer */

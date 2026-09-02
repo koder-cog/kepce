@@ -1,105 +1,119 @@
-import dice from '../../assets/icons/dice.svg?raw';
-import voteUp from '../../assets/icons/vote-up.svg?raw';
-import voteUpFilled from '../../assets/icons/vote-up-filled.svg?raw';
-import voteDown from '../../assets/icons/vote-down.svg?raw';
-import voteDownFilled from '../../assets/icons/vote-down-filled.svg?raw';
-import chevronDown from '../../assets/icons/chevron-down.svg?raw';
-import chevronUp from '../../assets/icons/chevron-up.svg?raw';
-import chevronLeft from '../../assets/icons/chevron-left.svg?raw';
-import chevronRight from '../../assets/icons/chevron-right.svg?raw';
-import chat from '../../assets/icons/chat.svg?raw';
-import warning from '../../assets/icons/warning.svg?raw';
-import strongLanguage from '../../assets/icons/strong-language.svg?raw';
-import info from '../../assets/icons/info.svg?raw';
-import infoCritical from '../../assets/icons/info-critical.svg?raw';
-import user from '../../assets/icons/user.svg?raw';
-import settings from '../../assets/icons/settings.svg?raw';
-import logout from '../../assets/icons/logout.svg?raw';
-import login from '../../assets/icons/login.svg?raw';
-import moon from '../../assets/icons/moon.svg?raw';
-import sun from '../../assets/icons/sun.svg?raw';
-import externalLink from '../../assets/icons/external-link.svg?raw';
-import logo from '../../assets/icons/logo.svg?raw';
-import logoSmall from '../../assets/icons/logo-small.svg?raw';
-import logoExperimental from '../../assets/icons/logo-experimental.svg?raw';
-import logoSmallExperimental from '../../assets/icons/logo-small-experimental.svg?raw';
-import system from '../../assets/icons/system.svg?raw';
-import verified from '../../assets/icons/verified.svg?raw';
-import star from '../../assets/icons/star.svg?raw';
-import starFilled from '../../assets/icons/star-filled.svg?raw';
-import starFilledHalfLeft from '../../assets/icons/star-filled-half-left.svg?raw';
-import starFilledHalfRight from '../../assets/icons/star-filled-half-right.svg?raw';
-import menuMissing from '../../assets/icons/menu-missing.svg?raw';
-import crossSmall from '../../assets/icons/cross-small.svg?raw';
-import avatarEmpty from '../../assets/icons/avatar-empty.svg?raw';
-import calendar from '../../assets/icons/calendar.svg?raw';
-import noConnection from '../../assets/icons/no-connection.svg?raw';
-import votedUpMore from '../../assets/icons/voted-upmore.svg?raw';
-import votedDownMore from '../../assets/icons/voted-downmore.svg?raw';
-import votedEqual from '../../assets/icons/voted-equal.svg?raw';
-import votedNone from '../../assets/icons/voted-none.svg?raw';
-import cards from '../../assets/icons/cards.svg?raw';
-import check from '../../assets/icons/check.svg?raw';
-import wheat from '../../assets/icons/wheat.svg?raw';
-import utensils from '../../assets/icons/utensils.svg?raw';
-import keyboard from '../../assets/icons/keyboard.svg?raw';
-import ghost from '../../assets/icons/ghost.svg?raw';
-import timeout from '../../assets/icons/timeout.svg?raw';
-import creditCard from '../../assets/icons/credit-card.svg?raw';
-import server from '../../assets/icons/server.svg?raw';
-import bread from '../../assets/icons/bread.svg?raw';
-import combine from '../../assets/icons/combine.svg?raw';
-import split from '../../assets/icons/split.svg?raw';
-import edit from '../../assets/icons/edit.svg?raw';
-import soup from '../../assets/icons/soup.svg?raw';
-import meat from '../../assets/icons/meat.svg?raw';
-import fish from '../../assets/icons/fish.svg?raw';
-import egg from '../../assets/icons/egg.svg?raw';
-import dessert from '../../assets/icons/dessert.svg?raw';
-import tea from '../../assets/icons/tea.svg?raw';
-import garlic from '../../assets/icons/garlic.svg?raw';
-import pepper from '../../assets/icons/pepper.svg?raw';
-import nut from '../../assets/icons/nut.svg?raw';
-import salami from '../../assets/icons/salami.svg?raw';
-import commentNone from '../../assets/icons/comment-none.svg?raw';
-import eyeLooking from '../../assets/icons/eye-looking.svg?raw';
-import eyeNotLooking from '../../assets/icons/eye-not-looking.svg?raw';
-import share from '../../assets/icons/share.svg?raw';
-import more from '../../assets/icons/more.svg?raw';
-import puzzlePiece from '../../assets/icons/puzzle-piece.svg?raw';
-import send from '../../assets/icons/send.svg?raw';
-import key from '../../assets/icons/key.svg?raw';
-import usage from '../../assets/icons/usage.svg?raw';
-import trash from '../../assets/icons/trash.svg?raw';
+// Actions
+import attach from '../../assets/icons/actions/attach.svg?raw';
+import check from '../../assets/icons/actions/check.svg?raw';
+import checkCircle from '../../assets/icons/actions/check-circle.svg?raw';
+import combine from '../../assets/icons/actions/combine.svg?raw';
+import copy from '../../assets/icons/actions/copy.svg?raw';
+import crossSmall from '../../assets/icons/actions/cross-small.svg?raw';
+import download from '../../assets/icons/actions/download.svg?raw';
+import edit from '../../assets/icons/actions/edit.svg?raw';
+import login from '../../assets/icons/actions/login.svg?raw';
+import logout from '../../assets/icons/actions/logout.svg?raw';
+import minusSquare from '../../assets/icons/actions/minus-square.svg?raw';
+import plusCircle from '../../assets/icons/actions/plus-circle.svg?raw';
+import plusSquare from '../../assets/icons/actions/plus-square.svg?raw';
+import redo from '../../assets/icons/actions/redo.svg?raw';
+import refresh from '../../assets/icons/actions/refresh.svg?raw';
+import search from '../../assets/icons/actions/search.svg?raw';
+import send from '../../assets/icons/actions/send.svg?raw';
+import share from '../../assets/icons/actions/share.svg?raw';
+import split from '../../assets/icons/actions/split.svg?raw';
+import stop from '../../assets/icons/actions/stop.svg?raw';
+import trash from '../../assets/icons/actions/trash.svg?raw';
+import upload from '../../assets/icons/actions/upload.svg?raw';
+
+// Navigation
+import chevronDown from '../../assets/icons/navigation/chevron-down.svg?raw';
+import chevronLeft from '../../assets/icons/navigation/chevron-left.svg?raw';
+import chevronRight from '../../assets/icons/navigation/chevron-right.svg?raw';
+import chevronUp from '../../assets/icons/navigation/chevron-up.svg?raw';
+import externalLink from '../../assets/icons/navigation/external-link.svg?raw';
+import list from '../../assets/icons/navigation/list.svg?raw';
+import menuHamburger from '../../assets/icons/navigation/menu-hamburger.svg?raw';
+import more from '../../assets/icons/navigation/more.svg?raw';
+
+// Status
+import info from '../../assets/icons/status/info.svg?raw';
+import infoCritical from '../../assets/icons/status/info-critical.svg?raw';
+import lockClose from '../../assets/icons/status/lock-close.svg?raw';
+import lockOpen from '../../assets/icons/status/lock-open.svg?raw';
+import noConnection from '../../assets/icons/status/no-connection.svg?raw';
+import strongLanguage from '../../assets/icons/status/strong-language.svg?raw';
+import timeout from '../../assets/icons/status/timeout.svg?raw';
+import verified from '../../assets/icons/status/verified.svg?raw';
+import warning from '../../assets/icons/status/warning.svg?raw';
+
+// Weather
+import moon from '../../assets/icons/weather/moon.svg?raw';
+import sun from '../../assets/icons/weather/sun.svg?raw';
+
+// Food
+import bread from '../../assets/icons/food/bread.svg?raw';
+import dessert from '../../assets/icons/food/dessert.svg?raw';
+import egg from '../../assets/icons/food/egg.svg?raw';
+import fish from '../../assets/icons/food/fish.svg?raw';
+import garlic from '../../assets/icons/food/garlic.svg?raw';
+import icecream from '../../assets/icons/food/icecream.svg?raw';
+import meat from '../../assets/icons/food/meat.svg?raw';
+import nut from '../../assets/icons/food/nut.svg?raw';
+import pepper from '../../assets/icons/food/pepper.svg?raw';
+import salami from '../../assets/icons/food/salami.svg?raw';
+import soup from '../../assets/icons/food/soup.svg?raw';
+import tea from '../../assets/icons/food/tea.svg?raw';
+import utensils from '../../assets/icons/food/utensils.svg?raw';
+import wheat from '../../assets/icons/food/wheat.svg?raw';
+
+// Feedback
+import chat from '../../assets/icons/feedback/chat.svg?raw';
+import commentNone from '../../assets/icons/feedback/comment-none.svg?raw';
+import star from '../../assets/icons/feedback/star.svg?raw';
+import starFilled from '../../assets/icons/feedback/star-filled.svg?raw';
+import starFilledHalfLeft from '../../assets/icons/feedback/star-filled-half-left.svg?raw';
+import starFilledHalfRight from '../../assets/icons/feedback/star-filled-half-right.svg?raw';
+import voteDown from '../../assets/icons/feedback/vote-down.svg?raw';
+import voteDownFilled from '../../assets/icons/feedback/vote-down-filled.svg?raw';
+import voteUp from '../../assets/icons/feedback/vote-up.svg?raw';
+import voteUpFilled from '../../assets/icons/feedback/vote-up-filled.svg?raw';
+import votedDownmore from '../../assets/icons/feedback/voted-downmore.svg?raw';
+import votedEqual from '../../assets/icons/feedback/voted-equal.svg?raw';
+import votedNone from '../../assets/icons/feedback/voted-none.svg?raw';
+import votedUpmore from '../../assets/icons/feedback/voted-upmore.svg?raw';
+
+// Brand
+import logo from '../../assets/icons/brand/logo.svg?raw';
+import logoSmall from '../../assets/icons/brand/logo-small.svg?raw';
+import logoExperimental from '../../assets/icons/brand/logo-experimental.svg?raw';
+import logoSmallExperimental from '../../assets/icons/brand/logo-small-experimental.svg?raw';
+
+// Objects
+import avatarEmpty from '../../assets/icons/objects/avatar-empty.svg?raw';
+import bot from '../../assets/icons/objects/bot.svg?raw';
+import bug from '../../assets/icons/objects/bug.svg?raw';
+import calendar from '../../assets/icons/objects/calendar.svg?raw';
+import cards from '../../assets/icons/objects/cards.svg?raw';
+import code from '../../assets/icons/objects/code.svg?raw';
+import creditCard from '../../assets/icons/objects/credit-card.svg?raw';
+import dice from '../../assets/icons/objects/dice.svg?raw';
+import eyeLooking from '../../assets/icons/objects/eye-looking.svg?raw';
+import eyeNotLooking from '../../assets/icons/objects/eye-not-looking.svg?raw';
+import ghost from '../../assets/icons/objects/ghost.svg?raw';
+import human from '../../assets/icons/objects/human.svg?raw';
+import image from '../../assets/icons/objects/image.svg?raw';
+import key from '../../assets/icons/objects/key.svg?raw';
+import keyboard from '../../assets/icons/objects/keyboard.svg?raw';
+import laptop from '../../assets/icons/objects/laptop.svg?raw';
+import mailRead from '../../assets/icons/objects/mail-read.svg?raw';
+import mailUnread from '../../assets/icons/objects/mail-unread.svg?raw';
+import menuMissing from '../../assets/icons/objects/menu-missing.svg?raw';
+import puzzlePiece from '../../assets/icons/objects/puzzle-piece.svg?raw';
+import server from '../../assets/icons/objects/server.svg?raw';
+import settings from '../../assets/icons/objects/settings.svg?raw';
+import system from '../../assets/icons/objects/system.svg?raw';
+import trophy from '../../assets/icons/objects/trophy.svg?raw';
+import usage from '../../assets/icons/objects/usage.svg?raw';
+import user from '../../assets/icons/objects/user.svg?raw';
+
 import { dev, building } from '$app/environment';
-
-// Newly added icons
-import attach from '../../assets/icons/attach.svg?raw';
-import bot from '../../assets/icons/bot.svg?raw';
-import bug from '../../assets/icons/bug.svg?raw';
-import checkCircle from '../../assets/icons/check-circle.svg?raw';
-import code from '../../assets/icons/code.svg?raw';
-import download from '../../assets/icons/download.svg?raw';
-import human from '../../assets/icons/human.svg?raw';
-import image from '../../assets/icons/image.svg?raw';
-import list from '../../assets/icons/list.svg?raw';
-import lockClose from '../../assets/icons/lock-close.svg?raw';
-import lockOpen from '../../assets/icons/lock-open.svg?raw';
-import mailRead from '../../assets/icons/mail-read.svg?raw';
-import mailUnread from '../../assets/icons/mail-unread.svg?raw';
-import minusSquare from '../../assets/icons/minus-square.svg?raw';
-import plusCircle from '../../assets/icons/plus-circle.svg?raw';
-import plusSquare from '../../assets/icons/plus-square.svg?raw';
-import search from '../../assets/icons/search.svg?raw';
-import upload from '../../assets/icons/upload.svg?raw';
-import trophy from '../../assets/icons/trophy.svg?raw';
-import menuHamburger from '../../assets/icons/menu-hamburger.svg?raw';
-import laptop from '../../assets/icons/laptop.svg?raw';
-import icecream from '../../assets/icons/icecream.svg?raw';
-import stop from '../../assets/icons/stop.svg?raw';
-import refresh from '../../assets/icons/refresh.svg?raw';
-import copy from '../../assets/icons/copy.svg?raw';
-
 
 /**
  * Kepçe Icon Module - Adwaita-style inline SVG icons.
@@ -116,6 +130,7 @@ export const icons = {
   chevronDown,
   chevronUp,
   chevronLeft,
+  chevronRight,
   chat,
   warning,
   strongLanguage,
@@ -147,12 +162,10 @@ export const icons = {
   avatarEmpty,
   calendar,
   noConnection,
-  votedUpMore,
-  votedDownMore,
+  votedUpMore: votedUpmore,
+  votedDownMore: votedDownmore,
   votedEqual,
   votedNone,
-  chevronRight,
-  puzzle: puzzlePiece,
   cards,
   check,
   wheat,
@@ -163,7 +176,7 @@ export const icons = {
   creditCard,
   server,
   bread,
-  merge: combine,
+  combine,
   split,
   edit,
   soup,
@@ -177,121 +190,85 @@ export const icons = {
   nut,
   salami,
   commentNone,
-  eye: eyeLooking,
-  eyeOff: eyeNotLooking,
+  eyeLooking,
+  eyeNotLooking,
   share,
   more,
+  puzzlePiece,
   send,
   key,
   usage,
   trash,
 
-  // Newly Added / Updated
+  // Newly added icons
   attach,
   bot,
   bug,
-  'check-circle': checkCircle,
   checkCircle,
   code,
   download,
   human,
   image,
   list,
-  'lock-close': lockClose,
-  'lock-open': lockOpen,
-  lock: lockClose, // Fallback for code using 'lock'
-  'mail-read': mailRead,
-  'mail-unread': mailUnread,
-  mail: mailUnread, // Fallback for code using 'mail'
-  'minus-square': minusSquare,
-  minus: minusSquare, // Fallback for code using 'minus'
-  'plus-circle': plusCircle,
-  plusCircle, // Fallback for camelCase usage
-  'plus-square': plusSquare,
-  plus: plusSquare, // Fallback for code using 'plus'
+  lockClose,
+  lockOpen,
+  mailRead,
+  mailUnread,
+  minusSquare,
+  plusCircle,
+  plusSquare,
   search,
   upload,
   trophy,
   menuHamburger,
   icecream,
-  'ice-cream': icecream,
-  alert: warning, // Fallback for code using 'alert' (maps to warning)
-  alertTriangle: warning,
-  'alert-triangle': warning,
-  tag: info,
-  refresh,
-  'refresh-cw': refresh, // Fallback for refresh-cw
-  'rotate-ccw': refresh,
-  arrowLeft: chevronLeft, // Fallback for code using 'arrowLeft' (maps to chevronLeft)
-  arrowRight: chevronRight, // Fallback for code using 'arrowRight' (maps to chevronRight)
-  'arrow-left': chevronLeft,
-  'arrow-right': chevronRight,
-  'chevron-left': chevronLeft,
-  'chevron-right': chevronRight,
-  'chevron-up': chevronUp,
-  'chevron-down': chevronDown,
-  'external-link': externalLink,
-  wifiOff: noConnection,
-  'wifi-off': noConnection,
-  error: infoCritical,
-  inbox: mailUnread,
-  archive: calendar,
-  folder: cards,
-  box: cards,
-  takeaway: bread,
-  slash: warning,
-  bell: mailUnread,
-  eyeSlash: eyeNotLooking,
-  'eye-slash': eyeNotLooking,
-  grid: cards,
-  layers: list,
-  timeline: cards,
-  edit,
-  pencil: edit,
   stop,
-  copy,
-  flag: warning,
+  refresh,
+  redo,
+  copy
 };
 
 /**
- * Get an icon SVG string by name.
- * @param {string} name - Icon name from the icons object
- * @param {number} [size=16] - Size override
- * @returns {string} SVG HTML string
+ * Render an SVG icon with size and accessibility attributes.
+ *
+ * @param {string} name - Icon name (key in `icons` map)
+ * @param {number|string} [size=16] - Icon size in pixels (applied to width and height)
+ * @param {string} [className=''] - Additional CSS class(es)
+ * @param {string} [ariaLabel=''] - Accessibility label for screen readers
+ * @returns {string} The SVG markup as a string, ready for {@html icon(...)}
  */
-export function icon(name, size, label = '') {
-  let svg = icons[name] || '';
+export function icon(name, size = 16, className = '', ariaLabel = '') {
+  const svg = icons[name];
   if (!svg) {
-    if (dev || building) {
-      console.warn(`[Kepçe Uyarı] Tanımsız ikon çağrıldı: "${name}"`);
+    // Only warn during dev/SSR, but don't fail builds for missing icons
+    if (dev && !building) {
+      console.warn(`[icons] Unknown icon: "${name}"`);
     }
     return '';
   }
 
-  // If size is provided, we force the dimensions. 
-  // Otherwise, we respect the SVG's original dimensions (important for logos).
-  if (size) {
-    if (svg.includes('width=')) {
-      svg = svg.replace(/width=["']\d+(px)?["']/, `width="${size}"`);
-    } else {
-      svg = svg.replace('<svg', `<svg width="${size}"`);
-    }
+  // Inject size, class, and aria attributes into the opening <svg> tag
+  const sizeNum = typeof size === 'number' ? size : parseInt(size, 10) || 16;
+  let attrs = `width="${sizeNum}" height="${sizeNum}"`;
 
-    if (svg.includes('height=')) {
-      svg = svg.replace(/height=["']\d+(px)?["']/, `height="${size}"`);
-    } else {
-      svg = svg.replace('<svg', `<svg height="${size}"`);
-    }
+  if (className) {
+    attrs += ` class="${className}"`;
   }
 
-  // Handle accessibility and ARIA roles
-  if (label) {
-    // If it has a label, it's an image that should be announced
-    svg = svg.replace('<svg', `<svg role="img" aria-label="${label}"`);
-  } else if (!svg.includes('aria-hidden')) {
-    // Decorative icons should be hidden from screen readers
-    svg = svg.replace('<svg', `<svg aria-hidden="true"`);
+  if (ariaLabel) {
+    attrs += ` role="img" aria-label="${ariaLabel}"`;
+  } else {
+    attrs += ` aria-hidden="true"`;
   }
 
-  return svg.trim();
+  // Replace the opening tag attributes
+  return svg.replace(/<svg\b([^>]*)>/, (match, existing) => {
+    // Remove existing width, height, class, role, aria-* attributes to avoid duplicates
+    const cleaned = existing
+      .replace(/\b(width|height|class|role|aria-\w+)\s*=\s*("[^"]*"|'[^']*')/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    return `<svg ${attrs}${cleaned ? ' ' + cleaned : ''}>`;
+  });
 }
