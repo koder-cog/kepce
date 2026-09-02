@@ -358,22 +358,31 @@
 /* Geniş Oval Kategori Adası (Kepçe SegmentedControl) */
 .c-search-categories-island {
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  padding: 2px 0;
+}
+
+.c-search-categories-island::-webkit-scrollbar {
+  display: none;
 }
 
 .c-search-categories-island .c-segmented-control {
+  min-width: 360px;
   width: 100%;
   border-radius: var(--radius-full);
-  padding: 4px;
-  background-color: var(--color-surface);
+  padding: 3px;
+  background-color: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-sm);
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.04);
   display: flex;
 }
 
 .c-search-categories-island .c-segmented-control__btn {
   flex: 1;
   border-radius: var(--radius-full);
-  height: 38px;
+  height: 36px;
   font-size: var(--text-sm);
   font-weight: 500;
   display: flex;
@@ -381,6 +390,8 @@
   justify-content: center;
   color: var(--color-text-muted);
   transition: color var(--dur-fast) var(--ease-standard);
+  white-space: nowrap;
+  padding: 0 12px;
 }
 
 .c-search-categories-island .c-segmented-control__btn:hover {
@@ -394,8 +405,59 @@
 
 .c-search-categories-island .c-segmented-control__indicator {
   border-radius: var(--radius-full);
-  background-color: var(--color-surface-raised, var(--color-surface));
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+  background-color: var(--color-surface);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  border: 1px solid var(--color-border);
+}
+
+@media (max-width: 600px) {
+  .c-search-results__topbar {
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .c-search-results__topbar-inner {
+    gap: var(--space-xs);
+  }
+
+  .c-search-results__brand {
+    width: 32px;
+    height: 32px;
+  }
+
+  .c-search-results__brand svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .c-search-results__search-wrap {
+    min-width: 0;
+  }
+
+  .c-search-results__search-wrap .c-search-box__input {
+    height: 38px;
+    font-size: var(--text-sm);
+    padding: 0 2.2rem 0 0.85rem;
+  }
+
+  .c-search-results__search-wrap .c-search-box__submit {
+    width: 38px;
+    height: 38px;
+  }
+
+  .c-search-results__topbar-actions {
+    gap: 2px;
+  }
+
+  .c-search-results__topbar-actions .c-search-icon-btn {
+    width: 34px;
+    height: 34px;
+    padding: 6px;
+  }
+
+  .c-search-subbar-wrap {
+    padding: var(--space-sm) var(--space-sm) var(--space-xs);
+    gap: var(--space-xs);
+  }
 }
 
 /* Filtre Linkleri Satırı (Kepçe Dropdown Ghost - Apple Kapsül Butonları) */

@@ -43,13 +43,53 @@ server:
   port: 8080
   bind_address: "0.0.0.0"
   secret_key: "kepce_searxng_secret_development_key_1234567890"
+  image_proxy: true
 search:
   safe_search: 0
-  autocomplete: ""
-  default_lang: "tr"
+  autocomplete: "duckduckgo"
+  autocomplete_min: 2
+  default_lang: "auto"
+  request_timeout: 5.0
   formats:
     - html
     - json
+outgoing:
+  request_timeout: 5.0
+  max_request_timeout: 8.0
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+engines:
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    disabled: false
+    weight: 2
+  - name: brave
+    engine: brave
+    shortcut: br
+    disabled: false
+    weight: 2
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+    weight: 1
+  - name: bing
+    engine: bing
+    shortcut: b
+    disabled: false
+    weight: 1
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    disabled: false
+    weight: 1
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: w
+    disabled: false
+    weight: 1
 EOF
         fi
 
