@@ -39,7 +39,7 @@
     return "Bilgi";
   });
 
-  // Dinamik alt başlık çıkarma
+  // Dinamik alt başlık / unvan
   let subtitle = $derived.by(() => {
     if (entityType === "place") {
       if (place?.country) return place.country;
@@ -68,19 +68,19 @@
 </script>
 
 {#if infobox}
-  <section class="c-google-knowledge c-google-knowledge--{entityType}" aria-label="Bilgi Kartı">
-    <!-- ── 1. ÜST BAŞLIK (Google Tarzı Başlık & Dinamik Alt Başlık) ─ -->
-    <header class="c-google-knowledge__header">
-      <div class="c-google-knowledge__title-group">
-        <h1 class="c-google-knowledge__title">{infobox.title}</h1>
-        <p class="c-google-knowledge__subtitle">{subtitle}</p>
+  <article class="c-hig-knowledge c-hig-knowledge--{entityType}" aria-label="Bilgi Kartı">
+    <!-- ── 1. ÜST BAŞLIK (Bütünleşik Kart İçi Başlık) ──────────── -->
+    <header class="c-hig-knowledge__header">
+      <div class="c-hig-knowledge__title-group">
+        <h1 class="c-hig-knowledge__title">{infobox.title}</h1>
+        <p class="c-hig-knowledge__subtitle">{subtitle}</p>
       </div>
-      <div class="c-google-knowledge__badges">
-        <span class="c-google-knowledge__badge c-google-knowledge__badge--type">
+      <div class="c-hig-knowledge__badges">
+        <span class="c-hig-knowledge__badge c-hig-knowledge__badge--type">
           {typeBadgeLabel}
         </span>
         {#if infobox.engine}
-          <span class="c-google-knowledge__badge">
+          <span class="c-hig-knowledge__badge">
             {infobox.engine === "wikipedia"
               ? "Vikipedi"
               : infobox.engine === "wikidata"
@@ -91,43 +91,43 @@
       </div>
     </header>
 
-    <!-- ── 2. VİTRİN / MEDYA ALANI (Varlık Türüne Göre) ───────────── -->
+    <!-- ── 2. GÖVDE VE VİTRİN DÜZENİ (Varlık Türüne Göre) ───────── -->
     {#if hasValidPlace}
-      <!-- 2A. Coğrafi Yer: 3 Parçalı Vitrin (Resim + Harita + Hava Durumu) -->
-      <div class="c-google-knowledge__showcase">
+      <!-- 2A. Coğrafi Yer: Üstte 3 Parçalı Vitrin + Altta Genel Bakış -->
+      <div class="c-hig-knowledge__showcase">
         <!-- Fotoğraf -->
-        <div class="c-google-showcase-tile c-google-showcase-tile--photo">
+        <div class="c-hig-tile c-hig-tile--photo">
           {#if infobox.imgSrc && !imgError}
             <img
               src={infobox.imgSrc}
               alt={infobox.title}
-              class="c-google-showcase-tile__img"
+              class="c-hig-tile__img"
               loading="lazy"
               onerror={handleImgError}
             />
           {:else}
-            <div class="c-google-showcase-tile__fallback">
+            <div class="c-hig-tile__fallback">
               <span>🏛️</span>
             </div>
           {/if}
         </div>
 
         <!-- Harita Karosu -->
-        <div class="c-google-showcase-tile c-google-showcase-tile--map">
+        <div class="c-hig-tile c-hig-tile--map">
           <iframe
             title="Harita - {infobox.title}"
-            class="c-google-showcase-tile__map-iframe"
+            class="c-hig-tile__map-iframe"
             src="https://www.openstreetmap.org/export/embed.html?bbox={place.lon - 0.08}%2C{place.lat - 0.04}%2C{place.lon + 0.08}%2C{place.lat + 0.04}&layer=mapnik&marker={place.lat}%2C{place.lon}"
             loading="lazy"
             tabindex="-1"
           ></iframe>
-          <div class="c-google-showcase-tile__map-overlay">
-            <span class="c-google-showcase-tile__map-pin">📍 {infobox.title}</span>
+          <div class="c-hig-tile__map-overlay">
+            <span class="c-hig-tile__map-pin">📍 {infobox.title}</span>
             <a
               href="https://www.openstreetmap.org/?mlat={place.lat}&mlon={place.lon}#map=12/{place.lat}/{place.lon}"
               target="_blank"
               rel="noopener noreferrer"
-              class="c-google-showcase-tile__map-btn"
+              class="c-hig-tile__map-btn"
               title="Haritada Büyüt"
             >
               ↗
@@ -136,21 +136,21 @@
         </div>
 
         <!-- Sağ İkili Yığın (Hava Durumu + Nasıl Gidilir) -->
-        <div class="c-google-showcase-stack">
+        <div class="c-hig-stack">
           {#if weather}
-            <div class="c-google-stat-card c-google-stat-card--weather">
-              <div class="c-google-stat-card__head">
-                <span class="c-google-stat-card__title">Hava durumu</span>
-                <span class="c-google-stat-card__icon">{getWeatherInfo(weather.weatherCode).icon}</span>
+            <div class="c-hig-widget c-hig-widget--weather">
+              <div class="c-hig-widget__head">
+                <span class="c-hig-widget__title">Hava durumu</span>
+                <span class="c-hig-widget__icon">{getWeatherInfo(weather.weatherCode).icon}</span>
               </div>
-              <div class="c-google-stat-card__temp-now">
+              <div class="c-hig-widget__temp-now">
                 {weather.currentTemp}°C
-                <span class="c-google-stat-card__cond">{getWeatherInfo(weather.weatherCode).label}</span>
+                <span class="c-hig-widget__cond">{getWeatherInfo(weather.weatherCode).label}</span>
               </div>
               {#if weather.daily && weather.daily.length > 0}
-                <div class="c-google-stat-card__forecast">
+                <div class="c-hig-widget__forecast">
                   {#each weather.daily as day}
-                    <div class="c-google-forecast-item">
+                    <div class="c-hig-forecast-item">
                       <span class="f-day">{formatDayName(day.date)}</span>
                       <span class="f-icon">{getWeatherInfo(day.code).icon}</span>
                       <span class="f-temp">{day.maxTemp}°</span>
@@ -165,45 +165,121 @@
             href="https://www.openstreetmap.org/directions?to={place.lat}%2C{place.lon}"
             target="_blank"
             rel="noopener noreferrer"
-            class="c-google-stat-card c-google-stat-card--action"
+            class="c-hig-widget c-hig-widget--action"
           >
-            <div class="c-google-stat-card__action-text">
-              <span class="c-google-stat-card__title">Nasıl gidilir?</span>
-              <span class="c-google-stat-card__subtext">Rota ve yol tarifi al</span>
+            <div class="c-hig-widget__action-text">
+              <span class="c-hig-widget__title">Nasıl gidilir?</span>
+              <span class="c-hig-widget__subtext">Rota ve yol tarifi al</span>
             </div>
-            <span class="c-google-stat-card__arrow">›</span>
+            <span class="c-hig-widget__arrow">›</span>
           </a>
         </div>
       </div>
-    {:else if hasValidOrgMap}
-      <!-- 2B. Kurum / Üniversite: Logo/Kampüs + Yerleşke Haritası (2'li Vitrin) -->
-      <div class="c-google-knowledge__org-showcase">
+
+      <!-- Altta Detaylar -->
+      <div class="c-hig-details">
+        {#if infobox.content}
+          <p class="c-hig-details__summary">
+            {infobox.content}
+            {#if infobox.urls && infobox.urls.length > 0}
+              <a
+                href={infobox.urls[0].url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="c-hig-details__inline-source"
+              >
+                Vikipedi
+              </a>
+            {/if}
+          </p>
+        {/if}
+
+        {#if infobox.attributes && infobox.attributes.length > 0}
+          <div class="c-hig-attr-chips">
+            {#each infobox.attributes.slice(0, 6) as attr}
+              <div class="c-hig-attr-chip">
+                <span class="c-hig-attr-chip__label">{attr.label}</span>
+                <span class="c-hig-attr-chip__value">{attr.value}</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+    {:else if entityType === "person"}
+      <!-- 2B. Kişi / Biyografi: Sol Portre + Sağ Künye & Biyografi -->
+      <div class="c-hig-person-layout">
         {#if infobox.imgSrc && !imgError}
-          <div class="c-google-showcase-tile c-google-showcase-tile--org-media">
+          <div class="c-hig-person-portrait">
             <img
               src={infobox.imgSrc}
               alt={infobox.title}
-              class="c-google-showcase-tile__img"
+              class="c-hig-person-portrait__img"
               loading="lazy"
               onerror={handleImgError}
             />
           </div>
         {/if}
-        <div class="c-google-showcase-tile c-google-showcase-tile--map">
+
+        <div class="c-hig-person-content">
+          {#if infobox.content}
+            <p class="c-hig-details__summary">
+              {infobox.content}
+              {#if infobox.urls && infobox.urls.length > 0}
+                <a
+                  href={infobox.urls[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="c-hig-details__inline-source"
+                >
+                  Vikipedi
+                </a>
+              {/if}
+            </p>
+          {/if}
+
+          {#if personQuickStats.length > 0}
+            <div class="c-hig-attr-chips">
+              {#each personQuickStats as stat}
+                <div class="c-hig-attr-chip">
+                  <span class="c-hig-attr-chip__label">{stat.label}</span>
+                  <span class="c-hig-attr-chip__value">{stat.value}</span>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
+      </div>
+
+    {:else if hasValidOrgMap}
+      <!-- 2C. Kurum / Üniversite: Logo/Kampüs + Yerleşke Haritası -->
+      <div class="c-hig-knowledge__org-showcase">
+        {#if infobox.imgSrc && !imgError}
+          <div class="c-hig-tile c-hig-tile--org-media">
+            <img
+              src={infobox.imgSrc}
+              alt={infobox.title}
+              class="c-hig-tile__img"
+              loading="lazy"
+              onerror={handleImgError}
+            />
+          </div>
+        {/if}
+        <div class="c-hig-tile c-hig-tile--map">
           <iframe
             title="Yerleşke - {infobox.title}"
-            class="c-google-showcase-tile__map-iframe"
+            class="c-hig-tile__map-iframe"
             src="https://www.openstreetmap.org/export/embed.html?bbox={place.lon - 0.05}%2C{place.lat - 0.03}%2C{place.lon + 0.05}%2C{place.lat + 0.03}&layer=mapnik&marker={place.lat}%2C{place.lon}"
             loading="lazy"
             tabindex="-1"
           ></iframe>
-          <div class="c-google-showcase-tile__map-overlay">
-            <span class="c-google-showcase-tile__map-pin">🏛️ {infobox.title}</span>
+          <div class="c-hig-tile__map-overlay">
+            <span class="c-hig-tile__map-pin">🏛️ {infobox.title}</span>
             <a
               href="https://www.openstreetmap.org/?mlat={place.lat}&mlon={place.lon}#map=14/{place.lat}/{place.lon}"
               target="_blank"
               rel="noopener noreferrer"
-              class="c-google-showcase-tile__map-btn"
+              class="c-hig-tile__map-btn"
               title="Haritada İncele"
             >
               ↗
@@ -211,96 +287,82 @@
           </div>
         </div>
       </div>
-    {:else if entityType === "person" && infobox.imgSrc && !imgError}
-      <!-- 2C. Kişi / Biyografi: Portre Fotoğrafı + Sağda 2x2 Mini Bilgi Matrisi -->
-      <div class="c-google-knowledge__person-showcase">
-        <div class="c-google-knowledge__hero-container c-google-knowledge__hero-container--person">
-          <img
-            src={infobox.imgSrc}
-            alt={infobox.title}
-            class="c-google-knowledge__hero-img"
-            loading="lazy"
-            onerror={handleImgError}
-          />
-        </div>
-        {#if personQuickStats.length > 0}
-          <div class="c-google-person-matrix">
-            {#each personQuickStats as stat}
-              <div class="c-google-person-tile">
-                <span class="c-google-person-tile__label">{stat.label}</span>
-                <span class="c-google-person-tile__value">{stat.value}</span>
+
+      <div class="c-hig-details">
+        {#if infobox.content}
+          <p class="c-hig-details__summary">{infobox.content}</p>
+        {/if}
+        {#if infobox.attributes && infobox.attributes.length > 0}
+          <div class="c-hig-attr-chips">
+            {#each infobox.attributes.slice(0, 6) as attr}
+              <div class="c-hig-attr-chip">
+                <span class="c-hig-attr-chip__label">{attr.label}</span>
+                <span class="c-hig-attr-chip__value">{attr.value}</span>
               </div>
             {/each}
           </div>
         {/if}
       </div>
-    {:else if infobox.imgSrc && !imgError}
-      <!-- 2D. Nesne / Genel: Odaklanmış Hero Görseli -->
-      <div class="c-google-knowledge__hero-container c-google-knowledge__hero-container--{entityType}">
-        <img
-          src={infobox.imgSrc}
-          alt={infobox.title}
-          class="c-google-knowledge__hero-img"
-          loading="lazy"
-          onerror={handleImgError}
-        />
+
+    {:else}
+      <!-- 2D. Nesne / Kavram: Sol Medya + Sağ Tanım & Nitelikler -->
+      <div class="c-hig-thing-layout">
+        {#if infobox.imgSrc && !imgError}
+          <div class="c-hig-thing-media">
+            <img
+              src={infobox.imgSrc}
+              alt={infobox.title}
+              class="c-hig-thing-media__img"
+              loading="lazy"
+              onerror={handleImgError}
+            />
+          </div>
+        {/if}
+        <div class="c-hig-thing-content">
+          {#if infobox.content}
+            <p class="c-hig-details__summary">
+              {infobox.content}
+              {#if infobox.urls && infobox.urls.length > 0}
+                <a
+                  href={infobox.urls[0].url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="c-hig-details__inline-source"
+                >
+                  Vikipedi
+                </a>
+              {/if}
+            </p>
+          {/if}
+          {#if infobox.attributes && infobox.attributes.length > 0}
+            <div class="c-hig-attr-chips">
+              {#each infobox.attributes.slice(0, 6) as attr}
+                <div class="c-hig-attr-chip">
+                  <span class="c-hig-attr-chip__label">{attr.label}</span>
+                  <span class="c-hig-attr-chip__value">{attr.value}</span>
+                </div>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </div>
     {/if}
 
-    <!-- ── 3. ALT BİLGİ VE HAKKINDA BÖLÜMÜ ───────────────────────── -->
-    <div class="c-google-knowledge__details">
-      <div class="c-google-knowledge__section-title">
-        {entityType === "person"
-          ? "Biyografi"
-          : entityType === "place"
-            ? "Genel Bakış"
-            : "Hakkında"}
-      </div>
-
-      {#if infobox.content}
-        <p class="c-google-knowledge__summary">
-          {infobox.content}
-          {#if infobox.urls && infobox.urls.length > 0}
-            <a
-              href={infobox.urls[0].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="c-google-knowledge__inline-source"
-            >
-              Vikipedi
-            </a>
-          {/if}
-        </p>
-      {/if}
-
-      <!-- Nitelikler Izgarası (Attributes) -->
-      {#if infobox.attributes && infobox.attributes.length > 0}
-        <div class="c-google-knowledge__attrs-grid">
-          {#each infobox.attributes.slice(0, 8) as attr}
-            <div class="c-google-attr-item">
-              <span class="c-google-attr-label">{attr.label}</span>
-              <span class="c-google-attr-value">{attr.value}</span>
-            </div>
-          {/each}
-        </div>
-      {/if}
-
-      <!-- Bağlantılar / Hap Butonlar -->
-      {#if infobox.urls && infobox.urls.length > 0}
-        <div class="c-google-knowledge__pills">
-          {#each infobox.urls.slice(0, 5) as link}
-            <a
-              href={link.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="c-google-pill-btn"
-            >
-              <span>{link.title || "Kaynak"}</span>
-              <span class="c-google-pill-arrow">↗</span>
-            </a>
-          {/each}
-        </div>
-      {/if}
-    </div>
-  </section>
+    <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI ───────────────────────────── -->
+    {#if infobox.urls && infobox.urls.length > 0}
+      <footer class="c-hig-knowledge__footer">
+        {#each infobox.urls.slice(0, 5) as link}
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="c-hig-pill-btn"
+          >
+            <span>{link.title || "Kaynak"}</span>
+            <span class="c-hig-pill-arrow">↗</span>
+          </a>
+        {/each}
+      </footer>
+    {/if}
+  </article>
 {/if}
