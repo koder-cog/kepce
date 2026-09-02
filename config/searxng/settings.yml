@@ -15,16 +15,18 @@ search:
   autocomplete: "duckduckgo"
   autocomplete_min: 2
   default_lang: "auto"
-  request_timeout: 5.0
+  request_timeout: 2.5
   formats:
     - html
     - json
+    - rss
+    - csv
 
 outgoing:
-  request_timeout: 5.0
-  max_request_timeout: 8.0
+  request_timeout: 2.2
+  max_request_timeout: 4.0
   pool_connections: 100
-  pool_maxsize: 20
+  pool_maxsize: 50
   enable_http2: true
 
 enabled_plugins:
@@ -35,55 +37,141 @@ enabled_plugins:
   - 'Hash plugin'
 
 engines:
+  # ── 1. Web & Genel Arama ───────────────────────────────────
   - name: zapmeta
     engine: zapmeta
     shortcut: zm
     disabled: false
     weight: 4
-    timeout: 4.0
+    timeout: 2.2
   - name: bing
     engine: bing
     shortcut: b
     disabled: false
     weight: 3
-    timeout: 3.0
-  - name: google
-    engine: google
-    shortcut: g
-    disabled: false
-    weight: 2
-    timeout: 3.0
-  - name: wikipedia
-    engine: wikipedia
-    shortcut: w
-    disabled: false
-    weight: 2
-    timeout: 3.0
-  - name: duckduckgo
-    engine: duckduckgo
-    shortcut: ddg
-    disabled: false
-    weight: 1
-    timeout: 3.0
+    timeout: 2.0
   - name: brave
     engine: brave
     shortcut: br
     disabled: false
     weight: 3
-    timeout: 3.0
-  - name: wikinews
-    engine: wikinews
-    shortcut: wn
+    timeout: 2.0
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+    weight: 2
+    timeout: 2.0
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: w
+    disabled: false
+    weight: 2
+    timeout: 2.0
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
     disabled: false
     weight: 1
-    timeout: 3.0
-  - name: mojeek
-    engine: mojeek
-    shortcut: mj
-    disabled: false
-    weight: 1
-    timeout: 3.0
+    timeout: 2.0
   - name: qwant
     engine: qwant
     shortcut: qw
     disabled: true
+
+  # ── 2. Yazılım & Kod (IT) ──────────────────────────────────
+  - name: github
+    engine: github
+    shortcut: gh
+    categories: [it]
+    disabled: false
+    weight: 3
+    timeout: 2.2
+  - name: gitlab
+    engine: gitlab
+    shortcut: gl
+    categories: [it]
+    disabled: false
+    weight: 2
+    timeout: 2.2
+  - name: stackoverflow
+    engine: stackoverflow
+    shortcut: so
+    categories: [it]
+    disabled: false
+    weight: 3
+    timeout: 2.2
+  - name: npm
+    engine: npm
+    shortcut: npm
+    categories: [it]
+    disabled: false
+    weight: 2
+    timeout: 2.2
+  - name: pypi
+    engine: pypi
+    shortcut: pypi
+    categories: [it]
+    disabled: false
+    weight: 2
+    timeout: 2.2
+  - name: archwiki
+    engine: archwiki
+    shortcut: aw
+    categories: [it]
+    disabled: false
+    weight: 2
+    timeout: 2.2
+
+  # ── 3. Akademi & Bilim (Science) ───────────────────────────
+  - name: arxiv
+    engine: arxiv
+    shortcut: arx
+    categories: [science]
+    disabled: false
+    weight: 3
+    timeout: 2.2
+  - name: google scholar
+    engine: google_scholar
+    shortcut: gs
+    categories: [science]
+    disabled: false
+    weight: 3
+    timeout: 2.2
+  - name: pubmed
+    engine: pubmed
+    shortcut: pm
+    categories: [science]
+    disabled: false
+    weight: 2
+    timeout: 2.2
+  - name: crossref
+    engine: crossref
+    shortcut: cr
+    categories: [science]
+    disabled: false
+    weight: 2
+    timeout: 2.2
+
+  # ── 4. Haberler (News) ─────────────────────────────────────
+  - name: bing news
+    engine: bing_news
+    shortcut: bn
+    categories: [news]
+    disabled: false
+    weight: 3
+    timeout: 2.0
+  - name: google news
+    engine: google_news
+    shortcut: gn
+    categories: [news]
+    disabled: false
+    weight: 3
+    timeout: 2.0
+  - name: wikinews
+    engine: wikinews
+    shortcut: wn
+    categories: [news]
+    disabled: false
+    weight: 1
+    timeout: 2.0

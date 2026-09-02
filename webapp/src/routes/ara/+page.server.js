@@ -530,18 +530,11 @@ export async function load({ url, fetch }) {
     return cached;
   }
 
-  // 3. Anlık Yanıt Çözücü (Yalnızca Web genel aramasında)
+  // 3. Paralel İstek İşleme (Anlık Çözücüler ve SearXNG Motorları Eşzamanlı Çalışır)
   const isGeneralCategory = category === "general" || !category;
-  const instantAnswer = isGeneralCategory ? await solveInstantQuery(q) : null;
+  const instantAnswerPromise = isGeneralCategory ? solveInstantQuery(q) : Promise.resolve(null);
 
-  // Doğal dildeki döviz sorgularında web sekmesinde organik haber/piyasa sonuçlarının akması için anahtar kelime ayarlaması
-  let effectiveQuery = q;
-  if (instantAnswer?.type === "currency" && isGeneralCategory) {
-    effectiveQuery = `${instantAnswer.fromCurrencyName} kuru`;
-  } else if (q.startsWith("!")) {
-    // SearXNG motor sözdizimi (!engine) ile çakışmaması için çözümlenmeyen !bangs'i arama terimine çevir
-    effectiveQuery = q.replace(/^!+/, "").trim() || q;
-  }
+  let effectiveQuery = q.startsWith("!") ? q.replace(/^!+/, "").trim() || q : q;
 
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   const searchParams = new URLSearchParams({
@@ -562,9 +555,11 @@ export async function load({ url, fetch }) {
   }
 
   try {
-    const res = await fetch(`${searxUrl.replace(/\/+$/, "")}/search?${searchParams.toString()}`, {
-      signal: AbortSignal.timeout(8000),
+    const searxPromise = fetch(`${searxUrl.replace(/\/+$/, "")}/search?${searchParams.toString()}`, {
+      signal: AbortSignal.timeout(5000),
     });
+
+    const [instantAnswer, res] = await Promise.all([instantAnswerPromise, searxPromise]);
 
     if (!res.ok) {
       return {

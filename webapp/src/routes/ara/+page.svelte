@@ -117,13 +117,70 @@
     searchInput = data.query || "";
   });
 
+  let selectedResultIndex = $state(-1);
+
   const CATEGORIES = [
     { id: "general", label: "Web" },
     { id: "images", label: "Görseller" },
     { id: "videos", label: "Videolar" },
     { id: "news", label: "Haberler" },
+    { id: "it", label: "Kod" },
+    { id: "science", label: "Akademi" },
     { id: "map", label: "Haritalar" },
   ];
+
+  function handleGlobalKeydown(e) {
+    const activeEl = document.activeElement;
+    const isInputActive =
+      activeEl &&
+      (activeEl.tagName === "INPUT" ||
+        activeEl.tagName === "TEXTAREA" ||
+        activeEl.isContentEditable);
+
+    if (e.key === "/" && !isInputActive) {
+      e.preventDefault();
+      if (searchInputEl) {
+        searchInputEl.focus();
+        searchInputEl.select();
+      }
+      return;
+    }
+
+    if (isInputActive) {
+      if (e.key === "Escape") {
+        activeEl.blur();
+        isSuggestionsOpen = false;
+        isHistoryOpen = false;
+      }
+      return;
+    }
+
+    if (data.results && data.results.length > 0) {
+      if (e.key === "j" || e.key === "ArrowDown") {
+        e.preventDefault();
+        selectedResultIndex = Math.min(data.results.length - 1, selectedResultIndex + 1);
+        scrollSelectedResult();
+      } else if (e.key === "k" || e.key === "ArrowUp") {
+        e.preventDefault();
+        selectedResultIndex = Math.max(0, selectedResultIndex - 1);
+        scrollSelectedResult();
+      } else if (e.key === "Enter" && selectedResultIndex >= 0) {
+        const target = data.results[selectedResultIndex];
+        if (target?.url) {
+          window.open(target.url, "_blank", "noopener,noreferrer");
+        }
+      } else if (e.key === "Escape") {
+        selectedResultIndex = -1;
+      }
+    }
+  }
+
+  function scrollSelectedResult() {
+    const el = document.querySelector(`.c-search-item[data-index="${selectedResultIndex}"]`);
+    if (el) {
+      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
+  }
 
   let suggestions = $state([]);
   let isSuggestionsOpen = $state(false);
@@ -361,7 +418,11 @@
   }
 </script>
 
+<svelte:window onkeydown={handleGlobalKeydown} />
+
 <svelte:head>
+  <link rel="preconnect" href="https://icons.duckduckgo.com" />
+  <link rel="dns-prefetch" href="https://icons.duckduckgo.com" />
   <link
     rel="search"
     type="application/opensearchdescription+xml"
@@ -591,6 +652,16 @@
         </div>
 
         <div class="c-search-results__topbar-actions">
+          <a
+            href={basePath ? `${basePath}/rss?q=${encodeURIComponent(data.query)}&kategori=${data.category || 'general'}` : `/ara/rss?q=${encodeURIComponent(data.query)}&kategori=${data.category || 'general'}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="c-search-icon-btn"
+            aria-label="RSS Akışı"
+            title="Arama Sonuçlarını RSS Beslemesi Olarak Al"
+          >
+            {@html icon("rss", 20)}
+          </a>
           <button
             type="button"
             class="c-search-icon-btn"
@@ -788,11 +859,15 @@
             {/each}
           </div>
         {:else}
-          <!-- Standart Web / Haber Sonuçları -->
-          {#each data.results as item}
+          <!-- Standart Web / Haber / Kod / Akademi Sonuçları -->
+          {#each data.results as item, idx}
             {@const favicon = getFaviconUrl(item.url)}
             {@const dateBadge = formatDateSnippet(item.publishedDate)}
-            <article class="c-search-item">
+            <article
+              class="c-search-item"
+              class:is-keyboard-selected={idx === selectedResultIndex}
+              data-index={idx}
+            >
               <a
                 href={item.url}
                 target="_blank"
