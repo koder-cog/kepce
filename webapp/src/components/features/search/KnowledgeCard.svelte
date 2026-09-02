@@ -15,7 +15,7 @@
   // Standart hava durumu GNOME ikon eşleştirmesi
   function getWeatherInfo(code) {
     if (code === 0) return { label: "Açık", iconName: "sun" };
-    if ([1, 2, 3].includes(code)) return { label: "Bulutlu", iconName: "cloudSun" };
+    if ([1, 2, 3].includes(code)) return { label: "Parçalı Bulutlu", iconName: "cloudSun" };
     if ([45, 48].includes(code)) return { label: "Sisli", iconName: "fog" };
     if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { label: "Yağmurlu", iconName: "rain" };
     if ([71, 73, 75, 85, 86].includes(code)) return { label: "Karlı", iconName: "snow" };
@@ -38,15 +38,26 @@
   let hasValidPlace = $derived(entityType === "place" && !!place?.lat && !!place?.lon);
   let hasValidOrgMap = $derived(entityType === "organization" && !!place?.lat && !!place?.lon);
 
+  // Vikipedi bağlantısını bulma
+  let wikiUrl = $derived.by(() => {
+    if (!infobox) return "";
+    const urls = infobox.urls || [];
+    const wikiItem = urls.find((u) => u.title === "Vikipedi" || (u.url && u.url.includes("wikipedia.org")));
+    if (wikiItem?.url) return wikiItem.url;
+    if (urls.length > 0 && urls[0].url) return urls[0].url;
+    if (infobox.id) return `https://tr.wikipedia.org/wiki/${encodeURIComponent(infobox.id)}`;
+    return "";
+  });
+
   // Dinamik alt başlık / unvan
   let subtitle = $derived.by(() => {
     if (entityType === "place") {
       if (place?.country) return place.country;
-      const match = (infobox.content || "").match(/^([^,.]+)/);
+      const match = (infobox?.content || "").match(/^([^,.]+)/);
       return match ? match[1].trim() : "";
     }
     if (entityType === "person") {
-      const text = infobox.content || "";
+      const text = infobox?.content || "";
       const parts = text.split(/[,–-]/);
       if (parts.length > 1 && parts[1].trim().length > 3 && parts[1].trim().length < 60) {
         return parts[1].trim();
@@ -56,15 +67,10 @@
     return "";
   });
 
-  // En önemli 4 ila 6 özet nitelik
+  // En önemli özet nitelikler
   let displayAttributes = $derived.by(() => {
     if (!infobox?.attributes) return [];
-    return infobox.attributes.slice(0, 6);
-  });
-
-  // İkincil dış bağlantılar (Vikipedi zaten özet metninde bağlı)
-  let secondaryLinks = $derived.by(() => {
-    return (infobox?.urls || []).filter((l) => l.title !== "Vikipedi");
+    return infobox.attributes.slice(0, 8);
   });
 </script>
 
@@ -82,8 +88,8 @@
 
     <!-- ── 2. VİTRİN VE İÇERİK DÜZENİ ───────────────────────────── -->
     {#if hasValidPlace}
-      <!-- 2A. Coğrafi Yer: 3 Parçalı Vitrin (Resim + Retina Harita + Hava Durumu) -->
-      <div class="c-knowledge-showcase" class:is-map-expanded={mapExpanded}>
+      <!-- 2A. Coğrafi Yer: Ferah Vitrin (Resim + Google Harita + Modern Hava Durumu) -->
+      <div class="c-knowledge-showcase" class:is-map-expanded={mapExpanded} class:has-weather={!!weather}>
         <!-- Fotoğraf -->
         <div class="c-knowledge-tile c-knowledge-tile--photo">
           {#if infobox.imgSrc && !imgError}
@@ -101,74 +107,65 @@
           {/if}
         </div>
 
-        <!-- Yüksek Çözünürlüklü Morfoz Vektör Harita -->
-        <MapCard lat={place.lat} lon={place.lon} zoom={12} bind:isExpanded={mapExpanded} />
+        <!-- Google Harita Kartı -->
+        <MapCard
+          lat={place.lat}
+          lon={place.lon}
+          zoom={12}
+          title={infobox.title}
+          bind:isExpanded={mapExpanded}
+        />
 
-        <!-- Sağ İkili Yığın (Hava Durumu + Nasıl Gidilir) -->
-        <div class="c-knowledge-stack">
-          {#if weather}
-            {@const currentWeather = getWeatherInfo(weather.weatherCode)}
-            <div class="c-knowledge-widget c-knowledge-widget--weather">
-              <div class="c-knowledge-widget__head">
-                <span class="c-knowledge-widget__title">Hava durumu</span>
-                <span class="c-knowledge-weather-icon">
-                  {@html icon(currentWeather.iconName, 20)}
-                </span>
-              </div>
-              <div class="c-knowledge-widget__temp-now">
-                {weather.currentTemp}°C
-                <span class="c-knowledge-widget__cond">{currentWeather.label}</span>
-              </div>
-              {#if weather.daily && weather.daily.length > 0}
-                <div class="c-knowledge-widget__forecast">
-                  {#each weather.daily as day}
-                    {@const dayWeather = getWeatherInfo(day.code)}
-                    <div class="c-knowledge-forecast-item">
-                      <span class="f-day">{formatDayName(day.date)}</span>
-                      <span class="f-icon" title={dayWeather.label}>
-                        {@html icon(dayWeather.iconName, 14)}
-                      </span>
-                      <span class="f-temp">{day.maxTemp}°</span>
-                    </div>
-                  {/each}
-                </div>
-              {/if}
+        <!-- Hava Durumu Kartı (Tek ve Ferah Widget) -->
+        {#if weather}
+          {@const currentWeather = getWeatherInfo(weather.weatherCode)}
+          <div class="c-knowledge-widget c-knowledge-widget--weather">
+            <div class="c-knowledge-widget__head">
+              <span class="c-knowledge-widget__title">Hava durumu</span>
+              <span class="c-knowledge-weather-icon">
+                {@html icon(currentWeather.iconName, 22)}
+              </span>
             </div>
-          {/if}
 
-          <a
-            href="https://www.openstreetmap.org/directions?to={place.lat}%2C{place.lon}"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="c-knowledge-widget c-knowledge-widget--action"
-          >
-            <div class="c-knowledge-widget__action-text">
-              <span class="c-knowledge-widget__title">Nasıl gidilir?</span>
-              <span class="c-knowledge-widget__subtext">Rota ve yol tarifi al</span>
+            <div class="c-knowledge-widget__temp-now">
+              <span class="temp-val">{weather.currentTemp}°C</span>
+              <span class="c-knowledge-widget__cond">{currentWeather.label}</span>
             </div>
-            <div class="c-knowledge-widget__action-icon">
-              {@html icon("chevronRight", 18)}
-            </div>
-          </a>
-        </div>
+
+            {#if weather.daily && weather.daily.length > 0}
+              <div class="c-knowledge-widget__forecast">
+                {#each weather.daily as day}
+                  {@const dayWeather = getWeatherInfo(day.code)}
+                  <div class="c-knowledge-forecast-item">
+                    <span class="f-day">{formatDayName(day.date)}</span>
+                    <span class="f-icon" title={dayWeather.label}>
+                      {@html icon(dayWeather.iconName, 15)}
+                    </span>
+                    <span class="f-temp">{day.maxTemp}°</span>
+                  </div>
+                {/each}
+              </div>
+            {/if}
+          </div>
+        {/if}
       </div>
 
-      <!-- Altta Detaylar ve Sindirilebilir Hap Bilgiler -->
+      <!-- Altta Açıklama, Vikipedi Bağlantısı ve Hap Bilgiler -->
       <div class="c-knowledge-details">
         {#if infobox.content}
-          <p class="c-knowledge-details__summary">
-            {infobox.content}
-            {#if infobox.urls && infobox.urls.length > 0}
-              <a
-                href={infobox.urls[0].url}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="c-knowledge-details__inline-source"
-              >
-                Vikipedi
-              </a>
-            {/if}
-          </p>
+          <p class="c-knowledge-details__summary">{infobox.content}</p>
+        {/if}
+
+        {#if wikiUrl}
+          <a
+            href={wikiUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="c-knowledge-more-link"
+          >
+            <span>Devamını Vikipedi'de oku</span>
+            <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+          </a>
         {/if}
 
         {#if displayAttributes.length > 0}
@@ -200,19 +197,19 @@
 
         <div class="c-knowledge-person-content">
           {#if infobox.content}
-            <p class="c-knowledge-details__summary">
-              {infobox.content}
-              {#if infobox.urls && infobox.urls.length > 0}
-                <a
-                  href={infobox.urls[0].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="c-knowledge-details__inline-source"
-                >
-                  Vikipedi
-                </a>
-              {/if}
-            </p>
+            <p class="c-knowledge-details__summary">{infobox.content}</p>
+          {/if}
+
+          {#if wikiUrl}
+            <a
+              href={wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="c-knowledge-more-link"
+            >
+              <span>Devamını Vikipedi'de oku</span>
+              <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+            </a>
           {/if}
 
           {#if displayAttributes.length > 0}
@@ -229,7 +226,7 @@
       </div>
 
     {:else if hasValidOrgMap}
-      <!-- 2C. Kurum: Medya + Yerleşke Haritası -->
+      <!-- 2C. Kurum: Medya + Yerleşke Google Haritası -->
       <div class="c-knowledge-org-showcase" class:is-map-expanded={orgMapExpanded}>
         {#if infobox.imgSrc && !imgError}
           <div class="c-knowledge-tile c-knowledge-tile--org-media">
@@ -242,13 +239,32 @@
             />
           </div>
         {/if}
-        <MapCard lat={place.lat} lon={place.lon} zoom={14} bind:isExpanded={orgMapExpanded} />
+        <MapCard
+          lat={place.lat}
+          lon={place.lon}
+          zoom={14}
+          title={infobox.title}
+          bind:isExpanded={orgMapExpanded}
+        />
       </div>
 
       <div class="c-knowledge-details">
         {#if infobox.content}
           <p class="c-knowledge-details__summary">{infobox.content}</p>
         {/if}
+
+        {#if wikiUrl}
+          <a
+            href={wikiUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="c-knowledge-more-link"
+          >
+            <span>Devamını Vikipedi'de oku</span>
+            <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+          </a>
+        {/if}
+
         {#if displayAttributes.length > 0}
           <div class="c-knowledge-facts-grid">
             {#each displayAttributes as attr}
@@ -277,20 +293,21 @@
         {/if}
         <div class="c-knowledge-thing-content">
           {#if infobox.content}
-            <p class="c-knowledge-details__summary">
-              {infobox.content}
-              {#if infobox.urls && infobox.urls.length > 0}
-                <a
-                  href={infobox.urls[0].url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="c-knowledge-details__inline-source"
-                >
-                  Vikipedi
-                </a>
-              {/if}
-            </p>
+            <p class="c-knowledge-details__summary">{infobox.content}</p>
           {/if}
+
+          {#if wikiUrl}
+            <a
+              href={wikiUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="c-knowledge-more-link"
+            >
+              <span>Devamını Vikipedi'de oku</span>
+              <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+            </a>
+          {/if}
+
           {#if displayAttributes.length > 0}
             <div class="c-knowledge-facts-grid">
               {#each displayAttributes as attr}
@@ -303,25 +320,6 @@
           {/if}
         </div>
       </div>
-    {/if}
-
-    <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI ───────────────────────────── -->
-    {#if secondaryLinks.length > 0}
-      <footer class="c-knowledge-footer">
-        {#each secondaryLinks.slice(0, 3) as link}
-          <a
-            href={link.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="c-knowledge-pill-btn"
-          >
-            <span>{link.title}</span>
-            <span class="c-knowledge-pill-arrow">
-              {@html icon("externalLink", 11)}
-            </span>
-          </a>
-        {/each}
-      </footer>
     {/if}
   </article>
 {/if}

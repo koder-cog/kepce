@@ -1,272 +1,48 @@
 <script>
-  import { onMount } from "svelte";
   import { icon } from "@/components/ui/icons.js";
 
   let {
     lat = 0,
     lon = 0,
-    zoom = 12,
+    zoom = 13,
     isExpanded = $bindable(false),
-    osmUrl = ""
+    title = "Harita",
   } = $props();
 
-  let canvasEl = $state(null);
-  let isDark = $state(false);
+  let googleEmbedUrl = $derived(
+    lat && lon
+      ? `https://maps.google.com/maps?q=${lat},${lon}&hl=tr&z=${zoom}&output=embed`
+      : ""
+  );
 
-  let currentZoom = $state(12);
-  let centerLat = $state(0);
-  let centerLon = $state(0);
+  let googleMapsUrl = $derived(
+    lat && lon
+      ? `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
+      : ""
+  );
 
-  $effect(() => {
-    centerLat = lat;
-    centerLon = lon;
-    currentZoom = zoom;
-  });
-
-  // Sürükleme (Drag / Pan) durumu
-  let isDragging = $state(false);
-  let dragStartX = 0;
-  let dragStartY = 0;
-  let dragStartLat = 0;
-  let dragStartLon = 0;
-
-  function lon2tileFrac(lonDeg, z) {
-    const n = 2 ** z;
-    return ((lonDeg + 180) / 360) * n;
-  }
-
-  function lat2tileFrac(latDeg, z) {
-    const n = 2 ** z;
-    const latRad = (latDeg * Math.PI) / 180;
-    return ((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * n;
-  }
-
-  function checkDarkMode() {
-    if (typeof document === "undefined") return false;
-    const theme = document.documentElement.getAttribute("data-theme");
-    if (theme === "dark") return true;
-    if (theme === "light") return false;
-    return window.matchMedia?.("(prefers-color-scheme: dark)").matches || false;
-  }
-
-  function renderMap() {
-    if (!canvasEl || !centerLat || !centerLon) return;
-
-    const ctx = canvasEl.getContext("2d");
-    if (!ctx) return;
-
-    const rect = canvasEl.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
-    const width = rect.width || 320;
-    const height = rect.height || 200;
-
-    canvasEl.width = width * dpr;
-    canvasEl.height = height * dpr;
-    ctx.scale(dpr, dpr);
-
-    const tileSize = 256;
-    const z = currentZoom;
-    const xFrac = lon2tileFrac(centerLon, z);
-    const yFrac = lat2tileFrac(centerLat, z);
-    const n = 2 ** z;
-
-    const centerX = width / 2;
-    const centerY = height / 2;
-    const centerPxX = xFrac * tileSize;
-    const centerPxY = yFrac * tileSize;
-
-    const minX = Math.floor((centerPxX - centerX) / tileSize);
-    const maxX = Math.floor((centerPxX + centerX) / tileSize);
-    const minY = Math.floor((centerPxY - centerY) / tileSize);
-    const maxY = Math.floor((centerPxY + centerY) / tileSize);
-
-    const subdomains = ["a", "b", "c", "d"];
-
-    for (let ty = minY; ty <= maxY; ty++) {
-      if (ty < 0 || ty >= n) continue;
-      for (let tx = minX; tx <= maxX; tx++) {
-        const wrappedX = ((tx % n) + n) % n;
-        const sub = subdomains[(wrappedX + ty) % subdomains.length];
-        
-        // Açık modda sıcak/pastel OSM-HOT veya temiz CartoDB, koyu modda Dark Matter (Filigransız)
-        const tileUrl = isDark
-          ? `https://${sub}.basemaps.cartocdn.com/dark_all/${z}/${wrappedX}/${ty}.png`
-          : `https://${sub}.tile.openstreetmap.fr/hot/${z}/${wrappedX}/${ty}.png`;
-
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.src = tileUrl;
-        img.onload = () => {
-          const posX = tx * tileSize - centerPxX + centerX;
-          const posY = ty * tileSize - centerPxY + centerY;
-          ctx.drawImage(img, posX, posY, tileSize, tileSize);
-        };
-      }
-    }
-  }
-
-  function handleMouseDown(e) {
-    if (e.button !== 0) return;
-    isDragging = true;
-    dragStartX = e.clientX;
-    dragStartY = e.clientY;
-    dragStartLat = centerLat;
-    dragStartLon = centerLon;
-  }
-
-  function handleMouseMove(e) {
-    if (!isDragging) return;
-    const dx = e.clientX - dragStartX;
-    const dy = e.clientY - dragStartY;
-
-    const tileSize = 256;
-    const n = 2 ** currentZoom;
-    const dLonFrac = -dx / tileSize;
-    const dLatFrac = -dy / tileSize;
-
-    const startXFrac = lon2tileFrac(dragStartLon, currentZoom);
-    const startYFrac = lat2tileFrac(dragStartLat, currentZoom);
-
-    const curXFrac = startXFrac + dLonFrac;
-    const curYFrac = startYFrac + dLatFrac;
-
-    centerLon = (curXFrac / n) * 360 - 180;
-    const sinhVal = Math.sinh(Math.PI * (1 - (2 * curYFrac) / n));
-    centerLat = (Math.atan(sinhVal) * 180) / Math.PI;
-
-    renderMap();
-  }
-
-  function handleMouseUp() {
-    isDragging = false;
-  }
-
-  function handleTouchStart(e) {
-    if (e.touches.length !== 1) return;
-    isDragging = true;
-    dragStartX = e.touches[0].clientX;
-    dragStartY = e.touches[0].clientY;
-    dragStartLat = centerLat;
-    dragStartLon = centerLon;
-  }
-
-  function handleTouchMove(e) {
-    if (!isDragging || e.touches.length !== 1) return;
-    const dx = e.touches[0].clientX - dragStartX;
-    const dy = e.touches[0].clientY - dragStartY;
-
-    const tileSize = 256;
-    const n = 2 ** currentZoom;
-    const dLonFrac = -dx / tileSize;
-    const dLatFrac = -dy / tileSize;
-
-    const startXFrac = lon2tileFrac(dragStartLon, currentZoom);
-    const startYFrac = lat2tileFrac(dragStartLat, currentZoom);
-
-    const curXFrac = startXFrac + dLonFrac;
-    const curYFrac = startYFrac + dLatFrac;
-
-    centerLon = (curXFrac / n) * 360 - 180;
-    const sinhVal = Math.sinh(Math.PI * (1 - (2 * curYFrac) / n));
-    centerLat = (Math.atan(sinhVal) * 180) / Math.PI;
-
-    renderMap();
-  }
-
-  function handleTouchEnd() {
-    isDragging = false;
-  }
-
-  function toggleExpand() {
+  function toggleExpand(e) {
+    e.stopPropagation();
     isExpanded = !isExpanded;
-    setTimeout(() => {
-      renderMap();
-    }, 50);
   }
-
-  function zoomIn() {
-    if (currentZoom < 18) {
-      currentZoom += 1;
-      renderMap();
-    }
-  }
-
-  function zoomOut() {
-    if (currentZoom > 3) {
-      currentZoom -= 1;
-      renderMap();
-    }
-  }
-
-  function resetCenter() {
-    centerLat = lat;
-    centerLon = lon;
-    currentZoom = zoom;
-    renderMap();
-  }
-
-  onMount(() => {
-    isDark = checkDarkMode();
-    centerLat = lat;
-    centerLon = lon;
-    currentZoom = zoom;
-    renderMap();
-
-    const observer = new MutationObserver(() => {
-      const nextDark = checkDarkMode();
-      if (nextDark !== isDark) {
-        isDark = nextDark;
-        renderMap();
-      }
-    });
-
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ["data-theme"]
-    });
-
-    const handleResize = () => {
-      renderMap();
-    };
-    window.addEventListener("resize", handleResize);
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", handleResize);
-    };
-  });
 </script>
-
-<svelte:window
-  onmousemove={handleMouseMove}
-  onmouseup={handleMouseUp}
-  ontouchmove={handleTouchMove}
-  ontouchend={handleTouchEnd}
-/>
 
 <div
   class="c-knowledge-tile c-knowledge-tile--map"
   class:is-expanded={isExpanded}
-  class:is-dragging={isDragging}
   role="region"
-  aria-label="Etkileşimli Harita"
+  aria-label="Google Harita Görünümü"
 >
-  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-  <canvas
-    bind:this={canvasEl}
-    class="c-map-canvas"
-    onmousedown={handleMouseDown}
-    ontouchstart={handleTouchStart}
-    ondblclick={zoomIn}
-  ></canvas>
-
-  <!-- Merkez Vektör Pin -->
-  <div class="c-map-marker-anchor" aria-hidden="true">
-    <div class="c-map-marker-pulse"></div>
-    <div class="c-map-marker-pin">
-      <div class="c-map-marker-dot"></div>
-    </div>
-  </div>
+  {#if googleEmbedUrl}
+    <iframe
+      src={googleEmbedUrl}
+      title="{title} Google Harita"
+      class="c-map-iframe"
+      loading="lazy"
+      referrerpolicy="no-referrer"
+      sandbox="allow-scripts allow-same-origin allow-popups"
+    ></iframe>
+  {/if}
 
   <!-- Sağ Üst: Genişlet / Daralt (Morfoz) Butonu -->
   <div class="c-map-ctrl-top-right">
@@ -278,67 +54,30 @@
       aria-label={isExpanded ? "Haritayı Daralt" : "Haritayı Genişlet"}
     >
       {#if isExpanded}
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14L3 21" />
         </svg>
       {:else}
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
         </svg>
       {/if}
     </button>
   </div>
 
-  <!-- Sağ Alt: Yakınlaştırma (+ / -) ve Dış Bağlantı Butonları -->
+  <!-- Sağ Alt: Dış Bağlantı (Google Haritalar) Butonu -->
   <div class="c-map-ctrl-bottom-right">
-    {#if isExpanded}
-      <div class="c-map-zoom-group">
-        <button
-          type="button"
-          class="c-map-zoom-btn"
-          onclick={zoomIn}
-          title="Yakınlaştır"
-          aria-label="Yakınlaştır"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M12 5v14M5 12h14" />
-          </svg>
-        </button>
-        <button
-          type="button"
-          class="c-map-zoom-btn"
-          onclick={zoomOut}
-          title="Uzaklaştır"
-          aria-label="Uzaklaştır"
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M5 12h14" />
-          </svg>
-        </button>
-      </div>
-
-      <button
-        type="button"
+    {#if googleMapsUrl}
+      <a
+        href={googleMapsUrl}
+        target="_blank"
+        rel="noopener noreferrer"
         class="c-map-action-btn"
-        onclick={resetCenter}
-        title="Merkeze Dön"
-        aria-label="Merkeze Dön"
+        title="Google Haritalar'da Aç"
+        aria-label="Google Haritalar'da Aç"
       >
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-          <circle cx="12" cy="12" r="3" />
-          <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-        </svg>
-      </button>
+        {@html icon("externalLink", 14)}
+      </a>
     {/if}
-
-    <a
-      href={osmUrl || `https://www.openstreetmap.org/?mlat=${centerLat}&mlon=${centerLon}#map=${currentZoom}/${centerLat}/${centerLon}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="c-map-action-btn"
-      title="OpenStreetMap'te Aç"
-    >
-      {@html icon("externalLink", 14)}
-    </a>
   </div>
 </div>
