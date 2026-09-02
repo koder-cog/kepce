@@ -80,6 +80,124 @@ async function fetchPlaceDetails(placeName) {
   }
 }
 
+function classifyEntity(box, q) {
+  const attributes = box.attributes || [];
+  const labels = attributes.map((a) => (a.label || "").toLowerCase());
+  const text = `${box.title || ""} ${box.content || ""} ${q || ""}`.toLowerCase();
+
+  // 1. Kişi (Person) Kontrolü
+  const personLabels = [
+    "doğum tarihi",
+    "ölüm tarihi",
+    "vatandaşlığı",
+    "mesleği",
+    "eşi",
+    "çocukları",
+    "boyu",
+    "ebeveynleri",
+    "etkin yılları",
+    "eğitimi",
+  ];
+  if (labels.some((l) => personLabels.includes(l))) {
+    return "person";
+  }
+  const personKeywords = [
+    "devlet adamı",
+    "mareşal",
+    "yazar",
+    "şair",
+    "fizikçi",
+    "matematikçi",
+    "müzisyen",
+    "futbolcu",
+    "oyuncu",
+    "şarkıcı",
+    "ressam",
+    "bilim insanı",
+    "politikacı",
+    "filozof",
+  ];
+  if (
+    personKeywords.some((k) => text.includes(k)) &&
+    !text.includes("üniversite") &&
+    !text.includes("şehir")
+  ) {
+    return "person";
+  }
+
+  // 2. Kurum / Üniversite (Organization) Kontrolü
+  const orgLabels = [
+    "rektör",
+    "genel merkez",
+    "ceo",
+    "kuruluş tarihi",
+    "yönetim kurulu başkanı",
+    "çalışan sayısı",
+  ];
+  if (labels.some((l) => orgLabels.includes(l))) {
+    return "organization";
+  }
+  if (
+    text.includes("üniversite") ||
+    text.includes("enstitü") ||
+    text.includes("vakıf") ||
+    text.includes("kurumu") ||
+    text.includes("şirketi") ||
+    text.includes("kulübü")
+  ) {
+    return "organization";
+  }
+
+  // 3. Yer / Coğrafya (Place) Kontrolü
+  const placeLabels = [
+    "başkenti",
+    "nüfus",
+    "nüfusu",
+    "alanı",
+    "yüzölçümü",
+    "rakımı",
+    "koordinatları",
+    "su hacmi",
+    "en yüksek noktası",
+    "derinliği",
+    "konumu",
+    "bölgesi",
+  ];
+  if (labels.some((l) => placeLabels.includes(l))) {
+    return "place";
+  }
+  const placeKeywords = [
+    "başkent",
+    "şehir",
+    "gölü",
+    "göl",
+    "dağı",
+    "dağ",
+    "nehri",
+    "nehir",
+    "ilçesi",
+    "ilçe",
+    "adası",
+    "ada",
+    "körfezi",
+    "şelalesi",
+    "kenti",
+    "bölgesi",
+    "kasabası",
+    "vadisi",
+    "kanyonu",
+    "denizi",
+    "boğazı",
+    "plajı",
+  ];
+  if (placeKeywords.some((k) => text.includes(k))) {
+    return "place";
+  }
+
+  // 4. Varsayılan: Nesne / Kavram / Araç (Thing)
+  return "thing";
+}
+
 export async function load({ url, fetch }) {
   const q = (url.searchParams.get("q") || "").trim();
   const category = url.searchParams.get("kategori") || "general";
@@ -158,23 +276,37 @@ export async function load({ url, fetch }) {
       parsedUrl: item.parsed_url || [],
     }));
 
-    const infoboxes = (data.infoboxes || []).map((box) => ({
-      title: box.infobox || box.title || "",
-      id: box.id || "",
-      content: box.content || "",
-      imgSrc: box.img_src || box.thumbnail || "",
-      urls: box.urls || (box.id ? [{ title: "Vikipedi", url: box.id }] : []),
-      attributes: (box.attributes || [])
+    const infoboxes = (data.infoboxes || []).map((box) => {
+      const cleanAttrs = (box.attributes || [])
         .map((a) => ({
           label: a.label || "",
           value: a.value || "",
         }))
-        .filter((a) => a.label && a.value),
-      engine: box.engine || (box.engines && box.engines[0]) || "",
-      placeInfo: null,
-    }));
+        .filter((a) => a.label && a.value);
 
-    if (infoboxes.length > 0) {
+      const rawBox = {
+        title: box.infobox || box.title || "",
+        id: box.id || "",
+        content: box.content || "",
+        imgSrc: box.img_src || box.thumbnail || "",
+        urls: box.urls || (box.id ? [{ title: "Vikipedi", url: box.id }] : []),
+        attributes: cleanAttrs,
+        engine: box.engine || (box.engines && box.engines[0]) || "",
+      };
+
+      const entityType = classifyEntity(rawBox, q);
+
+      return {
+        ...rawBox,
+        entityType,
+        placeInfo: null,
+      };
+    });
+
+    if (
+      infoboxes.length > 0 &&
+      (infoboxes[0].entityType === "place" || infoboxes[0].entityType === "organization")
+    ) {
       try {
         const placeDetails = await fetchPlaceDetails(infoboxes[0].title || q);
         if (placeDetails) {

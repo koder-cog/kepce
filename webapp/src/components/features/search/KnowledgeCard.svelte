@@ -26,36 +26,55 @@
     }
   }
 
+  let entityType = $derived(infobox?.entityType || "thing");
   let place = $derived(infobox?.placeInfo);
   let weather = $derived(place?.weather);
-  let isPlaceEntity = $derived(!!place?.lat && !!place?.lon);
+  let hasValidPlace = $derived(entityType === "place" && !!place?.lat && !!place?.lon);
+  let hasValidOrgMap = $derived(entityType === "organization" && !!place?.lat && !!place?.lon);
+
+  let typeBadgeLabel = $derived.by(() => {
+    if (entityType === "place") return "Coğrafi Konum";
+    if (entityType === "person") return "Biyografi";
+    if (entityType === "organization") return "Kurum";
+    return "Bilgi";
+  });
 </script>
 
 {#if infobox}
-  <section class="c-google-knowledge" aria-label="Bilgi Kartı">
-    <!-- ── 1. ÜST BAŞLIK (Google Tarzı Büyük Başlık & Alt Başlık) ── -->
+  <section class="c-google-knowledge c-google-knowledge--{entityType}" aria-label="Bilgi Kartı">
+    <!-- ── 1. ÜST BAŞLIK (Google Tarzı Başlık & Alt Başlık) ────────── -->
     <header class="c-google-knowledge__header">
       <div class="c-google-knowledge__title-group">
         <h1 class="c-google-knowledge__title">{infobox.title}</h1>
-        {#if place?.country}
+        {#if place?.country && entityType === "place"}
           <p class="c-google-knowledge__subtitle">{place.country}</p>
+        {:else if entityType === "person"}
+          <p class="c-google-knowledge__subtitle">Tarihî Şahsiyet / Biyografi</p>
+        {:else if entityType === "organization"}
+          <p class="c-google-knowledge__subtitle">Kurum / Kuruluş</p>
         {/if}
       </div>
-      {#if infobox.engine}
-        <span class="c-google-knowledge__badge">
-          {infobox.engine === "wikipedia"
-            ? "Vikipedi"
-            : infobox.engine === "wikidata"
-              ? "Wikidata"
-              : infobox.engine}
+      <div class="c-google-knowledge__badges">
+        <span class="c-google-knowledge__badge c-google-knowledge__badge--type">
+          {typeBadgeLabel}
         </span>
-      {/if}
+        {#if infobox.engine}
+          <span class="c-google-knowledge__badge">
+            {infobox.engine === "wikipedia"
+              ? "Vikipedi"
+              : infobox.engine === "wikidata"
+                ? "Wikidata"
+                : infobox.engine}
+          </span>
+        {/if}
+      </div>
     </header>
 
-    <!-- ── 2. VİTRİN KARTLARI (Yer/Coğrafya ise 3 Kartlı Grid) ── -->
-    {#if isPlaceEntity}
+    <!-- ── 2. VİTRİN / MEDYA ALANI (Varlık Türüne Göre) ───────────── -->
+    {#if hasValidPlace}
+      <!-- 2A. Coğrafi Yer: 3 Parçalı Vitrin (Resim + Harita + Hava Durumu) -->
       <div class="c-google-knowledge__showcase">
-        <!-- Kart 1: Fotoğraf -->
+        <!-- Fotoğraf -->
         <div class="c-google-showcase-tile c-google-showcase-tile--photo">
           {#if infobox.imgSrc && !imgError}
             <img
@@ -72,7 +91,7 @@
           {/if}
         </div>
 
-        <!-- Kart 2: Harita -->
+        <!-- Harita Karosu -->
         <div class="c-google-showcase-tile c-google-showcase-tile--map">
           <iframe
             title="Harita - {infobox.title}"
@@ -88,16 +107,15 @@
               target="_blank"
               rel="noopener noreferrer"
               class="c-google-showcase-tile__map-btn"
-              title="Haritayı Büyüt"
+              title="Haritada Büyüt"
             >
               ↗
             </a>
           </div>
         </div>
 
-        <!-- Kart 3: Sağ İkili Yığın (Hava Durumu + Nasıl Gidilir) -->
+        <!-- Sağ İkili Yığın (Hava Durumu + Nasıl Gidilir) -->
         <div class="c-google-showcase-stack">
-          <!-- Hava Durumu Kartı -->
           {#if weather}
             <div class="c-google-stat-card c-google-stat-card--weather">
               <div class="c-google-stat-card__head">
@@ -122,7 +140,6 @@
             </div>
           {/if}
 
-          <!-- Nasıl Gidilir Kartı -->
           <a
             href="https://www.openstreetmap.org/directions?to={place.lat}%2C{place.lon}"
             target="_blank"
@@ -131,28 +148,71 @@
           >
             <div class="c-google-stat-card__action-text">
               <span class="c-google-stat-card__title">Nasıl gidilir?</span>
-              <span class="c-google-stat-card__subtext">Harita üzerinde rota ve yol tarifi al</span>
+              <span class="c-google-stat-card__subtext">Rota ve yol tarifi al</span>
             </div>
             <span class="c-google-stat-card__arrow">›</span>
           </a>
         </div>
       </div>
+    {:else if hasValidOrgMap}
+      <!-- 2B. Kurum / Üniversite: Logo/Kampüs + Yerleşke Haritası (2'li Vitrin) -->
+      <div class="c-google-knowledge__org-showcase">
+        {#if infobox.imgSrc && !imgError}
+          <div class="c-google-showcase-tile c-google-showcase-tile--org-media">
+            <img
+              src={infobox.imgSrc}
+              alt={infobox.title}
+              class="c-google-showcase-tile__img"
+              loading="lazy"
+              onerror={handleImgError}
+            />
+          </div>
+        {/if}
+        <div class="c-google-showcase-tile c-google-showcase-tile--map">
+          <iframe
+            title="Yerleşke - {infobox.title}"
+            class="c-google-showcase-tile__map-iframe"
+            src="https://www.openstreetmap.org/export/embed.html?bbox={place.lon - 0.05}%2C{place.lat - 0.03}%2C{place.lon + 0.05}%2C{place.lat + 0.03}&layer=mapnik&marker={place.lat}%2C{place.lon}"
+            loading="lazy"
+            tabindex="-1"
+          ></iframe>
+          <div class="c-google-showcase-tile__map-overlay">
+            <span class="c-google-showcase-tile__map-pin">🏛️ {infobox.title}</span>
+            <a
+              href="https://www.openstreetmap.org/?mlat={place.lat}&mlon={place.lon}#map=14/{place.lat}/{place.lon}"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="c-google-showcase-tile__map-btn"
+              title="Haritada İncele"
+            >
+              ↗
+            </a>
+          </div>
+        </div>
+      </div>
     {:else if infobox.imgSrc && !imgError}
-      <!-- Genel Varlık (Yer değilse): Tek Geniş Hero Fotoğrafı -->
-      <div class="c-google-knowledge__single-hero">
+      <!-- 2C. Kişi / Nesne: Tekil Odaklı Hero Görseli (Harita/Hava Yok!) -->
+      <div class="c-google-knowledge__hero-container c-google-knowledge__hero-container--{entityType}">
         <img
           src={infobox.imgSrc}
           alt={infobox.title}
-          class="c-google-knowledge__single-img"
+          class="c-google-knowledge__hero-img"
           loading="lazy"
           onerror={handleImgError}
         />
       </div>
     {/if}
 
-    <!-- ── 3. ALT BİLGİ VE HAKKINDA BÖLÜMÜ ──────────────────── -->
+    <!-- ── 3. ALT BİLGİ VE HAKKINDA BÖLÜMÜ ───────────────────────── -->
     <div class="c-google-knowledge__details">
-      <div class="c-google-knowledge__section-title">Hakkında</div>
+      <div class="c-google-knowledge__section-title">
+        {entityType === "person"
+          ? "Biyografi"
+          : entityType === "place"
+            ? "Genel Bakış"
+            : "Hakkında"}
+      </div>
+
       {#if infobox.content}
         <p class="c-google-knowledge__summary">
           {infobox.content}
@@ -172,7 +232,7 @@
       <!-- Nitelikler Izgarası (Attributes) -->
       {#if infobox.attributes && infobox.attributes.length > 0}
         <div class="c-google-knowledge__attrs-grid">
-          {#each infobox.attributes.slice(0, 6) as attr}
+          {#each infobox.attributes.slice(0, 8) as attr}
             <div class="c-google-attr-item">
               <span class="c-google-attr-label">{attr.label}</span>
               <span class="c-google-attr-value">{attr.value}</span>
