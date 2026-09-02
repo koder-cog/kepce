@@ -22,11 +22,18 @@ export const BANG_DEFINITIONS = [
 
   // Multimedya & Video & Müzik
   { prefix: "!yt", name: "YouTube", url: "https://www.youtube.com/results?search_query=" },
+  { prefix: "!ytm", name: "YouTube Music", url: "https://music.youtube.com/search?q=" },
   { prefix: "!sp", name: "Spotify", url: "https://open.spotify.com/search/" },
+  { prefix: "!genius", name: "Genius (Şarkı Sözleri)", url: "https://genius.com/search?q=" },
+  { prefix: "!sc", name: "SoundCloud", url: "https://soundcloud.com/search?q=" },
+  { prefix: "!twitch", name: "Twitch", url: "https://www.twitch.tv/search?term=" },
+  { prefix: "!steam", name: "Steam", url: "https://store.steampowered.com/search/?term=" },
   { prefix: "!imdb", name: "IMDb", url: "https://www.imdb.com/find?q=" },
+  { prefix: "!lb", name: "Letterboxd", url: "https://letterboxd.com/search/" },
+  { prefix: "!goodreads", name: "Goodreads", url: "https://www.goodreads.com/search?q=" },
   { prefix: "!unsplash", name: "Unsplash", url: "https://unsplash.com/s/photos/" },
   { prefix: "!vimeo", name: "Vimeo", url: "https://vimeo.com/search?q=" },
-  { prefix: "!lb", name: "Letterboxd", url: "https://letterboxd.com/search/" },
+  { prefix: "!pin", name: "Pinterest", url: "https://www.pinterest.com/search/pins/?q=" },
 
   // Sosyal Medya & Topluluk
   { prefix: "!r", name: "Reddit", url: "https://www.reddit.com/search/?q=" },
@@ -43,6 +50,7 @@ export const BANG_DEFINITIONS = [
 
   // Haritalar & Coğrafya
   { prefix: "!m", name: "OpenStreetMap", url: "https://www.openstreetmap.org/search?query=" },
+  { prefix: "!maps", name: "Google Haritalar", url: "https://www.google.com/maps/search/" },
   { prefix: "!gmaps", name: "Google Haritalar", url: "https://www.google.com/maps/search/" },
 
   // Alışveriş
@@ -54,6 +62,8 @@ export const BANG_DEFINITIONS = [
   // Çeviri & Araçlar
   { prefix: "!tr", name: "Google Çeviri (TR)", url: "https://translate.google.com/?sl=auto&tl=tr&text=" },
   { prefix: "!tren", name: "Google Çeviri (EN)", url: "https://translate.google.com/?sl=auto&tl=en&text=" },
+  { prefix: "!chatgpt", name: "ChatGPT", url: "https://chatgpt.com/?q=" },
+  { prefix: "!claude", name: "Claude", url: "https://claude.ai/new?q=" },
   { prefix: "!wayback", name: "Wayback Machine", url: "https://web.archive.org/web/*/" }
 ];
 

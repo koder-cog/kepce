@@ -535,7 +535,13 @@ export async function load({ url, fetch }) {
   const instantAnswer = isGeneralCategory ? await solveInstantQuery(q) : null;
 
   // Doğal dildeki döviz sorgularında web sekmesinde organik haber/piyasa sonuçlarının akması için anahtar kelime ayarlaması
-  const effectiveQuery = (instantAnswer?.type === "currency" && isGeneralCategory) ? `${instantAnswer.fromCurrencyName} kuru` : q;
+  let effectiveQuery = q;
+  if (instantAnswer?.type === "currency" && isGeneralCategory) {
+    effectiveQuery = `${instantAnswer.fromCurrencyName} kuru`;
+  } else if (q.startsWith("!")) {
+    // SearXNG motor sözdizimi (!engine) ile çakışmaması için çözümlenmeyen !bangs'i arama terimine çevir
+    effectiveQuery = q.replace(/^!+/, "").trim() || q;
+  }
 
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   const searchParams = new URLSearchParams({
@@ -657,21 +663,31 @@ export async function load({ url, fetch }) {
     const suggestions = data.suggestions || [];
     const numberOfResults = data.number_of_results || results.length;
 
-    // SearXNG yerleşik eklentilerinin (calculator, unit_converter, time) answers çıktısını bağlama
+    // SearXNG yerleşik eklentilerinin (calculator, unit_converter) answers çıktısını bağlama
     let resolvedAnswer = instantAnswer;
     if (!resolvedAnswer && data.answers && data.answers.length > 0) {
       const rawAns = data.answers[0];
+      let ansContent = "";
+      let ansType = "generic";
+      let ansTitle = "Anlık Yanıt";
+
       if (typeof rawAns === "string") {
-        resolvedAnswer = {
-          type: "generic",
-          title: "Anlık Yanıt",
-          content: rawAns,
-        };
+        ansContent = rawAns;
       } else if (rawAns && typeof rawAns === "object") {
+        ansType = rawAns.type || "generic";
+        ansTitle = rawAns.title || "Anlık Yanıt";
+        ansContent = rawAns.answer || rawAns.content || "";
+      }
+
+      // Kullanıcı doğrudan saat/tarih sormadıysa SearXNG'nin rastgele döndürdüğü sistem saatini yanıltıcı kart yapma
+      const isDateOrTimeAnswer = /\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]+\s+\d{4}|\d{2}:\d{2}:\d{2}/.test(ansContent);
+      const isExplicitTimeQuery = /saat|time|tarih|date|bugün|gun|gün/.test(q.toLowerCase());
+
+      if (ansContent && (!isDateOrTimeAnswer || isExplicitTimeQuery)) {
         resolvedAnswer = {
-          type: rawAns.type || "generic",
-          title: rawAns.title || "Anlık Yanıt",
-          content: rawAns.answer || rawAns.content || JSON.stringify(rawAns),
+          type: ansType,
+          title: ansTitle,
+          content: ansContent,
         };
       }
     }
