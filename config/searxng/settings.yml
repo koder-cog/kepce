@@ -1,15 +1,28 @@
 use_default_settings: true
+
 general:
   debug: false
   instance_name: "Kepçe Ara"
+
 server:
   port: 8080
   bind_address: "0.0.0.0"
   secret_key: "kepce_searxng_production_secret_key_change_me"
+  image_proxy: true
+
 search:
   safe_search: 0
-  autocomplete: ""
+  autocomplete: "duckduckgo"
+  autocomplete_min: 2
   default_lang: "tr"
+  request_timeout: 3.0
   formats:
     - html
     - json
+
+outgoing:
+  request_timeout: 3.0
+  max_request_timeout: 4.0
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true

@@ -65,8 +65,78 @@
     { id: "map", label: "Haritalar" },
   ];
 
+  let suggestions = $state([]);
+  let isSuggestionsOpen = $state(false);
+  let selectedSuggestionIndex = $state(-1);
+  let debounceTimeout = null;
+
+  async function fetchSuggestions(query) {
+    const q = query.trim();
+    if (!q || q.length < 2) {
+      suggestions = [];
+      isSuggestionsOpen = false;
+      return;
+    }
+
+    try {
+      const res = await fetch(`${basePath}/autocompleter?q=${encodeURIComponent(q)}`);
+      if (res.ok) {
+        const list = await res.json();
+        if (Array.isArray(list) && list.length > 0) {
+          suggestions = list;
+          isSuggestionsOpen = true;
+          selectedSuggestionIndex = -1;
+          return;
+        }
+      }
+    } catch {
+      // ignore
+    }
+    suggestions = [];
+    isSuggestionsOpen = false;
+  }
+
+  function handleInput(e) {
+    const val = e.target.value;
+    searchInput = val;
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      fetchSuggestions(val);
+    }, 150);
+  }
+
+  function handleKeydown(e) {
+    if (!isSuggestionsOpen || suggestions.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
+      searchInput = suggestions[selectedSuggestionIndex];
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      selectedSuggestionIndex = (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
+      searchInput = suggestions[selectedSuggestionIndex];
+    } else if (e.key === "Escape") {
+      isSuggestionsOpen = false;
+      selectedSuggestionIndex = -1;
+    }
+  }
+
+  function selectSuggestion(item) {
+    searchInput = item;
+    isSuggestionsOpen = false;
+    handleSearch();
+  }
+
+  function handleBlur() {
+    setTimeout(() => {
+      isSuggestionsOpen = false;
+    }, 200);
+  }
+
   function handleSearch(e) {
     e?.preventDefault();
+    isSuggestionsOpen = false;
     const q = searchInput.trim();
     if (!q) return;
 
@@ -197,9 +267,13 @@
           type="search"
           class="c-search-box__input"
           placeholder="İnterneti kurcala..."
-          bind:value={searchInput}
+          value={searchInput}
+          oninput={handleInput}
+          onkeydown={handleKeydown}
+          onblur={handleBlur}
           bind:this={searchInputEl}
           aria-label="Ara"
+          autocomplete="off"
         />
         <button
           type="submit"
@@ -209,6 +283,25 @@
         >
           {@html icon("search", 20)}
         </button>
+
+        {#if isSuggestionsOpen && suggestions.length > 0}
+          <ul class="c-search-autocomplete" role="listbox">
+            {#each suggestions as item, idx}
+              <li
+                class="c-search-autocomplete__item"
+                class:is-selected={idx === selectedSuggestionIndex}
+                onmousedown={() => selectSuggestion(item)}
+                role="option"
+                aria-selected={idx === selectedSuggestionIndex}
+              >
+                <span class="c-search-autocomplete__icon">
+                  {@html icon("search", 16)}
+                </span>
+                <span>{item}</span>
+              </li>
+            {/each}
+          </ul>
+        {/if}
       </form>
 
       <!-- Hızlı Kısayol İpuçları (Dinamik Rastgele Havuz) -->
@@ -277,8 +370,12 @@
               type="search"
               class="c-search-box__input"
               placeholder="Ara..."
-              bind:value={searchInput}
+              value={searchInput}
+              oninput={handleInput}
+              onkeydown={handleKeydown}
+              onblur={handleBlur}
               aria-label="Ara"
+              autocomplete="off"
             />
             <button
               type="submit"
@@ -288,6 +385,25 @@
             >
               {@html icon("search", 20)}
             </button>
+
+            {#if isSuggestionsOpen && suggestions.length > 0}
+              <ul class="c-search-autocomplete" role="listbox">
+                {#each suggestions as item, idx}
+                  <li
+                    class="c-search-autocomplete__item"
+                    class:is-selected={idx === selectedSuggestionIndex}
+                    onmousedown={() => selectSuggestion(item)}
+                    role="option"
+                    aria-selected={idx === selectedSuggestionIndex}
+                  >
+                    <span class="c-search-autocomplete__icon">
+                      {@html icon("search", 16)}
+                    </span>
+                    <span>{item}</span>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
           </form>
         </div>
 
