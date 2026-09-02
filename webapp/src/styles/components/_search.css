@@ -1324,10 +1324,9 @@
   padding: 10px 14px;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
-  min-height: 62px;
+  min-height: 64px;
   overflow: hidden;
   transition: background-color var(--dur-fast) var(--ease-standard);
 }
@@ -1342,6 +1341,9 @@
 }
 
 .c-knowledge-fact-value {
+  flex: 1;
+  display: flex;
+  align-items: center;
   font-size: 0.9375rem;
   font-weight: 700;
   color: var(--color-text);
