@@ -80,19 +80,21 @@
   <div class="c-answer-card" role="region" aria-label="Hızlı Yanıt">
     {#if answer.type === "currency"}
       <div class="c-answer-card__currency-clean">
-        <p class="c-answer-card__sub-title">
-          {fromAmount.toLocaleString("tr-TR")} {fromCurrencyName} eşittir
-        </p>
+        <div class="c-answer-card__left">
+          <p class="c-answer-card__sub-title">
+            {fromAmount.toLocaleString("tr-TR")} {fromCurrencyName} eşittir
+          </p>
 
-        <h2 class="c-answer-card__headline">
-          {formattedToAmount} {toCurrencyName}
-        </h2>
+          <h2 class="c-answer-card__headline">
+            {formattedToAmount} {toCurrencyName}
+          </h2>
 
-        <p class="c-answer-card__single-rate">
-          1 {fromCurrency} = {formattedSingleRate} {toCurrency}
-        </p>
+          <p class="c-answer-card__single-rate">
+            1 {fromCurrency} = {formattedSingleRate} {toCurrency}
+          </p>
+        </div>
 
-        <!-- Google Tarzı Dikey Yığılmış İki Dönüştürücü Kutusu -->
+        <!-- Google Tarzı Dikey Yığılmış İki Dönüştürücü Kutusu (Sağ Taraf) -->
         <div class="c-answer-fx-stack">
           <!-- Üst Satır: Kaynak Tutar + Para Birimi -->
           <div class="c-answer-fx-row">

@@ -1374,7 +1374,14 @@
 }
 
 .c-answer-card__currency-clean {
-  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.c-answer-card__left {
+  display: flex;
+  flex-direction: column;
 }
 
 .c-answer-card__sub-title {
@@ -1396,15 +1403,34 @@
 .c-answer-card__single-rate {
   font-size: var(--text-xs);
   color: var(--color-text-dim);
-  margin: 0 0 var(--space-lg);
+  margin: 0;
 }
 
-/* Google Tarzı Dikey Yığın */
+/* Sağ Taraf Dikey Yığın */
 .c-answer-fx-stack {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  max-width: 440px;
+  width: 100%;
+}
+
+@media (min-width: 600px) {
+  .c-answer-card__currency-clean {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2xl);
+  }
+
+  .c-answer-card__left {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .c-answer-fx-stack {
+    width: 380px;
+    flex-shrink: 0;
+  }
 }
 
 .c-answer-fx-row {
