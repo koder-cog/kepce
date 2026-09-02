@@ -75,18 +75,25 @@ export function resolveBang(query) {
   const prefix = parts[0].toLowerCase();
   const rawTerm = parts.slice(1).join(" ").trim();
 
+  // 1. Yerel tanımlı hızlı bang'ler (0ms direkt yönlendirme)
   const match = BANG_DEFINITIONS.find((b) => b.prefix === prefix);
-  if (!match) return null;
-
-  if (!rawTerm) {
-    // Sorgu boşsa doğrudan ilgili servisin ana sayfasına git
-    try {
-      const u = new URL(match.url);
-      return u.origin;
-    } catch {
-      return match.url;
+  if (match) {
+    if (!rawTerm) {
+      // Sorgu terimsizse doğrudan ilgili servisin ana sayfasına git
+      try {
+        const u = new URL(match.url);
+        return u.origin;
+      } catch {
+        return match.url;
+      }
     }
+    return match.url + encodeURIComponent(rawTerm);
   }
 
-  return match.url + encodeURIComponent(rawTerm);
+  // 2. Yerel listede olmayan tüm !bang kalıplarını DuckDuckGo'nun 13.000+ global havuzuna devret
+  if (/^![a-z0-9_]+$/i.test(prefix)) {
+    return `https://duckduckgo.com/?q=${encodeURIComponent(trimmed)}`;
+  }
+
+  return null;
 }
