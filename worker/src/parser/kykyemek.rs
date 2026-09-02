@@ -2,13 +2,18 @@ use chrono::NaiveDate;
 use scraper::{Html, Selector};
 use shared::services::content_guard::ContentGuard;
 
-pub struct KykMenuParseResult {
+use shared::entities::sea_orm_active_enums::MealTypeEnum;
+
+pub struct KykyemekParseResult {
     pub date: NaiveDate,
     pub dishes: Vec<Vec<crate::parser::models::MenuComponent>>,
     pub takeaways: Vec<(String, Vec<Vec<crate::parser::models::MenuComponent>>)>,
     pub min_calories: Option<i32>,
     pub max_calories: Option<i32>,
+    pub detected_meal: Option<MealTypeEnum>,
 }
+
+pub type KykMenuParseResult = KykyemekParseResult;
 
 /// "1100-1500 kalori" veya "850 kcal" -> (Some(1100), Some(1500))
 pub fn parse_kcal_range(meta: Option<&str>) -> (Option<i32>, Option<i32>) {
@@ -28,7 +33,7 @@ pub fn parse_kcal_range(meta: Option<&str>) -> (Option<i32>, Option<i32>) {
     }
 }
 
-pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> Vec<KykMenuParseResult> {
+pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str) -> Vec<KykyemekParseResult> {
     let document = Html::parse_document(html_content);
     let card_selector = Selector::parse(".cardStyle").unwrap();
     let date_selector = Selector::parse("p.date, p.cardDate, .cardDate, p[id^='date_']").unwrap();
@@ -123,6 +128,15 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
         let mut seen_takeaways = std::collections::HashSet::new();
         takeaways.retain(|(pkg_name, _)| seen_takeaways.insert(pkg_name.clone()));
         
+        let card_html = card.html();
+        let detected_meal = if card_html.contains("'Dinner'") || card_html.contains("\"Dinner\"") || card_html.contains("Akşam Yemeği") || card_html.contains("Aksam Yemegi") {
+            Some(MealTypeEnum::Dinner)
+        } else if card_html.contains("'Breakfast'") || card_html.contains("\"Breakfast\"") || card_html.contains("Kahvaltı") || card_html.contains("Kahvalti") {
+            Some(MealTypeEnum::Breakfast)
+        } else {
+            None
+        };
+
         if !raw_dishes.is_empty() {
             results.push(KykMenuParseResult {
                 date: date_val,
@@ -130,12 +144,15 @@ pub fn parse_kyk_html(html_content: &str, city_slug: &str, meal_type: &str) -> V
                 takeaways,
                 min_calories,
                 max_calories,
+                detected_meal,
             });
         }
     }
     
     results
 }
+
+pub use parse_kykyemek_html as parse_kyk_html;
 
 pub fn clean_and_split_dish(mut text: String) -> Vec<crate::parser::models::MenuComponent> {
     if ContentGuard::is_junk_dish_text(&text) {
@@ -223,5 +240,22 @@ mod tests {
         
         // p4: <p>Siyah/Yeşil Zeytin</p> -> replaced and split
         assert_eq!(dishes[3], vec!["Siyah Zeytin", "Yeşil Zeytin"]);
+    }
+
+    #[test]
+    fn test_kyk_menu_detected_meal() {
+        let html_dinner = r#"
+            <div class="cardStyle">
+                <p class="date">3 Eylül 2026</p>
+                <div class="card-body">
+                    <p>Mercimek Çorbası</p>
+                    <p>Çökertme Kebabı</p>
+                </div>
+                <button onclick="openModal('guid','0','Dinner','3.09.2026 00:00:00','istanbul')"></button>
+            </div>
+        "#;
+        let results = parse_kyk_html(html_dinner, "istanbul", "breakfast");
+        assert_eq!(results.len(), 1);
+        assert_eq!(results[0].detected_meal, Some(MealTypeEnum::Dinner));
     }
 }

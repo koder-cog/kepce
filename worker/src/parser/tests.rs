@@ -3,7 +3,7 @@
 mod tests {
     use chrono::NaiveDate;
     use std::collections::HashMap;
-    use crate::parser::kykyemek::{parse_kyk_html, parse_turkish_date};
+    use crate::parser::kykyemek::{parse_kykyemek_html, parse_turkish_date};
     use crate::parser::takeaway::{parse_takeaway_menu, TAKEAWAY_CACHE};
     use crate::parser::models::MenuComponent;
     use crate::parser::core::{parse_grid, SheetGrid, DateTokenOrder, infer_sheet_date_order, parse_date_with_order};
@@ -145,7 +145,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_kyk_html_basic() {
+    fn test_parse_kykyemek_html_basic() {
         let html = r#"
             <div class="cardStyle">
                 <div class="card-header">
@@ -160,7 +160,7 @@ mod tests {
             </div>
         "#;
 
-        let results = parse_kyk_html(html, "ankara", "dinner");
+        let results = parse_kykyemek_html(html, "ankara", "dinner");
         assert_eq!(results.len(), 1);
         let menu = &results[0];
         assert_eq!(menu.date, NaiveDate::from_ymd_opt(2026, 7, 14).unwrap());
@@ -246,7 +246,7 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_kyk_html_with_data_fastmenus() {
+    fn test_parse_kykyemek_html_with_data_fastmenus() {
         let card_html = r#"
             <div class="card cardStyle">
                 <p class="cardDate">3 Haziran 2026 Çarşamba</p>
@@ -262,7 +262,7 @@ mod tests {
             </div>
         "#;
 
-        let parsed = crate::parser::kykyemek::parse_kyk_html(card_html, "istanbul", "breakfast");
+        let parsed = crate::parser::kykyemek::parse_kykyemek_html(card_html, "istanbul", "breakfast");
         assert_eq!(parsed.len(), 1);
         let menu = &parsed[0];
         assert_eq!(menu.takeaways.len(), 2);

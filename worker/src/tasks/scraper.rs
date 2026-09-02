@@ -1,5 +1,6 @@
 use anyhow::Result;
-use chrono::{Datelike, NaiveDate};
+use chrono::NaiveDate;
+use rand::Rng;
 use reqwest::Client;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
@@ -102,7 +103,7 @@ pub fn take_inserted_menus() -> Vec<(i32, NaiveDate)> {
 }
 use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, Set, TransactionTrait};
 use shared::entities::{cities, menus, menu_dishes, sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum}};
-use crate::parser::kykyemek::parse_kyk_html;
+use crate::parser::kykyemek::parse_kykyemek_html;
 
 async fn sleep_cancelable(ms: u64, shutdown_rx: &mut tokio::sync::watch::Receiver<bool>) -> bool {
     if *shutdown_rx.borrow() {
@@ -114,223 +115,76 @@ async fn sleep_cancelable(ms: u64, shutdown_rx: &mut tokio::sync::watch::Receive
     }
 }
 
-pub async fn scrape_today_menus(
-    db: &DatabaseConnection,
-    client: &Client,
-    shutdown_rx: tokio::sync::watch::Receiver<bool>,
-) -> Result<usize> {
-    if is_banned() {
-        tracing::warn!("[KYK-BREAKER] Cooldown aktif - [TODAY] taraması bu tur atlanıyor.");
-        return Ok(0);
-    }
-
-    // Alfabetik/deterministik gezinme sırası bot klişesidir; her turda karıştır.
-    let mut active_cities = [
-        "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum",
-        "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk",
-        "kirklareli", "konya", "sakarya", "sivas", "trabzon"
+pub fn extract_cities_from_kykyemek_html(html: &str) -> Vec<String> {
+    static FALLBACK_CITIES: &[&str] = &[
+        "ankara", "antalya", "canakkale", "erzurum", "eskisehir", "gaziantep",
+        "isparta", "istanbul", "izmir", "kahramanmaras", "karabuk", "kirklareli",
+        "konya", "sakarya", "sivas", "trabzon",
     ];
-    {
-        use rand::seq::SliceRandom;
-        active_cities.shuffle(&mut rand::thread_rng());
+
+    if html.is_empty() {
+        return FALLBACK_CITIES.iter().map(|s| s.to_string()).collect();
     }
 
-    let mut token_opt = match fetch_antiforgery_token(client).await {
-        Ok(t) => Some(t),
-        Err(e) => {
-            tracing::warn!("Kykyemek token alınamadı: {:?}", e);
-            None
-        }
+    let document = scraper::Html::parse_document(html);
+    let select_sel = match scraper::Selector::parse("select#navbarDropdown option") {
+        Ok(s) => s,
+        Err(_) => return FALLBACK_CITIES.iter().map(|s| s.to_string()).collect(),
     };
 
-    let now = chrono::Local::now().naive_local().date();
-    let current_day = now.day() as i32;
-    let days_in_month = match now.month() {
-        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
-        4 | 6 | 9 | 11 => 30,
-        2 => if now.year() % 4 == 0 && (now.year() % 100 != 0 || now.year() % 400 == 0) { 29 } else { 28 },
-        _ => 30,
-    };
-
-    let mut total_saved = 0;
-
-    for slug in active_cities {
-        if *shutdown_rx.borrow() {
-            return Ok(total_saved);
+    let mut discovered: Vec<String> = Vec::new();
+    for opt in document.select(&select_sel) {
+        let text = opt.text().collect::<String>().trim().to_string();
+        if text.is_empty() {
+            continue;
         }
-
-        let city_opt = cities::Entity::find()
-            .filter(cities::Column::Slug.eq(slug))
-            .one(db)
-            .await?;
-
-        let city = match city_opt {
-            Some(c) => c,
-            None => continue,
-        };
-
-        let start_of_month = match NaiveDate::from_ymd_opt(now.year(), now.month(), 1) {
-            Some(d) => d,
-            None => continue,
-        };
-        let end_of_month = match NaiveDate::from_ymd_opt(now.year(), now.month(), days_in_month as u32) {
-            Some(d) => d,
-            None => continue,
-        };
-
-        // DB-SKIP: Bu şehrin bu ayına ait onaylı menüleri çek.
-        // Zaten veritabanında onaylı olan günler için dış sunucuya (kykyemek) tekrar istek ATMA.
-        let existing_approved_dates: HashSet<NaiveDate> = menus::Entity::find()
-            .filter(menus::Column::CityId.eq(city.id))
-            .filter(menus::Column::ServeDate.gte(start_of_month))
-            .filter(menus::Column::ServeDate.lte(end_of_month))
-            .filter(menus::Column::Status.eq(MenuStatusEnum::Approved))
-            .all(db)
-            .await
-            .unwrap_or_default()
-            .into_iter()
-            .map(|m| m.serve_date)
-            .collect();
-
-        let skipped_count = (1..=days_in_month)
-            .filter_map(|d| NaiveDate::from_ymd_opt(now.year(), now.month(), d as u32))
-            .filter(|d| existing_approved_dates.contains(d))
-            .count();
-
-        tracing::info!(
-            "[TODAY] Şehir için günün menüleri taranıyor: {} (toplam: {} gün, DB'de onaylı atlanan: {} gün)",
-            city.name, days_in_month, skipped_count
-        );
-
-        for day in 1..=days_in_month {
-            if *shutdown_rx.borrow() {
-                return Ok(total_saved);
-            }
-
-            let target_date = match NaiveDate::from_ymd_opt(now.year(), now.month(), day as u32) {
-                Some(d) => d,
-                None => continue,
-            };
-
-            // DB-SKIP: Eğer bu günün menüsü veritabanında zaten onaylı olarak mevcutsa dış kaynağa istek ATMA.
-            if existing_approved_dates.contains(&target_date) {
-                continue;
-            }
-
-            let day_shift = day - current_day;
-            let url = "https://kykyemek.com/Menu/GetDailyMenu";
-
-            let meal_configs = [
-                ("false", "breakfast", MealTypeEnum::Breakfast),
-                ("true", "dinner", MealTypeEnum::Dinner),
-            ];
-
-            for (meal_param, kyk_meal_type, meal_enum) in meal_configs {
-                if *shutdown_rx.borrow() || is_banned() {
-                    return Ok(total_saved);
-                }
-
-                let mut req = with_xhr_headers(client.get(url)
-                    .query(&[
-                        ("city", city.slug.as_str()),
-                        ("mealType", meal_param),
-                        ("isToday", "true"),
-                        ("dayShift", &day_shift.to_string()),
-                    ]))
-                    .header("X-Requested-With", "XMLHttpRequest")
-                    .header("Accept", "application/json, text/javascript, */*; q=0.01")
-                    .header("Referer", "https://kykyemek.com/Menu/TodayMenu")
-                    .timeout(std::time::Duration::from_secs(30));
-
-                if let Some(ref token) = token_opt {
-                    req = req
-                        .header("RequestVerificationToken", token.as_str())
-                        .header("__RequestVerificationToken", token.as_str());
-                }
-
-                let res = match req.send().await {
-                    Ok(r) if r.status().is_success() => {
-                        KYK_429_STREAK.store(0, Ordering::Relaxed);
-                        r
-                    }
-                    Ok(r) if r.status() == reqwest::StatusCode::TOO_MANY_REQUESTS => {
-                        // Kaynak sunucu hiz siniri uyguluyor: geri cekil, sakin ısrar etme.
-                        // Israrci 429 serisi ban'a evrilir -> esik asilinca devreyi kes.
-                        let streak = KYK_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
-                        if streak >= 5 {
-                            trip_ban(&format!("art arda {} kez HTTP 429 ([TODAY] taraması)", streak)).await;
-                            return Ok(total_saved);
-                        }
-                        let wait_secs = 30u64.saturating_mul(u64::from(streak)).min(300);
-                        tracing::warn!("HTTP 429 (hiz siniri) - {} kesinti/streak, {}sn bekleniyor...", streak, wait_secs);
-                        tokio::time::sleep(std::time::Duration::from_secs(wait_secs)).await;
-                        continue;
-                    }
-                    Ok(r) if r.status() == reqwest::StatusCode::FORBIDDEN => {
-                        // 403: büyük olasılıkla IP ban. Israr etmeden devreyi kes.
-                        trip_ban(&format!("HTTP 403 ([TODAY] taraması, şehir: {})", city.slug)).await;
-                        return Ok(total_saved);
-                    }
-                    Ok(r) if r.status() == reqwest::StatusCode::UNAUTHORIZED => {
-                        if let Ok(new_token) = fetch_antiforgery_token(client).await {
-                            token_opt = Some(new_token);
-                        }
-                        continue;
-                    }
-                    _ => continue,
-                };
-
-                let body_text = match res.text().await {
-                    Ok(b) => b,
-                    Err(_) => continue,
-                };
-
-                let html_content = if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_text) {
-                    json_val.get("html").and_then(|h| h.as_str()).unwrap_or(&body_text).to_string()
-                } else {
-                    body_text
-                };
-
-                if html_content.contains("Menü bulunamadı") || !html_content.contains("cardStyle") {
-                    continue;
-                }
-
-                let parsed_menus = parse_kyk_html(&html_content, &city.slug, kyk_meal_type);
-                for menu in parsed_menus {
-                    upsert_menu(
-                        db,
-                        city.id,
-                        menu.date,
-                        meal_enum.clone(),
-                        "kykyemek".to_string(),
-                        None,
-                        menu.dishes,
-                        vec![],
-                        menu.takeaways,
-                        None,
-                        menu.min_calories,
-                        menu.max_calories,
-                    ).await?;
-                    total_saved += 1;
-                }
-
-                // Kibar tarama: istekler arası 1.5-3sn rastgele gecikme
-                let delay_ms = {
-                    use rand::Rng;
-                    rand::thread_rng().gen_range(1500..=3000)
-                };
-                tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
-            }
+        let slug = text
+            .replace(['İ', 'I', 'ı'], "i")
+            .replace(['Ş', 'ş'], "s")
+            .replace(['Ğ', 'ğ'], "g")
+            .replace(['Ü', 'ü'], "u")
+            .replace(['Ö', 'ö'], "o")
+            .replace(['Ç', 'ç'], "c")
+            .to_lowercase()
+            .replace(' ', "-");
+        if !slug.is_empty() && !discovered.contains(&slug) {
+            discovered.push(slug);
         }
     }
 
-    tracing::info!("[TODAY] Günün menüsü taraması tamamlandı: {} menü kaydedildi.", total_saved);
-    Ok(total_saved)
+    if discovered.is_empty() {
+        FALLBACK_CITIES.iter().map(|s| s.to_string()).collect()
+    } else {
+        discovered
+    }
 }
 
-async fn fetch_antiforgery_token(client: &Client) -> Result<String> {
-    // Ana sayfa ziyareti = oturum ısıtma (warm-up). Gerçek bir tarayıcı
-    // gezinmesi gibi tam başlık setiyle gider.
+pub fn extract_token_from_html(html: &str) -> Result<String> {
+    static TOKEN_REGEX: OnceLock<regex::Regex> = OnceLock::new();
+    let re = TOKEN_REGEX.get_or_init(|| {
+        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*value=["']([^"']+)["']"#).unwrap()
+    });
+
+    if let Some(caps) = re.captures(html) {
+        if let Some(token) = caps.get(1) {
+            return Ok(token.as_str().to_string());
+        }
+    }
+
+    static TOKEN_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
+    let re_fb = TOKEN_FALLBACK.get_or_init(|| {
+        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#).unwrap()
+    });
+    if let Some(caps) = re_fb.captures(html) {
+        if let Some(token) = caps.get(1) {
+            return Ok(token.as_str().to_string());
+        }
+    }
+
+    anyhow::bail!("__RequestVerificationToken HTML içinde bulunamadı")
+}
+
+pub async fn fetch_kykyemek_session(client: &Client) -> Result<(String, Vec<String>)> {
     let res = client.get("https://kykyemek.com/")
         .header("User-Agent", BROWSER_UA)
         .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
@@ -351,34 +205,99 @@ async fn fetch_antiforgery_token(client: &Client) -> Result<String> {
     }
     let html = res.text().await?;
 
-    static TOKEN_REGEX: OnceLock<regex::Regex> = OnceLock::new();
-    let re = TOKEN_REGEX.get_or_init(|| {
-        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*value=["']([^"']+)["']"#).unwrap()
-    });
+    let token = extract_token_from_html(&html)?;
+    let cities = extract_cities_from_kykyemek_html(&html);
+    tracing::info!(
+        "[KYKYEMEK-DISCOVERY] Oturum açıldı. Kykyemek üzerinde dinamik olarak {} aktif şehir tespit edildi.",
+        cities.len()
+    );
 
-    if let Some(caps) = re.captures(&html) {
-        if let Some(token) = caps.get(1) {
-            return Ok(token.as_str().to_string());
+    Ok((token, cities))
+}
+
+pub use fetch_kykyemek_session as fetch_kyk_session;
+
+pub async fn fetch_antiforgery_token(client: &Client) -> Result<String> {
+    fetch_kykyemek_session(client).await.map(|(t, _)| t)
+}
+
+pub async fn scrape_today_menus(
+    db: &DatabaseConnection,
+    client: &Client,
+    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+) -> Result<usize> {
+    if is_banned() {
+        tracing::warn!("[KYKYEMEK-BREAKER] Cooldown aktif - bülten taraması bu tur atlanıyor.");
+        return Ok(0);
+    }
+
+    let (mut token_opt, mut active_slugs) = match fetch_kykyemek_session(client).await {
+        Ok((tok, slugs)) => (Some(tok), slugs),
+        Err(e) => {
+            tracing::warn!("[KYKYEMEK-SESSION] Oturum başlatılamadı: {:?}. Düz istek deneniyor.", e);
+            (None, extract_cities_from_kykyemek_html(""))
+        }
+    };
+
+    {
+        use rand::seq::SliceRandom;
+        active_slugs.shuffle(&mut rand::thread_rng());
+    }
+
+    let mut total_saved = 0;
+
+    for slug in active_slugs {
+        if *shutdown_rx.borrow() || is_banned() {
+            break;
+        }
+
+        let city_opt = cities::Entity::find()
+            .filter(cities::Column::Slug.eq(&slug))
+            .one(db)
+            .await?;
+
+        let city = match city_opt {
+            Some(c) => c,
+            None => continue,
+        };
+
+        tracing::info!("[KYKYEMEK-BULLETIN] Şehir için aylık bülten çekiliyor: {}...", city.name);
+
+        // 1. Kahvaltı Bülteni (Tüm Ay Tek İstek)
+        match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, "0", &mut token_opt, &mut shutdown_rx).await {
+            Ok(Some(count)) => total_saved += count,
+            Ok(None) => return Ok(total_saved),
+            Err(e) => tracing::warn!(city = %city.slug, meal = "breakfast", "Kahvaltı bülteni alınamadı: {:?}", e),
+        }
+
+        // Kibar gecikme (3.5 - 6.5s)
+        let delay_ms = rand::thread_rng().gen_range(3500..=6500);
+        if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
+            return Ok(total_saved);
+        }
+
+        // 2. Akşam Yemeği Bülteni (Tüm Ay Tek İstek)
+        match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, "0", &mut token_opt, &mut shutdown_rx).await {
+            Ok(Some(count)) => total_saved += count,
+            Ok(None) => return Ok(total_saved),
+            Err(e) => tracing::warn!(city = %city.slug, meal = "dinner", "Akşam yemeği bülteni alınamadı: {:?}", e),
+        }
+
+        // Kibar gecikme (3.5 - 6.5s)
+        let delay_ms = rand::thread_rng().gen_range(3500..=6500);
+        if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
+            return Ok(total_saved);
         }
     }
 
-    static TOKEN_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
-    let re_fb = TOKEN_FALLBACK.get_or_init(|| {
-        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#).unwrap()
-    });
-    if let Some(caps) = re_fb.captures(&html) {
-        if let Some(token) = caps.get(1) {
-            return Ok(token.as_str().to_string());
-        }
-    }
-
-    anyhow::bail!("__RequestVerificationToken HTML içinde bulunamadı")
+    tracing::info!("[KYKYEMEK-BULLETIN] Kykyemek aylık bülten taraması tamamlandı: {} menü güncellendi.", total_saved);
+    Ok(total_saved)
 }
 
 pub async fn run_kykyemek_scraper(
     db: &DatabaseConnection,
     client: &Client,
-    mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
+    shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<()> {
     let mut total_fetched = 0;
 
@@ -420,82 +339,6 @@ pub async fn run_kykyemek_scraper(
         }
     }
 
-    // Şehir sırasını her turda karıştır: A'dan Z'ye sabit tarama deseni
-    // sunucu tarafı istatistikte çizgi gibi görünür.
-    let mut all_cities = cities::Entity::find().all(db).await?;
-    {
-        use rand::seq::SliceRandom;
-        all_cities.shuffle(&mut rand::thread_rng());
-    }
-
-    let mut token_opt = if is_banned() {
-        tracing::warn!("[KYK-BREAKER] Cooldown aktif - ana tarama bu tur atlanıyor, token alınmayacak.");
-        None
-    } else {
-        match fetch_antiforgery_token(client).await {
-            Ok(t) => {
-                tracing::info!("Kykyemek oturum token'ı başarıyla alındı.");
-                Some(t)
-            }
-            Err(e) => {
-                tracing::warn!("Kykyemek token alınamadı: {:?}. Düz istek deneniyor.", e);
-                None
-            }
-        }
-    };
-
-    for city in all_cities {
-        if *shutdown_rx.borrow() {
-            tracing::info!("Kapatma sinyali algılandı. Tarayıcı durduruluyor.");
-            return Ok(());
-        }
-        if is_banned() {
-            tracing::warn!("[KYK-BREAKER] Tur içinde devre kesildi, kalan şehirler atlanıyor.");
-            break;
-        }
-        tracing::info!("[WEB] Şehir taranıyor: {}...", city.name);
-
-        for month_shift in ["-2", "-1", "0"] {
-            if *shutdown_rx.borrow() || is_banned() {
-                break;
-            }
-
-            // Fetch breakfast
-            match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, month_shift, &mut token_opt, &mut shutdown_rx).await {
-                Ok(Some(count)) => total_fetched += count,
-                Ok(None) => return Ok(()), // Aborted via shutdown signal
-                Err(e) => tracing::error!(city = %city.slug, meal = "breakfast", month = month_shift, "Menü çekme hatası: {:?}", e),
-            }
-
-            // Sleep between requests (random 4000 to 8000 ms)
-            // 81 il x 3 ay x 2 ogun = ~486 istek; kaynak sunucuya kibar ol.
-            // (IP ban olayı sonrası temkin: eski 2.5-5sn aralığı artırıldı.)
-            let delay_ms = {
-                use rand::Rng;
-                rand::thread_rng().gen_range(4000..=8000)
-            };
-            if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
-                return Ok(());
-            }
-
-            // Fetch dinner
-            match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, month_shift, &mut token_opt, &mut shutdown_rx).await {
-                Ok(Some(count)) => total_fetched += count,
-                Ok(None) => return Ok(()), // Aborted via shutdown signal
-                Err(e) => tracing::error!(city = %city.slug, meal = "dinner", month = month_shift, "Menü çekme hatası: {:?}", e),
-            }
-
-            // Sleep between requests (random 4000 to 8000 ms)
-            let delay_ms = {
-                use rand::Rng;
-                rand::thread_rng().gen_range(4000..=8000)
-            };
-            if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
-                return Ok(());
-            }
-        }
-    }
-
     // Faz 1.6: bu turda yeni açılan gün URL'lerini IndexNow'a bildir.
     // INDEXNOW_KEY atanmamışsa no-op; hata durumunda yalnızca warn loglanır,
     // asla döngüyü düşürmez. Yalnızca kanonik /{sehir}/{tarih} URL'leri
@@ -504,13 +347,7 @@ pub async fn run_kykyemek_scraper(
         super::indexnow::ping_new_day_urls(db, client, &config).await;
     }
 
-    if total_fetched == 0 {
-        let alert_msg = "Kykyemek taraması tamamlandı ancak 81 il genelinde HİÇBİR menü çekilemedi (Global Ingestion Blackout)!";
-        tracing::error!("{}", alert_msg);
-        let _ = shared::services::alerting::AlertingService::send_webhook_alert(alert_msg).await;
-    } else {
-        tracing::info!("Kykyemek taraması tamamlandı. {} menü kontrol edildi.", total_fetched);
-    }
+    tracing::info!("Kykyemek tarama döngüsü tamamlandı. Toplam {} menü işlendi.", total_fetched);
     Ok(())
 }
 
@@ -580,7 +417,7 @@ async fn fetch_and_save(
                     anyhow::bail!("kykyemek IP ban şüphesi (HTTP 403): {} ({})", city.name, kyk_meal_type);
                 } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
-                    if let Ok(new_token) = fetch_antiforgery_token(client).await {
+                    if let Ok((new_token, _)) = fetch_kykyemek_session(client).await {
                         *token_opt = Some(new_token);
                     }
                 } else {
@@ -624,10 +461,22 @@ async fn fetch_and_save(
         let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
     }
     
-    let parsed_menus = parse_kyk_html(&html_content, &city.slug, kyk_meal_type);
+    let parsed_menus = parse_kykyemek_html(&html_content, &city.slug, kyk_meal_type);
     let mut count = 0;
     
     for menu in parsed_menus {
+        // Öğün Doğrulama Kalkanı: Eğer kart açıkça başka bir öğün olduğunu beyan ediyorsa,
+        // yanlış öğün türüyle kaydedilmesini kesinlikle engelle.
+        if let Some(ref detected) = menu.detected_meal {
+            if *detected != meal_type_enum {
+                tracing::warn!(
+                    "[MEAL-GUARD] {} şehri için {} ({:?}) menüsü istendi ancak kart açıkça {:?} beyan ediyor! Hatalı öğün kaydı engellendi.",
+                    city.name, kyk_meal_type, meal_type_enum, detected
+                );
+                continue;
+            }
+        }
+
         upsert_menu(
             db, 
             city.id, 
