@@ -597,6 +597,26 @@ export async function load({ url, fetch }) {
       parsedUrl: item.parsed_url || [],
     }));
 
+    // Çok kelimeli sorgularda başlık ve açıklamada arama terimlerinin geçme yoğunluğuna göre akıllı sıralama
+    const queryTokens = q.toLowerCase().split(/\s+/).filter((t) => t.length > 2);
+    if (queryTokens.length > 1) {
+      results.sort((a, b) => {
+        const scoreResult = (item) => {
+          let score = 0;
+          const titleLower = (item.title || "").toLowerCase();
+          const contentLower = (item.content || "").toLowerCase();
+
+          for (const token of queryTokens) {
+            if (titleLower.includes(token)) score += 3;
+            if (contentLower.includes(token)) score += 1;
+          }
+          return score;
+        };
+
+        return scoreResult(b) - scoreResult(a);
+      });
+    }
+
     const rawInfoboxes = (data.infoboxes || [])
       .map((box) => {
         const title = box.infobox || box.title || "";
