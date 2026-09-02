@@ -32,7 +32,6 @@ pub enum RateLimitCategory {
     Ingestion,
     Vote,
     Comment,
-    Assistant,
     SpikeArrest,
     General,
 }
@@ -47,7 +46,6 @@ impl RateLimitCategory {
             Self::Ingestion => (10, Duration::from_secs(3600)),
             Self::Vote => (10, Duration::from_secs(60)),         // 1 dakikada maks 10 oy
             Self::Comment => (5, Duration::from_secs(60)),        // 1 dakikada maks 5 yorum
-            Self::Assistant => (15, Duration::from_secs(60)),    // 1 dakikada maks 15 asistan isteği (15 RPM)
             Self::SpikeArrest => (10, Duration::from_secs(1)),   // DoS koruması: Saniyede maks 10 istek/IP
             Self::General => (240, Duration::from_secs(60)),
         }
@@ -206,8 +204,6 @@ pub async fn rate_limit_middleware(
         RateLimitCategory::Passwordless
     } else if path.starts_with("/api/v1/ingestion") {
         RateLimitCategory::Ingestion
-    } else if path.starts_with("/api/v1/assistant") {
-        RateLimitCategory::Assistant
     } else if path.starts_with("/api/v1/") {
         RateLimitCategory::General
     } else {

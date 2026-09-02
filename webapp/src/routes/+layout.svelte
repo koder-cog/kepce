@@ -17,7 +17,6 @@
 	import { openMenuReportModal } from "@/components/features/report-modal.js";
 	import ExternalLinkWarningModal from "@/components/features/ExternalLinkWarningModal.svelte";
 	import OfflineBanner from "@/components/ui/OfflineBanner.svelte";
-	import AssistantDrawer from "@/components/features/assistant/AssistantDrawer.svelte";
 
 	let { children } = $props();
 
@@ -401,9 +400,6 @@
 {/if}
 
 <ToastContainer />
-{#if !isSearchRoute}
-	<AssistantDrawer />
-{/if}
 
 <style>
 	#page-wrapper {

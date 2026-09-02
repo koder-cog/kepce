@@ -108,34 +108,10 @@
         }
     }
 
-    function openAssistant() {
-        window.dispatchEvent(new CustomEvent("kepce:open-assistant"));
-    }
-
     function handleKeydown(e) {
         if (e.key === "Escape") {
             dropdownOpen = false;
             menuDropdownOpen = false;
-        }
-
-        const isAssistantShortcut =
-            e.key === "/" ||
-            (e.ctrlKey && e.shiftKey && (e.key === "K" || e.key === "k")) ||
-            ((e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K"));
-
-        if (isAssistantShortcut) {
-            const target = e.target;
-            const tagName = target?.tagName?.toUpperCase();
-            const isEditable =
-                tagName === "INPUT" ||
-                tagName === "TEXTAREA" ||
-                tagName === "SELECT" ||
-                target?.isContentEditable;
-
-            if (!isEditable) {
-                e.preventDefault();
-                openAssistant();
-            }
         }
     }
 
@@ -231,38 +207,8 @@
                     }}>{l.label}</a
                 >
             {/each}
-            <button
-                type="button"
-                class="c-menu__item c-assistant-trigger"
-                onclick={() => {
-                    menuDropdownOpen = false;
-                    openAssistant();
-                }}
-            >
-                Kepçe Bot
-            </button>
         </div>
     </div>
-
-    <button
-        type="button"
-        class="nav-bar__menu-btn c-assistant-trigger c-assistant-trigger--mobile"
-        id="nav-assistant-mobile-btn"
-        aria-label="Kepçe Bot"
-        onclick={openAssistant}
-    >
-        {@html icon("bot", 24)}
-    </button>
-
-    <button
-        type="button"
-        class="c-assistant-trigger c-assistant-trigger--desktop"
-        id="nav-assistant-desktop-btn"
-        aria-label="Kepçe Bot"
-        onclick={openAssistant}
-    >
-        Bot
-    </button>
 
     <div class="nav-bar__user-container" bind:this={userContainer}>
         <button

@@ -10,9 +10,6 @@ WORKER_LOG="log/worker.log"
 API_PID_FILE="server.pid"
 WEB_PID_FILE="dev.pid"
 WORKER_PID_FILE="worker.pid"
-LLAMA_PID_FILE="llama.pid"
-LLAMA_LOG="log/llama.log"
-LLAMA_PORT="${LLAMA_PORT:-5262}"
 DB_CONTAINER="kepce-db"
 SEARXNG_CONTAINER="kepce-searxng"
 SEARXNG_PORT="${SEARXNG_PORT:-8080}"
@@ -363,95 +360,6 @@ stop_web() {
     fuser -k 4173/tcp 2>/dev/null || true
 }
 
-# Function to start Llama Server
-start_llama() {
-    echo -e "${BLUE}Starting Llama Server (Port $LLAMA_PORT)...${NC}"
-    if [ -f "$LLAMA_PID_FILE" ] && kill -0 $(cat "$LLAMA_PID_FILE") 2>/dev/null; then
-        echo -e "${YELLOW}Llama Server is already running (PID: $(cat "$LLAMA_PID_FILE"))${NC}"
-        return 0
-    fi
-
-    # Port hâlâ meşgulse ve PID dosyası yoksa temizle
-    if lsof -i:$LLAMA_PORT >/dev/null 2>&1 || fuser $LLAMA_PORT/tcp >/dev/null 2>&1; then
-        fuser -k $LLAMA_PORT/tcp 2>/dev/null || true
-        sleep 0.5
-    fi
-
-    mkdir -p log
-    if [ -f ".env" ]; then
-        export $(grep -v '^#' .env | xargs) 2>/dev/null || true
-    elif [ -f "../.env" ]; then
-        export $(grep -v '^#' ../.env | xargs) 2>/dev/null || true
-    fi
-
-    # Binary tespiti
-    LLAMA_BIN="${LLAMA_SERVER_BIN:-}"
-    if [ -z "$LLAMA_BIN" ]; then
-        if [ -x "$HOME/.arsiv/models/llama.cpp/build/bin/llama-server" ]; then
-            LLAMA_BIN="$HOME/.arsiv/models/llama.cpp/build/bin/llama-server"
-        elif [ -x "$HOME/.AppImages/llama.cpp/llama.cpp/build/bin/llama-server" ]; then
-            LLAMA_BIN="$HOME/.AppImages/llama.cpp/llama.cpp/build/bin/llama-server"
-        elif which llama-server >/dev/null 2>&1; then
-            LLAMA_BIN="$(which llama-server)"
-        fi
-    fi
-
-    # Model tespiti
-    MODEL_PATH="${LLAMA_MODEL_PATH:-}"
-    if [ -z "$MODEL_PATH" ]; then
-        if [ -f "$HOME/.llms/37d74778c5533e01cf690fd68a9c2e3bc8093154c1660bd55fe60c83795bf30d" ]; then
-            MODEL_PATH="$HOME/.llms/37d74778c5533e01cf690fd68a9c2e3bc8093154c1660bd55fe60c83795bf30d"
-        elif [ -f "./models/model.gguf" ]; then
-            MODEL_PATH="./models/model.gguf"
-        fi
-    fi
-
-    if [ -z "$LLAMA_BIN" ] || [ ! -x "$LLAMA_BIN" ]; then
-        echo -e "${RED}Hata: llama-server binary bulunamadı. Lütfen .env içinde LLAMA_SERVER_BIN tanımlayın.${NC}"
-        return 1
-    fi
-
-    if [ -z "$MODEL_PATH" ] || [ ! -f "$MODEL_PATH" ]; then
-        echo -e "${RED}Hata: GGUF model dosyası bulunamadı. Lütfen .env içinde LLAMA_MODEL_PATH tanımlayın.${NC}"
-        return 1
-    fi
-
-    echo -e "${BLUE}Using binary: $LLAMA_BIN${NC}"
-    echo -e "${BLUE}Using model: $MODEL_PATH${NC}"
-    nohup "$LLAMA_BIN" -m "$MODEL_PATH" --port "$LLAMA_PORT" --host 127.0.0.1 -c 16384 -t 4 > "$LLAMA_LOG" 2>&1 &
-    LLAMA_PID=$!
-    echo $LLAMA_PID > "$LLAMA_PID_FILE"
-    disown $LLAMA_PID 2>/dev/null || true
-    sleep 1
-    if kill -0 $(cat "$LLAMA_PID_FILE") 2>/dev/null; then
-        echo -e "${GREEN}Llama Server started with PID: $(cat "$LLAMA_PID_FILE") on port $LLAMA_PORT${NC}"
-    else
-        echo -e "${RED}Llama Server failed to start. Check $LLAMA_LOG${NC}"
-    fi
-}
-
-# Function to stop Llama Server
-stop_llama() {
-    echo -e "${BLUE}Stopping Llama Server...${NC}"
-    if [ -f "$LLAMA_PID_FILE" ]; then
-        PID=$(cat "$LLAMA_PID_FILE")
-        if kill -0 $PID 2>/dev/null; then
-            kill $PID 2>/dev/null || true
-            while kill -0 $PID 2>/dev/null; do sleep 0.3; done
-            echo -e "${GREEN}Llama Server stopped.${NC}"
-        fi
-        rm -f "$LLAMA_PID_FILE"
-    fi
-    fuser -k $LLAMA_PORT/tcp 2>/dev/null || true
-    pkill -f "llama-server" 2>/dev/null || true
-    
-    local wait_count=0
-    while (lsof -i:$LLAMA_PORT >/dev/null 2>&1 || fuser $LLAMA_PORT/tcp >/dev/null 2>&1) && [ $wait_count -lt 20 ]; do
-        sleep 0.2
-        wait_count=$((wait_count + 1))
-    done
-    rm -f "$LLAMA_PID_FILE"
-}
 
 # Function to show status
 status() {
@@ -478,14 +386,6 @@ status() {
         echo -e "Worker: ${RED}STOPPED${NC}"
     fi
 
-    # Llama (LLM)
-    if [ -f "$LLAMA_PID_FILE" ] && kill -0 $(cat "$LLAMA_PID_FILE") 2>/dev/null; then
-        echo -e "Llama:  ${GREEN}RUNNING${NC} (PID: $(cat "$LLAMA_PID_FILE"), Port: $LLAMA_PORT)"
-    elif lsof -i:$LLAMA_PORT >/dev/null 2>&1 || fuser $LLAMA_PORT/tcp >/dev/null 2>&1; then
-        echo -e "Llama:  ${GREEN}RUNNING${NC} (Port: $LLAMA_PORT)"
-    else
-        echo -e "Llama:  ${RED}STOPPED${NC}"
-    fi
 
     # SearXNG
     if podman ps --filter "name=$SEARXNG_CONTAINER" --filter "status=running" --format "{{.Names}}" | grep -q "^$SEARXNG_CONTAINER$"; then
@@ -514,17 +414,8 @@ show_logs() {
         web)
             tail -f "$WEB_DIR/$WEB_LOG"
             ;;
-        llama|llm)
-            tail -f "$LLAMA_LOG"
-            ;;
-        searxng)
-            podman logs -f "$SEARXNG_CONTAINER"
-            ;;
-        db)
-            podman logs -f "$DB_CONTAINER"
-            ;;
         *)
-            echo "Usage: $0 logs {api|worker|web|llama|searxng|db}"
+            echo "Usage: $0 logs {api|worker|web|searxng|db}"
             ;;
     esac
 }
@@ -541,11 +432,10 @@ case "$COMMAND" in
             web) start_web ;;
             web-dev) start_web_dev ;;
             web-preview) start_web_preview ;;
-            llama|llm) start_llama ;;
             searxng) start_searxng ;;
             db)  start_db ;;
-            all|"") start_db; start_searxng; start_llama; start_api; start_worker; start_web ;;
-            *) echo "Usage: $0 start {api|worker|web|web-dev|web-preview|llama|searxng|db|all}" ;;
+            all|"") start_db; start_searxng; start_api; start_worker; start_web ;;
+            *) echo "Usage: $0 start {api|worker|web|web-dev|web-preview|searxng|db|all}" ;;
         esac
         ;;
     stop)
@@ -554,11 +444,10 @@ case "$COMMAND" in
             worker) stop_worker ;;
             web) stop_web ;;
             web-dev|web-preview) stop_web ;;
-            llama|llm) stop_llama ;;
             searxng) stop_searxng ;;
             db)  stop_db ;;
-            all|"") stop_api; stop_worker; stop_web; stop_llama; stop_searxng; stop_db ;;
-            *) echo "Usage: $0 stop {api|worker|web|web-dev|web-preview|llama|searxng|db|all}" ;;
+            all|"") stop_api; stop_worker; stop_web; stop_searxng; stop_db ;;
+            *) echo "Usage: $0 stop {api|worker|web|web-dev|web-preview|searxng|db|all}" ;;
         esac
         ;;
     restart)
@@ -568,11 +457,10 @@ case "$COMMAND" in
             web) stop_web; start_web ;;
             web-dev) stop_web; start_web_dev ;;
             web-preview) stop_web; start_web_preview ;;
-            llama|llm) stop_llama; start_llama ;;
             searxng) stop_searxng; start_searxng ;;
             db)  stop_db; start_db ;;
-            all|"") stop_api; stop_worker; stop_web; stop_llama; stop_searxng; stop_db; start_db; start_searxng; start_llama; start_api; start_worker; start_web ;;
-            *) echo "Usage: $0 restart {api|worker|web|web-dev|web-preview|llama|searxng|db|all}" ;;
+            all|"") stop_api; stop_worker; stop_web; stop_searxng; stop_db; start_db; start_searxng; start_api; start_worker; start_web ;;
+            *) echo "Usage: $0 restart {api|worker|web|web-dev|web-preview|searxng|db|all}" ;;
         esac
         ;;
     status)

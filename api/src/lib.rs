@@ -58,7 +58,6 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
         .nest("/api/v1/public/contact", routes::contact::router())
         .nest("/api/v1/public/og", routes::og::router())
         .nest("/api/v1/public/push", routes::push::router())
-        .nest("/api/v1/assistant", routes::assistant::router())
 
         .nest_service("/static", tower_http::services::ServeDir::new("static"))
         .layer(axum::middleware::from_fn_with_state(state.clone(), middleware::rate_limiter::rate_limit_middleware))

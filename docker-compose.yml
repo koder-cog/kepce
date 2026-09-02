@@ -59,7 +59,6 @@ services:
       - KEPCE_BASE_URL=${KEPCE_BASE_URL}
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL}
       - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
-      - LLAMA_API_URL=${LLAMA_API_URL:-http://llama:5262}
       - SEARXNG_URL=${SEARXNG_URL:-http://searxng:8080}
     volumes:
       - uploads:/app/uploads
