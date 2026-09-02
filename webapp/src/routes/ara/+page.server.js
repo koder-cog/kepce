@@ -382,21 +382,68 @@ const CURRENCY_CODES = {
   "¥": { code: "JPY", name: "Japon Yeni" },
   frank: { code: "CHF", name: "İsviçre Frangı" },
   chf: { code: "CHF", name: "İsviçre Frangı" },
+  aud: { code: "AUD", name: "Avustralya Doları" },
+  cad: { code: "CAD", name: "Kanada Doları" },
+  cny: { code: "CNY", name: "Çin Yuanı" },
+  yuan: { code: "CNY", name: "Çin Yuanı" },
+  rmb: { code: "CNY", name: "Çin Yuanı" },
+  rub: { code: "RUB", name: "Rus Rublesi" },
+  ruble: { code: "RUB", name: "Rus Rublesi" },
+  sar: { code: "SAR", name: "Suudi Arabistan Riyali" },
+  riyal: { code: "SAR", name: "Suudi Arabistan Riyali" },
+  aed: { code: "AED", name: "BAE Dirhemi" },
+  dirhem: { code: "AED", name: "BAE Dirhemi" },
+  sek: { code: "SEK", name: "İsveç Kronu" },
+  nok: { code: "NOK", name: "Norveç Kronu" },
+  dkk: { code: "DKK", name: "Danimarka Kronu" },
+  kron: { code: "SEK", name: "İsveç Kronu" },
+  krw: { code: "KRW", name: "Güney Kore Wonu" },
+  won: { code: "KRW", name: "Güney Kore Wonu" },
+  "₩": { code: "KRW", name: "Güney Kore Wonu" },
+  inr: { code: "INR", name: "Hindistan Rupisi" },
+  rupi: { code: "INR", name: "Hindistan Rupisi" },
+  "₹": { code: "INR", name: "Hindistan Rupisi" },
+  brl: { code: "BRL", name: "Brezilya Reali" },
+  real: { code: "BRL", name: "Brezilya Reali" },
+  pln: { code: "PLN", name: "Polonya Zlotisi" },
+  zloti: { code: "PLN", name: "Polonya Zlotisi" },
+  czk: { code: "CZK", name: "Çek Korunası" },
+  bgn: { code: "BGN", name: "Bulgar Levası" },
+  leva: { code: "BGN", name: "Bulgar Levası" },
+  huf: { code: "HUF", name: "Macar Forinti" },
+  forint: { code: "HUF", name: "Macar Forinti" },
+  ron: { code: "RON", name: "Rumen Leyi" },
+  ils: { code: "ILS", name: "İsrail Şekeli" },
+  şekel: { code: "ILS", name: "İsrail Şekeli" },
+  sekel: { code: "ILS", name: "İsrail Şekeli" },
+  "₪": { code: "ILS", name: "İsrail Şekeli" },
+  mxn: { code: "MXN", name: "Meksika Pezosu" },
+  nzd: { code: "NZD", name: "Yeni Zelanda Doları" },
+  sgd: { code: "SGD", name: "Singapur Doları" },
+  hkd: { code: "HKD", name: "Hong Kong Doları" },
+  zar: { code: "ZAR", name: "Güney Afrika Randı" },
+  rand: { code: "ZAR", name: "Güney Afrika Randı" },
+  thb: { code: "THB", name: "Tayland Bahtı" },
+  baht: { code: "THB", name: "Tayland Bahtı" },
+  "฿": { code: "THB", name: "Tayland Bahtı" },
+  idr: { code: "IDR", name: "Endonezya Rupiahı" },
+  myr: { code: "MYR", name: "Malezya Ringgiti" },
+  php: { code: "PHP", name: "Filipinler Pezosu" },
 };
 
 let fxRatesCache = {
   timestamp: 0,
   dateStr: "",
-  rates: { USD: 1, TRY: 48.27, EUR: 0.86, GBP: 0.74, JPY: 160.0, CHF: 0.81 },
+  rates: { USD: 1, TRY: 48.27, EUR: 0.86, GBP: 0.74, JPY: 160.0, CHF: 0.81, AUD: 1.55, CAD: 1.38, CNY: 7.25 },
 };
 
 async function getFxRates(customFetch = fetch) {
   const now = Date.now();
-  if (now - fxRatesCache.timestamp < 15 * 60 * 1000 && Object.keys(fxRatesCache.rates).length > 2) {
+  if (now - fxRatesCache.timestamp < 15 * 60 * 1000 && Object.keys(fxRatesCache.rates).length > 5) {
     return fxRatesCache;
   }
   try {
-    const res = await customFetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=TRY,EUR,GBP,JPY,CHF", {
+    const res = await customFetch("https://api.frankfurter.dev/v1/latest?base=USD", {
       signal: AbortSignal.timeout(3000),
     });
     if (res.ok) {
@@ -707,6 +754,8 @@ export async function load({ url, fetch }) {
       }
     }
 
+    const corrections = Array.isArray(data.corrections) ? data.corrections : [];
+
     const payload = {
       isHome: false,
       query: q,
@@ -715,6 +764,7 @@ export async function load({ url, fetch }) {
       results,
       infoboxes,
       suggestions,
+      corrections,
       answer: resolvedAnswer,
       numberOfResults,
       language,

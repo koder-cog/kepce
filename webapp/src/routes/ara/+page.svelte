@@ -5,6 +5,7 @@
   import { icon } from "@/components/ui/icons.js";
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
+  import RegionSwitch from "@/components/features/search/RegionSwitch.svelte";
   import SearchInfoModal from "@/components/features/search/SearchInfoModal.svelte";
   import SearchSettingsModal from "@/components/features/search/SearchSettingsModal.svelte";
   import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
@@ -148,35 +149,36 @@
 
     if (isInputActive) {
       if (e.key === "Escape") {
-        activeEl.blur();
-        isSuggestionsOpen = false;
-        isHistoryOpen = false;
+        if (searchInputEl) searchInputEl.blur();
       }
       return;
     }
 
-    if (data.results && data.results.length > 0) {
-      if (e.key === "j" || e.key === "ArrowDown") {
-        e.preventDefault();
-        selectedResultIndex = Math.min(data.results.length - 1, selectedResultIndex + 1);
-        scrollSelectedResult();
-      } else if (e.key === "k" || e.key === "ArrowUp") {
-        e.preventDefault();
-        selectedResultIndex = Math.max(0, selectedResultIndex - 1);
-        scrollSelectedResult();
-      } else if (e.key === "Enter" && selectedResultIndex >= 0) {
-        const target = data.results[selectedResultIndex];
-        if (target?.url) {
-          window.open(target.url, "_blank", "noopener,noreferrer");
-        }
-      } else if (e.key === "Escape") {
-        selectedResultIndex = -1;
+    // Arama sonuçları listesi klavye ile gezinti (j: aşağı, k: yukarı, Enter: aç, Esc: seçimi kaldır)
+    const items = data.results || [];
+    if (items.length === 0) return;
+
+    if (e.key === "j" || e.key === "ArrowDown") {
+      e.preventDefault();
+      selectedResultIndex = Math.min(items.length - 1, selectedResultIndex + 1);
+      scrollToSelectedResult();
+    } else if (e.key === "k" || e.key === "ArrowUp") {
+      e.preventDefault();
+      selectedResultIndex = Math.max(0, selectedResultIndex - 1);
+      scrollToSelectedResult();
+    } else if (e.key === "Enter" && selectedResultIndex >= 0) {
+      const selectedItem = items[selectedResultIndex];
+      if (selectedItem?.url) {
+        window.open(selectedItem.url, "_blank", "noopener,noreferrer");
       }
+    } else if (e.key === "Escape") {
+      selectedResultIndex = -1;
     }
   }
 
-  function scrollSelectedResult() {
-    const el = document.querySelector(`.c-search-item[data-index="${selectedResultIndex}"]`);
+  function scrollToSelectedResult() {
+    if (selectedResultIndex < 0) return;
+    const el = document.getElementById(`search-result-${selectedResultIndex}`);
     if (el) {
       el.scrollIntoView({ block: "nearest", behavior: "smooth" });
     }
@@ -189,7 +191,37 @@
 
   async function fetchSuggestions(query) {
     const q = query.trim();
-    if (!q || q.length < 2) {
+    if (!q) {
+      suggestions = [];
+      isSuggestionsOpen = false;
+      return;
+    }
+
+    // 1. !bang kısayol tamamlama kontrolü
+    if (q.startsWith("!")) {
+      const bangTerm = q.toLowerCase();
+      const matchedBangs = BANG_DEFINITIONS.filter(
+        (b) =>
+          b.prefix.toLowerCase().startsWith(bangTerm) ||
+          b.name.toLowerCase().includes(bangTerm.replace(/^!/, ""))
+      )
+        .slice(0, 6)
+        .map((b) => ({
+          isBang: true,
+          prefix: b.prefix,
+          label: b.name,
+          displayText: `${b.prefix} ${b.name}`,
+        }));
+
+      if (matchedBangs.length > 0) {
+        suggestions = matchedBangs;
+        isSuggestionsOpen = true;
+        selectedSuggestionIndex = -1;
+        return;
+      }
+    }
+
+    if (q.length < 2) {
       suggestions = [];
       isSuggestionsOpen = false;
       return;
@@ -200,7 +232,9 @@
       if (res.ok) {
         const list = await res.json();
         if (Array.isArray(list) && list.length > 0) {
-          suggestions = list;
+          suggestions = list.map((item) =>
+            typeof item === "string" ? { isBang: false, displayText: item } : item
+          );
           isSuggestionsOpen = true;
           selectedSuggestionIndex = -1;
           return;
@@ -234,11 +268,13 @@
       if (e.key === "ArrowDown") {
         e.preventDefault();
         selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
-        searchInput = suggestions[selectedSuggestionIndex];
+        const current = suggestions[selectedSuggestionIndex];
+        searchInput = current?.isBang ? current.prefix : (current?.displayText || current || "");
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         selectedSuggestionIndex = (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
-        searchInput = suggestions[selectedSuggestionIndex];
+        const current = suggestions[selectedSuggestionIndex];
+        searchInput = current?.isBang ? current.prefix : (current?.displayText || current || "");
       } else if (e.key === "Escape") {
         isSuggestionsOpen = false;
         selectedSuggestionIndex = -1;
@@ -247,7 +283,13 @@
   }
 
   function selectSuggestion(item) {
-    searchInput = item;
+    if (typeof item === "object" && item?.isBang) {
+      selectBang(item.prefix);
+      isSuggestionsOpen = false;
+      return;
+    }
+    const val = typeof item === "string" ? item : item?.displayText || "";
+    searchInput = val;
     isSuggestionsOpen = false;
     isHistoryOpen = false;
     handleSearch();
@@ -496,18 +538,31 @@
         {#if isSuggestionsOpen && suggestions.length > 0}
           <ul class="c-search-autocomplete" role="listbox">
             {#each suggestions as item, idx}
-              <li
-                class="c-search-autocomplete__item"
-                class:is-selected={idx === selectedSuggestionIndex}
-                onmousedown={() => selectSuggestion(item)}
-                role="option"
-                aria-selected={idx === selectedSuggestionIndex}
-              >
-                <span class="c-search-autocomplete__icon">
-                  {@html icon("search", 16)}
-                </span>
-                <span>{item}</span>
-              </li>
+              {#if item.isBang}
+                <li
+                  class="c-search-autocomplete__item is-bang"
+                  class:is-selected={idx === selectedSuggestionIndex}
+                  onmousedown={() => selectSuggestion(item)}
+                  role="option"
+                  aria-selected={idx === selectedSuggestionIndex}
+                >
+                  <span class="c-search-autocomplete__bang-prefix">{item.prefix}</span>
+                  <span class="c-search-autocomplete__bang-label">{item.label}</span>
+                </li>
+              {:else}
+                <li
+                  class="c-search-autocomplete__item"
+                  class:is-selected={idx === selectedSuggestionIndex}
+                  onmousedown={() => selectSuggestion(item)}
+                  role="option"
+                  aria-selected={idx === selectedSuggestionIndex}
+                >
+                  <span class="c-search-autocomplete__icon">
+                    {@html icon("search", 16)}
+                  </span>
+                  <span>{item.displayText || item}</span>
+                </li>
+              {/if}
             {/each}
           </ul>
         {/if}
@@ -633,18 +688,31 @@
             {#if isSuggestionsOpen && suggestions.length > 0}
               <ul class="c-search-autocomplete" role="listbox">
                 {#each suggestions as item, idx}
-                  <li
-                    class="c-search-autocomplete__item"
-                    class:is-selected={idx === selectedSuggestionIndex}
-                    onmousedown={() => selectSuggestion(item)}
-                    role="option"
-                    aria-selected={idx === selectedSuggestionIndex}
-                  >
-                    <span class="c-search-autocomplete__icon">
-                      {@html icon("search", 16)}
-                    </span>
-                    <span>{item}</span>
-                  </li>
+                  {#if item.isBang}
+                    <li
+                      class="c-search-autocomplete__item is-bang"
+                      class:is-selected={idx === selectedSuggestionIndex}
+                      onmousedown={() => selectSuggestion(item)}
+                      role="option"
+                      aria-selected={idx === selectedSuggestionIndex}
+                    >
+                      <span class="c-search-autocomplete__bang-prefix">{item.prefix}</span>
+                      <span class="c-search-autocomplete__bang-label">{item.label}</span>
+                    </li>
+                  {:else}
+                    <li
+                      class="c-search-autocomplete__item"
+                      class:is-selected={idx === selectedSuggestionIndex}
+                      onmousedown={() => selectSuggestion(item)}
+                      role="option"
+                      aria-selected={idx === selectedSuggestionIndex}
+                    >
+                      <span class="c-search-autocomplete__icon">
+                        {@html icon("search", 16)}
+                      </span>
+                      <span>{item.displayText || item}</span>
+                    </li>
+                  {/if}
                 {/each}
               </ul>
             {/if}
@@ -696,15 +764,10 @@
         />
       </div>
 
-      <!-- 2. Filtreler (Kepçe Dropdown Ghost) -->
+      <!-- 2. Filtreler (DuckDuckGo Bölge Switch'i & Kepçe Dropdown Ghost) -->
       <div class="c-search-pill-filters">
-        <Dropdown
-          variant="ghost"
+        <RegionSwitch
           value={data.language || "tr"}
-          options={[
-            { value: "tr", label: "Türkiye" },
-            { value: "all", label: "Tüm diller" },
-          ]}
           onChange={(val) => handleFilterChange("dil", val)}
         />
 
@@ -755,6 +818,23 @@
         </div>
       {/if}
 
+      <!-- Yazım Hatası Düzeltmesi (Bunu mu demek istediniz?) -->
+      {#if data.corrections && data.corrections.length > 0}
+        <div class="c-search-spelling-correction">
+          <span>Bunu mu demek istediniz:</span>
+          {#each data.corrections as correction, i}
+            <a
+              href={buildSearchUrl(new URLSearchParams({ q: correction, kategori: data.category || 'general' }))}
+              class="c-search-spelling-correction__link"
+            >
+              {correction}
+            </a>
+            {#if i < data.corrections.length - 1}, {/if}
+          {/each}
+          <span>?</span>
+        </div>
+      {/if}
+
       <!-- Sonuç Listesi -->
       <section class="c-search-list">
         {#if data.error}
@@ -762,10 +842,38 @@
             <p class="u-text-sm u-color-danger">{data.error}</p>
           </div>
         {:else if data.results.length === 0 && !data.answer && (!data.infoboxes || data.infoboxes.length === 0)}
-          <div class="card u-p-lg">
-            <p class="u-text-sm">
-              <strong>{data.query}</strong> ile ilgili sonuç bulunamadı.
-            </p>
+          <div class="c-search-no-results">
+            <div class="c-search-no-results__icon">
+              {@html icon("search", 32)}
+            </div>
+            <h2 class="c-search-no-results__title">"{data.query}" ile ilgili hiçbir sonuç bulunamadı.</h2>
+            <ul class="c-search-no-results__tips">
+              <li>Tüm kelimelerin doğru yazıldığından emin olun.</li>
+              <li>Daha genel veya farklı anahtar sözcükler kullanmayı deneyin.</li>
+              {#if data.language && data.language !== "all"}
+                <li>
+                  Bölge filtresini genişletin:
+                  <button
+                    type="button"
+                    class="c-search-inline-btn"
+                    onclick={() => handleFilterChange("dil", "all")}
+                  >
+                    Tüm Dillerde / Küresel Ara
+                  </button>
+                </li>
+              {/if}
+              {#if data.category && data.category !== "general"}
+                <li>
+                  <button
+                    type="button"
+                    class="c-search-inline-btn"
+                    onclick={() => handleCategoryChange("general")}
+                  >
+                    Genel Web Sonuçlarına Dön
+                  </button>
+                </li>
+              {/if}
+            </ul>
           </div>
         {:else if data.category === "images"}
           <!-- Görsel Sonuçları Duvarı (Masonry Grid) -->

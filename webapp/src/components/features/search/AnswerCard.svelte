@@ -4,12 +4,39 @@
   let { answer } = $props();
 
   const CURRENCY_LIST = [
-    { code: "TRY", name: "Türk Lirası" },
-    { code: "USD", name: "Amerikan Doları" },
-    { code: "EUR", name: "Euro" },
-    { code: "GBP", name: "İngiliz Sterlini" },
-    { code: "JPY", name: "Japon Yeni" },
-    { code: "CHF", name: "İsviçre Frangı" }
+    { code: "TRY", name: "Türk Lirası (₺)" },
+    { code: "USD", name: "Amerikan Doları ($)" },
+    { code: "EUR", name: "Euro (€)" },
+    { code: "GBP", name: "İngiliz Sterlini (£)" },
+    { code: "JPY", name: "Japon Yeni (¥)" },
+    { code: "CHF", name: "İsviçre Frangı" },
+    { code: "AUD", name: "Avustralya Doları" },
+    { code: "CAD", name: "Kanada Doları" },
+    { code: "CNY", name: "Çin Yuanı (¥)" },
+    { code: "RUB", name: "Rus Rublesi (₽)" },
+    { code: "SAR", name: "Suudi Arabistan Riyali" },
+    { code: "AED", name: "BAE Dirhemi" },
+    { code: "SEK", name: "İsveç Kronu" },
+    { code: "NOK", name: "Norveç Kronu" },
+    { code: "DKK", name: "Danimarka Kronu" },
+    { code: "KRW", name: "Güney Kore Wonu (₩)" },
+    { code: "INR", name: "Hindistan Rupisi (₹)" },
+    { code: "BRL", name: "Brezilya Reali (R$)" },
+    { code: "PLN", name: "Polonya Zlotisi" },
+    { code: "CZK", name: "Çek Korunası" },
+    { code: "BGN", name: "Bulgar Levası" },
+    { code: "HUF", name: "Macar Forinti" },
+    { code: "RON", name: "Rumen Leyi" },
+    { code: "ILS", name: "İsrail Şekeli (₪)" },
+    { code: "MXN", name: "Meksika Pezosu" },
+    { code: "NZD", name: "Yeni Zelanda Doları" },
+    { code: "SGD", name: "Singapur Doları" },
+    { code: "HKD", name: "Hong Kong Doları" },
+    { code: "ZAR", name: "Güney Afrika Randı" },
+    { code: "THB", name: "Tayland Bahtı (฿)" },
+    { code: "IDR", name: "Endonezya Rupiahı" },
+    { code: "MYR", name: "Malezya Ringgiti" },
+    { code: "PHP", name: "Filipinler Pezosu (₱)" }
   ];
 
   const dropdownOptions = CURRENCY_LIST.map((c) => ({
