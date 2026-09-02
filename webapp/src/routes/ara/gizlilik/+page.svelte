@@ -11,7 +11,7 @@
 </script>
 
 <svelte:head>
-  <title>Gizlilik Politikası ve KVKK Aydınlatma Metni | Kepçe Ara</title>
+  <title>Gizlilik Politikası ve Aydınlatma Metni | Kepçe Ara</title>
   <meta
     name="description"
     content="6698 sayılı KVKK ve 5651 sayılı Kanun kapsamında Kepçe Ara veri işleme ilkeleri ve aydınlatma metni."
@@ -22,7 +22,7 @@
   <article class="content-page">
     <header class="content-page__header">
       <h1 class="content-page__title">
-        Gizlilik Politikası ve KVKK Aydınlatma Metni
+        Gizlilik Politikası ve Aydınlatma Metni
       </h1>
       <div class="content-page__meta">
         <time class="content-page__date">Yürürlük Tarihi: 2 Eylül 2026</time>
@@ -31,91 +31,60 @@
 
     <div class="content-page__body">
       <p class="u-text-base u-leading-comfortable u-mb-lg">
-        Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ("KVKK") m. 10
-        ile 5651 sayılı Kanun uyarınca, <strong>Kepçe Ara</strong> meta arama motorunu
-        kullanan ziyaretçilerin bilgilendirilmesi amacıyla hazırlanmıştır.
+        Bu metin, 6698 sayılı Kişisel Verilerin Korunması Kanunu ile 5651 sayılı Kanun kapsamında Kepçe Ara hizmetini kullanan ziyaretçileri bilgilendirmek amacıyla hazırlanmıştır.
       </p>
 
       <section class="u-mb-lg">
         <h2 class="u-text-lg u-font-bold u-mb-xs">
-          1. Veri Sorumlusu ve Hizmet Niteliği
+          1. Hizmetin Niteliği
         </h2>
         <p class="u-leading-comfortable">
-          Kepçe Ara, açık kaynaklı SearXNG altyapısını kullanan bir meta arama
-          aracıdır. Arama terimlerini anonimleştirerek üçüncü taraf motorlara
-          iletir ve sonuçları derler.
+          Kepçe Ara, açık kaynaklı SearXNG altyapısı üzerinde çalışan bağımsız bir meta arama aracıdır. Aramalarınızı doğrudan arama motorlarına iletmek yerine vekil sunucu üzerinden arındırarak iletir ve gelen sonuçları tarafsız şekilde listeler.
         </p>
       </section>
 
       <section class="u-mb-lg">
         <h2 class="u-text-lg u-font-bold u-mb-xs">
-          2. İşlenen Veriler ve Sıfır-Log İlkesi
+          2. Arama Gizliliği ve Sorgu Verileri
         </h2>
         <p class="u-leading-comfortable">
-          Kullanıcı gizliliği şu esaslara dayanır:
-        </p>
-        <ul class="u-mt-xs u-pl-md u-leading-comfortable">
-          <li>
-            <strong>Arama Terimleri:</strong> Arama kutusuna yazdığınız sorgular
-            sunucu veri tabanına kaydedilmez. Sorgu anlık olarak motorlara iletilir
-            ve sonuçlar tarayıcınıza gönderildikten sonra bellekten silinir.
-          </li>
-          <li>
-            <strong>IP Adresi ve Trafik Verileri:</strong> Arama oturumları ile IP
-            adresleri arasında profil oluşturulmaz. 5651 sayılı Kanun m. 4 ve 5
-            kapsamında bağlantı sağlanan harici içeriklere ilişkin arama kayıtları
-            tutulmaz.
-          </li>
-          <li>
-            <strong>Kullanıcı Profili ve Reklam:</strong> Kullanıcı profili oluşturulmaz;
-            reklam çerezi veya takip pikseli kullanılmaz.
-          </li>
-        </ul>
-      </section>
-
-      <section class="u-mb-lg">
-        <h2 class="u-text-lg u-font-bold u-mb-xs">
-          3. Çerezler ve Yerel Depolama (localStorage)
-        </h2>
-        <p class="u-leading-comfortable">
-          Kepçe Ara üçüncü taraf takip çerezi kullanmaz. Motor, tema, dil,
-          güvenli arama ve ara yüz seçenekleriniz yalnızca tarayıcınızın yerel
-          depolama alanında (<code>localStorage</code>) tutulur. Bu veriler
-          sunucuya gönderilmez. Bu tercihleri, tarayıcı verilerinizi temizleyerek
-          veya ayarlar sayfasından dilediğiniz zaman silebilirsiniz.
+          Arama kutusuna yazdığınız terimler sunucu veritabanına kaydedilmez. Yapılan arama anlık olarak ilgili motorlara iletilir, sonuçlar tarayıcınıza ulaştıktan sonra bellekten silinir. Arama geçmişi tutulmaz, kullanıcı profili çıkarılmaz ve davranışsal reklam hedeflemesi yapılmaz.
         </p>
       </section>
 
       <section class="u-mb-lg">
         <h2 class="u-text-lg u-font-bold u-mb-xs">
-          4. POST Yöntemi ve Yönlendirme (Referrer) Koruması
+          3. Kanuni Veri Saklama Yükümlülüğü
         </h2>
         <p class="u-leading-comfortable">
-          Aramalar varsayılan olarak HTTP POST yöntemiyle yapılır. Arama
-          teriminiz tarayıcı geçmişine yazılmaz ve sonuçlardaki bağlantılara
-          tıklandığında hedef siteye HTTP Referrer başlığı üzerinden aktarılmaz.
+          5651 sayılı Kanun uyarınca yer sağlayıcılar, sunucu düzeyindeki temel erişim ve trafik kayıtlarını (bağlantı tarihi, saati, IP adresi ve port bilgisi) kanunen 1 yıldan az ve 2 yıldan fazla olmamak üzere saklamakla yükümlüdür. Bu yasal kayıtlar arama sorgularınızla veya kişisel kimliğinizle eşleştirilmez; yasal sürenin sonunda sistemden kalıcı olarak silinir.
         </p>
       </section>
 
       <section class="u-mb-lg">
         <h2 class="u-text-lg u-font-bold u-mb-xs">
-          5. İlgili Kişinin Hakları (KVKK Madde 11)
+          4. Çerezler ve Tarayıcı Hafızası
         </h2>
         <p class="u-leading-comfortable">
-          KVKK'nin 11. maddesi uyarınca veri sahipleri kişisel verilerinin
-          işlenip işlenmediğini öğrenme hakkına sahiptir. Kepçe Ara kişisel veri
-          kaydı tutmadığından sistemlerimizde saklanan bir kullanıcı profili
-          yoktur.
+          Kepçe Ara üçüncü taraf takip çerezi kullanmaz. Tema, dil, güvenli arama ve arayüz tercihleriniz yalnızca kendi tarayıcınızın yerel hafızasında tutulur. Bu ayarlar sunucuya iletilmez; tarayıcı geçmişinizi temizleyerek veya ayarlar sayfasından dilediğiniz an silebilirsiniz.
         </p>
       </section>
 
       <section class="u-mb-lg">
-        <h2 class="u-text-lg u-font-bold u-mb-xs">6. İletişim</h2>
+        <h2 class="u-text-lg u-font-bold u-mb-xs">
+          5. Yönlendirme Koruması
+        </h2>
         <p class="u-leading-comfortable">
-          Gizlilik uygulamalarımızla ilgili sorularınız için <a
-            href="mailto:iletisim@kepce.org"
-            class="text-link">iletisim@kepce.org</a
-          > adresinden bize ulaşabilirsiniz.
+          Aramalar POST yöntemiyle gerçekleştirilir. Arama sonuçlarında tıkladığınız web sitelerine arama teriminiz yönlendirme başlığı üzerinden aktarılmaz.
+        </p>
+      </section>
+
+      <section class="u-mb-lg">
+        <h2 class="u-text-lg u-font-bold u-mb-xs">
+          6. Başvuru ve İletişim
+        </h2>
+        <p class="u-leading-comfortable">
+          Kişisel Verilerin Korunması Kanunu kapsamındaki haklarınız ve gizlilik uygulamalarımızla ilgili sorularınız için <a href="mailto:iletisim@kepce.org" class="text-link">iletisim@kepce.org</a> adresinden bize ulaşabilirsiniz.
         </p>
       </section>
     </div>

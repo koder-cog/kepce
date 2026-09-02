@@ -26,7 +26,7 @@
         <div class="card card--flat u-p-md u-flex u-flex-col u-gap-xs">
           <div class="u-text-xs u-font-bold u-color-text">Temel Prensipler:</div>
           <ul class="u-text-xs u-color-muted u-pl-md u-flex u-flex-col u-gap-2xs">
-            <li>IP adresi veya sorgu günlüğü (log) tutulmaz.</li>
+            <li>Kişisel arama geçmişi ve profil kaydı tutulmaz.</li>
             <li>Reklam hedeflemesi ve filtre balonu oluşturulmaz.</li>
             <li>AGPLv3 lisansıyla tamamen özgür ve açık kaynaklıdır.</li>
           </ul>
