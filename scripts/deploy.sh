@@ -131,6 +131,11 @@ if [[ "$OPT_BERT" =~ ^[EeYy]$ ]] || [[ "$OPT_LLAMA" =~ ^[EeYy]$ ]]; then
     echo -e "${GREEN}Yapay Zeka (BERT / Gemma) modülleri dahil edildi.${NC}"
 fi
 
+if [[ "$OPT_SEARXNG" =~ ^[EeYy]$ ]]; then
+    COMPOSE_CMD="$COMPOSE_CMD -f docker-compose.search.yml"
+    echo -e "${GREEN}SearXNG Arama Motoru modülü dahil edildi.${NC}"
+fi
+
 # 6. Sunucuda Konteynerlerin Başlatılması ve Veritabanı Hazırlığı
 echo -e "${YELLOW}[3/5] Veritabanı ve servisler hazırlanıyor...${NC}"
 ssh -i "$SSH_KEY" "$SERVER_HOST" "

@@ -43,17 +43,5 @@ services:
     networks:
       - backend-net
 
-  searxng:
-    image: docker.io/searxng/searxng:latest
-    container_name: kepce-searxng
-    restart: unless-stopped
-    volumes:
-      - ${SEARXNG_CONFIG_DIR:-./config/searxng}:/etc/searxng:Z
-    expose:
-      - "8080"
-    networks:
-      - frontend-net
-      - backend-net
-
 volumes:
   hf_cache:

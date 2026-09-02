@@ -23,6 +23,67 @@
     activeCategory = data.category || "general";
   });
 
+  let searxData = $state(null);
+  let isSearxLoading = $state(false);
+  let isNavigatingToResults = $state(false);
+  let scanStep = $state(0);
+  let instantPreview = $state(null);
+
+  $effect(() => {
+    if (data.streamed?.searxData) {
+      isSearxLoading = true;
+      searxData = null;
+      scanStep = 0;
+      const startTime = Date.now();
+      const interval = setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        if (elapsed < 350) {
+          scanStep = 0;
+        } else if (elapsed < 750) {
+          scanStep = 1;
+        } else if (elapsed < 1200) {
+          scanStep = 2;
+        } else {
+          scanStep = 3;
+        }
+      }, 100);
+
+      data.streamed.searxData.then((res) => {
+        clearInterval(interval);
+        scanStep = 4;
+        searxData = res;
+        isSearxLoading = false;
+        isNavigatingToResults = false;
+      }).catch(() => {
+        clearInterval(interval);
+        searxData = { results: [], infoboxes: [], suggestions: [], corrections: [], error: "Arama servisi şu anda yanıt vermiyor." };
+        isSearxLoading = false;
+        isNavigatingToResults = false;
+      });
+
+      return () => clearInterval(interval);
+    } else {
+      searxData = {
+        results: data.results || [],
+        infoboxes: data.infoboxes || [],
+        suggestions: data.suggestions || [],
+        corrections: data.corrections || [],
+        answer: data.answer,
+        numberOfResults: data.numberOfResults || 0,
+        error: data.error,
+      };
+      isSearxLoading = false;
+      isNavigatingToResults = false;
+      scanStep = 4;
+    }
+  });
+
+  let currentResults = $derived(searxData?.results || data.results || []);
+  let currentInfoboxes = $derived(searxData?.infoboxes || data.infoboxes || []);
+  let currentCorrections = $derived(searxData?.corrections || data.corrections || []);
+  let currentSuggestions = $derived(searxData?.suggestions || data.suggestions || []);
+  let currentError = $derived(searxData?.error || data.error);
+
   let randomShortcuts = $state(
     BANG_DEFINITIONS.slice(0, 4).map((b) => ({ prefix: b.prefix, label: b.name }))
   );
@@ -64,11 +125,15 @@
   }
 
   function removeHistoryItem(term, e) {
-    e.stopPropagation();
+    e?.preventDefault();
+    e?.stopPropagation();
     searchHistory = searchHistory.filter((t) => t !== term);
     try {
       localStorage.setItem("kepce_search_history", JSON.stringify(searchHistory));
     } catch {}
+    if (searchHistory.length === 0) {
+      isHistoryOpen = false;
+    }
   }
 
   function openImageLightbox(item, e) {
@@ -171,13 +236,16 @@
 
     if (isInputActive) {
       if (e.key === "Escape") {
+        isSuggestionsOpen = false;
+        isHistoryOpen = false;
+        instantPreview = null;
         if (searchInputEl) searchInputEl.blur();
       }
       return;
     }
 
     // Arama sonuçları listesi klavye ile gezinti (j: aşağı, k: yukarı, Enter: aç, Esc: seçimi kaldır)
-    const items = data.results || [];
+    const items = currentResults || [];
     if (items.length === 0) return;
 
     if (e.key === "j" || e.key === "ArrowDown") {
@@ -269,10 +337,56 @@
     isSuggestionsOpen = false;
   }
 
+  function checkInstantPreview(val) {
+    const q = (val || "").trim().toLowerCase();
+    if (!q) {
+      instantPreview = null;
+      return;
+    }
+    if (/^[\d\s.,+\-*/()^%]+$/.test(q) && /[+\-*/^%]/.test(q)) {
+      try {
+        const sanitized = q.replace(/,/g, ".").replace(/\^/g, "**");
+        if (!/[a-zA-Z_$]/.test(sanitized)) {
+          // eslint-disable-next-line no-new-func
+          const result = Function(`'use strict'; return (${sanitized})`)();
+          if (typeof result === "number") {
+            let resText = "";
+            if (isNaN(result)) {
+              resText = "Tanımsız (0/0 belirsizliği)";
+            } else if (!isFinite(result)) {
+              resText = "Tanımsız (Sıfıra bölünemez)";
+            } else {
+              resText = result.toLocaleString("tr-TR", { maximumFractionDigits: 6 });
+            }
+            instantPreview = {
+              badge: "Hesaplama",
+              text: `${q} = ${resText}`,
+            };
+            return;
+          }
+        }
+      } catch {}
+    }
+    const mCur = q.match(/^(\d+(?:[.,]\d+)?)\s*(dolar|usd|\$|euro|eur|€)/i);
+    if (mCur) {
+      const amt = parseFloat(mCur[1].replace(",", "."));
+      const cur = mCur[2].toLowerCase();
+      const rate = cur.includes("e") || cur.includes("€") ? 52.5 : 48.27;
+      const total = amt * rate;
+      instantPreview = {
+        badge: "Döviz Tahmini",
+        text: `≈ ${total.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} ₺`,
+      };
+      return;
+    }
+    instantPreview = null;
+  }
+
   function handleInput(e) {
     const val = e.target.value;
     searchInput = val;
     isHistoryOpen = !val;
+    checkInstantPreview(val);
     clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(() => {
       fetchSuggestions(val);
@@ -286,6 +400,15 @@
   }
 
   function handleKeydown(e) {
+    if (e.key === "Escape") {
+      isSuggestionsOpen = false;
+      isHistoryOpen = false;
+      instantPreview = null;
+      selectedSuggestionIndex = -1;
+      if (searchInputEl) searchInputEl.blur();
+      return;
+    }
+
     if (isSuggestionsOpen && suggestions.length > 0) {
       if (e.key === "ArrowDown") {
         e.preventDefault();
@@ -297,9 +420,6 @@
         selectedSuggestionIndex = (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
         const current = suggestions[selectedSuggestionIndex];
         searchInput = current?.isBang ? current.prefix : (current?.displayText || current || "");
-      } else if (e.key === "Escape") {
-        isSuggestionsOpen = false;
-        selectedSuggestionIndex = -1;
       }
     }
   }
@@ -314,6 +434,7 @@
     searchInput = val;
     isSuggestionsOpen = false;
     isHistoryOpen = false;
+    instantPreview = null;
     handleSearch();
   }
 
@@ -321,7 +442,17 @@
     setTimeout(() => {
       isSuggestionsOpen = false;
       isHistoryOpen = false;
+      instantPreview = null;
     }, 200);
+  }
+
+  function handleWindowClick(e) {
+    const target = e.target;
+    if (target && !target.closest(".c-search-bar") && !target.closest(".c-search-home-form")) {
+      isSuggestionsOpen = false;
+      isHistoryOpen = false;
+      instantPreview = null;
+    }
   }
 
   function buildSearchUrl(params) {
@@ -336,6 +467,10 @@
     isHistoryOpen = false;
     const q = searchInput.trim();
     if (!q) return;
+
+    if (data.isHome) {
+      isNavigatingToResults = true;
+    }
 
     saveToHistory(q);
 
@@ -482,7 +617,7 @@
   }
 </script>
 
-<svelte:window onkeydown={handleGlobalKeydown} />
+<svelte:window onkeydown={handleGlobalKeydown} onclick={handleWindowClick} />
 
 <svelte:head>
   <link rel="preconnect" href="https://icons.duckduckgo.com" />
@@ -507,7 +642,7 @@
 
 {#if data.isHome}
   <!-- ── 1. ANA ARAMA EKRANI (Home) ────────────────────────── -->
-  <div class="c-search-home">
+  <div class="c-search-home" class:is-navigating={$navigating || isNavigatingToResults}>
     <header class="c-search-home__header">
       <button
         type="button"
@@ -672,6 +807,10 @@
               {@html icon("search", 20)}
             </button>
 
+            {#if $navigating || isSearxLoading}
+              <div class="c-search-pulse-bar" aria-hidden="true"></div>
+            {/if}
+
             <!-- Yerel Arama Geçmişi (Arama çubuğu boş ve odaklıyken) -->
             {#if isHistoryOpen && searchHistory.length > 0 && !searchInput}
               <ul class="c-search-autocomplete c-search-history-panel" role="listbox">
@@ -707,8 +846,19 @@
               </ul>
             {/if}
 
-            {#if isSuggestionsOpen && suggestions.length > 0}
+            {#if (isSuggestionsOpen && suggestions.length > 0) || instantPreview}
               <ul class="c-search-autocomplete" role="listbox">
+                {#if instantPreview}
+                  <li
+                    class="c-search-autocomplete__item is-instant-preview"
+                    onmousedown={() => handleSearch()}
+                    role="option"
+                    aria-selected="false"
+                  >
+                    <span class="c-search-autocomplete__preview-badge">{instantPreview.badge}</span>
+                    <strong class="c-search-autocomplete__preview-text">{instantPreview.text}</strong>
+                  </li>
+                {/if}
                 {#each suggestions as item, idx}
                   {#if item.isBang}
                     <li
@@ -828,6 +978,39 @@
 
     <!-- Sonuçlar Gövdesi -->
     <main class="c-search-body" class:is-loading={Boolean($navigating)}>
+      <!-- 0. Kepçe Doğrudan Platform Sonucu (Menü / Araç / Arşiv) -->
+      {#if data.kepceCard && (data.category === "general" || !data.category)}
+        <aside class="c-kepce-direct-card" aria-label="Kepçe Sonucu">
+          <div class="c-kepce-direct-card__header">
+            <div class="c-kepce-direct-card__badge-group">
+              <span class="c-kepce-direct-card__brand">🥣 KEPÇE DOĞRUDAN SONUÇ</span>
+              <span class="c-kepce-direct-card__badge">{data.kepceCard.badge}</span>
+            </div>
+            <span class="c-kepce-direct-card__source">kepce.org</span>
+          </div>
+          <div class="c-kepce-direct-card__body">
+            <h2 class="c-kepce-direct-card__title">
+              <a href={data.kepceCard.href}>{data.kepceCard.title}</a>
+            </h2>
+            <p class="c-kepce-direct-card__subtitle">{data.kepceCard.subtitle}</p>
+            <p class="c-kepce-direct-card__desc">{data.kepceCard.description}</p>
+            {#if data.kepceCard.type === "city_menu"}
+              <div class="c-kepce-direct-card__features">
+                <span class="c-kepce-direct-card__feature-chip">🍲 4 Çeşit Tabldot Menü</span>
+                <span class="c-kepce-direct-card__feature-chip">⏰ Sabah & Akşam Saatleri</span>
+                <span class="c-kepce-direct-card__feature-chip">📊 Kalori & Fiyat Takibi</span>
+              </div>
+            {/if}
+          </div>
+          <div class="c-kepce-direct-card__footer">
+            <a href={data.kepceCard.href} class="c-kepce-direct-card__btn">
+              <span>{data.kepceCard.cta}</span>
+              {@html icon("arrowRight", 14)}
+            </a>
+          </div>
+        </aside>
+      {/if}
+
       <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi - Yalnızca Web sekmesinde) -->
       {#if data.answer && (data.category === "general" || !data.category)}
         <div class="c-search-top-answer">
@@ -836,24 +1019,24 @@
       {/if}
 
       <!-- 2. Üst Bilgi Kartı (Yalnızca Web sekmesinde) -->
-      {#if data.infoboxes && data.infoboxes.length > 0 && (data.category === "general" || !data.category)}
+      {#if currentInfoboxes && currentInfoboxes.length > 0 && (data.category === "general" || !data.category)}
         <div class="c-search-top-knowledge">
-          <KnowledgeCard infobox={data.infoboxes[0]} />
+          <KnowledgeCard infobox={currentInfoboxes[0]} />
         </div>
       {/if}
 
       <!-- Yazım Hatası Düzeltmesi (Bunu mu demek istediniz?) -->
-      {#if data.corrections && data.corrections.length > 0}
+      {#if currentCorrections && currentCorrections.length > 0}
         <div class="c-search-spelling-correction">
           <span>Bunu mu demek istediniz:</span>
-          {#each data.corrections as correction, i}
+          {#each currentCorrections as correction, i}
             <a
               href={buildSearchUrl(new URLSearchParams({ q: correction, kategori: data.category || 'general' }))}
               class="c-search-spelling-correction__link"
             >
               {correction}
             </a>
-            {#if i < data.corrections.length - 1}, {/if}
+            {#if i < currentCorrections.length - 1}, {/if}
           {/each}
           <span>?</span>
         </div>
@@ -861,11 +1044,84 @@
 
       <!-- Sonuç Listesi -->
       <section class="c-search-list">
-        {#if data.error}
-          <div class="card u-p-lg">
-            <p class="u-text-sm u-color-danger">{data.error}</p>
+        {#if isSearxLoading}
+          <!-- Canlı Motor Takipçisi (Canlı Radar Pulse & Akıllı Şov) -->
+          <div class="c-search-live-tracker" aria-live="polite">
+            <div class="c-search-live-tracker__header">
+              <span class="c-search-live-tracker__pulse"></span>
+              <span class="c-search-live-tracker__status">
+                {#if scanStep === 0}
+                  Vikipedi ve ansiklopedi taranıyor...
+                {:else if scanStep === 1}
+                  Bing ve web dizinleri taranıyor...
+                {:else if scanStep === 2}
+                  DuckDuckGo ve bağımsız kaynaklar taranıyor...
+                {:else if scanStep === 3}
+                  Sonuçlar analiz ediliyor ve sıralanıyor...
+                {:else}
+                  Sonuçlar hazırlandı!
+                {/if}
+              </span>
+            </div>
+            <div class="c-search-live-chips">
+              <span class="c-search-chip" class:is-done={scanStep > 0} class:is-active={scanStep === 0}>
+                {#if scanStep > 0}
+                  <span class="c-search-chip__icon">{@html icon("check", 12)}</span>
+                {:else if scanStep === 0}
+                  <span class="c-search-chip__spinner" aria-hidden="true"></span>
+                {:else}
+                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
+                {/if}
+                Vikipedi
+              </span>
+              <span class="c-search-chip" class:is-done={scanStep > 1} class:is-active={scanStep === 1}>
+                {#if scanStep > 1}
+                  <span class="c-search-chip__icon">{@html icon("check", 12)}</span>
+                {:else if scanStep === 1}
+                  <span class="c-search-chip__spinner" aria-hidden="true"></span>
+                {:else}
+                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
+                {/if}
+                Bing
+              </span>
+              <span class="c-search-chip" class:is-done={scanStep > 2} class:is-active={scanStep === 2}>
+                {#if scanStep > 2}
+                  <span class="c-search-chip__icon">{@html icon("check", 12)}</span>
+                {:else if scanStep === 2}
+                  <span class="c-search-chip__spinner" aria-hidden="true"></span>
+                {:else}
+                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
+                {/if}
+                DuckDuckGo
+              </span>
+              <span class="c-search-chip" class:is-done={scanStep >= 3} class:is-active={scanStep === 3}>
+                {#if scanStep >= 3}
+                  <span class="c-search-chip__icon">{@html icon("check", 12)}</span>
+                {:else if scanStep === 3}
+                  <span class="c-search-chip__spinner" aria-hidden="true"></span>
+                {:else}
+                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
+                {/if}
+                Sıralama
+              </span>
+            </div>
           </div>
-        {:else if data.results.length === 0 && !data.answer && (!data.infoboxes || data.infoboxes.length === 0)}
+
+          <div class="c-search-skeletons" aria-hidden="true">
+            {#each [1, 2, 3] as _}
+              <div class="c-search-skeleton-card">
+                <div class="c-search-skeleton-line is-source"></div>
+                <div class="c-search-skeleton-line is-title"></div>
+                <div class="c-search-skeleton-line is-desc-1"></div>
+                <div class="c-search-skeleton-line is-desc-2"></div>
+              </div>
+            {/each}
+          </div>
+        {:else if currentError}
+          <div class="card u-p-lg">
+            <p class="u-text-sm u-color-danger">{currentError}</p>
+          </div>
+        {:else if currentResults.length === 0 && !data.answer && !data.kepceCard && (!currentInfoboxes || currentInfoboxes.length === 0)}
           <div class="c-search-no-results">
             <div class="c-search-no-results__icon">
               {@html icon("search", 32)}
@@ -902,20 +1158,26 @@
         {:else if data.category === "images"}
           <!-- Görsel Sonuçları Duvarı (Masonry Grid) -->
           <div class="c-search-images-grid">
-            {#each data.results as item}
-              <div class="c-search-image-item">
+            {#each currentResults as item, idx}
+              {@const ratio = item.width && item.height ? `${item.width} / ${item.height}` : "4 / 3"}
+              <div class="c-search-image-item" style="--index: {idx}">
                 <button
                   type="button"
                   class="c-search-image-card"
+                  style="--aspect-ratio: {ratio}"
                   onclick={(e) => openImageLightbox(item, e)}
                   aria-label={item.title}
                 >
-                  {#if item.imgSrc}
+                  {#if item.thumbnailSrc || item.imgSrc}
                     <img
-                      src={item.imgSrc}
+                      src={item.thumbnailSrc || item.imgSrc}
                       alt={item.title}
                       class="c-search-image-card__img"
                       loading="lazy"
+                      decoding="async"
+                      onerror={(e) => {
+                        e.currentTarget.closest(".c-search-image-item")?.classList.add("is-img-error");
+                      }}
                     />
                   {/if}
                 </button>
@@ -938,9 +1200,9 @@
         {:else if data.category === "videos"}
           <!-- Video Sonuçları ve Gömülü Oynatıcı -->
           <div class="c-search-videos-grid">
-            {#each data.results as item}
+            {#each currentResults as item, idx}
               {@const embedUrl = getYoutubeEmbedUrl(item.url)}
-              <article class="c-search-video-card">
+              <article class="c-search-video-card" style="--index: {idx}">
                 {#if activeVideoEmbed === item.url && embedUrl}
                   <div class="c-search-video-embed-wrap">
                     <iframe
@@ -992,13 +1254,15 @@
           </div>
         {:else}
           <!-- Standart Web / Haber / Kod / Akademi Sonuçları -->
-          {#each data.results as item, idx}
+          {#each currentResults as item, idx}
             {@const favicon = getFaviconUrl(item.url)}
             {@const dateBadge = formatDateSnippet(item.publishedDate)}
             <article
+              id="search-result-{idx}"
               class="c-search-item"
               class:is-keyboard-selected={idx === selectedResultIndex}
               data-index={idx}
+              style="--index: {idx}"
             >
               <a
                 href={item.url}
@@ -1012,7 +1276,6 @@
                     alt=""
                     class="c-search-item__favicon"
                     loading="lazy"
-                    onerror={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
                 {/if}
                 <span class="c-search-item__domain">{getDomain(item.url)}</span>
@@ -1037,7 +1300,7 @@
         {/if}
 
         <!-- Sayfalama -->
-        {#if data.results.length > 0}
+        {#if currentResults.length > 0}
           <div class="c-search-pagination">
             {#if data.page > 1}
               <a
@@ -1076,6 +1339,7 @@
         {/if}
       </section>
     </main>
+
 
     <!-- 4 Kolonlu Dengeli Arama Footer'ı -->
     <footer class="site-footer">

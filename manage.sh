@@ -16,7 +16,7 @@ LLAMA_PORT="${LLAMA_PORT:-5262}"
 DB_CONTAINER="kepce-db"
 SEARXNG_CONTAINER="kepce-searxng"
 SEARXNG_PORT="${SEARXNG_PORT:-8080}"
-SEARXNG_DIR=".scratch/searxng"
+SEARXNG_DIR="${SEARXNG_CONFIG_DIR:-config/searxng}"
 
 # Colors for output
 RED='\033[0;31m'

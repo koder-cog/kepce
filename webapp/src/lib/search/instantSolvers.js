@@ -217,7 +217,15 @@ export function solveWorldTime(query) {
 // ── 3. TDK Sözlük & Tanım Çözücü ───────────────────────────────────────────
 export async function solveTdkDefinition(query) {
   const q = query.trim().toLowerCase();
-  const m = q.match(/^([a-zğüşıöç]+)\s*(?:nedir|ne\s*demek|anlam[ıi])$/i);
+  // 1. Sonek kalıpları: "merak tanım", "merak tanımı", "merak nedir", "merak ne demek", "merak anlamı"
+  let m = q.match(/^([a-zğüşıöç]+)\s*(?:nedir|ne\s*demek|tan[ıi]m[ıi]?|anlam[ıi]?|manas[ıi]|kelimesi\s*nedir)$/i);
+  // 2. Önek kalıpları: "tanım merak", "tanımı merak", "anlamı merak"
+  if (!m) {
+    const mPre = q.match(/^(?:tan[ıi]m[ıi]?|anlam[ıi]?|manas[ıi])\s+([a-zğüşıöç]+)$/i);
+    if (mPre) {
+      m = [mPre[0], mPre[1]];
+    }
+  }
   if (!m) return null;
 
   const word = m[1].trim();

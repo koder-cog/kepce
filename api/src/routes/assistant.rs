@@ -83,7 +83,7 @@ async fn search_searxng(client: &reqwest::Client, base_url: &str, query: &str) -
     let req = client
         .get(&url)
         .query(&[("q", query), ("format", "json"), ("language", "tr")])
-        .timeout(Duration::from_secs(8));
+        .timeout(Duration::from_millis(3500));
 
     match req.send().await {
         Ok(res) if res.status().is_success() => {

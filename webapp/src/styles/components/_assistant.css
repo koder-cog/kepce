@@ -311,7 +311,7 @@ html.hide-ai .c-assistant-backdrop {
   background: var(--color-accent-primary, #db6f3f);
   color: var(--color-text-on-accent, #ffffff);
   padding: 0.625rem 0.875rem;
-  border-radius: var(--radius-lg, 12px) var(--radius-lg, 12px) 2px var(--radius-lg, 12px);
+  border-radius: var(--radius-lg, 12px) var(--radius-sm, 2px) var(--radius-lg, 12px) var(--radius-lg, 12px);
   white-space: pre-wrap;
   word-break: break-word;
   width: 100%;

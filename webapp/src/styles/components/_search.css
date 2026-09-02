@@ -12,6 +12,13 @@
   padding: 0;
   background-color: var(--color-bg);
   color: var(--color-text);
+  transition: opacity 280ms var(--ease-standard), filter 280ms var(--ease-standard);
+}
+
+.c-search-home.is-navigating {
+  opacity: 0.6;
+  filter: blur(1px);
+  pointer-events: none;
 }
 
 .c-search-home__header {
@@ -282,6 +289,16 @@
   }
 }
 
+@keyframes searchPageFadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
 /* ── 3. Sonuç Sayfası Düzeni (Results Layout) ─────────────── */
 .c-search-results {
   min-height: 100vh;
@@ -289,6 +306,7 @@
   flex-direction: column;
   background-color: var(--color-bg);
   color: var(--color-text);
+  animation: searchPageFadeIn 280ms var(--ease-standard);
 }
 
 /* Üst Bar */
@@ -462,6 +480,7 @@
     grid-area: search;
     max-width: 100%;
     width: 100%;
+    margin-top: var(--space-sm);
   }
 
   .c-search-results__search-wrap .c-search-box__input {
@@ -656,9 +675,17 @@
 }
 
 @keyframes searchLoadingBar {
-  0% { background-position: 200% 0; }
-  50% { background-position: 0% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+
+  50% {
+    background-position: 0% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ── 5. Sonuçlar Gövdesi ─────────────────────────────────── */
@@ -672,6 +699,8 @@
   gap: var(--space-xl);
   flex: 1;
   line-height: 1.6;
+  box-sizing: border-box;
+  overflow-x: hidden;
   transition: opacity var(--dur-fast) var(--ease-standard);
 }
 
@@ -682,12 +711,25 @@
 
 .c-search-top-knowledge {
   width: 100%;
+  animation: resultCascade 260ms var(--ease-standard) backwards;
 }
 
 .c-search-list {
   display: flex;
   flex-direction: column;
   gap: var(--space-xl);
+}
+
+@keyframes resultCascade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Sonuç Kartı */
@@ -699,6 +741,14 @@
   border-radius: var(--radius-md);
   border-bottom: 1px solid var(--color-border-light, var(--color-border));
   transition: background-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+  animation: resultCascade 280ms var(--ease-standard) backwards;
+  animation-delay: calc(var(--index, 0) * 35ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .c-search-item {
+    animation: none;
+  }
 }
 
 .c-search-item.is-keyboard-selected {
@@ -791,39 +841,52 @@
   margin-right: 4px;
 }
 
-/* Görsel Izgarası — Dinamik Masonry (Pinterest / Google Images tarzı) */
+/* Görsel Izgarası — Sayfaya Tam Sığan Akışkan Izgara */
 .c-search-images-grid {
-  column-count: 2;
-  column-gap: var(--space-md);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--space-md);
   width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 600px) {
   .c-search-images-grid {
-    column-count: 3;
-    column-gap: var(--space-md);
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 }
 
 @media (min-width: 900px) {
   .c-search-images-grid {
-    column-count: 4;
-    column-gap: var(--space-md);
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 }
 
 .c-search-image-item {
-  break-inside: avoid;
   display: flex;
   flex-direction: column;
-  margin-bottom: var(--space-md);
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+  animation: resultCascade 340ms var(--ease-standard) backwards;
+  animation-delay: calc(var(--index, 0) * 35ms);
+}
+
+.c-search-image-item.is-img-error {
+  display: none;
 }
 
 /* Yalnızca görseli çevreleyen kutu */
 .c-search-image-card {
   display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  aspect-ratio: var(--aspect-ratio, 4 / 3);
+  max-height: 200px;
   padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -831,13 +894,14 @@
   overflow: hidden;
   cursor: pointer;
   outline: none;
+  box-sizing: border-box;
   transition: border-color var(--dur-fast) var(--ease-standard),
     box-shadow var(--dur-fast) var(--ease-standard);
 }
 
 .c-search-image-card:hover {
-  border-color: var(--color-accent-primary);
-  box-shadow: var(--shadow-sm);
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
 }
 
 .c-search-image-card:active {
@@ -846,10 +910,12 @@
 
 .c-search-image-card__img {
   width: 100%;
-  height: auto;
+  height: 100%;
+  max-width: 100%;
   display: block;
   object-fit: cover;
   border-radius: calc(var(--radius-lg) - 1px);
+  transition: opacity 0.25s ease;
 }
 
 /* Görselin dışında, altında duran meta metinleri */
@@ -858,6 +924,11 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .c-search-image-meta__title {
@@ -870,6 +941,9 @@
   line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  word-break: break-word;
+  width: 100%;
+  min-width: 0;
 }
 
 .c-search-image-meta__source {
@@ -879,6 +953,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  width: 100%;
+  min-width: 0;
+  display: block;
 }
 
 .c-search-image-meta__source:hover {
@@ -925,6 +1002,19 @@
   font-size: 0.95rem;
   color: var(--color-text-dim);
   margin: 0;
+}
+
+.c-knowledge-type-badge {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-hover);
+  color: var(--color-primary);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
 }
 
 /* 2A. Coğrafi Yer Vitrini (Ferah Vitrin Düzeni) */
@@ -974,6 +1064,7 @@
 }
 
 @media (min-width: 680px) {
+
   .c-knowledge-tile--photo,
   .c-knowledge-tile--org-media {
     height: 100%;
@@ -1091,7 +1182,7 @@
 }
 
 .c-map-action-btn {
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--color-card);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   color: var(--color-text);
@@ -1261,13 +1352,29 @@
   padding: 0 var(--space-xl) var(--space-lg);
 }
 
-@media (min-width: 680px) {
+@media (min-width: 600px) {
   .c-knowledge-person-layout {
     display: grid;
     grid-template-columns: 200px 1fr;
     gap: var(--space-xl);
     align-items: start;
   }
+
+  .c-knowledge-person-layout.has-no-image {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+.c-knowledge-person-layout.has-no-image .c-knowledge-person-content {
+  width: 100%;
+  max-width: 100%;
+}
+
+.c-knowledge-person-layout.has-no-image .c-knowledge-details__summary {
+  max-width: 80ch;
 }
 
 .c-knowledge-person-portrait {
@@ -1319,13 +1426,25 @@
   padding: 0 var(--space-xl) var(--space-lg);
 }
 
-@media (min-width: 680px) {
+@media (min-width: 600px) {
   .c-knowledge-thing-layout {
     display: grid;
     grid-template-columns: 220px 1fr;
     gap: var(--space-xl);
     align-items: start;
   }
+
+  .c-knowledge-thing-layout.has-no-image {
+    display: flex;
+    flex-direction: column;
+    grid-template-columns: 1fr;
+    max-width: 100%;
+  }
+}
+
+.c-knowledge-thing-layout.has-no-image .c-knowledge-thing-content {
+  width: 100%;
+  max-width: 100%;
 }
 
 .c-knowledge-thing-media {
@@ -1665,6 +1784,7 @@
 /* ── 9. Anlık Yanıt Kartı (AnswerCard: Döviz, Hesap Makinesi) ── */
 .c-search-top-answer {
   margin-bottom: var(--space-lg);
+  animation: resultCascade 260ms var(--ease-standard) backwards;
 }
 
 .c-answer-card {
@@ -1974,6 +2094,8 @@
   flex-direction: column;
   transition: border-color var(--dur-fast) var(--ease-standard),
     box-shadow var(--dur-fast) var(--ease-standard);
+  animation: resultCascade 320ms var(--ease-standard) backwards;
+  animation-delay: calc(var(--index, 0) * 35ms);
 }
 
 .c-search-video-card:hover {
@@ -2094,8 +2216,13 @@
 }
 
 @keyframes lightboxFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .c-search-lightbox-content {
@@ -2199,4 +2326,413 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
+}
+
+/* ── 15. Canlı Arama Nabız Çizgisi (Micro-Pulse Bar) ──────── */
+.c-search-pulse-bar {
+  position: absolute;
+  bottom: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 2px;
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  background: transparent;
+  pointer-events: none;
+}
+
+.c-search-pulse-bar::after {
+  content: "";
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(90deg,
+      transparent 0%,
+      var(--color-primary) 50%,
+      transparent 100%);
+  animation: search-pulse-slide 1.2s infinite ease-in-out;
+}
+
+@keyframes search-pulse-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* ── 16. Yazarken Anlık Önizleme (Autocomplete Preview) ──── */
+.c-search-autocomplete__item.is-instant-preview {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background-color: var(--color-surface-hover);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-sm) var(--space-md);
+  cursor: pointer;
+}
+
+.c-search-autocomplete__preview-badge {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.c-search-autocomplete__preview-text {
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── 17. Kepçe Doğrudan Platform Sonucu Kartı ─────────────── */
+.c-kepce-direct-card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-sm);
+  padding: var(--space-lg) var(--space-xl);
+  margin-bottom: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  position: relative;
+  overflow: hidden;
+  transition: border-color var(--dur-fast) var(--ease-standard),
+    box-shadow var(--dur-fast) var(--ease-standard);
+  animation: resultCascade 260ms var(--ease-standard) backwards;
+}
+
+.c-kepce-direct-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-md);
+}
+
+.c-kepce-direct-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.c-kepce-direct-card__badge-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.c-kepce-direct-card__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--color-surface-hover);
+  border: 1px solid var(--color-border);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  letter-spacing: 0.03em;
+}
+
+.c-kepce-direct-card__badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-dim);
+  background-color: var(--color-surface-sunken);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.c-kepce-direct-card__source {
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.c-kepce-direct-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.c-kepce-direct-card__title {
+  margin: 0;
+  font-family: var(--font-body);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.c-kepce-direct-card__title a {
+  color: var(--color-text);
+  text-decoration: none;
+  transition: color var(--dur-fast) var(--ease-standard);
+}
+
+.c-kepce-direct-card__title a:hover {
+  color: var(--color-primary);
+}
+
+.c-kepce-direct-card__subtitle {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.c-kepce-direct-card__desc {
+  margin: 4px 0 0;
+  font-size: 0.95rem;
+  color: var(--color-text-dim);
+  line-height: 1.6;
+  max-width: 80ch;
+}
+
+.c-kepce-direct-card__features {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 6px;
+}
+
+.c-kepce-direct-card__feature-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text);
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 4px 10px;
+}
+
+.c-kepce-direct-card__footer {
+  margin-top: var(--space-xs);
+  display: flex;
+  align-items: center;
+}
+
+.c-kepce-direct-card__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #ffffff;
+  background-color: var(--color-primary);
+  text-decoration: none;
+  padding: 8px 18px;
+  border-radius: var(--radius-full);
+  transition: background-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+.c-kepce-direct-card__btn:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.c-kepce-direct-card__btn:active {
+  transform: scale(0.98);
+}
+
+/* ── 18. Canlı Motor Takipçisi (Live Engine Tracker) ──────── */
+.c-search-live-tracker {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.c-search-live-tracker__header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-text-dim);
+}
+
+.c-search-live-tracker__status {
+  color: var(--color-text);
+  font-weight: 600;
+  transition: opacity var(--dur-fast) var(--ease-standard);
+}
+
+.c-search-live-tracker__pulse {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  flex-shrink: 0;
+  animation: light-shadow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes light-shadow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 3px 1px var(--color-primary),
+                0 0 10px 1px color-mix(in srgb, var(--color-primary) 25%, transparent);
+    opacity: 0.75;
+  }
+  50% {
+    box-shadow: 0 0 12px 3px var(--color-primary),
+                0 0 24px 6px color-mix(in srgb, var(--color-primary) 50%, transparent);
+    opacity: 1;
+  }
+}
+
+.c-search-live-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.c-search-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-xs);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-full);
+  background-color: var(--color-surface-hover);
+  color: var(--color-text-dim);
+  border: 1px solid var(--color-border);
+  transition: all var(--dur-fast) var(--ease-standard);
+}
+
+.c-search-chip.is-done {
+  color: #10b981;
+  border-color: color-mix(in srgb, #10b981 40%, var(--color-border));
+  background-color: color-mix(in srgb, #10b981 10%, var(--color-surface));
+  font-weight: 600;
+}
+
+.c-search-chip.is-active {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background-color: var(--color-surface);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  font-weight: 600;
+}
+
+.c-search-chip__spinner {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--color-primary) 30%, transparent);
+  border-top-color: var(--color-primary);
+  animation: chip-spin 0.8s linear infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+@keyframes chip-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.c-search-chip__bullet {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background-color: var(--color-text-dim);
+  opacity: 0.4;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.c-search-chip__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ── 19. Akışkan İskelet Kartları (Shimmer Skeletons) ─────── */
+.c-search-skeletons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-lg);
+}
+
+.c-search-skeleton-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: var(--space-sm) 0;
+}
+
+.c-search-skeleton-line {
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg,
+      var(--color-surface-hover) 25%,
+      var(--color-border) 50%,
+      var(--color-surface-hover) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite ease-in-out;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.c-search-skeleton-line.is-source {
+  width: 140px;
+  height: 12px;
+}
+
+.c-search-skeleton-line.is-title {
+  width: 70%;
+  height: 18px;
+}
+
+.c-search-skeleton-line.is-desc-1 {
+  width: 95%;
+  height: 13px;
+}
+
+.c-search-skeleton-line.is-desc-2 {
+  width: 80%;
+  height: 13px;
+}
+
+@media (max-width: 600px) {
+  .c-search-pulse-bar {
+    left: 1rem;
+    right: 1rem;
+  }
+
+  .c-kepce-direct-card {
+    padding: var(--space-sm) var(--space-md);
+  }
+
+  .c-search-skeleton-line.is-title {
+    width: 90%;
+  }
 }

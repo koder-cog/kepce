@@ -8,6 +8,14 @@ export const BANG_DEFINITIONS = [
   { prefix: "!arch", name: "ArchWiki", url: "https://wiki.archlinux.org/index.php?search=" },
   { prefix: "!wikt", name: "Vikisözlük", url: "https://tr.wiktionary.org/wiki/Special:Search?search=" },
 
+  // Öğrenci & Akademi (TR)
+  { prefix: "!kyk", name: "GSB KYK Portal", url: "https://www.google.com/search?q=site%3Agsb.gov.tr+" },
+  { prefix: "!yok", name: "YÖK Atlas", url: "https://yokatlas.yok.gov.tr/search.php?q=" },
+  { prefix: "!osym", name: "ÖSYM", url: "https://www.osym.gov.tr/TR,0/arama.html?q=" },
+  { prefix: "!dergipark", name: "DergiPark Akademik", url: "https://dergipark.org.tr/tr/search?q=" },
+  { prefix: "!tubitak", name: "TÜBİTAK", url: "https://www.tubitak.gov.tr/tr/arama?search_api_views_fulltext=" },
+  { prefix: "!kepce", name: "Kepçe Menü", url: "https://kepce.org/" },
+
   // Geliştirici & Kod
   { prefix: "!gh", name: "GitHub", url: "https://github.com/search?q=" },
   { prefix: "!gl", name: "GitLab", url: "https://gitlab.com/search?search=" },

@@ -37,6 +37,7 @@
   let weather = $derived(place?.weather);
   let hasValidPlace = $derived(entityType === "place" && !!place?.lat && !!place?.lon);
   let hasValidOrgMap = $derived(entityType === "organization" && !!place?.lat && !!place?.lon);
+  let hasImage = $derived(Boolean(infobox?.imgSrc) && !imgError);
 
   // Vikipedi bağlantısını bulma
   let wikiUrl = $derived.by(() => {
@@ -58,9 +59,23 @@
     }
     if (entityType === "person") {
       const text = infobox?.content || "";
+      // Eğer infobox'ta açık meslek/unvan niteliği varsa onu tercih et
+      const meslekAttr = (infobox?.attributes || []).find((a) =>
+        ["mesleği", "meslek", "unvanı", "unvan", "uğraş"].includes((a.label || "").toLowerCase())
+      );
+      if (meslekAttr?.value) {
+        return meslekAttr.value;
+      }
+
       const parts = text.split(/[,–-]/);
       if (parts.length > 1 && parts[1].trim().length > 3 && parts[1].trim().length < 60) {
-        return parts[1].trim();
+        const candidate = parts[1].trim();
+        const firstSentence = text.split(".")[0] || "";
+        // Eğer bu parça cümlenin içinde aynen yer alıyorsa alt başlığı boş geç, papağanlık yapma
+        if (firstSentence.toLowerCase().includes(candidate.toLowerCase()) && text.length < 200) {
+          return "";
+        }
+        return candidate;
       }
       return "";
     }
@@ -186,8 +201,8 @@
 
     {:else if entityType === "person"}
       <!-- 2B. Kişi / Biyografi: Sol Portre + Sağ Künye & Biyografi -->
-      <div class="c-knowledge-person-layout">
-        {#if infobox.imgSrc && !imgError}
+      <div class="c-knowledge-person-layout" class:has-no-image={!hasImage}>
+        {#if hasImage}
           <div class="c-knowledge-person-portrait">
             <img
               src={infobox.imgSrc}
@@ -283,8 +298,8 @@
 
     {:else}
       <!-- 2D. Nesne / Kavram: Sol Medya + Sağ Tanım & Nitelikler -->
-      <div class="c-knowledge-thing-layout">
-        {#if infobox.imgSrc && !imgError}
+      <div class="c-knowledge-thing-layout" class:has-no-image={!hasImage}>
+        {#if hasImage}
           <div class="c-knowledge-thing-media">
             <img
               src={infobox.imgSrc}

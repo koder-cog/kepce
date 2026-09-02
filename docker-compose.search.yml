@@ -1,0 +1,18 @@
+services:
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    container_name: kepce-searxng
+    restart: unless-stopped
+    environment:
+      - SEARXNG_SECRET=${SEARXNG_SECRET_KEY:-kepce_searxng_production_secret_key_change_me}
+    volumes:
+      - ${SEARXNG_CONFIG_DIR:-./config/searxng}:/etc/searxng:Z
+    expose:
+      - "8080"
+    networks:
+      - frontend-net
+      - backend-net
+
+networks:
+  frontend-net:
+  backend-net:
