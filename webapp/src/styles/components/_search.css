@@ -1564,15 +1564,20 @@
   background-color: var(--color-surface-hover);
 }
 
-.c-answer-card__calc .c-answer-card__sub-title {
+.c-answer-card__calc .c-answer-card__sub-title,
+.c-answer-card__unit .c-answer-card__sub-title,
+.c-answer-card__time .c-answer-card__sub-title {
   font-size: var(--text-base);
   color: var(--color-text-dim);
   margin-bottom: 4px;
 }
 
-.c-answer-card__calc .c-answer-card__headline {
+.c-answer-card__calc .c-answer-card__headline,
+.c-answer-card__unit .c-answer-card__headline,
+.c-answer-card__time .c-answer-card__headline {
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--color-text);
   margin: 0;
+  line-height: 1.15;
 }

@@ -1,6 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 import { resolveBang } from "$lib/search/bangs.js";
+import { solveUnitConversion, solveWorldTime } from "$lib/search/instantSolvers.js";
 
 // Bellek içi LRU Arama Önbelleği (10 dk TTL)
 const searchCache = new Map();
@@ -437,6 +438,18 @@ async function solveInstantQuery(query) {
     } catch {
       // ignore calculation error
     }
+  }
+
+  // 3. Birim Dönüştürücü (örn: "50 mil kaç km", "100 kg kaç pound", "100 fahrenheit kaç derece")
+  const unitAnswer = solveUnitConversion(query);
+  if (unitAnswer) {
+    return unitAnswer;
+  }
+
+  // 4. Dünya Saatleri & Zaman Dilimi (örn: "tokyo'da saat kaç", "new york saati", "londra saat kaç")
+  const timeAnswer = solveWorldTime(query);
+  if (timeAnswer) {
+    return timeAnswer;
   }
 
   return null;

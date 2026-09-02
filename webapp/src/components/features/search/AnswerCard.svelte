@@ -157,6 +157,32 @@
         <div class="c-answer-card__headline">{answer.result}</div>
       </div>
 
+    {:else if answer.type === "unit"}
+      <div class="c-answer-card__unit">
+        <div class="c-answer-card__sub-title">
+          {answer.fromAmount} {answer.fromUnitName} ({answer.categoryName}) eşittir
+        </div>
+        <div class="c-answer-card__headline">
+          {answer.toAmount.toLocaleString("tr-TR")} {answer.toUnitName}
+        </div>
+        <div class="c-answer-card__single-rate">
+          {answer.formula}
+        </div>
+      </div>
+
+    {:else if answer.type === "time"}
+      <div class="c-answer-card__time">
+        <div class="c-answer-card__sub-title">
+          {answer.city}, {answer.country}
+        </div>
+        <div class="c-answer-card__headline">
+          {answer.currentTime}
+        </div>
+        <div class="c-answer-card__single-rate">
+          {answer.currentDate} · {answer.diffText}
+        </div>
+      </div>
+
     {:else}
       <div class="c-answer-card__generic">
         <div class="c-answer-card__sub-title">{answer.title || "Hızlı Yanıt"}</div>
