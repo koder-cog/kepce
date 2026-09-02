@@ -65,13 +65,7 @@ echo -e "• 5651 Uyumlu Loglama:       ${GREEN}Caddy seviyesinde aktif (/var/lo
 read -r -p "1. Umami Web Analitiği (Self-Hosted) kurulsun mu? [E/h]: " OPT_UMAMI || true
 OPT_UMAMI="${OPT_UMAMI:-E}"
 
-read -r -p "2. Yerel Türkçe BERT Moderasyon Modeli aktif edilsin mi? [E/h]: " OPT_BERT || true
-OPT_BERT="${OPT_BERT:-E}"
-
-read -r -p "3. Yerel Gemma Asistanı (llama-server) aktif edilsin mi? [E/h]: " OPT_LLAMA || true
-OPT_LLAMA="${OPT_LLAMA:-E}"
-
-read -r -p "4. Yerel SearXNG Meta Arama Motoru aktif edilsin mi? [E/h]: " OPT_SEARXNG || true
+read -r -p "2. Yerel SearXNG Meta Arama Motoru aktif edilsin mi? [E/h]: " OPT_SEARXNG || true
 OPT_SEARXNG="${OPT_SEARXNG:-E}"
 
 echo -e "\n${BLUE}--- Dağıtım Başlatılıyor ---${NC}"
@@ -124,11 +118,6 @@ COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
 if [[ "$OPT_UMAMI" =~ ^[EeYy]$ ]]; then
     COMPOSE_CMD="$COMPOSE_CMD -f docker-compose.analytics.yml"
     echo -e "${GREEN}Umami Analitik modülü dahil edildi.${NC}"
-fi
-
-if [[ "$OPT_BERT" =~ ^[EeYy]$ ]] || [[ "$OPT_LLAMA" =~ ^[EeYy]$ ]]; then
-    COMPOSE_CMD="$COMPOSE_CMD -f docker-compose.ai.yml"
-    echo -e "${GREEN}Yapay Zeka (BERT / Gemma) modülleri dahil edildi.${NC}"
 fi
 
 if [[ "$OPT_SEARXNG" =~ ^[EeYy]$ ]]; then

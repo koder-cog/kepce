@@ -86,6 +86,8 @@ services:
       - INDEXNOW_KEY=${INDEXNOW_KEY:-}
       - INDEXNOW_HOST=${INDEXNOW_HOST:-kepce.org}
       - INDEXNOW_ENDPOINT=${INDEXNOW_ENDPOINT:-https://api.indexnow.org/indexnow}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_ADMIN_CHAT_ID=${TELEGRAM_ADMIN_CHAT_ID:-}
     volumes:
       - menuler:/app/data/menuler
       - ./config:/app/config:ro
