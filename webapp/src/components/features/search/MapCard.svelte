@@ -80,7 +80,6 @@
     const minY = Math.floor((centerPxY - centerY) / tileSize);
     const maxY = Math.floor((centerPxY + centerY) / tileSize);
 
-    const styleName = isDark ? "dark_all" : "voyager";
     const subdomains = ["a", "b", "c", "d"];
 
     for (let ty = minY; ty <= maxY; ty++) {
@@ -88,7 +87,11 @@
       for (let tx = minX; tx <= maxX; tx++) {
         const wrappedX = ((tx % n) + n) % n;
         const sub = subdomains[(wrappedX + ty) % subdomains.length];
-        const tileUrl = `https://${sub}.basemaps.cartocdn.com/rastertiles/${styleName}/${z}/${wrappedX}/${ty}@2x.png`;
+        
+        // Açık modda sıcak/pastel OSM-HOT veya temiz CartoDB, koyu modda Dark Matter (Filigransız)
+        const tileUrl = isDark
+          ? `https://${sub}.basemaps.cartocdn.com/dark_all/${z}/${wrappedX}/${ty}.png`
+          : `https://${sub}.tile.openstreetmap.fr/hot/${z}/${wrappedX}/${ty}.png`;
 
         const img = new Image();
         img.crossOrigin = "anonymous";
