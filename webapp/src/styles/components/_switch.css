@@ -71,6 +71,31 @@
     transform: translateX(27px);
   }
 
+  /* ── Küçük Boyut (Kompakt / Filtre Çubuğu vb.) ── */
+  .c-switch--sm {
+    width: 34px;
+    height: 18px;
+  }
+
+  .c-switch--sm .c-switch__handle {
+    width: 14px;
+    height: 14px;
+    border-radius: var(--radius-full);
+    margin-left: 1px;
+  }
+
+  .c-switch--sm:active .c-switch__handle {
+    width: 16px;
+  }
+
+  .c-input-hidden:checked+.c-switch--sm .c-switch__handle {
+    transform: translateX(16px);
+  }
+
+  .c-input-hidden:checked+.c-switch--sm:active .c-switch__handle {
+    transform: translateX(16px);
+  }
+
   /* ── Switch Indicators (Mechanical I/O) ── */
   body.show-indicators .c-switch::before,
   body.show-indicators .c-switch::after {

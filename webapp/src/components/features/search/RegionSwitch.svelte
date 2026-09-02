@@ -56,15 +56,18 @@
 </script>
 
 <div class="c-region-control">
-  <button
-    type="button"
-    class="c-region-switch-btn"
-    class:is-active={isEnabled}
-    onclick={handleToggle}
-    aria-label="Bölge filtresi"
-  >
-    <span class="c-region-switch-handle"></span>
-  </button>
+  <label class="c-region-switch-wrap squish-effect">
+    <input
+      type="checkbox"
+      class="c-input-hidden"
+      checked={isEnabled}
+      onchange={handleToggle}
+      aria-label="Bölge filtresi"
+    />
+    <span class="c-switch c-switch--sm">
+      <span class="c-switch__handle"></span>
+    </span>
+  </label>
 
   <Dropdown
     variant="ghost"
