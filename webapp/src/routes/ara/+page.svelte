@@ -1,7 +1,7 @@
 <script>
   import { onMount } from "svelte";
   import { goto } from "$app/navigation";
-  import { page } from "$app/stores";
+  import { page, navigating } from "$app/stores";
   import { icon } from "@/components/ui/icons.js";
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
@@ -17,6 +17,11 @@
   let searchInputEl = $state(null);
   let isInfoOpen = $state(false);
   let isSettingsOpen = $state(false);
+  let activeCategory = $state("general");
+
+  $effect(() => {
+    activeCategory = data.category || "general";
+  });
 
   let randomShortcuts = $state(
     BANG_DEFINITIONS.slice(0, 4).map((b) => ({ prefix: b.prefix, label: b.name }))
@@ -550,7 +555,7 @@
       <div class="c-search-categories-island">
         <SegmentedControl
           options={CATEGORIES.map((c) => ({ value: c.id, label: c.label }))}
-          value={data.category || "general"}
+          value={activeCategory}
           onChange={(catId) => handleCategoryChange(catId)}
         />
       </div>
@@ -593,8 +598,13 @@
       </div>
     </div>
 
+    <!-- Sonuçlar Yükleme Çubuğu -->
+    {#if $navigating}
+      <div class="c-search-loading-bar" aria-hidden="true"></div>
+    {/if}
+
     <!-- Sonuçlar Gövdesi -->
-    <main class="c-search-body">
+    <main class="c-search-body" class:is-loading={Boolean($navigating)}>
       <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi - Yalnızca Web sekmesinde) -->
       {#if data.answer && (data.category === "general" || !data.category)}
         <div class="c-search-top-answer">
