@@ -35,17 +35,29 @@ enabled_plugins:
   - 'Hash plugin'
 
 engines:
-  - name: google
-    engine: google
-    shortcut: g
+  - name: zapmeta
+    engine: zapmeta
+    shortcut: zm
     disabled: false
-    weight: 3
-    timeout: 3.0
+    weight: 4
+    timeout: 4.0
   - name: bing
     engine: bing
     shortcut: b
     disabled: false
     weight: 3
+    timeout: 3.0
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+    weight: 2
+    timeout: 3.0
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: w
+    disabled: false
+    weight: 2
     timeout: 3.0
   - name: duckduckgo
     engine: duckduckgo
@@ -57,19 +69,7 @@ engines:
     engine: brave
     shortcut: br
     disabled: false
-    weight: 1
-    timeout: 3.0
-  - name: qwant
-    engine: qwant
-    shortcut: qw
-    disabled: false
-    weight: 1
-    timeout: 3.0
-  - name: wikipedia
-    engine: wikipedia
-    shortcut: w
-    disabled: false
-    weight: 1
+    weight: 3
     timeout: 3.0
   - name: wikinews
     engine: wikinews
@@ -83,3 +83,7 @@ engines:
     disabled: false
     weight: 1
     timeout: 3.0
+  - name: qwant
+    engine: qwant
+    shortcut: qw
+    disabled: true
