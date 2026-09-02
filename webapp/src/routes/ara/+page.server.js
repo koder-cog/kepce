@@ -129,12 +129,39 @@ function cleanUrls(urls) {
   });
 }
 
+// Nitelik etiketlerini insan diline ve kısa forma dönüştürme
+const LABEL_REPLACEMENTS = {
+  "başkanı veya başkanları": "Yönetici",
+  "başkan veya başkanlar": "Yönetici",
+  "belediye başkanı": "Belediye Başkanı",
+  "ortaya çıkışı": "Kuruluş",
+  "yüzölçümü": "Alan",
+  "yüzölçüm": "Alan",
+  "alanı": "Alan",
+  "nüfusu": "Nüfus",
+  "nüfus": "Nüfus",
+  "vatandaşlığı": "Vatandaşlık",
+  "doğum tarihi": "Doğum",
+  "ölüm tarihi": "Ölüm",
+  "etkin yılları": "Etkin Yıllar",
+  "çalışan sayısı": "Çalışan Sayısı",
+  "kuruluş tarihi": "Kuruluş",
+  "genel merkez": "Genel Merkez",
+  "posta kodu": "Posta Kodu",
+};
+
+function formatAttrLabel(label) {
+  if (!label) return "";
+  const lower = label.trim().toLowerCase();
+  return LABEL_REPLACEMENTS[lower] || label.trim();
+}
+
 // Birim ve tarih formatlama
 const DAY_NAMES_TR = /\s+(pazartesi|salı|çarşamba|perşembe|cuma|cumartesi|pazar)$/i;
 
 function formatAttrValue(label, value) {
   if (!value) return value;
-  let v = value;
+  let v = value.trim();
 
   // m² → km² dönüşümü
   const sqmMatch = v.match(/^(\d[\d\s.,]*)(?:\s*)m²$/i);
@@ -142,6 +169,14 @@ function formatAttrValue(label, value) {
     const num = parseFloat(sqmMatch[1].replace(/\s/g, "").replace(",", "."));
     if (num >= 1_000_000) {
       v = `${(num / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} km²`;
+    }
+  }
+
+  // Düz sayısal büyük değerler (örn: nüfus "592713" -> "592.713")
+  if (/^\d{4,}$/.test(v)) {
+    const num = parseInt(v, 10);
+    if (!isNaN(num)) {
+      v = num.toLocaleString("tr-TR");
     }
   }
 
@@ -355,7 +390,7 @@ export async function load({ url, fetch }) {
         const title = box.infobox || box.title || "";
         const cleanAttrs = (box.attributes || [])
           .map((a) => ({
-            label: a.label || "",
+            label: formatAttrLabel(a.label || ""),
             value: formatAttrValue(a.label || "", a.value || ""),
           }))
           .filter((a) => a.label && a.value);

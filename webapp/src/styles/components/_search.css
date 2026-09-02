@@ -422,9 +422,9 @@
   background-color: var(--color-surface-sunken);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
   transition: background-color var(--dur-fast) var(--ease-standard),
-              border-color var(--dur-fast) var(--ease-standard),
-              color var(--dur-fast) var(--ease-standard),
-              transform var(--dur-fast) var(--ease-standard);
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -533,8 +533,8 @@
   transform: translateY(-2px);
 }
 
-/* ── Bilgi Kartı (Apple HIG & Google Bütünleşik Knowledge Panel) ─ */
-.c-hig-knowledge {
+/* ── Bilgi Paneli (Bütünleşik Knowledge Panel) ───────────── */
+.c-knowledge-panel {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: 24px;
@@ -546,7 +546,7 @@
 }
 
 /* 1. Üst Başlık */
-.c-hig-knowledge__header {
+.c-knowledge-header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -554,13 +554,13 @@
   padding: var(--space-lg) var(--space-xl) var(--space-md);
 }
 
-.c-hig-knowledge__title-group {
+.c-knowledge-title-group {
   display: flex;
   flex-direction: column;
   gap: 2px;
 }
 
-.c-hig-knowledge__title {
+.c-knowledge-title {
   font-size: 1.85rem;
   font-weight: 700;
   color: var(--color-text);
@@ -568,20 +568,20 @@
   line-height: 1.15;
 }
 
-.c-hig-knowledge__subtitle {
+.c-knowledge-subtitle {
   font-size: 0.95rem;
   color: var(--color-text-dim);
   margin: 0;
 }
 
-.c-hig-knowledge__badges {
+.c-knowledge-badges {
   display: flex;
   align-items: center;
   gap: 6px;
   flex-wrap: wrap;
 }
 
-.c-hig-knowledge__badge {
+.c-knowledge-badge {
   font-size: 0.75rem;
   font-weight: 700;
   color: var(--color-accent-primary);
@@ -593,14 +593,14 @@
   flex-shrink: 0;
 }
 
-.c-hig-knowledge__badge--type {
+.c-knowledge-badge--type {
   color: var(--color-text-muted);
   background-color: var(--color-surface-sunken);
   border-color: var(--color-border);
 }
 
 /* 2A. Coğrafi Yer Vitrini (3'lü Vitrin) */
-.c-hig-knowledge__showcase {
+.c-knowledge-showcase {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
@@ -608,13 +608,13 @@
 }
 
 @media (min-width: 680px) {
-  .c-hig-knowledge__showcase {
+  .c-knowledge-showcase {
     grid-template-columns: 1.8fr 1.1fr 1fr;
     height: 210px;
   }
 }
 
-.c-hig-tile {
+.c-knowledge-tile {
   border-radius: 18px;
   overflow: hidden;
   position: relative;
@@ -622,19 +622,19 @@
   border: 1px solid var(--color-border);
 }
 
-.c-hig-tile--photo,
-.c-hig-tile--org-media {
+.c-knowledge-tile--photo,
+.c-knowledge-tile--org-media {
   height: 200px;
 }
 
 @media (min-width: 680px) {
-  .c-hig-tile--photo,
-  .c-hig-tile--org-media {
+  .c-knowledge-tile--photo,
+  .c-knowledge-tile--org-media {
     height: 100%;
   }
 }
 
-.c-hig-tile__img {
+.c-knowledge-tile__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -642,95 +642,111 @@
   transition: transform var(--dur-normal) var(--ease-standard);
 }
 
-.c-hig-tile--photo:hover .c-hig-tile__img,
-.c-hig-tile--org-media:hover .c-hig-tile__img {
+.c-knowledge-tile--photo:hover .c-knowledge-tile__img,
+.c-knowledge-tile--org-media:hover .c-knowledge-tile__img {
   transform: scale(1.03);
 }
 
-.c-hig-tile__fallback {
+.c-knowledge-tile__fallback {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 3rem;
   background: var(--color-surface-sunken);
+  color: var(--color-text-muted);
 }
 
-.c-hig-tile--map {
+.c-knowledge-tile--map {
   height: 180px;
 }
 
 @media (min-width: 680px) {
-  .c-hig-tile--map {
+  .c-knowledge-tile--map {
     height: 100%;
   }
 }
 
-.c-hig-tile__map-iframe {
+.c-knowledge-tile__map-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  filter: saturate(0.85) contrast(1.1);
+  filter: saturate(0.8) contrast(1.05) brightness(0.98);
   pointer-events: none;
 }
 
-.c-hig-tile__map-overlay {
+.c-knowledge-tile__map-overlay {
   position: absolute;
   inset: 0;
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   padding: 10px;
-  background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 60%);
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.45) 0%, transparent 60%);
   pointer-events: auto;
 }
 
-.c-hig-tile__map-pin {
-  background: rgba(24, 24, 27, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fff;
+.c-knowledge-tile__map-pin {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
   font-size: 0.75rem;
   font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 80%;
+  box-shadow: var(--shadow-sm);
 }
 
-.c-hig-tile__map-btn {
-  background: rgba(24, 24, 27, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  color: #fff;
-  width: 26px;
-  height: 26px;
+.c-knowledge-tile__map-pin svg {
+  color: var(--color-accent-primary);
+  flex-shrink: 0;
+}
+
+.c-knowledge-tile__map-btn {
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  width: 28px;
+  height: 28px;
   border-radius: var(--radius-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 0.85rem;
-  font-weight: 700;
   text-decoration: none;
-  transition: background-color var(--dur-fast) var(--ease-standard);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--dur-fast) var(--ease-standard);
 }
 
-.c-hig-tile__map-btn:hover {
+.c-knowledge-tile__map-btn:hover {
   background-color: var(--color-accent-primary);
+  color: #fff;
+  border-color: var(--color-accent-primary);
 }
 
-/* Sağ Yığın */
-.c-hig-stack {
+.c-knowledge-tile__map-btn:active {
+  transform: scale(0.95);
+}
+
+/* Sağ Yığın (Widgetler) */
+.c-knowledge-stack {
   display: flex;
   flex-direction: column;
   gap: 10px;
   height: 100%;
 }
 
-.c-hig-widget {
+.c-knowledge-widget {
   border-radius: 16px;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -741,33 +757,35 @@
   flex: 1;
   text-decoration: none;
   color: inherit;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
   transition: background-color var(--dur-fast) var(--ease-standard),
-              border-color var(--dur-fast) var(--ease-standard),
-              transform var(--dur-fast) var(--ease-standard);
+    border-color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
 }
 
-.c-hig-widget--action {
+.c-knowledge-widget--action {
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  background-color: var(--color-surface-sunken);
 }
 
-.c-hig-widget--action:hover {
+.c-knowledge-widget--action:hover {
   background-color: var(--color-surface-hover);
   border-color: var(--color-accent-primary);
 }
 
-.c-hig-widget--action:active {
+.c-knowledge-widget--action:active {
   transform: scale(0.98);
 }
 
-.c-hig-widget__head {
+.c-knowledge-widget__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.c-hig-widget__title {
+.c-knowledge-widget__title {
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--color-text-dim);
@@ -775,11 +793,13 @@
   letter-spacing: 0.04em;
 }
 
-.c-hig-widget__icon {
-  font-size: 1.15rem;
+.c-knowledge-weather-icon {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-accent-primary);
 }
 
-.c-hig-widget__temp-now {
+.c-knowledge-widget__temp-now {
   font-size: 1.35rem;
   font-weight: 800;
   color: var(--color-text);
@@ -790,13 +810,13 @@
   line-height: 1;
 }
 
-.c-hig-widget__cond {
+.c-knowledge-widget__cond {
   font-size: 0.75rem;
   font-weight: 500;
   color: var(--color-text-dim);
 }
 
-.c-hig-widget__forecast {
+.c-knowledge-widget__forecast {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -804,47 +824,49 @@
   border-top: 1px solid var(--color-border);
 }
 
-.c-hig-forecast-item {
+.c-knowledge-forecast-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
 }
 
-.c-hig-forecast-item .f-day {
+.c-knowledge-forecast-item .f-day {
   font-size: 0.65rem;
   color: var(--color-text-dim);
   text-transform: capitalize;
 }
 
-.c-hig-forecast-item .f-icon {
-  font-size: 0.8rem;
-}
-
-.c-hig-forecast-item .f-temp {
+.c-knowledge-forecast-item .f-temp {
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--color-text);
 }
 
-.c-hig-widget__action-text {
+.c-knowledge-widget__action-text {
   display: flex;
   flex-direction: column;
 }
 
-.c-hig-widget__subtext {
+.c-knowledge-widget__subtext {
   font-size: 0.75rem;
   color: var(--color-text-dim);
 }
 
-.c-hig-widget__arrow {
-  font-size: 1.25rem;
+.c-knowledge-widget__action-icon {
   color: var(--color-text-dim);
-  font-weight: 700;
+  display: flex;
+  align-items: center;
+  transition: transform var(--dur-fast) var(--ease-standard);
 }
 
-/* 2B. Kişi / Biyografi Düzeni (Apple Person Layout) */
-.c-hig-person-layout {
+.c-knowledge-widget--action:hover .c-knowledge-widget__action-icon {
+  transform: translateX(2px);
+  color: var(--color-accent-primary);
+}
+
+/* 2B. Kişi / Biyografi Düzeni */
+.c-knowledge-person-layout {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
@@ -852,7 +874,7 @@
 }
 
 @media (min-width: 680px) {
-  .c-hig-person-layout {
+  .c-knowledge-person-layout {
     display: grid;
     grid-template-columns: 200px 1fr;
     gap: var(--space-xl);
@@ -860,7 +882,7 @@
   }
 }
 
-.c-hig-person-portrait {
+.c-knowledge-person-portrait {
   width: 100%;
   max-width: 200px;
   aspect-ratio: 3 / 4;
@@ -872,7 +894,7 @@
   margin: 0 auto;
 }
 
-.c-hig-person-portrait__img {
+.c-knowledge-person-portrait__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -880,14 +902,14 @@
   display: block;
 }
 
-.c-hig-person-content {
+.c-knowledge-person-content {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 }
 
 /* 2C. Kurum Vitrini */
-.c-hig-knowledge__org-showcase {
+.c-knowledge-org-showcase {
   display: grid;
   grid-template-columns: 1fr;
   gap: 12px;
@@ -895,14 +917,14 @@
 }
 
 @media (min-width: 680px) {
-  .c-hig-knowledge__org-showcase {
+  .c-knowledge-org-showcase {
     grid-template-columns: 1.2fr 1fr;
     height: 210px;
   }
 }
 
 /* 2D. Nesne / Kavram Düzeni */
-.c-hig-thing-layout {
+.c-knowledge-thing-layout {
   display: flex;
   flex-direction: column;
   gap: var(--space-lg);
@@ -910,7 +932,7 @@
 }
 
 @media (min-width: 680px) {
-  .c-hig-thing-layout {
+  .c-knowledge-thing-layout {
     display: grid;
     grid-template-columns: 220px 1fr;
     gap: var(--space-xl);
@@ -918,7 +940,7 @@
   }
 }
 
-.c-hig-thing-media {
+.c-knowledge-thing-media {
   width: 100%;
   max-width: 220px;
   height: 180px;
@@ -932,56 +954,54 @@
   padding: var(--space-xs);
 }
 
-.c-hig-thing-media__img {
+.c-knowledge-thing-media__img {
   width: 100%;
   height: 100%;
   object-fit: contain;
   display: block;
 }
 
-.c-hig-thing-content {
+.c-knowledge-thing-content {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
 }
 
 /* 3. Detaylar ve Nitelikler Gövdesi */
-.c-hig-details {
+.c-knowledge-details {
   padding: var(--space-md) var(--space-xl) var(--space-lg);
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  border-top: 1px solid var(--color-border);
 }
 
-.c-hig-details__summary {
+.c-knowledge-details__summary {
   font-size: 0.95rem;
   line-height: 1.65;
   color: var(--color-text);
-  max-width: 75ch;
   margin: 0;
 }
 
-.c-hig-details__inline-source {
+.c-knowledge-details__inline-source {
   color: var(--color-accent-primary);
   font-weight: 600;
   text-decoration: none;
   margin-left: 6px;
 }
 
-.c-hig-details__inline-source:hover {
+.c-knowledge-details__inline-source:hover {
   text-decoration: underline;
 }
 
-/* Nitelik Çipleri (Spotlight / Apple Maps Key-Value Chips) */
-.c-hig-attr-chips {
+/* Nitelik Çipleri */
+.c-knowledge-chips {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
   gap: 8px;
   padding-top: var(--space-2xs);
 }
 
-.c-hig-attr-chip {
+.c-knowledge-chip {
   background-color: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: 14px;
@@ -991,7 +1011,7 @@
   gap: 2px;
 }
 
-.c-hig-attr-chip__label {
+.c-knowledge-chip__label {
   font-size: 0.65rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -999,7 +1019,7 @@
   color: var(--color-text-dim);
 }
 
-.c-hig-attr-chip__value {
+.c-knowledge-chip__value {
   font-size: 0.875rem;
   font-weight: 700;
   color: var(--color-text);
@@ -1008,7 +1028,7 @@
 }
 
 /* 4. Dış Bağlantı Hapları Footer */
-.c-hig-knowledge__footer {
+.c-knowledge-footer {
   padding: var(--space-md) var(--space-xl);
   background-color: var(--color-surface-sunken);
   border-top: 1px solid var(--color-border);
@@ -1017,10 +1037,10 @@
   gap: var(--space-xs);
 }
 
-.c-hig-pill-btn {
+.c-knowledge-pill-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 0.8rem;
   font-weight: 600;
   color: var(--color-text);
@@ -1029,22 +1049,22 @@
   padding: 5px 12px;
   border-radius: var(--radius-full);
   text-decoration: none;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
   transition: all var(--dur-fast) var(--ease-standard);
 }
 
-.c-hig-pill-btn:hover {
+.c-knowledge-pill-btn:hover {
   background-color: var(--color-surface-hover);
   border-color: var(--color-accent-primary);
   color: var(--color-accent-primary);
 }
 
-.c-hig-pill-btn:active {
+.c-knowledge-pill-btn:active {
   transform: scale(0.98);
 }
 
-.c-hig-pill-arrow {
-  font-size: 0.75rem;
-  opacity: 0.7;
+.c-knowledge-pill-arrow {
+  opacity: 0.6;
 }
 
 /* Sayfalama */

@@ -7,14 +7,15 @@
     imgError = true;
   }
 
+  // Hava durumu SVG ikonları
   function getWeatherInfo(code) {
-    if (code === 0) return { label: "Açık", icon: "☀️" };
-    if ([1, 2, 3].includes(code)) return { label: "Bulutlu", icon: "⛅" };
-    if ([45, 48].includes(code)) return { label: "Sisli", icon: "🌫️" };
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { label: "Yağmurlu", icon: "🌧️" };
-    if ([71, 73, 75, 85, 86].includes(code)) return { label: "Karlı", icon: "🌨️" };
-    if ([95, 96, 99].includes(code)) return { label: "Fırtına", icon: "⛈️" };
-    return { label: "Açık", icon: "☀️" };
+    if (code === 0) return { label: "Açık", iconType: "sun" };
+    if ([1, 2, 3].includes(code)) return { label: "Bulutlu", iconType: "cloudSun" };
+    if ([45, 48].includes(code)) return { label: "Sisli", iconType: "fog" };
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { label: "Yağmurlu", iconType: "rain" };
+    if ([71, 73, 75, 85, 86].includes(code)) return { label: "Karlı", iconType: "snow" };
+    if ([95, 96, 99].includes(code)) return { label: "Fırtına", iconType: "storm" };
+    return { label: "Açık", iconType: "sun" };
   }
 
   function formatDayName(dateStr) {
@@ -68,19 +69,19 @@
 </script>
 
 {#if infobox}
-  <article class="c-hig-knowledge c-hig-knowledge--{entityType}" aria-label="Bilgi Kartı">
-    <!-- ── 1. ÜST BAŞLIK (Bütünleşik Kart İçi Başlık) ──────────── -->
-    <header class="c-hig-knowledge__header">
-      <div class="c-hig-knowledge__title-group">
-        <h1 class="c-hig-knowledge__title">{infobox.title}</h1>
-        <p class="c-hig-knowledge__subtitle">{subtitle}</p>
+  <article class="c-knowledge-panel c-knowledge-panel--{entityType}" aria-label="Bilgi Kartı">
+    <!-- ── 1. ÜST BAŞLIK ────────────────────────────────────────── -->
+    <header class="c-knowledge-header">
+      <div class="c-knowledge-title-group">
+        <h1 class="c-knowledge-title">{infobox.title}</h1>
+        <p class="c-knowledge-subtitle">{subtitle}</p>
       </div>
-      <div class="c-hig-knowledge__badges">
-        <span class="c-hig-knowledge__badge c-hig-knowledge__badge--type">
+      <div class="c-knowledge-badges">
+        <span class="c-knowledge-badge c-knowledge-badge--type">
           {typeBadgeLabel}
         </span>
         {#if infobox.engine}
-          <span class="c-hig-knowledge__badge">
+          <span class="c-knowledge-badge">
             {infobox.engine === "wikipedia"
               ? "Vikipedi"
               : infobox.engine === "wikidata"
@@ -91,68 +92,108 @@
       </div>
     </header>
 
-    <!-- ── 2. GÖVDE VE VİTRİN DÜZENİ (Varlık Türüne Göre) ───────── -->
+    <!-- ── 2. VİTRİN VE İÇERİK DÜZENİ ───────────────────────────── -->
     {#if hasValidPlace}
-      <!-- 2A. Coğrafi Yer: Üstte 3 Parçalı Vitrin + Altta Genel Bakış -->
-      <div class="c-hig-knowledge__showcase">
+      <!-- 2A. Coğrafi Yer: 3 Parçalı Vitrin (Resim + Harita + Hava Durumu) -->
+      <div class="c-knowledge-showcase">
         <!-- Fotoğraf -->
-        <div class="c-hig-tile c-hig-tile--photo">
+        <div class="c-knowledge-tile c-knowledge-tile--photo">
           {#if infobox.imgSrc && !imgError}
             <img
               src={infobox.imgSrc}
               alt={infobox.title}
-              class="c-hig-tile__img"
+              class="c-knowledge-tile__img"
               loading="lazy"
               onerror={handleImgError}
             />
           {:else}
-            <div class="c-hig-tile__fallback">
-              <span>🏛️</span>
+            <div class="c-knowledge-tile__fallback">
+              <svg class="c-knowledge-fallback-svg" viewBox="0 0 24 24" width="48" height="48" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 3L2 10h20L12 3z" />
+              </svg>
             </div>
           {/if}
         </div>
 
         <!-- Harita Karosu -->
-        <div class="c-hig-tile c-hig-tile--map">
+        <div class="c-knowledge-tile c-knowledge-tile--map">
           <iframe
             title="Harita - {infobox.title}"
-            class="c-hig-tile__map-iframe"
+            class="c-knowledge-tile__map-iframe"
             src="https://www.openstreetmap.org/export/embed.html?bbox={place.lon - 0.08}%2C{place.lat - 0.04}%2C{place.lon + 0.08}%2C{place.lat + 0.04}&layer=mapnik&marker={place.lat}%2C{place.lon}"
             loading="lazy"
             tabindex="-1"
           ></iframe>
-          <div class="c-hig-tile__map-overlay">
-            <span class="c-hig-tile__map-pin">📍 {infobox.title}</span>
+          <div class="c-knowledge-tile__map-overlay">
+            <span class="c-knowledge-tile__map-pin">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 21s-6-5.33-6-10a6 6 0 0 1 12 0c0 4.67-6 10-6 10z" />
+                <circle cx="12" cy="11" r="2.5" />
+              </svg>
+              <span>{infobox.title}</span>
+            </span>
             <a
               href="https://www.openstreetmap.org/?mlat={place.lat}&mlon={place.lon}#map=12/{place.lat}/{place.lon}"
               target="_blank"
               rel="noopener noreferrer"
-              class="c-hig-tile__map-btn"
+              class="c-knowledge-tile__map-btn"
               title="Haritada Büyüt"
             >
-              ↗
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M7 17L17 7M7 7h10v10" />
+              </svg>
             </a>
           </div>
         </div>
 
         <!-- Sağ İkili Yığın (Hava Durumu + Nasıl Gidilir) -->
-        <div class="c-hig-stack">
+        <div class="c-knowledge-stack">
           {#if weather}
-            <div class="c-hig-widget c-hig-widget--weather">
-              <div class="c-hig-widget__head">
-                <span class="c-hig-widget__title">Hava durumu</span>
-                <span class="c-hig-widget__icon">{getWeatherInfo(weather.weatherCode).icon}</span>
+            <div class="c-knowledge-widget c-knowledge-widget--weather">
+              <div class="c-knowledge-widget__head">
+                <span class="c-knowledge-widget__title">Hava durumu</span>
+                <span class="c-knowledge-weather-icon">
+                  {#if getWeatherInfo(weather.weatherCode).iconType === "sun"}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-sun">
+                      <circle cx="12" cy="12" r="4" />
+                      <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                    </svg>
+                  {:else if getWeatherInfo(weather.weatherCode).iconType === "cloudSun"}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-cloud-sun">
+                      <path d="M12 2v2M4.93 4.93l1.41 1.41M2 12h2M17.66 6.34l1.41-1.41" />
+                      <path d="M17.5 19H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 12 4.5 4.5 0 0 1 17.5 19z" />
+                    </svg>
+                  {:else if getWeatherInfo(weather.weatherCode).iconType === "rain"}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-rain">
+                      <path d="M17.5 14H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 7 4.5 4.5 0 0 1 17.5 14z" />
+                      <path d="M8 17l-1 3M12 17l-1 3M16 17l-1 3" />
+                    </svg>
+                  {:else if getWeatherInfo(weather.weatherCode).iconType === "snow"}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-snow">
+                      <path d="M17.5 14H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 7 4.5 4.5 0 0 1 17.5 14z" />
+                      <path d="M8 18h.01M12 18h.01M16 18h.01M10 21h.01M14 21h.01" />
+                    </svg>
+                  {:else if getWeatherInfo(weather.weatherCode).iconType === "storm"}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-storm">
+                      <path d="M17.5 13H9a5 5 0 0 1-1.2-9.85A6 6 0 0 1 19.36 6 4.5 4.5 0 0 1 17.5 13z" />
+                      <path d="M13 13l-3 5h4l-2 5" />
+                    </svg>
+                  {:else}
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" class="u-icon-fog">
+                      <path d="M4 14h16M4 18h16M6 10h12" />
+                    </svg>
+                  {/if}
+                </span>
               </div>
-              <div class="c-hig-widget__temp-now">
+              <div class="c-knowledge-widget__temp-now">
                 {weather.currentTemp}°C
-                <span class="c-hig-widget__cond">{getWeatherInfo(weather.weatherCode).label}</span>
+                <span class="c-knowledge-widget__cond">{getWeatherInfo(weather.weatherCode).label}</span>
               </div>
               {#if weather.daily && weather.daily.length > 0}
-                <div class="c-hig-widget__forecast">
+                <div class="c-knowledge-widget__forecast">
                   {#each weather.daily as day}
-                    <div class="c-hig-forecast-item">
+                    <div class="c-knowledge-forecast-item">
                       <span class="f-day">{formatDayName(day.date)}</span>
-                      <span class="f-icon">{getWeatherInfo(day.code).icon}</span>
                       <span class="f-temp">{day.maxTemp}°</span>
                     </div>
                   {/each}
@@ -165,28 +206,32 @@
             href="https://www.openstreetmap.org/directions?to={place.lat}%2C{place.lon}"
             target="_blank"
             rel="noopener noreferrer"
-            class="c-hig-widget c-hig-widget--action"
+            class="c-knowledge-widget c-knowledge-widget--action"
           >
-            <div class="c-hig-widget__action-text">
-              <span class="c-hig-widget__title">Nasıl gidilir?</span>
-              <span class="c-hig-widget__subtext">Rota ve yol tarifi al</span>
+            <div class="c-knowledge-widget__action-text">
+              <span class="c-knowledge-widget__title">Nasıl gidilir?</span>
+              <span class="c-knowledge-widget__subtext">Rota ve yol tarifi al</span>
             </div>
-            <span class="c-hig-widget__arrow">›</span>
+            <div class="c-knowledge-widget__action-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M9 18l6-6-6-6" />
+              </svg>
+            </div>
           </a>
         </div>
       </div>
 
       <!-- Altta Detaylar -->
-      <div class="c-hig-details">
+      <div class="c-knowledge-details">
         {#if infobox.content}
-          <p class="c-hig-details__summary">
+          <p class="c-knowledge-details__summary">
             {infobox.content}
             {#if infobox.urls && infobox.urls.length > 0}
               <a
                 href={infobox.urls[0].url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="c-hig-details__inline-source"
+                class="c-knowledge-details__inline-source"
               >
                 Vikipedi
               </a>
@@ -195,11 +240,11 @@
         {/if}
 
         {#if infobox.attributes && infobox.attributes.length > 0}
-          <div class="c-hig-attr-chips">
+          <div class="c-knowledge-chips">
             {#each infobox.attributes.slice(0, 6) as attr}
-              <div class="c-hig-attr-chip">
-                <span class="c-hig-attr-chip__label">{attr.label}</span>
-                <span class="c-hig-attr-chip__value">{attr.value}</span>
+              <div class="c-knowledge-chip">
+                <span class="c-knowledge-chip__label">{attr.label}</span>
+                <span class="c-knowledge-chip__value">{attr.value}</span>
               </div>
             {/each}
           </div>
@@ -208,29 +253,29 @@
 
     {:else if entityType === "person"}
       <!-- 2B. Kişi / Biyografi: Sol Portre + Sağ Künye & Biyografi -->
-      <div class="c-hig-person-layout">
+      <div class="c-knowledge-person-layout">
         {#if infobox.imgSrc && !imgError}
-          <div class="c-hig-person-portrait">
+          <div class="c-knowledge-person-portrait">
             <img
               src={infobox.imgSrc}
               alt={infobox.title}
-              class="c-hig-person-portrait__img"
+              class="c-knowledge-person-portrait__img"
               loading="lazy"
               onerror={handleImgError}
             />
           </div>
         {/if}
 
-        <div class="c-hig-person-content">
+        <div class="c-knowledge-person-content">
           {#if infobox.content}
-            <p class="c-hig-details__summary">
+            <p class="c-knowledge-details__summary">
               {infobox.content}
               {#if infobox.urls && infobox.urls.length > 0}
                 <a
                   href={infobox.urls[0].url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="c-hig-details__inline-source"
+                  class="c-knowledge-details__inline-source"
                 >
                   Vikipedi
                 </a>
@@ -239,11 +284,11 @@
           {/if}
 
           {#if personQuickStats.length > 0}
-            <div class="c-hig-attr-chips">
+            <div class="c-knowledge-chips">
               {#each personQuickStats as stat}
-                <div class="c-hig-attr-chip">
-                  <span class="c-hig-attr-chip__label">{stat.label}</span>
-                  <span class="c-hig-attr-chip__value">{stat.value}</span>
+                <div class="c-knowledge-chip">
+                  <span class="c-knowledge-chip__label">{stat.label}</span>
+                  <span class="c-knowledge-chip__value">{stat.value}</span>
                 </div>
               {/each}
             </div>
@@ -253,51 +298,58 @@
 
     {:else if hasValidOrgMap}
       <!-- 2C. Kurum / Üniversite: Logo/Kampüs + Yerleşke Haritası -->
-      <div class="c-hig-knowledge__org-showcase">
+      <div class="c-knowledge-org-showcase">
         {#if infobox.imgSrc && !imgError}
-          <div class="c-hig-tile c-hig-tile--org-media">
+          <div class="c-knowledge-tile c-knowledge-tile--org-media">
             <img
               src={infobox.imgSrc}
               alt={infobox.title}
-              class="c-hig-tile__img"
+              class="c-knowledge-tile__img"
               loading="lazy"
               onerror={handleImgError}
             />
           </div>
         {/if}
-        <div class="c-hig-tile c-hig-tile--map">
+        <div class="c-knowledge-tile c-knowledge-tile--map">
           <iframe
             title="Yerleşke - {infobox.title}"
-            class="c-hig-tile__map-iframe"
+            class="c-knowledge-tile__map-iframe"
             src="https://www.openstreetmap.org/export/embed.html?bbox={place.lon - 0.05}%2C{place.lat - 0.03}%2C{place.lon + 0.05}%2C{place.lat + 0.03}&layer=mapnik&marker={place.lat}%2C{place.lon}"
             loading="lazy"
             tabindex="-1"
           ></iframe>
-          <div class="c-hig-tile__map-overlay">
-            <span class="c-hig-tile__map-pin">🏛️ {infobox.title}</span>
+          <div class="c-knowledge-tile__map-overlay">
+            <span class="c-knowledge-tile__map-pin">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 21h18M3 10h18M5 10v11M19 10v11M9 10v11M15 10v11M12 3L2 10h20L12 3z" />
+              </svg>
+              <span>{infobox.title}</span>
+            </span>
             <a
               href="https://www.openstreetmap.org/?mlat={place.lat}&mlon={place.lon}#map=14/{place.lat}/{place.lon}"
               target="_blank"
               rel="noopener noreferrer"
-              class="c-hig-tile__map-btn"
+              class="c-knowledge-tile__map-btn"
               title="Haritada İncele"
             >
-              ↗
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M7 17L17 7M7 7h10v10" />
+              </svg>
             </a>
           </div>
         </div>
       </div>
 
-      <div class="c-hig-details">
+      <div class="c-knowledge-details">
         {#if infobox.content}
-          <p class="c-hig-details__summary">{infobox.content}</p>
+          <p class="c-knowledge-details__summary">{infobox.content}</p>
         {/if}
         {#if infobox.attributes && infobox.attributes.length > 0}
-          <div class="c-hig-attr-chips">
+          <div class="c-knowledge-chips">
             {#each infobox.attributes.slice(0, 6) as attr}
-              <div class="c-hig-attr-chip">
-                <span class="c-hig-attr-chip__label">{attr.label}</span>
-                <span class="c-hig-attr-chip__value">{attr.value}</span>
+              <div class="c-knowledge-chip">
+                <span class="c-knowledge-chip__label">{attr.label}</span>
+                <span class="c-knowledge-chip__value">{attr.value}</span>
               </div>
             {/each}
           </div>
@@ -306,28 +358,28 @@
 
     {:else}
       <!-- 2D. Nesne / Kavram: Sol Medya + Sağ Tanım & Nitelikler -->
-      <div class="c-hig-thing-layout">
+      <div class="c-knowledge-thing-layout">
         {#if infobox.imgSrc && !imgError}
-          <div class="c-hig-thing-media">
+          <div class="c-knowledge-thing-media">
             <img
               src={infobox.imgSrc}
               alt={infobox.title}
-              class="c-hig-thing-media__img"
+              class="c-knowledge-thing-media__img"
               loading="lazy"
               onerror={handleImgError}
             />
           </div>
         {/if}
-        <div class="c-hig-thing-content">
+        <div class="c-knowledge-thing-content">
           {#if infobox.content}
-            <p class="c-hig-details__summary">
+            <p class="c-knowledge-details__summary">
               {infobox.content}
               {#if infobox.urls && infobox.urls.length > 0}
                 <a
                   href={infobox.urls[0].url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  class="c-hig-details__inline-source"
+                  class="c-knowledge-details__inline-source"
                 >
                   Vikipedi
                 </a>
@@ -335,11 +387,11 @@
             </p>
           {/if}
           {#if infobox.attributes && infobox.attributes.length > 0}
-            <div class="c-hig-attr-chips">
+            <div class="c-knowledge-chips">
               {#each infobox.attributes.slice(0, 6) as attr}
-                <div class="c-hig-attr-chip">
-                  <span class="c-hig-attr-chip__label">{attr.label}</span>
-                  <span class="c-hig-attr-chip__value">{attr.value}</span>
+                <div class="c-knowledge-chip">
+                  <span class="c-knowledge-chip__label">{attr.label}</span>
+                  <span class="c-knowledge-chip__value">{attr.value}</span>
                 </div>
               {/each}
             </div>
@@ -350,16 +402,18 @@
 
     <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI ───────────────────────────── -->
     {#if infobox.urls && infobox.urls.length > 0}
-      <footer class="c-hig-knowledge__footer">
+      <footer class="c-knowledge-footer">
         {#each infobox.urls.slice(0, 5) as link}
           <a
             href={link.url}
             target="_blank"
             rel="noopener noreferrer"
-            class="c-hig-pill-btn"
+            class="c-knowledge-pill-btn"
           >
             <span>{link.title || "Kaynak"}</span>
-            <span class="c-hig-pill-arrow">↗</span>
+            <svg viewBox="0 0 24 24" width="11" height="11" fill="none" stroke="currentColor" stroke-width="2.5" class="c-knowledge-pill-arrow">
+              <path d="M7 17L17 7M7 7h10v10" />
+            </svg>
           </a>
         {/each}
       </footer>
