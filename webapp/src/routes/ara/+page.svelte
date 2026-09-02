@@ -1,6 +1,6 @@
 <script>
   import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
+  import { goto, preloadData } from "$app/navigation";
   import { page, navigating } from "$app/stores";
   import { icon } from "@/components/ui/icons.js";
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
@@ -237,6 +237,7 @@
   }
 
   function handleCategoryChange(catId) {
+    activeCategory = catId;
     const params = new URLSearchParams();
     params.set("q", data.query);
     if (catId !== "general") {
@@ -252,6 +253,69 @@
       params.set("guvenli", data.safeSearch);
     }
     goto(buildSearchUrl(params));
+  }
+
+  function handleCategoryHover(catId) {
+    if (!data.query) return;
+    const params = new URLSearchParams();
+    params.set("q", data.query);
+    if (catId !== "general") params.set("kategori", catId);
+    if (data.language && data.language !== "tr") params.set("dil", data.language);
+    if (data.timeRange) params.set("zaman", data.timeRange);
+    if (data.safeSearch && data.safeSearch !== "1") params.set("guvenli", data.safeSearch);
+    preloadData(buildSearchUrl(params));
+  }
+
+  function getDomain(rawUrl) {
+    try {
+      const u = new URL(rawUrl);
+      return u.hostname.replace(/^www\./, "");
+    } catch {
+      return "";
+    }
+  }
+
+  function getFaviconUrl(rawUrl) {
+    const domain = getDomain(rawUrl);
+    if (!domain) return "";
+    return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
+  }
+
+  function formatDateSnippet(dateStr) {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "";
+      return d.toLocaleDateString("tr-TR", { day: "numeric", month: "short", year: "numeric" });
+    } catch {
+      return "";
+    }
+  }
+
+  function escapeHtml(str) {
+    return String(str || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function highlightQuery(text, query) {
+    if (!text) return "";
+    if (!query) return escapeHtml(text);
+
+    const tokens = query
+      .trim()
+      .split(/\s+/)
+      .filter((t) => t.length > 1 && !t.startsWith("!"));
+    if (tokens.length === 0) return escapeHtml(text);
+
+    const escapedTokens = tokens.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    const regex = new RegExp(`(${escapedTokens.join("|")})`, "gi");
+
+    const safe = escapeHtml(text);
+    return safe.replace(regex, "<strong>$1</strong>");
   }
 
   function handleFilterChange(key, value) {
@@ -557,6 +621,7 @@
           options={CATEGORIES.map((c) => ({ value: c.id, label: c.label }))}
           value={activeCategory}
           onChange={(catId) => handleCategoryChange(catId)}
+          onHover={(catId) => handleCategoryHover(catId)}
         />
       </div>
 
@@ -725,14 +790,26 @@
         {:else}
           <!-- Standart Web / Haber Sonuçları -->
           {#each data.results as item}
+            {@const favicon = getFaviconUrl(item.url)}
+            {@const dateBadge = formatDateSnippet(item.publishedDate)}
             <article class="c-search-item">
               <a
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                class="c-search-item__url"
+                class="c-search-item__header"
               >
-                <span>{formatUrlBreadcrumb(item.url)}</span>
+                {#if favicon}
+                  <img
+                    src={favicon}
+                    alt=""
+                    class="c-search-item__favicon"
+                    loading="lazy"
+                    onerror={(e) => { e.currentTarget.style.display = 'none'; }}
+                  />
+                {/if}
+                <span class="c-search-item__domain">{getDomain(item.url)}</span>
+                <span class="c-search-item__breadcrumb">{formatUrlBreadcrumb(item.url)}</span>
               </a>
               <a
                 href={item.url}
@@ -740,10 +817,13 @@
                 rel="noopener noreferrer"
                 class="c-search-item__title"
               >
-                {item.title}
+                {@html highlightQuery(item.title, data.query)}
               </a>
               <p class="c-search-item__content">
-                {item.content}
+                {#if dateBadge}
+                  <span class="c-search-item__date-badge">{dateBadge} —</span>
+                {/if}
+                {@html highlightQuery(item.content, data.query)}
               </p>
             </article>
           {/each}

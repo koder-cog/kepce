@@ -9,6 +9,7 @@
         id = null,
         variant = "text",
         onChange,
+        onHover,
     } = $props();
 
     const validateOptions = (opts, compId) => {
@@ -104,6 +105,7 @@
             class:c-segmented-control__btn--active={value === opt.value}
             data-value={opt.value}
             onclick={(e) => selectOption(opt.value, e)}
+            onmouseenter={(e) => onHover?.(opt.value, e)}
             aria-label={opt.label || opt.tooltip || opt.value}
             title={variant === "icons" || variant === "responsive"
                 ? opt.label || opt.tooltip
