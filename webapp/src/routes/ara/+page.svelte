@@ -622,26 +622,39 @@
             </p>
           </div>
         {:else if data.category === "images"}
-          <!-- Görsel Sonuçları Izgarası -->
+          <!-- Görsel Sonuçları Duvarı (Masonry Grid) -->
           <div class="c-search-images-grid">
             {#each data.results as item}
-              <button
-                type="button"
-                class="c-search-image-card"
-                onclick={(e) => openImageLightbox(item, e)}
-              >
-                {#if item.imgSrc}
-                  <img
-                    src={item.imgSrc}
-                    alt={item.title}
-                    class="c-search-image-card__img"
-                    loading="lazy"
-                  />
-                {/if}
-                <div class="c-search-image-card__meta" title={item.title}>
-                  {item.title}
+              <div class="c-search-image-item">
+                <button
+                  type="button"
+                  class="c-search-image-card"
+                  onclick={(e) => openImageLightbox(item, e)}
+                  aria-label={item.title}
+                >
+                  {#if item.imgSrc}
+                    <img
+                      src={item.imgSrc}
+                      alt={item.title}
+                      class="c-search-image-card__img"
+                      loading="lazy"
+                    />
+                  {/if}
+                </button>
+                <div class="c-search-image-meta">
+                  <span class="c-search-image-meta__title" title={item.title}>
+                    {item.title}
+                  </span>
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="c-search-image-meta__source"
+                  >
+                    {formatUrlBreadcrumb(item.url)}
+                  </a>
                 </div>
-              </button>
+              </div>
             {/each}
           </div>
         {:else if data.category === "videos"}
