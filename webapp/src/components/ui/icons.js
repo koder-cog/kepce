@@ -46,6 +46,17 @@ import warning from '../../assets/icons/status/warning.svg?raw';
 // Weather
 import moon from '../../assets/icons/weather/moon.svg?raw';
 import sun from '../../assets/icons/weather/sun.svg?raw';
+import cloud from '../../assets/icons/weather/cloud.svg?raw';
+import cloudSun from '../../assets/icons/weather/cloud-sun.svg?raw';
+import cloudMoon from '../../assets/icons/weather/cloud-moon.svg?raw';
+import rain from '../../assets/icons/weather/rain.svg?raw';
+import snow from '../../assets/icons/weather/snow.svg?raw';
+import storm from '../../assets/icons/weather/storm.svg?raw';
+import fog from '../../assets/icons/weather/fog.svg?raw';
+import windy from '../../assets/icons/weather/windy.svg?raw';
+import tornado from '../../assets/icons/weather/tornado.svg?raw';
+import sunrise from '../../assets/icons/weather/sunrise.svg?raw';
+import sunset from '../../assets/icons/weather/sunset.svg?raw';
 
 // Food
 import bread from '../../assets/icons/food/bread.svg?raw';
@@ -137,7 +148,7 @@ export const icons = {
   info,
   'info-critical': infoCritical,
   user,
-  profile: user, // Standardized: profile uses user icon
+  profile: user,
   settings,
   logout,
   'log-out': logout,
@@ -145,6 +156,19 @@ export const icons = {
   login,
   moon,
   sun,
+  cloud,
+  cloudSun,
+  'cloud-sun': cloudSun,
+  cloudMoon,
+  'cloud-moon': cloudMoon,
+  rain,
+  snow,
+  storm,
+  fog,
+  windy,
+  tornado,
+  sunrise,
+  sunset,
   system,
   externalLink,
   logo,
@@ -240,14 +264,12 @@ export const icons = {
 export function icon(name, size = 16, className = '', ariaLabel = '') {
   const svg = icons[name];
   if (!svg) {
-    // Only warn during dev/SSR, but don't fail builds for missing icons
     if (dev && !building) {
       console.warn(`[icons] Unknown icon: "${name}"`);
     }
     return '';
   }
 
-  // Inject size, class, and aria attributes into the opening <svg> tag
   const sizeNum = typeof size === 'number' ? size : parseInt(size, 10) || 16;
   let attrs = `width="${sizeNum}" height="${sizeNum}"`;
 
@@ -261,9 +283,7 @@ export function icon(name, size = 16, className = '', ariaLabel = '') {
     attrs += ` aria-hidden="true"`;
   }
 
-  // Replace the opening tag attributes
   return svg.replace(/<svg\b([^>]*)>/, (match, existing) => {
-    // Remove existing width, height, class, role, aria-* attributes to avoid duplicates
     const cleaned = existing
       .replace(/\b(width|height|class|role|aria-\w+)\s*=\s*("[^"]*"|'[^']*')/gi, '')
       .replace(/\s+/g, ' ')
