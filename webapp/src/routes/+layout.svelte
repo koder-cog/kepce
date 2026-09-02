@@ -5,6 +5,7 @@
 	import { beforeNavigate, afterNavigate, onNavigate, goto } from "$app/navigation";
 	import { page, updated } from "$app/stores";
 	import { globalState, authActions } from "@/state.svelte.js";
+	import { forceUnlockScroll } from "@/lib/dom/scroll-lock.js";
 	import Nav from "@/components/layout/Nav.svelte";
 	import Footer from "@/components/layout/Footer.svelte";
 	import ToastContainer from "@/components/ui/ToastContainer.svelte";
@@ -16,6 +17,7 @@
 	import { openMenuReportModal } from "@/components/features/report-modal.js";
 	import ExternalLinkWarningModal from "@/components/features/ExternalLinkWarningModal.svelte";
 	import OfflineBanner from "@/components/ui/OfflineBanner.svelte";
+	import AssistantDrawer from "@/components/features/assistant/AssistantDrawer.svelte";
 
 	let { children } = $props();
 
@@ -35,6 +37,9 @@
 	let pendingExternalUrl = $state("");
 
 	function handleGlobalClick(e) {
+		// Arama motorunda dış bağlantı uyarısı gösterilmez, doğrudan hedefe gidilir
+		if (isSearchRoute) return;
+
 		const a = e.target.closest("a");
 		if (!a || !a.href) return;
 
@@ -208,6 +213,13 @@
 		});
 	});
 
+	afterNavigate(() => {
+		// Sayfa navigasyonunda arkada asılı kalan scroll kilitlerini temizle
+		if (typeof document !== "undefined" && !document.querySelector(".c-modal--open, dialog[open]")) {
+			forceUnlockScroll();
+		}
+	});
+
 	// Handle initial mount effects
 	beforeNavigate(({ willUnload, to }) => {
 		if ($updated && !willUnload && to?.url) {
@@ -325,47 +337,57 @@
 
 		await authActions.refreshUser();
 	});
+
+	let isSearchRoute = $derived(
+		$page.url.pathname.startsWith("/ara") ||
+		$page.url.hostname.startsWith("ara.") ||
+		$page.url.hostname === "ara.localhost"
+	);
 </script>
 
 <svelte:window onclick={handleGlobalClick} />
 
-<div id="app" class:is-app={globalState.isApp}>
-	{#if !globalState.isApp}
-		<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
-		<a href="#page-content" class="skip-link">Ana içeriğe geç</a>
-		<nav id="main-nav" class="nav-bar" bind:clientHeight={navHeight}>
-			<div class="nav-bar__inner">
-				<Nav />
-			</div>
-			<OfflineBanner />
-			{#if currentHoliday}
-				<AnnouncementBanner
-					id={`holiday-banner-${year}-${mmdd}`}
-					text={currentHoliday.message}
-					ctaText=""
-					theme={currentHoliday.theme || "accent-primary"}
-				/>
-			{/if}
-			<VerificationBanner />
-		</nav>
-	{:else}
-		<OfflineBanner />
-	{/if}
-	<div
-		id="page-wrapper"
-		class="page-wrapper"
-		style="--nav-height: {globalState.isApp ? 0 : navHeight}px"
-	>
-		<main id="page-content" class="page-container">
-			{@render children()}
-		</main>
+{#if isSearchRoute}
+	{@render children()}
+{:else}
+	<div id="app" class:is-app={globalState.isApp}>
 		{#if !globalState.isApp}
-			<footer id="site-footer" class="site-footer">
-				<Footer />
-			</footer>
+			<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
+			<a href="#page-content" class="skip-link">Ana içeriğe geç</a>
+			<nav id="main-nav" class="nav-bar" bind:clientHeight={navHeight}>
+				<div class="nav-bar__inner">
+					<Nav />
+				</div>
+				<OfflineBanner />
+				{#if currentHoliday}
+					<AnnouncementBanner
+						id={`holiday-banner-${year}-${mmdd}`}
+						text={currentHoliday.message}
+						ctaText=""
+						theme={currentHoliday.theme || "accent-primary"}
+					/>
+				{/if}
+				<VerificationBanner />
+			</nav>
+		{:else}
+			<OfflineBanner />
 		{/if}
+		<div
+			id="page-wrapper"
+			class="page-wrapper"
+			style="--nav-height: {globalState.isApp ? 0 : navHeight}px"
+		>
+			<main id="page-content" class="page-container">
+				{@render children()}
+			</main>
+			{#if !globalState.isApp}
+				<footer id="site-footer" class="site-footer">
+					<Footer />
+				</footer>
+			{/if}
+		</div>
 	</div>
-</div>
+{/if}
 
 {#if externalLinkModalOpen}
 	<ExternalLinkWarningModal
@@ -379,6 +401,9 @@
 {/if}
 
 <ToastContainer />
+{#if !isSearchRoute}
+	<AssistantDrawer />
+{/if}
 
 <style>
 	#page-wrapper {

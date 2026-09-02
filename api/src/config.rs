@@ -18,6 +18,8 @@ pub struct Config {
     pub google_client_id: Option<String>,
     pub google_client_secret: Option<String>,
     pub google_redirect_uri: Option<String>,
+    pub llama_api_url: String,
+    pub searxng_url: Option<String>,
 }
 
 impl Config {
@@ -41,6 +43,8 @@ impl Config {
             google_client_id: env::var("GOOGLE_CLIENT_ID").ok(),
             google_client_secret: env::var("GOOGLE_CLIENT_SECRET").ok(),
             google_redirect_uri: env::var("GOOGLE_REDIRECT_URI").ok(),
+            llama_api_url: env::var("LLAMA_API_URL").unwrap_or_else(|_| "http://127.0.0.1:5262".to_string()),
+            searxng_url: env::var("SEARXNG_URL").ok(),
         }
 
     }

@@ -8,7 +8,7 @@
         citySlug = "istanbul",
         date = "",
         isSummer = false,
-        lastMenuDay = null
+        lastMenuDay = null,
     } = $props();
 
     let cityName = $derived(CITY_MAP[citySlug] || citySlug);
@@ -18,21 +18,29 @@
         if (!lastMenuDay?.menus) return null;
         const b = lastMenuDay.menus.find((m) => m.meal_type === "breakfast");
         if (!b) return null;
-        const items = normalizeItems(b).map((i) => i.name).filter(Boolean);
+        const items = normalizeItems(b)
+            .map((i) => i.name)
+            .filter(Boolean);
         return {
-            itemsText: items.slice(0, 4).join(", ") + (items.length > 4 ? "..." : ""),
-            totalCount: items.length
+            itemsText:
+                items.slice(0, 4).join(", ") + (items.length > 4 ? "..." : ""),
+            totalCount: items.length,
         };
     });
 
     let lastDinner = $derived.by(() => {
         if (!lastMenuDay?.menus) return null;
-        const d = lastMenuDay.menus.find((m) => m.meal_type === "dinner" || m.meal_type !== "breakfast");
+        const d = lastMenuDay.menus.find(
+            (m) => m.meal_type === "dinner" || m.meal_type !== "breakfast",
+        );
         if (!d) return null;
-        const items = normalizeItems(d).map((i) => i.name).filter(Boolean);
+        const items = normalizeItems(d)
+            .map((i) => i.name)
+            .filter(Boolean);
         return {
-            itemsText: items.slice(0, 4).join(", ") + (items.length > 4 ? "..." : ""),
-            totalCount: items.length
+            itemsText:
+                items.slice(0, 4).join(", ") + (items.length > 4 ? "..." : ""),
+            totalCount: items.length,
         };
     });
 </script>
@@ -49,10 +57,14 @@
         <EmptyState
             iconName="ghost"
             title="Bugün bişii yok"
-            desc="Seçtiğin tarih için herhangi bir menü bilgisi bulamadık. Belki de aşçı abla tatile çıkmıştır."
+            desc="Seçtiğin tarih için herhangi bir menü bilgisi bulamadık. Belki de aşçı abla istifa etmiştir."
         >
             <div class="empty-hub__action">
-                <a href="/menu-gonder" class="btn btn--primary btn--large u-w-full btn--squish" data-link>
+                <a
+                    href="/menu-gonder"
+                    class="btn btn--primary u-w-full btn--squish"
+                    data-link
+                >
                     Menü gönder
                 </a>
             </div>
@@ -62,24 +74,40 @@
     <!-- 2. Yaz Sezonu Rehber Kartları (Ayrı Ayrı Kartlar) -->
     {#if isSummer}
         <div class="empty-hub__guides">
-            <a href="/kyk-beslenme-yardimi" class="card empty-hub__guide-card btn--squish" data-link>
+            <a
+                href="/kyk-beslenme-yardimi"
+                class="card empty-hub__guide-card btn--squish"
+                data-link
+            >
                 <div class="empty-hub__guide-content">
                     <span class="empty-hub__guide-title">Beslenme Yardımı</span>
                     <p class="empty-hub__guide-desc">
-                        KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.
+                        KYK yurtlarında beslenme yardımı, tabldot ve alakart
+                        farkı, kota ve limit aşımı kuralları.
                     </p>
                 </div>
-                <span class="empty-hub__guide-arrow">{@html icon("chevronRight", 18)}</span>
+                <span class="empty-hub__guide-arrow"
+                    >{@html icon("chevronRight", 18)}</span
+                >
             </a>
 
-            <a href="/kyk-yemek-saatleri" class="card empty-hub__guide-card btn--squish" data-link>
+            <a
+                href="/kyk-yemek-saatleri"
+                class="card empty-hub__guide-card btn--squish"
+                data-link
+            >
                 <div class="empty-hub__guide-content">
-                    <span class="empty-hub__guide-title">Yemekhane Saatleri</span>
+                    <span class="empty-hub__guide-title"
+                        >Yemekhane Saatleri</span
+                    >
                     <p class="empty-hub__guide-desc">
-                        KYK yurtlarında kahvaltı ve akşam yemeği saatleri kaçta başlıyor, kaçta bitiyor?
+                        KYK yurtlarında kahvaltı ve akşam yemeği saatleri kaçta
+                        başlıyor, kaçta bitiyor?
                     </p>
                 </div>
-                <span class="empty-hub__guide-arrow">{@html icon("chevronRight", 18)}</span>
+                <span class="empty-hub__guide-arrow"
+                    >{@html icon("chevronRight", 18)}</span
+                >
             </a>
         </div>
     {/if}
@@ -89,16 +117,26 @@
         <section class="card empty-hub__menu-card">
             <div class="empty-hub__menu-header">
                 <h3 class="empty-hub__menu-title">Eldeki Son Menü</h3>
-                <span class="empty-hub__menu-date">{formatFullTurkishDate(lastMenuDay.date)}</span>
+                <span class="empty-hub__menu-date"
+                    >{formatFullTurkishDate(lastMenuDay.date)}</span
+                >
             </div>
 
-            <a href="/{citySlug}/{lastMenuDay.date}" class="empty-hub__menu-body" data-link>
+            <a
+                href="/{citySlug}/{lastMenuDay.date}"
+                class="empty-hub__menu-body"
+                data-link
+            >
                 {#if lastBreakfast}
                     <div class="empty-hub__meal-row">
                         <span class="empty-hub__meal-label">Kahvaltı:</span>
-                        <span class="empty-hub__meal-items">{lastBreakfast.itemsText}</span>
+                        <span class="empty-hub__meal-items"
+                            >{lastBreakfast.itemsText}</span
+                        >
                         {#if lastBreakfast.totalCount > 0}
-                            <span class="empty-hub__count-badge">({lastBreakfast.totalCount} çeşit)</span>
+                            <span class="empty-hub__count-badge"
+                                >({lastBreakfast.totalCount} çeşit)</span
+                            >
                         {/if}
                     </div>
                 {/if}
@@ -106,16 +144,24 @@
                 {#if lastDinner}
                     <div class="empty-hub__meal-row">
                         <span class="empty-hub__meal-label">Akşam Yemeği:</span>
-                        <span class="empty-hub__meal-items">{lastDinner.itemsText}</span>
+                        <span class="empty-hub__meal-items"
+                            >{lastDinner.itemsText}</span
+                        >
                         {#if lastDinner.totalCount > 0}
-                            <span class="empty-hub__count-badge">({lastDinner.totalCount} çeşit)</span>
+                            <span class="empty-hub__count-badge"
+                                >({lastDinner.totalCount} çeşit)</span
+                            >
                         {/if}
                     </div>
                 {/if}
             </a>
 
             <div class="empty-hub__archive-wrapper">
-                <a href="/arsiv" class="btn btn--primary u-w-full btn--squish empty-hub__archive-btn" data-link>
+                <a
+                    href="/arsiv"
+                    class="btn btn--primary u-w-full btn--squish empty-hub__archive-btn"
+                    data-link
+                >
                     <span>Arşiv</span>
                     {@html icon("chevronRight", 18)}
                 </a>
@@ -156,8 +202,9 @@
         text-decoration: none;
         color: var(--color-text);
         cursor: pointer;
-        transition: border-color var(--dur-fast) var(--ease-standard),
-                    background-color var(--dur-fast) var(--ease-standard);
+        transition:
+            border-color var(--dur-fast) var(--ease-standard),
+            background-color var(--dur-fast) var(--ease-standard);
     }
 
     .empty-hub__guide-card:hover {

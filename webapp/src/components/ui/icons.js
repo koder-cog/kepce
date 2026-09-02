@@ -96,6 +96,9 @@ import trophy from '../../assets/icons/trophy.svg?raw';
 import menuHamburger from '../../assets/icons/menu-hamburger.svg?raw';
 import laptop from '../../assets/icons/laptop.svg?raw';
 import icecream from '../../assets/icons/icecream.svg?raw';
+import stop from '../../assets/icons/stop.svg?raw';
+import refresh from '../../assets/icons/refresh.svg?raw';
+import copy from '../../assets/icons/copy.svg?raw';
 
 
 /**
@@ -140,6 +143,7 @@ export const icons = {
   starFilledHalfRight,
   menuMissing,
   close: crossSmall,
+  crossSmall,
   avatarEmpty,
   calendar,
   noConnection,
@@ -215,9 +219,9 @@ export const icons = {
   alertTriangle: warning,
   'alert-triangle': warning,
   tag: info,
-  refresh: chevronLeft,
-  'refresh-cw': chevronLeft, // Fallback for refresh-cw
-  'rotate-ccw': chevronLeft,
+  refresh,
+  'refresh-cw': refresh, // Fallback for refresh-cw
+  'rotate-ccw': refresh,
   arrowLeft: chevronLeft, // Fallback for code using 'arrowLeft' (maps to chevronLeft)
   arrowRight: chevronRight, // Fallback for code using 'arrowRight' (maps to chevronRight)
   'arrow-left': chevronLeft,
@@ -242,6 +246,11 @@ export const icons = {
   grid: cards,
   layers: list,
   timeline: cards,
+  edit,
+  pencil: edit,
+  stop,
+  copy,
+  flag: warning,
 };
 
 /**
@@ -284,5 +293,5 @@ export function icon(name, size, label = '') {
     svg = svg.replace('<svg', `<svg aria-hidden="true"`);
   }
 
-  return svg;
+  return svg.trim();
 }

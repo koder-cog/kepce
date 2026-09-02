@@ -22,8 +22,9 @@
     bot: {
       title: 'Yapay zeka yanıtını bildir',
       options: [
-        { value: 'bot_inappropriate', label: 'Uygunsuz dil' },
-        { value: 'bot_typo',          label: 'Yazım yanlışı' },
+        { value: 'bot_incorrect',     label: 'Hatalı / yanlış bilgi' },
+        { value: 'bot_incoherent',    label: 'Tutarsız / anlamsız yanıt' },
+        { value: 'bot_inappropriate', label: 'Uygunsuz veya kaba dil' },
         { value: 'bot_other',         label: 'Diğer' },
       ],
       otherValue: 'bot_other',

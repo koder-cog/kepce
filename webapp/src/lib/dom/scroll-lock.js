@@ -21,3 +21,10 @@ export function unlockScroll() {
         document.documentElement.classList.remove("overlay-open");
     }
 }
+
+export function forceUnlockScroll() {
+    if (typeof document === "undefined") return;
+    lockCount = 0;
+    document.documentElement.classList.remove("overlay-open");
+}
+

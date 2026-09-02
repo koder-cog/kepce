@@ -184,15 +184,18 @@ name = "api"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-stream",
  "axum",
  "base64 0.22.1",
  "bcrypt",
  "chrono",
  "dotenvy",
+ "futures-util",
  "http",
  "jsonwebtoken",
  "lazy_static",
  "rand 0.8.7",
+ "regex",
  "reqwest",
  "resvg",
  "sea-orm",

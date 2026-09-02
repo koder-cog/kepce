@@ -1117,265 +1117,253 @@
     </div>
   </section>
 
-    <section class="settings-section" id="settings-communication">
-      <h2 class="settings-section__heading">Haberleşme</h2>
-      {#if globalState.user}
-        <h3>Bildirim</h3>
-        <div class="c-boxed-list">
-          <!-- Yorum yanıtları -->
-          <label class="c-list-row c-list-row--clickable c-list-row--tall">
-            <div class="c-list-row__info">
-              <div class="c-list-row__title">Yanıtlar</div>
-              <div class="c-list-row__desc">Yorumlarına gelen yanıtlar</div>
-            </div>
-            <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-notif-replies"
-                class="c-input-hidden"
-                checked={globalState.user?.notif_replies ?? false}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_replies",
-                    e.target.checked,
-                    "Yanıt bildirimleri",
-                  )}
-              />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-
-          <!-- Etkileşimler -->
-          <label class="c-list-row c-list-row--clickable c-list-row--tall">
-            <div class="c-list-row__info">
-              <div class="c-list-row__title">Etkileşim</div>
-              <div class="c-list-row__desc">Yorumlarının aldığı beğeniler</div>
-            </div>
-            <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-notif-interactions"
-                class="c-input-hidden"
-                checked={globalState.user?.notif_interactions ?? false}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_interactions",
-                    e.target.checked,
-                    "Etkileşim bildirimleri",
-                  )}
-              />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-
-          <!-- Sistem duyuruları -->
-          <label class="c-list-row c-list-row--clickable c-list-row--tall">
-            <div class="c-list-row__info">
-              <div class="c-list-row__title">Sistem</div>
-              <div class="c-list-row__desc">
-                Önemli güncellemeler ve moderasyon duyuruları
-              </div>
-            </div>
-            <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-notif-system"
-                class="c-input-hidden"
-                checked={globalState.user?.notif_system ?? false}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "notif_system",
-                    e.target.checked,
-                    "Sistem bildirimleri",
-                  )}
-              />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-        </div>
-      {/if}
-
-      <h3>Öğün Hatırlatıcıları</h3>
+  <section class="settings-section" id="settings-communication">
+    <h2 class="settings-section__heading">Haberleşme</h2>
+    {#if globalState.user}
+      <h3>Bildirim</h3>
       <div class="c-boxed-list">
-        <!-- Kahvaltı bildirimi -->
-        <div class="c-list-row c-list-row--tall">
-          <div class="c-list-row__info">
-            <div class="c-list-row__title">Kahvaltı</div>
-            <div class="c-list-row__desc">
-              Sabah menüsü ve eğlenceli hatırlatma
-            </div>
-          </div>
-          <div class="c-list-row__actions">
-            {#if user ? user.notif_breakfast_enabled : anonBreakfastEnabled}
-              <input
-                type="time"
-                id="settings-notif-breakfast-time"
-                class="c-time-input"
-                value={user
-                  ? user.notif_breakfast_time || "07:30"
-                  : anonBreakfastTime}
-                onchange={(e) =>
-                  handleMealTimeChange("breakfast", e.target.value)}
-                title="Kahvaltı bildirim saati"
-              />
-            {/if}
-            <label class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-notif-breakfast"
-                class="c-input-hidden"
-                checked={user
-                  ? (user.notif_breakfast_enabled ?? false)
-                  : anonBreakfastEnabled}
-                onchange={(e) =>
-                  handleMealNotifToggle("breakfast", e.target.checked)}
-              />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
-            </label>
-          </div>
-        </div>
-
-        <!-- Akşam yemeği bildirimi -->
-        <div class="c-list-row c-list-row--tall">
-          <div class="c-list-row__info">
-            <div class="c-list-row__title">Akşam yemeği</div>
-            <div class="c-list-row__desc">
-              Akşam menüsü ve anlık tabldot haberi
-            </div>
-          </div>
-          <div class="c-list-row__actions">
-            {#if user ? user.notif_dinner_enabled : anonDinnerEnabled}
-              <input
-                type="time"
-                id="settings-notif-dinner-time"
-                class="c-time-input"
-                value={user
-                  ? user.notif_dinner_time || "17:00"
-                  : anonDinnerTime}
-                onchange={(e) => handleMealTimeChange("dinner", e.target.value)}
-                title="Akşam yemeği bildirim saati"
-              />
-            {/if}
-            <label class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-notif-dinner"
-                class="c-input-hidden"
-                checked={user
-                  ? (user.notif_dinner_enabled ?? false)
-                  : anonDinnerEnabled}
-                onchange={(e) =>
-                  handleMealNotifToggle("dinner", e.target.checked)}
-              />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
-            </label>
-          </div>
-        </div>
-
-        <!-- Test Bildirimi Gönderme Satırı -->
-        {#if user ? user.notif_breakfast_enabled || user.notif_dinner_enabled : anonBreakfastEnabled || anonDinnerEnabled}
-          <div class="c-list-row c-list-row--tall">
-            <div class="c-list-row__info">
-              <div class="c-list-row__title">Bildirimleri Test Et</div>
-              <div class="c-list-row__desc">
-                Cihazınıza anlık bir deneme bildirimi gönderin
-              </div>
-            </div>
-            <div class="c-list-row__actions">
-              <button
-                type="button"
-                class="c-button c-button--secondary c-button--compact"
-                onclick={handleTestPushNotification}
-                disabled={isTestingPush}
-              >
-                {isTestingPush ? "Gönderiliyor..." : "Test Bildirimi Gönder"}
-              </button>
-            </div>
-          </div>
-        {/if}
-      </div>
-
-      {#if globalState.user}
-        <h3>E-posta</h3>
-        <div class="c-boxed-list">
-          <!-- Güvenlik bildirimleri -->
-          <label class="c-list-row c-list-row--clickable c-list-row--tall">
-            <div class="c-list-row__info">
-              <div class="c-list-row__title">Güvenlik</div>
-              <div class="c-list-row__desc">
-                Şifre değişiklikleri ve kritik güvenlik alarmları
-              </div>
-            </div>
-            <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-email-security"
-                class="c-input-hidden"
-                checked={globalState.user?.email_security ?? false}
-                onchange={(e) =>
-                  handlePreferenceChange(
-                    "email_security",
-                    e.target.checked,
-                    "Güvenlik e-postaları",
-                  )}
-              />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-        </div>
-      {/if}
-    </section>
-
-    <section class="settings-section" id="settings-privacy">
-      <h2 class="settings-section__heading">Gizlilik</h2>
-      <div class="c-boxed-list">
-        <!-- Dış bağlantı uyarısı -->
+        <!-- Yorum yanıtları -->
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
-            <div class="c-list-row__title">Dış bağlantı uyarısı</div>
-            <div class="c-list-row__desc">
-              Kepçe dışındaki sitelere giderken uyarı göster
-            </div>
+            <div class="c-list-row__title">Yanıtlar</div>
+            <div class="c-list-row__desc">Yorumlarına gelen yanıtlar</div>
           </div>
           <div class="c-list-row__control">
             <input
               type="checkbox"
-              id="settings-external-link-toggle"
+              id="settings-notif-replies"
               class="c-input-hidden"
-              bind:checked={externalLinkWarning}
-              onchange={handleExternalLinkWarningToggle}
+              checked={globalState.user?.notif_replies ?? false}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "notif_replies",
+                  e.target.checked,
+                  "Yanıt bildirimleri",
+                )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        {#if globalState.user}
-          <!-- İstatistik tablosunda gizlen -->
-          <label class="c-list-row c-list-row--clickable c-list-row--tall">
-            <div class="c-list-row__info">
-              <div class="c-list-row__title">İstatistikte gizlen</div>
-              <div class="c-list-row__desc">
-                Kullanıcı adı yerine "Anonim" yaz
-              </div>
+        <!-- Etkileşimler -->
+        <label class="c-list-row c-list-row--clickable c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">Etkileşim</div>
+            <div class="c-list-row__desc">Yorumlarının aldığı beğeniler</div>
+          </div>
+          <div class="c-list-row__control">
+            <input
+              type="checkbox"
+              id="settings-notif-interactions"
+              class="c-input-hidden"
+              checked={globalState.user?.notif_interactions ?? false}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "notif_interactions",
+                  e.target.checked,
+                  "Etkileşim bildirimleri",
+                )}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </div>
+        </label>
+
+        <!-- Sistem duyuruları -->
+        <label class="c-list-row c-list-row--clickable c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">Sistem</div>
+            <div class="c-list-row__desc">
+              Önemli güncellemeler ve moderasyon duyuruları
             </div>
-            <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                id="settings-opt-out-toggle"
-                class="c-input-hidden"
-                bind:checked={globalState.user.opt_out_statistics}
-                onchange={handleOptOutChange}
-              />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-        {/if}
+          </div>
+          <div class="c-list-row__control">
+            <input
+              type="checkbox"
+              id="settings-notif-system"
+              class="c-input-hidden"
+              checked={globalState.user?.notif_system ?? false}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "notif_system",
+                  e.target.checked,
+                  "Sistem bildirimleri",
+                )}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </div>
+        </label>
       </div>
-    </section>
+    {/if}
+
+    <h3>Öğün Hatırlatıcıları</h3>
+    <div class="c-boxed-list">
+      <!-- Kahvaltı bildirimi -->
+      <div class="c-list-row c-list-row--tall">
+        <div class="c-list-row__info">
+          <div class="c-list-row__title">Kahvaltı</div>
+        </div>
+        <div class="c-list-row__actions">
+          {#if user ? user.notif_breakfast_enabled : anonBreakfastEnabled}
+            <input
+              type="time"
+              id="settings-notif-breakfast-time"
+              class="c-time-input"
+              value={user
+                ? user.notif_breakfast_time || "07:30"
+                : anonBreakfastTime}
+              onchange={(e) =>
+                handleMealTimeChange("breakfast", e.target.value)}
+              title="Kahvaltı bildirim saati"
+            />
+          {/if}
+          <label class="c-list-row__control">
+            <input
+              type="checkbox"
+              id="settings-notif-breakfast"
+              class="c-input-hidden"
+              checked={user
+                ? (user.notif_breakfast_enabled ?? false)
+                : anonBreakfastEnabled}
+              onchange={(e) =>
+                handleMealNotifToggle("breakfast", e.target.checked)}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Akşam yemeği bildirimi -->
+      <div class="c-list-row c-list-row--tall">
+        <div class="c-list-row__info">
+          <div class="c-list-row__title">Akşam yemeği</div>
+        </div>
+        <div class="c-list-row__actions">
+          {#if user ? user.notif_dinner_enabled : anonDinnerEnabled}
+            <input
+              type="time"
+              id="settings-notif-dinner-time"
+              class="c-time-input"
+              value={user ? user.notif_dinner_time || "17:00" : anonDinnerTime}
+              onchange={(e) => handleMealTimeChange("dinner", e.target.value)}
+              title="Akşam yemeği bildirim saati"
+            />
+          {/if}
+          <label class="c-list-row__control">
+            <input
+              type="checkbox"
+              id="settings-notif-dinner"
+              class="c-input-hidden"
+              checked={user
+                ? (user.notif_dinner_enabled ?? false)
+                : anonDinnerEnabled}
+              onchange={(e) =>
+                handleMealNotifToggle("dinner", e.target.checked)}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Test Bildirimi Gönderme Satırı -->
+      {#if user ? user.notif_breakfast_enabled || user.notif_dinner_enabled : anonBreakfastEnabled || anonDinnerEnabled}
+        <div class="c-list-row c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">Bildirimleri Test Et</div>
+            <div class="c-list-row__desc">
+              Cihazınıza anlık bir deneme bildirimi gönderin
+            </div>
+          </div>
+          <div class="c-list-row__actions">
+            <button
+              type="button"
+              class="btn btn--secondary btn--compact"
+              onclick={handleTestPushNotification}
+              disabled={isTestingPush}
+            >
+              {isTestingPush ? "Gönderiliyor..." : "Test Bildirimi Gönder"}
+            </button>
+          </div>
+        </div>
+      {/if}
+    </div>
+
+    {#if globalState.user}
+      <h3>E-posta</h3>
+      <div class="c-boxed-list">
+        <!-- Güvenlik bildirimleri -->
+        <label class="c-list-row c-list-row--clickable c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">Güvenlik</div>
+            <div class="c-list-row__desc">
+              Şifre değişiklikleri ve kritik güvenlik alarmları
+            </div>
+          </div>
+          <div class="c-list-row__control">
+            <input
+              type="checkbox"
+              id="settings-email-security"
+              class="c-input-hidden"
+              checked={globalState.user?.email_security ?? false}
+              onchange={(e) =>
+                handlePreferenceChange(
+                  "email_security",
+                  e.target.checked,
+                  "Güvenlik e-postaları",
+                )}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </div>
+        </label>
+      </div>
+    {/if}
+  </section>
+
+  <section class="settings-section" id="settings-privacy">
+    <h2 class="settings-section__heading">Gizlilik</h2>
+    <div class="c-boxed-list">
+      <!-- Dış bağlantı uyarısı -->
+      <label class="c-list-row c-list-row--clickable c-list-row--tall">
+        <div class="c-list-row__info">
+          <div class="c-list-row__title">Dış bağlantı uyarısı</div>
+          <div class="c-list-row__desc">
+            Kepçe dışındaki sitelere giderken uyarı göster
+          </div>
+        </div>
+        <div class="c-list-row__control">
+          <input
+            type="checkbox"
+            id="settings-external-link-toggle"
+            class="c-input-hidden"
+            bind:checked={externalLinkWarning}
+            onchange={handleExternalLinkWarningToggle}
+          />
+          <span class="c-switch"><span class="c-switch__handle"></span></span>
+        </div>
+      </label>
+
+      {#if globalState.user}
+        <!-- İstatistik tablosunda gizlen -->
+        <label class="c-list-row c-list-row--clickable c-list-row--tall">
+          <div class="c-list-row__info">
+            <div class="c-list-row__title">İstatistikte gizlen</div>
+            <div class="c-list-row__desc">
+              Kullanıcı adı yerine "Anonim" yaz
+            </div>
+          </div>
+          <div class="c-list-row__control">
+            <input
+              type="checkbox"
+              id="settings-opt-out-toggle"
+              class="c-input-hidden"
+              bind:checked={globalState.user.opt_out_statistics}
+              onchange={handleOptOutChange}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </div>
+        </label>
+      {/if}
+    </div>
+  </section>
 
   {#if globalState.isApp}
     <section class="settings-section" id="settings-links">

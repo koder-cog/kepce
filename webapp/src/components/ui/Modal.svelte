@@ -1,5 +1,5 @@
 <script>
-    import { onMount, tick } from "svelte";
+    import { onMount, onDestroy, tick } from "svelte";
     import { icon } from "./icons.js";
     import { enhanceSelects } from "../../lib/dom/dropdown_enhancer.js";
     import { lockScroll, unlockScroll } from "../../lib/dom/scroll-lock.js";
@@ -9,10 +9,18 @@
     let isOpen = $state(false);
     let isClosing = $state(false);
     let modalContainer = $state(null);
+    let isScrollLocked = false;
     // #66-67: Focus restoration - modal kapanınca odak, modalı açan
     // elemana geri verilir.
     let previouslyFocused = null;
     let pushedState = false;
+
+    function releaseScroll() {
+        if (isScrollLocked) {
+            isScrollLocked = false;
+            unlockScroll();
+        }
+    }
 
     onMount(() => {
         previouslyFocused = document.activeElement;
@@ -28,7 +36,10 @@
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 isOpen = true;
-                lockScroll();
+                if (!isScrollLocked) {
+                    lockScroll();
+                    isScrollLocked = true;
+                }
 
                 if (modalContainer) {
                     enhanceSelects(modalContainer);
@@ -55,10 +66,14 @@
         });
     });
 
+    onDestroy(() => {
+        releaseScroll();
+    });
+
     export function close(fromPopState = false) {
         if (isClosing) return;
         isClosing = true;
-        unlockScroll();
+        releaseScroll();
 
         if (!fromPopState && pushedState && history.state?.kepceModal) {
             history.back();
