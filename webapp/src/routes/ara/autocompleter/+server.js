@@ -23,10 +23,10 @@ export async function GET({ url, fetch }) {
     const data = await res.json();
     // SearXNG standard autocomplete response: [query, [suggestions...], ...]
     if (Array.isArray(data) && Array.isArray(data[1])) {
-      return json(data[1].slice(0, 8));
+      return json(data[1].slice(0, 6));
     } else if (Array.isArray(data)) {
       return json(
-        data.filter((item) => typeof item === "string").slice(0, 8)
+        data.filter((item) => typeof item === "string").slice(0, 6)
       );
     }
     return json([]);

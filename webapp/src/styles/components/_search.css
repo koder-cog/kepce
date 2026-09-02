@@ -140,11 +140,14 @@
   top: calc(100% + 6px);
   left: 0;
   right: 0;
+  max-height: 280px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
-  overflow: hidden;
   z-index: 100;
   list-style: none;
   margin: 0;
@@ -424,21 +427,18 @@
 
 /* ── 5. Sonuçlar Gövdesi ─────────────────────────────────── */
 .c-search-body {
-  max-width: 1200px;
+  max-width: 860px;
   width: 100%;
   margin: 0 auto;
   padding: var(--space-md) var(--space-lg) var(--space-3xl);
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-2xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
   flex: 1;
 }
 
-@media (min-width: 900px) {
-  .c-search-body {
-    grid-template-columns: 1.8fr 1.2fr;
-    align-items: start;
-  }
+.c-search-top-knowledge {
+  width: 100%;
 }
 
 .c-search-list {
@@ -532,28 +532,33 @@
   text-overflow: ellipsis;
 }
 
-/* ── Bilgi Kartı (Knowledge Graph Paneli) ────────────────── */
-.c-search-sidebar {
-  position: sticky;
-  top: 90px;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-
+/* ── Bilgi Kartı (Knowledge Graph Paneli - Üst Konumlandırma) ─────── */
 .c-knowledge-card {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-xl);
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  width: 100%;
+}
+
+.c-knowledge-card__inner {
   display: flex;
   flex-direction: column;
 }
 
+@media (min-width: 600px) {
+  .c-knowledge-card__inner {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    align-items: stretch;
+  }
+}
+
 .c-knowledge-card__hero {
   width: 100%;
-  max-height: 250px;
+  height: 100%;
+  min-height: 200px;
   background-color: var(--color-surface-sunken);
   display: flex;
   align-items: center;
@@ -564,7 +569,7 @@
 
 .c-knowledge-card__img {
   width: 100%;
-  height: 250px;
+  height: 100%;
   object-fit: cover;
   display: block;
   transition: transform var(--dur-normal) var(--ease-standard);
@@ -578,7 +583,7 @@
   padding: var(--space-lg);
   display: flex;
   flex-direction: column;
-  gap: var(--space-md);
+  gap: var(--space-sm);
 }
 
 .c-knowledge-card__header {
@@ -617,31 +622,31 @@
 }
 
 .c-knowledge-card__attrs {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-top: var(--space-xs);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 8px var(--space-md);
+  padding-top: var(--space-sm);
   border-top: 1px solid var(--color-border);
 }
 
-.c-knowledge-card__attr-row {
+.c-knowledge-card__attr-chip {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: var(--space-md);
-  font-size: var(--text-xs);
+  flex-direction: column;
+  gap: 2px;
 }
 
 .c-knowledge-card__attr-label {
   color: var(--color-text-dim);
   font-weight: 600;
-  flex-shrink: 0;
+  font-size: 0.725rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
 .c-knowledge-card__attr-value {
   color: var(--color-text);
-  font-weight: 500;
-  text-align: right;
+  font-weight: 600;
+  font-size: 0.875rem;
   word-break: break-word;
 }
 
@@ -678,20 +683,6 @@
 .c-knowledge-card__link-icon {
   font-size: 0.75rem;
   opacity: 0.7;
-}
-
-.c-search-mobile-knowledge {
-  display: none;
-  margin-bottom: var(--space-lg);
-}
-
-@media (max-width: 900px) {
-  .c-search-sidebar {
-    display: none;
-  }
-  .c-search-mobile-knowledge {
-    display: block;
-  }
 }
 
 /* Sayfalama */

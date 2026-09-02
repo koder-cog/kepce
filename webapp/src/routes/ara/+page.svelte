@@ -481,18 +481,16 @@
     </div>
 
     <!-- Sonuçlar Gövdesi -->
-    <main
-      class="c-search-body"
-      class:c-search-body--full={!data.infoboxes || data.infoboxes.length === 0}
-    >
-      <!-- Sol Kolon: Sonuç Listesi -->
-      <section class="c-search-list">
-        {#if data.infoboxes && data.infoboxes.length > 0}
-          <div class="c-search-mobile-knowledge">
-            <KnowledgeCard infobox={data.infoboxes[0]} />
-          </div>
-        {/if}
+    <main class="c-search-body">
+      <!-- Üst Bilgi Kartı (Google Tarzı Instant Knowledge Panel) -->
+      {#if data.infoboxes && data.infoboxes.length > 0}
+        <div class="c-search-top-knowledge">
+          <KnowledgeCard infobox={data.infoboxes[0]} />
+        </div>
+      {/if}
 
+      <!-- Sonuç Listesi -->
+      <section class="c-search-list">
         {#if data.error}
           <div class="card u-p-lg">
             <p class="u-text-sm u-color-danger">{data.error}</p>
@@ -593,13 +591,6 @@
           </div>
         {/if}
       </section>
-
-      <!-- Sağ Kolon: Wikipedia / Wikidata Bilgi Kartı (Masaüstü) -->
-      {#if data.infoboxes && data.infoboxes.length > 0}
-        <div class="c-search-sidebar">
-          <KnowledgeCard infobox={data.infoboxes[0]} />
-        </div>
-      {/if}
     </main>
 
     <!-- 4 Kolonlu Dengeli Arama Footer'ı -->
