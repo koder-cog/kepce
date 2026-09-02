@@ -161,8 +161,9 @@ docker compose logs -f
 
 Yeni özellikler eklemek, hata bildirmek veya dokümantasyonu geliştirmek isterseniz bir [Issue](https://github.com/koder-cog/kepce/issues) açabilir veya Pull Request gönderebilirsiniz.
 
-## Lisans ve Telif Hakkı
+## Lisans ve Marka
 
 Telif Hakkı (C) 2026 Kepçe Katkıda Bulunanları.
 
-Bu proje **GNU Affero General Public License v3.0** ile lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına veya [gayriresmi Türkçe çevirisine](LICENSE_TR) bakabilirsiniz.
+- Kaynak kodlar **GNU Affero General Public License v3.0** altındadır. Şartlar için [LICENSE](LICENSE) dosyasına veya [gayriresmî Türkçe çevirisine](LICENSE_TR) bakabilirsiniz.
+- "Kepçe" adı, logosu ve alan adı kullanım şartları [TRADEMARK.md](TRADEMARK.md) (veya Türkçe [TRADEMARK_TR.md](TRADEMARK_TR.md)) dosyasında açıklanmıştır.

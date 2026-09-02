@@ -5,13 +5,13 @@ Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynakl
 ## Geliştirme Ortamı Kurulumu
 
 ### Gereksinimler
-- **Rust:** `1.80+` (Cargo, Clippy, Rustfmt)
-- **Node.js:** `20+` (npm)
-- **Veritabanı:** PostgreSQL `15+` (veya Docker / Podman)
+- Rust: `1.80+` (Cargo, Clippy, Rustfmt)
+- Node.js: `20+` (npm)
+- Veri tabanı: PostgreSQL `15+` (veya Docker / Podman)
 
 ### Hızlı Başlangıç
 
-1. Depoyu forklayın ve klonlayın:
+1. Depoyu fork edip klonlayın:
    ```bash
    git clone https://github.com/<kullanici-adiniz>/kepce.git
    cd kepce
@@ -33,7 +33,7 @@ Kepçe'ye katkıda bulunmak istediğiniz için teşekkür ederiz! Açık kaynakl
 - Tüm iş mantığı ve kritik ayrıştırıcılar için birim testleri (`cargo test --workspace`) yazılmalıdır.
 
 ### 2. SvelteKit ve Vanilla CSS (Frontend)
-- Yeni arayüz geliştirirken `webapp/src/styles/` altındaki mevcut CSS sınıfları ve değişkenler (`main.css`) kullanılmalıdır.
+- Yeni ara yüz geliştirirken `webapp/src/styles/` altındaki mevcut CSS sınıfları ve değişkenler (`main.css`) kullanılmalıdır.
 - HTML elementlerinde inline statik `style="..."` tanımları kullanılmaz; CSS sınıfları ve CSS custom property pattern'i (`style="--var-name: {value}"`) kullanılır.
 - Kod kalitesi ve tip kontrolü için `cd webapp && npm run check` çalıştırılmalıdır.
 

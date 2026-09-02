@@ -2,7 +2,7 @@
 
 ## Taahhüdümüz
 
-Kepçe topluluğunun üyeleri ve katkıda bulunanları olarak; yaş, beden ölçüsü, engellilik durumu, etnik köken, cinsiyet kimliği ve ifadesi, deneyim düzeyi, eğitim, sosyo-ekonomik durum, milliyet, kişisel görünüm, ırk, din veya cinsel kimlik ve yönelimden bağımsız olarak projemize ve topluluğumuza katılan herkes için tacizden ve ayrımcılıktan uzak, kapsayıcı bir deneyim sunmayı taahhüt ediyoruz.
+Kepçe topluluğunun üyeleri ve katkıda bulunanları olarak; yaş, beden ölçüsü, engellilik durumu, etnik köken, cinsiyet kimliği ve ifadesi, deneyim düzeyi, eğitim, sosyoekonomik durum, milliyet, kişisel görünüm, ırk, din veya cinsel kimlik ve yönelimden bağımsız olarak projemize ve topluluğumuza katılan herkes için tacizden ve ayrımcılıktan uzak, kapsayıcı bir deneyim sunmayı taahhüt ediyoruz.
 
 ## Standartlarımız
 
@@ -22,6 +22,6 @@ Kabul edilemez davranışlar:
 
 ## Sorumluluk ve Yaptırımlar
 
-Proje yöneticileri bu Davranış Kuralları standartlarını açıklığa kavuşturmak ve uygunsuz durumlarda adil ve yapıcı yaptırımlar uygulamakla yükümlüdür.
+Proje yöneticileri bu topluluk standartlarını açıklığa kavuşturmak ve uygunsuz durumlarda adil ve yapıcı yaptırımlar uygulamakla yükümlüdür.
 
 Kurallara aykırı bir durumla karşılaşırsanız lütfen `iletisim@kepce.org` adresinden proje yöneticileriyle iletişime geçiniz. Tüm bildirimler gizlilik içinde değerlendirilecektir.
