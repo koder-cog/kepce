@@ -1,4 +1,4 @@
-// Kepçe Ara — Birim Dönüştürücü, Dünya Saatleri ve Anlık Bilgi Çözücü
+// Kepçe Ara — Birim Dönüştürücü, Dünya Saatleri, TDK Sözlük ve Kripto Takip Çözücü
 
 // ── 1. Birim Dönüşüm Tablosu (Base Units) ───────────────────────────────────
 const UNIT_CATEGORIES = {
@@ -56,7 +56,6 @@ function findUnit(str) {
 export function solveUnitConversion(query) {
   const q = query.trim().toLowerCase();
 
-  // "100 km kaç mil", "50 mil kaç km", "500 gb kaç mb", "100 kg to lbs", "100 kg in lbs"
   const m = q.match(/^(\d+(?:[.,]\d+)?\s*)?([a-zğüşıöç°]+)\s*(?:ka[cç]\s*([a-zğüşıöç°]+)|to\s*([a-zğüşıöç°]+)|in\s*([a-zğüşıöç°]+))$/i);
   if (!m) return null;
 
@@ -64,7 +63,7 @@ export function solveUnitConversion(query) {
   const fromRaw = (m[2] || "").trim();
   const toRaw = (m[3] || m[4] || m[5] || "").trim();
 
-  // 1. Sıcaklık Özel Kontrolü
+  // Sıcaklık Özel Kontrolü
   const tempAliases = {
     c: ["c", "°c", "celsius", "santigrat", "derece"],
     f: ["f", "°f", "fahrenheit", "fahrenhayt"],
@@ -79,12 +78,10 @@ export function solveUnitConversion(query) {
     const toCode = isTempTo[0];
     let res = amount;
 
-    // Convert from -> Celsius
     let inC = amount;
     if (fromCode === "f") inC = (amount - 32) * (5 / 9);
     else if (fromCode === "k") inC = amount - 273.15;
 
-    // Convert Celsius -> to
     if (toCode === "c") res = inC;
     else if (toCode === "f") res = inC * (9 / 5) + 32;
     else if (toCode === "k") res = inC + 273.15;
@@ -104,7 +101,7 @@ export function solveUnitConversion(query) {
     };
   }
 
-  // 2. Standart Birimler
+  // Standart Birimler
   const fromUnit = findUnit(fromRaw);
   const toUnit = findUnit(toRaw);
 
@@ -165,7 +162,6 @@ const WORLD_CITIES = {
 export function solveWorldTime(query) {
   const q = query.trim().toLowerCase();
 
-  // "tokyo'da saat kaç", "londra saat kaç", "new york saati", "paris saat"
   const timeRegex = /^(?:([a-zğüşıöç\s]+?)(?:'d[ae]|'t[ae]|'n?da|'n?de|'de|'da)?\s*(?:saat\s*ka[cç]|saati|saat))$/i;
   const m = q.match(timeRegex);
   if (!m) return null;
@@ -193,7 +189,6 @@ export function solveWorldTime(query) {
       day: "numeric",
     });
 
-    // Türkiye saati ile fark hesaplama (Europe/Istanbul = UTC+3)
     const targetHour = parseInt(new Intl.DateTimeFormat("en-US", { timeZone: info.timezone, hour: "numeric", hour12: false }).format(now), 10);
     const trHour = parseInt(new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Istanbul", hour: "numeric", hour12: false }).format(now), 10);
     const diff = targetHour - trHour;
@@ -217,4 +212,120 @@ export function solveWorldTime(query) {
   } catch {
     return null;
   }
+}
+
+// ── 3. TDK Sözlük & Tanım Çözücü ───────────────────────────────────────────
+export async function solveTdkDefinition(query) {
+  const q = query.trim().toLowerCase();
+  const m = q.match(/^([a-zğüşıöç]+)\s*(?:nedir|ne\s*demek|anlam[ıi])$/i);
+  if (!m) return null;
+
+  const word = m[1].trim();
+  if (word.length < 2) return null;
+
+  try {
+    const res = await fetch(`https://sozluk.gov.tr/gts?ara=${encodeURIComponent(word)}`, {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0 && data[0].anlamlarListe && data[0].anlamlarListe.length > 0) {
+      const first = data[0];
+      const meanings = first.anlamlarListe.slice(0, 3).map((a, idx) => ({
+        index: idx + 1,
+        meaning: a.anlam,
+        example: a.orneklerListe?.[0]?.ornek || null,
+        author: a.orneklerListe?.[0]?.yazar?.[0]?.tam_adi || null,
+      }));
+
+      return {
+        type: "definition",
+        word: first.madde || word,
+        meanings,
+        source: "Türk Dil Kurumu Güncel Türkçe Sözlük",
+      };
+    }
+  } catch {
+    // gracefully ignore
+  }
+
+  return null;
+}
+
+// ── 4. Canlı Kripto Para Çözücü ───────────────────────────────────────────
+const CRYPTO_COINS = {
+  btc: { id: "bitcoin", name: "Bitcoin (BTC)", symbol: "BTC" },
+  bitcoin: { id: "bitcoin", name: "Bitcoin (BTC)", symbol: "BTC" },
+  eth: { id: "ethereum", name: "Ethereum (ETH)", symbol: "ETH" },
+  ethereum: { id: "ethereum", name: "Ethereum (ETH)", symbol: "ETH" },
+  sol: { id: "solana", name: "Solana (SOL)", symbol: "SOL" },
+  solana: { id: "solana", name: "Solana (SOL)", symbol: "SOL" },
+  xrp: { id: "ripple", name: "XRP (Ripple)", symbol: "XRP" },
+  ripple: { id: "ripple", name: "XRP (Ripple)", symbol: "XRP" },
+  doge: { id: "dogecoin", name: "Dogecoin (DOGE)", symbol: "DOGE" },
+  dogecoin: { id: "dogecoin", name: "Dogecoin (DOGE)", symbol: "DOGE" },
+  avax: { id: "avalanche-2", name: "Avalanche (AVAX)", symbol: "AVAX" },
+};
+
+let cryptoCache = {
+  ts: 0,
+  data: {},
+};
+
+export async function solveCryptoPrice(query) {
+  const q = query.trim().toLowerCase();
+  const m = q.match(/^([a-z0-9]+)\s*(?:ka[cç]\s*([a-z$€£₺]+)|fiyat[ıi]|kuru|to\s*([a-z$€£₺]+))$/i);
+  if (!m) return null;
+
+  const rawCoin = m[1];
+  const rawVs = (m[2] || m[3] || "tl").toLowerCase();
+
+  const coin = CRYPTO_COINS[rawCoin];
+  if (!coin) return null;
+
+  let vsCurrency = "try";
+  let symbol = "₺";
+  if (rawVs === "dolar" || rawVs === "usd" || rawVs === "$") {
+    vsCurrency = "usd";
+    symbol = "$";
+  } else if (rawVs === "euro" || rawVs === "eur" || rawVs === "€") {
+    vsCurrency = "eur";
+    symbol = "€";
+  }
+
+  try {
+    const now = Date.now();
+    if (now - cryptoCache.ts > 60 * 1000 || !cryptoCache.data[coin.id]) {
+      const res = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin,avalanche-2&vs_currencies=try,usd,eur&include_24hr_change=true`, {
+        signal: AbortSignal.timeout(3000),
+      });
+      if (res.ok) {
+        cryptoCache = {
+          ts: now,
+          data: await res.json(),
+        };
+      }
+    }
+
+    const entry = cryptoCache.data[coin.id];
+    if (entry && entry[vsCurrency]) {
+      const price = entry[vsCurrency];
+      const change = entry[`${vsCurrency}_24h_change`];
+
+      return {
+        type: "crypto",
+        name: coin.name,
+        symbol: coin.symbol,
+        price,
+        formattedPrice: `${price.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} ${symbol}`,
+        currency: vsCurrency.toUpperCase(),
+        change24h: change ? parseFloat(change.toFixed(2)) : null,
+      };
+    }
+  } catch {
+    // gracefully ignore
+  }
+
+  return null;
 }

@@ -1566,7 +1566,9 @@
 
 .c-answer-card__calc .c-answer-card__sub-title,
 .c-answer-card__unit .c-answer-card__sub-title,
-.c-answer-card__time .c-answer-card__sub-title {
+.c-answer-card__time .c-answer-card__sub-title,
+.c-answer-card__definition .c-answer-card__sub-title,
+.c-answer-card__crypto .c-answer-card__sub-title {
   font-size: var(--text-base);
   color: var(--color-text-dim);
   margin-bottom: 4px;
@@ -1574,10 +1576,58 @@
 
 .c-answer-card__calc .c-answer-card__headline,
 .c-answer-card__unit .c-answer-card__headline,
-.c-answer-card__time .c-answer-card__headline {
+.c-answer-card__time .c-answer-card__headline,
+.c-answer-card__definition .c-answer-card__headline,
+.c-answer-card__crypto .c-answer-card__headline {
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--color-text);
   margin: 0;
   line-height: 1.15;
+}
+
+/* TDK Anlam Listesi */
+.c-answer-card__meanings {
+  margin-top: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.c-answer-def-item {
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-text);
+}
+
+.c-answer-def-num {
+  font-weight: 700;
+  color: var(--color-accent-primary);
+  margin-right: 6px;
+}
+
+.c-answer-def-example {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-top: 2px;
+  padding-left: var(--space-md);
+}
+
+.c-answer-def-author {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--color-text-dim);
+  margin-left: 4px;
+}
+
+/* Kripto Değişim Oranları */
+.c-answer-crypto--up {
+  color: #10b981 !important;
+  font-weight: 700;
+}
+
+.c-answer-crypto--down {
+  color: #ef4444 !important;
+  font-weight: 700;
 }

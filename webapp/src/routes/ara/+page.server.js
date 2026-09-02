@@ -1,7 +1,12 @@
 import { redirect } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 import { resolveBang } from "$lib/search/bangs.js";
-import { solveUnitConversion, solveWorldTime } from "$lib/search/instantSolvers.js";
+import {
+  solveUnitConversion,
+  solveWorldTime,
+  solveTdkDefinition,
+  solveCryptoPrice,
+} from "$lib/search/instantSolvers.js";
 
 // Bellek içi LRU Arama Önbelleği (10 dk TTL)
 const searchCache = new Map();
@@ -446,10 +451,16 @@ async function solveInstantQuery(query) {
     return unitAnswer;
   }
 
-  // 4. Dünya Saatleri & Zaman Dilimi (örn: "tokyo'da saat kaç", "new york saati", "londra saat kaç")
-  const timeAnswer = solveWorldTime(query);
-  if (timeAnswer) {
-    return timeAnswer;
+  // 5. TDK Sözlük & Tanım Çözücü (örn: "tabldot nedir", "pragmatik ne demek")
+  const defAnswer = await solveTdkDefinition(query);
+  if (defAnswer) {
+    return defAnswer;
+  }
+
+  // 6. Canlı Kripto Takip Çözücü (örn: "btc kaç tl", "bitcoin kaç dolar", "eth kaç tl")
+  const cryptoAnswer = await solveCryptoPrice(query);
+  if (cryptoAnswer) {
+    return cryptoAnswer;
   }
 
   return null;

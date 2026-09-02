@@ -183,6 +183,48 @@
         </div>
       </div>
 
+    {:else if answer.type === "definition"}
+      <div class="c-answer-card__definition">
+        <div class="c-answer-card__sub-title">
+          {answer.source}
+        </div>
+        <h2 class="c-answer-card__headline">
+          {answer.word}
+        </h2>
+        <div class="c-answer-card__meanings">
+          {#each answer.meanings as m}
+            <div class="c-answer-def-item">
+              <span class="c-answer-def-num">{m.index}.</span>
+              <span class="c-answer-def-text">{m.meaning}</span>
+              {#if m.example}
+                <div class="c-answer-def-example">
+                  "{m.example}" {#if m.author}<span class="c-answer-def-author">— {m.author}</span>{/if}
+                </div>
+              {/if}
+            </div>
+          {/each}
+        </div>
+      </div>
+
+    {:else if answer.type === "crypto"}
+      <div class="c-answer-card__crypto">
+        <div class="c-answer-card__sub-title">
+          {answer.name}
+        </div>
+        <h2 class="c-answer-card__headline">
+          {answer.formattedPrice}
+        </h2>
+        {#if answer.change24h !== null}
+          <p
+            class="c-answer-card__single-rate"
+            class:c-answer-crypto--up={answer.change24h >= 0}
+            class:c-answer-crypto--down={answer.change24h < 0}
+          >
+            {answer.change24h >= 0 ? "+" : ""}{answer.change24h}% (Son 24 saat)
+          </p>
+        {/if}
+      </div>
+
     {:else}
       <div class="c-answer-card__generic">
         <div class="c-answer-card__sub-title">{answer.title || "Hızlı Yanıt"}</div>
