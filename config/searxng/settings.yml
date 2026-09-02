@@ -1,0 +1,15 @@
+use_default_settings: true
+general:
+  debug: false
+  instance_name: "Kepçe Ara"
+server:
+  port: 8080
+  bind_address: "0.0.0.0"
+  secret_key: "kepce_searxng_production_secret_key_change_me"
+search:
+  safe_search: 0
+  autocomplete: ""
+  default_lang: "tr"
+  formats:
+    - html
+    - json

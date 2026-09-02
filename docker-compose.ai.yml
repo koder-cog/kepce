@@ -21,5 +21,39 @@ services:
       - frontend-net
       - backend-net
 
+  llama:
+    image: ghcr.io/ggerganov/llama.cpp:server
+    container_name: kepce-llama
+    restart: unless-stopped
+    command:
+      - "-m"
+      - "/models/model.gguf"
+      - "--port"
+      - "5262"
+      - "--host"
+      - "0.0.0.0"
+      - "-c"
+      - "16384"
+      - "-t"
+      - "4"
+    volumes:
+      - ${LLAMA_MODEL_DIR:-./models}:/models:ro
+    expose:
+      - "5262"
+    networks:
+      - backend-net
+
+  searxng:
+    image: docker.io/searxng/searxng:latest
+    container_name: kepce-searxng
+    restart: unless-stopped
+    volumes:
+      - ${SEARXNG_CONFIG_DIR:-./config/searxng}:/etc/searxng:Z
+    expose:
+      - "8080"
+    networks:
+      - frontend-net
+      - backend-net
+
 volumes:
   hf_cache:

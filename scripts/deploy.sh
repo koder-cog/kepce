@@ -68,6 +68,12 @@ OPT_UMAMI="${OPT_UMAMI:-E}"
 read -r -p "2. Yerel Türkçe BERT Moderasyon Modeli aktif edilsin mi? [E/h]: " OPT_BERT || true
 OPT_BERT="${OPT_BERT:-E}"
 
+read -r -p "3. Yerel Gemma Asistanı (llama-server) aktif edilsin mi? [E/h]: " OPT_LLAMA || true
+OPT_LLAMA="${OPT_LLAMA:-E}"
+
+read -r -p "4. Yerel SearXNG Meta Arama Motoru aktif edilsin mi? [E/h]: " OPT_SEARXNG || true
+OPT_SEARXNG="${OPT_SEARXNG:-E}"
+
 echo -e "\n${BLUE}--- Dağıtım Başlatılıyor ---${NC}"
 
 # 3. Dosyaların Senkronizasyonu (Rsync)
@@ -85,7 +91,7 @@ if [ ${#MISSING_BINARIES[@]} -gt 0 ]; then
     echo -e "${YELLOW}Yerel makinenizde cross-compile yapmak derlemeyi hızlandırabilir: './manage.sh build-arm64'${NC}"
 fi
 
-ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,moderator,static,target/aarch64-unknown-linux-gnu/release}"
+ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,moderator,models,static,target/aarch64-unknown-linux-gnu/release}"
 
 rsync -avz --delete \
     --exclude-from='.gitignore' \
@@ -120,9 +126,9 @@ if [[ "$OPT_UMAMI" =~ ^[EeYy]$ ]]; then
     echo -e "${GREEN}Umami Analitik modülü dahil edildi.${NC}"
 fi
 
-if [[ "$OPT_BERT" =~ ^[EeYy]$ ]]; then
+if [[ "$OPT_BERT" =~ ^[EeYy]$ ]] || [[ "$OPT_LLAMA" =~ ^[EeYy]$ ]]; then
     COMPOSE_CMD="$COMPOSE_CMD -f docker-compose.ai.yml"
-    echo -e "${GREEN}Yerel Türkçe BERT Moderasyon modülü dahil edildi.${NC}"
+    echo -e "${GREEN}Yapay Zeka (BERT / Gemma) modülleri dahil edildi.${NC}"
 fi
 
 # 6. Sunucuda Konteynerlerin Başlatılması ve Veritabanı Hazırlığı

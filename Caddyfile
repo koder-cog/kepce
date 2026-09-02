@@ -49,6 +49,10 @@ kepce.org, www.kepce.org {
     # Statik bakım dosyası servisi
     root * /srv/static
 
+    # /ara isteklerini ara.kepce.org'a yönlendir
+    redir /ara https://ara.kepce.org 302
+    redir /ara/* https://ara.kepce.org/{path} 302
+
     # 1. API istekleri -> Rust API container'ı (api:8000)
     handle /api/* {
         reverse_proxy api:8000
@@ -70,6 +74,30 @@ kepce.org, www.kepce.org {
         rewrite @maintenance /maintenance.html
         file_server
     }
+}
+
+ara.kepce.org {
+    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+    encode zstd gzip
+
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+    }
+
+    log {
+        output file /var/log/caddy/ara_access.log {
+            roll_size 50mb
+            roll_keep 365
+            roll_keep_for 8760h
+        }
+        format json
+    }
+
+    reverse_proxy webapp:3000
 }
 
 analitik.kepce.org {
