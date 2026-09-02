@@ -30,6 +30,31 @@ function setCached(key, data) {
   searchCache.set(key, { ts: Date.now(), data });
 }
 
+/**
+ * URL'lerdeki bilinen izleme ve analitik parametrelerini (UTM, Facebook, Google, Yandex vb.) temizler.
+ */
+function cleanTrackingParams(rawUrl) {
+  if (!rawUrl) return rawUrl;
+  try {
+    const url = new URL(rawUrl);
+    const trackingKeys = [
+      "utm_source", "utm_medium", "utm_campaign", "utm_term", "utm_content", "utm_id",
+      "fbclid", "gclid", "gclsrc", "dclid", "msclkid", "yclid", "mc_eid",
+      "igshid", "_hsenc", "_hsmi", "wickedid", "wt_zmc", "s_kwcid"
+    ];
+    let changed = false;
+    for (const key of trackingKeys) {
+      if (url.searchParams.has(key)) {
+        url.searchParams.delete(key);
+        changed = true;
+      }
+    }
+    return changed ? url.toString() : rawUrl;
+  } catch {
+    return rawUrl;
+  }
+}
+
 // Open-Meteo ve Coğrafi Konum Servisi (Nominatim)
 async function fetchPlaceDetails(query) {
   try {
@@ -557,7 +582,7 @@ export async function load({ url, fetch }) {
 
     const results = (data.results || []).map((item) => ({
       title: item.title || "",
-      url: item.url || "",
+      url: cleanTrackingParams(item.url || ""),
       content: item.content || "",
       imgSrc: item.img_src || item.thumbnail || "",
       thumbnail: item.thumbnail || "",

@@ -7,14 +7,18 @@ export function reroute({ url }) {
   const isAraSubdomain = hostname.startsWith("ara.") || hostname === "ara.localhost";
 
   if (isAraSubdomain) {
-    if (url.pathname === "/") {
+    if (url.pathname === "/" || url.pathname === "") {
       return "/ara";
     }
-    if (url.pathname === "/opensearch.xml") {
-      return "/ara/opensearch.xml";
+    if (
+      url.pathname.startsWith("/ara") ||
+      url.pathname === "/opensearch.xml" ||
+      url.pathname === "/favicon.ico" ||
+      url.pathname === "/robots.txt" ||
+      url.pathname.startsWith("/_app")
+    ) {
+      return url.pathname;
     }
-    if (!url.pathname.startsWith("/ara")) {
-      return `/ara${url.pathname}`;
-    }
+    return `/ara${url.pathname}`;
   }
 }
