@@ -80,9 +80,17 @@ export async function load({ url, fetch }) {
 
     const infoboxes = (data.infoboxes || []).map((box) => ({
       title: box.infobox || box.title || "",
+      id: box.id || "",
       content: box.content || "",
       imgSrc: box.img_src || box.thumbnail || "",
       urls: box.urls || (box.id ? [{ title: "Vikipedi", url: box.id }] : []),
+      attributes: (box.attributes || [])
+        .map((a) => ({
+          label: a.label || "",
+          value: a.value || "",
+        }))
+        .filter((a) => a.label && a.value),
+      engine: box.engine || (box.engines && box.engines[0]) || "",
     }));
 
     const suggestions = data.suggestions || [];

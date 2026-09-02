@@ -7,6 +7,7 @@
   import Dropdown from "@/components/features/Dropdown.svelte";
   import SearchInfoModal from "@/components/features/search/SearchInfoModal.svelte";
   import SearchSettingsModal from "@/components/features/search/SearchSettingsModal.svelte";
+  import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
 
   let { data } = $props();
 
@@ -480,9 +481,18 @@
     </div>
 
     <!-- Sonuçlar Gövdesi -->
-    <main class="c-search-body">
+    <main
+      class="c-search-body"
+      class:c-search-body--full={!data.infoboxes || data.infoboxes.length === 0}
+    >
       <!-- Sol Kolon: Sonuç Listesi -->
       <section class="c-search-list">
+        {#if data.infoboxes && data.infoboxes.length > 0}
+          <div class="c-search-mobile-knowledge">
+            <KnowledgeCard infobox={data.infoboxes[0]} />
+          </div>
+        {/if}
+
         {#if data.error}
           <div class="card u-p-lg">
             <p class="u-text-sm u-color-danger">{data.error}</p>
@@ -584,34 +594,11 @@
         {/if}
       </section>
 
-      <!-- Sağ Kolon: Wikipedia Bilgi Kartı (Infobox) -->
+      <!-- Sağ Kolon: Wikipedia / Wikidata Bilgi Kartı (Masaüstü) -->
       {#if data.infoboxes && data.infoboxes.length > 0}
-        <aside class="c-search-infobox">
-          <h3 class="c-search-infobox__title">{data.infoboxes[0].title}</h3>
-          {#if data.infoboxes[0].imgSrc}
-            <div class="c-search-infobox__img-wrap">
-              <img
-                src={data.infoboxes[0].imgSrc}
-                alt={data.infoboxes[0].title}
-                class="c-search-infobox__img"
-              />
-            </div>
-          {/if}
-          <p class="c-search-infobox__content">
-            {data.infoboxes[0].content}
-          </p>
-          {#if data.infoboxes[0].urls && data.infoboxes[0].urls.length > 0}
-            <a
-              href={data.infoboxes[0].urls[0].url}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="c-search-infobox__link"
-            >
-              <span>Devamını Vikipedi'de oku</span>
-              {@html icon("externalLink", 14)}
-            </a>
-          {/if}
-        </aside>
+        <div class="c-search-sidebar">
+          <KnowledgeCard infobox={data.infoboxes[0]} />
+        </div>
       {/if}
     </main>
 

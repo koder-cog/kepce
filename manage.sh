@@ -269,7 +269,7 @@ start_web_dev() {
             npm install
         fi
         nohup npm run dev -- --host 0.0.0.0 --port 5173 --strictPort > "$WEB_LOG" 2>&1 &
-        echo $! > "../$WEB_PID_FILE"
+        echo $! > "$WEB_PID_FILE"
         cd ..
         echo -e "${GREEN}Webapp (dev) started with PID: $(cat "$WEB_DIR/$WEB_PID_FILE")${NC}"
     fi
