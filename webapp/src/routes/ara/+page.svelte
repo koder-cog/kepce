@@ -293,6 +293,12 @@
 </script>
 
 <svelte:head>
+  <link
+    rel="search"
+    type="application/opensearchdescription+xml"
+    title="Kepçe Ara"
+    href="/opensearch.xml"
+  />
   {#if data.isHome}
     <title>Kepçe Ara</title>
     <meta
