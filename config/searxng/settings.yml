@@ -27,6 +27,13 @@ outgoing:
   pool_maxsize: 20
   enable_http2: true
 
+enabled_plugins:
+  - 'Calculator'
+  - 'Unit converter'
+  - 'Tracker url remover'
+  - 'Hostnames'
+  - 'Hash plugin'
+
 engines:
   - name: duckduckgo
     engine: duckduckgo

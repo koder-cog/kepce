@@ -9,6 +9,7 @@
   import SearchSettingsModal from "@/components/features/search/SearchSettingsModal.svelte";
   import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
   import AnswerCard from "@/components/features/search/AnswerCard.svelte";
+  import { BANG_DEFINITIONS } from "$lib/search/bangs.js";
 
   let { data } = $props();
 
@@ -17,29 +18,16 @@
   let isInfoOpen = $state(false);
   let isSettingsOpen = $state(false);
 
-  const BANG_POOL = [
-    { prefix: "!w", label: "Vikipedi" },
-    { prefix: "!yt", label: "YouTube" },
-    { prefix: "!gh", label: "GitHub" },
-    { prefix: "!r", label: "Reddit" },
-    { prefix: "!so", label: "Stack Overflow" },
-    { prefix: "!m", label: "Harita" },
-    { prefix: "!imdb", label: "IMDb" },
-    { prefix: "!brave", label: "Brave" },
-    { prefix: "!ddg", label: "DuckDuckGo" },
-    { prefix: "!g", label: "Google" },
-    { prefix: "!mdn", label: "MDN" },
-    { prefix: "!npm", label: "npm" },
-    { prefix: "!crates", label: "Crates.io" },
-    { prefix: "!arch", label: "ArchWiki" },
-    { prefix: "!unsplash", label: "Unsplash" },
-  ];
-
-  let randomShortcuts = $state(BANG_POOL.slice(0, 4));
+  let randomShortcuts = $state(
+    BANG_DEFINITIONS.slice(0, 4).map((b) => ({ prefix: b.prefix, label: b.name }))
+  );
 
   onMount(() => {
-    const shuffled = [...BANG_POOL].sort(() => 0.5 - Math.random());
-    randomShortcuts = shuffled.slice(0, 4);
+    const shuffled = [...BANG_DEFINITIONS]
+      .sort(() => 0.5 - Math.random())
+      .slice(0, 4)
+      .map((b) => ({ prefix: b.prefix, label: b.name }));
+    randomShortcuts = shuffled;
   });
 
   function selectBang(prefix) {

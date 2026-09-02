@@ -1,4 +1,28 @@
+import { redirect } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
+import { resolveBang } from "$lib/search/bangs.js";
+
+// Bellek içi LRU Arama Önbelleği (10 dk TTL)
+const searchCache = new Map();
+const CACHE_TTL_MS = 10 * 60 * 1000;
+
+function getCached(key) {
+  const item = searchCache.get(key);
+  if (!item) return null;
+  if (Date.now() - item.ts > CACHE_TTL_MS) {
+    searchCache.delete(key);
+    return null;
+  }
+  return item.data;
+}
+
+function setCached(key, data) {
+  if (searchCache.size > 500) {
+    const oldestKey = searchCache.keys().next().value;
+    searchCache.delete(oldestKey);
+  }
+  searchCache.set(key, { ts: Date.now(), data });
+}
 
 // Open-Meteo ve Coğrafi Konum Servisi (Nominatim)
 async function fetchPlaceDetails(query) {
@@ -444,7 +468,20 @@ export async function load({ url, fetch }) {
     };
   }
 
-  // Anlık Yanıt Çözücü (Yalnızca Web genel aramasında)
+  // 1. !bang Kısayol Yönlendirmesi (!w, !yt, !gh, !so vb.)
+  const bangUrl = resolveBang(q);
+  if (bangUrl) {
+    throw redirect(302, bangUrl);
+  }
+
+  // 2. Bellek İçi Önbellek Kontrolü
+  const cacheKey = `${q}::${category}::${page}::${language}::${timeRange}::${safeSearch}`;
+  const cached = getCached(cacheKey);
+  if (cached) {
+    return cached;
+  }
+
+  // 3. Anlık Yanıt Çözücü (Yalnızca Web genel aramasında)
   const isGeneralCategory = category === "general" || !category;
   const instantAnswer = isGeneralCategory ? await solveInstantQuery(q) : null;
 
@@ -571,7 +608,26 @@ export async function load({ url, fetch }) {
     const suggestions = data.suggestions || [];
     const numberOfResults = data.number_of_results || results.length;
 
-    return {
+    // SearXNG yerleşik eklentilerinin (calculator, unit_converter, time) answers çıktısını bağlama
+    let resolvedAnswer = instantAnswer;
+    if (!resolvedAnswer && data.answers && data.answers.length > 0) {
+      const rawAns = data.answers[0];
+      if (typeof rawAns === "string") {
+        resolvedAnswer = {
+          type: "generic",
+          title: "Anlık Yanıt",
+          content: rawAns,
+        };
+      } else if (rawAns && typeof rawAns === "object") {
+        resolvedAnswer = {
+          type: rawAns.type || "generic",
+          title: rawAns.title || "Anlık Yanıt",
+          content: rawAns.answer || rawAns.content || JSON.stringify(rawAns),
+        };
+      }
+    }
+
+    const payload = {
       isHome: false,
       query: q,
       category,
@@ -579,14 +635,19 @@ export async function load({ url, fetch }) {
       results,
       infoboxes,
       suggestions,
-      answer: instantAnswer,
+      answer: resolvedAnswer,
       numberOfResults,
       language,
       timeRange,
       safeSearch,
       error: null,
     };
+
+    setCached(cacheKey, payload);
+    return payload;
   } catch (err) {
+    if (err && err.status === 302) throw err; // SvelteKit redirect
+
     return {
       isHome: false,
       query: q,
