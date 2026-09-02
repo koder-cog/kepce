@@ -574,6 +574,48 @@
     return safe.replace(regex, "<strong>$1</strong>");
   }
 
+  let hasActiveFilters = $derived(
+    Boolean(
+      (data.language && data.language !== "tr") ||
+      data.timeRange ||
+      (data.safeSearch && data.safeSearch !== "1") ||
+      data.fileType ||
+      data.siteFilter ||
+      data.verbatim ||
+      data.imgFormat ||
+      data.imgSize ||
+      data.imgColor ||
+      data.imgLicense ||
+      data.videoDuration ||
+      data.videoQuality ||
+      data.videoPlatform ||
+      data.newsSort ||
+      data.codeLang ||
+      data.codePlatform ||
+      data.scholarAccess ||
+      data.scholarYear
+    )
+  );
+
+  function appendActiveCategoryFilters(params) {
+    if (data.fileType) params.set("dosya", data.fileType);
+    if (data.siteFilter) params.set("site", data.siteFilter);
+    if (data.verbatim) params.set("tam", "1");
+    if (data.imgFormat) params.set("format", data.imgFormat);
+    if (data.imgSize) params.set("boyut", data.imgSize);
+    if (data.imgColor) params.set("renk", data.imgColor);
+    if (data.imgLicense) params.set("lisans", data.imgLicense);
+    if (data.videoDuration) params.set("sure", data.videoDuration);
+    if (data.videoQuality) params.set("kalite", data.videoQuality);
+    if (data.videoPlatform) params.set("platform", data.videoPlatform);
+    if (data.newsSort) params.set("sirala", data.newsSort);
+    if (data.codeLang) params.set("dil_prog", data.codeLang);
+    if (data.codePlatform) params.set("kaynak", data.codePlatform);
+    if (data.scholarAccess) params.set("erisim", data.scholarAccess);
+    if (data.scholarYear) params.set("yil", data.scholarYear);
+    return params;
+  }
+
   function handleFilterChange(key, value) {
     const params = new URLSearchParams();
     params.set("q", data.query);
@@ -588,6 +630,37 @@
     if (currentTime) params.set("zaman", currentTime);
     if (currentSafe && currentSafe !== "1") params.set("guvenli", currentSafe);
 
+    const filters = {
+      dosya: key === "dosya" ? value : data.fileType,
+      site: key === "site" ? value : data.siteFilter,
+      tam: key === "tam" ? (value ? "1" : "") : (data.verbatim ? "1" : ""),
+      format: key === "format" ? value : data.imgFormat,
+      boyut: key === "boyut" ? value : data.imgSize,
+      renk: key === "renk" ? value : data.imgColor,
+      lisans: key === "lisans" ? value : data.imgLicense,
+      sure: key === "sure" ? value : data.videoDuration,
+      kalite: key === "kalite" ? value : data.videoQuality,
+      platform: key === "platform" ? value : data.videoPlatform,
+      sirala: key === "sirala" ? value : data.newsSort,
+      dil_prog: key === "dil_prog" ? value : data.codeLang,
+      kaynak: key === "kaynak" ? value : data.codePlatform,
+      erisim: key === "erisim" ? value : data.scholarAccess,
+      yil: key === "yil" ? value : data.scholarYear,
+    };
+
+    for (const [k, v] of Object.entries(filters)) {
+      if (v) params.set(k, v);
+    }
+
+    goto(buildSearchUrl(params));
+  }
+
+  function clearAllFilters() {
+    const params = new URLSearchParams();
+    params.set("q", data.query);
+    if (data.category && data.category !== "general") {
+      params.set("kategori", data.category);
+    }
     goto(buildSearchUrl(params));
   }
 
@@ -601,6 +674,7 @@
     if (data.timeRange) params.set("zaman", data.timeRange);
     if (data.safeSearch && data.safeSearch !== "1")
       params.set("guvenli", data.safeSearch);
+    appendActiveCategoryFilters(params);
     if (pageNum > 1) params.set("sayfa", String(pageNum));
     return buildSearchUrl(params);
   }
@@ -936,8 +1010,9 @@
         />
       </div>
 
-      <!-- 2. Filtreler (Kepçe Dropdown Ghost) -->
+      <!-- 2. Filtreler (Kepçe Dropdown Ghost - Kategoriye Duyarlı Zengin Filtreler) -->
       <div class="c-search-pill-filters">
+        <!-- Ortak Filtreler: Dil ve Güvenli Arama -->
         <Dropdown
           variant="ghost"
           value={data.language || "tr"}
@@ -956,18 +1031,228 @@
           onChange={(val) => handleFilterChange("guvenli", val)}
         />
 
-        <Dropdown
-          variant="ghost"
-          value={data.timeRange || ""}
-          options={[
-            { value: "", label: "Tüm zamanlar" },
-            { value: "day", label: "Son 24 saat" },
-            { value: "week", label: "Son 1 hafta" },
-            { value: "month", label: "Son 1 ay" },
-            { value: "year", label: "Son 1 yıl" },
-          ]}
-          onChange={(val) => handleFilterChange("zaman", val)}
-        />
+        <!-- Zaman Filtresi (Kod hariç tüm sekmelerde geçerli) -->
+        {#if activeCategory !== "it"}
+          <Dropdown
+            variant="ghost"
+            value={data.timeRange || ""}
+            options={[
+              { value: "", label: "Zaman: Tümü" },
+              { value: "day", label: "Son 24 saat" },
+              { value: "week", label: "Son 1 hafta" },
+              { value: "month", label: "Son 1 ay" },
+              { value: "year", label: "Son 1 yıl" },
+            ]}
+            onChange={(val) => handleFilterChange("zaman", val)}
+          />
+        {/if}
+
+        <!-- 🌐 Web Özel Filtreleri -->
+        {#if activeCategory === "general"}
+          <Dropdown
+            variant="ghost"
+            value={data.fileType || ""}
+            options={[
+              { value: "", label: "Format: Tüm dosyalar" },
+              { value: "pdf", label: "Format: PDF (.pdf)" },
+              { value: "docx", label: "Format: Word (.docx)" },
+              { value: "pptx", label: "Format: Sunum (.pptx)" },
+              { value: "xlsx", label: "Format: Tablo (.xlsx)" },
+            ]}
+            onChange={(val) => handleFilterChange("dosya", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.siteFilter || ""}
+            options={[
+              { value: "", label: "Kaynak: Tüm siteler" },
+              { value: "edu.tr", label: "Kaynak: Üniversiteler (.edu.tr)" },
+              { value: "gov.tr", label: "Kaynak: Kamu / Devlet (.gov.tr)" },
+              { value: "org", label: "Kaynak: Vakıf / Dernek (.org)" },
+            ]}
+            onChange={(val) => handleFilterChange("site", val)}
+          />
+
+          <button
+            type="button"
+            class="c-search-filter-btn"
+            class:is-active={data.verbatim}
+            onclick={() => handleFilterChange("tam", !data.verbatim)}
+            title="Sadece arama kelimelerini harfi harfine içeren sonuçları getirir"
+          >
+            <span>"Tam Eşleşme"</span>
+          </button>
+        {/if}
+
+        <!-- 🖼️ Görseller Özel Filtreleri -->
+        {#if activeCategory === "images"}
+          <Dropdown
+            variant="ghost"
+            value={data.imgFormat || ""}
+            options={[
+              { value: "", label: "Tür: Tüm formatlar" },
+              { value: "transparent", label: "Tür: Şeffaf (Transparan PNG)" },
+              { value: "gif", label: "Tür: Hareketli (GIF)" },
+              { value: "svg", label: "Tür: Vektörel (SVG)" },
+              { value: "jpeg", label: "Tür: Fotoğraf (JPG)" },
+            ]}
+            onChange={(val) => handleFilterChange("format", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.imgSize || ""}
+            options={[
+              { value: "", label: "Boyut: Tümü" },
+              { value: "large", label: "Boyut: Büyük (Duvar Kağıdı)" },
+              { value: "medium", label: "Boyut: Orta" },
+              { value: "icon", label: "Boyut: Küçük / İkon" },
+            ]}
+            onChange={(val) => handleFilterChange("boyut", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.imgColor || ""}
+            options={[
+              { value: "", label: "Renk: Tümü" },
+              { value: "color", label: "Renk: Renkli" },
+              { value: "monochrome", label: "Renk: Siyah-Beyaz" },
+              { value: "transparent", label: "Renk: Saydam Zemin" },
+            ]}
+            onChange={(val) => handleFilterChange("renk", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.imgLicense || ""}
+            options={[
+              { value: "", label: "Lisans: Tümü" },
+              { value: "cc", label: "Lisans: Creative Commons" },
+              { value: "commercial", label: "Lisans: Ticari Kullanım" },
+            ]}
+            onChange={(val) => handleFilterChange("lisans", val)}
+          />
+        {/if}
+
+        <!-- 🎬 Videolar Özel Filtreleri -->
+        {#if activeCategory === "videos"}
+          <Dropdown
+            variant="ghost"
+            value={data.videoDuration || ""}
+            options={[
+              { value: "", label: "Süre: Tüm süreler" },
+              { value: "short", label: "Süre: Kısa (< 4 dk)" },
+              { value: "medium", label: "Süre: Orta (4 - 20 dk)" },
+              { value: "long", label: "Süre: Uzun (> 20 dk)" },
+            ]}
+            onChange={(val) => handleFilterChange("sure", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.videoQuality || ""}
+            options={[
+              { value: "", label: "Kalite: Tüm kaliteler" },
+              { value: "hd", label: "Kalite: Yüksek Kalite (HD/4K)" },
+              { value: "sd", label: "Kalite: Standart (SD)" },
+            ]}
+            onChange={(val) => handleFilterChange("kalite", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.videoPlatform || ""}
+            options={[
+              { value: "", label: "Platform: Tümü" },
+              { value: "youtube", label: "Platform: YouTube" },
+              { value: "vimeo", label: "Platform: Vimeo" },
+              { value: "dailymotion", label: "Platform: Dailymotion" },
+            ]}
+            onChange={(val) => handleFilterChange("platform", val)}
+          />
+        {/if}
+
+        <!-- 📰 Haberler Özel Filtreleri -->
+        {#if activeCategory === "news"}
+          <Dropdown
+            variant="ghost"
+            value={data.newsSort || ""}
+            options={[
+              { value: "", label: "Sıralama: Alakaya göre" },
+              { value: "date", label: "Sıralama: Tarihe göre (En yeni)" },
+            ]}
+            onChange={(val) => handleFilterChange("sirala", val)}
+          />
+        {/if}
+
+        <!-- 💻 Kod & IT Özel Filtreleri -->
+        {#if activeCategory === "it"}
+          <Dropdown
+            variant="ghost"
+            value={data.codeLang || ""}
+            options={[
+              { value: "", label: "Dil: Tüm diller" },
+              { value: "rust", label: "Dil: Rust" },
+              { value: "javascript", label: "Dil: JavaScript / TS" },
+              { value: "python", label: "Dil: Python" },
+              { value: "go", label: "Dil: Go" },
+              { value: "cpp", label: "Dil: C / C++" },
+            ]}
+            onChange={(val) => handleFilterChange("dil_prog", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.codePlatform || ""}
+            options={[
+              { value: "", label: "Platform: Tümü" },
+              { value: "github", label: "Platform: GitHub" },
+              { value: "stackoverflow", label: "Platform: StackOverflow" },
+              { value: "gitlab", label: "Platform: GitLab" },
+            ]}
+            onChange={(val) => handleFilterChange("kaynak", val)}
+          />
+        {/if}
+
+        <!-- 🎓 Akademi Özel Filtreleri -->
+        {#if activeCategory === "science"}
+          <Dropdown
+            variant="ghost"
+            value={data.scholarAccess || ""}
+            options={[
+              { value: "", label: "Erişim: Tüm makaleler" },
+              { value: "open", label: "Erişim: Açık Erişim (Tam PDF)" },
+            ]}
+            onChange={(val) => handleFilterChange("erisim", val)}
+          />
+
+          <Dropdown
+            variant="ghost"
+            value={data.scholarYear || ""}
+            options={[
+              { value: "", label: "Yıl: Tüm yıllar" },
+              { value: "2026", label: "Yıl: 2026'dan beri" },
+              { value: "2024", label: "Yıl: 2024'ten beri" },
+              { value: "2020", label: "Yıl: 2020'den beri" },
+            ]}
+            onChange={(val) => handleFilterChange("yil", val)}
+          />
+        {/if}
+
+        <!-- Filtreleri Temizle Butonu -->
+        {#if hasActiveFilters}
+          <button
+            type="button"
+            class="c-search-filter-btn c-search-filter-clear"
+            onclick={clearAllFilters}
+            title="Tüm filtreleri sıfırla"
+          >
+            {@html icon("close", 12)}
+            <span>Filtreleri Temizle</span>
+          </button>
+        {/if}
       </div>
     </div>
 

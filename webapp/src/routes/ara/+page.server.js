@@ -1174,6 +1174,51 @@ export async function load({ url, fetch }) {
   const safeSearch = url.searchParams.get("guvenli") || "1";
   const engines = url.searchParams.get("motorlar") || "";
 
+  // Gelişmiş Arama Filtreleri
+  const fileType = (url.searchParams.get("dosya") || "").trim().toLowerCase();
+  const siteFilter = (url.searchParams.get("site") || "").trim().toLowerCase();
+  const verbatim = url.searchParams.get("tam") === "1" || url.searchParams.get("verbatim") === "1";
+
+  // Görsel Filtreleri
+  const imgFormat = (url.searchParams.get("format") || "").trim().toLowerCase();
+  const imgSize = (url.searchParams.get("boyut") || "").trim().toLowerCase();
+  const imgColor = (url.searchParams.get("renk") || "").trim().toLowerCase();
+  const imgLicense = (url.searchParams.get("lisans") || "").trim().toLowerCase();
+
+  // Video Filtreleri
+  const videoDuration = (url.searchParams.get("sure") || "").trim().toLowerCase();
+  const videoQuality = (url.searchParams.get("kalite") || "").trim().toLowerCase();
+  const videoPlatform = (url.searchParams.get("platform") || "").trim().toLowerCase();
+
+  // Haber Filtreleri
+  const newsSort = (url.searchParams.get("sirala") || "").trim().toLowerCase();
+
+  // Kod & IT Filtreleri
+  const codeLang = (url.searchParams.get("dil_prog") || "").trim().toLowerCase();
+  const codePlatform = (url.searchParams.get("kaynak") || "").trim().toLowerCase();
+
+  // Akademi Filtreleri
+  const scholarAccess = (url.searchParams.get("erisim") || "").trim().toLowerCase();
+  const scholarYear = (url.searchParams.get("yil") || "").trim().toLowerCase();
+
+  const filterFields = {
+    fileType,
+    siteFilter,
+    verbatim,
+    imgFormat,
+    imgSize,
+    imgColor,
+    imgLicense,
+    videoDuration,
+    videoQuality,
+    videoPlatform,
+    newsSort,
+    codeLang,
+    codePlatform,
+    scholarAccess,
+    scholarYear,
+  };
+
   if (!q) {
     return {
       isHome: true,
@@ -1189,6 +1234,7 @@ export async function load({ url, fetch }) {
       language: "tr",
       timeRange: "",
       safeSearch: "1",
+      ...filterFields,
     };
   }
 
@@ -1199,7 +1245,7 @@ export async function load({ url, fetch }) {
   }
 
   // 2. Bellek İçi Önbellek Kontrolü
-  const cacheKey = `${q}::${category}::${page}::${language}::${timeRange}::${safeSearch}`;
+  const cacheKey = `${q}::${category}::${page}::${language}::${timeRange}::${safeSearch}::${fileType}::${siteFilter}::${verbatim}::${imgFormat}::${imgSize}::${imgColor}::${imgLicense}::${videoDuration}::${videoQuality}::${videoPlatform}::${newsSort}::${codeLang}::${codePlatform}::${scholarAccess}::${scholarYear}`;
   const cached = getCached(cacheKey);
   if (cached && !cached.error && cached.results?.length > 0) {
     return {
@@ -1225,8 +1271,83 @@ export async function load({ url, fetch }) {
   // Anlık yanıtı hemen bekle (yalnızca yerel matematik/döviz fonksiyonudur, <5ms)
   const instantAnswer = await instantAnswerPromise;
 
-  // 4. SearXNG Sorgusunu Hazırla
+  // 4. SearXNG Sorgusunu Hazırla ve Filtreleri Akıllıca Uygula
   let effectiveQuery = q.startsWith("!") ? q.replace(/^!+/, "").trim() || q : q;
+
+  // Tam eşleşme (Verbatim)
+  if (verbatim && !effectiveQuery.startsWith('"')) {
+    effectiveQuery = `"${effectiveQuery}"`;
+  }
+
+  // Dosya türü ve Alan Adı (Web & Akademi)
+  if (fileType) {
+    effectiveQuery += ` filetype:${fileType}`;
+  }
+  if (siteFilter) {
+    effectiveQuery += ` site:${siteFilter}`;
+  }
+
+  // Görsel Filtreleri
+  if (category === "images") {
+    if (imgFormat === "transparent") {
+      effectiveQuery += " transparent png";
+    } else if (imgFormat === "gif") {
+      effectiveQuery += " filetype:gif";
+    } else if (imgFormat === "svg") {
+      effectiveQuery += " filetype:svg";
+    } else if (imgFormat === "jpeg") {
+      effectiveQuery += " filetype:jpg";
+    }
+
+    if (imgSize === "large") {
+      effectiveQuery += " wallpaper";
+    } else if (imgSize === "icon") {
+      effectiveQuery += " icon";
+    }
+
+    if (imgColor === "monochrome") {
+      effectiveQuery += " black and white";
+    } else if (imgColor === "transparent") {
+      effectiveQuery += " transparent";
+    }
+
+    if (imgLicense === "cc") {
+      effectiveQuery += " creative commons";
+    } else if (imgLicense === "commercial") {
+      effectiveQuery += " commercial use";
+    }
+  }
+
+  // Video Filtreleri
+  if (category === "videos") {
+    if (videoQuality === "hd") {
+      effectiveQuery += " HD 1080p";
+    }
+    if (videoPlatform) {
+      effectiveQuery += ` site:${videoPlatform}.com`;
+    }
+  }
+
+  // Kod Filtreleri
+  if (category === "it") {
+    if (codeLang) {
+      effectiveQuery += ` language:${codeLang}`;
+    }
+    if (codePlatform) {
+      effectiveQuery += ` site:${codePlatform}.com`;
+    }
+  }
+
+  // Akademi Filtreleri
+  if (category === "science") {
+    if (scholarAccess === "open") {
+      effectiveQuery += " filetype:pdf";
+    }
+    if (scholarYear) {
+      effectiveQuery += ` ${scholarYear}`;
+    }
+  }
+
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   const searchParams = new URLSearchParams({
     q: effectiveQuery,
@@ -1242,6 +1363,9 @@ export async function load({ url, fetch }) {
   }
   if (engines) {
     searchParams.set("engines", engines);
+  }
+  if (newsSort === "date") {
+    searchParams.set("order", "date");
   }
 
   // 5. SearXNG Veri Akışı (Streaming Promise)
@@ -1270,6 +1394,7 @@ export async function load({ url, fetch }) {
         language,
         timeRange,
         safeSearch,
+        ...filterFields,
       });
     }
     return data;
@@ -1284,6 +1409,7 @@ export async function load({ url, fetch }) {
     language,
     timeRange,
     safeSearch,
+    ...filterFields,
     answer: instantAnswer,
     kepceCard,
     results: [],
