@@ -489,15 +489,15 @@
 
     <!-- Sonuçlar Gövdesi -->
     <main class="c-search-body">
-      <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi) -->
-      {#if data.answer}
+      <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi - Yalnızca Web sekmesinde) -->
+      {#if data.answer && (data.category === "general" || !data.category)}
         <div class="c-search-top-answer">
           <AnswerCard answer={data.answer} />
         </div>
       {/if}
 
-      <!-- 2. Üst Bilgi Kartı (Google Tarzı Instant Knowledge Panel) -->
-      {#if data.infoboxes && data.infoboxes.length > 0}
+      <!-- 2. Üst Bilgi Kartı (Yalnızca Web sekmesinde) -->
+      {#if data.infoboxes && data.infoboxes.length > 0 && (data.category === "general" || !data.category)}
         <div class="c-search-top-knowledge">
           <KnowledgeCard infobox={data.infoboxes[0]} />
         </div>

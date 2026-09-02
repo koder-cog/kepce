@@ -444,11 +444,12 @@ export async function load({ url, fetch }) {
     };
   }
 
-  // Anlık Yanıt Çözücü (Döviz, Hesap Makinesi)
-  const instantAnswer = await solveInstantQuery(q);
+  // Anlık Yanıt Çözücü (Yalnızca Web genel aramasında)
+  const isGeneralCategory = category === "general" || !category;
+  const instantAnswer = isGeneralCategory ? await solveInstantQuery(q) : null;
 
-  // Doğal dildeki döviz sorgularında organik haber/piyasa sonuçlarının akması için anahtar kelime ayarlaması
-  const effectiveQuery = instantAnswer?.type === "currency" ? `${instantAnswer.fromCurrencyName} kuru` : q;
+  // Doğal dildeki döviz sorgularında web sekmesinde organik haber/piyasa sonuçlarının akması için anahtar kelime ayarlaması
+  const effectiveQuery = (instantAnswer?.type === "currency" && isGeneralCategory) ? `${instantAnswer.fromCurrencyName} kuru` : q;
 
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   const searchParams = new URLSearchParams({
