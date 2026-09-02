@@ -1312,9 +1312,19 @@
 /* Sindirilebilir Hap Bilgi Kartları (Facts Grid) */
 .c-knowledge-facts-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 10px;
   padding-top: var(--space-xs);
+}
+
+@media (min-width: 600px) {
+  .c-knowledge-facts-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .c-knowledge-facts-grid.has-4-items {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .c-knowledge-fact-item {

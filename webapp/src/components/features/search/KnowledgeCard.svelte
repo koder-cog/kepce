@@ -67,10 +67,14 @@
     return "";
   });
 
-  // En önemli özet nitelikler
+  // En önemli özet nitelikler (Grid simetrisi için tam 6, 4 veya 2 eleman)
   let displayAttributes = $derived.by(() => {
     if (!infobox?.attributes) return [];
-    return infobox.attributes.slice(0, 8);
+    const attrs = infobox.attributes;
+    if (attrs.length >= 6) return attrs.slice(0, 6);
+    if (attrs.length >= 4) return attrs.slice(0, 4);
+    if (attrs.length >= 2) return attrs.slice(0, 2);
+    return attrs;
   });
 </script>
 
@@ -169,7 +173,7 @@
         {/if}
 
         {#if displayAttributes.length > 0}
-          <div class="c-knowledge-facts-grid">
+          <div class="c-knowledge-facts-grid" class:has-4-items={displayAttributes.length === 4}>
             {#each displayAttributes as attr}
               <div class="c-knowledge-fact-item">
                 <span class="c-knowledge-fact-label">{attr.label}</span>
@@ -213,7 +217,7 @@
           {/if}
 
           {#if displayAttributes.length > 0}
-            <div class="c-knowledge-facts-grid">
+            <div class="c-knowledge-facts-grid" class:has-4-items={displayAttributes.length === 4}>
               {#each displayAttributes as attr}
                 <div class="c-knowledge-fact-item">
                   <span class="c-knowledge-fact-label">{attr.label}</span>
@@ -266,7 +270,7 @@
         {/if}
 
         {#if displayAttributes.length > 0}
-          <div class="c-knowledge-facts-grid">
+          <div class="c-knowledge-facts-grid" class:has-4-items={displayAttributes.length === 4}>
             {#each displayAttributes as attr}
               <div class="c-knowledge-fact-item">
                 <span class="c-knowledge-fact-label">{attr.label}</span>
@@ -309,7 +313,7 @@
           {/if}
 
           {#if displayAttributes.length > 0}
-            <div class="c-knowledge-facts-grid">
+            <div class="c-knowledge-facts-grid" class:has-4-items={displayAttributes.length === 4}>
               {#each displayAttributes as attr}
                 <div class="c-knowledge-fact-item">
                   <span class="c-knowledge-fact-label">{attr.label}</span>
