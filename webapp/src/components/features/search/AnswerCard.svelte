@@ -25,11 +25,6 @@
     {#if answer.type === "currency"}
       <!-- Döviz / Kur Kartı -->
       <div class="c-answer-card__currency">
-        <div class="c-answer-card__head">
-          <span class="c-answer-card__currency-tag">{answer.fromCurrency} / {answer.toCurrency}</span>
-          <span class="c-answer-card__date">{answer.date} Verisi</span>
-        </div>
-
         <div class="c-answer-card__main-val">
           <span class="c-answer-card__target-num">{toAmount}</span>
           <span class="c-answer-card__target-unit">{answer.toCurrencyName}</span>
