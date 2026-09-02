@@ -22,7 +22,72 @@
     BANG_DEFINITIONS.slice(0, 4).map((b) => ({ prefix: b.prefix, label: b.name }))
   );
 
+  let searchHistory = $state([]);
+  let isHistoryOpen = $state(false);
+  let selectedImage = $state(null);
+  let isImageLightboxOpen = $state(false);
+  let activeVideoEmbed = $state(null);
+
+  function loadHistory() {
+    try {
+      const raw = localStorage.getItem("kepce_search_history");
+      if (raw) {
+        searchHistory = JSON.parse(raw);
+      }
+    } catch {
+      searchHistory = [];
+    }
+  }
+
+  function saveToHistory(q) {
+    const term = q.trim();
+    if (!term || term.startsWith("!")) return;
+    try {
+      let list = searchHistory.filter((item) => item.toLowerCase() !== term.toLowerCase());
+      list.unshift(term);
+      list = list.slice(0, 8);
+      searchHistory = list;
+      localStorage.setItem("kepce_search_history", JSON.stringify(list));
+    } catch {}
+  }
+
+  function clearHistory() {
+    searchHistory = [];
+    try {
+      localStorage.removeItem("kepce_search_history");
+    } catch {}
+  }
+
+  function removeHistoryItem(term, e) {
+    e.stopPropagation();
+    searchHistory = searchHistory.filter((t) => t !== term);
+    try {
+      localStorage.setItem("kepce_search_history", JSON.stringify(searchHistory));
+    } catch {}
+  }
+
+  function openImageLightbox(item, e) {
+    e.preventDefault();
+    selectedImage = item;
+    isImageLightboxOpen = true;
+  }
+
+  function closeImageLightbox() {
+    selectedImage = null;
+    isImageLightboxOpen = false;
+  }
+
+  function getYoutubeEmbedUrl(url) {
+    if (!url) return null;
+    const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (m) {
+      return `https://www.youtube-nocookie.com/embed/${m[1]}?autoplay=1`;
+    }
+    return null;
+  }
+
   onMount(() => {
+    loadHistory();
     const shuffled = [...BANG_DEFINITIONS]
       .sort(() => 0.5 - Math.random())
       .slice(0, 4)
@@ -89,38 +154,47 @@
   function handleInput(e) {
     const val = e.target.value;
     searchInput = val;
+    isHistoryOpen = !val;
     clearTimeout(debounceTimeout);
     debounceTimeout = setTimeout(() => {
       fetchSuggestions(val);
     }, 150);
   }
 
-  function handleKeydown(e) {
-    if (!isSuggestionsOpen || suggestions.length === 0) return;
+  function handleFocus() {
+    if (!searchInput.trim() && searchHistory.length > 0) {
+      isHistoryOpen = true;
+    }
+  }
 
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
-      searchInput = suggestions[selectedSuggestionIndex];
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      selectedSuggestionIndex = (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
-      searchInput = suggestions[selectedSuggestionIndex];
-    } else if (e.key === "Escape") {
-      isSuggestionsOpen = false;
-      selectedSuggestionIndex = -1;
+  function handleKeydown(e) {
+    if (isSuggestionsOpen && suggestions.length > 0) {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
+        searchInput = suggestions[selectedSuggestionIndex];
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        selectedSuggestionIndex = (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
+        searchInput = suggestions[selectedSuggestionIndex];
+      } else if (e.key === "Escape") {
+        isSuggestionsOpen = false;
+        selectedSuggestionIndex = -1;
+      }
     }
   }
 
   function selectSuggestion(item) {
     searchInput = item;
     isSuggestionsOpen = false;
+    isHistoryOpen = false;
     handleSearch();
   }
 
   function handleBlur() {
     setTimeout(() => {
       isSuggestionsOpen = false;
+      isHistoryOpen = false;
     }, 200);
   }
 
@@ -133,8 +207,11 @@
   function handleSearch(e) {
     e?.preventDefault();
     isSuggestionsOpen = false;
+    isHistoryOpen = false;
     const q = searchInput.trim();
     if (!q) return;
+
+    saveToHistory(q);
 
     const params = new URLSearchParams();
     params.set("q", q);
@@ -382,6 +459,41 @@
               {@html icon("search", 20)}
             </button>
 
+            <!-- Yerel Arama Geçmişi (Arama çubuğu boş ve odaklıyken) -->
+            {#if isHistoryOpen && searchHistory.length > 0 && !searchInput}
+              <ul class="c-search-autocomplete c-search-history-panel" role="listbox">
+                <li class="c-search-history-header">
+                  <span>Son Aramalar</span>
+                  <button type="button" class="c-search-history-clear" onmousedown={clearHistory}>
+                    Temizle
+                  </button>
+                </li>
+                {#each searchHistory as item}
+                  <li
+                    class="c-search-autocomplete__item c-search-history__item"
+                    onmousedown={() => selectSuggestion(item)}
+                    role="option"
+                    tabindex="-1"
+                    aria-selected="false"
+                  >
+                    <span class="c-search-autocomplete__icon">
+                      {@html icon("clock", 16)}
+                    </span>
+                    <span class="c-search-history__text">{item}</span>
+                    <button
+                      type="button"
+                      class="c-search-history__remove"
+                      onmousedown={(e) => removeHistoryItem(item, e)}
+                      aria-label="Sil"
+                      title="Sil"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                {/each}
+              </ul>
+            {/if}
+
             {#if isSuggestionsOpen && suggestions.length > 0}
               <ul class="c-search-autocomplete" role="listbox">
                 {#each suggestions as item, idx}
@@ -507,11 +619,10 @@
           <!-- Görsel Sonuçları Izgarası -->
           <div class="c-search-images-grid">
             {#each data.results as item}
-              <a
-                href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
+              <button
+                type="button"
                 class="c-search-image-card"
+                onclick={(e) => openImageLightbox(item, e)}
               >
                 {#if item.imgSrc}
                   <img
@@ -524,11 +635,66 @@
                 <div class="c-search-image-card__meta" title={item.title}>
                   {item.title}
                 </div>
-              </a>
+              </button>
+            {/each}
+          </div>
+        {:else if data.category === "videos"}
+          <!-- Video Sonuçları ve Gömülü Oynatıcı -->
+          <div class="c-search-videos-grid">
+            {#each data.results as item}
+              {@const embedUrl = getYoutubeEmbedUrl(item.url)}
+              <article class="c-search-video-card">
+                {#if activeVideoEmbed === item.url && embedUrl}
+                  <div class="c-search-video-embed-wrap">
+                    <iframe
+                      src={embedUrl}
+                      title={item.title}
+                      frameborder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowfullscreen
+                      class="c-search-video-iframe"
+                    ></iframe>
+                  </div>
+                {:else}
+                  <div class="c-search-video-thumb-wrap">
+                    {#if item.thumbnail || item.imgSrc}
+                      <img
+                        src={item.thumbnail || item.imgSrc}
+                        alt={item.title}
+                        class="c-search-video-thumb"
+                        loading="lazy"
+                      />
+                    {/if}
+                    {#if embedUrl}
+                      <button
+                        type="button"
+                        class="c-search-video-play-btn"
+                        onclick={() => (activeVideoEmbed = item.url)}
+                        aria-label="Videoyu Oynat"
+                        title="Doğrudan Oynat"
+                      >
+                        ▶
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+                <div class="c-search-video-info">
+                  <a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="c-search-video-title"
+                  >
+                    {item.title}
+                  </a>
+                  <p class="c-search-video-desc">{item.content}</p>
+                  <span class="c-search-video-source">{formatUrlBreadcrumb(item.url)}</span>
+                </div>
+              </article>
             {/each}
           </div>
         {:else}
-          <!-- Standart Web / Haber / Video Sonuçları -->
+          <!-- Standart Web / Haber Sonuçları -->
           {#each data.results as item}
             <article class="c-search-item">
               <a
@@ -690,3 +856,69 @@
 <!-- Modallar -->
 <SearchInfoModal bind:isOpen={isInfoOpen} />
 <SearchSettingsModal bind:isOpen={isSettingsOpen} />
+
+<!-- Görsel Büyüteç / Lightbox Modalı -->
+{#if isImageLightboxOpen && selectedImage}
+  <div
+    class="c-search-lightbox-backdrop"
+    onclick={closeImageLightbox}
+    onkeydown={(e) => e.key === "Escape" && closeImageLightbox()}
+    role="presentation"
+    tabindex="-1"
+  >
+    <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+    <div
+      class="c-search-lightbox-content"
+      onclick={(e) => e.stopPropagation()}
+      onkeydown={(e) => e.stopPropagation()}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Görsel Önizleme"
+      tabindex="-1"
+    >
+      <button
+        type="button"
+        class="c-search-lightbox-close"
+        onclick={closeImageLightbox}
+        aria-label="Kapat"
+        title="Kapat (Esc)"
+      >
+        ✕
+      </button>
+
+      <div class="c-search-lightbox-img-wrap">
+        <img
+          src={selectedImage.imgSrc || selectedImage.thumbnail}
+          alt={selectedImage.title}
+          class="c-search-lightbox-img"
+        />
+      </div>
+
+      <div class="c-search-lightbox-sidebar">
+        <h3 class="c-search-lightbox-title">{selectedImage.title}</h3>
+        <p class="c-search-lightbox-domain">{formatUrlBreadcrumb(selectedImage.url)}</p>
+
+        <div class="c-search-lightbox-actions">
+          <a
+            href={selectedImage.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn--primary btn--block"
+          >
+            Sayfayı Ziyaret Et
+          </a>
+          {#if selectedImage.imgSrc}
+            <a
+              href={selectedImage.imgSrc}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="btn btn--secondary btn--block"
+            >
+              Tam Boyut Görsel
+            </a>
+          {/if}
+        </div>
+      </div>
+    </div>
+  </div>
+{/if}
