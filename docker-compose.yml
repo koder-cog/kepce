@@ -106,6 +106,8 @@ services:
       - API_INTERNAL=http://api:8000
       - PORT=3000
       - HOST=0.0.0.0
+      - PROTOCOL_HEADER=x-forwarded-proto
+      - HOST_HEADER=x-forwarded-host
     expose:
       - "3000"
     networks:

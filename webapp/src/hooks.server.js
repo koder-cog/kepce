@@ -1,5 +1,22 @@
 import { redirect } from "@sveltejs/kit";
 
+export function reroute({ url }) {
+  const hostname = url.hostname.toLowerCase();
+  const isAraSubdomain = hostname.startsWith("ara.") || hostname === "ara.localhost";
+
+  if (isAraSubdomain) {
+    if (url.pathname === "/") {
+      return "/ara";
+    }
+    if (url.pathname === "/opensearch.xml") {
+      return "/ara/opensearch.xml";
+    }
+    if (!url.pathname.startsWith("/ara")) {
+      return `/ara${url.pathname}`;
+    }
+  }
+}
+
 export async function handle({ event, resolve }) {
   const hostname = event.url.hostname.toLowerCase();
   const isAraSubdomain = hostname.startsWith("ara.") || hostname === "ara.localhost";

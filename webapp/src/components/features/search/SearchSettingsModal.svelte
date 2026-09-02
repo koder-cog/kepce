@@ -115,7 +115,7 @@
 {#if isOpen}
   <Modal
     options={{
-      title: "Arama Ayarları",
+      title: "Ayarlar",
       iconHtml: icon("settings", 24),
     }}
     onClose={() => (isOpen = false)}

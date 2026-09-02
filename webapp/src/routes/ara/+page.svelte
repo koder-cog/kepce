@@ -555,7 +555,7 @@
 
         <div class="site-footer__col">
           <div class="site-footer__col-title">Bağlantılar</div>
-          <a href={`${basePath}/ayarlar`} class="site-footer__link">Arama Ayarları</a>
+          <a href={`${basePath}/ayarlar`} class="site-footer__link">Ayarlar</a>
           <a href="https://kepce.org" class="site-footer__link">Kepçe (Ana Site)</a>
           <a
             href="https://reddit.com/r/kepce"

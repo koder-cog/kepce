@@ -386,7 +386,7 @@
 </script>
 
 <svelte:head>
-  <title>Arama Ayarları | Kepçe Ara</title>
+  <title>Ayarlar | Kepçe Ara</title>
   <meta
     name="description"
     content="Arama motoru tercihleri, motor yönetimi ve veri aktarımı."
@@ -394,7 +394,7 @@
 </svelte:head>
 
 <div class="settings-page c-search-adv-page" id="settings-page">
-  <h1 class="settings-page__title">Arama Ayarları</h1>
+  <h1 class="settings-page__title">Ayarlar</h1>
 
   <!-- ── 5'li Sekme Seçici ────────────────────────────────── -->
   <div class="c-search-adv-tabs-box">
