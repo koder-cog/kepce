@@ -1373,92 +1373,96 @@
   box-shadow: var(--shadow-sm);
 }
 
-.c-answer-card__main-val {
-  display: flex;
-  align-items: baseline;
-  gap: var(--space-xs);
-  margin-bottom: 2px;
+.c-answer-card__currency-clean {
+  max-width: 560px;
 }
 
-.c-answer-card__target-num {
+.c-answer-card__sub-title {
+  font-size: var(--text-sm);
+  color: var(--color-text-dim);
+  margin: 0 0 2px;
+  font-weight: 500;
+}
+
+.c-answer-card__headline {
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--color-text);
-  line-height: 1.1;
+  line-height: 1.15;
+  margin: 0 0 4px;
   letter-spacing: -0.02em;
 }
 
-.c-answer-card__target-unit {
-  font-size: var(--text-base);
-  font-weight: 600;
+.c-answer-card__single-rate {
+  font-size: var(--text-xs);
   color: var(--color-text-dim);
+  margin: 0 0 var(--space-lg);
 }
 
-.c-answer-card__rate-sub {
-  font-size: var(--text-sm);
-  color: var(--color-text-dim);
-  margin-bottom: var(--space-lg);
+.c-answer-fx-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
 }
 
-.c-answer-card__inputs {
+@media (min-width: 500px) {
+  .c-answer-fx-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.c-answer-fx-box {
   display: flex;
   align-items: center;
-  gap: var(--space-sm);
-  max-width: 480px;
-}
-
-.c-answer-input-group {
-  position: relative;
-  flex: 1;
-}
-
-.c-answer-input {
-  width: 100%;
-  padding: 10px 48px 10px 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface-sunken);
-  color: var(--color-text);
-  font-size: var(--text-base);
-  font-weight: 600;
-  outline: none;
+  overflow: hidden;
   transition: border-color var(--dur-fast) var(--ease-standard);
 }
 
-.c-answer-input:focus {
+.c-answer-fx-box:focus-within {
   border-color: var(--color-accent-primary);
 }
 
-.c-answer-input.is-readonly {
+.c-answer-fx-input {
+  flex: 1;
+  padding: 10px 12px;
+  border: none;
+  background: transparent;
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--color-text);
+  outline: none;
+  min-width: 0;
+}
+
+.c-answer-fx-select {
+  border: none;
+  border-left: 1px solid var(--color-border);
+  background: transparent;
+  padding: 10px 12px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  cursor: pointer;
+  outline: none;
+}
+
+.c-answer-fx-select option {
   background-color: var(--color-surface);
-  cursor: default;
+  color: var(--color-text);
 }
 
-.c-answer-input-symbol {
-  position: absolute;
-  right: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--color-text-dim);
-  pointer-events: none;
-}
-
-.c-answer-eq {
-  font-size: var(--text-lg);
-  font-weight: 700;
-  color: var(--color-text-dim);
-}
-
-.c-answer-card__calc .c-answer-card__expr {
+.c-answer-card__calc .c-answer-card__sub-title {
   font-size: var(--text-base);
   color: var(--color-text-dim);
   margin-bottom: 4px;
 }
 
-.c-answer-card__calc .c-answer-card__calc-result {
+.c-answer-card__calc .c-answer-card__headline {
   font-size: 2.2rem;
   font-weight: 800;
   color: var(--color-text);
+  margin: 0;
 }

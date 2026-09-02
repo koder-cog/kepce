@@ -389,6 +389,7 @@ async function solveInstantQuery(query) {
         toCurrencyName: toInfo.name,
         fromRate,
         toRate,
+        allRates: fxData.rates,
         date: fxData.dateStr || "Bugün",
       };
     }
@@ -446,9 +447,12 @@ export async function load({ url, fetch }) {
   // Anlık Yanıt Çözücü (Döviz, Hesap Makinesi)
   const instantAnswer = await solveInstantQuery(q);
 
+  // Doğal dildeki döviz sorgularında organik haber/piyasa sonuçlarının akması için anahtar kelime ayarlaması
+  const effectiveQuery = instantAnswer?.type === "currency" ? `${instantAnswer.fromCurrencyName} kuru` : q;
+
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   const searchParams = new URLSearchParams({
-    q,
+    q: effectiveQuery,
     format: "json",
     categories: category,
     pageno: String(Math.max(1, page)),
