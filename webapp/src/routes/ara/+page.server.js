@@ -80,6 +80,80 @@ async function fetchPlaceDetails(placeName) {
   }
 }
 
+// Türkçe karakter normalizasyonu
+function normalizeTr(str) {
+  return str
+    .toLowerCase()
+    .replace(/ü/g, "u")
+    .replace(/ö/g, "o")
+    .replace(/ş/g, "s")
+    .replace(/ç/g, "c")
+    .replace(/ğ/g, "g")
+    .replace(/ı/g, "i")
+    .replace(/[^a-z0-9\s]/g, "")
+    .trim();
+}
+
+// Sorgu-Başlık Uyum Filtresi (Relevance Gate)
+function isRelevantInfobox(query, title) {
+  if (!query || !title) return false;
+  const qNorm = normalizeTr(query);
+  const tNorm = normalizeTr(title);
+
+  // Tam eşleşme veya içerme
+  if (tNorm.includes(qNorm) || qNorm.includes(tNorm)) return true;
+
+  const qWords = qNorm.split(/\s+/).filter((w) => w.length > 1);
+  const tWords = tNorm.split(/\s+/).filter((w) => w.length > 1);
+
+  if (qWords.length === 0 || tWords.length === 0) return false;
+
+  // Sorgu kelimelerinin en az %40'ı başlıkta bulunmalı
+  const qInT = qWords.filter((w) => tWords.some((tw) => tw.includes(w) || w.includes(tw)));
+  if (qInT.length / qWords.length >= 0.4) return true;
+
+  // Başlık kelimelerinin en az %40'ı sorguda bulunmalı
+  const tInQ = tWords.filter((w) => qWords.some((qw) => qw.includes(w) || w.includes(qw)));
+  if (tInQ.length / tWords.length >= 0.4) return true;
+
+  return false;
+}
+
+// Wikidata P-kodu ve gereksiz URL temizliği
+const JUNK_URL_PATTERNS = [/^P\d+$/, /^Q\d+$/, /musicbrainz/i];
+
+function cleanUrls(urls) {
+  return (urls || []).filter((link) => {
+    const t = (link.title || "").trim();
+    return !JUNK_URL_PATTERNS.some((p) => p.test(t));
+  });
+}
+
+// Birim ve tarih formatlama
+const DAY_NAMES_TR = /\s+(pazartesi|salı|çarşamba|perşembe|cuma|cumartesi|pazar)$/i;
+
+function formatAttrValue(label, value) {
+  if (!value) return value;
+  let v = value;
+
+  // m² → km² dönüşümü
+  const sqmMatch = v.match(/^(\d[\d\s.,]*)(?:\s*)m²$/i);
+  if (sqmMatch) {
+    const num = parseFloat(sqmMatch[1].replace(/\s/g, "").replace(",", "."));
+    if (num >= 1_000_000) {
+      v = `${(num / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} km²`;
+    }
+  }
+
+  // "santimetre" → "cm"
+  v = v.replace(/\s*santimetre$/i, " cm");
+
+  // Sondaki gün adını kaldır (19 Mayıs 1881 Perşembe → 19 Mayıs 1881)
+  v = v.replace(DAY_NAMES_TR, "");
+
+  return v.trim();
+}
+
 function classifyEntity(box, q) {
   const attributes = box.attributes || [];
   const labels = attributes.map((a) => (a.label || "").toLowerCase());
@@ -276,32 +350,37 @@ export async function load({ url, fetch }) {
       parsedUrl: item.parsed_url || [],
     }));
 
-    const infoboxes = (data.infoboxes || []).map((box) => {
-      const cleanAttrs = (box.attributes || [])
-        .map((a) => ({
-          label: a.label || "",
-          value: a.value || "",
-        }))
-        .filter((a) => a.label && a.value);
+    const rawInfoboxes = (data.infoboxes || [])
+      .map((box) => {
+        const title = box.infobox || box.title || "";
+        const cleanAttrs = (box.attributes || [])
+          .map((a) => ({
+            label: a.label || "",
+            value: formatAttrValue(a.label || "", a.value || ""),
+          }))
+          .filter((a) => a.label && a.value);
 
-      const rawBox = {
-        title: box.infobox || box.title || "",
-        id: box.id || "",
-        content: box.content || "",
-        imgSrc: box.img_src || box.thumbnail || "",
-        urls: box.urls || (box.id ? [{ title: "Vikipedi", url: box.id }] : []),
-        attributes: cleanAttrs,
-        engine: box.engine || (box.engines && box.engines[0]) || "",
-      };
+        const rawBox = {
+          title,
+          id: box.id || "",
+          content: box.content || "",
+          imgSrc: box.img_src || box.thumbnail || "",
+          urls: cleanUrls(box.urls || (box.id ? [{ title: "Vikipedi", url: box.id }] : [])),
+          attributes: cleanAttrs,
+          engine: box.engine || (box.engines && box.engines[0]) || "",
+        };
 
-      const entityType = classifyEntity(rawBox, q);
+        const entityType = classifyEntity(rawBox, q);
 
-      return {
-        ...rawBox,
-        entityType,
-        placeInfo: null,
-      };
-    });
+        return {
+          ...rawBox,
+          entityType,
+          placeInfo: null,
+        };
+      })
+      .filter((box) => isRelevantInfobox(q, box.title));
+
+    const infoboxes = rawInfoboxes;
 
     if (
       infoboxes.length > 0 &&

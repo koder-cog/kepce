@@ -38,21 +38,42 @@
     if (entityType === "organization") return "Kurum";
     return "Bilgi";
   });
+
+  // Dinamik alt başlık çıkarma
+  let subtitle = $derived.by(() => {
+    if (entityType === "place") {
+      if (place?.country) return place.country;
+      const match = (infobox.content || "").match(/^([^,.]+)/);
+      return match ? match[1].trim() : "Coğrafi Konum";
+    }
+    if (entityType === "person") {
+      const text = infobox.content || "";
+      const parts = text.split(/[,–-]/);
+      if (parts.length > 1 && parts[1].trim().length > 3 && parts[1].trim().length < 60) {
+        return parts[1].trim();
+      }
+      return "Tarihî Şahsiyet / Biyografi";
+    }
+    if (entityType === "organization") {
+      return "Kurum / Kuruluş";
+    }
+    return "Kavram / Nesne";
+  });
+
+  // Kişi için en önemli 4 özet nitelik
+  let personQuickStats = $derived.by(() => {
+    if (entityType !== "person" || !infobox?.attributes) return [];
+    return infobox.attributes.slice(0, 4);
+  });
 </script>
 
 {#if infobox}
   <section class="c-google-knowledge c-google-knowledge--{entityType}" aria-label="Bilgi Kartı">
-    <!-- ── 1. ÜST BAŞLIK (Google Tarzı Başlık & Alt Başlık) ────────── -->
+    <!-- ── 1. ÜST BAŞLIK (Google Tarzı Başlık & Dinamik Alt Başlık) ─ -->
     <header class="c-google-knowledge__header">
       <div class="c-google-knowledge__title-group">
         <h1 class="c-google-knowledge__title">{infobox.title}</h1>
-        {#if place?.country && entityType === "place"}
-          <p class="c-google-knowledge__subtitle">{place.country}</p>
-        {:else if entityType === "person"}
-          <p class="c-google-knowledge__subtitle">Tarihî Şahsiyet / Biyografi</p>
-        {:else if entityType === "organization"}
-          <p class="c-google-knowledge__subtitle">Kurum / Kuruluş</p>
-        {/if}
+        <p class="c-google-knowledge__subtitle">{subtitle}</p>
       </div>
       <div class="c-google-knowledge__badges">
         <span class="c-google-knowledge__badge c-google-knowledge__badge--type">
@@ -190,8 +211,31 @@
           </div>
         </div>
       </div>
+    {:else if entityType === "person" && infobox.imgSrc && !imgError}
+      <!-- 2C. Kişi / Biyografi: Portre Fotoğrafı + Sağda 2x2 Mini Bilgi Matrisi -->
+      <div class="c-google-knowledge__person-showcase">
+        <div class="c-google-knowledge__hero-container c-google-knowledge__hero-container--person">
+          <img
+            src={infobox.imgSrc}
+            alt={infobox.title}
+            class="c-google-knowledge__hero-img"
+            loading="lazy"
+            onerror={handleImgError}
+          />
+        </div>
+        {#if personQuickStats.length > 0}
+          <div class="c-google-person-matrix">
+            {#each personQuickStats as stat}
+              <div class="c-google-person-tile">
+                <span class="c-google-person-tile__label">{stat.label}</span>
+                <span class="c-google-person-tile__value">{stat.value}</span>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
     {:else if infobox.imgSrc && !imgError}
-      <!-- 2C. Kişi / Nesne: Tekil Odaklı Hero Görseli (Harita/Hava Yok!) -->
+      <!-- 2D. Nesne / Genel: Odaklanmış Hero Görseli -->
       <div class="c-google-knowledge__hero-container c-google-knowledge__hero-container--{entityType}">
         <img
           src={infobox.imgSrc}
