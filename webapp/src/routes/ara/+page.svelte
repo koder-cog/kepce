@@ -136,6 +136,12 @@
     }, 200);
   }
 
+  function buildSearchUrl(params) {
+    const qs = params.toString();
+    const prefix = isSubdomain ? "" : "/ara";
+    return `${prefix}${qs ? `?${qs}` : ""}` || "/";
+  }
+
   function handleSearch(e) {
     e?.preventDefault();
     isSuggestionsOpen = false;
@@ -157,7 +163,7 @@
       params.set("guvenli", data.safeSearch);
     }
 
-    goto(`${basePath}/?${params.toString()}`);
+    goto(buildSearchUrl(params));
   }
 
   function handleCategoryChange(catId) {
@@ -175,7 +181,7 @@
     if (data.safeSearch && data.safeSearch !== "1") {
       params.set("guvenli", data.safeSearch);
     }
-    goto(`${basePath}/?${params.toString()}`);
+    goto(buildSearchUrl(params));
   }
 
   function handleFilterChange(key, value) {
@@ -192,7 +198,7 @@
     if (currentTime) params.set("zaman", currentTime);
     if (currentSafe && currentSafe !== "1") params.set("guvenli", currentSafe);
 
-    goto(`${basePath}/?${params.toString()}`);
+    goto(buildSearchUrl(params));
   }
 
   function getPageUrl(pageNum) {
@@ -206,7 +212,7 @@
     if (data.safeSearch && data.safeSearch !== "1")
       params.set("guvenli", data.safeSearch);
     if (pageNum > 1) params.set("sayfa", String(pageNum));
-    return `${basePath}/?${params.toString()}`;
+    return buildSearchUrl(params);
   }
 
   function formatUrlBreadcrumb(rawUrl) {

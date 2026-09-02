@@ -805,8 +805,8 @@
   transform: scale(0.95);
 }
 
-:global([data-theme="dark"]) .c-map-action-btn,
-:global([data-theme="dark"]) .c-map-zoom-group {
+[data-theme="dark"] .c-map-action-btn,
+[data-theme="dark"] .c-map-zoom-group {
   background: rgba(30, 30, 30, 0.88);
 }
 
@@ -1399,21 +1399,18 @@
   margin: 0 0 var(--space-lg);
 }
 
-.c-answer-fx-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 10px;
+/* Google Tarzı Dikey Yığın */
+.c-answer-fx-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 440px;
 }
 
-@media (min-width: 500px) {
-  .c-answer-fx-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.c-answer-fx-box {
+.c-answer-fx-row {
   display: flex;
   align-items: center;
+  height: 48px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface-sunken);
@@ -1421,37 +1418,65 @@
   transition: border-color var(--dur-fast) var(--ease-standard);
 }
 
-.c-answer-fx-box:focus-within {
+.c-answer-fx-row:focus-within {
   border-color: var(--color-accent-primary);
 }
 
 .c-answer-fx-input {
   flex: 1;
-  padding: 10px 12px;
+  height: 100%;
+  padding: 0 14px;
   border: none;
   background: transparent;
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 700;
   color: var(--color-text);
   outline: none;
   min-width: 0;
 }
 
+.c-answer-fx-divider {
+  width: 1px;
+  height: 26px;
+  background-color: var(--color-border);
+  flex-shrink: 0;
+}
+
+.c-answer-fx-select-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 155px;
+  height: 100%;
+}
+
 .c-answer-fx-select {
+  width: 100%;
+  height: 100%;
   border: none;
-  border-left: 1px solid var(--color-border);
   background: transparent;
-  padding: 10px 12px;
-  font-size: var(--text-sm);
+  padding: 0 30px 0 12px;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--color-text);
   cursor: pointer;
   outline: none;
+  appearance: none;
+  -webkit-appearance: none;
 }
 
 .c-answer-fx-select option {
   background-color: var(--color-surface);
   color: var(--color-text);
+}
+
+.c-answer-fx-arrow {
+  position: absolute;
+  right: 10px;
+  pointer-events: none;
+  color: var(--color-text-dim);
+  display: flex;
+  align-items: center;
 }
 
 .c-answer-card__calc .c-answer-card__sub-title {
