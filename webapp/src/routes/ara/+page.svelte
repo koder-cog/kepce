@@ -8,6 +8,7 @@
   import SearchInfoModal from "@/components/features/search/SearchInfoModal.svelte";
   import SearchSettingsModal from "@/components/features/search/SearchSettingsModal.svelte";
   import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
+  import AnswerCard from "@/components/features/search/AnswerCard.svelte";
 
   let { data } = $props();
 
@@ -482,7 +483,14 @@
 
     <!-- Sonuçlar Gövdesi -->
     <main class="c-search-body">
-      <!-- Üst Bilgi Kartı (Google Tarzı Instant Knowledge Panel) -->
+      <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi) -->
+      {#if data.answer}
+        <div class="c-search-top-answer">
+          <AnswerCard answer={data.answer} />
+        </div>
+      {/if}
+
+      <!-- 2. Üst Bilgi Kartı (Google Tarzı Instant Knowledge Panel) -->
       {#if data.infoboxes && data.infoboxes.length > 0}
         <div class="c-search-top-knowledge">
           <KnowledgeCard infobox={data.infoboxes[0]} />
@@ -495,7 +503,7 @@
           <div class="card u-p-lg">
             <p class="u-text-sm u-color-danger">{data.error}</p>
           </div>
-        {:else if data.results.length === 0}
+        {:else if data.results.length === 0 && !data.answer && (!data.infoboxes || data.infoboxes.length === 0)}
           <div class="card u-p-lg">
             <p class="u-text-sm">
               <strong>{data.query}</strong> ile ilgili sonuç bulunamadı.

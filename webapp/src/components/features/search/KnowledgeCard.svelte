@@ -61,6 +61,11 @@
     if (!infobox?.attributes) return [];
     return infobox.attributes.slice(0, 6);
   });
+
+  // İkincil dış bağlantılar (Vikipedi zaten özet metninde bağlı)
+  let secondaryLinks = $derived.by(() => {
+    return (infobox?.urls || []).filter((l) => l.title !== "Vikipedi");
+  });
 </script>
 
 {#if infobox}
@@ -301,9 +306,9 @@
     {/if}
 
     <!-- ── 3. ALT DIŞ BAĞLANTI HAPLARI ───────────────────────────── -->
-    {#if infobox.urls && infobox.urls.length > 1}
+    {#if secondaryLinks.length > 0}
       <footer class="c-knowledge-footer">
-        {#each infobox.urls.slice(1, 4) as link}
+        {#each secondaryLinks.slice(0, 3) as link}
           <a
             href={link.url}
             target="_blank"

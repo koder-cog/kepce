@@ -1,61 +1,31 @@
 import { env } from "$env/dynamic/private";
 
-async function fetchPlaceDetails(placeName) {
-  if (!placeName || placeName.length < 2) return null;
-
-  let lat = null;
-  let lon = null;
-  let displayName = placeName;
-  let country = "";
-
+// Open-Meteo ve Coğrafi Konum Servisi (Nominatim)
+async function fetchPlaceDetails(query) {
   try {
-    // 1. Open-Meteo Geocoding (şehirler ve yerleşimler)
-    const geoRes = await fetch(
-      `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(placeName)}&count=1&language=tr`,
-      { signal: AbortSignal.timeout(1000) }
-    );
-    if (geoRes.ok) {
-      const geoData = await geoRes.json();
-      if (geoData.results && geoData.results.length > 0) {
-        const place = geoData.results[0];
-        lat = place.latitude;
-        lon = place.longitude;
-        displayName = place.name;
-        country = place.country || "";
-      }
-    }
+    const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`;
+    const geoRes = await fetch(geoUrl, {
+      headers: { "User-Agent": "Kepce/1.0 (bilgi@kepce.org)" },
+      signal: AbortSignal.timeout(3000),
+    });
 
-    // 2. Nominatim Fallback (göller, dağlar, üniversiteler, yapılar)
-    if (!lat || !lon) {
-      const nomRes = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(placeName)}&format=json&limit=1`,
-        {
-          headers: { "User-Agent": "KepceSearch/1.0" },
-          signal: AbortSignal.timeout(1200),
-        }
-      );
-      if (nomRes.ok) {
-        const nomData = await nomRes.json();
-        if (nomData && nomData.length > 0) {
-          lat = parseFloat(nomData[0].lat);
-          lon = parseFloat(nomData[0].lon);
-          displayName = nomData[0].name || placeName;
-          const parts = (nomData[0].display_name || "").split(", ");
-          country = parts[parts.length - 1] || "";
-        }
-      }
-    }
+    if (!geoRes.ok) return null;
+    const geoData = await geoRes.json();
+    if (!geoData || geoData.length === 0) return null;
 
-    if (!lat || !lon) return null;
+    const top = geoData[0];
+    const lat = parseFloat(top.lat);
+    const lon = parseFloat(top.lon);
+    const displayName = top.name || top.display_name.split(",")[0];
+    const country = top.address?.country || "";
 
-    // 3. Open-Meteo Hava Durumu
-    const weatherRes = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3`,
-      { signal: AbortSignal.timeout(1000) }
-    );
+    // Open-Meteo ile güncel ve 3 günlük hava tahmini
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3`;
+    const wRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(3000) });
+
     let weather = null;
-    if (weatherRes.ok) {
-      const wData = await weatherRes.json();
+    if (wRes.ok) {
+      const wData = await wRes.json();
       weather = {
         currentTemp: Math.round(wData.current?.temperature_2m ?? 0),
         weatherCode: wData.current?.weather_code ?? 0,
@@ -100,7 +70,6 @@ function isRelevantInfobox(query, title) {
   const qNorm = normalizeTr(query);
   const tNorm = normalizeTr(title);
 
-  // Tam eşleşme veya içerme
   if (tNorm.includes(qNorm) || qNorm.includes(tNorm)) return true;
 
   const qWords = qNorm.split(/\s+/).filter((w) => w.length > 1);
@@ -108,19 +77,17 @@ function isRelevantInfobox(query, title) {
 
   if (qWords.length === 0 || tWords.length === 0) return false;
 
-  // Sorgu kelimelerinin en az %40'ı başlıkta bulunmalı
   const qInT = qWords.filter((w) => tWords.some((tw) => tw.includes(w) || w.includes(tw)));
   if (qInT.length / qWords.length >= 0.4) return true;
 
-  // Başlık kelimelerinin en az %40'ı sorguda bulunmalı
   const tInQ = tWords.filter((w) => qWords.some((qw) => qw.includes(w) || w.includes(qw)));
   if (tInQ.length / tWords.length >= 0.4) return true;
 
   return false;
 }
 
-// Gereksiz dış bağlantıları filtreleme ve sadeleştirme
-const JUNK_URL_PATTERNS = [/^P\d+$/, /^Q\d+$/, /musicbrainz/i];
+// Gereksiz dış bağlantıları filtreleme ve sadeleştirme (P18, Q123 gibi Wikidata çöpleri engellenir)
+const JUNK_URL_PATTERNS = [/^[pq]\d+$/i, /musicbrainz/i, /^commons/i, /wikidata/i, /property:/i];
 
 function cleanUrls(urls) {
   if (!urls || urls.length === 0) return [];
@@ -136,9 +103,10 @@ function cleanUrls(urls) {
       const t = (link.title || "").trim().toLowerCase();
       const u = (link.url || "").toLowerCase();
 
-      if (JUNK_URL_PATTERNS.some((p) => p.test(t))) return false;
-      if (t === "wikidata" || u.includes("wikidata.org")) return false;
+      if (JUNK_URL_PATTERNS.some((p) => p.test(t) || p.test(u))) return false;
+      if (t === "wikidata" || u.includes("wikidata.org") || u.includes("/wiki/property:")) return false;
       if (t.includes("musicbrainz") || u.includes("musicbrainz.org")) return false;
+      if (t === "kaynak" || t === "source" || t.length <= 2) return false;
 
       // Türkçe Vikipedi varsa İngilizce Vikipedi kopyasını gösterme
       if (hasTrWiki && (u.includes("en.wikipedia.org") || t.includes("(en)"))) {
@@ -148,7 +116,7 @@ function cleanUrls(urls) {
       return true;
     })
     .map((link) => {
-      let title = link.title || "Kaynak";
+      let title = link.title || "";
       const tLower = title.toLowerCase();
       if (tLower.includes("official") || tLower.includes("resmî") || tLower.includes("resmi")) {
         title = "Resmî site";
@@ -161,7 +129,8 @@ function cleanUrls(urls) {
         ...link,
         title,
       };
-    });
+    })
+    .filter((link) => link.title && link.title.length > 2);
 }
 
 // Nitelik etiketlerini insan diline ve kısa forma dönüştürme
@@ -195,50 +164,42 @@ function formatAttrLabel(label) {
 const DAY_NAMES_TR = /\s+(pazartesi|salı|çarşamba|perşembe|cuma|cumartesi|pazar)$/i;
 
 function formatAttrValue(label, value) {
-  if (!value) return value;
-  let v = value.trim();
+  if (!value) return "";
+  let str = String(value).trim();
 
-  // m² → km² dönüşümü
-  const sqmMatch = v.match(/^(\d[\d\s.,]*)(?:\s*)m²$/i);
-  if (sqmMatch) {
-    const num = parseFloat(sqmMatch[1].replace(/\s/g, "").replace(",", "."));
-    if (num >= 1_000_000) {
-      v = `${(num / 1_000_000).toLocaleString("tr-TR", { maximumFractionDigits: 1 })} km²`;
-    }
-  }
+  // Tarih sonundaki gün adlarını temizleme
+  str = str.replace(DAY_NAMES_TR, "");
 
-  // Düz sayısal büyük değerler (örn: nüfus "592713" -> "592.713")
-  if (/^\d{4,}$/.test(v)) {
-    const num = parseInt(v, 10);
+  // Büyük sayıları binlik basamaklara ayırma (örn: 592713 -> 592.713)
+  if (/^\d{4,9}$/.test(str)) {
+    const num = parseInt(str, 10);
     if (!isNaN(num)) {
-      v = num.toLocaleString("tr-TR");
+      return num.toLocaleString("tr-TR");
     }
   }
 
-  // "santimetre" → "cm"
-  v = v.replace(/\s*santimetre$/i, " cm");
+  // Alan için km² ekleme
+  const labelLower = (label || "").toLowerCase();
+  if ((labelLower.includes("alan") || labelLower.includes("yüzölçüm")) && /^\d+(?:[.,]\d+)?$/.test(str)) {
+    return `${str} km²`;
+  }
 
-  // Sondaki gün adını kaldır (19 Mayıs 1881 Perşembe → 19 Mayıs 1881)
-  v = v.replace(DAY_NAMES_TR, "");
-
-  return v.trim();
+  return str;
 }
 
-function classifyEntity(box, q) {
-  const attributes = box.attributes || [];
-  const labels = attributes.map((a) => (a.label || "").toLowerCase());
-  const text = `${box.title || ""} ${box.content || ""} ${q || ""}`.toLowerCase();
+// Varlık Tipi Sınıflandırıcısı
+function classifyEntity(infobox, query) {
+  const text = `${infobox.title} ${infobox.content || ""}`.toLowerCase();
+  const labels = (infobox.attributes || []).map((a) => a.label.toLowerCase());
 
-  // 1. Kişi (Person) Kontrolü
+  // 1. Kişi / Biyografi (Person) Kontrolü
   const personLabels = [
     "doğum tarihi",
     "ölüm tarihi",
     "vatandaşlığı",
-    "mesleği",
     "eşi",
     "çocukları",
-    "boyu",
-    "ebeveynleri",
+    "mesleği",
     "etkin yılları",
     "eğitimi",
   ];
@@ -246,26 +207,27 @@ function classifyEntity(box, q) {
     return "person";
   }
   const personKeywords = [
+    "türk siyasetçi",
+    "türk oyuncu",
+    "türk yazar",
+    "türk futbolcu",
+    "türk akademisyen",
     "devlet adamı",
-    "mareşal",
-    "yazar",
+    "cumhurbaşkanı",
+    "başbakan",
     "şair",
-    "fizikçi",
-    "matematikçi",
-    "müzisyen",
-    "futbolcu",
+    "yazar",
     "oyuncu",
-    "şarkıcı",
+    "müzisyen",
+    "besteci",
     "ressam",
+    "futbolcu",
+    "basketbolcu",
     "bilim insanı",
-    "politikacı",
-    "filozof",
+    "profesör",
+    "tarihçi",
   ];
-  if (
-    personKeywords.some((k) => text.includes(k)) &&
-    !text.includes("üniversite") &&
-    !text.includes("şehir")
-  ) {
+  if (personKeywords.some((k) => text.includes(k))) {
     return "person";
   }
 
@@ -342,6 +304,119 @@ function classifyEntity(box, q) {
   return "thing";
 }
 
+// ── Canlı Döviz ve Matematik Motoru (Instant Answer Engine) ─────────────────────────
+const CURRENCY_CODES = {
+  dolar: { code: "USD", name: "Amerikan Doları" },
+  usd: { code: "USD", name: "Amerikan Doları" },
+  dollar: { code: "USD", name: "Amerikan Doları" },
+  "$": { code: "USD", name: "Amerikan Doları" },
+  euro: { code: "EUR", name: "Euro" },
+  avro: { code: "EUR", name: "Euro" },
+  eur: { code: "EUR", name: "Euro" },
+  "€": { code: "EUR", name: "Euro" },
+  sterlin: { code: "GBP", name: "İngiliz Sterlini" },
+  gbp: { code: "GBP", name: "İngiliz Sterlini" },
+  pound: { code: "GBP", name: "İngiliz Sterlini" },
+  "£": { code: "GBP", name: "İngiliz Sterlini" },
+  tl: { code: "TRY", name: "Türk Lirası" },
+  try: { code: "TRY", name: "Türk Lirası" },
+  lira: { code: "TRY", name: "Türk Lirası" },
+  "₺": { code: "TRY", name: "Türk Lirası" },
+  yen: { code: "JPY", name: "Japon Yeni" },
+  jpy: { code: "JPY", name: "Japon Yeni" },
+  "¥": { code: "JPY", name: "Japon Yeni" },
+  frank: { code: "CHF", name: "İsviçre Frangı" },
+  chf: { code: "CHF", name: "İsviçre Frangı" },
+};
+
+let fxRatesCache = {
+  timestamp: 0,
+  dateStr: "",
+  rates: { USD: 1, TRY: 48.27, EUR: 0.86, GBP: 0.74, JPY: 160.0, CHF: 0.81 },
+};
+
+async function getFxRates() {
+  const now = Date.now();
+  if (now - fxRatesCache.timestamp < 15 * 60 * 1000 && Object.keys(fxRatesCache.rates).length > 2) {
+    return fxRatesCache;
+  }
+  try {
+    const res = await fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=TRY,EUR,GBP,JPY,CHF", {
+      signal: AbortSignal.timeout(3000),
+    });
+    if (res.ok) {
+      const d = await res.json();
+      fxRatesCache = {
+        timestamp: now,
+        dateStr: d.date || new Date().toISOString().slice(0, 10),
+        rates: {
+          USD: 1,
+          ...d.rates,
+        },
+      };
+    }
+  } catch {
+    // fallback cache
+  }
+  return fxRatesCache;
+}
+
+async function solveInstantQuery(query) {
+  const q = query.trim().toLowerCase();
+
+  // 1. Döviz sorguları (örn: "50 dolar kaç tl", "100 euro kaç tl", "50 usd to try", "dolar kaç tl")
+  const currencyMatch = q.match(/^(\d+(?:[.,]\d+)?\s*)?([a-z$€£₺¥]+)\s*(?:ka[cç]\s*([a-z$€£₺¥]+)|to\s*([a-z$€£₺¥]+)|([a-z$€£₺¥]+))$/i);
+  if (currencyMatch) {
+    const amountRaw = (currencyMatch[1] || "1").replace(",", ".");
+    const fromSymbol = (currencyMatch[2] || "").toLowerCase();
+    const toSymbol = (currencyMatch[3] || currencyMatch[4] || currencyMatch[5] || "tl").toLowerCase();
+
+    const fromInfo = CURRENCY_CODES[fromSymbol];
+    const toInfo = CURRENCY_CODES[toSymbol];
+
+    if (fromInfo && toInfo && fromInfo.code !== toInfo.code) {
+      const fxData = await getFxRates();
+      const amount = parseFloat(amountRaw) || 1;
+      const fromRate = fxData.rates[fromInfo.code] || 1;
+      const toRate = fxData.rates[toInfo.code] || 1;
+
+      return {
+        type: "currency",
+        fromAmount: amount,
+        fromCurrency: fromInfo.code,
+        fromCurrencyName: fromInfo.name,
+        toCurrency: toInfo.code,
+        toCurrencyName: toInfo.name,
+        fromRate,
+        toRate,
+        date: fxData.dateStr || "Bugün",
+      };
+    }
+  }
+
+  // 2. Basit Matematik Hesaplamaları (örn: "125 * 8", "1500 / 12", "45 + 55")
+  if (/^[\d\s.,+\-*/()^%]+$/.test(q) && /[+\-*/^%]/.test(q)) {
+    try {
+      const sanitized = q.replace(/,/g, ".").replace(/\^/g, "**");
+      if (!/[a-zA-Z_$]/.test(sanitized)) {
+        // eslint-disable-next-line no-new-func
+        const result = Function(`'use strict'; return (${sanitized})`)();
+        if (typeof result === "number" && !isNaN(result) && isFinite(result)) {
+          return {
+            type: "calculator",
+            expression: query.trim(),
+            result: result.toLocaleString("tr-TR", { maximumFractionDigits: 6 }),
+          };
+        }
+      }
+    } catch {
+      // ignore calculation error
+    }
+  }
+
+  return null;
+}
+
 export async function load({ url, fetch }) {
   const q = (url.searchParams.get("q") || "").trim();
   const category = url.searchParams.get("kategori") || "general";
@@ -360,12 +435,16 @@ export async function load({ url, fetch }) {
       results: [],
       infoboxes: [],
       suggestions: [],
+      answer: null,
       numberOfResults: 0,
       language: "tr",
       timeRange: "",
       safeSearch: "1",
     };
   }
+
+  // Anlık Yanıt Çözücü (Döviz, Hesap Makinesi)
+  const instantAnswer = await solveInstantQuery(q);
 
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   const searchParams = new URLSearchParams({
@@ -399,11 +478,12 @@ export async function load({ url, fetch }) {
         results: [],
         infoboxes: [],
         suggestions: [],
+        answer: instantAnswer,
         numberOfResults: 0,
         language,
         timeRange,
         safeSearch,
-        error: `Arama servisi yanıt vermedi (${res.status})`,
+        error: instantAnswer ? null : `Arama servisi yanıt vermedi (${res.status})`,
       };
     }
 
@@ -452,14 +532,31 @@ export async function load({ url, fetch }) {
 
     const infoboxes = rawInfoboxes;
 
-    if (
-      infoboxes.length > 0 &&
-      (infoboxes[0].entityType === "place" || infoboxes[0].entityType === "organization")
-    ) {
+    // Hava durumu veya coğrafi yer detaylarını bağlama
+    const isWeatherQuery = q.toLowerCase().includes("hava durumu");
+    if (isWeatherQuery || (infoboxes.length > 0 && (infoboxes[0].entityType === "place" || infoboxes[0].entityType === "organization"))) {
       try {
-        const placeDetails = await fetchPlaceDetails(infoboxes[0].title || q);
+        let locationQuery = infoboxes.length > 0 ? (infoboxes[0].title || q) : q;
+        if (isWeatherQuery) {
+          // "Ankara hava durumu" -> "Ankara"
+          locationQuery = q.replace(/hava\s*durumu/gi, "").trim() || "Ankara";
+        }
+        const placeDetails = await fetchPlaceDetails(locationQuery);
         if (placeDetails) {
-          infoboxes[0].placeInfo = placeDetails;
+          if (infoboxes.length > 0) {
+            infoboxes[0].placeInfo = placeDetails;
+            infoboxes[0].entityType = "place";
+          } else if (isWeatherQuery) {
+            infoboxes.unshift({
+              title: placeDetails.name,
+              content: `${placeDetails.name} için güncel hava durumu ve 3 günlük meteoroloji tahmini.`,
+              imgSrc: "",
+              urls: [],
+              attributes: [],
+              entityType: "place",
+              placeInfo: placeDetails,
+            });
+          }
         }
       } catch {
         // gracefully ignore
@@ -477,6 +574,7 @@ export async function load({ url, fetch }) {
       results,
       infoboxes,
       suggestions,
+      answer: instantAnswer,
       numberOfResults,
       language,
       timeRange,
@@ -492,11 +590,12 @@ export async function load({ url, fetch }) {
       results: [],
       infoboxes: [],
       suggestions: [],
+      answer: instantAnswer,
       numberOfResults: 0,
       language,
       timeRange,
       safeSearch,
-      error: "Arama servisine şu anda ulaşılamıyor.",
+      error: instantAnswer ? null : "Arama servisine şu anda ulaşılamıyor.",
     };
   }
 }
