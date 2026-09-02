@@ -39,9 +39,9 @@
     const now = new Date();
     const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
 
-    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü | Kepçe`);
+    let pageTitle = $derived(`Bugünkü ${cityName} KYK Yemek Menüsü (2026-2027) — Güncel Tabldot | Kepçe`);
     let pageDescription = $derived(
-        `${todayTurkishStr} ${cityName} KYK yemekhane menüsü, kalori değerleri ve beslenme yardımı detayları.`
+        `Bugünkü ${cityName} KYK yurt yemekhane menüsü: ${todayTurkishStr} kahvaltı ve akşam yemeği tabldot listesi, kalori ve beslenme yardımı detayları.`
     );
     let canonicalUrl = $derived(`https://kepce.org/${citySlug}`);
     let ogImage = $derived(`https://kepce.org/api/v1/public/og/city/${citySlug}`);

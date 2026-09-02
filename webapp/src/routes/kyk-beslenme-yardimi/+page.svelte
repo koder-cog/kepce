@@ -26,8 +26,8 @@
 </script>
 
 <Seo
-  title="KYK Beslenme Yardımı | Kepçe"
-  description="KYK yurtlarında beslenme yardımı nasıl işler? Tabldot ve alakart farkı, günlük limitler ve kullanım detayları."
+  title="2026-2027 KYK Beslenme Yardımı Ne Kadar? (Günlük Ücret & Limit) | Kepçe"
+  description="2026-2027 KYK beslenme yardımı kaç TL oldu? Kahvaltı ve akşam yemeği günlük limitleri, tabldot farkı ve hesaplama rehberi."
   image="https://kepce.org/api/v1/public/og/page/rehber"
   canonical="https://kepce.org/kyk-beslenme-yardimi"
   schema={guideSchema}

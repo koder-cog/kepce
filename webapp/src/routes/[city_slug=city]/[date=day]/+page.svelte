@@ -110,10 +110,10 @@
 
 <Seo
     title={formattedDate
-        ? `${formattedDate} ${cityName} KYK Menüsü | Kepçe`
-        : "KYK Gün Menüsü | Kepçe"}
+        ? `${formattedDate} ${cityName} KYK Yemek Menüsü (Günün Tabldot Listesi) | Kepçe`
+        : "KYK Günlük Yemek Menüsü | Kepçe"}
     description={summaryText ||
-        `${cityName} KYK yurt yemekhane gün menüsü, kahvaltı ve akşam yemeği listesi.`}
+        `${formattedDate} ${cityName} KYK yurt yemekhanesi kahvaltı ve akşam menüsü tabldot listesi, yemek kalori ve fiyat detayları.`}
     image={ogImage}
     canonical={`https://kepce.org/${citySlug}/${date}`}
     schema={daySchema}

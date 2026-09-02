@@ -244,6 +244,16 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    let db_telegram = db.clone();
+    let rx_telegram = shutdown_rx.clone();
+
+    // İki Yönlü Telegram Operatör Botu Döngüsü (TELEGRAM_BOT_TOKEN varsa başlar)
+    let telegram_task = tokio::spawn(async move {
+        if let Err(e) = tasks::telegram_bot::run_telegram_bot_loop(&db_telegram, rx_telegram).await {
+            tracing::error!("[TELEGRAM-BOT] Bot döngüsünde kritik hata: {:?}", e);
+        }
+    });
+
     // Graceful Shutdown dinleyicisi
     let shutdown_signal = async {
         #[cfg(unix)]
@@ -274,7 +284,7 @@ async fn main() -> anyhow::Result<()> {
     let _ = shutdown_tx.send(true);
 
     // Görevlerin bitmesini bekle
-    let _ = tokio::join!(local_task, scraper_task, notifier_task);
+    let _ = tokio::join!(local_task, scraper_task, notifier_task, telegram_task);
     tracing::info!("Tüm görevler başarıyla durduruldu. Worker güvenli bir şekilde kapatıldı.");
 
     Ok(())

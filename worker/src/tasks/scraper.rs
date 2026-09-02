@@ -38,9 +38,26 @@ async fn trip_ban(reason: &str) {
     let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
 }
 
-fn is_banned() -> bool {
+pub fn is_banned() -> bool {
     let until = KYK_BANNED_UNTIL.load(Ordering::Relaxed);
     until > 0 && (chrono::Utc::now().timestamp().max(0) as u64) < until
+}
+
+/// Devre kesici durumunu döner. Banlıysa kalan saniyeyi, değilse None döner.
+pub fn get_ban_status() -> Option<u64> {
+    let until = KYK_BANNED_UNTIL.load(Ordering::Relaxed);
+    let now = chrono::Utc::now().timestamp().max(0) as u64;
+    if until > now {
+        Some(until - now)
+    } else {
+        None
+    }
+}
+
+/// Devre kesiciyi manuel olarak sıfırlar.
+pub fn reset_ban_status() {
+    KYK_BANNED_UNTIL.store(0, Ordering::Relaxed);
+    KYK_429_STREAK.store(0, Ordering::Relaxed);
 }
 
 /// Chrome 144 (LTS) User-Agent. Tek noktadan yönetilir.

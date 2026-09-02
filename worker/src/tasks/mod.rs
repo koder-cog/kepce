@@ -7,3 +7,4 @@ pub mod historical_ingest;
 pub mod meal_notifier;
 pub mod indexnow;
 pub mod enrich_takeaway;
+pub mod telegram_bot;
