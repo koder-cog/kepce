@@ -5,7 +5,6 @@
   import { icon } from "@/components/ui/icons.js";
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
-  import RegionSwitch from "@/components/features/search/RegionSwitch.svelte";
   import SearchInfoModal from "@/components/features/search/SearchInfoModal.svelte";
   import SearchSettingsModal from "@/components/features/search/SearchSettingsModal.svelte";
   import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
@@ -128,6 +127,29 @@
     { id: "it", label: "Kod" },
     { id: "science", label: "Akademi" },
     { id: "map", label: "Haritalar" },
+  ];
+
+  const REGION_OPTIONS = [
+    { value: "all", label: "Tüm bölgeler" },
+    { value: "tr", label: "Türkiye" },
+    { value: "de-DE", label: "Almanya" },
+    { value: "en-US", label: "Amerika Birleşik Devletleri" },
+    { value: "az", label: "Azerbaycan" },
+    { value: "en-GB", label: "Birleşik Krallık" },
+    { value: "pt-BR", label: "Brezilya" },
+    { value: "zh-CN", label: "Çin" },
+    { value: "fr-FR", label: "Fransa" },
+    { value: "ko-KR", label: "Güney Kore" },
+    { value: "nl-NL", label: "Hollanda" },
+    { value: "es-ES", label: "İspanya" },
+    { value: "sv-SE", label: "İsveç" },
+    { value: "it-IT", label: "İtalya" },
+    { value: "ja-JP", label: "Japonya" },
+    { value: "en-CA", label: "Kanada" },
+    { value: "pl-PL", label: "Polonya" },
+    { value: "ru-RU", label: "Rusya" },
+    { value: "ar-SA", label: "Suudi Arabistan" },
+    { value: "el-GR", label: "Yunanistan" },
   ];
 
   function handleGlobalKeydown(e) {
@@ -764,10 +786,12 @@
         />
       </div>
 
-      <!-- 2. Filtreler (DuckDuckGo Bölge Switch'i & Kepçe Dropdown Ghost) -->
+      <!-- 2. Filtreler (Kepçe Dropdown Ghost) -->
       <div class="c-search-pill-filters">
-        <RegionSwitch
+        <Dropdown
+          variant="ghost"
           value={data.language || "tr"}
+          options={REGION_OPTIONS}
           onChange={(val) => handleFilterChange("dil", val)}
         />
 
