@@ -534,52 +534,90 @@
   text-overflow: ellipsis;
 }
 
-/* ── Bilgi Kartı (Knowledge Graph Paneli - 2fr Resim + 1fr Harita + 1fr Hava) ── */
-.c-knowledge-card {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  width: 100%;
+/* ── Bilgi Kartı (Google Tarzı Knowledge Panel) ───────────── */
+.c-google-knowledge {
   display: flex;
   flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-xl);
 }
 
-/* 1. Üst Vitrin Izgarası (Showcase Grid) */
-.c-knowledge-card__showcase {
+/* 1. Üst Başlık */
+.c-google-knowledge__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 0 var(--space-2xs);
+}
+
+.c-google-knowledge__title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-google-knowledge__title {
+  font-family: var(--font-heading);
+  font-size: 1.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0;
+  line-height: 1.15;
+}
+
+.c-google-knowledge__subtitle {
+  font-size: 0.95rem;
+  color: var(--color-text-dim);
+  margin: 0;
+}
+
+.c-google-knowledge__badge {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--color-accent-primary);
+  background-color: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-accent-primary) 25%, transparent);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* 2. Vitrin Izgarası (Showcase Grid) */
+.c-google-knowledge__showcase {
   display: grid;
   grid-template-columns: 1fr;
-  gap: var(--space-xs);
-  padding: var(--space-xs);
-  background-color: var(--color-surface-sunken);
-  border-bottom: 1px solid var(--color-border);
+  gap: 12px;
 }
 
-@media (min-width: 600px) {
-  .c-knowledge-card__showcase {
-    grid-template-columns: 2fr 1.2fr 1fr;
-    height: 220px;
+@media (min-width: 680px) {
+  .c-google-knowledge__showcase {
+    grid-template-columns: 1.8fr 1.1fr 1fr;
+    height: 210px;
   }
 }
 
-/* Resim Alanı (2fr) */
-.c-knowledge-card__hero {
-  position: relative;
-  width: 100%;
-  height: 200px;
-  background-color: var(--color-surface);
-  border-radius: var(--radius-lg);
+.c-google-showcase-tile {
+  border-radius: 20px;
   overflow: hidden;
+  position: relative;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-sm);
 }
 
-@media (min-width: 600px) {
-  .c-knowledge-card__hero {
+.c-google-showcase-tile--photo {
+  height: 200px;
+}
+
+@media (min-width: 680px) {
+  .c-google-showcase-tile--photo {
     height: 100%;
   }
 }
 
-.c-knowledge-card__img {
+.c-google-showcase-tile__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
@@ -587,118 +625,151 @@
   transition: transform var(--dur-normal) var(--ease-standard);
 }
 
-.c-knowledge-card__hero:hover .c-knowledge-card__img {
+.c-google-showcase-tile--photo:hover .c-google-showcase-tile__img {
   transform: scale(1.03);
 }
 
-.c-knowledge-card__hero-fallback {
+.c-google-showcase-tile__fallback {
   width: 100%;
   height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
-  background: linear-gradient(135deg, var(--color-surface), var(--color-surface-sunken));
+  background: var(--color-surface-sunken);
 }
 
-/* Harita Alanı (1.2fr) */
-.c-knowledge-card__map-card {
-  position: relative;
-  width: 100%;
+/* Harita Karosu */
+.c-google-showcase-tile--map {
   height: 180px;
-  background-color: var(--color-surface);
-  border-radius: var(--radius-lg);
-  overflow: hidden;
-  border: 1px solid var(--color-border);
 }
 
-@media (min-width: 600px) {
-  .c-knowledge-card__map-card {
+@media (min-width: 680px) {
+  .c-google-showcase-tile--map {
     height: 100%;
   }
 }
 
-.c-knowledge-card__map-iframe {
+.c-google-showcase-tile__map-iframe {
   width: 100%;
   height: 100%;
   border: none;
-  filter: saturate(0.85) contrast(1.05);
+  filter: saturate(0.85) contrast(1.1);
   pointer-events: none;
 }
 
-.c-knowledge-card__map-overlay-btn {
+.c-google-showcase-tile__map-overlay {
   position: absolute;
-  bottom: 8px;
-  right: 8px;
-  background-color: rgba(24, 24, 27, 0.85);
+  inset: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 10px;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.55) 0%, transparent 60%);
+  pointer-events: auto;
+}
+
+.c-google-showcase-tile__map-pin {
+  background: rgba(24, 24, 27, 0.85);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   color: #fff;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   padding: 4px 10px;
   border-radius: var(--radius-full);
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  box-shadow: var(--shadow-sm);
-  transition: background-color var(--dur-fast) var(--ease-standard),
-              transform var(--dur-fast) var(--ease-standard);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80%;
 }
 
-.c-knowledge-card__map-overlay-btn:hover {
-  background-color: var(--color-accent-primary);
+.c-google-showcase-tile__map-btn {
+  background: rgba(24, 24, 27, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #fff;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-full);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background-color var(--dur-fast) var(--ease-standard);
 }
 
-/* Hava Durumu Alanı (1fr) */
-.c-knowledge-card__weather-card {
-  position: relative;
-  width: 100%;
+.c-google-showcase-tile__map-btn:hover {
+  background-color: var(--color-accent-primary);
+}
+
+/* Sağ Yığın */
+.c-google-showcase-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
   height: 100%;
-  background: linear-gradient(145deg, var(--color-surface), var(--color-surface-sunken));
+}
+
+.c-google-stat-card {
+  border-radius: 18px;
+  background-color: var(--color-surface);
   border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-sm) var(--space-md);
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+  transition: background-color var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
 }
 
-.c-knowledge-card__weather-header {
+.c-google-stat-card--action:hover {
+  background-color: var(--color-surface-hover);
+  border-color: var(--color-accent-primary);
+}
+
+.c-google-stat-card__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.c-knowledge-card__weather-badge {
-  font-size: 0.7rem;
+.c-google-stat-card__title {
+  font-size: 0.75rem;
   font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
   color: var(--color-text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
 }
 
-.c-knowledge-card__weather-icon {
-  font-size: 1.35rem;
+.c-google-stat-card__icon {
+  font-size: 1.15rem;
 }
 
-.c-knowledge-card__weather-temp {
+.c-google-stat-card__temp-now {
   font-family: var(--font-heading);
-  font-size: 1.75rem;
+  font-size: 1.35rem;
   font-weight: 800;
   color: var(--color-text);
+  margin: 2px 0;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
   line-height: 1;
 }
 
-.c-knowledge-card__weather-cond {
+.c-google-stat-card__cond {
   font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-text-muted);
+  font-weight: 500;
+  color: var(--color-text-dim);
 }
 
-.c-knowledge-card__forecast-row {
+.c-google-stat-card__forecast {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -706,43 +777,121 @@
   border-top: 1px solid var(--color-border);
 }
 
-.c-knowledge-card__forecast-day {
+.c-google-forecast-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1px;
 }
 
-.c-knowledge-card__forecast-day .day-name {
+.c-google-forecast-item .f-day {
   font-size: 0.65rem;
   color: var(--color-text-dim);
   text-transform: capitalize;
 }
 
-.c-knowledge-card__forecast-day .day-icon {
-  font-size: 0.85rem;
+.c-google-forecast-item .f-icon {
+  font-size: 0.8rem;
 }
 
-.c-knowledge-card__forecast-day .day-temp {
+.c-google-forecast-item .f-temp {
   font-size: 0.7rem;
   font-weight: 700;
   color: var(--color-text);
 }
 
-/* Yedek Bilgi Kartı (Harita/Hava Yoksa) */
-.c-knowledge-card__stat-card {
-  width: 100%;
-  height: 100%;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-lg);
-  padding: var(--space-sm) var(--space-md);
-  display: flex;
-  flex-direction: column;
+.c-google-stat-card--action {
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
+  padding: 10px 14px;
 }
 
-.c-knowledge-card__stat-title {
+.c-google-stat-card__action-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.c-google-stat-card__subtext {
+  font-size: 0.75rem;
+  color: var(--color-text-dim);
+}
+
+.c-google-stat-card__arrow {
+  font-size: 1.25rem;
+  color: var(--color-text-dim);
+  font-weight: 700;
+}
+
+/* Genel Tekil Hero */
+.c-google-knowledge__single-hero {
+  border-radius: 20px;
+  overflow: hidden;
+  height: 240px;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+}
+
+.c-google-knowledge__single-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* 3. Alt Detaylar (Hakkında Kartı) */
+.c-google-knowledge__details {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 20px;
+  padding: var(--space-xl);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  box-shadow: var(--shadow-sm);
+}
+
+.c-google-knowledge__section-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.c-google-knowledge__summary {
+  font-size: 0.95rem;
+  line-height: 1.65;
+  color: var(--color-text);
+  max-width: 75ch;
+  margin: 0;
+}
+
+.c-google-knowledge__inline-source {
+  color: var(--color-accent-primary);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 6px;
+}
+
+.c-google-knowledge__inline-source:hover {
+  text-decoration: underline;
+}
+
+.c-google-knowledge__attrs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px var(--space-lg);
+  padding: var(--space-md) 0;
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.c-google-attr-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.c-google-attr-label {
   font-size: 0.7rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -750,122 +899,20 @@
   color: var(--color-text-dim);
 }
 
-.c-knowledge-card__stat-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.c-knowledge-card__stat-item {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  font-size: 0.75rem;
-}
-
-.c-knowledge-card__stat-item .stat-label {
-  color: var(--color-text-dim);
-}
-
-.c-knowledge-card__stat-item .stat-value {
-  color: var(--color-text);
-  font-weight: 600;
-}
-
-.c-knowledge-card__stat-empty {
-  font-size: 0.75rem;
-  color: var(--color-text-dim);
-  margin: 0;
-}
-
-/* 2. Alt Detay ve Yazı Alanı */
-.c-knowledge-card__details {
-  padding: var(--space-lg);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-
-.c-knowledge-card__header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--space-sm);
-}
-
-.c-knowledge-card__title {
-  font-family: var(--font-heading);
-  font-size: 1.45rem;
-  font-weight: 800;
-  color: var(--color-text);
-  margin: 0;
-  line-height: 1.2;
-}
-
-.c-knowledge-card__subtitle {
-  display: block;
-  font-size: 0.85rem;
-  color: var(--color-text-dim);
-  margin-top: 2px;
-}
-
-.c-knowledge-card__badge {
-  font-size: 0.75rem;
+.c-google-attr-value {
+  font-size: 0.95rem;
   font-weight: 700;
-  color: var(--color-accent-primary);
-  background-color: color-mix(in srgb, var(--color-accent-primary) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--color-accent-primary) 25%, transparent);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-
-.c-knowledge-card__content {
-  font-size: 0.925rem;
-  line-height: 1.65;
   color: var(--color-text);
-  max-width: 75ch;
-  margin: 0;
-}
-
-.c-knowledge-card__attrs {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-  gap: 8px var(--space-md);
-  padding-top: var(--space-sm);
-  border-top: 1px solid var(--color-border);
-}
-
-.c-knowledge-card__attr-chip {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.c-knowledge-card__attr-label {
-  color: var(--color-text-dim);
-  font-weight: 600;
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-}
-
-.c-knowledge-card__attr-value {
-  color: var(--color-text);
-  font-weight: 600;
-  font-size: 0.875rem;
   word-break: break-word;
 }
 
-.c-knowledge-card__links {
+.c-google-knowledge__pills {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
-  padding-top: var(--space-xs);
 }
 
-.c-knowledge-card__link-pill {
+.c-google-pill-btn {
   display: inline-flex;
   align-items: center;
   gap: 4px;
@@ -874,7 +921,7 @@
   color: var(--color-text);
   background-color: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
-  padding: 4px 10px;
+  padding: 5px 12px;
   border-radius: var(--radius-full);
   text-decoration: none;
   transition: background-color var(--dur-fast) var(--ease-standard),
@@ -882,13 +929,13 @@
               color var(--dur-fast) var(--ease-standard);
 }
 
-.c-knowledge-card__link-pill:hover {
+.c-google-pill-btn:hover {
   background-color: var(--color-surface-hover);
   border-color: var(--color-accent-primary);
   color: var(--color-accent-primary);
 }
 
-.c-knowledge-card__link-icon {
+.c-google-pill-arrow {
   font-size: 0.75rem;
   opacity: 0.7;
 }

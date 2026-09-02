@@ -2,19 +2,56 @@ import { env } from "$env/dynamic/private";
 
 async function fetchPlaceDetails(placeName) {
   if (!placeName || placeName.length < 2) return null;
+
+  let lat = null;
+  let lon = null;
+  let displayName = placeName;
+  let country = "";
+
   try {
+    // 1. Open-Meteo Geocoding (şehirler ve yerleşimler)
     const geoRes = await fetch(
       `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(placeName)}&count=1&language=tr`,
-      { signal: AbortSignal.timeout(1200) }
+      { signal: AbortSignal.timeout(1000) }
     );
-    if (!geoRes.ok) return null;
-    const geoData = await geoRes.json();
-    if (!geoData.results || geoData.results.length === 0) return null;
+    if (geoRes.ok) {
+      const geoData = await geoRes.json();
+      if (geoData.results && geoData.results.length > 0) {
+        const place = geoData.results[0];
+        lat = place.latitude;
+        lon = place.longitude;
+        displayName = place.name;
+        country = place.country || "";
+      }
+    }
 
-    const place = geoData.results[0];
+    // 2. Nominatim Fallback (göller, dağlar, üniversiteler, yapılar)
+    if (!lat || !lon) {
+      const nomRes = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(placeName)}&format=json&limit=1`,
+        {
+          headers: { "User-Agent": "KepceSearch/1.0" },
+          signal: AbortSignal.timeout(1200),
+        }
+      );
+      if (nomRes.ok) {
+        const nomData = await nomRes.json();
+        if (nomData && nomData.length > 0) {
+          lat = parseFloat(nomData[0].lat);
+          lon = parseFloat(nomData[0].lon);
+          displayName = nomData[0].name || placeName;
+          const parts = (nomData[0].display_name || "").split(", ");
+          country = parts[parts.length - 1] || "";
+        }
+      }
+    }
+
+    if (!lat || !lon) return null;
+
+    // 3. Open-Meteo Hava Durumu
     const weatherRes = await fetch(
-      `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3`,
-      { signal: AbortSignal.timeout(1200) }
+      `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3`,
+      { signal: AbortSignal.timeout(1000) }
     );
     let weather = null;
     if (weatherRes.ok) {
@@ -32,10 +69,10 @@ async function fetchPlaceDetails(placeName) {
     }
 
     return {
-      name: place.name,
-      country: place.country,
-      lat: place.latitude,
-      lon: place.longitude,
+      name: displayName,
+      country,
+      lat,
+      lon,
       weather,
     };
   } catch {
