@@ -271,8 +271,11 @@ export function icon(name, size = 16, className = '', ariaLabel = '') {
     return '';
   }
 
-  const sizeNum = typeof size === 'number' ? size : parseInt(size, 10) || 16;
-  let attrs = `width="${sizeNum}" height="${sizeNum}"`;
+  let attrs = '';
+  if (size !== null && size !== false) {
+    const sizeNum = typeof size === 'number' ? size : parseInt(size, 10) || 16;
+    attrs = `width="${sizeNum}" height="${sizeNum}"`;
+  }
 
   if (className) {
     attrs += ` class="${className}"`;

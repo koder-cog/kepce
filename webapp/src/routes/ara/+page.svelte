@@ -657,8 +657,8 @@
             target="_blank"
             rel="noopener noreferrer"
             class="c-search-icon-btn"
-            aria-label="RSS Akışı"
-            title="Arama Sonuçlarını RSS Beslemesi Olarak Al"
+            aria-label="RSS Linki"
+            title="RSS Linki"
           >
             {@html icon("rss", 20)}
           </a>

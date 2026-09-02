@@ -25,8 +25,8 @@ html.hide-ai .c-assistant-backdrop {
   user-select: none;
   outline: none;
   transition: background-color var(--dur-fast) var(--ease-standard),
-              border-color var(--dur-fast) var(--ease-standard),
-              color var(--dur-fast) var(--ease-standard);
+    border-color var(--dur-fast) var(--ease-standard),
+    color var(--dur-fast) var(--ease-standard);
 }
 
 @media (hover: hover) {
@@ -51,6 +51,7 @@ html.hide-ai .c-assistant-backdrop {
   .c-assistant-trigger--desktop {
     display: none !important;
   }
+
   .c-assistant-trigger--mobile {
     display: flex !important;
   }
@@ -83,7 +84,7 @@ html.hide-ai .c-assistant-backdrop {
   flex-direction: column;
   box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
   transition: opacity var(--dur-default) var(--ease-effects-default),
-              transform var(--dur-default) var(--ease-effects-default);
+    transform var(--dur-default) var(--ease-effects-default);
 }
 
 /* Mobil: Bottom Sheet (<600px) */
@@ -170,7 +171,7 @@ html.hide-ai .c-assistant-backdrop {
   border-radius: var(--radius-sm, 6px);
   cursor: pointer;
   transition: color var(--dur-fast) var(--ease-standard),
-              background-color var(--dur-fast) var(--ease-standard);
+    background-color var(--dur-fast) var(--ease-standard);
 }
 
 .c-assistant-drawer__btn:hover:not(:disabled) {
@@ -214,7 +215,7 @@ html.hide-ai .c-assistant-backdrop {
   border-radius: var(--radius-sm, 4px);
   cursor: pointer;
   transition: background-color var(--dur-fast) var(--ease-standard),
-              color var(--dur-fast) var(--ease-standard);
+    color var(--dur-fast) var(--ease-standard);
 }
 
 .c-assistant-clear-confirm__btn:hover {
@@ -280,6 +281,7 @@ html.hide-ai .c-assistant-backdrop {
     opacity: 0;
     transform: scale(0.98);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -342,8 +344,8 @@ html.hide-ai .c-assistant-backdrop {
   font-size: 0.8125rem;
   line-height: 1;
   transition: color var(--dur-fast) var(--ease-standard),
-              background-color var(--dur-fast) var(--ease-standard),
-              opacity var(--dur-fast) var(--ease-standard);
+    background-color var(--dur-fast) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
 }
 
 .c-assistant-action-btn:hover {
@@ -509,8 +511,13 @@ html.hide-ai .c-assistant-backdrop {
 }
 
 @keyframes assistant-pulse {
-  0% { opacity: 0.4; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 1;
+  }
 }
 
 .c-assistant-msg__bot-actions {
@@ -587,6 +594,7 @@ html.hide-ai .c-assistant-backdrop {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -618,8 +626,8 @@ html.hide-ai .c-assistant-backdrop {
   border-radius: var(--radius-lg, 14px);
   padding: 0.25rem 0.375rem 0.25rem 0.875rem;
   transition: border-color var(--dur-fast) var(--ease-standard),
-              box-shadow var(--dur-fast) var(--ease-standard),
-              opacity var(--dur-fast) var(--ease-standard);
+    box-shadow var(--dur-fast) var(--ease-standard),
+    opacity var(--dur-fast) var(--ease-standard);
 }
 
 .c-assistant-form:focus-within {
@@ -644,7 +652,8 @@ html.hide-ai .c-assistant-backdrop {
   padding: 0.375rem 0;
   resize: none;
   min-height: 1.45rem;
-  max-height: 72px; /* ~3 satır */
+  max-height: 72px;
+  /* ~3 satır */
   overflow-y: auto;
 }
 
@@ -667,8 +676,8 @@ html.hide-ai .c-assistant-backdrop {
   align-self: flex-end;
   margin-bottom: 0.125rem;
   transition: background-color var(--dur-fast) var(--ease-standard),
-              opacity var(--dur-fast) var(--ease-standard),
-              transform var(--dur-fast) var(--ease-standard);
+    opacity var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
 }
 
 .c-assistant-submit:hover:not(:disabled) {
