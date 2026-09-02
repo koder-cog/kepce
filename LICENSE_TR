@@ -28,11 +28,11 @@ altında yayımlayabilirsiniz.
  Herkesin bu lisans belgesinin birebir kopyalarını kopyalamasına ve dağıtmasına
  izin verilir, ancak metnin değiştirilmesine izin verilmez.
 
-                            Önsöz
+                            Ön Söz
 
   GNU Affero Genel Kamu Lisansı, yazılımlar ve diğer türden eserler için
 özgür, "copyleft" (telif feragatli) bir lisanstır; özellikle ağ sunucusu
-yazılımlarında toplulukla işbirliğini güvence altına almak üzere tasarlanmıştır.
+yazılımlarında toplulukla iş birliğini güvence altına almak üzere tasarlanmıştır.
 
   Çoğu yazılım ve diğer pratik eserlerin lisansları, eserleri paylaşma ve değiştirme
 özgürlüğünüzü elinizden alacak şekilde tasarlanmıştır. Buna karşın,
@@ -53,7 +53,7 @@ ve/veya değiştirmeniz için size yasal izin veren bu Lisans'ı sunarlar.
 
   Tüm kullanıcıların özgürlüğünü savunmanın ikincil bir faydası da, programın alternatif
 sürümlerinde yapılan iyileştirmelerin, yaygın kullanıma ulaştığı takdirde diğer geliştiricilerin de
-kullanımına sunulmasıdır. Pek çok özgür yazılım geliştiricisi, bu işbirliği sayesinde
+kullanımına sunulmasıdır. Pek çok özgür yazılım geliştiricisi, bu iş birliği sayesinde
 cesaret bulmakta ve teşvik edilmektedir. Ancak, ağ sunucularında kullanılan yazılımlar söz
 konusu olduğunda, bu sonuç ortaya çıkmayabilir. GNU Genel Kamu Lisansı, değiştirilmiş bir
 sürümün oluşturulmasına ve kaynak kodunun kamuya açılmadan bir sunucu üzerinden
@@ -107,13 +107,13 @@ sürümünü yayımlamıştır.
   bir bilgisayar ağı üzerinden, hiçbir kopya aktarımı olmaksızın bir
   kullanıcı ile etkileşime girmek, iletmek sayılmaz.
 
-  Etkileşimli bir kullanıcı arayüzü; (1) uygun bir telif hakkı bildirimi
+  Etkileşimli bir kullanıcı ara yüzü; (1) uygun bir telif hakkı bildirimi
   gösterdiği ve (2) kullanıcıya eser için hiçbir garanti bulunmadığını
   (garanti sağlandığı durumlar haricinde), lisans alanların eseri bu
-  Lisans kapsamında iletebileceğini ve bu Lisansın bir kopyasını nasıl
+  Lisans kapsamında iletebileceğini ve bu Lisans'ın bir kopyasını nasıl
   görüntüleyebileceklerini belirten kullanışlı ve açıkça görülebilir bir
   özelliğe sahip olduğu ölçüde "Uygun Yasal Bildirimler"i gösterir. Eğer
-  arayüz kullanıcılara bir menü gibi komutlar veya seçenekler listesi
+  ara yüz kullanıcılara bir menü gibi komutlar veya seçenekler listesi
   sunuyorsa, bu listedeki belirgin bir öge bu kriteri karşılar.
 
   1. Kaynak Kod.
@@ -122,16 +122,16 @@ sürümünü yayımlamıştır.
 edilen biçimidir. "Nesne kodu", bir eserin kaynak kodu olmayan herhangi bir
 biçimi anlamına gelir.
 
-  "Standart Arayüz"; tanınmış bir standartlar kurumu tarafından tanımlanmış
+  "Standart Ara Yüz"; tanınmış bir standartlar kurumu tarafından tanımlanmış
 resmî bir standart olan veya belirli bir programlama dili için belirlenmiş
-arayüzler söz konusu olduğunda, o dilde çalışan geliştiriciler arasında
-yaygın olarak kullanılan bir arayüz anlamına gelir.
+ara yüzler söz konusu olduğunda, o dilde çalışan geliştiriciler arasında
+yaygın olarak kullanılan bir ara yüz anlamına gelir.
 
   Çalıştırılabilir bir eserin "Sistem Kütüphaneleri"; eserin tamamı hariç
 olmak üzere, (a) bir Temel Bileşenin normal paketleme biçimine dâhil edilen
 ancak o Temel Bileşenin bir parçası olmayan ve (b) yalnızca eserin o Temel Bileşenle
 birlikte kullanılmasını sağlayan veya kaynak kodu biçiminde kamunun erişimine
-açık bir gerçeklemesi bulunan bir Standart Arayüzü gerçeklemeye yarayan her
+açık bir gerçeklemesi bulunan bir Standart Ara Yüzü gerçeklemeye yarayan her
 şeyi içerir. Bu bağlamda bir "Temel Bileşen"; çalıştırılabilir eserin üzerinde
 çalıştığı belirli bir işletim sisteminin (eğer varsa) temel ve gerekli bir
 bileşeni (çekirdek, pencere sistemi vb.) veya eseri üretmek için kullanılan bir
@@ -144,7 +144,7 @@ için gereken tüm kaynak kodunu ve ayrıca bu etkinlikleri kontrol eden betikle
 ifade eder. Ancak bu, eserin Sistem Kütüphanelerini veya bu etkinlikleri
 gerçekleştirirken değiştirilmeden kullanılan ancak eserin bir parçası olmayan
 genel amaçlı araçları veya genel erişime açık özgür programları içermez.
-Örneğin İlgili Kaynak; eserin kaynak dosyalarıyla ilişkili arayüz tanım
+Örneğin İlgili Kaynak; eserin kaynak dosyalarıyla ilişkili ara yüz tanım
 dosyalarını ve eserin söz konusu alt programlar ile diğer kısımları arasındaki
 yakın veri iletişimi veya kontrol akışı gibi yollarla, özellikle ihtiyaç
 duyacak şekilde tasarlandığı paylaşılan kütüphaneler ve dinamik olarak
@@ -170,7 +170,7 @@ kabul eder.
 kaldığı sürece koşulsuz olarak oluşturabilir, çalıştırabilir ve yayabilirsiniz.
 Korunmuş eserleri, sırf sizin adınıza değişiklik yapmaları için veya
 bu eserleri çalıştırmanız adına size olanak sağlamaları amacıyla; telif
-hakkını kontrol etmediğiniz tüm materyallerin iletilmesinde bu Lisansın
+hakkını kontrol etmediğiniz tüm materyallerin iletilmesinde bu Lisans'ın
 şartlarına uymanız koşuluyla başkalarına iletebilirsiniz. Korunmuş eserleri
 sizin için bu şekilde oluşturan veya çalıştıranlar; bunu yalnızca sizin
 adınıza, sizin yönlendirmeniz ve kontrolünüz altında, sizinle olan
@@ -178,7 +178,7 @@ ilişkileri dışında telif hakkı size ait materyalin herhangi bir kopyasını
 çıkarmalarını yasaklayan şartlar çerçevesinde yapmalıdır.
 
   Eserin başka herhangi bir koşul altında iletilmesine, yalnızca aşağıda
-belirtilen şartlar dahilinde izin verilir. Alt lisanslamaya izin verilmez;
+belirtilen şartlar dâhilinde izin verilir. Alt lisanslamaya izin verilmez;
 bölüm 10 bunu gereksiz kılar.
 
   3. Kullanıcıların Yasal Haklarını Teknolojik Önlemlerin Aşılmasını Önleyici Kanunlara Karşı Korumak.
@@ -199,17 +199,17 @@ vazgeçtiğinizi beyan edersiniz.
 
   4. Birebir Kopyaların İletilmesi.
 
-  Programın kaynak kodunun birebir kopyalarını, teslim aldığınız haliyle herhangi
+  Programın kaynak kodunun birebir kopyalarını, teslim aldığınız hâliyle herhangi
 bir ortamda; her kopyanın üzerinde uygun bir telif hakkı bildirimini açıkça ve
-uygun bir şekilde yayımlamanız, bu Lisansın ve bölüm 7 uyarınca eklenen herhangi
-bir ek koşulun koda uygulandığını belirten tüm bildirimleri dokunulmamış halde
-tutmanız, hiçbir garanti bulunmadığına dair tüm bildirimleri dokunulmamış halde tutmanız
-ve Programla birlikte tüm alıcılara bu Lisansın bir kopyasını vermeniz koşuluyla
+uygun bir şekilde yayımlamanız, bu Lisans'ın ve bölüm 7 uyarınca eklenen herhangi
+bir ek koşulun koda uygulandığını belirten tüm bildirimleri dokunulmamış hâlde
+tutmanız, hiçbir garanti bulunmadığına dair tüm bildirimleri dokunulmamış hâlde tutmanız
+ve Programla birlikte tüm alıcılara bu Lisans'ın bir kopyasını vermeniz koşuluyla
 iletebilirsiniz.
 
   İlettiğiniz her bir kopya için dilediğiniz bir ücreti talep edebilir veya
 ücretsiz olarak verebilirsiniz; ayrıca bir ücret karşılığında destek veya garanti
-koması sunabilirsiniz.
+koruması sunabilirsiniz.
 
   5. Değiştirilmiş Kaynak Sürümlerin İletilmesi.
 
@@ -222,7 +222,7 @@ yerine getirmeniz şartıyla iletebilirsiniz:
 
     b) Eser, bu Lisans ve bölüm 7 uyarınca eklenen herhangi bir koşul altında
     yayımlandığını belirten göze çarpan bildirimler taşımalıdır. Bu gereklilik,
-    bölüm 4'teki "tüm bildirimleri dokunulmamış halde tutmanız" koşulunu
+    bölüm 4'teki "tüm bildirimleri dokunulmamış hâlde tutmanız" koşulunu
     değiştirir.
 
     c) Eserin tamamını bir bütün olarak, kopyasına sahip olan herkese bu Lisans
@@ -232,9 +232,9 @@ yerine getirmeniz şartıyla iletebilirsiniz:
     bir yolla lisanslamaya izin vermez; ancak böyle bir izni ayrıca almışsanız
     bu izni geçersiz kılmaz.
 
-    d) Eserin etkileşimli kullanıcı arayüzleri varsa, her biri Uygun Yasal
+    d) Eserin etkileşimli kullanıcı ara yüzleri varsa, her biri Uygun Yasal
     Bildirimleri göstermelidir; ancak Programın Uygun Yasal Bildirimleri
-    göstermeyen etkileşimli arayüzleri varsa, eserinizin de bunları göstermesine
+    göstermeyen etkileşimli ara yüzleri varsa, eserinizin de bunları göstermesine
     gerek yoktur.
 
   Korunmuş bir eserin, doğası gereği korunmuş eserin bir uzantısı olmayan ve
@@ -243,13 +243,13 @@ ayrı ve bağımsız eserlerle bir depolama veya dağıtım ortamında derlenmes
 eğer bu derleme ve sonucunda ortaya çıkan telif hakkı, derlemenin kullanıcılarının
 erişimini veya yasal haklarını bireysel eserlerin izin verdiğinin ötesinde
 kısıtlamak için kullanılmıyorsa "küme" (aggregate) denir. Korunmuş bir eserin
-bir kümeye dâhil edilmesi, bu Lisansın kümenin diğer parçalarına uygulanmasına
+bir kümeye dâhil edilmesi, bu Lisans'ın kümenin diğer parçalarına uygulanmasına
 neden olmaz.
 
   6. Kaynak Kod Dışındaki Biçimlerin İletilmesi.
 
   Korunmuş bir eseri, makine tarafından okunabilen İlgili Kaynağı da bu
-Lisansın şartları altında aşağıdaki yollardan biriyle iletmeniz koşuluyla,
+Lisans'ın şartları altında aşağıdaki yollardan biriyle iletmeniz koşuluyla,
 bölüm 4 ve 5'in şartlarına uygun olarak nesne kodu biçiminde iletebilirsiniz:
 
     a) Nesne kodunu, yazılım değişimi için alışılagelmiş dayanıklı fiziksel
@@ -336,10 +336,10 @@ kopyalamak için hiçbir özel parola ya da anahtar gerektirmemelidir.
 
   7. Ek Koşullar.
 
-  "Ek yetkiler"; bu Lisansın koşullarından bir veya daha fazlası için istisnalar
-yaratarak Lisansın koşullarını tamamlayan şartlardır. Programın tamamına
+  "Ek yetkiler"; bu Lisans'ın koşullarından bir veya daha fazlası için istisnalar
+yaratarak Lisans'ın koşullarını tamamlayan şartlardır. Programın tamamına
 uygulanabilen ek yetkiler, yürürlükteki kanunlar uyarınca geçerli oldukları
-ölçüde bu Lisansa dâhil edilmiş gibi muamele görecektir. Ek yetkiler yalnızca
+ölçüde bu Lisans'a dâhil edilmiş gibi muamele görecektir. Ek yetkiler yalnızca
 Programın bir kısmına uygulanıyorsa, o kısım söz konusu yetkiler altında ayrı
 olarak kullanılabilir; ancak Programın tamamı, ek yetkiler dikkate alınmaksızın
 bu Lisans tarafından yönetilmeye devam eder.
@@ -351,12 +351,12 @@ kaldırılmalarını şart koşacak şekilde yazılmış olabilir.) Korunmuş bi
 kendi eklediğiniz ve üzerinde uygun telif hakkı iznine sahip olduğunuz veya
 bu izni verebileceğiniz materyallere ek yetkiler koyabilirsiniz.
 
-  Bu Lisansın diğer hükümlerine bakılmaksızın, korunmuş bir esere eklediğiniz
+  Bu Lisans'ın diğer hükümlerine bakılmaksızın, korunmuş bir esere eklediğiniz
 materyaller için, (bu materyalin telif hakkı sahipleri tarafından
-yetkilendirilmişseniz) bu Lisansın şartlarını aşağıdaki şartlarla
+yetkilendirilmişseniz) bu Lisans'ın şartlarını aşağıdaki şartlarla
 tamamlayabilirsiniz:
 
-    a) Garantiyi reddetmek veya sorumluluğu bu Lisansın 15. ve 16.
+    a) Garantiyi reddetmek veya sorumluluğu bu Lisans'ın 15. ve 16.
     bölümlerindeki şartlardan farklı bir şekilde sınırlandırmak; veya
 
     b) Söz konusu materyalde veya onu barındıran eserlerin gösterdiği Uygun
@@ -381,7 +381,7 @@ tamamlayabilirsiniz:
 
   Diğer tüm izin vermeyen ek koşullar, bölüm 10'un anlamı dâhilinde "daha
 ileri kısıtlamalar" (further restrictions) olarak kabul edilir. Programı teslim
-aldığınız haliyle veya herhangi bir kısmı, bu Lisans tarafından yönetildiğini
+aldığınız hâliyle veya herhangi bir kısmı, bu Lisans tarafından yönetildiğini
 belirten bir bildirimin yanı sıra daha ileri kısıtlama niteliğinde bir koşul
 içeriyorsa, o koşulu kaldırabilirsiniz. Bir lisans belgesi daha ileri bir
 kısıtlama içeriyor ancak bu Lisans kapsamında yeniden lisanslamaya veya
@@ -400,13 +400,13 @@ iki durumda da geçerlidir.
 
   8. İptal.
 
-  Korunmuş bir eseri bu Lisansta açıkça belirtilenler dışında yayamaz
+  Korunmuş bir eseri bu Lisans'ta açıkça belirtilenler dışında yayamaz
 veya değiştiremezsiniz. Eseri başka bir şekilde yaymaya veya değiştirmeye
 yönelik her türlü girişim geçersizdir ve bu Lisans kapsamındaki
 haklarınızı (bölüm 11'in üçüncü paragrafı kapsamında verilen patent
 lisansları da dâhil olmak üzere) otomatik olarak sonlandıracaktır.
 
-  Ancak bu Lisansın tüm ihlallerini sonlandırırsanız, belirli bir telif
+  Ancak bu Lisans'ın tüm ihlallerini sonlandırırsanız, belirli bir telif
 hakkı sahibinden aldığınız lisans; (a) telif hakkı sahibi lisansınızı açıkça
 ve nihai olarak sonlandırana kadar geçici olarak, ve (b) ihlalin sona ermesinden
 sonraki 60 gün içinde telif hakkı sahibi ihlali size makul yollarla
@@ -414,7 +414,7 @@ bildirmezse kalıcı olarak iade edilir.
 
   Buna ek olarak, belirli bir telif hakkı sahibinden aldığınız lisans; telif
 hakkı sahibi ihlali size makul bir yolla bildirirse, bu o telif hakkı sahibinden
-(herhangi bir eser için) bu Lisansın ihlaline dair aldığınız ilk bildirimse ve
+(herhangi bir eser için) bu Lisans'ın ihlaline dair aldığınız ilk bildirimse ve
 bildirimi aldıktan sonra 30 gün içinde ihlali giderirseniz kalıcı olarak
 iade edilir.
 
@@ -425,19 +425,19 @@ kapsamında yeni lisanslar almaya hak kazanamazsınız.
 
   9. Kopyalara Sahip Olmak İçin Onay Gerekmemesi.
 
-  Programın bir kopyasını teslim almak veya çalıştırmak için bu Lisansı onaylamak
+  Programın bir kopyasını teslim almak veya çalıştırmak için bu Lisans'ı onaylamak
 zorunda değilsiniz. Sırf bir kopyayı almak için eşler arası iletim kullanmanın
 bir sonucu olarak meydana gelen korunmuş bir eserin ikincil yayımı da aynı şekilde
 onay gerektirmez. Ancak bu Lisans dışında hiçbir şey size herhangi bir korunmuş
-eseri yayma veya değiştirme yetkisi vermez. Bu Lisansı onaylamazsanız bu eylemler
+eseri yayma veya değiştirme yetkisi vermez. Bu Lisans'ı onaylamazsanız bu eylemler
 telif hakkını ihlal eder. Bu nedenle, korunmuş bir eseri değiştirerek veya yayarak,
-bunu yapmak için bu Lisansı onayladığınızı belirtmiş olursunuz.
+bunu yapmak için bu Lisans'ı onayladığınızı belirtmiş olursunuz.
 
   10. Alt Alıcıların Kendiliğinden Lisanslanması.
 
-  Korunmuş bir eseri her ilettiğinizde alıcı, söz konusu eseri bu Lisansa tabi
+  Korunmuş bir eseri her ilettiğinizde alıcı, söz konusu eseri bu Lisans'a tabi
 olarak çalıştırmak, değiştirmek ve yaymak için orijinal lisans verenlerden
-otomatik olarak bir lisans alır. Üçüncü tarafların bu Lisansa uymasını
+otomatik olarak bir lisans alır. Üçüncü tarafların bu Lisans'a uymasını
 sağlamaktan sorumlu değilsiniz.
 
   Bir "kurumsal işlem" (entity transaction); bir organizasyonun kontrolünün,
@@ -464,13 +464,13 @@ açamazsınız.
 bu Lisans altında kullanılmasına yetki veren bir telif hakkı sahibidir. Bu şekilde
 lisanslanan esere, katkıda bulunanın "katkı sürümü" denir.
 
-  Bir katkıda bulunanın "temel patent iddiaları"; halihazırda edinilmiş veya
+  Bir katkıda bulunanın "temel patent iddiaları"; hâlihazırda edinilmiş veya
 gelecekte edinilecek olan, katkıda bulunanın sahip olduğu veya kontrol ettiği ve
-kendi katkı sürümünün bu Lisansın izin verdiği bir şekilde yapılması,
+kendi katkı sürümünün bu Lisans'ın izin verdiği bir şekilde yapılması,
 kullanılması veya satılmasıyla ihlal edilecek tüm patent iddialarıdır,
-ancak katkı sürümünün daha fazla değiştirilmesinin bir sonucu olarak ihlal
+ ancak katkı sürümünün daha fazla değiştirilmesinin bir sonucu olarak ihlal
 edilecek iddiaları kapsamaz. Bu tanımın amaçları doğrultusunda "kontrol", bu
-Lisansın gereksinimleriyle tutarlı bir şekilde patent alt lisansları
+Lisans'ın gereksinimleriyle tutarlı bir şekilde patent alt lisansları
 verme hakkını içerir.
 
   Her bir katkıda bulunan; kendi temel patent iddiaları kapsamında,
@@ -487,11 +487,11 @@ patent lisansını "vermek", o tarafa karşı bir patenti uygulamamaya yönelik
 böyle bir anlaşma veya taahhütte bulunmak anlamına gelir.
 
   Korunmuş bir eseri bilerek bir patent lisansına dayanarak iletiyorsanız
-ve eserin İlgili Kaynağı herkesin ücretsiz olarak ve bu Lisansın şartları altında,
+ve eserin İlgili Kaynağı herkesin ücretsiz olarak ve bu Lisans'ın şartları altında,
 herkese açık bir ağ sunucusu veya kolayca erişilebilen başka yollarla kopyalamasına
 açık değilse, şu seçeneklerden birini uygulamalısınız: (1) İlgili Kaynağın
 böyle bir şekilde erişilebilir olmasını sağlamak, veya (2) söz konusu eser
-için patent lisansının faydasından mahrum kalmayı ayarlamak, veya (3) bu Lisansın
+için patent lisansının faydasından mahrum kalmayı ayarlamak, veya (3) bu Lisans'ın
 gereksinimleriyle uyumlu olacak bir biçimde patent lisansının alt alıcılara da
 genişletilmesini sağlamak. "Bilerek dayanmak", patent lisansı olmasaydı, korunmuş
 eseri bir ülkede iletmenizin veya alıcınızın korunmuş eseri bir ülkede
@@ -519,25 +519,25 @@ lisansı veriyorsa, korunmuş bir eseri iletemezsiniz. Ancak söz konusu düzenl
 girmiş olmanız veya patent lisansının verilmesi 28 Mart 2007 tarihinden önce
 gerçekleşmişse bu kısıtlama uygulanmaz.
 
-  Bu Lisanstaki hiçbir şey, yürürlükteki patent kanunu uyarınca yararlanabileceğiniz
+  Bu Lisans'taki hiçbir şey, yürürlükteki patent kanunu uyarınca yararlanabileceğiniz
 herhangi bir zımni lisansı veya ihlale karşı diğer savunmaları hariç tutacak
 veya sınırlandıracak şekilde yorumlanamaz.
 
   12. Diğerlerinin Özgürlüğünden Vazgeçmemek.
 
-  Eğer size (mahkeme emri, sözleşme veya başka bir yolla) bu Lisansın koşullarıyla
-çelişen koşullar dayatılırsa, bunlar sizi bu Lisansın koşullarından muaf kılmaz.
+  Eğer size (mahkeme emri, sözleşme veya başka bir yolla) bu Lisans'ın koşullarıyla
+çelişen koşullar dayatılırsa, bunlar sizi bu Lisans'ın koşullarından muaf kılmaz.
 Korunmuş bir eseri; hem bu Lisans kapsamındaki yükümlülüklerinizi hem de diğer
 ilgili yükümlülüklerinizi aynı anda yerine getirecek şekilde iletemiyorsanız,
 bunun bir sonucu olarak eseri hiçbir şekilde iletemezsiniz. Örneğin, Programı
 ilettiğiniz kişilerden daha sonraki iletimler için bir imtiyaz hakkı (royalty)
 tahsil etmenizi zorunlu kılan şartları kabul ederseniz, hem bu şartları hem de
-bu Lisansı yerine getirmenin tek yolu Programı iletmekten tamamen vazgeçmek
+bu Lisans'ı yerine getirmenin tek yolu Programı iletmekten tamamen vazgeçmek
 olacaktır.
 
   13. Uzaktan Ağ Etkileşimi; GNU Genel Kamu Lisansı ile Kullanım.
 
-  Bu Lisansın diğer hükümlerine bakılmaksızın, Programı değiştirirseniz,
+  Bu Lisans'ın diğer hükümlerine bakılmaksızın, Programı değiştirirseniz,
 değiştirilmiş sürümünüz; onunla bir bilgisayar ağı üzerinden uzaktan etkileşime
 giren tüm kullanıcılara (eğer sürümünüz böyle bir etkileşimi destekliyorsa),
 yazılımın kopyalanmasını kolaylaştıran bazı standart veya alışılmış araçlar
@@ -546,29 +546,29 @@ sürümünüzün İlgili Kaynağını alma fırsatını belirgin bir şekilde su
 İlgili Kaynak, aşağıdaki paragraf uyarınca dâhil edilen GNU Genel Kamu Lisansı
 sürüm 3 kapsamında korunan herhangi bir eserin İlgili Kaynağını da içerecektir.
 
-  Bu Lisansın diğer hükümlerine bakılmaksızın, herhangi bir korunmuş eseri
+  Bu Lisans'ın diğer hükümlerine bakılmaksızın, herhangi bir korunmuş eseri
 GNU Genel Kamu Lisansı sürüm 3 altında lisanslanmış bir eserle tek bir
 birleşik eserde bağlama veya birleştirme ve ortaya çıkan eseri iletme iznine
-sahipsiniz. Bu Lisansın şartları, korunmuş eser olan kısma uygulanmaya devam
+sahipsiniz. Bu Lisans'ın şartları, korunmuş eser olan kısma uygulanmaya devam
 edecek, ancak birleştirildiği eser GNU Genel Kamu Lisansı sürüm 3 tarafından
 yönetilmeye devam edecektir.
 
   14. Bu Lisansın Revize Edilmiş Sürümleri.
 
   Özgür Yazılım Vakfı (Free Software Foundation), zaman zaman GNU Affero Genel Kamu
-Lisansının revize edilmiş ve/veya yeni sürümlerini yayımlayabilir. Bu tür yeni
+Lisansı'nın revize edilmiş ve/veya yeni sürümlerini yayımlayabilir. Bu tür yeni
 sürümler ruh olarak mevcut sürüme benzeyecek, ancak yeni sorunları veya endişeleri
 ele almak için ayrıntılarda farklılık gösterebilecektir.
 
   Her sürüme ayırt edici bir sürüm numarası verilir. Program, GNU Affero Genel Kamu
-Lisansının belirli numaralı bir sürümünün "veya herhangi bir sonraki sürümünün"
+Lisansı'nın belirli numaralı bir sürümünün "veya herhangi bir sonraki sürümünün"
 kendisine uygulanacağını belirtiyorsa, Özgür Yazılım Vakfı tarafından yayımlanan
 o numaralı sürümün veya sonraki herhangi bir sürümün şart ve koşullarına uyma
-seçeneğine sahipsiniz. Program GNU Affero Genel Kamu Lisansının bir sürüm
+seçeneğine sahipsiniz. Program GNU Affero Genel Kamu Lisansı'nın bir sürüm
 numarasını belirtmiyorsa, Özgür Yazılım Vakfı tarafından şimdiye kadar yayımlanmış
 herhangi bir sürümü seçebilirsiniz.
 
-  Program, GNU Affero Genel Kamu Lisansının gelecekteki hangi sürümlerinin
+  Program, GNU Affero Genel Kamu Lisansı'nın gelecekteki hangi sürümlerinin
 kullanılabileceğine bir vekilin (proxy) karar verebileceğini belirtiyorsa, o vekilin
 bir sürümü kabul ettiğine dair kamuya açık beyanı, Program için o sürümü seçmeniz
 konusunda size kalıcı olarak yetki verir.
@@ -592,7 +592,7 @@ ONARIM VEYA DÜZELTME MASRAFLARINI ÜSTLENİRSİNİZ.
   YÜRÜRLÜKTEKİ KANUNLARIN ZORUNLU KILDIĞI VEYA YAZILI OLARAK KABUL EDİLEN DURUMLAR
 DIŞINDA; HİÇBİR TELİF HAKKI SAHİBİ VEYA PROGRAMI YUKARIDA İZİN VERİLDİĞİ ŞEKİLDE
 DEĞİŞTİREN VE/VEYA İLETEN HERHANGİ BİR DİĞER TARAF, PROGRAMIN KULLANILMASINDAN VEYA
-KULLANILAMAMASINDAN KAYNAKLANAN (VERİ KAYBI VEYA VERİLERİN YANLIŞ HALE GELMESİ
+KULLANILAMAMASINDAN KAYNAKLANAN (VERİ KAYBI VEYA VERİLERİN YANLIŞ HÂLE GELMESİ
 YA DA SİZİN VEYA ÜÇÜNCÜ TARAFLARIN UĞRADIĞI ZARARLAR VEYA PROGRAMIN BAŞKA HERHANGİ
 BİR PROGRAMLA BİRLİKTE ÇALIŞAMAMASI DÂHİL ANCAK BUNLARLA SINIRLI OLMAMAK ÜZERE)
 GENEL, ÖZEL, ARIZİ VEYA DOLAYLI ZARARLAR DA DÂHİL OLMAK ÜZERE HİÇBİR ZARAR İÇİN SİZE
@@ -614,7 +614,7 @@ bir feragete en yakın yerel hukuku uygulayacaktır.
   Yeni bir program geliştiriyorsanız ve bunun kamu için mümkün olan en büyük
 faydayı sağlamasını istiyorsanız, bunu başarmanın en iyi yolu programı herkesin
 bu şartlar altında yeniden dağıtabileceği ve değiştirebileceği özgür yazılım
-haline getirmektir.
+hâline getirmektir.
 
   Bunu yapmak için programa aşağıdaki bildirimleri ekleyin. Garanti reddini
 en etkili şekilde belirtmek için bunları her bir kaynak dosyasının başına
@@ -626,15 +626,15 @@ sahip olmalıdır.
     Copyright (C) <yıl>  <yazarın adı>
 
     Bu program özgür yazılımdır: Özgür Yazılım Vakfı tarafından yayımlanan GNU
-    Affero Genel Kamu Lisansının, Lisansın sürüm 3'ünün veya (isteğinize bağlı
+    Affero Genel Kamu Lisansı'nın, Lisans'ın sürüm 3'ünün veya (isteğinize bağlı
     olarak) sonraki herhangi bir sürümünün şartları altında yeniden dağıtabilir
     ve/veya değiştirebilirsiniz.
 
     Bu program faydalı olacağı umuduyla dağıtılmaktadır, ancak HİÇBİR GARANTİ
     YOKTUR; TİCARETE ELVERİŞLİLİK veya BELİRLİ BİR AMACA UYGUNLUK zımni garantisi
-    bile yoktur. Daha fazla ayrıntı için GNU Affero Genel Kamu Lisansına bakın.
+    bile yoktur. Daha fazla ayrıntı için GNU Affero Genel Kamu Lisansı'na bakın.
 
-    Bu programla birlikte GNU Affero Genel Kamu Lisansının bir kopyasını almış
+    Bu programla birlikte GNU Affero Genel Kamu Lisansı'nın bir kopyasını almış
     olmalısınız. Eğer almadıysanız, bkz. <https://www.gnu.org/licenses/>.
 
 Ayrıca size elektronik posta ve kâğıt posta ile nasıl ulaşılabileceğine dair
@@ -642,7 +642,7 @@ bilgiler de ekleyin.
 
   Yazılımınız kullanıcılarla bir bilgisayar ağı üzerinden uzaktan etkileşime
 girebiliyorsa, kullanıcıların kaynağını alabilmeleri için bir yol sağladığından
-emin olmalısınız. Örneğin, programınız bir web uygulamasıysa, arayüzü kullanıcıları
+emin olmalısınız. Örneğin, programınız bir web uygulamasıysa, ara yüzü kullanıcıları
 kodun bir arşivine yönlendiren bir "Kaynak" (Source) bağlantısı gösterebilir.
 Kaynak sunmanın birçok yolu vardır ve farklı programlar için farklı çözümler
 daha iyi olacaktır; özel gereksinimler için bölüm 13'e bakın.
