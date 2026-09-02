@@ -1461,6 +1461,17 @@
   min-width: 0;
 }
 
+.c-answer-fx-input::-webkit-outer-spin-button,
+.c-answer-fx-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.c-answer-fx-input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 .c-answer-fx-divider {
   width: 1px;
   height: 26px;
@@ -1468,41 +1479,27 @@
   flex-shrink: 0;
 }
 
-.c-answer-fx-select-wrap {
-  position: relative;
+.c-answer-fx-dropdown-wrap {
   display: flex;
   align-items: center;
-  min-width: 155px;
-  height: 100%;
+  flex-shrink: 0;
 }
 
-.c-answer-fx-select {
-  width: 100%;
-  height: 100%;
+.c-answer-fx-dropdown-wrap .dropdown--ghost .dropdown__trigger {
   border: none;
   background: transparent;
-  padding: 0 30px 0 12px;
-  font-size: 0.9rem;
+  box-shadow: none;
+  border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
+  height: 48px;
+  padding: 0 14px;
+  font-size: 0.95rem;
   font-weight: 600;
   color: var(--color-text);
-  cursor: pointer;
-  outline: none;
-  appearance: none;
-  -webkit-appearance: none;
+  gap: 8px;
 }
 
-.c-answer-fx-select option {
-  background-color: var(--color-surface);
-  color: var(--color-text);
-}
-
-.c-answer-fx-arrow {
-  position: absolute;
-  right: 10px;
-  pointer-events: none;
-  color: var(--color-text-dim);
-  display: flex;
-  align-items: center;
+.c-answer-fx-dropdown-wrap .dropdown--ghost .dropdown__trigger:hover {
+  background-color: var(--color-surface-hover);
 }
 
 .c-answer-card__calc .c-answer-card__sub-title {

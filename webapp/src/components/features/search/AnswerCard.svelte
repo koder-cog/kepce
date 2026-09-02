@@ -1,5 +1,5 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
+  import Dropdown from "@/components/features/Dropdown.svelte";
 
   let { answer } = $props();
 
@@ -11,6 +11,11 @@
     { code: "JPY", name: "Japon Yeni" },
     { code: "CHF", name: "İsviçre Frangı" }
   ];
+
+  const dropdownOptions = CURRENCY_LIST.map((c) => ({
+    value: c.code,
+    label: c.name
+  }));
 
   const DEFAULT_RATES = {
     USD: 1,
@@ -25,7 +30,7 @@
   let toCurrency = $state("TRY");
   let fromAmount = $state(1);
 
-  // Gelen yanıta göre başlangıç değerlerini senkronize et (Döngüsüz / Saf)
+  // Gelen yanıta göre başlangıç değerlerini senkronize et
   $effect(() => {
     if (answer?.type === "currency") {
       fromCurrency = answer.fromCurrency || "USD";
@@ -94,7 +99,7 @@
           </p>
         </div>
 
-        <!-- Google Tarzı Dikey Yığılmış İki Dönüştürücü Kutusu (Sağ Taraf) -->
+        <!-- Google Tarzı Dikey Yığılmış İki Dönüştürücü Kutusu (Kepçe Dropdown ile) -->
         <div class="c-answer-fx-stack">
           <!-- Üst Satır: Kaynak Tutar + Para Birimi -->
           <div class="c-answer-fx-row">
@@ -108,19 +113,15 @@
               aria-label="Kaynak Tutar"
             />
             <div class="c-answer-fx-divider"></div>
-            <div class="c-answer-fx-select-wrap">
-              <select
-                class="c-answer-fx-select"
-                bind:value={fromCurrency}
-                aria-label="Kaynak Para Birimi"
-              >
-                {#each CURRENCY_LIST as c}
-                  <option value={c.code}>{c.name}</option>
-                {/each}
-              </select>
-              <span class="c-answer-fx-arrow">
-                {@html icon("chevronDown", 14)}
-              </span>
+            <div class="c-answer-fx-dropdown-wrap">
+              <Dropdown
+                variant="ghost"
+                value={fromCurrency}
+                options={dropdownOptions}
+                onChange={(val) => {
+                  fromCurrency = val;
+                }}
+              />
             </div>
           </div>
 
@@ -136,19 +137,15 @@
               aria-label="Hedef Tutar"
             />
             <div class="c-answer-fx-divider"></div>
-            <div class="c-answer-fx-select-wrap">
-              <select
-                class="c-answer-fx-select"
-                bind:value={toCurrency}
-                aria-label="Hedef Para Birimi"
-              >
-                {#each CURRENCY_LIST as c}
-                  <option value={c.code}>{c.name}</option>
-                {/each}
-              </select>
-              <span class="c-answer-fx-arrow">
-                {@html icon("chevronDown", 14)}
-              </span>
+            <div class="c-answer-fx-dropdown-wrap">
+              <Dropdown
+                variant="ghost"
+                value={toCurrency}
+                options={dropdownOptions}
+                onChange={(val) => {
+                  toCurrency = val;
+                }}
+              />
             </div>
           </div>
         </div>
