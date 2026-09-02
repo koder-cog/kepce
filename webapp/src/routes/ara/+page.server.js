@@ -56,10 +56,10 @@ function cleanTrackingParams(rawUrl) {
 }
 
 // Open-Meteo ve Coğrafi Konum Servisi (Nominatim)
-async function fetchPlaceDetails(query) {
+async function fetchPlaceDetails(query, customFetch = fetch) {
   try {
     const geoUrl = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&addressdetails=1`;
-    const geoRes = await fetch(geoUrl, {
+    const geoRes = await customFetch(geoUrl, {
       headers: { "User-Agent": "Kepce/1.0 (bilgi@kepce.org)" },
       signal: AbortSignal.timeout(3000),
     });
@@ -76,7 +76,7 @@ async function fetchPlaceDetails(query) {
 
     // Open-Meteo ile güncel ve 3 günlük hava tahmini
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3`;
-    const wRes = await fetch(weatherUrl, { signal: AbortSignal.timeout(3000) });
+    const wRes = await customFetch(weatherUrl, { signal: AbortSignal.timeout(3000) });
 
     let weather = null;
     if (wRes.ok) {
@@ -390,13 +390,13 @@ let fxRatesCache = {
   rates: { USD: 1, TRY: 48.27, EUR: 0.86, GBP: 0.74, JPY: 160.0, CHF: 0.81 },
 };
 
-async function getFxRates() {
+async function getFxRates(customFetch = fetch) {
   const now = Date.now();
   if (now - fxRatesCache.timestamp < 15 * 60 * 1000 && Object.keys(fxRatesCache.rates).length > 2) {
     return fxRatesCache;
   }
   try {
-    const res = await fetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=TRY,EUR,GBP,JPY,CHF", {
+    const res = await customFetch("https://api.frankfurter.dev/v1/latest?base=USD&symbols=TRY,EUR,GBP,JPY,CHF", {
       signal: AbortSignal.timeout(3000),
     });
     if (res.ok) {
@@ -416,7 +416,7 @@ async function getFxRates() {
   return fxRatesCache;
 }
 
-async function solveInstantQuery(query) {
+async function solveInstantQuery(query, customFetch = fetch) {
   const q = query.trim().toLowerCase();
 
   // 1. Döviz sorguları (örn: "50 dolar kaç tl", "100 euro kaç tl", "50 usd to try", "dolar kaç tl")
@@ -430,7 +430,7 @@ async function solveInstantQuery(query) {
     const toInfo = CURRENCY_CODES[toSymbol];
 
     if (fromInfo && toInfo && fromInfo.code !== toInfo.code) {
-      const fxData = await getFxRates();
+      const fxData = await getFxRates(customFetch);
       const amount = parseFloat(amountRaw) || 1;
       const fromRate = fxData.rates[fromInfo.code] || 1;
       const toRate = fxData.rates[toInfo.code] || 1;
@@ -532,7 +532,7 @@ export async function load({ url, fetch }) {
 
   // 3. Paralel İstek İşleme (Anlık Çözücüler ve SearXNG Motorları Eşzamanlı Çalışır)
   const isGeneralCategory = category === "general" || !category;
-  const instantAnswerPromise = isGeneralCategory ? solveInstantQuery(q) : Promise.resolve(null);
+  const instantAnswerPromise = isGeneralCategory ? solveInstantQuery(q, fetch) : Promise.resolve(null);
 
   let effectiveQuery = q.startsWith("!") ? q.replace(/^!+/, "").trim() || q : q;
 
@@ -653,7 +653,7 @@ export async function load({ url, fetch }) {
           // "Ankara hava durumu" -> "Ankara"
           locationQuery = q.replace(/hava\s*durumu/gi, "").trim() || "Ankara";
         }
-        const placeDetails = await fetchPlaceDetails(locationQuery);
+        const placeDetails = await fetchPlaceDetails(locationQuery, fetch);
         if (placeDetails) {
           if (infoboxes.length > 0) {
             infoboxes[0].placeInfo = placeDetails;
