@@ -573,6 +573,25 @@
     fill: currentColor;
   }
 
+  .meal-card__action-btn--active {
+    border-color: var(--color-border);
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+  }
+
+  .meal-card__more-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .meal-card__more-menu {
+    bottom: calc(100% + var(--space-xs));
+    right: 0;
+    min-width: 140px;
+    transform-origin: bottom right;
+  }
+
   /* ── amk botu Köşesi Card ──────────────────────────────────── */
 
   .bot-card {

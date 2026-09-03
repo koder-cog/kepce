@@ -9,6 +9,7 @@
     import { openReportModal, openMenuReportModal } from "./report-modal.js";
     import { openTakeawayModal } from "../../lib/dom/takeaway-modal.js";
     import { getCurrentCity } from "../../stores/city.svelte.js";
+    import { formatFullTurkishDate, CITY_MAP } from "../../utils/turkish.js";
 
     let { menu = $bindable(), options = {} } = $props();
 
@@ -339,6 +340,123 @@
             pendingFavorites.delete(dishId);
         }
     }
+
+    let isMoreMenuOpen = $state(false);
+    let moreWrapperEl = $state(null);
+
+    function toggleMoreMenu(e) {
+        e.stopPropagation();
+        isMoreMenuOpen = !isMoreMenuOpen;
+    }
+
+    function handleKeydown(e) {
+        if (e.key === "Escape" && isMoreMenuOpen) {
+            isMoreMenuOpen = false;
+        }
+    }
+
+    $effect(() => {
+        if (!isMoreMenuOpen) return;
+        const onOutsideClick = (e) => {
+            if (moreWrapperEl && !moreWrapperEl.contains(e.target)) {
+                isMoreMenuOpen = false;
+            }
+        };
+        const onScroll = () => {
+            isMoreMenuOpen = false;
+        };
+        window.addEventListener("click", onOutsideClick);
+        window.addEventListener("scroll", onScroll, { passive: true });
+        return () => {
+            window.removeEventListener("click", onOutsideClick);
+            window.removeEventListener("scroll", onScroll);
+        };
+    });
+
+    function copyToClipboard(text) {
+        if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+            return navigator.clipboard.writeText(text);
+        }
+        return new Promise((resolve, reject) => {
+            const textarea = document.createElement("textarea");
+            textarea.value = text;
+            textarea.style.position = "fixed";
+            textarea.style.left = "-9999px";
+            textarea.style.top = "0";
+            textarea.style.opacity = "0";
+            document.body.appendChild(textarea);
+            textarea.focus();
+            textarea.select();
+            try {
+                const successful = document.execCommand("copy");
+                document.body.removeChild(textarea);
+                if (successful) resolve();
+                else reject(new Error("execCommand failed"));
+            } catch (err) {
+                document.body.removeChild(textarea);
+                reject(err);
+            }
+        });
+    }
+
+    async function handleShare(e) {
+        if (e) e.stopPropagation();
+        isMoreMenuOpen = false;
+
+        const citySlug = menu.city_slug || options.citySlug || getCurrentCity() || "istanbul";
+        const cityName = CITY_MAP[citySlug] || citySlug;
+        const dateStr = menu.serve_date || menu.date || "";
+
+        let dateLabel = "";
+        if (dateStr) {
+            const parts = dateStr.split("-");
+            if (parts.length === 3) {
+                const months = [
+                    "", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
+                    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+                ];
+                const dayNum = parseInt(parts[2], 10);
+                const monthName = months[parseInt(parts[1], 10)] || "";
+                dateLabel = `${dayNum} ${monthName} `;
+            }
+        }
+
+        const mealLabel = isBreakfast ? "Kahvaltısı" : "Akşam Yemeği";
+
+        const dishNames = (items || [])
+            .map((item) => {
+                if (item.dishes && item.dishes.length > 1) {
+                    return item.dishes.map((d) => d.name).filter(Boolean).join(" / ");
+                }
+                return item.name || item.dishes?.[0]?.name;
+            })
+            .filter(Boolean);
+
+        const shareUrl = `https://kepce.org/menu/${menu.id}`;
+        const header = `${dateLabel}${cityName} KYK ${mealLabel}:`;
+        const dishesLine = dishNames.join(", ");
+        const fullShareText = `${header} ${dishesLine}\nDetaylar: ${shareUrl}`;
+
+        if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+                await navigator.share({
+                    title: header,
+                    text: `${header} ${dishesLine}\nDetaylar:`,
+                    url: shareUrl,
+                });
+                return;
+            } catch (err) {
+                if (err.name === "AbortError") return;
+            }
+        }
+
+        try {
+            await copyToClipboard(fullShareText);
+            showToast("Menü bağlantısı panoya kopyalandı.");
+        } catch {
+            showToast("Menü panoya kopyalanamadı.", "error");
+        }
+    }
 </script>
 
 <div class="meal-card" id="meal-card-{menu.id}">
@@ -557,20 +675,47 @@
                     {/if}
                 </a>
             {/if}
-            <button
-                class="meal-card__action-btn"
-                onclick={(e) => {
-                    if (!globalState?.user) {
-                        authActions.triggerLogin();
-                        return;
-                    }
-                    openMenuReportModal(menu, e.currentTarget);
-                }}
-                data-tooltip="Hata bildir"
-                aria-label="Hata bildir"
-            >
-                {@html icon("warning", 18)}
-            </button>
+            <div class="meal-card__more-wrapper" bind:this={moreWrapperEl}>
+                <button
+                    class="meal-card__action-btn {isMoreMenuOpen ? 'meal-card__action-btn--active' : ''}"
+                    onclick={toggleMoreMenu}
+                    onkeydown={handleKeydown}
+                    data-tooltip="Diğer işlemler"
+                    aria-label="Diğer işlemler"
+                    aria-haspopup="true"
+                    aria-expanded={isMoreMenuOpen}
+                >
+                    {@html icon("more", 18)}
+                </button>
+
+                <div
+                    class="c-menu meal-card__more-menu {isMoreMenuOpen ? 'c-menu--open' : ''}"
+                    role="menu"
+                    aria-hidden={!isMoreMenuOpen}
+                >
+                    <button
+                        class="c-menu__item btn--squish"
+                        role="menuitem"
+                        onclick={handleShare}
+                    >
+                        Paylaş
+                    </button>
+                    <button
+                        class="c-menu__item btn--squish"
+                        role="menuitem"
+                        onclick={(e) => {
+                            isMoreMenuOpen = false;
+                            if (!globalState?.user) {
+                                authActions.triggerLogin();
+                                return;
+                            }
+                            openMenuReportModal(menu, e.currentTarget);
+                        }}
+                    >
+                        Hata bildir
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
