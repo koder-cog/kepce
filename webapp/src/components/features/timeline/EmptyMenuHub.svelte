@@ -3,6 +3,7 @@
     import EmptyState from "@/components/ui/EmptyState.svelte";
     import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
     import { normalizeItems } from "@/utils/menu.js";
+    import { timelineState } from "@/stores/timeline.svelte.js";
 
     let {
         citySlug = "istanbul",
@@ -122,10 +123,11 @@
                 >
             </div>
 
-            <a
-                href="/{citySlug}/{lastMenuDay.date}"
+            <button
+                type="button"
                 class="empty-hub__menu-body"
-                data-link
+                onclick={() => timelineState.selectDate(lastMenuDay.date)}
+                aria-label="{formatFullTurkishDate(lastMenuDay.date)} menüsünü görüntüle"
             >
                 {#if lastBreakfast}
                     <div class="empty-hub__meal-row">
@@ -154,7 +156,7 @@
                         {/if}
                     </div>
                 {/if}
-            </a>
+            </button>
 
             <div class="empty-hub__archive-wrapper">
                 <a
@@ -285,11 +287,21 @@
         font-size: var(--text-sm);
         line-height: var(--leading-relaxed);
         border-radius: var(--radius-md);
+        background: none;
+        border: none;
+        text-align: left;
+        cursor: pointer;
+        font-family: inherit;
+        width: 100%;
         transition: color var(--dur-fast) var(--ease-standard);
     }
 
     .empty-hub__menu-body:hover {
         color: var(--color-accent-primary);
+    }
+
+    .empty-hub__menu-body:active {
+        transform: scale(0.98);
     }
 
     .empty-hub__meal-row {

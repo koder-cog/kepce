@@ -638,6 +638,10 @@ pub async fn upsert_menu(
         update_m.source_type = Set(Some(source_type));
         update_m.submitted_by = Set(submitted_by);
         update_m.status = Set(target_status.clone());
+        if calorie_range_min.is_some() || calorie_range_max.is_some() {
+            update_m.calorie_range_min = Set(calorie_range_min.or(m.calorie_range_min));
+            update_m.calorie_range_max = Set(calorie_range_max.or(m.calorie_range_max));
+        }
         update_m.update(&txn).await?;
         
         m.id
@@ -808,29 +812,31 @@ pub async fn upsert_menu(
 }
 
 pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<i32> {
-    // XSS sanitization
+    // 1. XSS sanitization
     let sanitized = sanitize_dish_name(raw_name);
+    // 2. Kanonik isim normalizasyonu
+    let canonical_name = crate::parser::normalizer::normalize_food_name(&sanitized);
 
     // Kategori belirtilmemişse akıllı kural motoruyla otomatik belirle
-    let final_category = category.or_else(|| shared::services::categorizer::categorize_dish(&sanitized));
+    let final_category = category.or_else(|| shared::services::categorizer::categorize_dish(&canonical_name));
 
-    // Atomik işlem (Race Condition önleyici):
-    // 1. Ana dish (yemek) oluştur veya varsa IDsini döndür. Eğer mevcut kaydın kategorisi yoksa (NULL), tespit edilen kategoriyi yaz (COALESCE).
-    // 2. Takma adı (alias) ana yemeğe bağlayarak oluştur veya güncelleyip idsini döndür.
+    // Atomik işlem:
+    // 1. Ana dish'i (yemek) normalize edilmiş kanonik isimle arar veya oluşturur (LOWER(TRIM(name)) tekilliği ile).
+    // 2. Takma adı (sanitized raw alias) bu ana yemeğe bağlar.
     let stmt = sea_orm::Statement::from_sql_and_values(
         sea_orm::DbBackend::Postgres,
         r#"
         WITH upsert_dish AS (
             INSERT INTO dishes (name, category) VALUES ($1, $2)
-            ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name, category = COALESCE(dishes.category, EXCLUDED.category)
+            ON CONFLICT ((LOWER(TRIM(name)))) DO UPDATE SET category = COALESCE(dishes.category, EXCLUDED.category)
             RETURNING id
         )
         INSERT INTO dish_aliases (name, dish_id)
-        VALUES ($1, (SELECT id FROM upsert_dish))
-        ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name, dish_id = COALESCE(dish_aliases.dish_id, EXCLUDED.dish_id)
+        VALUES ($3, (SELECT id FROM upsert_dish))
+        ON CONFLICT (name) DO UPDATE SET dish_id = COALESCE(dish_aliases.dish_id, EXCLUDED.dish_id)
         RETURNING id
         "#,
-        vec![sanitized.into(), final_category.into()],
+        vec![canonical_name.into(), final_category.into(), sanitized.into()],
     );
 
     let query_res = txn.query_one(stmt).await?;
