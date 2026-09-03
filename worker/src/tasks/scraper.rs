@@ -1,5 +1,5 @@
 use anyhow::Result;
-use chrono::NaiveDate;
+use chrono::{Datelike, NaiveDate};
 use rand::Rng;
 use reqwest::Client;
 use std::collections::{HashMap, HashSet};
@@ -263,30 +263,39 @@ pub async fn scrape_today_menus(
 
         tracing::info!("[KYKYEMEK-BULLETIN] Şehir için aylık bülten çekiliyor: {}...", city.name);
 
-        // 1. Kahvaltı Bülteni (Tüm Ay Tek İstek)
-        match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, "0", &mut token_opt, &mut shutdown_rx).await {
-            Ok(Some(count)) => total_saved += count,
-            Ok(None) => return Ok(total_saved),
-            Err(e) => tracing::warn!(city = %city.slug, meal = "breakfast", "Kahvaltı bülteni alınamadı: {:?}", e),
-        }
+        // Ayın ilk 10 gününde bir önceki ayın menülerini de çekerek ay geçişlerindeki boşlukları doldur
+        let shifts: Vec<&str> = if chrono::Utc::now().date_naive().day() <= 10 {
+            vec!["-1", "0"]
+        } else {
+            vec!["0"]
+        };
 
-        // Kibar gecikme (3.5 - 6.5s)
-        let delay_ms = rand::thread_rng().gen_range(3500..=6500);
-        if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
-            return Ok(total_saved);
-        }
+        for shift in &shifts {
+            // 1. Kahvaltı Bülteni
+            match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, shift, &mut token_opt, &mut shutdown_rx).await {
+                Ok(Some(count)) => total_saved += count,
+                Ok(None) => return Ok(total_saved),
+                Err(e) => tracing::warn!(city = %city.slug, meal = "breakfast", shift = %shift, "Kahvaltı bülteni alınamadı: {:?}", e),
+            }
 
-        // 2. Akşam Yemeği Bülteni (Tüm Ay Tek İstek)
-        match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, "0", &mut token_opt, &mut shutdown_rx).await {
-            Ok(Some(count)) => total_saved += count,
-            Ok(None) => return Ok(total_saved),
-            Err(e) => tracing::warn!(city = %city.slug, meal = "dinner", "Akşam yemeği bülteni alınamadı: {:?}", e),
-        }
+            // Kibar gecikme (3.5 - 6.5s)
+            let delay_ms = rand::thread_rng().gen_range(3500..=6500);
+            if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
+                return Ok(total_saved);
+            }
 
-        // Kibar gecikme (3.5 - 6.5s)
-        let delay_ms = rand::thread_rng().gen_range(3500..=6500);
-        if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
-            return Ok(total_saved);
+            // 2. Akşam Yemeği Bülteni
+            match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, shift, &mut token_opt, &mut shutdown_rx).await {
+                Ok(Some(count)) => total_saved += count,
+                Ok(None) => return Ok(total_saved),
+                Err(e) => tracing::warn!(city = %city.slug, meal = "dinner", shift = %shift, "Akşam yemeği bülteni alınamadı: {:?}", e),
+            }
+
+            // Kibar gecikme (3.5 - 6.5s)
+            let delay_ms = rand::thread_rng().gen_range(3500..=6500);
+            if sleep_cancelable(delay_ms, &mut shutdown_rx).await {
+                return Ok(total_saved);
+            }
         }
     }
 

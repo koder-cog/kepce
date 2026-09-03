@@ -153,7 +153,10 @@
         tray = exactCombos[Math.floor(Math.random() * exactCombos.length)];
         showToast("Tam 0 TL fark ile menü oluşturuldu.", "success");
       } else {
-        showToast("Bu bütçeye tam 0 TL oturan bir kombinasyon bulunamadı.", "warning");
+        showToast(
+          "Bu bütçeye tam 0 TL oturan bir kombinasyon bulunamadı.",
+          "warning",
+        );
       }
     } else if (type === "protein") {
       const proteinKeywords = [
@@ -634,8 +637,4 @@
       </aside>
     </div>
   {/if}
-
-  <p class="u-text-xs u-color-muted u-mt-sm">
-    Fiyatlar, GSB / KYK il müdürlüklerinin yayınladığı resmi tavan fiyat tarifeleri baz alınarak listelenmektedir.
-  </p>
 </section>
