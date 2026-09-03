@@ -47,7 +47,8 @@ impl PushService {
         static KEYPAIR: OnceLock<ES256KeyPair> = OnceLock::new();
         KEYPAIR.get_or_init(|| {
             if let Ok(pem) = env::var("VAPID_PRIVATE_KEY") {
-                if let Ok(kp) = ES256KeyPair::from_pem(&pem) {
+                let normalized = pem.replace("\\n", "\n");
+                if let Ok(kp) = ES256KeyPair::from_pem(&normalized) {
                     return kp;
                 }
             }

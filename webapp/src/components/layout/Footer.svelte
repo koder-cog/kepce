@@ -16,6 +16,12 @@
     <div class="site-footer__col-title">Proje</div>
     <a href="/hakkinda" class="site-footer__link" data-link>Hakkında</a>
     <a
+      href="https://ara.kepce.org"
+      target="_blank"
+      rel="noopener"
+      class="site-footer__link">Kepçe Ara</a
+    >
+    <a
       href="https://github.com/koder-cog/kepce"
       target="_blank"
       rel="noopener"
