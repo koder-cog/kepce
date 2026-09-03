@@ -28,13 +28,13 @@
     opacity: 0;
     pointer-events: none;
     transform: translate3d(var(--indicator-left, 3px), 0, 0);
+    will-change: transform;
   }
 
   .c-segmented-control.is-ready .c-segmented-control__indicator {
     opacity: 1;
     transition: 
       transform var(--dur-default) cubic-bezier(0.25, 1, 0.5, 1),
-      width var(--dur-default) cubic-bezier(0.25, 1, 0.5, 1),
       opacity var(--dur-fast) var(--ease-standard);
   }
 

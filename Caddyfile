@@ -40,6 +40,12 @@ kepce.org, www.kepce.org {
     }
     header @private_pages Cache-Control "private, no-store"
 
+    # Statik fontlar ve kalıcı varlıklar için 1 yıl (immutable) önbellekleme
+    @immutable_assets {
+        path /fonts/* *.woff2 *.woff *.ttf /internal/immutable/* /agpl-v3.svg /og_image.png
+    }
+    header @immutable_assets >Cache-Control "public, max-age=31536000, immutable"
+
     # Statik meta ve simge dosyaları için önbellek kuralları (manifest.json, favicon vb.)
     @static_meta {
         path /manifest.json /favicon.ico /favicon.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png

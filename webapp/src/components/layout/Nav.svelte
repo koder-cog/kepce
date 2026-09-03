@@ -143,6 +143,7 @@
     class="nav-bar__brand"
     href="/"
     id="nav-brand"
+    aria-label="Kepçe Ana Sayfa"
     data-link
     onclick={(e) => {
         if (activePath === "/") {
