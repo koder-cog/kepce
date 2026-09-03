@@ -353,7 +353,7 @@
 		{#if !globalState.isApp}
 			<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
 			<a href="#page-content" class="skip-link">Ana içeriğe geç</a>
-			<nav id="main-nav" class="nav-bar" bind:clientHeight={navHeight}>
+			<nav id="main-nav" class="nav-bar" bind:clientHeight={navHeight} aria-label="Ana Menü">
 				<div class="nav-bar__inner">
 					<Nav />
 				</div>

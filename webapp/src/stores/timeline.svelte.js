@@ -262,12 +262,8 @@ export function createTimelineStore() {
     }
 
     async function init() {
-        // Prerender verisi mevcut city/date ile eşleşiyorsa ilk açılışta tekrar API'ye gitme
-        const today = new Date();
-        const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-        const skipInitialLoad = prerenderedMeta
-            && prerenderedMeta.city === currentCity
-            && prerenderedMeta.date === todayStr;
+        // Prerender verisi mevcut şehir ile eşleşiyorsa ilk açılışta tekrar API'ye gitme
+        const skipInitialLoad = Boolean(prerenderedMeta && prerenderedMeta.city === currentCity);
 
         if (!skipInitialLoad) {
             loadMenus();

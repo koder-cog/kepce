@@ -39,45 +39,17 @@
         }
     });
 
-    let containerNode = $state(null);
-    let indicatorWidth = $state(0);
-    let indicatorLeft = $state(0);
+    let activeIndex = $derived.by(() => {
+        const idx = options.findIndex((opt) => opt.value === value);
+        return idx >= 0 ? idx : 0;
+    });
+    let totalOptions = $derived(Math.max(1, options.length));
     let isReady = $state(false);
 
-    function updateIndicator() {
-        if (!containerNode) return;
-        requestAnimationFrame(() => {
-            if (!containerNode) return;
-            const activeBtn = containerNode.querySelector(
-                `button[data-value="${value}"]`,
-            );
-            if (activeBtn) {
-                indicatorWidth = activeBtn.offsetWidth;
-                indicatorLeft = activeBtn.offsetLeft;
-            }
-        });
-    }
-
-    $effect(() => {
-        value;
-        if (isReady) {
-            updateIndicator();
-        }
-    });
-
     onMount(() => {
-        updateIndicator();
         requestAnimationFrame(() => {
             isReady = true;
         });
-
-        // Indicator'ın ekran boyutu değişimlerinde (responsive veya container query) senkronize kalması için
-        const ro = new ResizeObserver(() => {
-            updateIndicator();
-        });
-
-        if (containerNode) ro.observe(containerNode);
-        return () => ro.disconnect();
     });
 
     function selectOption(val, e) {
@@ -91,12 +63,9 @@
     class="c-segmented-control {className}"
     data-variant={variant}
     class:is-ready={isReady}
-    bind:this={containerNode}
+    style="--active-index: {activeIndex}; --total-options: {totalOptions};"
 >
-    <div
-        class="c-segmented-control__indicator"
-        style="--indicator-width: {indicatorWidth}px; --indicator-left: {indicatorLeft}px;"
-    ></div>
+    <div class="c-segmented-control__indicator"></div>
 
     {#each options as opt}
         <button

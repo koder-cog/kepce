@@ -184,8 +184,9 @@
     <div class="nav-bar__menu-container" bind:this={menuContainer}>
         <button
             class="nav-bar__menu-btn"
-            aria-label="menü"
+            aria-label="Ana Menü"
             aria-expanded={menuDropdownOpen}
+            aria-controls="nav-main-dropdown"
             onclick={toggleMenuDropdown}
         >
             {@html icon("menuHamburger", 24)}
@@ -216,6 +217,8 @@
             class="nav-bar__user"
             id="nav-user-btn"
             aria-label="Kullanıcı Menüsü"
+            aria-expanded={dropdownOpen}
+            aria-controls="nav-user-dropdown"
             onclick={toggleDropdown}
         >
             <div class="nav-bar__user-avatar-container">
