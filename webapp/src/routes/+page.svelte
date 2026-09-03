@@ -144,26 +144,3 @@
     isSummer={data?.isSummer}
 />
 
-<nav class="city-seo-directory" aria-label="Şehirlere Göre KYK Yemek Menüleri">
-    <h2 class="city-seo-directory__title">Şehirlere Göre KYK Menüleri</h2>
-    <div class="city-seo-directory__grid">
-        {#each Object.entries(CITY_MAP) as [slug, name]}
-            <a href="/{slug}" class="city-seo-directory__link" title="{name} KYK Yemek Menüsü">
-                {name}
-            </a>
-        {/each}
-    </div>
-    <div class="city-seo-directory__about">
-        <p>
-            Kepçe; 81 ildeki Gençlik ve Spor Bakanlığı (GSB) KYK yurtlarında çıkan günlük kahvaltı ve akşam yemeği tabldot menülerini, kalori değerlerini ve beslenme yardımı detaylarını reklamsız olarak sunar.
-        </p>
-    </div>
-    <div class="city-seo-directory__guides">
-        <a href="/kyk-yemek-saatleri" class="city-seo-directory__guide-link">
-            2026-2027 KYK Yemek Saatleri (Sabah & Akşam) →
-        </a>
-        <a href="/kyk-beslenme-yardimi" class="city-seo-directory__guide-link">
-            2026-2027 KYK Beslenme Yardımı Ücretleri →
-        </a>
-    </div>
-</nav>
