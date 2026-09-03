@@ -23,7 +23,14 @@
     let commentUrl = $derived(menu?.id ? `/menu/${menu.id}` : null);
 
     let isBreakfast = $derived(menu.meal_type === "breakfast");
-    let title = $derived(isBreakfast ? "Kahvaltı" : "Akşam yemeği");
+    let title = $derived(
+        options.title ||
+            (isBreakfast
+                ? "Kahvaltı"
+                : options.isOffSeason
+                  ? "Yemek"
+                  : "Akşam yemeği"),
+    );
 
     // Kart altındaki tek satırlık kalori bilgisi: menüye ait VERİLEN ARALIK
     // esas alınır, uçlar eşitse "a - a" yerine "~a".

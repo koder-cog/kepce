@@ -376,4 +376,83 @@
       margin-bottom: var(--space-xl);
     }
   }
+
+  /* ── Off-season Single Meal Timeline Layout ─────────────────── */
+  .timeline--off-season {
+    padding-left: 0;
+  }
+
+  .timeline--off-season .timeline__content {
+    padding-left: 0;
+  }
+
+  .timeline--off-season .timeline__line,
+  .timeline--off-season .timeline__time {
+    display: none;
+  }
+
+  /* ── Season / Orientation Guides ────────────────────────────── */
+  .season-guides {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    margin-top: var(--space-xl);
+    width: 100%;
+  }
+
+  .season-guides__card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-lg) var(--space-xl);
+    text-decoration: none;
+    color: var(--color-text);
+    cursor: pointer;
+    transition:
+      border-color var(--dur-fast) var(--ease-standard),
+      background-color var(--dur-fast) var(--ease-standard);
+  }
+
+  .season-guides__card:hover {
+    border-color: var(--color-accent-primary);
+    background-color: var(--color-surface-hover);
+  }
+
+  .season-guides__card:active {
+    transform: scale(0.98);
+  }
+
+  .season-guides__content {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xs);
+  }
+
+  .season-guides__title {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+  }
+
+  .season-guides__desc {
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    line-height: var(--leading-normal);
+    margin: 0;
+  }
+
+  .season-guides__arrow {
+    color: var(--color-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-left: var(--space-md);
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+
+  .season-guides__card:hover .season-guides__arrow {
+    color: var(--color-accent-primary);
+  }
 }
+

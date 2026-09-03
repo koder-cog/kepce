@@ -9,6 +9,8 @@
     import Skeleton from "@/components/ui/Skeleton.svelte";
     import EmptyState from "@/components/ui/EmptyState.svelte";
     import EmptyMenuHub from "@/components/features/timeline/EmptyMenuHub.svelte";
+    import SeasonGuides from "@/components/features/timeline/SeasonGuides.svelte";
+    import { isOffSeasonDate, isOrientationSeason } from "@/utils/season.js";
 
     let {
         lastMenuDay = null,
@@ -41,17 +43,27 @@
         timelineState.dinnerData.filter((m) => normalizeItems(m).length > 0),
     );
 
-    // Görev #20: "Boş içerik kartlarını göster" ayarı kapalıyken,
-    // tamamen boş olan slotları (ve içindeki timeline__time elementini)
-    // de gizle.
-    let hideBreakfastSlot = $derived(
-        !showEmptyCards && breakfasts.length === 0 && !botCommentaryRaw,
+    let isOffSeason = $derived(isOffSeasonDate(timelineState.selectedDate));
+    let showSeasonGuides = $derived(isOrientationSeason(timelineState.selectedDate));
+
+    // Tek öğün / nöbetçi modu: Sezon dışındayken ve kahvaltı yoksa (yalnızca akşam yemeği varsa)
+    // dikey çizgi ve saatler kalkar, kart "Yemek" başlığıyla merkezlenir.
+    let isSingleMealLayout = $derived(
+        isOffSeason && breakfasts.length === 0 && dinners.length > 0,
     );
+
+    // Görev #20: Sezon dışındayken kahvaltı verisi yoksa boş kart basma;
+    // Sezon içinde ise kullanıcının showEmptyCards tercihine bak.
+    let hideBreakfastSlot = $derived.by(() => {
+        if (breakfasts.length > 0) return false;
+        if (isOffSeason) return true;
+        return !showEmptyCards && !botCommentaryRaw;
+    });
     let hideDinnerSlot = $derived(!showEmptyCards && dinners.length === 0);
 
-    // Eğer bot yorumu yoksa ve boş kartlar gösterilmiyorsa, sağ taraf (bot köşesi) tamamen iptal edilir.
+    // Eğer bot yorumu yoksa ve boş kartlar gösterilmiyorsa (veya sezon dışındaysak), sağ taraf (bot köşesi) iptal edilir.
     let showBotArea = $derived(
-        botCommentaryRaw || showEmptyCards
+        botCommentaryRaw || (showEmptyCards && !isOffSeason),
     );
 
     function renderBotCommentary(raw, currentDate) {
@@ -100,7 +112,7 @@
         <EmptyMenuHub
             citySlug={timelineState.currentCity}
             date={timelineState.selectedDateString}
-            isSummer={isSummer || (timelineState.selectedDate && [6, 7].includes(timelineState.selectedDate.getMonth()))}
+            isSummer={isSummer || isOffSeason}
             {lastMenuDay}
         />
     {:else if timelineState.currentDietMode === "celiac" && !timelineState.breakfastData.some((m) => m.items?.length > 0) && !timelineState.dinnerData.some((m) => m.items?.length > 0)}
@@ -112,14 +124,18 @@
             />
         </div>
     {:else}
-        <div class="timeline">
-            <div class="timeline__line"></div>
+        <div class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}">
+            {#if !isSingleMealLayout}
+                <div class="timeline__line"></div>
+            {/if}
 
             <!-- Breakfast Slot -->
             <div class="timeline__slot timeline__slot--breakfast{hideBreakfastSlot ? ' timeline__slot--hidden' : ''}">
-                <div class="timeline__time">
-                    06:00 - {timelineState.breakfastEnd}
-                </div>
+                {#if !isSingleMealLayout}
+                    <div class="timeline__time">
+                        06:00 - {timelineState.breakfastEnd}
+                    </div>
+                {/if}
                 <div class="timeline__content {showBotArea ? 'timeline__content--60-40' : ''}">
                     <div class="timeline__meal-wrapper">
                         {#if breakfasts.length > 0}
@@ -132,7 +148,7 @@
                                     }}
                                 />
                             {/each}
-                        {:else if showEmptyCards}
+                        {:else if showEmptyCards && !isOffSeason}
                             <!-- #19: Kartı tamamen gizlemek yerine kompakt empty-state -->
                             <EmptyState
                                 compact
@@ -179,7 +195,7 @@
                                 </button>
                             </div>
                         </div>
-                    {:else if breakfasts.length > 0 && showEmptyCards}
+                    {:else if breakfasts.length > 0 && showEmptyCards && !isOffSeason}
                         <!-- Kahvaltı var ama bot yorumu yoksa ve boş kartlar gizlenmiyorsa, snarky sahte bot yorumu gösterilir -->
                         <div class="bot-card ai-element">
                             <h3 class="bot-card__title">Kepçe Bot köşesi</h3>
@@ -187,7 +203,7 @@
                                 <p>Bugünkü menü hakkında tek satır yazamıyorum çünkü geliştirici hazretleri bu ayki menüyü veritabanıma işleme zahmetinde bulunmamış. Ya da daha acı bir ihtimalle, bu proje çoktan siber bir çöplüğe gömüldü ve ben sadece kendi kendime konuşan terk edilmiş bir yapay zekayım. Gerçi o vıcık vıcık salçalı makarnanın verisi gelse ne yazar, sistem o kimyasal atık yığınını analiz ederken komple çökerdi.</p>
                             </div>
                         </div>
-                    {:else if showEmptyCards}
+                    {:else if showEmptyCards && !isOffSeason}
                         <!-- Kahvaltı da yok, bot yorumu da yok ve boş kartlar gizlenmiyor -->
                         <div class="bot-card ai-element">
                             <EmptyState
@@ -203,9 +219,11 @@
 
             <!-- Dinner Slot -->
             <div class="timeline__slot timeline__slot--dinner{hideDinnerSlot ? ' timeline__slot--hidden' : ''}">
-                <div class="timeline__time">
-                    16:00 - {timelineState.dinnerEnd}
-                </div>
+                {#if !isSingleMealLayout}
+                    <div class="timeline__time">
+                        16:00 - {timelineState.dinnerEnd}
+                    </div>
+                {/if}
                 <div class="timeline__content timeline__content--100">
                     <div class="timeline__meal-wrapper">
                         {#if dinners.length > 0}
@@ -215,6 +233,7 @@
                                     options={{
                                         dietMode: timelineState.currentDietMode,
                                         takeaways: [],
+                                        isOffSeason: isSingleMealLayout,
                                     }}
                                 />
                             {/each}
@@ -229,6 +248,10 @@
                     </div>
                 </div>
             </div>
+
+            {#if showSeasonGuides}
+                <SeasonGuides />
+            {/if}
         </div>
     {/if}
 </div>

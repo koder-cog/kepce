@@ -4,6 +4,8 @@
     import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
     import { normalizeItems } from "@/utils/menu.js";
     import { timelineState } from "@/stores/timeline.svelte.js";
+    import SeasonGuides from "@/components/features/timeline/SeasonGuides.svelte";
+    import { isOrientationSeason } from "@/utils/season.js";
 
     let {
         citySlug = "istanbul",
@@ -13,6 +15,7 @@
     } = $props();
 
     let cityName = $derived(CITY_MAP[citySlug] || citySlug);
+    let showGuides = $derived(isSummer || isOrientationSeason(date));
 
     // Son menü öğelerini özetle
     let lastBreakfast = $derived.by(() => {
@@ -72,45 +75,9 @@
         </EmptyState>
     {/if}
 
-    <!-- 2. Yaz Sezonu Rehber Kartları (Ayrı Ayrı Kartlar) -->
-    {#if isSummer}
-        <div class="empty-hub__guides">
-            <a
-                href="/kyk-beslenme-yardimi"
-                class="card empty-hub__guide-card btn--squish"
-                data-link
-            >
-                <div class="empty-hub__guide-content">
-                    <span class="empty-hub__guide-title">Beslenme Yardımı</span>
-                    <p class="empty-hub__guide-desc">
-                        KYK yurtlarında beslenme yardımı, tabldot ve alakart
-                        farkı, kota ve limit aşımı kuralları.
-                    </p>
-                </div>
-                <span class="empty-hub__guide-arrow"
-                    >{@html icon("chevronRight", 18)}</span
-                >
-            </a>
-
-            <a
-                href="/kyk-yemek-saatleri"
-                class="card empty-hub__guide-card btn--squish"
-                data-link
-            >
-                <div class="empty-hub__guide-content">
-                    <span class="empty-hub__guide-title"
-                        >Yemekhane Saatleri</span
-                    >
-                    <p class="empty-hub__guide-desc">
-                        KYK yurtlarında kahvaltı ve akşam yemeği saatleri kaçta
-                        başlıyor, kaçta bitiyor?
-                    </p>
-                </div>
-                <span class="empty-hub__guide-arrow"
-                    >{@html icon("chevronRight", 18)}</span
-                >
-            </a>
-        </div>
+    <!-- 2. Yaz Sezonu ve Oryantasyon Rehber Kartları -->
+    {#if showGuides}
+        <SeasonGuides />
     {/if}
 
     <!-- 3. Eldeki Son Menü Kartı -->
@@ -187,64 +154,6 @@
         width: 100%;
         max-width: 360px;
         margin: var(--space-md) auto 0;
-    }
-
-    /* ── Guides (Ayrı Kartlar) ────────────────────────────────── */
-    .empty-hub__guides {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-md);
-    }
-
-    .empty-hub__guide-card {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-lg) var(--space-xl);
-        text-decoration: none;
-        color: var(--color-text);
-        cursor: pointer;
-        transition:
-            border-color var(--dur-fast) var(--ease-standard),
-            background-color var(--dur-fast) var(--ease-standard);
-    }
-
-    .empty-hub__guide-card:hover {
-        border-color: var(--color-accent-primary);
-        background-color: var(--color-surface-hover);
-    }
-
-    .empty-hub__guide-content {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-2xs);
-    }
-
-    .empty-hub__guide-title {
-        font-size: var(--text-base);
-        font-weight: var(--font-weight-bold);
-        color: var(--color-text);
-    }
-
-    .empty-hub__guide-desc {
-        font-size: var(--text-xs);
-        color: var(--color-muted);
-        line-height: var(--leading-normal);
-        margin: 0;
-    }
-
-    .empty-hub__guide-arrow {
-        color: var(--color-muted);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        margin-left: var(--space-md);
-        transition: color var(--dur-fast) var(--ease-standard);
-    }
-
-    .empty-hub__guide-card:hover .empty-hub__guide-arrow {
-        color: var(--color-accent-primary);
     }
 
     /* ── Eldeki Son Menü Kartı ───────────────────────────────── */
@@ -337,10 +246,6 @@
     @media (max-width: 600px) {
         .empty-hub {
             gap: var(--space-md);
-        }
-
-        .empty-hub__guide-card {
-            padding: var(--space-md);
         }
 
         .empty-hub__menu-card {
