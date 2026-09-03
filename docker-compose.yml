@@ -93,6 +93,7 @@ services:
       - ./config:/app/config:ro
     networks:
       - backend-net
+      - frontend-net
     depends_on:
       db:
         condition: service_healthy

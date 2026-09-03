@@ -515,6 +515,12 @@ fn get_source_priority(source: &str) -> i32 {
     }
 }
 
+#[derive(Hash, PartialEq, Eq, Clone, Debug)]
+pub enum DishSlotKey {
+    Primary(String, i32),
+    Alternative(String, i32, i32),
+}
+
 #[allow(clippy::too_many_arguments)]
 pub async fn upsert_menu(
     db: &DatabaseConnection,
@@ -620,7 +626,12 @@ pub async fn upsert_menu(
         hist.insert(&txn).await?;
         
         for (d, _) in existing_dishes {
-            existing_map.insert((d.dish_alias_id, d.package_name.clone()), d);
+            let key = if d.is_alternative {
+                DishSlotKey::Alternative(d.package_name.clone(), d.order_index, d.dish_alias_id)
+            } else {
+                DishSlotKey::Primary(d.package_name.clone(), d.order_index)
+            };
+            existing_map.insert(key, d);
         }
         
         let mut update_m: menus::ActiveModel = m.clone().into();
@@ -648,8 +659,8 @@ pub async fn upsert_menu(
         res.id
     };
     
-    // Build target_map: Key: (dish_alias_id, package_name), Value: (order_index, is_alternative, amount, calories)
-    let mut target_map = HashMap::new();
+    // Build target_map
+    let mut target_map: HashMap<DishSlotKey, (i32, Option<String>, Option<i32>)> = HashMap::new();
     
     let parse_dish_calories = |raw: &Option<String>| -> Option<i32> {
         let s = raw.as_ref()?;
@@ -679,7 +690,18 @@ pub async fn upsert_menu(
             let alias_id = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
             let package_name = "NORMAL".to_string();
             let cals = parse_dish_calories(&comp.calories);
-            target_map.insert((alias_id, package_name), (order_index, is_alternative, comp.amount, cals));
+            let key = if is_alternative {
+                DishSlotKey::Alternative(package_name, order_index, alias_id)
+            } else {
+                DishSlotKey::Primary(package_name, order_index)
+            };
+
+            if let Some((_, existing_amt, existing_cals)) = target_map.get_mut(&key) {
+                *existing_amt = comp.amount.filter(|s| !s.trim().is_empty()).or(existing_amt.take());
+                *existing_cals = cals.or(*existing_cals);
+            } else {
+                target_map.insert(key, (alias_id, comp.amount, cals));
+            }
         }
     }
 
@@ -690,7 +712,18 @@ pub async fn upsert_menu(
             let alias_id = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
             let package_name = "ÇÖLYAK MENÜSÜ".to_string();
             let cals = parse_dish_calories(&comp.calories);
-            target_map.insert((alias_id, package_name), (order_index, is_alternative, comp.amount, cals));
+            let key = if is_alternative {
+                DishSlotKey::Alternative(package_name, order_index, alias_id)
+            } else {
+                DishSlotKey::Primary(package_name, order_index)
+            };
+
+            if let Some((_, existing_amt, existing_cals)) = target_map.get_mut(&key) {
+                *existing_amt = comp.amount.filter(|s| !s.trim().is_empty()).or(existing_amt.take());
+                *existing_cals = cals.or(*existing_cals);
+            } else {
+                target_map.insert(key, (alias_id, comp.amount, cals));
+            }
         }
     }
     
@@ -702,32 +735,49 @@ pub async fn upsert_menu(
                 let is_alternative = j > 0;
                 let alias_id = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
                 let cals = parse_dish_calories(&comp.calories);
-                target_map.insert((alias_id, sanitized_package.clone()), (order_index, is_alternative, comp.amount, cals));
+                let key = if is_alternative {
+                    DishSlotKey::Alternative(sanitized_package.clone(), order_index, alias_id)
+                } else {
+                    DishSlotKey::Primary(sanitized_package.clone(), order_index)
+                };
+
+                if let Some((_, existing_amt, existing_cals)) = target_map.get_mut(&key) {
+                    *existing_amt = comp.amount.filter(|s| !s.trim().is_empty()).or(existing_amt.take());
+                    *existing_cals = cals.or(*existing_cals);
+                } else {
+                    target_map.insert(key, (alias_id, comp.amount, cals));
+                }
             }
         }
     }
     
-    // Smart Sync
-    for (key, target_vals) in target_map.into_iter() {
-        let (order_index, is_alternative, amount, calories) = target_vals;
+    // Smart Sync with slot integrity and field-level metadata merge
+    for (key, (alias_id, amount, calories)) in target_map.into_iter() {
+        let (package_name, order_index, is_alternative) = match &key {
+            DishSlotKey::Primary(pkg, idx) => (pkg.clone(), *idx, false),
+            DishSlotKey::Alternative(pkg, idx, _) => (pkg.clone(), *idx, true),
+        };
+
         if let Some(existing) = existing_map.remove(&key) {
-            // Update if changed
-            if existing.order_index != order_index || existing.is_alternative != is_alternative || existing.amount != amount || existing.calories != calories {
+            // Field-level merge: preserve existing values if incoming is None/empty
+            let final_amount = amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone());
+            let final_calories = calories.or(existing.calories);
+
+            if existing.dish_alias_id != alias_id || existing.amount != final_amount || existing.calories != final_calories {
                 let mut active: menu_dishes::ActiveModel = existing.into();
-                active.order_index = Set(order_index);
-                active.is_alternative = Set(is_alternative);
-                active.amount = Set(amount);
-                active.calories = Set(calories);
+                active.dish_alias_id = Set(alias_id);
+                active.amount = Set(final_amount);
+                active.calories = Set(final_calories);
                 active.update(&txn).await?;
             }
         } else {
-            // Insert new
+            // Insert new slot
             let link = menu_dishes::ActiveModel {
                 menu_id: Set(menu_id),
-                dish_alias_id: Set(key.0),
+                dish_alias_id: Set(alias_id),
                 order_index: Set(order_index),
                 is_alternative: Set(is_alternative),
-                package_name: Set(key.1),
+                package_name: Set(package_name),
                 amount: Set(amount),
                 calories: Set(calories),
                 ..Default::default()
@@ -736,7 +786,7 @@ pub async fn upsert_menu(
         }
     }
     
-    // Delete missing
+    // Delete missing slots
     for (_, existing) in existing_map.into_iter() {
         let active: menu_dishes::ActiveModel = existing.into();
         active.delete(&txn).await?;
