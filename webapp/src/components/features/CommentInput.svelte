@@ -296,6 +296,8 @@
                 <button 
                     class="ci-submit" 
                     class:is-disabled={submitDisabled || isSubmitting}
+                    disabled={submitDisabled || isSubmitting}
+                    aria-label="Yorumu Gönder"
                     data-tooltip={submitTooltipMsg}
                     onclick={handleSubmit}
                 >

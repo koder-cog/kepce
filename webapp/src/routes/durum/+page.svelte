@@ -168,6 +168,7 @@
                     class="pill pill--{day.status}"
                     role="button"
                     tabindex="0"
+                    aria-label="{new Date(day.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}: {day.status === 'aktif' ? 'Sistem Sorunsuz' : 'Olay Kaydı'}"
                     data-tooltip-trigger="click"
                   >
                     <div class="tooltip-template u-hidden">

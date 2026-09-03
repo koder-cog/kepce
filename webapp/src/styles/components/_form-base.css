@@ -170,13 +170,11 @@
     text-align: right;
     font-size: var(--text-2xs);
     font-weight: var(--font-weight-bold);
-    color: var(--color-muted);
-    opacity: 0.6;
+    color: var(--color-text-secondary);
     padding-top: var(--space-xs);
     padding-right: 2px;
     pointer-events: none;
-    transition: color var(--dur-fast) var(--ease-standard),
-      opacity var(--dur-fast) var(--ease-standard);
+    transition: color var(--dur-fast) var(--ease-standard);
     user-select: none;
   }
 

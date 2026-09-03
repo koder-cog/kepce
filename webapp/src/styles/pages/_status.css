@@ -87,11 +87,21 @@
   }
 
   .pill {
+    position: relative;
     flex: 1;
     border-radius: var(--radius-2xs);
     background: var(--color-success);
     opacity: 0.8;
     transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+  }
+
+  .pill::after {
+    content: '';
+    position: absolute;
+    top: -6px;
+    bottom: -6px;
+    left: -1px;
+    right: -1px;
   }
 
   .pill--aktif {

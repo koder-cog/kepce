@@ -419,6 +419,8 @@
         class:dropdown__trigger--placeholder={value === undefined || value === null || value === ''}
         type="button"
         role="combobox"
+        disabled={disabled}
+        aria-disabled={disabled}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-controls={isOpen ? menuId : undefined}

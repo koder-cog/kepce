@@ -509,6 +509,7 @@
                     ? 'is-active'
                     : ''}"
                 data-vote="up"
+                aria-label="Menüyü Beğen"
                 onclick={() => handleVote("positive")}
             >
                 {@html icon(
@@ -522,6 +523,7 @@
                     ? 'is-active'
                     : ''}"
                 data-vote="down"
+                aria-label="Menüyü Beğenme"
                 onclick={() => handleVote("negative")}
             >
                 {@html icon(

@@ -104,7 +104,7 @@
 
   /* Active State */
   .c-tab--active {
-    color: var(--color-text);
+    color: var(--color-text-on-accent);
     font-weight: var(--font-weight-bold);
     opacity: 1;
   }

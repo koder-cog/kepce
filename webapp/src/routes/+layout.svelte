@@ -238,6 +238,11 @@
 		// Remove disabled state on load
 		document.documentElement.classList.remove("no-js");
 
+		// PWA: Tarayıcının yerel uygulama yükleme yeteneğini ve Web Push altyapısını sessizce hazırla
+		if (typeof window !== "undefined" && "serviceWorker" in navigator) {
+			navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+		}
+
 		const animationsEnabled =
 			localStorage.getItem("kepce_animations") !== "false";
 		const effectsEnabled =
