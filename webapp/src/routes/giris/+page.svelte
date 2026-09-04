@@ -231,7 +231,7 @@
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
               onclick={() => (showPassword = !showPassword)}
             >
-              {@html icon(showPassword ? "eyeOff" : "eye", 20)}
+              {@html icon(showPassword ? "eyeNotLooking" : "eyeLooking", 20)}
             </button>
           </div>
 

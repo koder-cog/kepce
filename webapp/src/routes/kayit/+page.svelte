@@ -349,7 +349,7 @@
               aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
               onclick={() => (showPassword = !showPassword)}
             >
-              {@html icon(showPassword ? "eyeOff" : "eye", 20)}
+              {@html icon(showPassword ? "eyeNotLooking" : "eyeLooking", 20)}
             </button>
           </div>
           {#if password.length > 0}
@@ -415,7 +415,7 @@
             aria-label={showRepeatPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             onclick={() => (showRepeatPassword = !showRepeatPassword)}
           >
-            {@html icon(showRepeatPassword ? "eyeOff" : "eye", 20)}
+            {@html icon(showRepeatPassword ? "eyeNotLooking" : "eyeLooking", 20)}
           </button>
         </div>
       </div>
