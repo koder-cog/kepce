@@ -549,7 +549,11 @@ pub async fn upsert_menu(
     // satırları çöp diye elerse ya da kaynak site boş döndüyse) slot işgal
     // etmesin. Böyle bir menü insert edilirse fallback/gap-fill "kayıt var"
     // görüp o şehir/gün/öğün kombinasyonunu bir daha doldurmaz.
-    if dishes.is_empty() && celiac_dishes.is_empty() && takeaways.is_empty() {
+    let has_standard = dishes.iter().any(|group| group.iter().any(|c| !c.name.trim().is_empty()));
+    let has_celiac = celiac_dishes.iter().any(|group| group.iter().any(|c| !c.name.trim().is_empty()));
+    let has_takeaways = takeaways.iter().any(|(_, groups)| groups.iter().any(|group| group.iter().any(|c| !c.name.trim().is_empty())));
+
+    if !has_standard && !has_celiac && !has_takeaways {
         tracing::warn!(
             "upsert_menu reddedildi: geçerli içeriği olmayan kayıt (city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
             city_id, date, meal_type, source_type

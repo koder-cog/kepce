@@ -93,10 +93,10 @@ async fn ping_inner(db: &DatabaseConnection, client: &Client, config: &IndexNowC
 
     let mut urls: Vec<String> = unique
         .iter()
-        .filter_map(|(city_id, date)| {
+        .filter_map(|(city_id, _)| {
             slug_by_id
                 .get(city_id)
-                .map(|slug| format!("https://{}/{}/{}", config.host, slug, date.format("%Y-%m-%d")))
+                .map(|slug| format!("https://{}/{}", config.host, slug))
         })
         .collect();
     urls.sort();

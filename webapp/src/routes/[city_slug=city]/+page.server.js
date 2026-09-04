@@ -7,14 +7,15 @@ import { CITY_MAP } from '@/utils/turkish.js';
  * çeker ve HTML'e gömer. Menü yoksa veya yaz tatilindeyse noindex basar,
  * son çıkan menüyü ve arşiv bağlantılarını sunar.
  */
-export async function load({ params, setHeaders }) {
+export async function load({ params, url, setHeaders }) {
 	const citySlug = params.city_slug;
 
 	if (!CITY_MAP[citySlug]) {
 		error(404, 'Bu şehir için bir sayfa bulunamadı.');
 	}
 
-	const date = istanbulToday();
+	const gunParam = url.searchParams.get('gun') || url.searchParams.get('tarih') || url.searchParams.get('date');
+	const date = gunParam && /^\d{4}-\d{2}-\d{2}$/.test(gunParam) ? gunParam : istanbulToday();
 	const isSummer = ['07', '08'].includes(date.slice(5, 7));
 
 	setHeaders({

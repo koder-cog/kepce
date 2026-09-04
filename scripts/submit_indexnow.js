@@ -40,23 +40,27 @@ function extractLocs(xml) {
 }
 
 async function collectAllUrls() {
-	console.log(`[1/3] Sitemap indeksinden URL'ler toplaniyor: ${BASE_URL}/sitemap.xml`);
-	const indexXml = await fetchText(`${BASE_URL}/sitemap.xml`);
-	const sitemaps = extractLocs(indexXml);
-
-	console.log(`      ${sitemaps.length} adet sitemap parcasi bulundu.`);
-
+	console.log(`[1/3] Sitemap'ten URL'ler toplaniyor: ${BASE_URL}/sitemap.xml`);
+	const xml = await fetchText(`${BASE_URL}/sitemap.xml`);
 	const allUrls = new Set();
 
-	for (const sm of sitemaps) {
-		try {
-			const subXml = await fetchText(sm);
-			const locs = extractLocs(subXml);
-			locs.forEach((u) => allUrls.add(u));
-			console.log(`      + ${sm}: ${locs.length} URL`);
-		} catch (err) {
-			console.warn(`      ! Hata: ${sm} okunamadi: ${err.message}`);
+	if (xml.includes('<sitemapindex')) {
+		const sitemaps = extractLocs(xml);
+		console.log(`      ${sitemaps.length} adet sitemap parcasi bulundu.`);
+		for (const sm of sitemaps) {
+			try {
+				const subXml = await fetchText(sm);
+				const locs = extractLocs(subXml);
+				locs.forEach((u) => allUrls.add(u));
+				console.log(`      + ${sm}: ${locs.length} URL`);
+			} catch (err) {
+				console.warn(`      ! Hata: ${sm} okunamadi: ${err.message}`);
+			}
 		}
+	} else {
+		const locs = extractLocs(xml);
+		locs.forEach((u) => allUrls.add(u));
+		console.log(`      ${locs.length} adet tekil sayfa URL'i bulundu.`);
 	}
 
 	const sorted = Array.from(allUrls).sort();

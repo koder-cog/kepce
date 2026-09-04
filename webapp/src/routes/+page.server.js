@@ -10,7 +10,8 @@ export async function load({ url, setHeaders }) {
 	const cityParam = url.searchParams.get('sehir') || url.searchParams.get('city');
 	const city =
 		cityParam && ACTIVE_CITIES.includes(cityParam) ? cityParam : 'istanbul';
-	const date = istanbulToday();
+	const gunParam = url.searchParams.get('gun') || url.searchParams.get('tarih') || url.searchParams.get('date');
+	const date = gunParam && /^\d{4}-\d{2}-\d{2}$/.test(gunParam) ? gunParam : istanbulToday();
 	const isSummer = ['07', '08'].includes(date.slice(5, 7));
 
 	setHeaders({
