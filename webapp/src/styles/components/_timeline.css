@@ -103,8 +103,7 @@
     }
 
     .view-toggle {
-      flex: 1;
-      transition: flex-grow var(--dur-medium) var(--ease-spatial-default);
+      flex: 0 0 auto;
     }
 
     .diet-mode-selector .c-segmented-control {
@@ -334,10 +333,6 @@
 
     .month-nav-wrapper {
       justify-content: center;
-      width: 100%;
-    }
-
-    .view-toggle {
       width: 100%;
     }
 

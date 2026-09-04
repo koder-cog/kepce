@@ -51,6 +51,23 @@
     border: 1px solid var(--color-border);
   }
 
+  .c-segmented-control[data-variant="icons"] {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .c-segmented-control[data-variant="icons"] .c-segmented-control__btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    padding: 0;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
   .c-segmented-control[data-variant="icons"] .c-segmented-control__indicator {
     width: var(--indicator-width, 36px);
   }
