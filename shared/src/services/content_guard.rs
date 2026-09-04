@@ -149,6 +149,12 @@ impl ContentGuard {
             "kahvaltiaksam",
             "kahvaltiogle",
             "ogleaksam",
+            // Sezon/dönem başı duyuruları (örn. "14 Eylül itibarıyla yeni dönem listeleri...")
+            "yeni donem",
+            "girilmeye baslanacak",
+            "basarilar dileriz",
+            "itibariyla",
+            "itibariyle",
         ];
 
         for kw in blocked_keywords {
@@ -226,8 +232,9 @@ mod tests {
         assert!(ContentGuard::is_junk_dish_text("- Kahvaltı Yemek Listesi"));
         assert!(ContentGuard::is_junk_dish_text("- Akşam Yemeği Yemek Listesi"));
         assert!(ContentGuard::is_junk_dish_text("Gün Menüsü"));
-        assert!(ContentGuard::is_junk_dish_text("KahvaltıAkşam"));
-        assert!(ContentGuard::is_junk_dish_text("Kahvaltı Öğle"));
+        assert!(ContentGuard::is_junk_dish_text(
+            "14 Eylül itibarıyla yeni dönem listeleri girilmeye başlanacak. Herkese yeni dönemde başarılar dileriz."
+        ));
 
         // Valid dishes
         assert!(!ContentGuard::is_junk_dish_text("Pideli Soslu Izgara Köfte"));
