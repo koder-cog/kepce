@@ -14,10 +14,34 @@ export const BANG_DEFINITIONS = [
   { prefix: "!osym", name: "ÖSYM", url: "https://www.osym.gov.tr/TR,0/arama.html?q=" },
   { prefix: "!dergipark", name: "DergiPark Akademik", url: "https://dergipark.org.tr/tr/search?q=" },
   { prefix: "!tubitak", name: "TÜBİTAK", url: "https://www.tubitak.gov.tr/tr/arama?search_api_views_fulltext=" },
+  { prefix: "!scholar", name: "Google Akademik", url: "https://scholar.google.com/scholar?q=" },
+  { prefix: "!arxiv", name: "arXiv", url: "https://arxiv.org/search/?query=" },
+  { prefix: "!scihub", name: "Sci-Hub", url: "https://sci-hub.se/" },
   { prefix: "!kepce", name: "Kepçe Menü", url: "https://kepce.org/" },
+
+  // Üniversiteler (TR)
+  { prefix: "!itu", name: "İstanbul Teknik Üniversitesi", url: "https://www.google.com/search?q=site%3Aitu.edu.tr+" },
+  { prefix: "!odtu", name: "Orta Doğu Teknik Üniversitesi", url: "https://www.google.com/search?q=site%3Ametu.edu.tr+" },
+  { prefix: "!boun", name: "Boğaziçi Üniversitesi", url: "https://www.google.com/search?q=site%3Aboun.edu.tr+" },
+  { prefix: "!hacettepe", name: "Hacettepe Üniversitesi", url: "https://www.google.com/search?q=site%3Ahacettepe.edu.tr+" },
+  { prefix: "!ege", name: "Ege Üniversitesi", url: "https://www.google.com/search?q=site%3Aege.edu.tr+" },
+  { prefix: "!deu", name: "Dokuz Eylül Üniversitesi", url: "https://www.google.com/search?q=site%3Adeu.edu.tr+" },
+  { prefix: "!ankara", name: "Ankara Üniversitesi", url: "https://www.google.com/search?q=site%3Aankara.edu.tr+" },
+  { prefix: "!marmara", name: "Marmara Üniversitesi", url: "https://www.google.com/search?q=site%3Amarmara.edu.tr+" },
+  { prefix: "!ytu", name: "Yıldız Teknik Üniversitesi", url: "https://www.google.com/search?q=site%3Aytu.edu.tr+" },
+  { prefix: "!iu", name: "İstanbul Üniversitesi", url: "https://www.google.com/search?q=site%3Aistanbul.edu.tr+" },
+  { prefix: "!gsu", name: "Galatasaray Üniversitesi", url: "https://www.google.com/search?q=site%3Agsu.edu.tr+" },
+
+  // Kamu & Resmi Hizmetler
+  { prefix: "!turkiye", name: "e-Devlet Kapısı", url: "https://www.turkiye.gov.tr/arama?aranan=" },
+  { prefix: "!edevlet", name: "e-Devlet Kapısı", url: "https://www.turkiye.gov.tr/arama?aranan=" },
+  { prefix: "!resmigazete", name: "T.C. Resmî Gazete", url: "https://www.resmigazete.gov.tr/arama?ara=" },
+  { prefix: "!meb", name: "Millî Eğitim Bakanlığı", url: "https://www.meb.gov.tr/arama.php?q=" },
+  { prefix: "!tuik", name: "TÜİK", url: "https://data.tuik.gov.tr/Search/Search?text=" },
 
   // Geliştirici & Kod
   { prefix: "!gh", name: "GitHub", url: "https://github.com/search?q=" },
+  { prefix: "!github", name: "GitHub", url: "https://github.com/search?q=" },
   { prefix: "!gl", name: "GitLab", url: "https://gitlab.com/search?search=" },
   { prefix: "!so", name: "Stack Overflow", url: "https://stackoverflow.com/search?q=" },
   { prefix: "!npm", name: "npm Packages", url: "https://www.npmjs.com/search?q=" },
@@ -27,6 +51,10 @@ export const BANG_DEFINITIONS = [
   { prefix: "!hf", name: "Hugging Face", url: "https://huggingface.co/models?search=" },
   { prefix: "!pkg", name: "Go Packages", url: "https://pkg.go.dev/search?q=" },
   { prefix: "!docker", name: "Docker Hub", url: "https://hub.docker.com/search?q=" },
+  { prefix: "!deno", name: "Deno", url: "https://docs.deno.com/search?q=" },
+  { prefix: "!bun", name: "Bun", url: "https://bun.sh/docs#search=" },
+  { prefix: "!devdocs", name: "DevDocs", url: "https://devdocs.io/#q=" },
+  { prefix: "!caniuse", name: "Can I Use", url: "https://caniuse.com/?search=" },
 
   // Multimedya & Video & Müzik
   { prefix: "!yt", name: "YouTube", url: "https://www.youtube.com/results?search_query=" },
@@ -49,12 +77,16 @@ export const BANG_DEFINITIONS = [
   { prefix: "!x", name: "X (Twitter)", url: "https://twitter.com/search?q=" },
   { prefix: "!hn", name: "Hacker News", url: "https://hn.algolia.com/?q=" },
 
-  // Arama Motorları
+  // Arama Motorları & Yapay Zeka
   { prefix: "!g", name: "Google", url: "https://www.google.com/search?q=" },
   { prefix: "!ddg", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
   { prefix: "!brave", name: "Brave Search", url: "https://search.brave.com/search?q=" },
   { prefix: "!bing", name: "Bing", url: "https://www.bing.com/search?q=" },
   { prefix: "!yandex", name: "Yandex", url: "https://yandex.com.tr/search/?text=" },
+  { prefix: "!chatgpt", name: "ChatGPT", url: "https://chatgpt.com/?q=" },
+  { prefix: "!claude", name: "Claude", url: "https://claude.ai/new?q=" },
+  { prefix: "!gemini", name: "Google Gemini", url: "https://gemini.google.com/app" },
+  { prefix: "!perplex", name: "Perplexity AI", url: "https://www.perplexity.ai/search?q=" },
 
   // Haritalar & Coğrafya
   { prefix: "!m", name: "OpenStreetMap", url: "https://www.openstreetmap.org/search?query=" },
@@ -70,8 +102,6 @@ export const BANG_DEFINITIONS = [
   // Çeviri & Araçlar
   { prefix: "!tr", name: "Google Çeviri (TR)", url: "https://translate.google.com/?sl=auto&tl=tr&text=" },
   { prefix: "!tren", name: "Google Çeviri (EN)", url: "https://translate.google.com/?sl=auto&tl=en&text=" },
-  { prefix: "!chatgpt", name: "ChatGPT", url: "https://chatgpt.com/?q=" },
-  { prefix: "!claude", name: "Claude", url: "https://claude.ai/new?q=" },
   { prefix: "!wayback", name: "Wayback Machine", url: "https://web.archive.org/web/*/" }
 ];
 
