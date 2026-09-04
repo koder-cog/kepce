@@ -1,20 +1,12 @@
 import { ACTIVE_CITIES } from '@/utils/turkish.js';
 import { withEtag } from '@/lib/server/etag.js';
+import { apiGet, istanbulToday } from '@/lib/server/api.js';
 
 /**
- * Statik sayfalar + 81 şehir sayfası (~100 URL).
- * Şehir sayfaları her gün güncellendiği için lastmod = bugün (Istanbul).
+ * Statik sayfalar + aktif şehir sayfaları.
+ * Şehir sayfaları için lastmod: o şehrin onaylı en son menü tarihidir (bugünü geçmeyecek şekilde).
  */
 const BASE_URL = 'https://kepce.org';
-
-function istanbulToday() {
-	return new Intl.DateTimeFormat('en-CA', {
-		timeZone: 'Europe/Istanbul',
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).format(new Date());
-}
 
 // Statik sayfalar ve gerçek içerik güncellenme tarihleri (lastmod dürüstlüğü)
 const staticPagesWithLastmod = [
@@ -41,6 +33,11 @@ const staticPagesWithLastmod = [
 export async function GET({ request }) {
 	const today = istanbulToday();
 
+	// Şehirlerin en son onaylı menü tarihlerini (bugünü geçmeyecek şekilde) API'den al
+	const cityLastmods = await apiGet('/api/v1/public/menus/latest-by-city', {
+		fallback: {}
+	});
+
 	const staticEntries = staticPagesWithLastmod.map(({ path, lastmod }) => ({
 		loc: `${BASE_URL}${path}`,
 		lastmod: lastmod || today
@@ -48,7 +45,7 @@ export async function GET({ request }) {
 
 	const cityEntries = ACTIVE_CITIES.map((slug) => ({
 		loc: `${BASE_URL}/${slug}`,
-		lastmod: today
+		lastmod: cityLastmods?.[slug] || today
 	}));
 
 	const allEntries = [...staticEntries, ...cityEntries];

@@ -28,6 +28,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/menus/months", get(get_menu_months))
         .route("/menus/index", get(get_menu_index))
         .route("/menus/days", get(get_menu_days))
+        .route("/menus/latest-by-city", get(get_menu_latest_by_city))
         .route("/menus/today/:city", get(get_today_menu))
         .route("/menus/:id", get(get_single_menu))
 }
@@ -283,4 +284,41 @@ pub async fn get_menu_days(
     let now_month = chrono::Utc::now().format("%Y-%m").to_string();
     let ttl: u32 = if query.month == now_month { 3600 } else { 86400 };
     crate::utils::response::cached_json_response(&headers, &days, ttl)
+}
+
+/// GET /api/v1/public/menus/latest-by-city
+/// Aktif şehirlerin en son onaylı menü tarihleri (bugünü geçmeyecek biçimde LEAST(MAX(serve_date), CURRENT_DATE)).
+/// Şehir ana sayfası sitemap lastmod doğruluğunu besler.
+pub async fn get_menu_latest_by_city(
+    State(db): State<sea_orm::DatabaseConnection>,
+    headers: HeaderMap,
+) -> Result<axum::response::Response, AppError> {
+    use sea_orm::{ConnectionTrait, Statement, DatabaseBackend};
+
+    let rows = db
+        .query_all(Statement::from_string(
+            DatabaseBackend::Postgres,
+            "SELECT c.slug AS city_slug, TO_CHAR(LEAST(MAX(m.serve_date), CURRENT_DATE), 'YYYY-MM-DD') AS lastmod \
+             FROM menus m JOIN cities c ON m.city_id = c.id \
+             WHERE m.status = 'approved' \
+             GROUP BY c.slug \
+             ORDER BY c.slug ASC",
+        ))
+        .await
+        .map_err(|e| {
+            tracing::error!("DB error fetching latest menu dates by city: {}", e);
+            AppError::Internal("DB Error".to_string())
+        })?;
+
+    let mut result = std::collections::HashMap::new();
+    for r in rows {
+        if let (Ok(city_slug), Ok(lastmod)) = (
+            r.try_get::<String>("", "city_slug"),
+            r.try_get::<String>("", "lastmod"),
+        ) {
+            result.insert(city_slug, lastmod);
+        }
+    }
+
+    crate::utils::response::cached_json_response(&headers, &result, 3600)
 }
