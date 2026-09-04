@@ -10,6 +10,7 @@
   import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
   import AnswerCard from "@/components/features/search/AnswerCard.svelte";
   import { BANG_DEFINITIONS } from "$lib/search/bangs.js";
+  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
 
   let { data } = $props();
 
@@ -157,6 +158,7 @@
   }
 
   onMount(() => {
+    searchPreferences.init();
     loadHistory();
     const shuffled = [...BANG_DEFINITIONS]
       .sort(() => 0.5 - Math.random())
@@ -259,7 +261,11 @@
     } else if (e.key === "Enter" && selectedResultIndex >= 0) {
       const selectedItem = items[selectedResultIndex];
       if (selectedItem?.url) {
-        window.open(selectedItem.url, "_blank", "noopener,noreferrer");
+        if (searchPreferences.openInNewTab) {
+          window.open(selectedItem.url, "_blank", "noopener,noreferrer");
+        } else {
+          window.location.href = selectedItem.url;
+        }
       }
     } else if (e.key === "Escape") {
       selectedResultIndex = -1;
@@ -280,6 +286,12 @@
   let debounceTimeout = null;
 
   async function fetchSuggestions(query) {
+    if (searchPreferences.autocomplete === "off") {
+      suggestions = [];
+      isSuggestionsOpen = false;
+      return;
+    }
+
     const q = query.trim();
     if (!q) {
       suggestions = [];
@@ -318,7 +330,8 @@
     }
 
     try {
-      const res = await fetch(`${basePath}/autocompleter?q=${encodeURIComponent(q)}`);
+      const motorParam = searchPreferences.autocomplete ? `&motor=${encodeURIComponent(searchPreferences.autocomplete)}` : "";
+      const res = await fetch(`${basePath}/autocompleter?q=${encodeURIComponent(q)}${motorParam}`);
       if (res.ok) {
         const list = await res.json();
         if (Array.isArray(list) && list.length > 0) {
@@ -343,7 +356,7 @@
       instantPreview = null;
       return;
     }
-    if (/^[\d\s.,+\-*/()^%]+$/.test(q) && /[+\-*/^%]/.test(q)) {
+    if (searchPreferences.pluginCalculator && /^[\d\s.,+\-*/()^%]+$/.test(q) && /[+\-*/^%]/.test(q)) {
       try {
         const sanitized = q.replace(/,/g, ".").replace(/\^/g, "**");
         if (!/[a-zA-Z_$]/.test(sanitized)) {
@@ -367,17 +380,19 @@
         }
       } catch {}
     }
-    const mCur = q.match(/^(\d+(?:[.,]\d+)?)\s*(dolar|usd|\$|euro|eur|€)/i);
-    if (mCur) {
-      const amt = parseFloat(mCur[1].replace(",", "."));
-      const cur = mCur[2].toLowerCase();
-      const rate = cur.includes("e") || cur.includes("€") ? 52.5 : 48.27;
-      const total = amt * rate;
-      instantPreview = {
-        badge: "Döviz Tahmini",
-        text: `≈ ${total.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} ₺`,
-      };
-      return;
+    if (searchPreferences.pluginCalculator || searchPreferences.pluginUnitConverter) {
+      const mCur = q.match(/^(\d+(?:[.,]\d+)?)\s*(dolar|usd|\$|euro|eur|€)/i);
+      if (mCur) {
+        const amt = parseFloat(mCur[1].replace(",", "."));
+        const cur = mCur[2].toLowerCase();
+        const rate = cur.includes("e") || cur.includes("€") ? 52.5 : 48.27;
+        const total = amt * rate;
+        instantPreview = {
+          badge: "Döviz Tahmini",
+          text: `≈ ${total.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} ₺`,
+        };
+        return;
+      }
     }
     instantPreview = null;
   }
@@ -461,6 +476,14 @@
     return `${prefix}${qs ? `?${qs}` : ""}` || "/";
   }
 
+  function isAnswerPluginAllowed(ans) {
+    if (!ans) return false;
+    if (ans.type === "calculator" && !searchPreferences.pluginCalculator) return false;
+    if (ans.type === "unit" && !searchPreferences.pluginUnitConverter) return false;
+    if (ans.type === "time" && !searchPreferences.pluginTimezones) return false;
+    return true;
+  }
+
   function handleSearch(e) {
     e?.preventDefault();
     isSuggestionsOpen = false;
@@ -476,18 +499,33 @@
 
     const params = new URLSearchParams();
     params.set("q", q);
-    if (data.category && data.category !== "general") {
-      params.set("kategori", data.category);
+
+    const targetCategory = data.isHome
+      ? searchPreferences.defaultCategory
+      : (data.category || searchPreferences.defaultCategory || "general");
+    if (targetCategory && targetCategory !== "general") {
+      params.set("kategori", targetCategory);
     }
-    if (data.language && data.language !== "tr") {
-      params.set("dil", data.language);
+
+    const targetLang = data.isHome
+      ? searchPreferences.language
+      : (data.language || searchPreferences.language || "tr");
+    if (targetLang && targetLang !== "tr") {
+      params.set("dil", targetLang);
     }
+
     if (data.timeRange) {
       params.set("zaman", data.timeRange);
     }
-    if (data.safeSearch && data.safeSearch !== "1") {
-      params.set("guvenli", data.safeSearch);
+
+    const targetSafe = data.isHome
+      ? searchPreferences.safeSearch
+      : (data.safeSearch || searchPreferences.safeSearch || "1");
+    if (targetSafe && targetSafe !== "1") {
+      params.set("guvenli", targetSafe);
     }
+
+    appendActiveCategoryFilters(params);
 
     goto(buildSearchUrl(params));
   }
@@ -532,8 +570,14 @@
   }
 
   function getFaviconUrl(rawUrl) {
+    if (searchPreferences.faviconResolver === "off" || searchPreferences.faviconResolver === "none") {
+      return null;
+    }
     const domain = getDomain(rawUrl);
-    if (!domain) return "";
+    if (!domain) return null;
+    if (searchPreferences.faviconResolver === "google") {
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    }
     return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
   }
 
@@ -679,6 +723,14 @@
     return buildSearchUrl(params);
   }
 
+  let searchPageNumbers = $derived.by(() => {
+    const current = Math.max(1, data.page || 1);
+    if (current <= 3) {
+      return [1, 2, 3, 4, 5];
+    }
+    return [current - 2, current - 1, current, current + 1, current + 2];
+  });
+
   function formatUrlBreadcrumb(rawUrl) {
     try {
       const u = new URL(rawUrl);
@@ -709,7 +761,7 @@
       content="Gizlilik odaklı, açık kaynaklı meta arama motoru."
     />
   {:else}
-    <title>{data.query} | Kepçe Ara</title>
+    <title>{searchPreferences.hideQueryInTitle ? "Kepçe Ara" : `${data.query} | Kepçe Ara`}</title>
     <meta name="description" content="{data.query} arama sonuçları." />
   {/if}
 </svelte:head>
@@ -1297,7 +1349,7 @@
       {/if}
 
       <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi - Yalnızca Web sekmesinde) -->
-      {#if data.answer && (data.category === "general" || !data.category)}
+      {#if data.answer && (data.category === "general" || !data.category) && isAnswerPluginAllowed(data.answer)}
         <div class="c-search-top-answer">
           <AnswerCard answer={data.answer} />
         </div>
@@ -1472,8 +1524,8 @@
                   </span>
                   <a
                     href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={searchPreferences.linkTarget}
+                    rel={searchPreferences.linkRel}
                     class="c-search-image-meta__source"
                   >
                     {formatUrlBreadcrumb(item.url)}
@@ -1525,8 +1577,8 @@
                 <div class="c-search-video-info">
                   <a
                     href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                    target={searchPreferences.linkTarget}
+                    rel={searchPreferences.linkRel}
                     class="c-search-video-title"
                   >
                     {item.title}
@@ -1551,8 +1603,8 @@
             >
               <a
                 href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                target={searchPreferences.linkTarget}
+                rel={searchPreferences.linkRel}
                 class="c-search-item__header"
               >
                 {#if favicon}
@@ -1568,8 +1620,8 @@
               </a>
               <a
                 href={item.url}
-                target="_blank"
-                rel="noopener noreferrer"
+                target={searchPreferences.linkTarget}
+                rel={searchPreferences.linkRel}
                 class="c-search-item__title"
               >
                 {@html highlightQuery(item.title, data.query)}
@@ -1586,41 +1638,49 @@
 
         <!-- Sayfalama -->
         {#if currentResults.length > 0}
-          <div class="c-search-pagination">
+          <nav class="pagination c-search-pagination" aria-label="Sayfalama">
             {#if data.page > 1}
               <a
                 href={getPageUrl(data.page - 1)}
-                class="btn btn--sm btn--secondary"
-                aria-label="Önceki"
+                class="pagination__btn pagination__btn--nav"
+                aria-label="Önceki sayfa"
               >
-                Önceki
+                {@html icon("chevronLeft", 18)}
+                <span class="pagination__btn-text">Önceki</span>
               </a>
             {/if}
-            <span class="btn btn--sm btn--primary">
-              {data.page}
+
+            <span class="pagination__mobile-label">
+              Sayfa {data.page}
             </span>
+
+            <ul class="pagination__list">
+              {#each searchPageNumbers as p}
+                <li class="pagination__item">
+                  {#if p === data.page}
+                    <span class="pagination__btn is-active" aria-current="page">{p}</span>
+                  {:else}
+                    <a
+                      href={getPageUrl(p)}
+                      class="pagination__btn"
+                      aria-label="Sayfa {p}"
+                    >
+                      {p}
+                    </a>
+                  {/if}
+                </li>
+              {/each}
+            </ul>
+
             <a
               href={getPageUrl(data.page + 1)}
-              class="btn btn--sm btn--secondary"
-              aria-label="Sonraki"
+              class="pagination__btn pagination__btn--nav"
+              aria-label="Sonraki sayfa"
             >
-              {data.page + 1}
+              <span class="pagination__btn-text">Sonraki</span>
+              {@html icon("chevronRight", 18)}
             </a>
-            <a
-              href={getPageUrl(data.page + 2)}
-              class="btn btn--sm btn--secondary"
-              aria-label="Sayfa {data.page + 2}"
-            >
-              {data.page + 2}
-            </a>
-            <a
-              href={getPageUrl(data.page + 1)}
-              class="btn btn--sm btn--secondary"
-              aria-label="Sonraki"
-            >
-              Sonraki
-            </a>
-          </div>
+          </nav>
         {/if}
       </section>
     </main>
@@ -1643,7 +1703,7 @@
             href="https://github.com/searxng/searxng"
             target="_blank"
             rel="noopener noreferrer"
-            class="site-footer__link">Kaynak kodu</a
+            class="site-footer__link">Kaynak Kodu</a
           >
           <a
             href="https://github.com/searxng/searxng/issues"
@@ -1652,16 +1712,16 @@
             class="site-footer__link">Hata Bildirimi</a
           >
           <a
-            href="https://searx.space/"
+            href="https://github.com/koder-cog/kepce"
             target="_blank"
             rel="noopener noreferrer"
-            class="site-footer__link">Motor İstatistikleri</a
+            class="site-footer__link">Kepçe Deposu</a
           >
           <a
-            href="https://searx.space/"
+            href="https://www.gnu.org/licenses/agpl-3.0.html#license-text"
             target="_blank"
             rel="noopener noreferrer"
-            class="site-footer__link">Diğer Açık Sunucular</a
+            class="site-footer__link">AGPLv3 Lisansı</a
           >
         </div>
 
@@ -1669,11 +1729,11 @@
           <div class="site-footer__col-title">Yasal</div>
           <a
             href={`${basePath}/gizlilik`}
-            class="site-footer__link">Gizlilik politikası</a
+            class="site-footer__link">Gizlilik Politikası</a
           >
           <a
             href={`${basePath}/kosullar`}
-            class="site-footer__link">Kullanım koşulları</a
+            class="site-footer__link">Kullanım Koşulları</a
           >
           <a href={`${basePath}/iletisim`} class="site-footer__link"
             >İletişim & Geri Bildirim</a
@@ -1683,7 +1743,7 @@
         <div class="site-footer__col">
           <div class="site-footer__col-title">Bağlantılar</div>
           <a href={`${basePath}/ayarlar`} class="site-footer__link">Ayarlar</a>
-          <a href="https://kepce.org" class="site-footer__link">Kepçe (Ana Site)</a>
+          <a href="/" class="site-footer__link">Kepçe (Ana Site)</a>
           <a
             href="https://reddit.com/r/kepce"
             target="_blank"
@@ -1691,16 +1751,10 @@
             class="site-footer__link">Subreddit</a
           >
           <a
-            href="https://twitter.com/kepceorg"
+            href="https://github.com/koder-cog/kepce"
             target="_blank"
             rel="noopener noreferrer"
-            class="site-footer__link">Twitter</a
-          >
-          <a
-            href="https://instagram.com/kepceorg"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="site-footer__link">Instagram</a
+            class="site-footer__link">GitHub</a
           >
         </div>
       </div>
@@ -1766,8 +1820,8 @@
         <div class="c-search-lightbox-actions">
           <a
             href={selectedImage.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={searchPreferences.linkTarget}
+            rel={searchPreferences.linkRel}
             class="btn btn--primary btn--block"
           >
             Sayfayı Ziyaret Et

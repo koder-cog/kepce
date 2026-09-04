@@ -3,17 +3,10 @@
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
   import { icon } from "@/components/ui/icons.js";
+  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
   import { onMount } from "svelte";
 
   let { isOpen = $bindable(false) } = $props();
-
-  let theme = $state("sistem");
-  let language = $state("tr");
-  let safeSearch = $state("1");
-  let openInNewTab = $state(false);
-  let compactResults = $state(false);
-  let showFavicons = $state(true);
-  let infiniteScroll = $state(false);
 
   const THEME_OPTIONS = [
     { value: "sistem", label: "Sistem" },
@@ -34,81 +27,17 @@
   ];
 
   onMount(() => {
-    try {
-      theme = localStorage.getItem("renkTercihi") || "sistem";
-      language = localStorage.getItem("kepce_search_lang") || "tr";
-      safeSearch = localStorage.getItem("kepce_search_safe") || "1";
-      openInNewTab = localStorage.getItem("kepce_search_new_tab") === "true";
-      compactResults = localStorage.getItem("kepce_search_compact") === "true";
-      showFavicons = localStorage.getItem("kepce_search_favicons") !== "false";
-      infiniteScroll = localStorage.getItem("kepce_search_infinite") === "true";
-    } catch (e) {}
+    searchPreferences.init();
   });
 
-  function handleThemeChange(newTheme) {
-    theme = newTheme;
-    try {
-      localStorage.setItem("renkTercihi", newTheme);
-      if (
-        typeof window !== "undefined" &&
-        typeof window.applyTheme === "function"
-      ) {
-        window.applyTheme(newTheme);
-      }
-    } catch (e) {}
-  }
-
-  function updateLanguage(newLang) {
-    language = newLang;
-    try {
-      localStorage.setItem("kepce_search_lang", newLang);
-    } catch (e) {}
-  }
-
-  function updateSafeSearch(newSafe) {
-    safeSearch = newSafe;
-    try {
-      localStorage.setItem("kepce_search_safe", newSafe);
-    } catch (e) {}
-  }
-
-  function updateOpenInNewTab(val) {
-    openInNewTab = val;
-    try {
-      localStorage.setItem("kepce_search_new_tab", String(val));
-    } catch (e) {}
-  }
-
-  function updateCompactResults(val) {
-    compactResults = val;
-    try {
-      localStorage.setItem("kepce_search_compact", String(val));
-      document.documentElement.classList.toggle("is-compact-results", val);
-    } catch (e) {}
-  }
-
-  function updateShowFavicons(val) {
-    showFavicons = val;
-    try {
-      localStorage.setItem("kepce_search_favicons", String(val));
-    } catch (e) {}
-  }
-
-  function updateInfiniteScroll(val) {
-    infiniteScroll = val;
-    try {
-      localStorage.setItem("kepce_search_infinite", String(val));
-    } catch (e) {}
-  }
-
   function resetSettings() {
-    handleThemeChange("sistem");
-    updateLanguage("tr");
-    updateSafeSearch("1");
-    updateOpenInNewTab(false);
-    updateCompactResults(false);
-    updateShowFavicons(true);
-    updateInfiniteScroll(false);
+    searchPreferences.setTheme("sistem");
+    searchPreferences.setLanguage("tr");
+    searchPreferences.setSafeSearch("1");
+    searchPreferences.setOpenInNewTab(false);
+    searchPreferences.setCompactResults(false);
+    searchPreferences.setFaviconResolver("duckduckgo");
+    searchPreferences.setInfiniteScroll(false);
   }
 </script>
 
@@ -130,8 +59,8 @@
           <div class="c-search-settings-theme-ctrl">
             <SegmentedControl
               options={THEME_OPTIONS}
-              value={theme}
-              onChange={handleThemeChange}
+              value={searchPreferences.theme}
+              onChange={(val) => searchPreferences.setTheme(val)}
             />
           </div>
 
@@ -142,8 +71,8 @@
               type="checkbox"
               id="search-compact-switch"
               class="c-input-hidden"
-              checked={compactResults}
-              onchange={(e) => updateCompactResults(e.currentTarget.checked)}
+              checked={searchPreferences.compactResults}
+              onchange={(e) => searchPreferences.setCompactResults(e.currentTarget.checked)}
             />
             <span class="c-switch" aria-hidden="true">
               <span class="c-switch__handle"></span>
@@ -157,8 +86,8 @@
               type="checkbox"
               id="search-favicons-switch"
               class="c-input-hidden"
-              checked={showFavicons}
-              onchange={(e) => updateShowFavicons(e.currentTarget.checked)}
+              checked={searchPreferences.faviconResolver !== "none" && searchPreferences.faviconResolver !== "off"}
+              onchange={(e) => searchPreferences.setFaviconResolver(e.currentTarget.checked ? "duckduckgo" : "off")}
             />
             <span class="c-switch" aria-hidden="true">
               <span class="c-switch__handle"></span>
@@ -176,9 +105,9 @@
             <div class="c-search-settings-control">
               <Dropdown
                 variant="ghost"
-                value={language}
+                value={searchPreferences.language}
                 options={LANG_OPTIONS}
-                onChange={updateLanguage}
+                onChange={(val) => searchPreferences.setLanguage(val)}
               />
             </div>
           </div>
@@ -189,9 +118,9 @@
             <div class="c-search-settings-control">
               <Dropdown
                 variant="ghost"
-                value={safeSearch}
+                value={searchPreferences.safeSearch}
                 options={SAFE_OPTIONS}
-                onChange={updateSafeSearch}
+                onChange={(val) => searchPreferences.setSafeSearch(val)}
               />
             </div>
           </div>
@@ -205,8 +134,8 @@
               type="checkbox"
               id="search-new-tab-switch"
               class="c-input-hidden"
-              checked={openInNewTab}
-              onchange={(e) => updateOpenInNewTab(e.currentTarget.checked)}
+              checked={searchPreferences.openInNewTab}
+              onchange={(e) => searchPreferences.setOpenInNewTab(e.currentTarget.checked)}
             />
             <span class="c-switch" aria-hidden="true">
               <span class="c-switch__handle"></span>
@@ -220,8 +149,8 @@
               type="checkbox"
               id="search-infinite-switch"
               class="c-input-hidden"
-              checked={infiniteScroll}
-              onchange={(e) => updateInfiniteScroll(e.currentTarget.checked)}
+              checked={searchPreferences.infiniteScroll}
+              onchange={(e) => searchPreferences.setInfiniteScroll(e.currentTarget.checked)}
             />
             <span class="c-switch" aria-hidden="true">
               <span class="c-switch__handle"></span>

@@ -1,6 +1,7 @@
 <script>
   import { icon } from "@/components/ui/icons.js";
   import MapCard from "./MapCard.svelte";
+  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
 
   let { infobox } = $props();
 
@@ -178,8 +179,8 @@
         {#if wikiUrl}
           <a
             href={wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={searchPreferences.linkTarget}
+            rel={searchPreferences.linkRel}
             class="c-knowledge-more-link"
           >
             <span>Devamını Vikipedi'de oku</span>
@@ -222,8 +223,8 @@
           {#if wikiUrl}
             <a
               href={wikiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              target={searchPreferences.linkTarget}
+              rel={searchPreferences.linkRel}
               class="c-knowledge-more-link"
             >
               <span>Devamını Vikipedi'de oku</span>
@@ -275,8 +276,8 @@
         {#if wikiUrl}
           <a
             href={wikiUrl}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={searchPreferences.linkTarget}
+            rel={searchPreferences.linkRel}
             class="c-knowledge-more-link"
           >
             <span>Devamını Vikipedi'de oku</span>
@@ -318,8 +319,8 @@
           {#if wikiUrl}
             <a
               href={wikiUrl}
-              target="_blank"
-              rel="noopener noreferrer"
+              target={searchPreferences.linkTarget}
+              rel={searchPreferences.linkRel}
               class="c-knowledge-more-link"
             >
               <span>Devamını Vikipedi'de oku</span>

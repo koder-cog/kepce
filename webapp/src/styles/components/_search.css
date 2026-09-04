@@ -1616,11 +1616,16 @@
 
 /* Sayfalama */
 .c-search-pagination {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-top: var(--space-xl);
-  flex-wrap: wrap;
+  justify-content: flex-start;
+  margin-top: var(--space-2xl);
+  margin-bottom: var(--space-md);
+}
+
+@media (max-width: 600px) {
+  .c-search-pagination {
+    justify-content: space-between;
+    width: 100%;
+  }
 }
 
 /* ── 6. DuckDuckGo Tarzı Yapılandırılmış Ayarlar Paneli ────── */

@@ -5,6 +5,7 @@
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import Dropdown from "@/components/features/Dropdown.svelte";
   import { showToast } from "@/components/ui/toast.js";
+  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
 
   let isSubdomain = $derived(
     $page.url.hostname.startsWith("ara.") ||
@@ -202,36 +203,28 @@
 
   function persistAll() {
     try {
-      localStorage.setItem("kepce_search_category", defaultCategory);
-      localStorage.setItem("kepce_search_lang", language);
-      localStorage.setItem("kepce_search_autocomplete", autocomplete);
-      localStorage.setItem("kepce_search_favicons", faviconResolver);
-      localStorage.setItem("kepce_search_safe", safeSearch);
-      localStorage.setItem(
-        "kepce_search_plugin_calc",
-        String(pluginCalculator),
-      );
-      localStorage.setItem("kepce_search_plugin_ip", String(pluginSelfInfo));
-      localStorage.setItem("kepce_search_plugin_time", String(pluginTimezones));
-      localStorage.setItem(
-        "kepce_search_plugin_unit",
-        String(pluginUnitConverter),
-      );
+      searchPreferences.defaultCategory = defaultCategory;
+      searchPreferences.language = language;
+      searchPreferences.autocomplete = autocomplete;
+      searchPreferences.faviconResolver = faviconResolver;
+      searchPreferences.safeSearch = safeSearch;
+      searchPreferences.pluginCalculator = pluginCalculator;
+      searchPreferences.pluginSelfInfo = pluginSelfInfo;
+      searchPreferences.pluginTimezones = pluginTimezones;
+      searchPreferences.pluginUnitConverter = pluginUnitConverter;
 
-      localStorage.setItem("renkTercihi", theme);
-      localStorage.setItem("kepce_search_new_tab", String(openInNewTab));
-      localStorage.setItem("kepce_search_compact", String(compactResults));
-      localStorage.setItem("kepce_search_infinite", String(infiniteScroll));
-      localStorage.setItem("kepce_search_per_page", resultsPerPage);
+      searchPreferences.theme = theme;
+      searchPreferences.openInNewTab = openInNewTab;
+      searchPreferences.compactResults = compactResults;
+      searchPreferences.infiniteScroll = infiniteScroll;
+      searchPreferences.resultsPerPage = resultsPerPage;
 
-      localStorage.setItem("kepce_search_method", httpMethod);
-      localStorage.setItem(
-        "kepce_search_tracker_remover",
-        String(trackerRemover),
-      );
-      localStorage.setItem("kepce_search_hide_title", String(hideQueryInTitle));
+      searchPreferences.httpMethod = httpMethod;
+      searchPreferences.trackerRemover = trackerRemover;
+      searchPreferences.hideQueryInTitle = hideQueryInTitle;
+      searchPreferences.engines = engines;
 
-      localStorage.setItem("kepce_search_engines", JSON.stringify(engines));
+      searchPreferences.persistAll();
     } catch (e) {}
   }
 

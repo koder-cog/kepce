@@ -3,14 +3,16 @@ import { env } from "$env/dynamic/private";
 
 export async function GET({ url, fetch }) {
   const q = (url.searchParams.get("q") || "").trim();
+  const motor = (url.searchParams.get("motor") || "").trim();
   if (!q || q.length < 2) {
     return json([]);
   }
 
   const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
   try {
+    const completerQuery = motor && motor !== "off" ? `&completer=${encodeURIComponent(motor)}` : "";
     const res = await fetch(
-      `${searxUrl.replace(/\/+$/, "")}/autocompleter?q=${encodeURIComponent(q)}`,
+      `${searxUrl.replace(/\/+$/, "")}/autocompleter?q=${encodeURIComponent(q)}${completerQuery}`,
       {
         signal: AbortSignal.timeout(3000),
       }
