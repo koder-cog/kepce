@@ -47,15 +47,29 @@
             totalCount: items.length,
         };
     });
+    let selectedMonth = $derived.by(() => {
+        if (!date) return 0;
+        const d = new Date(date);
+        return isNaN(d.getTime()) ? 0 : d.getMonth() + 1;
+    });
+
+    let isRealSummer = $derived(selectedMonth === 7 || selectedMonth === 8);
+    let isSeptemberPreSeason = $derived(selectedMonth === 9 && isSummer);
 </script>
 
 <div class="empty-hub">
     <!-- 1. Durum Bildirimi -->
-    {#if isSummer}
+    {#if isRealSummer}
         <EmptyState
             iconName="icecream"
             title="Yaz Sezonu"
             desc="Temmuz ve ağustos aylarında yemekhane hizmeti verilmemektedir. Nöbetçi yurtlar yerel düzenleme yapabilir."
+        />
+    {:else if isSeptemberPreSeason}
+        <EmptyState
+            iconName="calendar"
+            title="Yeni Dönem Hazırlığı"
+            desc="KYK yurt yemekhaneleri yeni eğitim-öğretim dönemiyle birlikte hizmete açılacaktır. Nöbetçi yurtlar yerel düzenleme yapabilir."
         />
     {:else}
         <EmptyState
