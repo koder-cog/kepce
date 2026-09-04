@@ -1,5 +1,5 @@
 <script>
-    import { onMount } from "svelte";
+    import { onMount, tick } from "svelte";
     import { dev, building } from "$app/environment";
 
     let {
@@ -44,26 +44,109 @@
         return idx >= 0 ? idx : 0;
     });
     let totalOptions = $derived(Math.max(1, options.length));
+
+    let containerEl = $state(null);
+    let indicatorLeft = $state(null);
+    let indicatorWidth = $state(null);
     let isReady = $state(false);
 
+    function updateIndicator() {
+        if (!containerEl) return;
+        const activeBtn =
+            containerEl.querySelector(`[data-value="${value}"]`) ||
+            containerEl.querySelectorAll(".c-segmented-control__btn")[activeIndex];
+        if (activeBtn) {
+            indicatorLeft = activeBtn.offsetLeft;
+            indicatorWidth = activeBtn.offsetWidth;
+        }
+    }
+
+    $effect(() => {
+        // Değer veya seçenekler değiştiğinde indikatör pozisyonunu güncelle
+        if (value !== undefined && options) {
+            tick().then(() => {
+                updateIndicator();
+                if (!isReady && typeof window !== "undefined") {
+                    requestAnimationFrame(() => {
+                        isReady = true;
+                    });
+                }
+            });
+        }
+    });
+
     onMount(() => {
-        requestAnimationFrame(() => {
-            isReady = true;
-        });
+        updateIndicator();
+        let ro;
+        if (typeof ResizeObserver !== "undefined" && containerEl) {
+            ro = new ResizeObserver(() => {
+                updateIndicator();
+            });
+            ro.observe(containerEl);
+        }
+        return () => {
+            ro?.disconnect();
+        };
     });
 
     function selectOption(val, e) {
         value = val;
         if (onChange) onChange(val, e);
     }
+
+    function handleKeyDown(e) {
+        if (!options.length) return;
+        let newIndex = activeIndex;
+
+        if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+            e.preventDefault();
+            newIndex = (activeIndex + 1) % options.length;
+        } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+            e.preventDefault();
+            newIndex = (activeIndex - 1 + options.length) % options.length;
+        } else if (e.key === "Home") {
+            e.preventDefault();
+            newIndex = 0;
+        } else if (e.key === "End") {
+            e.preventDefault();
+            newIndex = options.length - 1;
+        } else {
+            return;
+        }
+
+        const nextOpt = options[newIndex];
+        if (nextOpt) {
+            selectOption(nextOpt.value, e);
+            if (containerEl) {
+                const btns = containerEl.querySelectorAll(".c-segmented-control__btn");
+                btns[newIndex]?.focus();
+            }
+        }
+    }
+
+    let cssCustomProperties = $derived.by(() => {
+        let styleStr = `--active-index: ${activeIndex}; --total-options: ${totalOptions};`;
+        if (indicatorLeft !== null) {
+            styleStr += ` --indicator-left: ${indicatorLeft}px;`;
+        }
+        if (indicatorWidth !== null) {
+            styleStr += ` --indicator-width: ${indicatorWidth}px;`;
+        }
+        return styleStr;
+    });
 </script>
 
 <div
     {id}
+    bind:this={containerEl}
     class="c-segmented-control {className}"
     data-variant={variant}
     class:is-ready={isReady}
-    style="--active-index: {activeIndex}; --total-options: {totalOptions};"
+    role="radiogroup"
+    aria-label="Seçenekler"
+    tabindex="0"
+    onkeydown={handleKeyDown}
+    style={cssCustomProperties}
 >
     <div class="c-segmented-control__indicator"></div>
 
@@ -73,6 +156,9 @@
             class="c-segmented-control__btn"
             class:c-segmented-control__btn--active={value === opt.value}
             data-value={opt.value}
+            role="radio"
+            aria-checked={value === opt.value}
+            tabindex={value === opt.value ? 0 : -1}
             onclick={(e) => selectOption(opt.value, e)}
             onmouseenter={(e) => onHover?.(opt.value, e)}
             aria-label={opt.label || opt.tooltip || opt.value}

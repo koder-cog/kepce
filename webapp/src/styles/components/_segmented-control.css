@@ -6,7 +6,7 @@
     --seg-gap: 2px;
     position: relative;
     display: inline-flex;
-    /* content-sized by default */
+    align-items: center;
     gap: var(--seg-gap);
     background: var(--color-surface-sunken);
     padding: var(--seg-pad);
@@ -15,6 +15,13 @@
     border: 1px solid var(--color-border);
     max-width: 100%;
     min-width: 0;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .c-segmented-control:focus-visible {
+    outline: 2px solid var(--color-focus, var(--color-primary));
+    outline-offset: 2px;
   }
 
   .c-segmented-control__indicator {
@@ -22,26 +29,37 @@
     top: var(--seg-pad);
     bottom: var(--seg-pad);
     left: 0;
-    width: calc((100% - (2 * var(--seg-pad)) - ((var(--total-options, 1) - 1) * var(--seg-gap))) / var(--total-options, 1));
-    background: var(--color-card);
+    /* Öncelik DOM ile ölçülen --indicator-width değerinde, fallback CSS formülünde */
+    width: var(--indicator-width, calc((100% - (2 * var(--seg-pad)) - ((var(--total-options, 1) - 1) * var(--seg-gap))) / var(--total-options, 1)));
+    background: var(--color-surface);
     border-radius: var(--radius-full);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    border: 0.5px solid var(--color-border);
     z-index: 0;
     opacity: 0;
     pointer-events: none;
-    transform: translate3d(calc(var(--seg-pad) + var(--active-index, 0) * (100% + var(--seg-gap))), 0, 0);
-    will-change: transform;
+    /* Öncelik DOM ile ölçülen --indicator-left değerinde, fallback CSS formülünde */
+    transform: translate3d(var(--indicator-left, calc(var(--seg-pad) + var(--active-index, 0) * (100% + var(--seg-gap)))), 0, 0);
+    will-change: transform, width;
+  }
+
+  /* Dark mode indicator elevation & subtle top highlight */
+  html.dark .c-segmented-control__indicator,
+  :global(html.dark) .c-segmented-control__indicator {
+    background: var(--color-surface-elevated, #2a2e2e);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
+    border: 1px solid var(--color-border);
   }
 
   .c-segmented-control[data-variant="icons"] .c-segmented-control__indicator {
-    width: 36px;
-    transform: translate3d(calc(var(--seg-pad) + var(--active-index, 0) * (36px + var(--seg-gap))), 0, 0);
+    width: var(--indicator-width, 36px);
   }
 
   .c-segmented-control.is-ready .c-segmented-control__indicator {
     opacity: 1;
     transition: 
       transform var(--dur-default) cubic-bezier(0.25, 1, 0.5, 1),
+      width var(--dur-default) cubic-bezier(0.25, 1, 0.5, 1),
       opacity var(--dur-fast) var(--ease-standard);
   }
 
@@ -55,16 +73,15 @@
     border-radius: var(--radius-full);
     border: none;
     background: transparent;
-    color: var(--color-muted);
+    color: var(--color-text-muted);
     font-family: var(--font-body);
     font-size: var(--text-xs);
-    /* Adjusted to match HIG legibility */
     font-weight: var(--font-weight-medium);
     cursor: pointer;
-    transition: color var(--motion-effects-fast);
+    transition: color var(--dur-fast) var(--ease-standard),
+                transform var(--dur-fast) var(--ease-standard);
     white-space: nowrap;
     z-index: 1;
-    /* HIG Rule: Segments should be equal in width */
     flex: 1;
     flex-basis: 0;
     min-width: max-content;
@@ -74,13 +91,22 @@
     color: var(--color-text);
   }
 
+  .c-segmented-control__btn:focus-visible {
+    outline: none;
+    color: var(--color-text);
+  }
+
+  .c-segmented-control__btn:active {
+    transform: scale(0.98);
+  }
+
   .c-segmented-control__btn--active {
     color: var(--color-text);
+    font-weight: var(--font-weight-semibold);
   }
 
   .c-segmented-control__btn svg {
     flex-shrink: 0;
-    /* İkonların inline (18px) boyutunu ezmemesi için width/height kısıtlaması kaldırıldı */
   }
 
   .c-segmented-control__fallback-text {
