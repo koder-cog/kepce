@@ -11,6 +11,8 @@
     import EmptyMenuHub from "@/components/features/timeline/EmptyMenuHub.svelte";
     import SeasonGuides from "@/components/features/timeline/SeasonGuides.svelte";
     import { isOffSeasonDate, isOrientationSeason } from "@/utils/season.js";
+    import { fade } from "svelte/transition";
+    import { isMotionEnabled } from "@/lib/dom/motion.js";
 
     let {
         lastMenuDay = null,
@@ -92,9 +94,9 @@
     }
 </script>
 
-<div id="meals-container">
+<div id="meals-container" class:is-updating={timelineState.isUpdating}>
     {#if !timelineState.currentCity}
-        <div class="empty-state-container">
+        <div class="empty-state-container" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
             <EmptyState
                 iconName={"info"}
                 title={"Lütfen bir şehir seçin"}
@@ -104,19 +106,23 @@
     {:else if timelineState.isLoading}
         <Skeleton type="timeline" />
     {:else if timelineState.errorState}
-        <EmptyState
-            statusCode={timelineState.errorState.statusCode}
-            desc={timelineState.errorState.desc}
-        />
+        <div class="empty-state-container" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
+            <EmptyState
+                statusCode={timelineState.errorState.statusCode}
+                desc={timelineState.errorState.desc}
+            />
+        </div>
     {:else if breakfasts.length === 0 && dinners.length === 0}
-        <EmptyMenuHub
-            citySlug={timelineState.currentCity}
-            date={timelineState.selectedDateString}
-            isSummer={isSummer || isOffSeason}
-            {lastMenuDay}
-        />
+        <div class="timeline-empty-wrapper" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
+            <EmptyMenuHub
+                citySlug={timelineState.currentCity}
+                date={timelineState.selectedDateString}
+                isSummer={isSummer || isOffSeason}
+                {lastMenuDay}
+            />
+        </div>
     {:else if timelineState.currentDietMode === "celiac" && !timelineState.breakfastData.some((m) => m.items?.length > 0) && !timelineState.dinnerData.some((m) => m.items?.length > 0)}
-        <div class="empty-state-container">
+        <div class="empty-state-container" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
             <EmptyState
                 iconName={"wheat"}
                 title={"Bugün çölyak menüsü yok"}
@@ -124,7 +130,7 @@
             />
         </div>
     {:else}
-        <div class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}">
+        <div class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
             {#if !isSingleMealLayout}
                 <div class="timeline__line"></div>
             {/if}

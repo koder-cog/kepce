@@ -1,5 +1,8 @@
 <script>
     import { onMount, onDestroy } from "svelte";
+    import { fly } from "svelte/transition";
+    import { cubicOut } from "svelte/easing";
+    import { isMotionEnabled } from "@/lib/dom/motion.js";
     import { timelineState } from "@/stores/timeline.svelte.js";
     import holidays from "$lib/data/holidays.json";
 
@@ -56,6 +59,7 @@
     }
 
     function handleScrollToActive(e) {
+        if (timelineState.viewType === "calendar") return;
         const forceCenter = e.detail?.forceCenter;
         if (!daySelectorWrapper) return;
         requestAnimationFrame(() => {
@@ -64,8 +68,9 @@
                 daySelectorWrapper.querySelector(".day-selector__item--active") ||
                 daySelectorWrapper.querySelector(".day-selector__item--today");
             if (activeItem) {
+                const behavior = isMotionEnabled() ? "smooth" : "auto";
                 if (forceCenter) {
-                    activeItem.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                    activeItem.scrollIntoView({ behavior, block: "nearest", inline: "center" });
                 } else {
                     const container = activeItem.parentElement;
                     if (!container) return;
@@ -73,7 +78,7 @@
                     const containerRect = container.getBoundingClientRect();
                     const isVisible = rect.left >= containerRect.left && rect.right <= containerRect.right;
                     if (!isVisible) {
-                        activeItem.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+                        activeItem.scrollIntoView({ behavior, block: "nearest", inline: "center" });
                     }
                 }
             }
@@ -85,8 +90,16 @@
     class="day-selector-wrapper"
     bind:this={daySelectorWrapper}
 >
-    <div class="day-selector-inner">
-        <div class="day-selector {timelineState.viewType === 'calendar' ? 'day-selector--calendar' : ''}">
+    {#key `${timelineState.viewYear}-${timelineState.viewMonth}`}
+        <div
+            class="day-selector-inner"
+            in:fly={{
+                x: isMotionEnabled() ? timelineState.monthNavDirection * 24 : 0,
+                duration: isMotionEnabled() ? 180 : 0,
+                easing: cubicOut
+            }}
+        >
+            <div class="day-selector {timelineState.viewType === 'calendar' ? 'day-selector--calendar' : ''}">
             {#if timelineState.viewType === "calendar"}
                 <div class="calendar-grid">
                     {#each [1, 2, 3, 4, 5, 6, 0] as d}
@@ -173,4 +186,5 @@
             {/if}
         </div>
     </div>
+    {/key}
 </div>

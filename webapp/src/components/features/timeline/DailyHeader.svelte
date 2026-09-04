@@ -3,6 +3,9 @@
     import CitySelector from "@/components/features/CitySelector.svelte";
     import { icon } from "@/components/ui/icons.js";
     import { onMount } from "svelte";
+    import { fly } from "svelte/transition";
+    import { cubicOut } from "svelte/easing";
+    import { isMotionEnabled } from "@/lib/dom/motion.js";
 
     import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
 
@@ -23,7 +26,20 @@
             <button class="month-nav__btn" aria-label="Önceki ay" onclick={timelineState.prevMonth} disabled={!timelineState.canPrevMonth}>
                 {@html icon("chevronLeft", 20)}
             </button>
-            <span class="month-nav__label">{MONTHS[timelineState.viewMonth]} {timelineState.viewYear}</span>
+            <div class="month-nav__label-wrapper">
+                {#key `${timelineState.viewYear}-${timelineState.viewMonth}`}
+                    <span
+                        class="month-nav__label"
+                        in:fly={{
+                            x: isMotionEnabled() ? timelineState.monthNavDirection * 14 : 0,
+                            duration: isMotionEnabled() ? 160 : 0,
+                            easing: cubicOut
+                        }}
+                    >
+                        {MONTHS[timelineState.viewMonth]} {timelineState.viewYear}
+                    </span>
+                {/key}
+            </div>
             <button class="month-nav__btn" aria-label="Sonraki ay" onclick={timelineState.nextMonth} disabled={!timelineState.canNextMonth}>
                 {@html icon("chevronRight", 20)}
             </button>

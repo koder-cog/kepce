@@ -21,6 +21,8 @@ export function createTimelineStore() {
     let prerenderedMeta = null;
     let currentLoadToken = 0;
     let currentCity = $derived(getCurrentCity());
+    let monthNavDirection = $state(1); // 1: sonraki ay, -1: önceki ay
+    let isUpdating = $state(false); // Arka planda veri güncellenirken stale-while-revalidate karartması
 
     // Görev #21-24: Ay bazlı çölyak menüsü mevcudiyeti.
     // "city:YYYY:M" → boolean. Problar aylık endpoint ile yapılır ve
@@ -53,6 +55,12 @@ export function createTimelineStore() {
     let isBeforeMay2026 = $derived(selectedDate < MAY_2026);
     let breakfastEnd = $derived(isWeekend ? "12:30" : "12:00");
     let dinnerEnd = $derived(isBeforeMay2026 ? "22:00" : "23:00");
+    let selectedDateString = $derived.by(() => {
+        const y = selectedDate.getFullYear();
+        const m = String(selectedDate.getMonth() + 1).padStart(2, "0");
+        const d = String(selectedDate.getDate()).padStart(2, "0");
+        return `${y}-${m}-${d}`;
+    });
 
 
 
@@ -69,8 +77,14 @@ export function createTimelineStore() {
         const executeLoad = async () => {
             if (currentLoadToken !== token) return;
 
+            // Eğer ekranda zaten bir veri varsa, skeleton basıp ekranı titretmek yerine
+            // kartları hafif karartarak stale-while-revalidate moduna geç
+            if (menusState.length > 0) {
+                isUpdating = true;
+            }
+
             let timeoutId = setTimeout(() => {
-                if (currentLoadToken === token) {
+                if (currentLoadToken === token && menusState.length === 0) {
                     isLoading = true;
                 }
             }, 150);
@@ -95,6 +109,7 @@ export function createTimelineStore() {
                 clearTimeout(timeoutId);
                 if (currentLoadToken === token) {
                     isLoading = false;
+                    isUpdating = false;
                 }
             }
         };
@@ -115,6 +130,7 @@ export function createTimelineStore() {
     function prevMonth() {
         if (viewYear === START_YEAR && viewMonth <= 0) return;
         if (viewYear < START_YEAR) return;
+        monthNavDirection = -1;
         let m = viewMonth - 1;
         let y = viewYear;
         if (m < 0) {
@@ -123,14 +139,15 @@ export function createTimelineStore() {
         }
         updateView(m, y, viewType, 250);
         if (y === new Date().getFullYear() && m === new Date().getMonth()) {
-            selectDate(new Date().getDate(), 250);
+            selectDate(new Date().getDate(), 250, true);
         } else {
-            selectDate(1, 250);
+            selectDate(1, 250, true);
         }
     }
 
     function nextMonth() {
         if (viewYear >= new Date().getFullYear() && viewMonth >= new Date().getMonth()) return;
+        monthNavDirection = 1;
         let m = viewMonth + 1;
         let y = viewYear;
         if (m > 11) {
@@ -139,17 +156,17 @@ export function createTimelineStore() {
         }
         updateView(m, y, viewType, 250);
         if (y === new Date().getFullYear() && m === new Date().getMonth()) {
-            selectDate(new Date().getDate(), 250);
+            selectDate(new Date().getDate(), 250, true);
         } else {
-            selectDate(1, 250);
+            selectDate(1, 250, true);
         }
     }
 
-    function selectDate(day, debounceMs = 0) {
+    function selectDate(day, debounceMs = 0, forceCenter = false) {
         selectedDate = new Date(viewYear, viewMonth, day);
         loadMenus(debounceMs);
         probeCeliacMonth();
-        scrollToActiveDay(false);
+        scrollToActiveDay(forceCenter);
     }
 
     // Timeline selector'ı tarafından çağrılır - SESSION bazlıdır.
@@ -318,6 +335,8 @@ export function createTimelineStore() {
         get dietForcedViaUrl() { return dietForcedViaUrl; },
         get canPrevMonth() { return viewYear > START_YEAR || (viewYear === START_YEAR && viewMonth > 0); },
         get canNextMonth() { return viewYear < new Date().getFullYear() || (viewYear === new Date().getFullYear() && viewMonth < new Date().getMonth()); },
+        get monthNavDirection() { return monthNavDirection; },
+        get isUpdating() { return isUpdating; },
 
         get isLoading() { return isLoading; },
         get errorState() { return errorState; },
@@ -329,6 +348,7 @@ export function createTimelineStore() {
         get dinnerData() { return dinnerData; },
         get breakfastEnd() { return breakfastEnd; },
         get dinnerEnd() { return dinnerEnd; },
+        get selectedDateString() { return selectedDateString; },
 
         set currentCity(val) { setCity(val); },
         set viewType(val) { updateView(undefined, undefined, val); },

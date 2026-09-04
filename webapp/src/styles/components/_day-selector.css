@@ -15,6 +15,10 @@
     transition: opacity 0.05s ease-out;
   }
 
+  .day-selector-inner {
+    width: 100%;
+  }
+
   .day-selector {
     display: flex;
     gap: var(--space-sm);

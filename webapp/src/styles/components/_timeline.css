@@ -195,6 +195,14 @@
     pointer-events: none;
   }
 
+  .month-nav__label-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    min-width: 140px;
+    overflow: hidden;
+  }
+
   .month-nav__label {
     font-family: var(--font-body);
     font-weight: var(--font-weight-black);
@@ -202,7 +210,7 @@
     line-height: var(--leading-none);
     color: var(--color-text);
     margin: 0 var(--space-xs);
-    min-width: 140px;
+    white-space: nowrap;
     display: flex;
     align-items: center;
   }
@@ -226,11 +234,35 @@
     }
   }
 
+  /* ── Meals Container ───────────────────────────────────────── */
+
+  #meals-container {
+    transition: opacity var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+  }
+
+  #meals-container.is-updating {
+    opacity: 0.55;
+    transform: scale(0.995);
+    pointer-events: none;
+  }
+
+  .timeline-empty-wrapper {
+    width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #meals-container.is-updating {
+      transform: none;
+    }
+  }
+
   /* ── Timeline Layout ───────────────────────────────────────── */
 
   .timeline {
     position: relative;
     padding-left: 140px;
+    transition: padding-left var(--dur-default) var(--ease-spatial-default);
   }
 
   .timeline__line {
