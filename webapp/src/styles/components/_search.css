@@ -2554,6 +2554,92 @@
   max-width: 80ch;
 }
 
+.c-kepce-direct-card__date-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-surface-hover);
+  padding: 3px 10px;
+  border-radius: var(--radius-full);
+}
+
+.c-kepce-direct-card__meals {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-md);
+  margin-top: var(--space-xs);
+}
+
+.c-kepce-direct-card__meal-box {
+  background-color: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.c-kepce-direct-card__meal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.c-kepce-direct-card__meal-type {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.c-kepce-direct-card__meal-cal {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--color-border);
+}
+
+.c-kepce-direct-card__dishes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.c-kepce-direct-card__dish-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.c-kepce-direct-card__dish-bullet {
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.c-kepce-direct-card__dish-name {
+  font-weight: 600;
+}
+
+.c-kepce-direct-card__dish-portion {
+  font-size: 0.78rem;
+  color: var(--color-text-dim);
+  font-weight: 400;
+}
+
 .c-kepce-direct-card__features {
   display: flex;
   gap: 8px;
@@ -2578,6 +2664,28 @@
   margin-top: var(--space-xs);
   display: flex;
   align-items: center;
+}
+
+.c-kepce-direct-card__more-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  padding: 4px 0;
+  transition: color var(--dur-fast) var(--ease-standard),
+    transform var(--dur-fast) var(--ease-standard);
+}
+
+.c-kepce-direct-card__more-link:hover {
+  color: var(--color-primary-hover);
+  text-decoration: underline;
+}
+
+.c-kepce-direct-card__more-link:active {
+  transform: scale(0.98);
 }
 
 .c-kepce-direct-card__btn {

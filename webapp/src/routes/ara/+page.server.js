@@ -8,6 +8,7 @@ import {
   solveCryptoPrice,
 } from "$lib/search/instantSolvers.js";
 import { CITY_MAP, TURKEY_GEO_MAP } from "@/utils/turkish.js";
+import { apiGet, normalizeMenuList, istanbulToday } from "@/lib/server/api.js";
 
 // Bellek içi LRU Arama Önbelleği (10 dk TTL)
 const searchCache = new Map();
@@ -169,7 +170,7 @@ function matchKepceIntent(query) {
         description: `${uniInfo.name} genelindeki KYK yurt yemekhanelerinde bugünün sabah kahvaltısı ve akşam tabldot listesi.`,
         href: `/${uniInfo.slug}`,
         badge: "KYK Menüsü",
-        cta: "Bugünün Menüsünü Gör",
+        cta: "Detayları Kepçe'de incele",
       };
     }
   }
@@ -188,7 +189,7 @@ function matchKepceIntent(query) {
         description: `${cityName} genelindeki tüm KYK yurtlarında geçerli bugünkü sabah kahvaltısı ve akşam tabldot menüsü.`,
         href: `/${slug}`,
         badge: "KYK Menüsü",
-        cta: "Bugünün Menüsünü Gör",
+        cta: "Detayları Kepçe'de incele",
       };
     }
   }
@@ -1266,7 +1267,25 @@ export async function load({ url, fetch }) {
   // 3. Anlık Çözücüler ve Kepçe Niyet Süzgeci (0-5ms içinde çözülür)
   const isGeneralCategory = category === "general" || !category;
   const instantAnswerPromise = isGeneralCategory ? solveInstantQuery(q, fetch) : Promise.resolve(null);
-  const kepceCard = isGeneralCategory ? matchKepceIntent(q) : null;
+  let kepceCard = isGeneralCategory ? matchKepceIntent(q) : null;
+
+  // Şehir menüsü niyetinde bugünün gerçek menü kalemlerini API'den çekip karta ekle
+  if (kepceCard && kepceCard.type === "city_menu" && kepceCard.slug) {
+    const today = istanbulToday();
+    try {
+      const payload = await apiGet(
+        `/api/v1/menus?city=${encodeURIComponent(kepceCard.slug)}&date=${today}`,
+        { timeout: 1000, fallback: null }
+      );
+      const menus = normalizeMenuList(payload);
+      if (Array.isArray(menus) && menus.length > 0) {
+        kepceCard.date = today;
+        kepceCard.menus = menus;
+      }
+    } catch {
+      // API yanıt vermezse sessizce temel kart yapısıyla devam et
+    }
+  }
 
   // Anlık yanıtı hemen bekle (yalnızca yerel matematik/döviz fonksiyonudur, <5ms)
   const instantAnswer = await instantAnswerPromise;
