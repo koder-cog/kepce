@@ -33,6 +33,8 @@ import menuHamburger from '../../assets/icons/navigation/menu-hamburger.svg?raw'
 import more from '../../assets/icons/navigation/more.svg?raw';
 
 // Status
+import bell from '../../assets/icons/status/bell.svg?raw';
+import clock from '../../assets/icons/status/clock.svg?raw';
 import info from '../../assets/icons/status/info.svg?raw';
 import infoCritical from '../../assets/icons/status/info-critical.svg?raw';
 import lockClose from '../../assets/icons/status/lock-close.svg?raw';
@@ -70,6 +72,7 @@ import nut from '../../assets/icons/food/nut.svg?raw';
 import pepper from '../../assets/icons/food/pepper.svg?raw';
 import salami from '../../assets/icons/food/salami.svg?raw';
 import soup from '../../assets/icons/food/soup.svg?raw';
+import takeaway from '../../assets/icons/food/takeaway.svg?raw';
 import tea from '../../assets/icons/food/tea.svg?raw';
 import utensils from '../../assets/icons/food/utensils.svg?raw';
 import wheat from '../../assets/icons/food/wheat.svg?raw';
@@ -97,6 +100,7 @@ import logoExperimental from '../../assets/icons/brand/logo-experimental.svg?raw
 import logoSmallExperimental from '../../assets/icons/brand/logo-small-experimental.svg?raw';
 
 // Objects
+import archive from '../../assets/icons/objects/archive.svg?raw';
 import avatarEmpty from '../../assets/icons/objects/avatar-empty.svg?raw';
 import bot from '../../assets/icons/objects/bot.svg?raw';
 import bug from '../../assets/icons/objects/bug.svg?raw';
@@ -107,19 +111,26 @@ import creditCard from '../../assets/icons/objects/credit-card.svg?raw';
 import dice from '../../assets/icons/objects/dice.svg?raw';
 import eyeLooking from '../../assets/icons/objects/eye-looking.svg?raw';
 import eyeNotLooking from '../../assets/icons/objects/eye-not-looking.svg?raw';
+import fire from '../../assets/icons/objects/fire.svg?raw';
+import folder from '../../assets/icons/objects/folder.svg?raw';
 import ghost from '../../assets/icons/objects/ghost.svg?raw';
 import human from '../../assets/icons/objects/human.svg?raw';
 import image from '../../assets/icons/objects/image.svg?raw';
+import inbox from '../../assets/icons/objects/inbox.svg?raw';
 import key from '../../assets/icons/objects/key.svg?raw';
 import keyboard from '../../assets/icons/objects/keyboard.svg?raw';
 import laptop from '../../assets/icons/objects/laptop.svg?raw';
 import mailRead from '../../assets/icons/objects/mail-read.svg?raw';
 import mailUnread from '../../assets/icons/objects/mail-unread.svg?raw';
 import menuMissing from '../../assets/icons/objects/menu-missing.svg?raw';
+import monitor from '../../assets/icons/objects/monitor.svg?raw';
 import puzzlePiece from '../../assets/icons/objects/puzzle-piece.svg?raw';
 import server from '../../assets/icons/objects/server.svg?raw';
 import settings from '../../assets/icons/objects/settings.svg?raw';
+import smartphone from '../../assets/icons/objects/smartphone.svg?raw';
 import system from '../../assets/icons/objects/system.svg?raw';
+import tablet from '../../assets/icons/objects/tablet.svg?raw';
+import tag from '../../assets/icons/objects/tag.svg?raw';
 import trophy from '../../assets/icons/objects/trophy.svg?raw';
 import usage from '../../assets/icons/objects/usage.svg?raw';
 import user from '../../assets/icons/objects/user.svg?raw';
@@ -233,6 +244,7 @@ export const icons = {
   bot,
   bug,
   checkCircle,
+  'check-circle': checkCircle,
   code,
   download,
   human,
@@ -240,11 +252,15 @@ export const icons = {
   list,
   lockClose,
   lockOpen,
+  lock: lockClose,
   mailRead,
   mailUnread,
+  mail: mailRead,
   minusSquare,
+  minus: minusSquare,
   plusCircle,
   plusSquare,
+  plus: plusSquare,
   search,
   upload,
   trophy,
@@ -253,8 +269,32 @@ export const icons = {
   stop,
   refresh,
   redo,
+  'rotate-ccw': redo,
   copy,
   rss,
+  bell,
+  clock,
+  takeaway,
+  archive,
+  fire,
+  folder,
+  inbox,
+  monitor,
+  smartphone,
+  tablet,
+  tag,
+  box: takeaway,
+  slash: stop,
+  shield: verified,
+  crown: trophy,
+  arrowRight: chevronRight,
+  arrowLeft: chevronLeft,
+  'arrow-left': chevronLeft,
+  wifiOff: noConnection,
+  puzzle: puzzlePiece,
+  alert: warning,
+  'alert-triangle': warning,
+  error: infoCritical,
 };
 
 /**
