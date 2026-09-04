@@ -98,7 +98,7 @@ function matchKepceIntent(query) {
       title: "KYK Tabldot & Yemek Fiyatı Hesaplama",
       subtitle: "Kepçe Hesaplama Aracı",
       description: "Güncel GSB beslenme yardımı, tabldot sınırları ve ekstra ürün fiyatlarını hesaplayın.",
-      href: "/fiyat",
+      href: "https://kepce.org/kyk-beslenme-yardimi",
       badge: "Araç",
       cta: "Fiyat Hesapla",
     };
@@ -110,7 +110,7 @@ function matchKepceIntent(query) {
       title: "Geçmiş Menü Arşivi",
       subtitle: "Tarihsel Yemekhane Kayıtları",
       description: "Tüm illerin geçmiş aylardaki ve yıllardaki KYK yemekhane menülerini inceleyin.",
-      href: "/arsiv",
+      href: "https://kepce.org/arsiv",
       badge: "Arşiv",
       cta: "Arşive Git",
     };
@@ -122,7 +122,7 @@ function matchKepceIntent(query) {
       title: "Yemekhane Menüsü Gönder",
       subtitle: "Topluluk Katkısı",
       description: "Yurdunuzun güncel yemek listesini veya fotoğrafını sisteme yükleyin.",
-      href: "/menu-gonder",
+      href: "https://kepce.org/menu-gonder",
       badge: "Katkı",
       cta: "Menü Yükle",
     };
@@ -134,7 +134,7 @@ function matchKepceIntent(query) {
       title: "Kepçe - Açık Menü ve Yemekhane Platformu",
       subtitle: "Hakkında",
       description: "81 ilin KYK yurt yemekhanesi menüleri, beslenme saatleri, öğrenci yorumları ve şeffaf beslenme yardımı takibi.",
-      href: "/hakkinda",
+      href: "https://kepce.org/hakkinda",
       badge: "Platform",
       cta: "Keşfet",
     };
@@ -168,7 +168,7 @@ function matchKepceIntent(query) {
         title: `${uniInfo.name} KYK Yurtları Yemek Menüsü`,
         subtitle: `${uniInfo.uni} GSB Yurt Menüsü (Üniversite rektörlük menüsü değildir)`,
         description: `${uniInfo.name} genelindeki KYK yurt yemekhanelerinde bugünün sabah kahvaltısı ve akşam tabldot listesi.`,
-        href: `/${uniInfo.slug}`,
+        href: `https://kepce.org/${uniInfo.slug}`,
         badge: "KYK Menüsü",
         cta: "Detayları Kepçe'de incele",
       };
@@ -187,7 +187,7 @@ function matchKepceIntent(query) {
         title: `${cityName} KYK Yurtları Yemek Menüsü`,
         subtitle: "Günlük GSB Yurt Yemekhanesi Listesi",
         description: `${cityName} genelindeki tüm KYK yurtlarında geçerli bugünkü sabah kahvaltısı ve akşam tabldot menüsü.`,
-        href: `/${slug}`,
+        href: `https://kepce.org/${slug}`,
         badge: "KYK Menüsü",
         cta: "Detayları Kepçe'de incele",
       };
