@@ -1,5 +1,4 @@
 use ammonia;
-use rustrict::{Censor, Type};
 
 pub struct ContentGuard;
 
@@ -8,17 +7,6 @@ impl ContentGuard {
     /// Ammonia kütüphanesi güvenli bir whitelist stratejisi kullanır.
     pub fn sanitize_html(input: &str) -> String {
         ammonia::clean(input)
-    }
-
-    /// İçerikte küfür, hakaret veya sakıncalı bir metin var mı kontrol eder.
-    pub fn contains_profanity(input: &str) -> bool {
-        let analysis = Censor::from_str(input).analyze();
-        analysis.is(Type::INAPPROPRIATE) || analysis.is(Type::PROFANE) || analysis.is(Type::OFFENSIVE) || analysis.is(Type::SEVERE)
-    }
-
-    /// Sakıncalı kelimeleri sansürler (yerlerine yıldız * koyar)
-    pub fn censor_profanity(input: &str) -> String {
-        Censor::from_str(input).censor()
     }
 
     /// Basit spam kontrolü (Link tespiti ve anlamsız karakter tekrarı)

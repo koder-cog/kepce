@@ -147,28 +147,14 @@ impl CommentService {
             DtoSentiment::Neutral => shared::entities::sea_orm_active_enums::SentimentEnum::Neutral,
         };
 
-        // 4. İçerik Moderasyonu (XSS, Spam, Küfür, AI NLP Kontrolü)
+        // 4. İçerik Güvenliği (XSS ve Spam Kontrolü - Kullanıcı metni sansürlenmeden korunur)
         let clean_content = if !is_pure_vote {
-            let mut sanitized = shared::services::content_guard::ContentGuard::sanitize_html(dto.comment.as_ref().unwrap());
+            let sanitized = shared::services::content_guard::ContentGuard::sanitize_html(dto.comment.as_ref().unwrap());
             
             if shared::services::content_guard::ContentGuard::is_spam(&sanitized) {
                 return Err(CommentError::SpamDetected);
             }
-            
-            // Yerel BERT Toksiklik / Nefret Söylemi Analizi
-            if let Ok(ai_res) = ModerationService::check_text_ai(&sanitized).await {
-                if ai_res.is_toxic {
-                    tracing::warn!(
-                        "Yorum yerel BERT NLP tarafından işaretlendi: etiket={}, güven={:.2}",
-                        ai_res.label,
-                        ai_res.score
-                    );
-                }
-            }
 
-            if shared::services::content_guard::ContentGuard::contains_profanity(&sanitized) {
-                sanitized = shared::services::content_guard::ContentGuard::censor_profanity(&sanitized);
-            }
             Some(sanitized)
         } else {
             None

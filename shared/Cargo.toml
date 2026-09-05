@@ -14,7 +14,6 @@ tracing.workspace = true
 reqwest.workspace = true
 anyhow.workspace = true
 ammonia = "4.1.2"
-rustrict = "0.7.38"
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["macros"] }

@@ -587,34 +587,4 @@ impl ModerationService {
         txn.commit().await.map_err(ModerationError::DatabaseError)?;
         Ok(updated)
     }
-
-    /// Yerel BERT NLP Moderasyon Servisi Kontrolü
-    pub async fn check_text_ai(text: &str) -> Result<AiModerationResponse, String> {
-        let moderator_url = std::env::var("MODERATOR_URL").unwrap_or_else(|_| "http://moderator:8002".to_string());
-        let client = reqwest::Client::builder()
-            .timeout(std::time::Duration::from_millis(800))
-            .build()
-            .map_err(|e| e.to_string())?;
-
-        let resp = client
-            .post(format!("{}/check", moderator_url))
-            .json(&serde_json::json!({ "text": text }))
-            .send()
-            .await
-            .map_err(|e| e.to_string())?;
-
-        if resp.status().is_success() {
-            let res: AiModerationResponse = resp.json().await.map_err(|e| e.to_string())?;
-            Ok(res)
-        } else {
-            Err(format!("Moderator returned status: {}", resp.status()))
-        }
-    }
-}
-
-#[derive(Debug, Clone, serde::Deserialize, serde::Serialize)]
-pub struct AiModerationResponse {
-    pub is_toxic: bool,
-    pub label: String,
-    pub score: f32,
 }

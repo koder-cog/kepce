@@ -8,8 +8,7 @@
 members = [
     "api",
     "worker",
-    "shared",
-    "moderator"
+    "shared"
 ]
 resolver = "2"
 

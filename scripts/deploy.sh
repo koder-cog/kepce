@@ -76,16 +76,13 @@ echo -e "${YELLOW}[1/5] Proje dosyaları sunucuya aktarılıyor...${NC}"
 MISSING_BINARIES=()
 [ ! -f "target/aarch64-unknown-linux-gnu/release/api" ] && MISSING_BINARIES+=("api")
 [ ! -f "target/aarch64-unknown-linux-gnu/release/worker" ] && MISSING_BINARIES+=("worker")
-if [[ "$OPT_BERT" =~ ^[EeYy]$ ]] && [ ! -f "target/aarch64-unknown-linux-gnu/release/moderator" ]; then
-    MISSING_BINARIES+=("moderator")
-fi
 
 if [ ${#MISSING_BINARIES[@]} -gt 0 ]; then
     echo -e "${YELLOW}İpucu: Yerel ARM64 binary eksik (${MISSING_BINARIES[*]}).${NC}"
     echo -e "${YELLOW}Yerel makinenizde cross-compile yapmak derlemeyi hızlandırabilir: './manage.sh build-arm64'${NC}"
 fi
 
-ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,moderator,models,static,target/aarch64-unknown-linux-gnu/release}"
+ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,models,static,target/aarch64-unknown-linux-gnu/release}"
 
 rsync -avz --delete \
     --exclude-from='.gitignore' \
