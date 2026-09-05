@@ -54,7 +54,7 @@ impl UserService {
             720..=749 => "döküm tencere",
             700..=719 => "cacık sevdalısı",
             667..=699 => "revani müptelası",
-            666 => "tabldot uğruna ruhunu satmış",
+            666 => "ızgara tavuk uğruna ruhunu satmış",
             650..=665 => "kemik sulu",
             630..=649 => "fırın sütlaç avcısı",
             620..=629 => "tuzluğu dolu bulan",
@@ -703,7 +703,7 @@ mod tests {
         assert_eq!(UserService::get_title_for_karma(1500), "aşçıbaşının yeğeni");
         assert_eq!(UserService::get_title_for_karma(1000), "altın kepçe");
         assert_eq!(UserService::get_title_for_karma(950), "turnikeden ilk geçen");
-        assert_eq!(UserService::get_title_for_karma(666), "tabldot uğruna ruhunu satmış");
+        assert_eq!(UserService::get_title_for_karma(666), "ızgara tavuk uğruna ruhunu satmış");
         assert_eq!(UserService::get_title_for_karma(500), "mercimeğe yarım limon sıkan");
         assert_eq!(UserService::get_title_for_karma(0), "düz tabldotçu");
         assert_eq!(UserService::get_title_for_karma(5), "düz tabldotçu");
