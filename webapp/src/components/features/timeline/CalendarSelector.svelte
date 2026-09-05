@@ -37,7 +37,7 @@
         const city = timelineState.currentCity || "istanbul";
         const m = String(timelineState.viewMonth + 1).padStart(2, '0');
         const d = String(day).padStart(2, '0');
-        return `/${city}/${timelineState.viewYear}-${m}-${d}`;
+        return `/${city}?gun=${timelineState.viewYear}-${m}-${d}`;
     }
 
     function getHolidays(year, month, day) {

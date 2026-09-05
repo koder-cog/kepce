@@ -32,7 +32,7 @@
         "@type": "Organization",
         "@id": `${BASE_URL}/#organization`,
         name: "Kepçe",
-        url: `${BASE_URL}/`,
+        url: BASE_URL,
         logo: `${BASE_URL}/icon-512.png`,
       },
     ];
@@ -41,7 +41,7 @@
       graphs.unshift({
         "@type": "WebSite",
         "@id": `${BASE_URL}/#website`,
-        url: `${BASE_URL}/`,
+        url: BASE_URL,
         name: "Kepçe",
         alternateName: ["Kepçe KYK", "KYK Yemek Menüsü", "KYK Yemek Listesi"],
         description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
@@ -77,7 +77,7 @@
   {#if noindex}
     <meta name="robots" content="noindex, follow" />
   {:else}
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
   {/if}
 
   <!-- Open Graph / Facebook -->

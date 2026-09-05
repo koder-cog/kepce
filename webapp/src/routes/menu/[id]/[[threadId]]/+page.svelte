@@ -104,22 +104,6 @@
         return null;
     }
 
-    function flattenPureVotes(nodes) {
-        let result = [];
-        for (const n of nodes) {
-            if (n.user?.nickname === "kepce_bot" || n.sentiment === "report") {
-                result.push({
-                    id: n.id,
-                    voteType: n.sentiment === "report" ? "report" : n.content,
-                });
-            }
-            if (n.children && n.children.length > 0) {
-                result = result.concat(flattenPureVotes(n.children));
-            }
-        }
-        return result;
-    }
-
     async function loadData() {
         if (!menuId) return;
         // SSR'da menü zaten gömülüyse loader gösterme; sessizce tazele.
@@ -203,15 +187,6 @@
         const cityName = CITY_MAP[targetCitySlug] || targetCitySlug || "KYK";
         const dateLabel = formattedDate || menu.date || "";
 
-        const votes = flattenPureVotes(allComments || []);
-        let ratingValue = null;
-        let reviewCount = votes.length;
-        if (reviewCount > 0) {
-            const scoreMap = { lezzetli: 5, guzel: 5, normal: 3.5, orta: 3, kotu: 2, berbat: 1, zehir: 1 };
-            const totalScore = votes.reduce((acc, v) => acc + (scoreMap[v.voteType] || 3.5), 0);
-            ratingValue = (totalScore / reviewCount).toFixed(1);
-        }
-
         const menuObj = {
             "@type": "Menu",
             name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü`,
@@ -223,16 +198,6 @@
                 ...(d.calories ? { description: `Yaklaşık ${d.calories} kcal` } : {}),
             })),
         };
-
-        if (reviewCount >= 1 && ratingValue) {
-            menuObj.aggregateRating = {
-                "@type": "AggregateRating",
-                ratingValue: ratingValue,
-                bestRating: "5",
-                worstRating: "1",
-                ratingCount: reviewCount,
-            };
-        }
 
         return {
             "@context": "https://schema.org",
@@ -346,7 +311,7 @@
                     {/if}
                 </div>
 
-                <h1 class="comments-page__title">{formattedDate || menu?.date || ""}</h1>
+                <h2 class="comments-page__title">{formattedDate || menu?.date || ""}</h2>
             </header>
 
             <MenuCard bind:menu options={{ hideComment: true }} />

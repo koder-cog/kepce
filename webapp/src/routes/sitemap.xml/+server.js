@@ -10,16 +10,16 @@ import { apiGet, istanbulToday } from '@/lib/server/api.js';
 const BASE_URL = 'https://kepce.org';
 
 const staticPagesWithLastmod = [
-	{ path: '', lastmod: null },
-	{ path: '/sehirler', lastmod: null },
+	{ path: '', dynamicRoot: true },
+	{ path: '/sehirler', lastmod: '2026-09-01' },
 	{ path: '/kyk-yemek-saatleri', lastmod: '2026-08-20' },
 	{ path: '/kyk-beslenme-yardimi', lastmod: '2026-08-20' },
 	{ path: '/arsiv', lastmod: '2026-08-15' },
-	{ path: '/istatistikler/yemekler', lastmod: null },
-	{ path: '/istatistikler/yorumlar', lastmod: null },
-	{ path: '/istatistikler/insaniyet', lastmod: null },
-	{ path: '/istatistikler/denetim', lastmod: null },
-	{ path: '/durum', lastmod: null },
+	{ path: '/istatistikler/yemekler', lastmod: '2026-09-01' },
+	{ path: '/istatistikler/yorumlar', lastmod: '2026-09-01' },
+	{ path: '/istatistikler/insaniyet', lastmod: '2026-09-01' },
+	{ path: '/istatistikler/denetim', lastmod: '2026-09-01' },
+	{ path: '/durum', lastmod: '2026-09-01' },
 	{ path: '/menu-gonder', lastmod: '2026-08-10' },
 	{ path: '/hakkinda', lastmod: '2026-08-10' },
 	{ path: '/sss', lastmod: '2026-08-20' },
@@ -38,9 +38,11 @@ export async function GET({ request }) {
 		fallback: {}
 	});
 
-	const staticEntries = staticPagesWithLastmod.map(({ path, lastmod }) => ({
+	const rootLastmod = cityLastmods?.['istanbul'] || today;
+
+	const staticEntries = staticPagesWithLastmod.map(({ path, lastmod, dynamicRoot }) => ({
 		loc: `${BASE_URL}${path}`,
-		lastmod: lastmod || today
+		lastmod: dynamicRoot ? rootLastmod : (lastmod || '2026-09-01')
 	}));
 
 	const cityEntries = ACTIVE_CITIES.map((slug) => ({
