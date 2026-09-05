@@ -60,7 +60,7 @@ pub struct MenuItemDto {
 }
 
 /// Eşleşmiş yemeğin kesin, onaylanmış verileri
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct DishMasterDataDto {
     pub dish_id: i32,
     pub name: String,
@@ -68,4 +68,9 @@ pub struct DishMasterDataDto {
     pub is_vegan: bool,
     pub is_vegetarian: bool,
     pub estimated_calories: Option<i32>,
+    pub total_votes: i32,
+    pub positive_votes: i32,
+    pub negative_votes: i32,
+    pub dislike_ratio: Option<f64>,
+    pub like_ratio: Option<f64>,
 }

@@ -38,7 +38,12 @@ export function normalizeItems(menu) {
           my_favorite: i.my_favorite || false,
           weight: i.amount || null,
           price: i.price || null,
-          calories: i.calories || null
+          calories: i.calories || null,
+          total_votes: i.master_data ? (i.master_data.total_votes || 0) : 0,
+          positive_votes: i.master_data ? (i.master_data.positive_votes || 0) : 0,
+          negative_votes: i.master_data ? (i.master_data.negative_votes || 0) : 0,
+          dislike_ratio: i.master_data ? (i.master_data.dislike_ratio ?? null) : null,
+          like_ratio: i.master_data ? (i.master_data.like_ratio ?? null) : null
         }]
       }));
   }

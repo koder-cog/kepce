@@ -513,47 +513,68 @@
                                     <span class="meal-card__dish-name"
                                         >{sanitizeText(dish.name)}</span
                                     >
-                                    {#if dish.weight || dish.calories || dish.estimated_calories}
-                                        <div
-                                            class="text-xs color-muted weight-info"
-                                        >
-                                            {#if dish.weight}{sanitizeText(
-                                                    dish.weight,
-                                                )}{/if}
-                                            {#if dish.weight && (dish.calories || dish.estimated_calories)}
-                                                &bull;
-                                            {/if}
-                                            {#if dish.calories || dish.estimated_calories}{dish.calories ||
-                                                    dish.estimated_calories} kcal{/if}
-                                        </div>
-                                    {/if}
-                                </div>
+                                    <div class="meal-card__dish-meta">
+                                        {#if dish.weight || dish.calories || dish.estimated_calories}
+                                            <span
+                                                class="text-xs color-muted weight-info"
+                                            >
+                                                {#if dish.weight}{sanitizeText(
+                                                        dish.weight,
+                                                    )}{/if}
+                                                {#if dish.weight && (dish.calories || dish.estimated_calories)}
+                                                    &bull;
+                                                {/if}
+                                                {#if dish.calories || dish.estimated_calories}{dish.calories ||
+                                                        dish.estimated_calories} kcal{/if}
+                                            </span>
+                                        {/if}
 
-                                {#if dish.price || typeof dish.id === "number" || dish.is_vegan || dish.is_vegetarian || dish.is_celiac}
-                                    <div class="meal-card__dish-actions">
                                         {#if dish.is_celiac}
-                                            <div
+                                            <span
                                                 class="meal-card__diet-icon"
                                                 data-tooltip="Çölyak"
                                             >
-                                                {@html icon("wheat", 18)}
-                                            </div>
+                                                {@html icon("wheat", 13)}
+                                            </span>
                                         {/if}
                                         {#if dish.is_vegan}
-                                            <div
+                                            <span
                                                 class="meal-card__diet-icon"
                                                 data-tooltip="Vegan"
                                             >
-                                                {@html icon("check", 18)}
-                                            </div>
+                                                {@html icon("check", 13)}
+                                            </span>
                                         {:else if dish.is_vegetarian}
-                                            <div
+                                            <span
                                                 class="meal-card__diet-icon"
                                                 data-tooltip="Vejetaryen"
                                             >
-                                                {@html icon("check", 18)}
-                                            </div>
+                                                {@html icon("check", 13)}
+                                            </span>
                                         {/if}
+
+                                        {#if (dish.total_votes || 0) >= 5}
+                                            {#if (dish.dislike_ratio || 0) >= 0.7}
+                                                <span
+                                                    class="c-badge-pill c-badge-pill--warning"
+                                                    data-tooltip={`Öğrencilerin %${Math.round((dish.dislike_ratio || 0) * 100)}'i bu yemeğe olumsuz oy verdi`}
+                                                >
+                                                    {@html icon("warning", 12)} %{Math.round((dish.dislike_ratio || 0) * 100)} Eleştiri
+                                                </span>
+                                            {:else if (dish.like_ratio || 0) >= 0.8}
+                                                <span
+                                                    class="c-badge-pill c-badge-pill--positive"
+                                                    data-tooltip={`Öğrencilerin %${Math.round((dish.like_ratio || 0) * 100)}'i bu yemeği beğendi`}
+                                                >
+                                                    {@html icon("starFilled", 12)} %{Math.round((dish.like_ratio || 0) * 100)} Sevilen
+                                                </span>
+                                            {/if}
+                                        {/if}
+                                    </div>
+                                </div>
+
+                                {#if dish.price || typeof dish.id === "number"}
+                                    <div class="meal-card__dish-actions">
                                         {#if dish.price}
                                             <span
                                                 class="c-badge-pill c-badge-pill--price"

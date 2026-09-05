@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use chrono::NaiveDate;
 use sea_orm::sea_query::Expr;
 use shared::entities::{
-    prelude::*, menus, menu_dishes, dish_aliases, dishes, cities, sea_orm_active_enums::MealTypeEnum, comments, menu_votes,
+    prelude::*, menus, menu_dishes, dish_aliases, dishes, cities, sea_orm_active_enums::MealTypeEnum, comments, menu_votes, dish_votes,
 };
 use crate::dto::menu::{MenuResponseDto, MenuItemDto, DishMasterDataDto, MealType};
 
@@ -58,15 +58,60 @@ impl MenuService {
     }
 
     fn calculate_total_calories(items: &[MenuItemDto]) -> Option<i32> {
-        let sum: i32 = items.iter().filter_map(|item| {
-            item.calories.or_else(|| item.master_data.as_ref().and_then(|m| m.estimated_calories))
-        }).sum();
-
-        if sum > 0 {
-            Some(sum)
-        } else {
-            None
+        let mut total = 0;
+        let mut has_calories = false;
+        for item in items {
+            if let Some(cal) = item.calories {
+                total += cal;
+                has_calories = true;
+            }
         }
+        if has_calories { Some(total) } else { None }
+    }
+
+    async fn get_dish_vote_stats_map(
+        db: &DatabaseConnection,
+        dish_ids: &[i32],
+    ) -> HashMap<i32, (i32, i32, i32, Option<f64>, Option<f64>)> {
+        if dish_ids.is_empty() {
+            return HashMap::new();
+        }
+
+        let vote_stats_list: Vec<(i32, i64, i64, i64)> = dish_votes::Entity::find()
+            .select_only()
+            .column(dish_votes::Column::DishId)
+            .column_as(dish_votes::Column::Id.count(), "total_votes")
+            .column_as(
+                Expr::cust("COALESCE(SUM(CASE WHEN sentiment = 'positive' THEN 1 ELSE 0 END), 0)"),
+                "positive_votes",
+            )
+            .column_as(
+                Expr::cust("COALESCE(SUM(CASE WHEN sentiment = 'negative' THEN 1 ELSE 0 END), 0)"),
+                "negative_votes",
+            )
+            .filter(dish_votes::Column::DishId.is_in(dish_ids.to_vec()))
+            .group_by(dish_votes::Column::DishId)
+            .into_tuple()
+            .all(db)
+            .await
+            .unwrap_or_default();
+
+        let mut map = HashMap::new();
+        for (d_id, total, pos, neg) in vote_stats_list {
+            let total_i32 = total as i32;
+            let pos_i32 = pos as i32;
+            let neg_i32 = neg as i32;
+            let (like_ratio, dislike_ratio) = if total_i32 > 0 {
+                (
+                    Some((pos as f64) / (total as f64)),
+                    Some((neg as f64) / (total as f64)),
+                )
+            } else {
+                (None, None)
+            };
+            map.insert(d_id, (total_i32, pos_i32, neg_i32, dislike_ratio, like_ratio));
+        }
+        map
     }
 
     /// Belirtilen bir menüyü (ID ile) ve içindeki yemekleri tam hiyerarşiyle getirir
@@ -106,7 +151,7 @@ impl MenuService {
             
         let master_dishes = if !dish_ids.is_empty() {
             dishes::Entity::find()
-                .filter(dishes::Column::Id.is_in(dish_ids))
+                .filter(dishes::Column::Id.is_in(dish_ids.clone()))
                 .all(db)
                 .await
                 .map_err(MenuError::DatabaseError)?
@@ -118,6 +163,7 @@ impl MenuService {
         for dish in master_dishes {
             master_map.insert(dish.id, dish);
         }
+        let dish_stats_map = Self::get_dish_vote_stats_map(db, &dish_ids).await;
         
         // Response formatına (DTO) çeviriyoruz
         let mut items = Vec::new();
@@ -126,6 +172,11 @@ impl MenuService {
             let alias = alias_opt.ok_or_else(|| MenuError::DatabaseError(DbErr::Custom("Yabancı anahtar bozuk: Alias bulunamadı".into())))?;
             
             let master_data = alias.dish_id.and_then(|did| master_map.get(&did)).map(|dish| {
+                let (tot, pos, neg, d_ratio, l_ratio) = dish_stats_map
+                    .get(&dish.id)
+                    .copied()
+                    .unwrap_or((0, 0, 0, None, None));
+
                 DishMasterDataDto {
                     dish_id: dish.id,
                     name: dish.name.clone(),
@@ -133,6 +184,11 @@ impl MenuService {
                     is_vegan: dish.is_vegan,
                     is_vegetarian: dish.is_vegetarian,
                     estimated_calories: dish.estimated_calories,
+                    total_votes: tot,
+                    positive_votes: pos,
+                    negative_votes: neg,
+                    dislike_ratio: d_ratio,
+                    like_ratio: l_ratio,
                 }
             });
             
@@ -363,6 +419,9 @@ impl MenuService {
         let mut dish_idx = 0;
         let is_celiac_mode = dietary_type.as_deref() == Some("celiac");
 
+        let dish_ids: Vec<i32> = dishes_opts.iter().flatten().map(|d| d.id).collect();
+        let dish_stats_map = Self::get_dish_vote_stats_map(db, &dish_ids).await;
+
         for (i, menu) in menus.into_iter().enumerate() {
             let mut items = Vec::with_capacity(menu_dishes_groups[i].len());
             let mut takeaway_map: HashMap<String, Vec<MenuItemDto>> = HashMap::new();
@@ -376,6 +435,11 @@ impl MenuService {
                     dish_idx += 1;
                     
                     let master_data = dish_opt.as_ref().map(|dish| {
+                        let (tot, pos, neg, d_ratio, l_ratio) = dish_stats_map
+                            .get(&dish.id)
+                            .copied()
+                            .unwrap_or((0, 0, 0, None, None));
+
                         DishMasterDataDto {
                             dish_id: dish.id,
                             name: dish.name.clone(),
@@ -383,6 +447,11 @@ impl MenuService {
                             is_vegan: dish.is_vegan,
                             is_vegetarian: dish.is_vegetarian,
                             estimated_calories: dish.estimated_calories,
+                            total_votes: tot,
+                            positive_votes: pos,
+                            negative_votes: neg,
+                            dislike_ratio: d_ratio,
+                            like_ratio: l_ratio,
                         }
                     });
                     
@@ -622,6 +691,9 @@ impl MenuService {
 
         let is_celiac_mode = _dietary_type.as_deref() == Some("celiac");
 
+        let dish_ids: Vec<i32> = dishes_opts.iter().flatten().map(|d| d.id).collect();
+        let dish_stats_map = Self::get_dish_vote_stats_map(db, &dish_ids).await;
+
         for (i, (menu, city_opt)) in menus_with_cities.into_iter().enumerate() {
             if let Some(city) = city_opt {
                 let mut items = Vec::with_capacity(menu_dishes_groups[i].len());
@@ -636,6 +708,11 @@ impl MenuService {
                         dish_idx += 1;
                         
                         let master_data = dish_opt.as_ref().map(|dish| {
+                            let (tot, pos, neg, d_ratio, l_ratio) = dish_stats_map
+                                .get(&dish.id)
+                                .copied()
+                                .unwrap_or((0, 0, 0, None, None));
+
                             DishMasterDataDto {
                                 dish_id: dish.id,
                                 name: dish.name.clone(),
@@ -643,6 +720,11 @@ impl MenuService {
                                 is_vegan: dish.is_vegan,
                                 is_vegetarian: dish.is_vegetarian,
                                 estimated_calories: dish.estimated_calories,
+                                total_votes: tot,
+                                positive_votes: pos,
+                                negative_votes: neg,
+                                dislike_ratio: d_ratio,
+                                like_ratio: l_ratio,
                             }
                         });
                         
