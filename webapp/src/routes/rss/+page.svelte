@@ -4,14 +4,14 @@
   import Seo from "@/components/ui/Seo.svelte";
 
   const rssUrl = `https://kepce.org/rss.xml`;
-  let buttonText = $state("Bağlantıyı Kopyala");
+  let buttonText = $state("Aynen öyle");
 
   function handleCopy() {
     navigator.clipboard.writeText(rssUrl).then(() => {
       showToast("RSS bağlantısı panoya kopyalandı!", "success");
       buttonText = "Kopyalandı";
       setTimeout(() => {
-        buttonText = "Bağlantıyı Kopyala";
+        buttonText = "Aynen öyle";
       }, 2000);
     });
   }
@@ -29,8 +29,9 @@
   </div>
   <div class="content-page__body">
     <p>
-      Menüleri tarayıcı açmadan doğrudan RSS okuyucunuza veya bildirim botunuza
-      çekmek isteyenler için hafif ve işlevsel bir akış. Günlük olarak güncellenir.
+      Menünün amele gibi siteye girmeden direkt ayağına gelmesini isteyen ama
+      API yerine RSS tercih eden dedelere adanmış nostaljik amme hizmeti.
+      Sınırlamalara tabidir.
     </p>
 
     <div

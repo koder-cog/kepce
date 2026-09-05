@@ -7,22 +7,22 @@
     const CATEGORY_META = {
         sadakat: {
             title: "Sadakat ve İstikrar",
-            subtitle: "Giriş ve Takip Başarımları",
+            subtitle: "Çaresizlik Sınavı",
             icon: "calendar",
         },
         sosyal: {
             title: "Sosyal Etkileşim",
-            subtitle: "Yorum ve Oylama Başarımları",
+            subtitle: "Yemekhane Dedikodusu",
             icon: "chat",
         },
         denetim: {
-            title: "Denetim ve Düzen",
-            subtitle: "Geri Bildirim ve Moderasyon",
+            title: "Denetim ve Kalite",
+            subtitle: "Sistemin Bedava Bekçileri",
             icon: "search",
         },
         veri: {
             title: "Veri Katkısı",
-            subtitle: "Menü ve Fiyat Gönderimleri",
+            subtitle: "Tedarikçi Manyaklar",
             icon: "plus",
         },
     };
@@ -32,7 +32,7 @@
             slug: "ilk_kepce",
             name: "İlk Kepçe",
             description:
-                "Menü yayınlandıktan sonra ilk 5 dakika içinde ilk yorumu yazan.",
+                "Menü yayınlandığı an ilk 5 dakika içinde ilk yorumu giren işsiz.",
             category: "sadakat",
             karma_reward: 25,
             is_repeatable: true,
@@ -41,7 +41,7 @@
         {
             slug: "demir_mide",
             name: "Demir Mide",
-            description: "7 gün üst üste siteye giriş yapan kararlı tabldotçu.",
+            description: "7 gün üst üste siteye giriş yapan felaketzede.",
             category: "sadakat",
             karma_reward: 50,
             is_repeatable: false,
@@ -50,7 +50,7 @@
         {
             slug: "kurumsal_caresizlik",
             name: "Kurumsal Çaresizlik",
-            description: "30 gün üst üste her gün siteyi ziyaret eden.",
+            description: "30 gün üst üste siteye giren amansız.",
             category: "sadakat",
             karma_reward: 150,
             is_repeatable: false,
@@ -59,7 +59,7 @@
         {
             slug: "stokholm_sendromu",
             name: "Stokholm Sendromu",
-            description: "100 gün üst üste her gün siteyi ziyaret eden.",
+            description: "100 gün üst üste siteye giren yurt kuşu.",
             category: "sadakat",
             karma_reward: 400,
             is_repeatable: false,
@@ -69,7 +69,7 @@
             slug: "demirbas",
             name: "Demirbaş",
             description:
-                "Bir eğitim-öğretim dönemi boyunca (Ekim-Haziran) aralıksız her gün siteye uğrayan.",
+                "Bir eğitim-öğretim dönemi boyunca (ekim-haziran) üst üste siteye giren gariban.",
             category: "sadakat",
             karma_reward: 750,
             is_repeatable: true,
@@ -78,7 +78,7 @@
         {
             slug: "hucre_hapsi",
             name: "Hücre Hapsi",
-            description: "Tam 1 yıl (365 gün) aralıksız her gün siteyi ziyaret eden.",
+            description: "365 gün (1 yıl) aralıksız siteye giren hayatsız.",
             category: "sadakat",
             karma_reward: 1500,
             is_repeatable: false,
@@ -88,7 +88,7 @@
             slug: "vefakar",
             name: "Vefakar",
             description:
-                "Bir ay boyunca bir şehirdeki tüm menülere upvote veren.",
+                "Bir ay boyunca bir şehirdeki tüm menülere upvote veren polyanna.",
             category: "sadakat",
             karma_reward: 100,
             is_repeatable: true,
@@ -115,7 +115,7 @@
         {
             slug: "muzmin_muhalif",
             name: "Müzmin Muhalif",
-            description: "Toplam 50 farklı öğüne veya yoruma downvote atan.",
+            description: "Üst üste herhangi bir şeye 50 downvote atan.",
             category: "sosyal",
             karma_reward: 50,
             is_repeatable: false,
@@ -133,7 +133,7 @@
         {
             slug: "linc_kurbani",
             name: "Linç Kurbanı",
-            description: "Tek bir yorumunda 50 downvote alan.",
+            description: "Tek bir yorumunda 50 downvote yiyen.",
             category: "sosyal",
             karma_reward: 75,
             is_repeatable: true,
@@ -142,7 +142,7 @@
         {
             slug: "caylak_gammaz",
             name: "Çaylak Gammaz",
-            description: "İlk menü veya yorum bildirimini yapan.",
+            description: "İlk şikayetini/raporunu yapan hevesli ispiyoncu.",
             category: "denetim",
             karma_reward: 25,
             is_repeatable: false,
@@ -151,7 +151,7 @@
         {
             slug: "fahri_mufettis",
             name: "Fahri Müfettiş",
-            description: "10 geçerli hata veya ihlal bildirimi yapan.",
+            description: "10 başarılı şikayetle sanal egosu okşanan.",
             category: "denetim",
             karma_reward: 500,
             is_repeatable: false,
@@ -160,7 +160,7 @@
         {
             slug: "isguzar",
             name: "İşgüzar",
-            description: "50 geçerli bildirimle topluluk düzenine katkı sunan.",
+            description: "50 başarılı şikayetle uygulamanın ücretsiz amelesi.",
             category: "denetim",
             karma_reward: 5000,
             is_repeatable: false,
@@ -169,7 +169,7 @@
         {
             slug: "cesnicibassi",
             name: "Çeşnicibaşı",
-            description: "Şehrine ait bir menüyü sisteme ilk yükleyip onaylatan.",
+            description: "Menüyü şehre ilk sızdırıp onaylatan kobay.",
             category: "veri",
             karma_reward: 50,
             is_repeatable: false,
@@ -179,7 +179,7 @@
             slug: "karbonhidrat_elcisi",
             name: "Karbonhidrat Elçisi",
             description:
-                "İçinde 'Makarna' veya 'Ekmek' geçen 30 öğünü favorilerine ekleyen.",
+                "İçinde 'Makarna' veya 'Ekmek' geçen 30 öğünü favorileyen gizli insülin direnci.",
             category: "veri",
             karma_reward: 100,
             is_repeatable: false,

@@ -42,73 +42,75 @@
 
 <ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 2026.08.05">
   <p>
-    Kepçe, KYK yurtlarında kalan öğrencilerin günlük yemek menülerine ve besin
-    değerlerine reklamsız, hızlı ve doğrudan ulaşabilmesi için geliştirilmiş açık
-    kaynaklı özgür bir yazılımdır.
+    Kepçe, temel olarak API sağlayıcı görevini üstlenen açık kaynaklı ve kâr
+    amacı gütmeyen özgür bir yazılımdır. Kepçe'nin temel değerlerinde
+    kullanıcıların öğün verilerine reklamsız, hızlı ve doğrudan ulaşabilmesi
+    vardır.
   </p>
 
   <h2>Bu site kimin?</h2>
   <p>
-    Sitede emeği geçen kişi, şu an bir KYK yurdunda kalan ve her gün aynı
-    yemekhanede sıraya giren bir üniversite öğrencisi. Yani dışarıdan bir girişim
-    veya şirket değil; doğrudan bu hizmeti her gün kendisi de kullanan bir öğrenci
-    projesi.
+    Benim... Peki kimim ben? Güncel olarak bir KYK yurdunda kalan ve KYK
+    tabldotlarından beslenen sıradan bir üniversite öğrencisiyim. Yani doğrudan
+    sizin gibi biriyim ve bu sitenin asıl kullanıcısıyım.
   </p>
   <p>
-    Görüş, öneri veya sorularınız için <a href="/iletisim">iletişim</a> sayfası
-    üzerinden mesaj gönderebilirsiniz.
+    Eğer benimle site ile ilgili belirli bir konuda iletişime geçmek isterseniz <a
+      href="/iletisim">iletişim</a
+    > sayfamıza bekleriz.
   </p>
 
   <h2>Güvenilir mi?</h2>
   <p>
-    Sitede kullanıcıları takip eden üçüncü taraf reklam veya gizli takip çerezleri
-    yer almaz. Kaynak kodları AGPL v3 lisansıyla tamamen açıktır; dileyen herkes
-    arka planda çalışan kodları bağımsız olarak inceleyebilir, denetleyebilir ve
-    geliştirme önerisinde bulunabilir.
+    Proje, güncel güvenlik standartları ve kabul görmüş pratikler üzerine inşa
+    edildiği için temel güvenlik standartlarını karşılamaktadır. Artı olarak
+    projenin kaynak kodları açıktır; yani istenirse kodlar bağımsız olarak
+    incelenebilir, denetlenebilir ve herhangi bir hata veya geliştirme önerisi
+    için kodlara katkıda bulunulabilir.
   </p>
 
   <h2>Bana ne faydası var?</h2>
-  <p>Kullanım amacınıza göre:</p>
+  <p>Sizin kim olduğunuza göre değişir:</p>
   <ul>
     <li>
-      <strong>Öğrenciyseniz:</strong> Yurdunuzun kahvaltı ve akşam yemeği
-      menüsüne reklama boğulmadan, saniyeler içinde göz atabilirsiniz.
+      Düz kullanıcıysanız, yurdunuzun menüsüne reklamlara boğulmadan, saniyeler
+      içinde bakıp çıkabilirsiniz.
     </li>
     <li>
-      <strong>Geliştiriciyseniz:</strong> Kendi botunuzu, arayüzünüzü veya
-      otomasyonunuzu yazmak için ücretsiz ve açık API servisinden
-      faydalanabilirsiniz.
+      Geliştiriciyseniz ve kendi arayüzünüzü geliştirmek veya otomasyon kurmak
+      istiyorsanız; Kepçe size diğer platformların sunmadığı ücretsiz bir API
+      sağlar.
     </li>
   </ul>
 
-  <h2>Masraflar nasıl karşılanıyor? Gelir modeli nedir?</h2>
+  <h2>Masraflar kimin cebinden çıkıyor? Gelir modeliniz nedir?</h2>
   <p>
-    Sunucu ve alan adı gibi temel altyapı masrafları şahsi bütçeden
-    karşılanmaktadır. Sitede reklam veya kâr amacı güden bir gelir modeli yoktur.
-    Destek olmak isterseniz <a href="/iletisim">iletişim</a> sayfası üzerinden
-    irtibata geçebilirsiniz.
+    Alan adı ve sunucu gibi temel altyapı masrafları şu an tamamen benim
+    cebimden çıkıyor. Sitede kurulu bir bağış sistemi yok ancak çorbada tuzum
+    bulunsun derseniz <a href="/iletisim">iletişim</a> sayfası üzerinden benimle
+    iletişime geçebilirsiniz.
   </p>
 
   <h2>Projeye nasıl katkı sağlayabilirim?</h2>
   <ul>
     <li>
-      <strong>Geliştirici olarak:</strong> <a
+      Eğer geliştirici iseniz <a
         href="https://github.com/koder-cog/kepce"
         target="_blank"
-        rel="noopener noreferrer">GitHub deposu</a
-      > üzerinden kodları inceleyebilir, hata bildirebilir veya yeni özellikler için
-      pull request gönderebilirsiniz.
+        rel="noopener noreferrer">GitHub</a
+      > depomuz üzerinden kodları inceleyebilir, hata çözümlerinde bulunabilir veya
+      yeni özellikler için PR gönderebilirsiniz.
     </li>
     <li>
-      <strong>Kullanıcı olarak:</strong> Yurttaki arkadaşlarınızla paylaşabilir,
-      eksik menüleri sisteme yükleyebilir veya karşılaştığınız hataları
-      bildirebilirsiniz.
+      Eğer kullanıcı iseniz sitede gördüğünüz hataları bize bildirebilirsiniz
+      veya diğer insanlara göstererek daha fazla kişinin Kepçe'den haberdar
+      olmasını sağlayabilirsiniz. En büyük katkı uygulamanın kullanılmasıdır.
     </li>
   </ul>
 
   <p>
-    Menülere yorum yazmak ve topluluğa katılmak isterseniz <a href="/kayit"
-      >kayıt olabilir</a
-    >; zaten hesabınız varsa doğrudan <a href="/giris">giriş yapabilirsiniz</a>.
+    Menülere yorum yazmak, toplulukla sohbet etmek veya API'den faydalanmak
+    isterseniz <a href="/kayit">kayıt olabilir</a>; halihazırda bir Kepçe
+    kullanıcısıysanız doğrudan <a href="/giris">giriş yapabilirsiniz</a>.
   </p>
 </ContentPage>

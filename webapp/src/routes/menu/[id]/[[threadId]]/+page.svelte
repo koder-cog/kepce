@@ -331,7 +331,7 @@
                     <EmptyState
                         iconName={"info"}
                         title={"Yorum Yok"}
-                        desc={"Henüz yorum yapılmamış. Düşüncelerini ilk sen paylaş!"}
+                        desc={"Burada biz haşlanmış yumurtalardan başka kimse yok."}
                     />
                 {:else}
                     {#if focusId}
