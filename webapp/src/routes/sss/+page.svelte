@@ -9,6 +9,13 @@
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
+          { "@type": "ListItem", position: 2, name: "Sıkça Sorulan Sorular", item: "https://kepce.org/sss" },
+        ],
+      },
+      {
         "@type": "WebPage",
         "@id": "https://kepce.org/sss#webpage",
         url: "https://kepce.org/sss",
@@ -16,12 +23,6 @@
         description:
           "Kepçe'nin çalışma mantığı, KYK yemek menüleri ve sistem hakkında merak edilebilecekler.",
         inLanguage: "tr-TR",
-        isPartOf: {
-          "@type": "WebSite",
-          "@id": "https://kepce.org/#website",
-          url: "https://kepce.org/",
-          name: "Kepçe",
-        },
       },
       {
         "@type": "Organization",

@@ -172,9 +172,12 @@
         menu?.date ? formatFullTurkishDate(menu.date) : ""
     );
 
-    // Gün sayfası konsolidasyonu: canonical sinyalleri /{sehir}/{tarih}'e gider.
+    // Şehir iniş sayfası konsolidasyonu: canonical sinyalleri doğrudan /{sehir}'e gider.
     let dayUrl = $derived(
-        data?.dayUrl || (targetCitySlug && menu?.date ? `/${targetCitySlug}/${menu.date}` : null),
+        data?.dayUrl || (targetCitySlug && menu?.date ? `/${targetCitySlug}?gun=${menu.date}` : null),
+    );
+    let canonicalUrl = $derived(
+        data?.canonicalUrl || (targetCitySlug ? `https://kepce.org/${targetCitySlug}` : `https://kepce.org/menu/${menuId}`),
     );
 
     let mealLabel = $derived(
@@ -398,6 +401,6 @@
         ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} ${mealLabel} menüsü detayları, besin değerleri ve öğrenci yorumları.`
         : "KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri."}
     image={ogImageUrl}
-    canonical={dayUrl ? `https://kepce.org${dayUrl}` : `https://kepce.org/menu/${menuId}`}
+    canonical={canonicalUrl}
     schema={menuSchema}
 />

@@ -629,6 +629,7 @@
     title="Kepçe Ara"
     href="/opensearch.xml"
   />
+  <meta name="robots" content="noindex, follow" />
   {#if data.isHome}
     <title>Kepçe Ara</title>
     <meta

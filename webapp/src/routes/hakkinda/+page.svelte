@@ -7,6 +7,13 @@
     "@context": "https://schema.org",
     "@graph": [
       {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
+          { "@type": "ListItem", position: 2, name: "Hakkında", item: "https://kepce.org/hakkinda" },
+        ],
+      },
+      {
         "@type": "AboutPage",
         "@id": "https://kepce.org/hakkinda#webpage",
         url: "https://kepce.org/hakkinda",
@@ -14,12 +21,6 @@
         description:
           "Kepçe, KYK yurtlarında çıkan yemekleri öğrencilerin kolayca takip edebilmesi için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur.",
         inLanguage: "tr-TR",
-        isPartOf: {
-          "@type": "WebSite",
-          "@id": "https://kepce.org/#website",
-          url: "https://kepce.org/",
-          name: "Kepçe",
-        },
       },
       {
         "@type": "Organization",

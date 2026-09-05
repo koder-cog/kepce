@@ -26,12 +26,12 @@
     let rawItems = $derived(normalizeItems(menu));
     let items = $derived(groupItems(rawItems));
 
-    // Gün sayfası konsolidasyonu: alanlar varsa kanonik gün sayfası,
-    // yoksa eski /menu/[id] bağlantısına düş (geriye uyumlu).
+    // Şehir iniş sayfası konsolidasyonu: doğrudan /{slug}?gun={day} bağlantısı
+    // verilerek lüzumsuz 301 yönlendirmesi önlenir.
     let dayUrl = $derived.by(() => {
         const slug = menu?.city_slug;
         const day = menu?.date ?? menu?.serve_date;
-        return slug && day ? `/${slug}/${day}` : `/menu/${menu?.id}`;
+        return slug && day ? `/${slug}?gun=${day}` : `/menu/${menu?.id}`;
     });
     
     let dishesText = $derived(

@@ -34,6 +34,7 @@
 
   <div class="site-footer__col">
     <div class="site-footer__col-title">Keşfet</div>
+    <a href="/sehirler" class="site-footer__link" data-link>Şehirler</a>
     <a href="/sss" class="site-footer__link" data-link
       >Sıkça Sorulabilecek Sorular</a
     >

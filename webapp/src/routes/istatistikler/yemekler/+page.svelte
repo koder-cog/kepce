@@ -22,6 +22,8 @@
     { id: "pulse", label: "Genel vaziyet", icon: icon("usage", 18) },
   ];
 
+  let { data } = $props();
+
   let activeSubTab = $state("top_rated");
   let selectedCity = $state("");
   let selectedTimeframe = $state("");
@@ -34,11 +36,13 @@
     { value: "yearly", label: "Geçen Yıl" },
   ];
 
-  let isLoading = $state(true);
+  let hasInitial = Boolean(data?.initialTopDishes && data.initialTopDishes.length > 0);
+  let isLoading = $state(!hasInitial);
   let errorMsg = $state(null);
   let errorCode = $state(null);
-  let contentData = $state(null);
+  let contentData = $state(hasInitial ? data.initialTopDishes : null);
   let currentLoadToken = 0;
+  let isFirstLoad = true;
 
   afterNavigate(async () => {
     try {
@@ -46,6 +50,11 @@
     } catch (e) {
       cachedCities = [];
     }
+    if (isFirstLoad && hasInitial) {
+      isFirstLoad = false;
+      return;
+    }
+    isFirstLoad = false;
     loadContent();
   });
 
@@ -168,6 +177,11 @@
   title="Yemek İstatistikleri | Kepçe"
   description="KYK yurtlarında en beğenilen ve en eleştirilen yemekler, öğrenci oyları ve nefret tablosu."
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
+  breadcrumbs={[
+    { name: "Ana Sayfa", item: "https://kepce.org/" },
+    { name: "İstatistikler", item: "https://kepce.org/istatistikler/yemekler" },
+    { name: "Yemek İstatistikleri", item: "https://kepce.org/istatistikler/yemekler" },
+  ]}
 />
 
 <h1 class="sr-only">KYK Yemek İstatistikleri ve Analizleri</h1>

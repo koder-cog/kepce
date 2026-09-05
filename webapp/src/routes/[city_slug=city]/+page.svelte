@@ -36,10 +36,34 @@
         "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
         "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
     ];
-    const now = new Date();
-    const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
 
-    let pageTitle = $derived(`Bugünkü ${cityName} KYK Yemek Menüsü (2026-2027) - Güncel Tabldot | Kepçe`);
+    let dateParts = $derived.by(() => {
+        const dStr = data?.date || "";
+        const parts = dStr.split("-");
+        if (parts.length === 3) {
+            const y = parseInt(parts[0], 10);
+            const m = parseInt(parts[1], 10);
+            const d = parseInt(parts[2], 10);
+            return { year: y, month: m, day: d, monthName: turkishMonths[m - 1] || "" };
+        }
+        const now = new Date();
+        return {
+            year: now.getFullYear(),
+            month: now.getMonth() + 1,
+            day: now.getDate(),
+            monthName: turkishMonths[now.getMonth()] || ""
+        };
+    });
+
+    let academicYear = $derived.by(() => {
+        const y = dateParts.year;
+        const m = dateParts.month;
+        return m >= 9 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+    });
+
+    let todayTurkishStr = $derived(`${dateParts.day} ${dateParts.monthName} ${dateParts.year}`);
+
+    let pageTitle = $derived(`Bugünkü ${cityName} KYK Yemek Menüsü (${academicYear}) - Güncel Tabldot | Kepçe`);
     let pageDescription = $derived(
         `Bugünkü ${cityName} KYK yurt yemekhane menüsü: ${todayTurkishStr} kahvaltı ve akşam yemeği tabldot listesi, kalori ve beslenme yardımı detayları.`
     );
@@ -48,15 +72,15 @@
 
     let menuSchema = $derived.by(() => {
         const menus = timelineState.menusState || [];
-        const isoNow = now.toISOString();
+        const nowIso = new Date().toISOString();
         const baseGraphs = [
             {
-                "@type": "WebSite",
-                "@id": "https://kepce.org/#website",
-                url: "https://kepce.org/",
-                name: "Kepçe",
-                description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
-                inLanguage: "tr-TR",
+                "@type": "BreadcrumbList",
+                itemListElement: [
+                    { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
+                    { "@type": "ListItem", position: 2, name: "Şehirler", item: "https://kepce.org/sehirler" },
+                    { "@type": "ListItem", position: 3, name: `${cityName} KYK Menüsü`, item: `https://kepce.org/${citySlug}` },
+                ],
             },
             {
                 "@type": "Organization",
@@ -87,8 +111,8 @@
                 "@id": `https://kepce.org/${citySlug}#menu`,
                 name: `${cityName} KYK Günlük Yemek Menüsü`,
                 inLanguage: "tr-TR",
-                datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
-                dateModified: isoNow,
+                datePublished: `${data?.date || nowIso.split("T")[0]}T00:00:00+03:00`,
+                dateModified: nowIso,
                 hasMenuSection: sections,
             });
         }

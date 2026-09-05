@@ -5,27 +5,28 @@
 ## Ana Sayfalar ve Dokümantasyon
 
 - [Günün Yemek Menüsü](https://kepce.org/): Günlük ve aylık KYK yurt yemek menüleri, kalori ve besin değerleri.
+- [Şehirler Dizini](https://kepce.org/sehirler): Menüsü bulunan tüm aktif şehirlerin listesi.
 - [Yemek Arşivi](https://kepce.org/arsiv): Geçmiş ayların ve günlerin KYK yurt menü arşivi.
 - [Yemek İstatistikleri](https://kepce.org/istatistikler/yemekler): KYK yurtlarında en sık çıkan yemekler, besin analizi ve öğrenci değerlendirmeleri.
+- [KYK Yemek Saatleri](https://kepce.org/kyk-yemek-saatleri): Kahvaltı, akşam yemeği ve Ramazan saatleri rehberi.
+- [KYK Beslenme Yardımı](https://kepce.org/kyk-beslenme-yardimi): Beslenme yardımı limitleri ve tabldot detayları.
 - [Sıkça Sorulan Sorular](https://kepce.org/sss): Kepçe platformu ve menü verileri hakkında SSS.
 - [Sistem Durumu](https://kepce.org/durum): Servislerin anlık çalışma durumu ve geçmiş kesinti raporları.
-- [Geliştirici Portalı](https://kepce.org/gelistirici): Açık kaynaklı REST API uç noktaları ve API anahtarı yönetimi.
 
 ## Yapay Zeka Ajanları ve LLM Aletleri (API Endpoints for AI Agents)
 
 Kepçe, AI ajanlarının ve asistanların doğrudan sorgu atabilmesi için açık JSON API uç noktaları sağlar:
 
-- **Günün Menüsü:** `GET https://kepce.org/api/v1/public/menus/daily?city={sehir_slug}&date={YYYY-MM-DD}`
+- **Günün Menüsü:** `GET https://kepce.org/api/v1/menus?city={sehir_slug}&date={YYYY-MM-DD}`
   - Parametreler:
     - `city` (zorunlu): İl adı veya plaka slug'ı (örn: `istanbul`, `ankara`, `izmir`)
     - `date` (isteğe bağlı, varsayılan bugün): `YYYY-MM-DD` formatında tarih
   - Yanıt: Kahvaltı ve akşam yemeği menüsü, yemek adları, kalori ve diyet kategorileri.
-- **Aylık Menü Bülteni:** `GET https://kepce.org/api/v1/public/menus/monthly?city={sehir_slug}&year={YYYY}&month={MM}`
-- **Meta Arama Motoru:** `GET https://ara.kepce.org/?q={sorgu}&format=json`
+- **Bugünün Menüsü (Kısa Yol):** `GET https://kepce.org/api/v1/public/menus/today/{sehir_slug}`
+- **Aktif Şehirler:** `GET https://kepce.org/api/v1/public/cities`
 
 ## İsteğe Bağlı Kaynaklar
 
 - [Açık Kaynak Kod Deposu](https://github.com/koder-cog/kepce): Kepçe GitHub kaynak kodu ve AGPLv3 lisanslı altyapı.
 - [Gizlilik Politikası](https://kepce.org/gizlilik-politikasi): Veri saklama ve gizlilik politikası.
 - [Kullanım Koşulları](https://kepce.org/kullanim-kosullari): Topluluk kuralları ve hizmet şartları.
-

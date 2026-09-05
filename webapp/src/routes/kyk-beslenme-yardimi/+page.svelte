@@ -5,23 +5,35 @@
 
   const guideSchema = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "KYK Beslenme Yardımı",
-    description:
-      "KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.",
-    datePublished: "2026-08-20",
-    dateModified: "2026-08-20",
-    inLanguage: "tr-TR",
-    author: {
-      "@type": "Organization",
-      name: "Kepçe",
-      url: "https://kepce.org/",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Kepçe",
-      logo: "https://kepce.org/icon-512.png",
-    },
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
+          { "@type": "ListItem", position: 2, name: "KYK Beslenme Yardımı", item: "https://kepce.org/kyk-beslenme-yardimi" },
+        ],
+      },
+      {
+        "@type": "Article",
+        headline: "KYK Beslenme Yardımı",
+        description:
+          "KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.",
+        datePublished: "2026-08-20",
+        dateModified: "2026-08-20",
+        inLanguage: "tr-TR",
+        mainEntityOfPage: "https://kepce.org/kyk-beslenme-yardimi",
+        author: {
+          "@type": "Organization",
+          name: "Kepçe",
+          url: "https://kepce.org/",
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Kepçe",
+          logo: "https://kepce.org/icon-512.png",
+        },
+      },
+    ],
   };
 </script>
 

@@ -96,6 +96,7 @@
   description={profile
     ? `@${safeNickname} kullanıcısının kazandığı rozetler, başarımlar ve karma seviyesi.`
     : "Kepçe rozetler ve başarımlar."}
+  noindex={true}
 />
 
 {#if loading}

@@ -31,8 +31,8 @@ export async function load({ params, setHeaders }) {
 		city: raw.city ?? { name: raw.city_name }
 	};
 
-	// Gün sayfası konsolidasyonu: /menu/[id] ikincil sayfadır; canonical
-	// sinyalleri /{sehir}/{tarih} gün sayfasına devreder.
+	// Şehir iniş sayfası konsolidasyonu: /menu/[id] ikincil sayfadır; canonical
+	// sinyalleri doğrudan /{sehir} şehir sayfasına devreder (301 redirect zincirini önler).
 	const citySlug = raw.city_slug ?? null;
 	const menuDate = menu.date ?? null;
 	const shiftDate = (iso, days) => {
@@ -45,7 +45,9 @@ export async function load({ params, setHeaders }) {
 
 	return {
 		menu,
-		dayUrl: citySlug && menuDate ? `/${citySlug}/${menuDate}` : null,
+		citySlug,
+		dayUrl: citySlug && menuDate ? `/${citySlug}?gun=${menuDate}` : null,
+		canonicalUrl: citySlug ? `https://kepce.org/${citySlug}` : null,
 		prevDate: shiftDate(menuDate, -1),
 		nextDate: shiftDate(menuDate, 1)
 	};

@@ -8,6 +8,7 @@
     type = "website",
     canonical = null,
     noindex = false,
+    breadcrumbs = null,
     schema = null,
   } = $props();
 
@@ -21,34 +22,50 @@
     return path ? `${BASE_URL}${path}` : BASE_URL;
   });
 
-  let defaultSchema = $derived(
-    schema || {
+  let isRoot = $derived(!($page.url?.pathname) || $page.url.pathname === "/" || $page.url.pathname === "");
+
+  let defaultSchema = $derived.by(() => {
+    if (schema) return schema;
+
+    const graphs = [
+      {
+        "@type": "Organization",
+        "@id": `${BASE_URL}/#organization`,
+        name: "Kepçe",
+        url: `${BASE_URL}/`,
+        logo: `${BASE_URL}/icon-512.png`,
+      },
+    ];
+
+    if (isRoot) {
+      graphs.unshift({
+        "@type": "WebSite",
+        "@id": `${BASE_URL}/#website`,
+        url: `${BASE_URL}/`,
+        name: "Kepçe",
+        alternateName: ["Kepçe KYK", "KYK Yemek Menüsü", "KYK Yemek Listesi"],
+        description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
+        inLanguage: "tr-TR",
+      });
+    }
+
+    if (breadcrumbs && breadcrumbs.length > 0) {
+      graphs.push({
+        "@type": "BreadcrumbList",
+        itemListElement: breadcrumbs.map((b, idx) => ({
+          "@type": "ListItem",
+          position: idx + 1,
+          name: b.name,
+          item: b.item,
+        })),
+      });
+    }
+
+    return {
       "@context": "https://schema.org",
-      "@graph": [
-        {
-          "@type": "WebSite",
-          "@id": `${BASE_URL}/#website`,
-          url: `${BASE_URL}/`,
-          name: "Kepçe",
-          alternateName: ["Kepçe KYK", "KYK Yemek Menüsü", "KYK Yemek Listesi"],
-          description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
-          inLanguage: "tr-TR",
-          potentialAction: {
-            "@type": "SearchAction",
-            target: `${BASE_URL}/ara?q={search_term_string}`,
-            "query-input": "required name=search_term_string",
-          },
-        },
-        {
-          "@type": "Organization",
-          "@id": `${BASE_URL}/#organization`,
-          name: "Kepçe",
-          url: `${BASE_URL}/`,
-          logo: `${BASE_URL}/icon-512.png`,
-        },
-      ],
-    },
-  );
+      "@graph": graphs,
+    };
+  });
 </script>
 
 <svelte:head>
@@ -73,11 +90,11 @@
   <meta property="og:image" content={image} />
 
   <!-- Twitter -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:url" content={canonicalUrl} />
-  <meta property="twitter:title" content={title} />
-  <meta property="twitter:description" content={description} />
-  <meta property="twitter:image" content={image} />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:url" content={canonicalUrl} />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={image} />
 
   <!-- Structured Data (JSON-LD) -->
   {@html `<script type="application/ld+json">${JSON.stringify(defaultSchema)}</script>`}

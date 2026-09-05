@@ -4,23 +4,35 @@
 
   const guideSchema = {
     "@context": "https://schema.org",
-    "@type": "Article",
-    headline: "KYK Yemek Saatleri",
-    description:
-      "KYK yurtlarında kahvaltı ve akşam yemeği saatleri, yemekhane gerçekleri ve Ramazan düzeni.",
-    datePublished: "2026-08-20",
-    dateModified: "2026-08-20",
-    inLanguage: "tr-TR",
-    author: {
-      "@type": "Organization",
-      name: "Kepçe",
-      url: "https://kepce.org/",
-    },
-    publisher: {
-      "@type": "Organization",
-      name: "Kepçe",
-      logo: "https://kepce.org/icon-512.png",
-    },
+    "@graph": [
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
+          { "@type": "ListItem", position: 2, name: "KYK Yemek Saatleri", item: "https://kepce.org/kyk-yemek-saatleri" },
+        ],
+      },
+      {
+        "@type": "Article",
+        headline: "KYK Yemek Saatleri",
+        description:
+          "KYK yurtlarında kahvaltı ve akşam yemeği saatleri, yemekhane gerçekleri ve Ramazan düzeni.",
+        datePublished: "2026-08-20",
+        dateModified: "2026-08-20",
+        inLanguage: "tr-TR",
+        mainEntityOfPage: "https://kepce.org/kyk-yemek-saatleri",
+        author: {
+          "@type": "Organization",
+          name: "Kepçe",
+          url: "https://kepce.org/",
+        },
+        publisher: {
+          "@type": "Organization",
+          name: "Kepçe",
+          logo: "https://kepce.org/icon-512.png",
+        },
+      },
+    ],
   };
 </script>
 
