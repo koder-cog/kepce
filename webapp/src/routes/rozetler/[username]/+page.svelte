@@ -159,30 +159,14 @@
       <div class="achievements-header__info">
         <h1 class="achievements-header__nickname">@{safeNickname}</h1>
         <div class="achievements-header__rank">{title}</div>
-
-        <div class="level-progress-container">
-          <div class="level-progress">
-            <div
-              class="level-progress__bar"
-              style="--progress-width: {progressPercent}%"
-            ></div>
-          </div>
-          <div class="level-progress__text">
-            <span
-              >{levelProgress.karma_in_level || 0} / {levelProgress.karma_for_next ||
-                50}</span
-            >
-            <span>Sonraki Seviye: Lvl {level + 1}</span>
-          </div>
-        </div>
       </div>
     </header>
 
     <!-- ── Stats Grid ──────────────────── -->
     <div class="achievements-stats">
       <div class="achievements-stat-card btn--squish">
-        <span class="achievements-stat-value">Lvl {level}</span>
-        <span class="achievements-stat-label">Profil seviyesi</span>
+        <span class="achievements-stat-value">{title}</span>
+        <span class="achievements-stat-label">Mevcut unvan</span>
       </div>
       <div class="achievements-stat-card btn--squish">
         <span class="achievements-stat-value">{karma}</span>
@@ -192,7 +176,7 @@
         <span class="achievements-stat-value"
           >{totalUnlocked} / {totalBadges}</span
         >
-        <span class="achievements-stat-label">Rozetler</span>
+        <span class="achievements-stat-label">Kazanılan rozetler</span>
       </div>
     </div>
 

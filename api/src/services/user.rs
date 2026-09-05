@@ -37,6 +37,97 @@ impl UserService {
         }
     }
 
+    /// Kullanıcının karma puanına göre dinamik tabldot unvanını döndürür
+    pub fn get_title_for_karma(karma: i32) -> &'static str {
+        match karma {
+            k if k > 1000 => "aşçıbaşının yeğeni",
+            1000 => "altın kepçe",
+            950..=999 => "turnikeden ilk geçen",
+            900..=949 => "çift porsiyon tatlı hakkı",
+            880..=899 => "etli yemeği denk getiren",
+            870..=879 => "nohut-pilav gurmesi",
+            860..=869 => "yoğurdu ekşimeyen",
+            850..=859 => "fazladan mandalina koparan",
+            800..=849 => "tabak sıyıran",
+            780..=799 => "somun canavarı",
+            750..=779 => "kalorimetre",
+            720..=749 => "döküm tencere",
+            700..=719 => "cacık sevdalısı",
+            667..=699 => "revani müptelası",
+            666 => "tabldot uğruna ruhunu satmış",
+            650..=665 => "kemik sulu",
+            630..=649 => "fırın sütlaç avcısı",
+            620..=629 => "tuzluğu dolu bulan",
+            600..=619 => "garnitürsüz yaşayan",
+            570..=599 => "ikinci ekmeği cebe atan",
+            550..=569 => "tepsiyi nizami taşıyan",
+            530..=549 => "porselen tabak arayan",
+            500..=529 => "mercimeğe yarım limon sıkan",
+            470..=499 => "tabldot müdavimi",
+            450..=469 => "çatalı peçeteyle silen",
+            430..=449 => "kampüs gurmesi",
+            400..=429 => "vegan reyonu mültecisi",
+            370..=399 => "menü mühendisi",
+            350..=369 => "kyk gazisi",
+            300..=349 => "karbonhidrat aşığı",
+            250..=299 => "turnike fatihi",
+            200..=249 => "tatlıyı önden yiyen",
+            150..=199 => "kart dolum sırası bekleyen",
+            120..=149 => "bayat ekmek kemiren",
+            100..=119 => "çömez tabldotçu",
+            50..=99 => "son dilim karpuz",
+            40..=49 => "çorba sıcak mı diyen",
+            30..=39 => "kantin kaçağı",
+            20..=29 => "porsiyon sayan",
+            10..=19 => "kuyrukta menü okuyan",
+            -1..=9 => "düz tabldotçu",
+            -11..=-2 => "salataya sirke dökmeyen",
+            -31..=-12 => "soğuk mercimek",
+            -51..=-32 => "tavuk sote sansarı",
+            -101..=-52 => "araya kaynak yapan",
+            -121..=-102 => "kayış gibi ciğer",
+            -151..=-122 => "kepçeyi yarım dolduran memur",
+            -161..=-152 => "tuzu bitmiş tuzluk",
+            -171..=-162 => "çatalı masada unutan",
+            -201..=-172 => "bayat ekmek fırlatan",
+            -231..=-202 => "ketçapsız makarna",
+            -251..=-232 => "taşlı pirinç",
+            -271..=-252 => "tepsiyi masada bırakan",
+            -291..=-272 => "dört kişilik masaya tek oturan",
+            -301..=-292 => "tabldotta tel zımba bulan",
+            -311..=-302 => "sulu köfte sabotajcısı",
+            -321..=-312 => "patlak su böreği",
+            -331..=-322 => "turnikede kartı okumayan",
+            -341..=-332 => "soya kıyması savunucusu",
+            -351..=-342 => "ılık ayran",
+            -361..=-352 => "kantin tostu öven",
+            -401..=-362 => "yıkanmamış marul",
+            -411..=-402 => "tencere dibi sıyıran",
+            -421..=-412 => "çiğ patates",
+            -431..=-422 => "yağı donmuş tas kebabı",
+            -441..=-432 => "rektörlük ajanı",
+            -451..=-442 => "bedava ekmek stokçusu",
+            -461..=-452 => "haşlama tavuk derisi",
+            -471..=-462 => "tatlıyı yere düşüren",
+            -481..=-472 => "çatalı yamuk olan",
+            -491..=-482 => "turnike üstünden atlayan",
+            -501..=-492 => "ekşi yoğurt",
+            -511..=-502 => "gaz yapan kuru fasulye",
+            -571..=-512 => "buz gibi bezelye",
+            -601..=-572 => "çürük elma",
+            -651..=-602 => "tahta kaşık kıran",
+            -671..=-652 => "tuzsuz brokoli",
+            -701..=-672 => "yemekhane grev kırıcısı",
+            -711..=-702 => "çiğ tavuk servis eden",
+            -751..=-712 => "bulyon çorbası",
+            -801..=-752 => "bütçe kısıntısı",
+            -851..=-802 => "yemekhane müteahhidi",
+            -871..=-852 => "donmuş margarin tabakası",
+            -901..=-872 => "taşeron yemek firması ceo'su",
+            _ => "lavabo açıcı kıvamında hoşaf",
+        }
+    }
+
     /// ID ile kullanıcı profilini ve kazandığı tüm rozetleri çeker
     pub async fn get_user_profile_by_id(
         db: &DatabaseConnection,
@@ -141,18 +232,7 @@ impl UserService {
             0
         };
 
-        let title = match level {
-            1 => "Çırak",
-            2 => "Kalfalık Yolunda",
-            3 => "Kalfa",
-            4 => "Usta Adayı",
-            5 => "Usta",
-            6 => "Şef",
-            7 => "Gurme",
-            8 => "Kepçe Ustası",
-            9 => "Yemekhane Gurusu",
-            _ => "Efsane Şef",
-        }.to_string();
+        let title = Self::get_title_for_karma(user.karma_score).to_string();
 
         let level_progress = crate::dto::user::LevelProgressDto {
             level,
@@ -613,3 +693,25 @@ impl UserService {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_get_title_for_karma() {
+        assert_eq!(UserService::get_title_for_karma(1500), "aşçıbaşının yeğeni");
+        assert_eq!(UserService::get_title_for_karma(1000), "altın kepçe");
+        assert_eq!(UserService::get_title_for_karma(950), "turnikeden ilk geçen");
+        assert_eq!(UserService::get_title_for_karma(666), "tabldot uğruna ruhunu satmış");
+        assert_eq!(UserService::get_title_for_karma(500), "mercimeğe yarım limon sıkan");
+        assert_eq!(UserService::get_title_for_karma(0), "düz tabldotçu");
+        assert_eq!(UserService::get_title_for_karma(5), "düz tabldotçu");
+        assert_eq!(UserService::get_title_for_karma(-1), "düz tabldotçu");
+        assert_eq!(UserService::get_title_for_karma(-2), "salataya sirke dökmeyen");
+        assert_eq!(UserService::get_title_for_karma(-330), "turnikede kartı okumayan");
+        assert_eq!(UserService::get_title_for_karma(-890), "taşeron yemek firması ceo'su");
+        assert_eq!(UserService::get_title_for_karma(-1200), "lavabo açıcı kıvamında hoşaf");
+    }
+}
+

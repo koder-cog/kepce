@@ -364,11 +364,6 @@
                 <span class="comment-node__author">{userName}</span>
             {/if}
 
-            {#if comment.user?.level}
-                <span class="comment-node__level">Lvl {comment.user.level}</span
-                >
-            {/if}
-
             <span class="comment-node__dot">·</span>
             <button
                 class="comment-node__time comment-node__time-btn"
