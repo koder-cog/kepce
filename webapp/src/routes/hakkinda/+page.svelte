@@ -56,17 +56,15 @@
   </p>
   <p>
     Eğer benimle site ile ilgili belirli bir konuda iletişime geçmek isterseniz <a
-      href="/iletisim">iletişim</a
-    > sayfamıza bekleriz.
+      href="/iletisim">iletişim</a> sayfası üzerinden yazabilirsiniz.
   </p>
 
   <h2>Güvenilir mi?</h2>
   <p>
-    Proje, güncel güvenlik standartları ve kabul görmüş pratikler üzerine inşa
-    edildiği için temel güvenlik standartlarını karşılamaktadır. Artı olarak
-    projenin kaynak kodları açıktır; yani istenirse kodlar bağımsız olarak
-    incelenebilir, denetlenebilir ve herhangi bir hata veya geliştirme önerisi
-    için kodlara katkıda bulunulabilir.
+    Evet. Şifreler ve oturumlar modern güvenlik pratikleriyle korunuyor, gereksiz
+    hiçbir kişisel veri de toplanmıyor. Üstüne bir de kaynak kodları AGPL v3 ile
+    tamamen açık olduğu için arkada gizli kapaklı bir iş dönmediğini kendiniz de
+    görebilir, olası bir açıkta doğrudan müdahale edebilirsiniz.
   </p>
 
   <h2>Bana ne faydası var?</h2>
@@ -86,9 +84,8 @@
   <h2>Masraflar kimin cebinden çıkıyor? Gelir modeliniz nedir?</h2>
   <p>
     Alan adı ve sunucu gibi temel altyapı masrafları şu an tamamen benim
-    cebimden çıkıyor. Sitede kurulu bir bağış sistemi yok ancak çorbada tuzum
-    bulunsun derseniz <a href="/iletisim">iletişim</a> sayfası üzerinden benimle
-    iletişime geçebilirsiniz.
+    cebimden çıkıyor. Sitede reklam veya kâr amacı güden bir gelir modeli
+    bulunmuyor.
   </p>
 
   <h2>Projeye nasıl katkı sağlayabilirim?</h2>
@@ -97,12 +94,11 @@
       Eğer geliştirici iseniz <a
         href="https://github.com/koder-cog/kepce"
         target="_blank"
-        rel="noopener noreferrer">GitHub</a
-      > depomuz üzerinden kodları inceleyebilir, hata çözümlerinde bulunabilir veya
+        rel="noopener noreferrer">GitHub</a> deposu üzerinden kodları inceleyebilir, hata çözümlerinde bulunabilir veya
       yeni özellikler için PR gönderebilirsiniz.
     </li>
     <li>
-      Eğer kullanıcı iseniz sitede gördüğünüz hataları bize bildirebilirsiniz
+      Eğer kullanıcı iseniz sitede gördüğünüz hataları bildirebilirsiniz
       veya diğer insanlara göstererek daha fazla kişinin Kepçe'den haberdar
       olmasını sağlayabilirsiniz. En büyük katkı uygulamanın kullanılmasıdır.
     </li>

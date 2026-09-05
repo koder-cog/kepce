@@ -56,9 +56,9 @@
     Menü verilerini nereden alıyorsunuz?
   </h2>
   <p>
-    Kişisel olarak elde edebildiğim dosyalardan (biz de yurtta kalıyoruz
-    sonuçta), veri erişimine olanak sağlayan diğer sitelerden ve diğer yurt
-    mağdurlarının gönderdiği eklerden derleniyor. Elinizde menü varsa <a
+    Elime geçen listelerden (biz de yurtta kalıyoruz sonuçta), veri
+    erişimine olanak sağlayan diğer sitelerden ve diğer yurt mağdurlarının
+    gönderdiği eklerden derleniyor. Elinizde menü varsa <a
       href="/menu-gonder"
       data-link>şuracıktan</a
     > göndermeniz beni müteşekkir kılar.
@@ -69,24 +69,24 @@
   </h2>
   <p>
     Önce telefonu yavaşça yere bırakın ve derin bir nefes alın zira mutfaktaki
-    aşçının o gün eşiyle kavga etmiş olması, ihalelere fesat karışması veya
-    salçanın kamyonda kalması gibi kelebek etkileri menüyü değiştirebilir.
-    Ayrıca 81 ilde kuantum dolanıklığına sahip olmadığım için bütün menüleri
-    doğrulayamam.
+    aşçının o gün eşiyle kavga etmiş olması veya salçanın kamyonda kalması gibi
+    kelebek etkileri menüyü değiştirebilir. Ayrıca 81 ilde kuantum
+    dolanıklığına sahip olmadığım için bütün menüleri doğrulayamam.
   </p>
   <p>
     Eğer site hata veriyorsa, muhtemelen sunucu o anki yükü kaldıramamıştır.
     Hata koduna ve açıklamasına bakın (404, 500 vb.), sitede standart HTTP
-    kodları kullanıldığı için Google amca yolu gösterecektir, eğer gösteremezse <a
+    kodları kullanıldığı için arama motoruna yazdığınızda ne olduğu doğrudan çıkar,
+    eğer gösteremezse <a
       href="/iletisim"
       data-link>iletişim</a
-    > sayfamız her zaman açıktır. Menü yanlışsa "Hata Bildir" butonuna bastığınız
+    > sayfası her zaman açıktır. Menü yanlışsa "Hata Bildir" butonuna bastığınız
     takdirde size bazı güzellikler olabilir (olmayabilir de).
   </p>
 
   <h2 id="neden-agpl-v3">Neden AGPL v3 lisansı?</h2>
   <p>
-    Zannımca "kimse kodu alıp kapatmasın" fikri hoşuma gitti. MIT seçebilirdim,
+    "Kimse kodu alıp kapatmasın" fikri hoşuma gitti. MIT seçebilirdim,
     Apache seçebilirdim ancak gönlüm en katı copyleft lisanslardan birini seçti.
     Artı olarak bu projeyi açık kaynak yapmak; açıkların bulunmasını ve ben
     mezun olunca bu bayrağı başka bir öğrencinin taşımasını kolaylaştırır...
@@ -101,8 +101,8 @@
   </p>
   <p>
     Yemek menülerinin yanında zuhur eden Kepçe Bot ise, bir dil modeli
-    kullanılarak ayda bir günlük menüleri yorumlar. Amacı, deneyime ufak tefek
-    teknolojik fanteziler katmaktır.
+    kullanılarak ayda bir çalıştırılır ve o ayın her günü için teker teker
+    menü yorumu üretir. Amacı, deneyime ufak tefek teknolojik fanteziler katmaktır.
   </p>
 
   <h2 id="kepce-botu-kapatabilir-miyim">Kepçe Bot'u (YZ) Kapatabilir miyim?</h2>
