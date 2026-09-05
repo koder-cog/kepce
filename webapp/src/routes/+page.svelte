@@ -3,7 +3,6 @@
     import DailyHeader from "@/components/features/timeline/DailyHeader.svelte";
     import CalendarSelector from "@/components/features/timeline/CalendarSelector.svelte";
     import TimelineView from "@/components/features/timeline/TimelineView.svelte";
-    import { CITY_MAP } from "@/utils/turkish.js";
     import Seo from "@/components/ui/Seo.svelte";
     import { onMount } from "svelte";
 
@@ -42,26 +41,12 @@
     const now = new Date();
     const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
 
-    let cityName = $derived(
-        CITY_MAP[timelineState.currentCity] || timelineState.currentCity,
-    );
-
-    let pageTitle = $derived(
-        timelineState.currentCity
-            ? `${cityName} KYK Yemek Menüsü (Günlük Tabldot) | Kepçe`
-            : "KYK Yemek Menüsü - Bugün KYK'da Ne Yemek Var? | Kepçe",
-    );
+    let pageTitle = "KYK Yemek Menüsü - Bugün KYK'da Ne Yemek Var? | Kepçe";
 
     let pageDescription = $derived(
-        timelineState.currentCity
-            ? `${todayTurkishStr} ${cityName} KYK yurt yemekhane menüsü: Güncel kahvaltı ve akşam tabldot listesi, kalori ve beslenme yardımı detayları.`
-            : `${todayTurkishStr} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il güncel tabldot listeleri, kalori ve beslenme yardımı detayları.`,
+        `${todayTurkishStr} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il güncel tabldot listeleri, kalori ve beslenme yardımı detayları.`,
     );
-    let ogImage = $derived(
-        timelineState.currentCity
-            ? `https://kepce.org/api/v1/public/og/city/${timelineState.currentCity}`
-            : "https://kepce.org/og_image.png",
-    );
+    let ogImage = "https://kepce.org/og_image.png";
 
     let canonicalUrl = "https://kepce.org";
 
@@ -107,7 +92,7 @@
             baseGraphs.push({
                 "@type": "Menu",
                 "@id": "https://kepce.org/#menu",
-                name: `${cityName} KYK Günlük Yemek Menüsü`,
+                name: "Günlük KYK Yemek Menüsü",
                 inLanguage: "tr-TR",
                 datePublished: `${now.toISOString().split("T")[0]}T00:00:00+03:00`,
                 dateModified: now.toISOString(),
@@ -132,9 +117,7 @@
 />
 
 <h1 class="sr-only">
-    {timelineState.currentCity
-        ? `${CITY_MAP[timelineState.currentCity] || timelineState.currentCity} KYK Yurt Yemek Menüsü`
-        : "KYK Yurt Yemek Menüsü - Günlük Yemek Listesi"}
+    KYK Yurt Yemek Menüsü - Günlük Yemek Listesi
 </h1>
 
 <DailyHeader />
