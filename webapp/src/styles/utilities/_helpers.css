@@ -297,19 +297,19 @@
   }
 
   .u-color-accent {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
   }
 
   .u-color-positive {
-    color: var(--color-accent-positive);
+    color: var(--color-success-text);
   }
 
   .u-color-negative {
-    color: var(--color-accent-negative);
+    color: var(--color-error-text);
   }
 
   .u-color-disclaimer {
-    color: var(--color-accent-disclaimer);
+    color: var(--color-warning-text);
   }
 
   .u-color-primary {

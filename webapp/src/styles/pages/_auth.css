@@ -297,7 +297,7 @@
   }
 
   .verification-step--active {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
   }
 
   .verification-step--active .verification-step__badge {
@@ -306,7 +306,7 @@
   }
 
   .verification-step--done {
-    color: var(--color-accent-positive);
+    color: var(--color-success-text);
   }
 
   .verification-step--done .verification-step__badge {

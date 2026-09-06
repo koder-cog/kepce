@@ -85,7 +85,7 @@
 
 .notification-card--unread .notification-card__icon {
   background-color: var(--color-accent-primary-light);
-  color: var(--color-accent-primary);
+  color: var(--color-accent-text);
 }
 
 .notification-card__content {

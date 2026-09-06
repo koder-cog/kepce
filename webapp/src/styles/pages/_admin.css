@@ -127,7 +127,7 @@
 
   .btn-icon:hover {
     background: var(--color-accent-primary-light);
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     border-color: var(--color-accent-primary-light);
   }
 
@@ -154,7 +154,7 @@
   .bot-commentary__label {
     font-size: var(--text-xs);
     font-weight: var(--font-weight-bold);
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     text-transform: uppercase;
   }
 

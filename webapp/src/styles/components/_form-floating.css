@@ -52,14 +52,14 @@
     top: 8px;
     font-size: var(--text-2xs);
     font-weight: var(--font-weight-black);
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     opacity: 1;
   }
 
   /* Focused state specific shadow/glow */
   .form-group--floating input:focus+.form-label,
   .form-group--floating textarea:focus+.form-label {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
   }
 
   .form-group--floating input,
@@ -103,7 +103,7 @@
   }
 
   .password-toggle:hover {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
   }
 
   .form-group--floating:has(.password-toggle) input {

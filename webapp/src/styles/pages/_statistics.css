@@ -163,7 +163,7 @@
 
   .stats-item.rank-top .stats-item__rank {
     font-size: var(--text-2xl);
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
   }
 
   .stats-item.rank-top .stats-item__rank--negative {
@@ -341,7 +341,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     border: 2px solid var(--color-border-light);
     overflow: hidden;
   }

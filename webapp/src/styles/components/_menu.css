@@ -143,7 +143,7 @@
   }
 
   .c-menu__item--accent {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     font-weight: var(--font-weight-bold);
   }
 
@@ -190,7 +190,7 @@
   @media (hover: hover) {
     .c-menu__item.c-menu__item--special:hover {
       background-color: var(--color-surface-variant);
-      color: var(--color-accent-primary);
+      color: var(--color-link-hover);
       text-decoration: underline;
     }
   }

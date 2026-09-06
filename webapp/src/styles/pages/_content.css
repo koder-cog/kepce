@@ -43,18 +43,15 @@
     font-family: inherit;
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
-    color: var(--color-accent-primary);
+    color: var(--color-link);
     text-decoration: none;
     text-align: left;
-    transition: color var(--dur-fast) var(--ease-standard),
-                filter var(--dur-fast) var(--ease-standard),
-                opacity var(--dur-fast) var(--ease-standard);
+    transition: color var(--dur-fast) var(--ease-standard);
   }
 
   .content-page__archive-link:hover {
-    filter: brightness(1.25);
+    color: var(--color-link-hover);
     text-decoration: underline;
-    opacity: 0.9;
   }
 
   .content-page__date,
@@ -109,21 +106,22 @@
   }
 
   .content-page__body li::marker {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     font-weight: var(--font-weight-bold);
   }
 
   /* Links */
   .content-page__body a {
-    color: var(--color-accent-primary);
-    text-decoration: none;
+    color: var(--color-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
     font-weight: var(--font-weight-semibold);
-    transition: all var(--motion-effects-fast);
+    transition: color var(--dur-fast) var(--ease-standard);
   }
 
   .content-page__body a:hover {
+    color: var(--color-link-hover);
     text-decoration: underline;
-    opacity: 0.8;
   }
 
   /* Emphasis */
@@ -251,7 +249,7 @@
   }
 
   .city-directory__card:hover .city-directory__name {
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
   }
 
   .city-directory__date {

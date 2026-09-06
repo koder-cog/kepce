@@ -226,7 +226,7 @@
   @media (hover: hover) {
     .sidebar-nav-link:hover {
       background: var(--color-accent-primary-light);
-      color: var(--color-accent-primary);
+      color: var(--color-accent-text);
     }
   }
 

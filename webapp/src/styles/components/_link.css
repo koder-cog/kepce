@@ -29,12 +29,11 @@ li a:not([class]) {
   font-size: inherit;
   
   /* Link Styling */
-  color: var(--color-accent-primary);
+  color: var(--color-link);
   text-decoration: none;
   font-weight: var(--font-weight-semibold);
   transition: color var(--dur-fast) var(--ease-standard),
-    filter var(--dur-fast) var(--ease-standard),
-    opacity var(--dur-fast) var(--ease-standard);
+    text-decoration var(--dur-fast) var(--ease-standard);
   cursor: pointer;
 }
 
@@ -46,10 +45,8 @@ li a:not([class]) {
 .content-page__body a:hover,
 p a:not([class]):hover,
 li a:not([class]):hover {
-  color: var(--color-accent-primary);
-  filter: brightness(1.25);
+  color: var(--color-link-hover);
   text-decoration: underline;
-  opacity: 0.9;
 }
 
 /* Text links should not squish when clicked, even if they are <button> elements */

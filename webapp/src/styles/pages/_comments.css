@@ -91,7 +91,7 @@
 
     @media (hover: hover) {
       .comments-page__back-link:hover {
-        color: var(--color-accent-primary);
+        color: var(--color-link-hover);
       }
 
       .comments-page__back-link:hover .comments-page__back-icon {
@@ -177,7 +177,7 @@
       background: rgba(var(--color-accent-primary-rgb), 0.05);
       border: 1px solid var(--color-accent-primary);
       font-weight: var(--font-weight-bold);
-      color: var(--color-accent-primary);
+      color: var(--color-accent-text);
       padding: 8px 16px;
       border-radius: var(--radius-full);
       text-decoration: none;

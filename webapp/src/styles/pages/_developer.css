@@ -39,7 +39,7 @@
 .dev-sidebar-subtitle {
   font-size: var(--text-xs);
   font-weight: var(--font-weight-black);
-  color: var(--color-accent-primary);
+  color: var(--color-accent-text);
   margin-top: 4px;
 }
 
@@ -198,7 +198,7 @@
 
 .dev-nav-link.active {
   background: var(--color-accent-primary-light);
-  color: var(--color-accent-primary);
+  color: var(--color-accent-text);
   font-weight: var(--font-weight-bold);
 }
 

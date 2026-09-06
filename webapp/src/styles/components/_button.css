@@ -171,7 +171,7 @@
 
   .btn-group__btn--active {
     background: var(--color-card);
-    color: var(--color-accent-primary);
+    color: var(--color-accent-text);
     box-shadow: var(--shadow-sm);
   }
 
