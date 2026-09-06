@@ -88,6 +88,7 @@
 
 <div
     class="day-selector-wrapper"
+    class:is-updating={timelineState.isUpdating}
     bind:this={daySelectorWrapper}
 >
     {#key `${timelineState.viewYear}-${timelineState.viewMonth}`}

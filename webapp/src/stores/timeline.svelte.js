@@ -127,39 +127,72 @@ export function createTimelineStore() {
         if (newType !== undefined) viewType = newType;
     }
 
-    function prevMonth() {
+    async function navigateToMonth(m, y, direction) {
+        if (isUpdating) return;
+        monthNavDirection = direction;
+        isUpdating = true;
+
+        const now = new Date();
+        let targetDay = 1;
+        if (y === now.getFullYear() && m === now.getMonth()) {
+            targetDay = now.getDate();
+        }
+        const targetDate = new Date(y, m, targetDay);
+
+        const yearStr = y;
+        const monthStr = String(m + 1).padStart(2, "0");
+        const dayStr = String(targetDay).padStart(2, "0");
+        const dateQuery = `${yearStr}-${monthStr}-${dayStr}`;
+        const token = ++currentLoadToken;
+
+        let menus = [];
+        let error = null;
+        if (currentCity) {
+            try {
+                menus = await api.getMenusByDate(currentCity, dateQuery, currentDietMode);
+            } catch (err) {
+                console.error("Month nav load failed:", err);
+                error = {
+                    statusCode: parseInt(err.message?.match(/\d{3}/)?.[0]) || 500,
+                    desc: err.message || "Menü yüklenemedi",
+                };
+            }
+        }
+
+        if (currentLoadToken !== token) return;
+
+        errorState = error;
+        menusState = menus || [];
+        viewMonth = m;
+        viewYear = y;
+        selectedDate = targetDate;
+        isUpdating = false;
+
+        probeCeliacMonth();
+        scrollToActiveDay(true);
+    }
+
+    async function prevMonth() {
         if (viewYear === START_YEAR && viewMonth <= 0) return;
         if (viewYear < START_YEAR) return;
-        monthNavDirection = -1;
         let m = viewMonth - 1;
         let y = viewYear;
         if (m < 0) {
             m = 11;
             y--;
         }
-        updateView(m, y, viewType, 250);
-        if (y === new Date().getFullYear() && m === new Date().getMonth()) {
-            selectDate(new Date().getDate(), 250, true);
-        } else {
-            selectDate(1, 250, true);
-        }
+        await navigateToMonth(m, y, -1);
     }
 
-    function nextMonth() {
+    async function nextMonth() {
         if (viewYear >= new Date().getFullYear() && viewMonth >= new Date().getMonth()) return;
-        monthNavDirection = 1;
         let m = viewMonth + 1;
         let y = viewYear;
         if (m > 11) {
             m = 0;
             y++;
         }
-        updateView(m, y, viewType, 250);
-        if (y === new Date().getFullYear() && m === new Date().getMonth()) {
-            selectDate(new Date().getDate(), 250, true);
-        } else {
-            selectDate(1, 250, true);
-        }
+        await navigateToMonth(m, y, 1);
     }
 
     function selectDate(day, debounceMs = 0, forceCenter = false) {

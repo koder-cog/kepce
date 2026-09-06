@@ -131,17 +131,13 @@
         </div>
     {:else}
         <div class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
-            {#if !isSingleMealLayout}
-                <div class="timeline__line"></div>
-            {/if}
+            <div class="timeline__line"></div>
 
             <!-- Breakfast Slot -->
             <div class="timeline__slot timeline__slot--breakfast{hideBreakfastSlot ? ' timeline__slot--hidden' : ''}">
-                {#if !isSingleMealLayout}
-                    <div class="timeline__time">
-                        06:00 - {timelineState.breakfastEnd}
-                    </div>
-                {/if}
+                <div class="timeline__time">
+                    06:00 - {timelineState.breakfastEnd}
+                </div>
                 <div class="timeline__content {showBotArea ? 'timeline__content--60-40' : ''}">
                     <div class="timeline__meal-wrapper">
                         {#if breakfasts.length > 0}
@@ -225,11 +221,9 @@
 
             <!-- Dinner Slot -->
             <div class="timeline__slot timeline__slot--dinner{hideDinnerSlot ? ' timeline__slot--hidden' : ''}">
-                {#if !isSingleMealLayout}
-                    <div class="timeline__time">
-                        16:00 - {timelineState.dinnerEnd}
-                    </div>
-                {/if}
+                <div class="timeline__time">
+                    16:00 - {timelineState.dinnerEnd}
+                </div>
                 <div class="timeline__content timeline__content--100">
                     <div class="timeline__meal-wrapper">
                         {#if dinners.length > 0}

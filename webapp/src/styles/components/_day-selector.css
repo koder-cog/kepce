@@ -6,13 +6,18 @@
     margin-left: calc(var(--space-lg) * -1);
     margin-right: calc(var(--space-lg) * -1);
     margin-bottom: var(--space-2xl);
-    transition: opacity 0.15s ease-out 0.05s;
+    transition: opacity var(--dur-fast) var(--ease-standard);
     overflow: hidden;
+  }
+
+  .day-selector-wrapper.is-updating {
+    opacity: 0.55;
+    pointer-events: none;
   }
 
   .day-selector-wrapper--changing {
     opacity: 0;
-    transition: opacity 0.05s ease-out;
+    transition: opacity var(--dur-fast) var(--ease-standard);
   }
 
   .day-selector-inner {

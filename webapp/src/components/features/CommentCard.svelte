@@ -104,13 +104,31 @@
         goto(`/menu/${menuId}/${shortId}`);
     }
 
-    function handleShare(e) {
+    async function handleShare(e) {
         if (e) e.stopPropagation();
         const shortId = comment.id.substring(0, 7);
         const url = `${window.location.origin}/menu/${menuId}/${shortId}`;
-        navigator.clipboard
-            .writeText(url)
-            .then(() => showToast("Yorum linki kopyalandı!"));
+        const author = comment.author_username ? `@${comment.author_username}` : "Öğrenci";
+        const shareData = {
+            title: `Kepçe - ${author} yorumu`,
+            text: `Kepçe'deki ${author} yorumu:`,
+            url: url,
+        };
+        if (typeof navigator !== "undefined" && navigator.share) {
+            try {
+                if (!navigator.canShare || navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                    return;
+                }
+            } catch (err) {
+                if (err.name === "AbortError") return;
+            }
+        }
+        if (navigator.clipboard) {
+            navigator.clipboard
+                .writeText(url)
+                .then(() => showToast("Yorum bağlantısı panoya kopyalandı."));
+        }
     }
 
     function toggleReply(e) {

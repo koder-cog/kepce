@@ -200,6 +200,11 @@
     justify-content: flex-start;
     min-width: 140px;
     overflow: hidden;
+    transition: opacity var(--dur-fast) var(--ease-standard);
+  }
+
+  .month-nav__label-wrapper.is-updating {
+    opacity: 0.55;
   }
 
   .month-nav__label {
@@ -253,7 +258,7 @@
   .timeline {
     position: relative;
     padding-left: 140px;
-    transition: padding-left var(--dur-default) var(--ease-spatial-default);
+    transition: padding-left var(--dur-standard) var(--ease-standard);
   }
 
   .timeline__line {
@@ -268,6 +273,7 @@
         transparent 8px,
         transparent 16px);
     opacity: 0.5;
+    transition: opacity var(--dur-standard) var(--ease-standard);
   }
 
   .timeline__slot {
@@ -275,7 +281,36 @@
     margin-bottom: var(--space-xl);
   }
 
-  .timeline__slot--hidden {
+  .timeline__slot--breakfast {
+    display: grid;
+    grid-template-rows: 1fr;
+    opacity: 1;
+    margin-bottom: var(--space-xl);
+    transition:
+      grid-template-rows var(--dur-standard) var(--ease-standard),
+      opacity var(--dur-standard) var(--ease-standard),
+      margin-bottom var(--dur-standard) var(--ease-standard);
+  }
+
+  .timeline__slot--breakfast > * {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .timeline__slot--breakfast.timeline__slot--hidden {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    margin-bottom: 0;
+    pointer-events: none;
+    visibility: hidden;
+    transition:
+      grid-template-rows var(--dur-standard) var(--ease-standard),
+      opacity var(--dur-standard) var(--ease-standard),
+      margin-bottom var(--dur-standard) var(--ease-standard),
+      visibility 0s linear var(--dur-standard);
+  }
+
+  .timeline__slot--dinner.timeline__slot--hidden {
     display: none !important;
   }
 
@@ -292,6 +327,8 @@
     font-size: var(--text-lg);
     color: inherit;
     line-height: var(--leading-none);
+    opacity: 1;
+    transition: opacity var(--dur-standard) var(--ease-standard);
   }
 
   .timeline__content {
@@ -299,7 +336,11 @@
     gap: var(--space-xl);
     padding-left: var(--space-xl);
     align-items: stretch;
-    transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default);
+    transition:
+      padding-left var(--dur-standard) var(--ease-standard),
+      background-color var(--motion-effects-default),
+      color var(--motion-effects-default),
+      border-color var(--motion-effects-default);
   }
 
   .timeline__content--60-40 {
@@ -409,9 +450,14 @@
     padding-left: 0;
   }
 
-  .timeline--off-season .timeline__line,
+  .timeline--off-season .timeline__line {
+    opacity: 0;
+    pointer-events: none;
+  }
+
   .timeline--off-season .timeline__time {
-    display: none;
+    opacity: 0;
+    pointer-events: none;
   }
 
   /* ── Season / Orientation Guides ────────────────────────────── */

@@ -23,10 +23,10 @@
 <div class="daily-header">
     <div class="month-nav-wrapper">
         <div class="month-nav">
-            <button class="month-nav__btn" aria-label="Önceki ay" onclick={timelineState.prevMonth} disabled={!timelineState.canPrevMonth}>
+            <button class="month-nav__btn" aria-label="Önceki ay" onclick={timelineState.prevMonth} disabled={!timelineState.canPrevMonth || timelineState.isUpdating}>
                 {@html icon("chevronLeft", 20)}
             </button>
-            <div class="month-nav__label-wrapper">
+            <div class="month-nav__label-wrapper" class:is-updating={timelineState.isUpdating}>
                 {#key `${timelineState.viewYear}-${timelineState.viewMonth}`}
                     <span
                         class="month-nav__label"
@@ -40,7 +40,7 @@
                     </span>
                 {/key}
             </div>
-            <button class="month-nav__btn" aria-label="Sonraki ay" onclick={timelineState.nextMonth} disabled={!timelineState.canNextMonth}>
+            <button class="month-nav__btn" aria-label="Sonraki ay" onclick={timelineState.nextMonth} disabled={!timelineState.canNextMonth || timelineState.isUpdating}>
                 {@html icon("chevronRight", 20)}
             </button>
         </div>

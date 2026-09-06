@@ -374,24 +374,20 @@
     });
 
     function copyToClipboard(text) {
-        if (typeof navigator !== "undefined" && navigator.clipboard && window.isSecureContext) {
+        if (navigator.clipboard && window.isSecureContext) {
             return navigator.clipboard.writeText(text);
         }
         return new Promise((resolve, reject) => {
             const textarea = document.createElement("textarea");
             textarea.value = text;
-            textarea.style.position = "fixed";
-            textarea.style.left = "-9999px";
-            textarea.style.top = "0";
-            textarea.style.opacity = "0";
+            textarea.className = "sr-only";
             document.body.appendChild(textarea);
             textarea.focus();
             textarea.select();
             try {
-                const successful = document.execCommand("copy");
+                document.execCommand("copy");
                 document.body.removeChild(textarea);
-                if (successful) resolve();
-                else reject(new Error("execCommand failed"));
+                resolve();
             } catch (err) {
                 document.body.removeChild(textarea);
                 reject(err);
@@ -417,7 +413,9 @@
                 ];
                 const dayNum = parseInt(parts[2], 10);
                 const monthName = months[parseInt(parts[1], 10)] || "";
-                dateLabel = `${dayNum} ${monthName} `;
+                if (monthName) {
+                    dateLabel = `${dayNum} ${monthName} `;
+                }
             }
         }
 
@@ -426,25 +424,36 @@
         const dishNames = (items || [])
             .map((item) => {
                 if (item.dishes && item.dishes.length > 1) {
-                    return item.dishes.map((d) => d.name).filter(Boolean).join(" / ");
+                    return item.dishes
+                        .map((d) => d.name?.trim())
+                        .filter(Boolean)
+                        .join(" / ");
                 }
-                return item.name || item.dishes?.[0]?.name;
+                const name = item.name || item.dishes?.[0]?.name;
+                return name ? name.trim() : null;
             })
             .filter(Boolean);
 
-        const shareUrl = `https://kepce.org/menu/${menu.id}`;
-        const header = `${dateLabel}${cityName} KYK ${mealLabel}:`;
-        const dishesLine = dishNames.join(", ");
-        const fullShareText = `${header} ${dishesLine}\nDetaylar: ${shareUrl}`;
+        const shareUrl = dateStr
+            ? `https://kepce.org/${citySlug}?gun=${dateStr}`
+            : `https://kepce.org/${citySlug}`;
+        const headerTitle = `${dateLabel}${cityName} KYK ${mealLabel}`.trim();
+        const header = dishNames.length > 0 ? `${headerTitle}:` : headerTitle;
+        const dishesList = dishNames.map((name) => `• ${name}`).join("\n");
+        const shareText = dishesList ? `${header}\n${dishesList}` : header;
+        const fullShareText = `${shareText}\n\n${shareUrl}`;
 
         if (typeof navigator !== "undefined" && navigator.share) {
             try {
-                await navigator.share({
-                    title: header,
-                    text: `${header} ${dishesLine}\nDetaylar:`,
+                const shareData = {
+                    title: headerTitle,
+                    text: shareText,
                     url: shareUrl,
-                });
-                return;
+                };
+                if (!navigator.canShare || navigator.canShare(shareData)) {
+                    await navigator.share(shareData);
+                    return;
+                }
             } catch (err) {
                 if (err.name === "AbortError") return;
             }
@@ -452,7 +461,7 @@
 
         try {
             await copyToClipboard(fullShareText);
-            showToast("Menü bağlantısı panoya kopyalandı.");
+            showToast("Menü panoya kopyalandı.");
         } catch {
             showToast("Menü panoya kopyalanamadı.", "error");
         }
