@@ -104,8 +104,52 @@ pub async fn load_pricing_from_db(db: &DatabaseConnection) -> Result<(), anyhow:
     Ok(())
 }
 
+/// Verilen tarihin nöbetçi yurt / tatil (off-season) dönemi olup olmadığını kontrol eder.
+/// - Temmuz ve Ağustos ayları her yıl istisnasız off-season'dır.
+/// - Eylül ayında GSB KYK standart açılış gününe kadar (15 Eylül'e en yakın Pazartesi) nöbetçi yurt düzeni sürer.
+pub fn is_off_season_date(date: chrono::NaiveDate) -> bool {
+    use chrono::Datelike;
+    let month = date.month();
+    if month == 7 || month == 8 {
+        return true;
+    }
+    if month == 9 {
+        let year = date.year();
+        let open_day = match year {
+            2024 => 16,
+            2025 => 15,
+            2026 => 14,
+            2027 => 13,
+            2028 => 11,
+            2029 => 17,
+            2030 => 16,
+            _ => {
+                if let Some(sept15) = chrono::NaiveDate::from_ymd_opt(year, 9, 15) {
+                    let weekday = sept15.weekday().num_days_from_monday(); // 0=Pazartesi, 6=Pazar
+                    let diff: i32 = match weekday {
+                        0 => 0,
+                        1 => -1,
+                        2 => -2,
+                        3 => -3,
+                        4 => -4,
+                        5 => 2,
+                        6 => 1,
+                        _ => 0,
+                    };
+                    (15 + diff) as u32
+                } else {
+                    15
+                }
+            }
+        };
+        return date.day() < open_day;
+    }
+    false
+}
+
 /// Belirtilen şehir, tarih ve öğün tipi için fiyat bilgisini döndürür.
-/// Temmuz ve Ağustos aylarında (nöbetçi yurt / dönem dışı) `None` döner.
+/// Sezon dışı (off-season: Temmuz, Ağustos, Eylül açılış öncesi) veya tanımlı bir
+/// fiyat dönemi dışındaki tarihlerde kesinlikle `None` döner.
 pub fn get_pricing_info_for_city(
     city: &str,
     serve_date: Option<chrono::NaiveDate>,
@@ -113,28 +157,23 @@ pub fn get_pricing_info_for_city(
     category: Option<&str>,
     name: &str,
 ) -> Option<PriceInfo> {
-    use chrono::Datelike;
-
-    if let Some(date) = serve_date {
-        let month = date.month();
-        if month == 7 || month == 8 {
-            return None; // Temmuz ve Ağustos tatil/nöbetçi yurt dönemidir, fiyat gösterilmez
-        }
-    }
-
     let target_date = serve_date.unwrap_or_else(|| chrono::Local::now().date_naive());
+
+    // Sezon dışı / nöbetçi yurt döneminde fiyat gösterilmez
+    if is_off_season_date(target_date) {
+        return None;
+    }
 
     if let Ok(cache) = PRICING_CACHE.read() {
         // İlgili şehri bul; eğer o şehirde tanımlı fiyat yoksa 'istanbul' tarifesini fallback kullan
         let period_list = cache.get(city).or_else(|| cache.get("istanbul"));
 
         if let Some(periods) = period_list {
-            // 1. Hedef tarihi kapsayan tam dönem
-            // 2. Yoksa en son (veya en yakın) dönem
+            // Hedef tarihi kapsayan tam dönem aranır.
+            // Süresi dolmuş veya henüz başlamamış dönemlerin fiyatları asla sızdırılmaz (periods.last fallback'i yoktur).
             let matched_pricing = periods
                 .iter()
-                .find(|p| target_date >= p.period_start && target_date <= p.period_end)
-                .or_else(|| periods.last());
+                .find(|p| target_date >= p.period_start && target_date <= p.period_end);
 
             if let Some(pricing) = matched_pricing {
                 let meal_pricing = match meal_type {
@@ -179,7 +218,26 @@ mod tests {
     use chrono::NaiveDate;
 
     #[test]
-    fn test_pricing_date_matching_and_july_august_exclusion() {
+    fn test_is_off_season_date() {
+        // Temmuz ve Ağustos her yıl off-season
+        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 7, 1).unwrap()));
+        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 7, 31).unwrap()));
+        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap()));
+        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 8, 31).unwrap()));
+
+        // 2026 Eylül: 14 Eylül Pazartesi açılış. Öncesi nöbetçi yurt (off-season), sonrası sezon içi
+        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 1).unwrap()));
+        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 13).unwrap()));
+        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 14).unwrap()));
+        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 20).unwrap()));
+
+        // Normal sezon ayları
+        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 10, 1).unwrap()));
+        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 5, 15).unwrap()));
+    }
+
+    #[test]
+    fn test_pricing_date_matching_and_off_season_exclusion() {
         let mut cache = HashMap::new();
         let mut dinner = MealPricing::default();
         dinner.categories.insert(
@@ -190,6 +248,7 @@ mod tests {
             },
         );
 
+        // Yalnızca 2025-2026 tarifesi tanımlı
         let p1 = PeriodPricing {
             period_start: NaiveDate::from_ymd_opt(2025, 9, 1).unwrap(),
             period_end: NaiveDate::from_ymd_opt(2026, 8, 31).unwrap(),
@@ -197,29 +256,13 @@ mod tests {
             ..Default::default()
         };
 
-        let mut dinner_new = MealPricing::default();
-        dinner_new.categories.insert(
-            "ANA YEMEK".to_string(),
-            PriceInfo {
-                amount: "200 g".to_string(),
-                price: 65.0,
-            },
-        );
-
-        let p2 = PeriodPricing {
-            period_start: NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
-            period_end: NaiveDate::from_ymd_opt(2027, 8, 31).unwrap(),
-            dinner: Some(dinner_new),
-            ..Default::default()
-        };
-
-        cache.insert("istanbul".to_string(), vec![p1, p2]);
+        cache.insert("istanbul".to_string(), vec![p1]);
 
         if let Ok(mut c) = PRICING_CACHE.write() {
             *c = cache;
         }
 
-        // Mayıs 2026 -> 2025-2026 tarifesi (50.0 TL)
+        // 1. Mayıs 2026 -> 2025-2026 tarifesi (50.0 TL)
         let may_price = get_pricing_info_for_city(
             "istanbul",
             Some(NaiveDate::from_ymd_opt(2026, 5, 15).unwrap()),
@@ -230,18 +273,7 @@ mod tests {
         assert!(may_price.is_some());
         assert_eq!(may_price.unwrap().price, 50.0);
 
-        // Eylül 2026 -> 2026-2027 tarifesi (65.0 TL)
-        let sept_price = get_pricing_info_for_city(
-            "istanbul",
-            Some(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap()),
-            "dinner",
-            Some("ANA YEMEK"),
-            "TAVUK SOTE",
-        );
-        assert!(sept_price.is_some());
-        assert_eq!(sept_price.unwrap().price, 65.0);
-
-        // Temmuz 2026 -> Nöbetçi yurt, gizli (None)
+        // 2. Temmuz 2026 -> Nöbetçi yurt / off-season, gizli (None)
         let july_price = get_pricing_info_for_city(
             "istanbul",
             Some(NaiveDate::from_ymd_opt(2026, 7, 10).unwrap()),
@@ -251,7 +283,27 @@ mod tests {
         );
         assert!(july_price.is_none());
 
-        // Başka şehir (Ankara) -> İstanbul fallback
+        // 3. 10 Eylül 2026 -> Eylül başı nöbetçi yurt / off-season (None)
+        let early_sept_price = get_pricing_info_for_city(
+            "istanbul",
+            Some(NaiveDate::from_ymd_opt(2026, 9, 10).unwrap()),
+            "dinner",
+            Some("ANA YEMEK"),
+            "TAVUK SOTE",
+        );
+        assert!(early_sept_price.is_none());
+
+        // 4. 15 Eylül 2026 -> Sezon başladı ancak 2026-2027 dönemi DB'de yok; eski 2025-2026 sızmamalı! (None)
+        let new_season_unannounced = get_pricing_info_for_city(
+            "istanbul",
+            Some(NaiveDate::from_ymd_opt(2026, 9, 15).unwrap()),
+            "dinner",
+            Some("ANA YEMEK"),
+            "TAVUK SOTE",
+        );
+        assert!(new_season_unannounced.is_none());
+
+        // 5. Başka şehir (Ankara) -> Aktif dönemde İstanbul fallback (50.0 TL)
         let ankara_price = get_pricing_info_for_city(
             "ankara",
             Some(NaiveDate::from_ymd_opt(2026, 5, 15).unwrap()),
