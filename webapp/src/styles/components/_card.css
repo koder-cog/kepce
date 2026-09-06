@@ -206,17 +206,17 @@
 
   .c-badge-pill--celiac {
     background: rgba(var(--color-accent-positive-rgb), 0.15);
-    color: var(--color-accent-positive);
+    color: var(--color-success-text);
   }
 
   .c-badge-pill--vegetarian {
     background: rgba(var(--color-info-rgb), 0.15);
-    color: var(--color-info);
+    color: var(--color-info-text);
   }
 
   .c-badge-pill--spicy {
     background: rgba(var(--color-warning-rgb), 0.15);
-    color: var(--color-warning);
+    color: var(--color-warning-text);
   }
 
   .c-badge-pill--warning {
@@ -237,7 +237,7 @@
 
   .c-badge-pill--price {
     background: rgba(var(--color-accent-positive-rgb), 0.15);
-    color: var(--color-accent-positive);
+    color: var(--color-success-text);
   }
 
   .meal-card__source svg {
@@ -544,15 +544,15 @@
   }
 
   .meal-card__vote-count.positive {
-    color: var(--color-accent-positive);
+    color: var(--color-success-text);
   }
 
   .meal-card__vote-count.negative {
-    color: var(--color-accent-negative);
+    color: var(--color-error-text);
   }
 
   .meal-card__vote-count.disclaimer {
-    color: var(--color-accent-disclaimer);
+    color: var(--color-warning-text);
   }
 
   .meal-card__actions {
