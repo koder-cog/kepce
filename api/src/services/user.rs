@@ -12,10 +12,11 @@
 //   6. Hesap güncelleme / silme
 
 use sea_orm::*;
-use chrono::Utc;
+use chrono::{DateTime, Utc};
 use uuid::Uuid;
 use shared::entities::{
-    prelude::*, users, user_badges, badges, sea_orm_active_enums::UserRoleEnum,
+    prelude::*, users, user_badges, badges, comments, vote_reactions, reports, menu_submissions,
+    sea_orm_active_enums::{UserRoleEnum, ReportStatusEnum, ReactionTypeEnum},
 };
 use crate::dto::user::{UserProfileDto, UserBadgeDto, UserRole};
 
@@ -157,14 +158,178 @@ impl UserService {
         Self::build_profile(db, user, false).await
     }
 
+    /// Kullanıcının hak ettiği rozetleri kontrol eder ve henüz verilmemiş olanları atar.
+    /// Yeni kazanılan rozetlerin karma ödülleri kullanıcının toplam karma puanına eklenir.
+    pub async fn check_and_award_badges(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<(), UserError> {
+        let user = users::Entity::find_by_id(user_id)
+            .one(db)
+            .await
+            .map_err(UserError::DatabaseError)?
+            .ok_or(UserError::NotFound)?;
+
+        let all_badges = badges::Entity::find()
+            .all(db)
+            .await
+            .map_err(UserError::DatabaseError)?;
+
+        let earned_badges = user_badges::Entity::find()
+            .filter(user_badges::Column::UserId.eq(user_id))
+            .all(db)
+            .await
+            .map_err(UserError::DatabaseError)?;
+
+        // Kullanıcının istatistiklerini hesaplayalım
+        let comment_count = comments::Entity::find()
+            .filter(comments::Column::UserId.eq(user_id))
+            .filter(comments::Column::IsDeleted.eq(false))
+            .count(db)
+            .await
+            .unwrap_or(0);
+
+        let user_comments = comments::Entity::find()
+            .filter(comments::Column::UserId.eq(user_id))
+            .all(db)
+            .await
+            .unwrap_or_default();
+        let comment_ids: Vec<Uuid> = user_comments.iter().map(|c| c.id).collect();
+
+        let mut max_single_comment_upvotes = 0;
+        let mut max_single_comment_downvotes = 0;
+        let mut total_received_upvotes = 0;
+
+        if !comment_ids.is_empty() {
+            let reactions = vote_reactions::Entity::find()
+                .filter(vote_reactions::Column::CommentId.is_in(comment_ids))
+                .all(db)
+                .await
+                .unwrap_or_default();
+
+            let mut upvote_counts: std::collections::HashMap<Uuid, i64> = std::collections::HashMap::new();
+            let mut downvote_counts: std::collections::HashMap<Uuid, i64> = std::collections::HashMap::new();
+
+            for r in reactions {
+                if r.reaction_type == ReactionTypeEnum::Upvote {
+                    *upvote_counts.entry(r.comment_id).or_insert(0) += 1;
+                    total_received_upvotes += 1;
+                } else {
+                    *downvote_counts.entry(r.comment_id).or_insert(0) += 1;
+                }
+            }
+
+            max_single_comment_upvotes = upvote_counts.values().cloned().max().unwrap_or(0);
+            max_single_comment_downvotes = downvote_counts.values().cloned().max().unwrap_or(0);
+        }
+
+        let user_given_downvotes = vote_reactions::Entity::find()
+            .filter(vote_reactions::Column::UserId.eq(user_id))
+            .filter(vote_reactions::Column::ReactionType.eq(ReactionTypeEnum::Downvote))
+            .count(db)
+            .await
+            .unwrap_or(0);
+
+        let user_given_upvotes = vote_reactions::Entity::find()
+            .filter(vote_reactions::Column::UserId.eq(user_id))
+            .filter(vote_reactions::Column::ReactionType.eq(ReactionTypeEnum::Upvote))
+            .count(db)
+            .await
+            .unwrap_or(0);
+
+        let report_count = reports::Entity::find()
+            .filter(reports::Column::ReporterId.eq(user_id))
+            .count(db)
+            .await
+            .unwrap_or(0);
+
+        let approved_report_count = reports::Entity::find()
+            .filter(reports::Column::ReporterId.eq(user_id))
+            .filter(reports::Column::Status.eq(ReportStatusEnum::Resolved))
+            .count(db)
+            .await
+            .unwrap_or(0);
+
+        let approved_submissions = menu_submissions::Entity::find()
+            .filter(menu_submissions::Column::UserId.eq(user_id))
+            .filter(menu_submissions::Column::Status.eq("approved"))
+            .count(db)
+            .await
+            .unwrap_or(0);
+
+        let days_registered = user.created_at.map(|ca| {
+            let now = Utc::now();
+            let created: DateTime<Utc> = ca.into();
+            (now - created).num_days().max(0)
+        }).unwrap_or(0);
+
+        let mut additional_karma = 0;
+
+        for badge in all_badges {
+            let slug = badge.slug.as_deref().unwrap_or("");
+            let already_earned = earned_badges.iter().find(|eb| eb.badge_id == badge.id);
+
+            let qualifies = match slug {
+                "ilk_kepce" => comment_count >= 1,
+                "demir_mide" => days_registered >= 7 && (comment_count >= 1 || user_given_upvotes >= 1),
+                "kurumsal_caresizlik" => days_registered >= 30,
+                "stokholm_sendromu" => days_registered >= 100,
+                "demirbas" => days_registered >= 180,
+                "hucre_hapsi" => days_registered >= 365,
+                "vefakar" => user_given_upvotes >= 30,
+                "klavyesor" => comment_count >= 100,
+                "halkin_adami" => max_single_comment_upvotes >= 50,
+                "muzmin_muhalif" => user_given_downvotes >= 50,
+                "kanaat_onderi" => total_received_upvotes >= 500,
+                "linc_kurbani" => max_single_comment_downvotes >= 50,
+                "caylak_gammaz" => report_count >= 1,
+                "fahri_mufettis" => approved_report_count >= 10,
+                "kacak_asci" => approved_submissions >= 1,
+                "bas_muhbir" => approved_submissions >= 10,
+                "bakanlik_ajani" => approved_submissions >= 50,
+                "derin_devlet" => approved_submissions >= 5,
+                _ => false,
+            };
+
+            if qualifies && already_earned.is_none() {
+                let new_user_badge = user_badges::ActiveModel {
+                    user_id: Set(user_id),
+                    badge_id: Set(badge.id),
+                    awarded_at: Set(Some(Utc::now().into())),
+                    count: Set(1),
+                };
+                let _ = new_user_badge.insert(db).await;
+                additional_karma += badge.karma_reward;
+            }
+        }
+
+        if additional_karma > 0 {
+            let current_karma = user.karma_score;
+            let mut user_active: users::ActiveModel = user.into();
+            user_active.karma_score = Set(current_karma + additional_karma);
+            let _ = user_active.update(db).await;
+        }
+
+        Ok(())
+    }
+
     /// Ortak profil oluşturucu fonksiyon
     pub(crate) async fn build_profile(
         db: &DatabaseConnection,
-        user: users::Model,
+        mut user: users::Model,
         include_private: bool,
     ) -> Result<UserProfileDto, UserError> {
-        // Tüm rozetleri çekiyoruz (locked durumlarını belirlemek için)
+        // Önce rozet kontrolü ve hak edişleri çalıştırıyoruz
+        let _ = Self::check_and_award_badges(db, user.id).await;
+
+        // Güncel kullanıcı kaydını tekrar çekiyoruz (karma güncellenmiş olabilir)
+        if let Ok(Some(fresh_user)) = users::Entity::find_by_id(user.id).one(db).await {
+            user = fresh_user;
+        }
+
+        // Tüm rozetleri çekiyoruz
         let all_db_badges = badges::Entity::find()
+            .order_by_asc(badges::Column::Id)
             .all(db)
             .await
             .map_err(UserError::DatabaseError)?;
@@ -175,47 +340,32 @@ impl UserService {
             .all(db)
             .await
             .map_err(UserError::DatabaseError)?;
-            
+
         let mut dto_badges = Vec::new();
         let mut badge_count = 0;
-        
+
         for badge in all_db_badges {
             let user_badge_opt = earned_user_badges.iter().find(|ub| ub.badge_id == badge.id);
             let unlocked = user_badge_opt.is_some();
             if unlocked {
                 badge_count += 1;
             }
-            
-            // Kategori tespiti (veya varsayılan)
-            let category = match badge.name.to_lowercase().as_str() {
-                n if n.contains("sadakat") || n.contains("level") || n.contains("seviye") => "sadakat",
-                n if n.contains("sosyal") || n.contains("yorum") || n.contains("beğeni") => "sosyal",
-                n if n.contains("denetim") || n.contains("rapor") || n.contains("şikayet") => "denetim",
-                n if n.contains("veri") || n.contains("ekleme") || n.contains("yemekhane") => "veri",
-                _ => "sadakat",
-            }.to_string();
-            
-            let icon = match badge.name.to_lowercase().as_str() {
-                n if n.contains("sadakat") || n.contains("seviye") => Some("heart".to_string()),
-                n if n.contains("sosyal") || n.contains("yorum") => Some("messageSquare".to_string()),
-                n if n.contains("denetim") || n.contains("rapor") => Some("shield".to_string()),
-                n if n.contains("veri") || n.contains("ekleme") => Some("database".to_string()),
-                _ => Some("starFilled".to_string()),
-            };
 
             let awarded_at = user_badge_opt.and_then(|ub| ub.awarded_at.map(|dt| dt.into()));
+            let count = user_badge_opt.map(|ub| ub.count).unwrap_or(0);
 
             dto_badges.push(UserBadgeDto {
+                slug: badge.slug.clone().unwrap_or_else(|| format!("badge_{}", badge.id)),
                 name: badge.name,
-                icon,
+                icon: Some(badge.icon),
                 icon_url: badge.icon_url,
                 description: badge.description,
-                category,
+                category: badge.category,
                 awarded_at,
                 unlocked,
-                karma_reward: 10, // Varsayılan karma ödülü
-                count: if unlocked { 1 } else { 0 },
-                is_repeatable: false,
+                karma_reward: badge.karma_reward,
+                count,
+                is_repeatable: badge.is_repeatable,
             });
         }
 

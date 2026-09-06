@@ -161,6 +161,7 @@ pub struct UserProfileDto {
 
 #[derive(Debug, Serialize)]
 pub struct UserBadgeDto {
+    pub slug: String,
     pub name: String,
     pub icon: Option<String>,
     pub icon_url: Option<String>,

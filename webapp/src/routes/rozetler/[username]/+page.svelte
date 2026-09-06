@@ -208,6 +208,9 @@
                 )}
               </div>
               <div class="badge-item__name">{badge.name}</div>
+              {#if badge.description}
+                <p class="badge-item__desc">{badge.description}</p>
+              {/if}
               <div class="badge-item__meta">
                 {#if badge.unlocked}
                   <span class="badge-item__karma">+{badge.karma_reward}</span>
@@ -219,8 +222,8 @@
                 {/if}
               </div>
               {#if badge.is_repeatable}
-                <div class="badge-item__repeatable" title="Tekrarlanabilir">
-                  [TEKRAR]
+                <div class="badge-item__repeatable" title="Her dönem tekrar kazanılabilir">
+                  Tekrar
                 </div>
               {/if}
             </div>
