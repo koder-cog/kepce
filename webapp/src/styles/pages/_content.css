@@ -175,4 +175,92 @@
     padding-top: var(--space-xl);
     border-top: 1px solid var(--color-border-light);
   }
+
+  /* ── City Directory (Şehirler Sayfası) ──────────────────────── */
+  .city-directory {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2xl);
+    margin-top: var(--space-lg);
+  }
+
+  .city-directory__intro {
+    color: var(--color-text-secondary);
+    margin-bottom: var(--space-md) !important;
+  }
+
+  .city-directory__group {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .city-directory__heading {
+    margin-bottom: var(--space-xs) !important;
+    font-size: var(--text-h3) !important;
+  }
+
+  .city-directory__desc {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    margin-bottom: var(--space-md) !important;
+  }
+
+  .city-directory__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  @media (min-width: 600px) {
+    .city-directory__grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-sm) var(--space-md);
+    }
+  }
+
+  .city-directory__card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    text-decoration: none !important;
+    transition: border-color var(--dur-fast) var(--ease-standard),
+                background-color var(--dur-fast) var(--ease-standard),
+                box-shadow var(--dur-fast) var(--ease-standard);
+  }
+
+  .city-directory__card:hover {
+    border-color: var(--color-accent-primary);
+    background: var(--color-surface-elevated);
+    text-decoration: none !important;
+  }
+
+  .city-directory__card:active {
+    transform: scale(0.98);
+  }
+
+  .city-directory__name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text-primary);
+    line-height: var(--leading-normal);
+  }
+
+  .city-directory__card:hover .city-directory__name {
+    color: var(--color-accent-primary);
+  }
+
+  .city-directory__date {
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+    color: var(--color-muted);
+    white-space: nowrap;
+    background: var(--color-surface-sunken);
+    padding: 2px 8px;
+    border-radius: var(--radius-sm);
+  }
 }

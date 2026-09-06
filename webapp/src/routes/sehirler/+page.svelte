@@ -17,7 +17,7 @@
         "@id": "https://kepce.org/sehirler#webpage",
         url: "https://kepce.org/sehirler",
         name: "KYK Yemek Menüsü Çıkan Şehirler | Kepçe",
-        description: "Türkiye genelinde KYK yurt yemek menüsü yayımlanan aktif iller ve günlük tabldot listeleri.",
+        description: "Kepçe üzerinde KYK yurt yemek menüsü bulunan şehirler ve tabldot listeleri.",
         inLanguage: "tr-TR",
       },
       {
@@ -35,26 +35,34 @@
 
 <Seo
   title="KYK Yemek Menüsü Çıkan Şehirler | Kepçe"
-  description="Bugün KYK yurtlarında yemek menüsü yayımlanan aktif iller. İstanbul, Ankara, İzmir ve diğer şehirlerin günlük kahvaltı ve akşam tabldot listeleri."
+  description="Kepçe üzerinde KYK yurt yemek menüsü bulunan şehirler. Güncel ve geçmiş dönem tabldot listesi olan iller."
   image="https://kepce.org/og_image.png"
   canonical="https://kepce.org/sehirler"
   schema={citySchema}
 />
 
 <ContentPage title="Menüsü Olan Şehirler">
-  <p>
-    Kepçe üzerinde günlük ve aylık tabldot menü verisi doğrulanmış aktif iller
-    aşağıda listelenmiştir. Şehrinizi seçerek bugünün kahvaltı ve akşam yemeği
-    menüsünü inceleyebilirsiniz.
+  <p class="city-directory__intro">
+    Kepçe'de tabldot menü verisi bulunan şehirler, güncellik durumuna göre aşağıda listelenmiştir. Şehrinizi seçerek menüleri inceleyebilirsiniz.
   </p>
 
-  <ul>
-    {#each data.cities as city (city.slug)}
-      <li>
-        <a href="/{city.slug}" data-link>
-          {city.name}
-        </a>
-      </li>
+  <div class="city-directory">
+    {#each data.groups as group (group.id)}
+      <section class="city-directory__group">
+        <h2 class="city-directory__heading">{group.title}</h2>
+        <p class="city-directory__desc">{group.description}</p>
+
+        <div class="city-directory__grid">
+          {#each group.cities as city (city.slug)}
+            <a href="/{city.slug}" class="city-directory__card" data-link>
+              <span class="city-directory__name">{city.name}</span>
+              {#if city.lastmodLabel}
+                <span class="city-directory__date">{city.lastmodLabel}</span>
+              {/if}
+            </a>
+          {/each}
+        </div>
+      </section>
     {/each}
-  </ul>
+  </div>
 </ContentPage>

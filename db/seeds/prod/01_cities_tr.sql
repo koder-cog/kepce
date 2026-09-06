@@ -19,7 +19,7 @@ INSERT INTO cities (id, name, slug) VALUES
   (15, 'Burdur',         'burdur'),
   (16, 'Bursa',          'bursa'),
   (17, 'Çanakkale',      'canakkale'),
-  (18, 'Çankırı',        'canakri'),
+  (18, 'Çankırı',        'cankiri'),
   (19, 'Çorum',          'corum'),
   (20, 'Denizli',        'denizli'),
   (21, 'Diyarbakır',     'diyarbakir'),
