@@ -9,6 +9,7 @@ import {
 } from "$lib/search/instantSolvers.js";
 import { CITY_MAP, TURKEY_GEO_MAP } from "@/utils/turkish.js";
 import { apiGet, normalizeMenuList, istanbulToday } from "@/lib/server/api.js";
+import { extractQueryDate } from "@/utils/date.js";
 
 // Bellek içi LRU Arama Önbelleği (10 dk TTL)
 const searchCache = new Map();
@@ -189,62 +190,6 @@ function matchKepceIntent(query) {
   }
 
   return null;
-}
-
-const TURKISH_MONTH_MAP = {
-  ocak: 1, subat: 2, şubat: 2, mart: 3, nisan: 4, mayis: 5, mayıs: 5,
-  haziran: 6, temmuz: 7, agustos: 8, ağustos: 8, eylul: 9, eylül: 9,
-  ekim: 10, kasim: 11, kasım: 11, aralik: 12, aralık: 12
-};
-
-/**
- * Kullanıcı arama sorgusundaki tarihi ("30 haziran 2026", "dün", "yarın", "2026-06-30") ayıklar.
- */
-function extractQueryDate(query, referenceDateStr) {
-  if (!query) return referenceDateStr;
-  const q = query.toLowerCase();
-
-  // 1. Dün / Yarın / Bugün
-  if (/\bdün\b/.test(q)) {
-    const d = new Date(referenceDateStr + "T12:00:00");
-    d.setDate(d.getDate() - 1);
-    return d.toISOString().split("T")[0];
-  }
-  if (/\byarın\b/.test(q)) {
-    const d = new Date(referenceDateStr + "T12:00:00");
-    d.setDate(d.getDate() + 1);
-    return d.toISOString().split("T")[0];
-  }
-
-  // 2. "30 haziran 2026" veya "30 haziran"
-  const textMonthMatch = q.match(/\b(\d{1,2})\s+(ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik)(?:\s+(\d{4}))?\b/i);
-  if (textMonthMatch) {
-    const day = parseInt(textMonthMatch[1], 10);
-    const month = TURKISH_MONTH_MAP[textMonthMatch[2].toLowerCase()];
-    const refYear = parseInt(referenceDateStr.slice(0, 4), 10);
-    const year = textMonthMatch[3] ? parseInt(textMonthMatch[3], 10) : refYear;
-    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    }
-  }
-
-  // 3. ISO formatı: "2026-06-30"
-  const isoMatch = q.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
-  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
-
-  // 4. Noktalı format: "30.06.2026" veya "30.06"
-  const dotMatch = q.match(/\b(\d{1,2})[./](\d{1,2})(?:[./](\d{4}))?\b/);
-  if (dotMatch) {
-    const day = parseInt(dotMatch[1], 10);
-    const month = parseInt(dotMatch[2], 10);
-    const refYear = parseInt(referenceDateStr.slice(0, 4), 10);
-    const year = dotMatch[3] ? parseInt(dotMatch[3], 10) : refYear;
-    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
-      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-    }
-  }
-
-  return referenceDateStr;
 }
 
 // Open-Meteo ve Coğrafi Konum Servisi (TURKEY_GEO_MAP öncelikli)
