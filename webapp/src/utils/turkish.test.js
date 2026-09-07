@@ -59,19 +59,60 @@ describe('resolveCityFromQuery', () => {
     expect(resolveCityFromQuery('afyon karahisar menü')?.slug).toBe('afyonkarahisar');
   });
 
-  it('popüler üniversite adlarını ilgili şehirle doğru eşleştirir', () => {
+  it('popüler üniversite adlarını ve kısaltmalarını ilgili şehirle doğru eşleştirir', () => {
+    // Büyükşehir Devlet Üniversiteleri
     expect(resolveCityFromQuery('itü kyk yemek')?.slug).toBe('istanbul');
     expect(resolveCityFromQuery('odtü kyk yemek')?.slug).toBe('ankara');
     expect(resolveCityFromQuery('boğaziçi kyk yemek')?.slug).toBe('istanbul');
     expect(resolveCityFromQuery('hacettepe kyk menü')?.slug).toBe('ankara');
-    expect(resolveCityFromQuery('akdeniz kyk yemek')?.slug).toBe('antalya');
-    expect(resolveCityFromQuery('uludağ kyk menüsü')?.slug).toBe('bursa');
-    expect(resolveCityFromQuery('anadolu kyk yemek')?.slug).toBe('eskisehir');
     expect(resolveCityFromQuery('dokuz eylül kyk')?.slug).toBe('izmir');
+    expect(resolveCityFromQuery('ege kyk yemek')?.slug).toBe('izmir');
+    expect(resolveCityFromQuery('iyte yemek')?.slug).toBe('izmir');
+    expect(resolveCityFromQuery('ytü yemekhane')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('cerrahpaşa kyk')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('anadolu kyk yemek')?.slug).toBe('eskisehir');
+    expect(resolveCityFromQuery('osmangazi kyk')?.slug).toBe('eskisehir');
+    expect(resolveCityFromQuery('uludağ kyk menüsü')?.slug).toBe('bursa');
     expect(resolveCityFromQuery('çukurova kyk yemek')?.slug).toBe('adana');
     expect(resolveCityFromQuery('selçuk kyk yemek')?.slug).toBe('konya');
+    expect(resolveCityFromQuery('akdeniz kyk yemek')?.slug).toBe('antalya');
     expect(resolveCityFromQuery('karadeniz teknik kyk')?.slug).toBe('trabzon');
     expect(resolveCityFromQuery('ondokuz mayıs kyk')?.slug).toBe('samsun');
+
+    // Vakıf Üniversiteleri
+    expect(resolveCityFromQuery('bilkent kyk yemek')?.slug).toBe('ankara');
+    expect(resolveCityFromQuery('tobb etü yemek')?.slug).toBe('ankara');
+    expect(resolveCityFromQuery('koç kyk yemek')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('sabancı kyk menüsü')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('özyeğin yemekhane')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('yeditepe kyk')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('başkent kyk yemek')?.slug).toBe('ankara');
+
+    // Anadolu ve Bölge Devlet Üniversiteleri
+    expect(resolveCityFromQuery('pamukkale kyk yemek')?.slug).toBe('denizli');
+    expect(resolveCityFromQuery('dumlupınar kyk')?.slug).toBe('kutahya');
+    expect(resolveCityFromQuery('erciyes kyk tabldot')?.slug).toBe('kayseri');
+    expect(resolveCityFromQuery('atatürk kyk yemek')?.slug).toBe('erzurum');
+    expect(resolveCityFromQuery('harran kyk yemek')?.slug).toBe('sanliurfa');
+    expect(resolveCityFromQuery('dicle kyk yemek')?.slug).toBe('diyarbakir');
+    expect(resolveCityFromQuery('fırat kyk')?.slug).toBe('elazig');
+    expect(resolveCityFromQuery('inönü kyk yemek')?.slug).toBe('malatya');
+    expect(resolveCityFromQuery('munzur kyk')?.slug).toBe('tunceli');
+    expect(resolveCityFromQuery('bozok kyk')?.slug).toBe('yozgat');
+    expect(resolveCityFromQuery('karaelmas kyk')?.slug).toBe('zonguldak');
+    expect(resolveCityFromQuery('abant kyk yemek')?.slug).toBe('bolu');
+    expect(resolveCityFromQuery('yüzüncü yıl kyk')?.slug).toBe('van');
+    expect(resolveCityFromQuery('adnan menderes kyk')?.slug).toBe('aydin');
+    expect(resolveCityFromQuery('süleyman demirel yemek')?.slug).toBe('isparta');
+    expect(resolveCityFromQuery('trakya kyk yemek')?.slug).toBe('edirne');
+  });
+
+  it('üniversite adlarındaki Türkçe çekim eklerini doğru çözer', () => {
+    expect(resolveCityFromQuery("hacettepe'de kyk yemek")?.slug).toBe('ankara');
+    expect(resolveCityFromQuery('bilkentten yemek')?.slug).toBe('ankara');
+    expect(resolveCityFromQuery('koçun yemekleri')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('pamukkalede kyk var mı')?.slug).toBe('denizli');
+    expect(resolveCityFromQuery('itüye ait tabldot')?.slug).toBe('istanbul');
   });
 
   it('kısa şehir adlarında (Van, Muş) sahte eşleşmeleri (false-positive) kesinlikle engeller', () => {
