@@ -165,8 +165,8 @@ pub fn get_pricing_info_for_city(
     }
 
     if let Ok(cache) = PRICING_CACHE.read() {
-        // İlgili şehri bul; eğer o şehirde tanımlı fiyat yoksa 'istanbul' tarifesini fallback kullan
-        let period_list = cache.get(city).or_else(|| cache.get("istanbul"));
+        // İlgili şehri bul; fiyat tarifesi yalnızca o şehir için açıkça tanımlanmışsa geçerlidir (çapraz sızıntı engeli)
+        let period_list = cache.get(city);
 
         if let Some(periods) = period_list {
             // Hedef tarihi kapsayan tam dönem aranır.
@@ -303,7 +303,7 @@ mod tests {
         );
         assert!(new_season_unannounced.is_none());
 
-        // 5. Başka şehir (Ankara) -> Aktif dönemde İstanbul fallback (50.0 TL)
+        // 5. Başka şehir (Ankara) -> Kendi fiyat dönemi tanımlı değilse asla İstanbul fiyatı sızdırılmaz! (None)
         let ankara_price = get_pricing_info_for_city(
             "ankara",
             Some(NaiveDate::from_ymd_opt(2026, 5, 15).unwrap()),
@@ -311,8 +311,7 @@ mod tests {
             Some("ANA YEMEK"),
             "TAVUK SOTE",
         );
-        assert!(ankara_price.is_some());
-        assert_eq!(ankara_price.unwrap().price, 50.0);
+        assert!(ankara_price.is_none());
     }
 }
 

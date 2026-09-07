@@ -5,7 +5,7 @@
 BEGIN;
 
 INSERT INTO pricing_periods (city_slug, period_start, period_end)
-VALUES ('istanbul', '2025-09-01', '2026-08-31')
+VALUES ('istanbul', '2025-09-15', '2026-08-31')
 ON CONFLICT (city_slug, period_start, period_end) DO NOTHING;
 
 DO $$
@@ -14,7 +14,7 @@ DECLARE
 BEGIN
     SELECT id INTO v_period_id 
     FROM pricing_periods 
-    WHERE city_slug = 'istanbul' AND period_start = '2025-09-01' AND period_end = '2026-08-31';
+    WHERE city_slug = 'istanbul' AND period_start = '2025-09-15' AND period_end = '2026-08-31';
 
     IF v_period_id IS NOT NULL THEN
         -- ==========================================
