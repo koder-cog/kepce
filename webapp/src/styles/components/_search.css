@@ -2471,68 +2471,18 @@
   animation: resultCascade 260ms var(--ease-standard) backwards;
 }
 
-.c-kepce-direct-card__header {
+.c-kepce-direct-card__top {
   display: flex;
-  align-items: center;
+  align-items: baseline;
   justify-content: space-between;
-  gap: var(--space-sm);
-}
-
-.c-kepce-direct-card__badge-group {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
+  gap: var(--space-md);
   flex-wrap: wrap;
-}
-
-.c-kepce-direct-card__brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: var(--text-xs);
-  font-weight: 700;
-  color: var(--color-primary);
-  background-color: var(--color-surface-hover);
-  border: 1px solid var(--color-border);
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-  letter-spacing: 0.03em;
-}
-
-.c-kepce-direct-card__brand svg {
-  display: block;
-  width: 13px;
-  height: 13px;
-  color: var(--color-primary);
-}
-
-.c-kepce-direct-card__badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-dim);
-  background-color: var(--color-surface-sunken);
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
-}
-
-.c-kepce-direct-card__source {
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-text-muted);
-}
-
-.c-kepce-direct-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
 }
 
 .c-kepce-direct-card__title {
   margin: 0;
   font-family: var(--font-body);
-  font-size: 1.45rem;
+  font-size: 1.35rem;
   font-weight: 800;
   line-height: 1.25;
 }
@@ -2547,30 +2497,18 @@
   color: var(--color-primary);
 }
 
-.c-kepce-direct-card__subtitle {
-  margin: 0;
-  font-size: 0.9rem;
+.c-kepce-direct-card__date {
+  font-size: var(--text-xs);
   font-weight: 600;
-  color: var(--color-primary);
+  color: var(--color-text-dim);
 }
 
 .c-kepce-direct-card__desc {
-  margin: 4px 0 0;
+  margin: var(--space-xs) 0 0;
   font-size: 0.95rem;
   color: var(--color-text-dim);
   line-height: 1.6;
   max-width: 80ch;
-}
-
-.c-kepce-direct-card__date-badge {
-  display: inline-flex;
-  align-items: center;
-  font-size: var(--text-xs);
-  font-weight: 600;
-  color: var(--color-primary);
-  background-color: var(--color-surface-hover);
-  padding: 3px 10px;
-  border-radius: var(--radius-full);
 }
 
 .c-kepce-direct-card__meals {
@@ -2606,13 +2544,9 @@
 }
 
 .c-kepce-direct-card__meal-cal {
-  font-size: 0.75rem;
-  font-weight: 600;
-  color: var(--color-primary);
-  background-color: var(--color-surface);
-  padding: 2px 8px;
-  border-radius: var(--radius-full);
-  border: 1px solid var(--color-border);
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--color-text-dim);
 }
 
 .c-kepce-direct-card__dishes {
@@ -2655,34 +2589,6 @@
   font-size: 0.85rem;
   color: var(--color-text-muted);
   font-style: italic;
-}
-
-.c-kepce-direct-card__features {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-top: 6px;
-}
-
-.c-kepce-direct-card__feature-chip {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 0.78rem;
-  font-weight: 600;
-  color: var(--color-text-dim);
-  background-color: var(--color-surface-sunken);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  padding: 4px 10px;
-}
-
-.c-kepce-direct-card__feature-chip svg {
-  display: block;
-  width: 13px;
-  height: 13px;
-  color: var(--color-primary);
-  flex-shrink: 0;
 }
 
 .c-kepce-direct-card__footer {

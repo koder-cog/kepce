@@ -165,11 +165,8 @@ function matchKepceIntent(query) {
       return {
         type: "city_menu",
         slug: uniInfo.slug,
-        title: `${uniInfo.name} KYK Yurtları Yemek Menüsü`,
-        subtitle: `${uniInfo.uni} GSB Yurt Menüsü (Üniversite rektörlük menüsü değildir)`,
-        description: `${uniInfo.name} genelindeki KYK yurt yemekhanelerinde bugünün sabah kahvaltısı ve akşam tabldot listesi.`,
+        title: `${uniInfo.name} KYK Yemek Menüsü`,
         href: `/${uniInfo.slug}`,
-        badge: "KYK Menüsü",
         cta: "Detayları Kepçe'de incele",
       };
     }
@@ -184,17 +181,70 @@ function matchKepceIntent(query) {
       return {
         type: "city_menu",
         slug,
-        title: `${cityName} KYK Yurtları Yemek Menüsü`,
-        subtitle: "Günlük GSB Yurt Yemekhanesi Listesi",
-        description: `${cityName} genelindeki tüm KYK yurtlarında geçerli bugünkü sabah kahvaltısı ve akşam tabldot menüsü.`,
+        title: `${cityName} KYK Yemek Menüsü`,
         href: `/${slug}`,
-        badge: "KYK Menüsü",
         cta: "Detayları Kepçe'de incele",
       };
     }
   }
 
   return null;
+}
+
+const TURKISH_MONTH_MAP = {
+  ocak: 1, subat: 2, şubat: 2, mart: 3, nisan: 4, mayis: 5, mayıs: 5,
+  haziran: 6, temmuz: 7, agustos: 8, ağustos: 8, eylul: 9, eylül: 9,
+  ekim: 10, kasim: 11, kasım: 11, aralik: 12, aralık: 12
+};
+
+/**
+ * Kullanıcı arama sorgusundaki tarihi ("30 haziran 2026", "dün", "yarın", "2026-06-30") ayıklar.
+ */
+function extractQueryDate(query, referenceDateStr) {
+  if (!query) return referenceDateStr;
+  const q = query.toLowerCase();
+
+  // 1. Dün / Yarın / Bugün
+  if (/\bdün\b/.test(q)) {
+    const d = new Date(referenceDateStr + "T12:00:00");
+    d.setDate(d.getDate() - 1);
+    return d.toISOString().split("T")[0];
+  }
+  if (/\byarın\b/.test(q)) {
+    const d = new Date(referenceDateStr + "T12:00:00");
+    d.setDate(d.getDate() + 1);
+    return d.toISOString().split("T")[0];
+  }
+
+  // 2. "30 haziran 2026" veya "30 haziran"
+  const textMonthMatch = q.match(/\b(\d{1,2})\s+(ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik)(?:\s+(\d{4}))?\b/i);
+  if (textMonthMatch) {
+    const day = parseInt(textMonthMatch[1], 10);
+    const month = TURKISH_MONTH_MAP[textMonthMatch[2].toLowerCase()];
+    const refYear = parseInt(referenceDateStr.slice(0, 4), 10);
+    const year = textMonthMatch[3] ? parseInt(textMonthMatch[3], 10) : refYear;
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+  }
+
+  // 3. ISO formatı: "2026-06-30"
+  const isoMatch = q.match(/\b(\d{4})-(\d{2})-(\d{2})\b/);
+  if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+
+  // 4. Noktalı format: "30.06.2026" veya "30.06"
+  const dotMatch = q.match(/\b(\d{1,2})[./](\d{1,2})(?:[./](\d{4}))?\b/);
+  if (dotMatch) {
+    const day = parseInt(dotMatch[1], 10);
+    const month = parseInt(dotMatch[2], 10);
+    const refYear = parseInt(referenceDateStr.slice(0, 4), 10);
+    const year = dotMatch[3] ? parseInt(dotMatch[3], 10) : refYear;
+    if (day >= 1 && day <= 31 && month >= 1 && month <= 12) {
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    }
+  }
+
+  return referenceDateStr;
 }
 
 // Open-Meteo ve Coğrafi Konum Servisi (TURKEY_GEO_MAP öncelikli)
@@ -1185,17 +1235,21 @@ export async function load({ url, fetch }) {
   const instantAnswerPromise = isGeneralCategory ? solveInstantQuery(q, fetch) : Promise.resolve(null);
   let kepceCard = isGeneralCategory ? matchKepceIntent(q) : null;
 
-  // Şehir menüsü niyetinde bugünün gerçek menü kalemlerini API'den çekip karta ekle
+  // Şehir menüsü niyetinde hedeflenen tarihin gerçek menü kalemlerini API'den çekip karta ekle
   if (kepceCard && kepceCard.type === "city_menu" && kepceCard.slug) {
     const today = istanbulToday();
+    const targetDate = extractQueryDate(q, today);
+    kepceCard.date = targetDate;
+    if (targetDate !== today) {
+      kepceCard.href = `/${kepceCard.slug}?gun=${targetDate}`;
+    }
     try {
       const payload = await apiGet(
-        `/api/v1/menus?city=${encodeURIComponent(kepceCard.slug)}&date=${today}`,
+        `/api/v1/menus?city=${encodeURIComponent(kepceCard.slug)}&date=${targetDate}`,
         { timeout: 1000, fallback: null }
       );
       const menus = normalizeMenuList(payload);
-      if (Array.isArray(menus) && menus.length > 0) {
-        kepceCard.date = today;
+      if (Array.isArray(menus)) {
         kepceCard.menus = menus;
       }
     } catch {
