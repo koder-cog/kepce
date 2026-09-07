@@ -36,75 +36,13 @@
     activeCategory = data.category || "general";
   });
 
-  let searxData = $state(null);
-  let isSearxLoading = $state(false);
   let isNavigatingToResults = $state(false);
-  let scanStep = $state(0);
   let instantPreview = $state(null);
 
-  $effect(() => {
-    if (data.streamed?.searxData) {
-      isSearxLoading = true;
-      searxData = null;
-      scanStep = 0;
-      const startTime = Date.now();
-      const interval = setInterval(() => {
-        const elapsed = Date.now() - startTime;
-        if (elapsed < 350) {
-          scanStep = 0;
-        } else if (elapsed < 750) {
-          scanStep = 1;
-        } else if (elapsed < 1200) {
-          scanStep = 2;
-        } else {
-          scanStep = 3;
-        }
-      }, 100);
-
-      data.streamed.searxData
-        .then((res) => {
-          clearInterval(interval);
-          scanStep = 4;
-          searxData = res;
-          isSearxLoading = false;
-          isNavigatingToResults = false;
-        })
-        .catch(() => {
-          clearInterval(interval);
-          searxData = {
-            results: [],
-            infoboxes: [],
-            suggestions: [],
-            corrections: [],
-            error: "Arama servisi şu anda yanıt vermiyor.",
-          };
-          isSearxLoading = false;
-          isNavigatingToResults = false;
-        });
-
-      return () => clearInterval(interval);
-    } else {
-      searxData = {
-        results: data.results || [],
-        infoboxes: data.infoboxes || [],
-        suggestions: data.suggestions || [],
-        corrections: data.corrections || [],
-        answer: data.answer,
-        numberOfResults: data.numberOfResults || 0,
-        error: data.error,
-      };
-      isSearxLoading = false;
-      isNavigatingToResults = false;
-      scanStep = 4;
-    }
-  });
-
-  let currentResults = $derived(searxData?.results || data.results || []);
-  let currentInfoboxes = $derived(searxData?.infoboxes || data.infoboxes || []);
-  let currentCorrections = $derived(
-    searxData?.corrections || data.corrections || [],
-  );
-  let currentError = $derived(searxData?.error || data.error);
+  let currentResults = $derived(data.results || []);
+  let currentInfoboxes = $derived(data.infoboxes || []);
+  let currentCorrections = $derived(data.corrections || []);
+  let currentError = $derived(data.error);
 
   let randomShortcuts = $state(
     BANG_DEFINITIONS.slice(0, 4).map((b) => ({
@@ -675,7 +613,7 @@
       category={data.category}
       {searchInput}
       bind:searchInputEl
-      isLoading={$navigating || isSearxLoading}
+      isLoading={Boolean($navigating || isNavigatingToResults)}
       {searchHistory}
       {isHistoryOpen}
       {suggestions}
@@ -757,97 +695,7 @@
 
       <!-- Sonuç Listesi -->
       <section class="c-search-list">
-        {#if isSearxLoading}
-          <!-- Canlı Motor Takipçisi -->
-          <div class="c-search-live-tracker" aria-live="polite">
-            <div class="c-search-live-tracker__header">
-              <span class="c-search-live-tracker__pulse"></span>
-              <span class="c-search-live-tracker__status">
-                {#if scanStep === 0}
-                  Vikipedi ve ansiklopedi taranıyor...
-                {:else if scanStep === 1}
-                  Bing ve web dizinleri taranıyor...
-                {:else if scanStep === 2}
-                  DuckDuckGo ve bağımsız kaynaklar taranıyor...
-                {:else if scanStep === 3}
-                  Sonuçlar analiz ediliyor ve sıralanıyor...
-                {:else}
-                  Sonuçlar hazırlandı!
-                {/if}
-              </span>
-            </div>
-            <div class="c-search-live-chips">
-              <span
-                class="c-search-chip"
-                class:is-done={scanStep > 0}
-                class:is-active={scanStep === 0}
-              >
-                {#if scanStep > 0}
-                  <span class="c-search-chip__icon"
-                    >{@html icon("check", 12)}</span
-                  >
-                {:else if scanStep === 0}
-                  <span class="c-search-chip__spinner" aria-hidden="true"
-                  ></span>
-                {:else}
-                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
-                {/if}
-                Vikipedi
-              </span>
-              <span
-                class="c-search-chip"
-                class:is-done={scanStep > 1}
-                class:is-active={scanStep === 1}
-              >
-                {#if scanStep > 1}
-                  <span class="c-search-chip__icon"
-                    >{@html icon("check", 12)}</span
-                  >
-                {:else if scanStep === 1}
-                  <span class="c-search-chip__spinner" aria-hidden="true"
-                  ></span>
-                {:else}
-                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
-                {/if}
-                Bing
-              </span>
-              <span
-                class="c-search-chip"
-                class:is-done={scanStep > 2}
-                class:is-active={scanStep === 2}
-              >
-                {#if scanStep > 2}
-                  <span class="c-search-chip__icon"
-                    >{@html icon("check", 12)}</span
-                  >
-                {:else if scanStep === 2}
-                  <span class="c-search-chip__spinner" aria-hidden="true"
-                  ></span>
-                {:else}
-                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
-                {/if}
-                DuckDuckGo
-              </span>
-              <span
-                class="c-search-chip"
-                class:is-done={scanStep >= 3}
-                class:is-active={scanStep === 3}
-              >
-                {#if scanStep >= 3}
-                  <span class="c-search-chip__icon"
-                    >{@html icon("check", 12)}</span
-                  >
-                {:else if scanStep === 3}
-                  <span class="c-search-chip__spinner" aria-hidden="true"
-                  ></span>
-                {:else}
-                  <span class="c-search-chip__bullet" aria-hidden="true"></span>
-                {/if}
-                Sıralama
-              </span>
-            </div>
-          </div>
-
+        {#if $navigating}
           <div class="c-search-skeletons" aria-hidden="true">
             {#each [1, 2, 3] as _}
               <div class="c-search-skeleton-card">

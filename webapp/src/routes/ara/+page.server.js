@@ -781,115 +781,56 @@ async function solveInstantQuery(query, customFetch = fetch) {
     return cryptoAnswer;
   }
 
-  return null;
-}
-
-// ── Görsel Fallback Yardımcısı (Vikipedi'de fotoğrafı olmayan ünlüler/kavramlar için) ──
-async function fetchFallbackImage(query, searxUrl, customFetch) {
-  try {
-    const params = new URLSearchParams({
-      q: query,
-      categories: "images",
-      format: "json",
-    });
-    const res = await customFetch(`${searxUrl.replace(/\/+$/, "")}/search?${params.toString()}`, {
-      signal: AbortSignal.timeout(1500),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    const firstValid = (data.results || []).find((r) => r.img_src || r.thumbnail);
-    return firstValid ? (firstValid.img_src || firstValid.thumbnail) : null;
-  } catch {
-    return null;
   }
-}
 
-// Wikipedia REST API Fallback (Kavram / Teknoloji aramalarında SearXNG infobox bulamazsa devreye girer)
+
+// Wikipedia REST API Fallback (Yalnızca doğrudan başlık eşleşen kavramlar için hızlı özet)
 async function fetchWikipediaFallback(query, customFetch = fetch) {
   if (!query || query.length < 2) return null;
   const qClean = query.trim().replace(/[?.,!]+$/, "");
   if (qClean.split(/\s+/).length > 3) return null;
 
   try {
-    // 1. Önce doğrudan özet çekmeyi dene (hem girildiği gibi hem de baş harf büyük veya büyük harf varyantı ile)
-    const variants = [qClean];
-    if (qClean.length <= 6) variants.push(qClean.toUpperCase());
+    const qNorm = normalizeTr(qClean);
     const capitalized = qClean.charAt(0).toUpperCase() + qClean.slice(1);
-    if (!variants.includes(capitalized)) variants.push(capitalized);
+    const variants = [capitalized, qClean];
 
     for (const v of variants) {
       try {
         const wikiUrl = `https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(v)}`;
         const res = await customFetch(wikiUrl, {
           headers: { "User-Agent": "Kepce/1.0 (bilgi@kepce.org)" },
-          signal: AbortSignal.timeout(1800),
+          signal: AbortSignal.timeout(1200),
         });
 
         if (res.ok) {
           const data = await res.json();
           if (data && data.extract && data.type !== "disambiguation") {
-            const raw = {
-              title: data.title,
-              content: data.extract,
-              imgSrc: data.thumbnail?.source || "",
-              urls: [{ title: "Vikipedi", url: data.content_urls?.desktop?.page || `https://tr.wikipedia.org/wiki/${encodeURIComponent(data.title)}` }],
-              attributes: [],
-            };
-            const eType = classifyEntity(raw, query);
-            const geo = TURKEY_GEO_MAP[normalizeTr(query)] || TURKEY_GEO_MAP[normalizeTr(data.title)] || null;
+            const tNorm = normalizeTr(data.title || "");
+            // Sadece başlık sorguyla doğrudan örtüşüyorsa bilgi kartı olarak kullan
+            if (tNorm === qNorm || tNorm.includes(qNorm) || qNorm.includes(tNorm)) {
+              const raw = {
+                title: data.title,
+                content: data.extract,
+                imgSrc: data.thumbnail?.source || "",
+                urls: [{ title: "Vikipedi", url: data.content_urls?.desktop?.page || `https://tr.wikipedia.org/wiki/${encodeURIComponent(data.title)}` }],
+                attributes: [],
+              };
+              const eType = classifyEntity(raw, query);
+              const geo = TURKEY_GEO_MAP[qNorm] || TURKEY_GEO_MAP[tNorm] || null;
 
-            return {
-              ...raw,
-              entityType: eType,
-              placeInfo: geo,
-              engine: "wikipedia_fallback",
-            };
+              return {
+                ...raw,
+                entityType: eType,
+                placeInfo: geo,
+                engine: "wikipedia_fallback",
+              };
+            }
           }
         }
       } catch {}
     }
-
-    // 2. Doğrudan başlık tutmadıysa Wikipedia Arama API'si ile en alakalı sayfayı bul
-    const sUrl = `https://tr.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(qClean)}&format=json&utf8=1`;
-    const sRes = await customFetch(sUrl, {
-      headers: { "User-Agent": "Kepce/1.0 (bilgi@kepce.org)" },
-      signal: AbortSignal.timeout(2000),
-    });
-    if (sRes.ok) {
-      const sData = await sRes.json();
-      const top = sData?.query?.search?.[0];
-      if (top && isRelevantInfobox(qClean, top.title)) {
-        const sumUrl = `https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(top.title)}`;
-        const sumRes = await customFetch(sumUrl, {
-          headers: { "User-Agent": "Kepce/1.0 (bilgi@kepce.org)" },
-          signal: AbortSignal.timeout(2000),
-        });
-        if (sumRes.ok) {
-          const sumData = await sumRes.json();
-          if (sumData && sumData.extract) {
-            const raw = {
-              title: sumData.title,
-              content: sumData.extract,
-              imgSrc: sumData.thumbnail?.source || "",
-              urls: [{ title: "Vikipedi", url: sumData.content_urls?.desktop?.page || `https://tr.wikipedia.org/wiki/${encodeURIComponent(sumData.title)}` }],
-              attributes: [],
-            };
-            const eType = classifyEntity(raw, query);
-            const geo = TURKEY_GEO_MAP[normalizeTr(query)] || TURKEY_GEO_MAP[normalizeTr(sumData.title)] || null;
-
-            return {
-              ...raw,
-              entityType: eType,
-              placeInfo: geo,
-              engine: "wikipedia_fallback",
-            };
-          }
-        }
-      }
-    }
-  } catch {
-    // gracefully ignore
-  }
+  } catch {}
 
   return null;
 }
@@ -917,11 +858,11 @@ function isSpamResult(item) {
   return false;
 }
 
-// ── SearXNG Asenkron Veri Çekici (Streaming Helper) ──────────────────────
+// ── SearXNG Asenkron Veri Çekici (Doğrudan Arama) ────────────────────────
 async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, instantAnswer, customFetch }) {
   try {
     const res = await customFetch(`${searxUrl.replace(/\/+$/, "")}/search?${searchParams.toString()}`, {
-      signal: AbortSignal.timeout(4500),
+      signal: AbortSignal.timeout(3500),
     });
 
     if (!res.ok) {
@@ -1066,7 +1007,7 @@ async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, insta
 
     let infoboxes = rawInfoboxes;
 
-    // Eğer SearXNG'den infobox gelmediyse Wikipedia REST API Fallback'ini çalıştır (Docker, Kuantum, Kubernetes vb.)
+    // Eğer SearXNG'den infobox gelmediyse hızlı Wikipedia özet kontrolü yap
     if (infoboxes.length === 0) {
       try {
         const wikiFallback = await fetchWikipediaFallback(q, customFetch);
@@ -1075,19 +1016,6 @@ async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, insta
         }
       } catch {
         // ignore
-      }
-    }
-
-    // Fotoğrafı eksik bilgi kartları için alternatif arama motoru görsellerini kontrol et
-    if (infoboxes.length > 0 && !infoboxes[0].imgSrc) {
-      try {
-        const fallbackTarget = infoboxes[0].title || effectiveQuery;
-        const fallbackImg = await fetchFallbackImage(fallbackTarget, searxUrl, customFetch);
-        if (fallbackImg) {
-          infoboxes[0].imgSrc = fallbackImg;
-        }
-      } catch {
-        // gracefully ignore
       }
     }
 
@@ -1249,19 +1177,7 @@ export async function load({ url, fetch }) {
   const cacheKey = `${q}::${category}::${page}::${language}::${timeRange}::${safeSearch}::${fileType}::${siteFilter}::${verbatim}::${imgFormat}::${imgSize}::${imgColor}::${imgLicense}::${videoDuration}::${videoQuality}::${videoPlatform}::${newsSort}::${codeLang}::${codePlatform}::${scholarAccess}::${scholarYear}`;
   const cached = getCached(cacheKey);
   if (cached && !cached.error && cached.results?.length > 0) {
-    return {
-      ...cached,
-      streamed: {
-        searxData: Promise.resolve({
-          results: cached.results,
-          infoboxes: cached.infoboxes,
-          suggestions: cached.suggestions,
-          corrections: cached.corrections || [],
-          answer: cached.answer,
-          numberOfResults: cached.numberOfResults,
-        }),
-      },
-    };
+    return cached;
   }
 
   // 3. Anlık Çözücüler ve Kepçe Niyet Süzgeci (0-5ms içinde çözülür)
@@ -1387,40 +1303,17 @@ export async function load({ url, fetch }) {
     searchParams.set("order", "date");
   }
 
-  // 5. SearXNG Veri Akışı (Streaming Promise)
-  const searxPromise = fetchSearxData({
+  // 5. SearXNG Verilerini Doğrudan Çek (Maksimum 3.5 sn zaman aşımı)
+  const searxData = await fetchSearxData({
     effectiveQuery,
     searxUrl,
     searchParams,
     q,
     instantAnswer,
     customFetch: fetch,
-  }).then((data) => {
-    // Yanıt başarılı ve sonuçlu ise önbelleğe kaydet (hataları asla önbelleğe alma)
-    if (!data.error && (data.results?.length > 0 || data.answer || data.kepceCard)) {
-      setCached(cacheKey, {
-        isHome: false,
-        query: q,
-        category,
-        page,
-        results: data.results,
-        infoboxes: data.infoboxes,
-        suggestions: data.suggestions,
-        corrections: data.corrections,
-        answer: data.answer,
-        kepceCard,
-        numberOfResults: data.numberOfResults,
-        language,
-        timeRange,
-        safeSearch,
-        ...filterFields,
-      });
-    }
-    return data;
   });
 
-  // Sayfayı anında aç (0ms): instantAnswer ve kepceCard anında ekranda!
-  return {
+  const responseData = {
     isHome: false,
     query: q,
     category,
@@ -1429,17 +1322,20 @@ export async function load({ url, fetch }) {
     timeRange,
     safeSearch,
     ...filterFields,
-    answer: instantAnswer,
+    answer: searxData.answer || instantAnswer,
     kepceCard,
-    results: [],
-    infoboxes: [],
-    suggestions: [],
-    corrections: [],
-    numberOfResults: 0,
-    error: null,
-    streamed: {
-      searxData: searxPromise,
-    },
+    results: searxData.results || [],
+    infoboxes: searxData.infoboxes || [],
+    suggestions: searxData.suggestions || [],
+    corrections: searxData.corrections || [],
+    numberOfResults: searxData.numberOfResults || 0,
+    error: searxData.error || null,
   };
+
+  if (!searxData.error && (searxData.results?.length > 0 || searxData.answer || kepceCard)) {
+    setCached(cacheKey, responseData);
+  }
+
+  return responseData;
 }
 
