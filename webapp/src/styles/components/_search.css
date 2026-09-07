@@ -2584,6 +2584,21 @@
   font-weight: 400;
 }
 
+.c-kepce-direct-card__dish-separator {
+  list-style: none;
+  display: flex;
+  align-items: center;
+  margin: -2px 0;
+  padding-left: 14px;
+}
+
+.c-kepce-direct-card__dish-separator-text {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  font-style: italic;
+  opacity: 0.85;
+}
+
 .c-kepce-direct-card__dish-empty {
   margin: 0;
   font-size: 0.85rem;

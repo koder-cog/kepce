@@ -1,7 +1,7 @@
 <script>
   import { icon } from "@/components/ui/icons.js";
   import { formatFullTurkishDate } from "@/utils/turkish.js";
-  import { normalizeItems } from "@/utils/menu.js";
+  import { normalizeItems, groupItems } from "@/utils/menu.js";
 
   let { card = null } = $props();
 
@@ -25,7 +25,7 @@
       <!-- Doğrudan Menü Tabldot / Yemek Listesi Görünümü -->
       <div class="c-kepce-direct-card__meals">
         {#each card.menus as meal}
-          {@const dishes = normalizeItems(meal)}
+          {@const items = groupItems(normalizeItems(meal))}
           <div class="c-kepce-direct-card__meal-box">
             <div class="c-kepce-direct-card__meal-header">
               <span class="c-kepce-direct-card__meal-type">
@@ -44,16 +44,24 @@
               {/if}
             </div>
 
-            {#if dishes.length > 0}
+            {#if items.length > 0}
               <ul class="c-kepce-direct-card__dishes">
-                {#each dishes as item}
-                  <li class="c-kepce-direct-card__dish-item">
-                    <span class="c-kepce-direct-card__dish-bullet">•</span>
-                    <span class="c-kepce-direct-card__dish-name">{item.name}</span>
-                    {#if item.dishes?.[0]?.weight}
-                      <span class="c-kepce-direct-card__dish-portion">({item.dishes[0].weight})</span>
+                {#each items as item}
+                  {@const dishes = item.dishes && item.dishes.length > 0 ? item.dishes : [{ name: item.name }]}
+                  {#each dishes as dish, idx}
+                    {#if idx > 0}
+                      <li class="c-kepce-direct-card__dish-separator">
+                        <span class="c-kepce-direct-card__dish-separator-text">- ya da -</span>
+                      </li>
                     {/if}
-                  </li>
+                    <li class="c-kepce-direct-card__dish-item">
+                      <span class="c-kepce-direct-card__dish-bullet">•</span>
+                      <span class="c-kepce-direct-card__dish-name">{dish.name}</span>
+                      {#if dish.weight}
+                        <span class="c-kepce-direct-card__dish-portion">({dish.weight})</span>
+                      {/if}
+                    </li>
+                  {/each}
                 {/each}
               </ul>
             {:else}
