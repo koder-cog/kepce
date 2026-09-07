@@ -2468,14 +2468,7 @@
   gap: var(--space-sm);
   position: relative;
   overflow: hidden;
-  transition: border-color var(--dur-fast) var(--ease-standard),
-    box-shadow var(--dur-fast) var(--ease-standard);
   animation: resultCascade 260ms var(--ease-standard) backwards;
-}
-
-.c-kepce-direct-card:hover {
-  border-color: var(--color-primary);
-  box-shadow: var(--shadow-md);
 }
 
 .c-kepce-direct-card__header {
@@ -2504,6 +2497,13 @@
   padding: 3px 10px;
   border-radius: var(--radius-full);
   letter-spacing: 0.03em;
+}
+
+.c-kepce-direct-card__brand svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  color: var(--color-primary);
 }
 
 .c-kepce-direct-card__badge {
@@ -2634,7 +2634,9 @@
 }
 
 .c-kepce-direct-card__dish-bullet {
-  font-size: 0.85rem;
+  color: var(--color-primary);
+  font-size: 0.95rem;
+  line-height: 1;
   flex-shrink: 0;
 }
 
@@ -2648,6 +2650,13 @@
   font-weight: 400;
 }
 
+.c-kepce-direct-card__dish-empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
 .c-kepce-direct-card__features {
   display: flex;
   gap: 8px;
@@ -2658,14 +2667,22 @@
 .c-kepce-direct-card__feature-chip {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   font-size: 0.78rem;
   font-weight: 600;
-  color: var(--color-text);
+  color: var(--color-text-dim);
   background-color: var(--color-surface-sunken);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 4px 10px;
+}
+
+.c-kepce-direct-card__feature-chip svg {
+  display: block;
+  width: 13px;
+  height: 13px;
+  color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .c-kepce-direct-card__footer {
