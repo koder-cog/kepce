@@ -63,6 +63,38 @@
       visibility var(--dur-default);
   }
 
+  /* View Toggle varsayılan olarak (masaüstünde) daima kompakt 36px ikon modundadır */
+  .view-toggle.c-segmented-control {
+    display: inline-flex;
+    flex: 0 0 auto;
+  }
+
+  .view-toggle .c-segmented-control__label {
+    display: none !important;
+  }
+
+  .view-toggle .c-segmented-control__icon {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .view-toggle .c-segmented-control__btn {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    max-width: 36px;
+    padding: 0;
+    flex: 0 0 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .view-toggle .c-segmented-control__indicator {
+    width: var(--indicator-width, 36px);
+  }
+
   @media (max-width: 900px) {
     .header-controls {
       order: 2;
@@ -104,6 +136,33 @@
 
     .view-toggle {
       flex: 0 0 auto;
+    }
+
+    /* Mobilde çölyak butonu gizliyken (.is-alone), view-toggle metinli geniş varyanta geçer ve satıra yayılır */
+    .view-toggle.is-alone {
+      flex: 1;
+      width: 100%;
+      max-width: 100%;
+      transition: flex var(--dur-default) var(--ease-standard),
+                  width var(--dur-default) var(--ease-standard);
+    }
+
+    .view-toggle.is-alone .c-segmented-control__label {
+      display: inline-block !important;
+      font-size: var(--text-xs);
+    }
+
+    .view-toggle.is-alone .c-segmented-control__btn {
+      width: auto;
+      min-width: 0;
+      max-width: none;
+      flex: 1;
+      padding: var(--space-xs) var(--space-sm);
+      gap: var(--space-xs);
+    }
+
+    .view-toggle.is-alone .c-segmented-control__indicator {
+      width: var(--indicator-width, calc((100% - (2 * var(--seg-pad)) - ((var(--total-options, 1) - 1) * var(--seg-gap))) / var(--total-options, 1)));
     }
 
     .diet-mode-selector .c-segmented-control {

@@ -5,7 +5,7 @@ const DEFAULT_CITIES = Object.entries(CITY_MAP).map(([slug, name], i) => ({
   id: i + 1,
   slug,
   name,
-  has_celiac: false
+  has_celiac: slug === 'istanbul'
 }));
 
 let currentCity = $state(typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || 'istanbul' : 'istanbul');
@@ -18,8 +18,8 @@ let citiesLoaded = $state(true);
 let citiesPromise = null;
 
 /**
- * Şehir listesini önbellekten anında döndürür (varsayılan 81 il).
- * @returns {Promise<Array<{slug: string, name: string}>>}
+ * Şehir listesini önbellekten anında döndürür ve arka planda API'den günceller.
+ * @returns {Promise<Array<{slug: string, name: string, has_celiac: boolean}>>}
  */
 export function getCitiesData() {
   // 1. localStorage'dan hemen yükle (varsa zenginleştir)
@@ -33,6 +33,13 @@ export function getCitiesData() {
         }
       }
     } catch (_) { /* bozuk cache, yok say */ }
+
+    // 2. Arka planda API'den tazeleyerek önbelleği yenile (SWR)
+    if (!citiesPromise) {
+      citiesPromise = refreshCities().finally(() => {
+        citiesPromise = null;
+      });
+    }
   }
 
   return Promise.resolve(citiesData);
