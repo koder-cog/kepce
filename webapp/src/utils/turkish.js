@@ -270,3 +270,149 @@ export function formatFullTurkishDate(input, includeDay = false) {
   }
   return `${day} ${month} ${year}`;
 }
+
+export const CITY_ALIASES = {
+  // Halk ağzı / yaygın kısaltmalar
+  afyon: "afyonkarahisar",
+  urfa: "sanliurfa",
+  maras: "kahramanmaras",
+  maraş: "kahramanmaras",
+  antep: "gaziantep",
+  izmit: "kocaeli",
+  adapazari: "sakarya",
+  adapazarı: "sakarya",
+  antakya: "hatay",
+  iskenderun: "hatay",
+  icel: "mersin",
+  içel: "mersin",
+  elaziz: "elazig",
+  dersim: "tunceli",
+
+  // Popüler Üniversiteler
+  itu: "istanbul",
+  itü: "istanbul",
+  odtu: "ankara",
+  odtü: "ankara",
+  boun: "istanbul",
+  bogazici: "istanbul",
+  boğaziçi: "istanbul",
+  hacettepe: "ankara",
+  yildiz: "istanbul",
+  ytu: "istanbul",
+  ytü: "istanbul",
+  marmara: "istanbul",
+  gazi: "ankara",
+  ege: "izmir",
+  deu: "izmir",
+  dokuzeylul: "izmir",
+  dokuzeylül: "izmir",
+  katipcelebi: "izmir",
+  iyte: "izmir",
+  akdeniz: "antalya",
+  anadolu: "eskisehir",
+  osmangazi: "eskisehir",
+  esogu: "eskisehir",
+  selcuk: "konya",
+  selçuk: "konya",
+  uludag: "bursa",
+  uludağ: "bursa",
+  cukurova: "adana",
+  çukurova: "adana",
+  ktu: "trabzon",
+  ktü: "trabzon",
+  karadenizteknik: "trabzon",
+  omu: "samsun",
+  omü: "samsun",
+  ondokuzmayis: "samsun",
+  firat: "elazig",
+  fırat: "elazig",
+  dicle: "diyarbakir",
+  inonu: "malatya",
+  inönü: "malatya",
+  sdu: "isparta",
+  sdü: "isparta",
+  pau: "denizli",
+  paü: "denizli",
+  comu: "canakkale",
+  çomü: "canakkale",
+  baun: "balikesir",
+  gtu: "kocaeli",
+  gtü: "kocaeli",
+};
+
+const TURKISH_CITY_SUFFIX_REGEX = /^(?:da|de|ta|te|nda|nde|dan|den|tan|ten|ndan|nden|a|e|ya|ye|na|ne|in|ın|un|ün|nin|nın|nun|nün|daki|deki|taki|teki|ndaki|ndeki|li|lı|lu|lü)$/;
+
+export function normalizeTurkishText(str) {
+  if (!str || typeof str !== "string") return "";
+  return str
+    .replace(/İ/g, "i")
+    .replace(/I/g, "ı")
+    .toLowerCase()
+    .replace(/ğ/g, "g")
+    .replace(/ü/g, "u")
+    .replace(/ş/g, "s")
+    .replace(/ı/g, "i")
+    .replace(/ö/g, "o")
+    .replace(/ç/g, "c")
+    .replace(/[''’`]/g, "")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function matchesCityStem(token, stem) {
+  if (!token || !stem) return false;
+  if (token === stem) return true;
+  if (token.startsWith(stem)) {
+    const remainder = token.slice(stem.length);
+    return TURKISH_CITY_SUFFIX_REGEX.test(remainder);
+  }
+  return false;
+}
+
+/**
+ * Verilen arama sorgusundan Türkiye şehri eşleştirmesi yapar.
+ * 81 ilin resmi adını, slug'ını, yaygın kısaltmalarını (Afyon, Antep, Urfa, İzmit, Adapazarı)
+ * ve büyük üniversiteleri (İTÜ, ODTÜ, Akdeniz, Uludağ, vb.) Türkçe ekleriyle birlikte çözer.
+ * 
+ * @param {string} query Kullanıcı sorgusu
+ * @returns {{ slug: string, name: string } | null}
+ */
+export function resolveCityFromQuery(query) {
+  if (!query || typeof query !== "string") return null;
+  const norm = normalizeTurkishText(query);
+  const tokens = norm.split(" ").filter(Boolean);
+  if (tokens.length === 0) return null;
+
+  // 1. İki kelimeli birleşik ad kontrolü (örn. "afyon karahisar", "sanli urfa", "gazi antep", "dokuz eylul")
+  for (let i = 0; i < tokens.length - 1; i++) {
+    const pair = tokens[i] + tokens[i + 1];
+    if (CITY_MAP[pair]) {
+      return { slug: pair, name: CITY_MAP[pair] };
+    }
+    if (CITY_ALIASES[pair] && CITY_MAP[CITY_ALIASES[pair]]) {
+      const slug = CITY_ALIASES[pair];
+      return { slug, name: CITY_MAP[slug] };
+    }
+  }
+
+  // 2. Takma adlar ve üniversite eşleşmeleri (öncelikli)
+  for (const [alias, targetSlug] of Object.entries(CITY_ALIASES)) {
+    const normAlias = normalizeTurkishText(alias);
+    if (tokens.some((t) => matchesCityStem(t, normAlias))) {
+      if (CITY_MAP[targetSlug]) {
+        return { slug: targetSlug, name: CITY_MAP[targetSlug] };
+      }
+    }
+  }
+
+  // 3. 81 Resmi İl ve Slug Eşleştirmesi
+  for (const [slug, cityName] of Object.entries(CITY_MAP)) {
+    const normName = normalizeTurkishText(cityName);
+    if (tokens.some((t) => matchesCityStem(t, slug) || matchesCityStem(t, normName))) {
+      return { slug, name: cityName };
+    }
+  }
+
+  return null;
+}

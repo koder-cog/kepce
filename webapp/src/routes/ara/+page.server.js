@@ -7,7 +7,7 @@ import {
   solveTdkDefinition,
   solveCryptoPrice,
 } from "$lib/search/instantSolvers.js";
-import { CITY_MAP, TURKEY_GEO_MAP } from "@/utils/turkish.js";
+import { CITY_MAP, TURKEY_GEO_MAP, resolveCityFromQuery } from "@/utils/turkish.js";
 import { apiGet, normalizeMenuList, istanbulToday } from "@/lib/server/api.js";
 import { extractQueryDate } from "@/utils/date.js";
 
@@ -148,45 +148,15 @@ function matchKepceIntent(query) {
   // Eğer yemek/yurt/menü niyeti YOKSA kesinlikle şehir kartı basma (False-positive engeli)
   if (!hasMealIntent) return null;
 
-  // Popüler Üniversite Eşleşmeleri (Kampüs çevresi KYK Yurtları uyarısıyla)
-  const uniCityMap = {
-    itu: { slug: "istanbul", name: "İstanbul", uni: "İTÜ Çevresi" },
-    odtu: { slug: "ankara", name: "Ankara", uni: "ODTÜ Çevresi" },
-    boun: { slug: "istanbul", name: "İstanbul", uni: "Boğaziçi Çevresi" },
-    hacettepe: { slug: "ankara", name: "Ankara", uni: "Hacettepe Çevresi" },
-    yildiz: { slug: "istanbul", name: "İstanbul", uni: "YTÜ Çevresi" },
-    ege: { slug: "izmir", name: "İzmir", uni: "Ege Üniversitesi Çevresi" },
-    deu: { slug: "izmir", name: "İzmir", uni: "Dokuz Eylül Çevresi" },
-    marmara: { slug: "istanbul", name: "İstanbul", uni: "Marmara Çevresi" },
-    gazi: { slug: "ankara", name: "Ankara", uni: "Gazi Üniversitesi Çevresi" },
-  };
-
-  for (const [uniKey, uniInfo] of Object.entries(uniCityMap)) {
-    if (clean.includes(uniKey)) {
-      return {
-        type: "city_menu",
-        slug: uniInfo.slug,
-        title: `${uniInfo.name} KYK Yemek Menüsü`,
-        href: `/${uniInfo.slug}`,
-        cta: "Detayları Kepçe'de incele",
-      };
-    }
-  }
-
-  // 81 İl Eşleştirmesi
-  const normCityKeys = Object.keys(CITY_MAP);
-  for (const slug of normCityKeys) {
-    const cityName = CITY_MAP[slug];
-    const cityNameNorm = normalizeTr(cityName);
-    if (tokens.some((t) => t === slug || t === cityNameNorm || t.startsWith(slug) || t.startsWith(cityNameNorm))) {
-      return {
-        type: "city_menu",
-        slug,
-        title: `${cityName} KYK Yemek Menüsü`,
-        href: `/${slug}`,
-        cta: "Detayları Kepçe'de incele",
-      };
-    }
+  const matchedCity = resolveCityFromQuery(query);
+  if (matchedCity) {
+    return {
+      type: "city_menu",
+      slug: matchedCity.slug,
+      title: `${matchedCity.name} KYK Yemek Menüsü`,
+      href: `/${matchedCity.slug}`,
+      cta: "Detayları Kepçe'de incele",
+    };
   }
 
   return null;
