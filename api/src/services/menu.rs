@@ -27,6 +27,15 @@ pub enum MenuError {
     DatabaseError(DbErr),
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DishVoteStats {
+    pub total: i32,
+    pub positive: i32,
+    pub negative: i32,
+    pub dislike_ratio: Option<f64>,
+    pub like_ratio: Option<f64>,
+}
+
 pub struct MenuService;
 
 impl MenuService {
@@ -56,13 +65,17 @@ impl MenuService {
         }
     }
 
-    fn calculate_total_calories(items: &[MenuItemDto]) -> Option<i32> {
+    pub(crate) fn calculate_total_calories(items: &[MenuItemDto]) -> Option<i32> {
         let mut total = 0;
         let mut has_calories = false;
         for item in items {
-            if let Some(cal) = item.calories {
-                total += cal;
-                has_calories = true;
+            // Alternatif yemekler aynı öğünde seçilemeyen ek seçenekler olduğundan
+            // tabldot toplam kalorisine çift eklenmez.
+            if !item.is_alternative {
+                if let Some(cal) = item.calories {
+                    total += cal;
+                    has_calories = true;
+                }
             }
         }
         if has_calories { Some(total) } else { None }
@@ -71,7 +84,7 @@ impl MenuService {
     async fn get_dish_vote_stats_map(
         db: &DatabaseConnection,
         dish_ids: &[i32],
-    ) -> HashMap<i32, (i32, i32, i32, Option<f64>, Option<f64>)> {
+    ) -> HashMap<i32, DishVoteStats> {
         if dish_ids.is_empty() {
             return HashMap::new();
         }
@@ -108,7 +121,16 @@ impl MenuService {
             } else {
                 (None, None)
             };
-            map.insert(d_id, (total_i32, pos_i32, neg_i32, dislike_ratio, like_ratio));
+            map.insert(
+                d_id,
+                DishVoteStats {
+                    total: total_i32,
+                    positive: pos_i32,
+                    negative: neg_i32,
+                    dislike_ratio,
+                    like_ratio,
+                },
+            );
         }
         map
     }
@@ -168,10 +190,10 @@ impl MenuService {
             let alias = alias_opt.ok_or_else(|| MenuError::DatabaseError(DbErr::Custom("Yabancı anahtar bozuk: Alias bulunamadı".into())))?;
             
             let master_data = alias.dish_id.and_then(|did| master_map.get(&did)).map(|dish| {
-                let (tot, pos, neg, d_ratio, l_ratio) = dish_stats_map
+                let stats = dish_stats_map
                     .get(&dish.id)
                     .copied()
-                    .unwrap_or((0, 0, 0, None, None));
+                    .unwrap_or_default();
 
                 DishMasterDataDto {
                     dish_id: dish.id,
@@ -180,11 +202,11 @@ impl MenuService {
                     is_vegan: dish.is_vegan,
                     is_vegetarian: dish.is_vegetarian,
                     estimated_calories: dish.estimated_calories,
-                    total_votes: tot,
-                    positive_votes: pos,
-                    negative_votes: neg,
-                    dislike_ratio: d_ratio,
-                    like_ratio: l_ratio,
+                    total_votes: stats.total,
+                    positive_votes: stats.positive,
+                    negative_votes: stats.negative,
+                    dislike_ratio: stats.dislike_ratio,
+                    like_ratio: stats.like_ratio,
                 }
             });
             
@@ -357,15 +379,24 @@ impl MenuService {
             .await.map_err(MenuError::DatabaseError)?;
 
         let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
-        let mut comment_counts = Vec::with_capacity(menus.len());
-        for m in &menus {
-            let c = comments::Entity::find()
-                .filter(comments::Column::MenuId.eq(m.id))
+        let comment_counts_map: HashMap<i32, i32> = if !menu_ids.is_empty() {
+            comments::Entity::find()
+                .select_only()
+                .column(comments::Column::MenuId)
+                .column_as(comments::Column::Id.count(), "count")
+                .filter(comments::Column::MenuId.is_in(menu_ids.clone()))
                 .filter(comments::Column::IsDeleted.eq(false))
-                .count(db)
-                .await.unwrap_or(0);
-            comment_counts.push(c as i32);
-        }
+                .group_by(comments::Column::MenuId)
+                .into_tuple()
+                .all(db)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .map(|(m_id, count): (i32, i64)| (m_id, count as i32))
+                .collect()
+        } else {
+            HashMap::new()
+        };
 
         let vote_stats_list: Vec<(i32, i64, i64)> = menu_votes::Entity::find()
             .select_only()
@@ -428,10 +459,10 @@ impl MenuService {
                     dish_idx += 1;
                     
                     let master_data = dish_opt.as_ref().map(|dish| {
-                        let (tot, pos, neg, d_ratio, l_ratio) = dish_stats_map
+                        let stats = dish_stats_map
                             .get(&dish.id)
                             .copied()
-                            .unwrap_or((0, 0, 0, None, None));
+                            .unwrap_or_default();
 
                         DishMasterDataDto {
                             dish_id: dish.id,
@@ -440,11 +471,11 @@ impl MenuService {
                             is_vegan: dish.is_vegan,
                             is_vegetarian: dish.is_vegetarian,
                             estimated_calories: dish.estimated_calories,
-                            total_votes: tot,
-                            positive_votes: pos,
-                            negative_votes: neg,
-                            dislike_ratio: d_ratio,
-                            like_ratio: l_ratio,
+                            total_votes: stats.total,
+                            positive_votes: stats.positive,
+                            negative_votes: stats.negative,
+                            dislike_ratio: stats.dislike_ratio,
+                            like_ratio: stats.like_ratio,
                         }
                     });
                     
@@ -528,7 +559,7 @@ impl MenuService {
                 source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),
                 status: Self::map_menu_status(&menu.status),
                 bot_commentary: menu.bot_commentary.clone(),
-                comment_count: comment_counts[i],
+                comment_count: *comment_counts_map.get(&menu.id).unwrap_or(&0),
                 rating_sum,
                 vote_count,
                 my_vote,
@@ -617,15 +648,24 @@ impl MenuService {
             .await.map_err(MenuError::DatabaseError)?;
 
         let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
-        let mut comment_counts = Vec::with_capacity(menus.len());
-        for m in &menus {
-            let c = comments::Entity::find()
-                .filter(comments::Column::MenuId.eq(m.id))
+        let comment_counts_map: HashMap<i32, i32> = if !menu_ids.is_empty() {
+            comments::Entity::find()
+                .select_only()
+                .column(comments::Column::MenuId)
+                .column_as(comments::Column::Id.count(), "count")
+                .filter(comments::Column::MenuId.is_in(menu_ids.clone()))
                 .filter(comments::Column::IsDeleted.eq(false))
-                .count(db)
-                .await.unwrap_or(0);
-            comment_counts.push(c as i32);
-        }
+                .group_by(comments::Column::MenuId)
+                .into_tuple()
+                .all(db)
+                .await
+                .unwrap_or_default()
+                .into_iter()
+                .map(|(m_id, count): (i32, i64)| (m_id, count as i32))
+                .collect()
+        } else {
+            HashMap::new()
+        };
 
         let mut rating_sums = HashMap::new();
         let mut vote_counts = HashMap::new();
@@ -642,7 +682,8 @@ impl MenuService {
                 .group_by(menu_votes::Column::MenuId)
                 .into_tuple()
                 .all(db)
-                .await.unwrap_or_default();
+                .await
+                .unwrap_or_default();
             for (m_id, count, sum) in stats {
                 vote_counts.insert(m_id, count as i32);
                 rating_sums.insert(m_id, sum as i32);
@@ -692,10 +733,10 @@ impl MenuService {
                         dish_idx += 1;
                         
                         let master_data = dish_opt.as_ref().map(|dish| {
-                            let (tot, pos, neg, d_ratio, l_ratio) = dish_stats_map
+                            let stats = dish_stats_map
                                 .get(&dish.id)
                                 .copied()
-                                .unwrap_or((0, 0, 0, None, None));
+                                .unwrap_or_default();
 
                             DishMasterDataDto {
                                 dish_id: dish.id,
@@ -704,11 +745,11 @@ impl MenuService {
                                 is_vegan: dish.is_vegan,
                                 is_vegetarian: dish.is_vegetarian,
                                 estimated_calories: dish.estimated_calories,
-                                total_votes: tot,
-                                positive_votes: pos,
-                                negative_votes: neg,
-                                dislike_ratio: d_ratio,
-                                like_ratio: l_ratio,
+                                total_votes: stats.total,
+                                positive_votes: stats.positive,
+                                negative_votes: stats.negative,
+                                dislike_ratio: stats.dislike_ratio,
+                                like_ratio: stats.like_ratio,
                             }
                         });
                         
@@ -789,7 +830,7 @@ impl MenuService {
                     source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),
                     status: Self::map_menu_status(&menu.status),
                     bot_commentary: menu.bot_commentary.clone(),
-                    comment_count: comment_counts[i],
+                    comment_count: *comment_counts_map.get(&menu.id).unwrap_or(&0),
                     rating_sum: *rating_sums.get(&menu.id).unwrap_or(&0),
                     vote_count: *vote_counts.get(&menu.id).unwrap_or(&0),
                     my_vote: my_votes_map.get(&menu.id).cloned(),
@@ -850,3 +891,69 @@ impl MenuService {
         Ok(res.into_iter().map(|(y,)| y).collect())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dto::menu::{DishMasterDataDto, MenuItemDto};
+
+    fn make_test_item(order_index: i32, is_alternative: bool, calories: Option<i32>) -> MenuItemDto {
+        MenuItemDto {
+            order_index,
+            raw_name: "Test Yemek".into(),
+            is_alternative,
+            amount: None,
+            calories,
+            price: None,
+            category: None,
+            master_data: calories.map(|c| DishMasterDataDto {
+                dish_id: 1,
+                name: "Test Yemek".into(),
+                is_celiac: false,
+                is_vegan: false,
+                is_vegetarian: false,
+                estimated_calories: Some(c),
+                total_votes: 0,
+                positive_votes: 0,
+                negative_votes: 0,
+                dislike_ratio: None,
+                like_ratio: None,
+            }),
+        }
+    }
+
+    #[test]
+    fn test_calculate_total_calories_empty() {
+        assert_eq!(MenuService::calculate_total_calories(&[]), None);
+    }
+
+    #[test]
+    fn test_calculate_total_calories_no_calories() {
+        let items = vec![
+            make_test_item(1, false, None),
+            make_test_item(2, false, None),
+        ];
+        assert_eq!(MenuService::calculate_total_calories(&items), None);
+    }
+
+    #[test]
+    fn test_calculate_total_calories_sums_standard_items() {
+        let items = vec![
+            make_test_item(1, false, Some(250)),
+            make_test_item(2, false, Some(450)),
+            make_test_item(3, false, None),
+        ];
+        assert_eq!(MenuService::calculate_total_calories(&items), Some(700));
+    }
+
+    #[test]
+    fn test_calculate_total_calories_ignores_alternatives() {
+        let items = vec![
+            make_test_item(1, false, Some(250)),
+            make_test_item(2, true, Some(600)),
+            make_test_item(3, false, Some(350)),
+        ];
+        assert_eq!(MenuService::calculate_total_calories(&items), Some(600));
+    }
+}
+

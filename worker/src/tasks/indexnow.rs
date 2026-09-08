@@ -14,11 +14,10 @@
 //! - `INDEXNOW_ENDPOINT` (varsayılan `https://api.indexnow.org/indexnow`)
 
 use anyhow::Result;
-use chrono::NaiveDate;
 use reqwest::Client;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use serde::Serialize;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use super::scraper::take_inserted_menus;
 use shared::entities::cities;
@@ -81,26 +80,19 @@ async fn ping_inner(db: &DatabaseConnection, client: &Client, config: &IndexNowC
         return Ok(());
     }
 
-    // Dedupe: aynı günün birden fazla öğünü (kahvaltı + akşam) tek URL'e düşer
-    let unique: HashSet<(i32, NaiveDate)> = inserted.into_iter().collect();
-    let city_ids: Vec<i32> = unique.iter().map(|(id, _)| *id).collect();
+    // Eklenen menülerin tekil şehir ID'leri toplanır; IndexNow'a doğrudan kanonik /{sehir} bildirilir.
+    let city_ids: HashSet<i32> = inserted.into_iter().map(|(id, _)| id).collect();
 
     let city_rows = cities::Entity::find()
         .filter(cities::Column::Id.is_in(city_ids))
         .all(db)
         .await?;
-    let slug_by_id: HashMap<i32, String> = city_rows.into_iter().map(|c| (c.id, c.slug)).collect();
 
-    let mut urls: Vec<String> = unique
-        .iter()
-        .filter_map(|(city_id, _)| {
-            slug_by_id
-                .get(city_id)
-                .map(|slug| format!("https://{}/{}", config.host, slug))
-        })
+    let mut urls: Vec<String> = city_rows
+        .into_iter()
+        .map(|c| format!("https://{}/{}", config.host, c.slug))
         .collect();
     urls.sort();
-    urls.dedup();
 
     if urls.is_empty() {
         return Ok(());
