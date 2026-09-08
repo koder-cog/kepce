@@ -23,8 +23,8 @@ search:
     - csv
 
 outgoing:
-  request_timeout: 2.0
-  max_request_timeout: 3.5
+  request_timeout: 3.0
+  max_request_timeout: 4.5
   pool_connections: 100
   pool_maxsize: 50
   enable_http2: true
@@ -42,12 +42,17 @@ engines:
     engine: bing
     disabled: false
     weight: 4
-    timeout: 2.0
+    timeout: 2.5
   - name: wikipedia
     engine: wikipedia
     disabled: false
     weight: 3
-    timeout: 1.5
+    timeout: 2.5
+  - name: wikidata
+    engine: wikidata
+    disabled: false
+    weight: 2
+    timeout: 2.5
   - name: qwant
     engine: qwant
     disabled: true
@@ -128,3 +133,59 @@ engines:
     disabled: false
     weight: 2
     timeout: 2.0
+
+  # ── 5. Görseller (Images) ──────────────────────────────────
+  - name: bing images
+    engine: bing_images
+    disabled: false
+    weight: 4
+    timeout: 2.5
+  - name: duckduckgo images
+    engine: duckduckgo_images
+    disabled: false
+    weight: 3
+    timeout: 2.5
+  - name: google images
+    engine: google_images
+    disabled: false
+    weight: 2
+    timeout: 2.5
+  - name: unsplash
+    engine: unsplash
+    disabled: false
+    weight: 1
+    timeout: 2.0
+  - name: flickr
+    engine: flickr
+    disabled: true
+  - name: openverse
+    engine: openverse
+    disabled: true
+  - name: deviantart
+    engine: deviantart
+    disabled: true
+
+  # ── 6. Videolar (Videos) ───────────────────────────────────
+  - name: youtube
+    engine: youtube
+    disabled: false
+    weight: 4
+    timeout: 2.5
+  - name: bing videos
+    engine: bing_videos
+    disabled: false
+    weight: 3
+    timeout: 2.5
+  - name: duckduckgo videos
+    engine: duckduckgo_videos
+    disabled: false
+    weight: 2
+    timeout: 2.5
+  - name: google videos
+    engine: google_videos
+    disabled: false
+    weight: 2
+    timeout: 2.5
+  - name: dailymotion
+    engine: dailymotion
+    disabled: true

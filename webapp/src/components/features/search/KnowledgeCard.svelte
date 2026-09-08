@@ -51,8 +51,11 @@
     return "";
   });
 
-  // Dinamik alt başlık / unvan
+  // Dinamik alt başlık / unvan (Wikidata etiket ve açıklaması öncelikli)
   let subtitle = $derived.by(() => {
+    if (infobox?.tagline) return infobox.tagline;
+    if (infobox?.subtitle) return infobox.subtitle;
+
     if (entityType === "place") {
       if (place?.country) return place.country;
       const match = (infobox?.content || "").match(/^([^,.]+)/);

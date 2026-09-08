@@ -7,6 +7,7 @@ import {
   solveTdkDefinition,
   solveCryptoPrice,
 } from "$lib/search/instantSolvers.js";
+import { cleanLeadParentheses } from "$lib/search/searchHelpers.js";
 import { CITY_MAP, TURKEY_GEO_MAP, resolveCityFromQuery } from "@/utils/turkish.js";
 import { apiGet, normalizeMenuList, istanbulToday } from "@/lib/server/api.js";
 import { extractQueryDate } from "@/utils/date.js";
@@ -403,15 +404,21 @@ function formatAttrValue(label, value) {
   str = str.replace(DAY_NAMES_TR, "");
 
   // Büyük sayıları binlik basamaklara ayırma (örn: 592713 -> 592.713)
+  // Yıl alanlarını (1000-2100) veya kuruluş/doğum etiketlerini binlik ayraca sokma (1999 asla 1.999 olmamalı)
+  const labelLower = (label || "").toLowerCase();
+  const isYearLabel = ["kuruluş", "kurulus", "dogum", "doğum", "ölüm", "olum", "tarih", "yıl", "yil"].some((l) => labelLower.includes(l));
+
   if (/^\d{4,9}$/.test(str)) {
     const num = parseInt(str, 10);
     if (!isNaN(num)) {
+      if (isYearLabel || (str.length === 4 && num >= 1000 && num <= 2100)) {
+        return str;
+      }
       return num.toLocaleString("tr-TR");
     }
   }
 
   // Alan için km² ekleme ve yanlış m² formatlarını düzeltme
-  const labelLower = (label || "").toLowerCase();
   if (labelLower.includes("alan") || labelLower.includes("yüzölçüm")) {
     str = str.replace(/\bkm2\b/gi, "km²").replace(/\bm[²2]\b/gi, "km²");
     if (/^\d+(?:[.,\s]\d+)*$/.test(str)) {
@@ -425,7 +432,7 @@ function formatAttrValue(label, value) {
 // Varlık Tipi Sınıflandırıcısı
 function classifyEntity(infobox, query) {
   const text = `${infobox.title} ${infobox.content || ""}`.toLowerCase();
-  const labels = (infobox.attributes || []).map((a) => a.label.toLowerCase());
+  const labels = (infobox.attributes || []).map((a) => (a.label || "").toLowerCase());
 
   // 0. Anlam Ayrımı (Disambiguation) Kontrolü
   if (
@@ -438,7 +445,7 @@ function classifyEntity(infobox, query) {
     return "disambiguation";
   }
 
-  // 1. Kurum / Üniversite (Organization) Kontrolü
+  // 1. Kurum / Üniversite / Web Platformu (Organization) Kontrolü
   const isOrgText =
     text.includes("üniversite") ||
     text.includes("university") ||
@@ -448,25 +455,37 @@ function classifyEntity(infobox, query) {
     text.includes("vakıf") ||
     text.includes("kurumu") ||
     text.includes("şirketi") ||
-    text.includes("kulübü");
+    text.includes("kulübü") ||
+    text.includes("sosyal ağ") ||
+    text.includes("web sitesi") ||
+    text.includes("ağ sayfası") ||
+    text.includes("platform");
 
   const orgLabels = [
     "rektör",
     "genel merkez",
+    "merkez",
     "ceo",
     "kuruluş tarihi",
+    "kuruluş",
+    "kurucu",
     "yönetim kurulu başkanı",
     "çalışan sayısı",
   ];
 
-  if ((isOrgText || labels.some((l) => orgLabels.includes(l))) && !labels.some((l) => ["doğum tarihi", "ölüm tarihi", "eşi"].includes(l))) {
+  if (
+    (isOrgText || labels.some((l) => orgLabels.includes(l))) &&
+    !labels.some((l) => ["doğum tarihi", "ölüm tarihi", "eşi"].includes(l))
+  ) {
     return "organization";
   }
 
   // 2. Kişi / Biyografi (Person) Kontrolü
   const personLabels = [
     "doğum tarihi",
+    "doğum",
     "ölüm tarihi",
+    "ölüm",
     "vatandaşlığı",
     "eşi",
     "çocukları",
@@ -477,38 +496,16 @@ function classifyEntity(infobox, query) {
   if (labels.some((l) => personLabels.includes(l))) {
     return "person";
   }
-  const personKeywords = [
-    "türk siyasetçi",
-    "türk oyuncu",
-    "türk yazar",
-    "türk futbolcu",
-    "türk akademisyen",
-    "devlet adamı",
-    "cumhurbaşkanı",
-    "başbakan",
-    "şair",
-    "yazar",
-    "oyuncu",
-    "müzisyen",
-    "besteci",
-    "ressam",
-    "futbolcu",
-    "basketbolcu",
-    "bilim insanı",
-    "profesör",
-    "tarihçi",
-    "şarkıcı",
-    "sanatçı",
-    "müzisyen",
-    "şarkı yazarı",
-    "internet ünlüsü",
-    "fenomen",
-    "spiker",
-    "sunucu",
-    "yönetmen",
-    "yapımcı",
-  ];
-  if (personKeywords.some((k) => text.includes(k))) {
+
+  // Kurucusu olan veya kuruluş bilgisi olan bir varlık kişi olamaz
+  if (labels.includes("kurucu") || labels.includes("kuruluş")) {
+    return "organization";
+  }
+
+  // Kelime sınırları kontrolü ile yanıltıcı eşleşmeleri önle (örn: "yazarların" -> yazar olmamalı)
+  const personKeywordsRegex =
+    /\b(türk siyasetçi|türk oyuncu|türk yazar|türk futbolcu|türk akademisyen|devlet adamı|cumhurbaşkanı|başbakan|şair|yazar|oyuncu|müzisyen|besteci|ressam|futbolcu|basketbolcu|bilim insanı|profesör|tarihçi|şarkıcı|sanatçı|şarkı yazarı|internet ünlüsü|fenomen|spiker|sunucu|yönetmen|yapımcı)\b/i;
+  if (personKeywordsRegex.test(text)) {
     return "person";
   }
 
@@ -753,7 +750,7 @@ async function solveInstantQuery(query, customFetch = fetch) {
 async function fetchWikipediaFallback(query, customFetch = fetch) {
   if (!query || query.length < 2) return null;
   const qClean = query.trim().replace(/[?.,!]+$/, "");
-  if (qClean.split(/\s+/).length > 3) return null;
+  if (qClean.split(/\s+/).length > 6) return null;
 
   try {
     const qNorm = normalizeTr(qClean);
@@ -765,7 +762,7 @@ async function fetchWikipediaFallback(query, customFetch = fetch) {
         const wikiUrl = `https://tr.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(v)}`;
         const res = await customFetch(wikiUrl, {
           headers: { "User-Agent": "Kepce/1.0 (bilgi@kepce.org)" },
-          signal: AbortSignal.timeout(1200),
+          signal: AbortSignal.timeout(1800),
         });
 
         if (res.ok) {
@@ -776,7 +773,7 @@ async function fetchWikipediaFallback(query, customFetch = fetch) {
             if (tNorm === qNorm || tNorm.includes(qNorm) || qNorm.includes(tNorm)) {
               const raw = {
                 title: data.title,
-                content: data.extract,
+                content: cleanLeadParentheses(data.extract),
                 imgSrc: data.thumbnail?.source || "",
                 urls: [{ title: "Vikipedi", url: data.content_urls?.desktop?.page || `https://tr.wikipedia.org/wiki/${encodeURIComponent(data.title)}` }],
                 attributes: [],
@@ -827,7 +824,7 @@ function isSpamResult(item) {
 async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, instantAnswer, customFetch }) {
   try {
     const res = await customFetch(`${searxUrl.replace(/\/+$/, "")}/search?${searchParams.toString()}`, {
-      signal: AbortSignal.timeout(3500),
+      signal: AbortSignal.timeout(6000),
     });
 
     if (!res.ok) {
@@ -871,6 +868,7 @@ async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, insta
           content: item.content || "",
           imgSrc: fullImg,
           thumbnailSrc: thumb,
+          thumbnail: thumb, // Geriye dönük ve bileşen uyumluluğu
           width,
           height,
           aspectRatio,
@@ -910,7 +908,7 @@ async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, insta
       yildiz: "Yıldız Teknik Üniversitesi (YTÜ)",
     };
 
-    const rawInfoboxes = (data.infoboxes || [])
+    const mappedInfoboxes = (data.infoboxes || [])
       .map((box) => {
         let title = box.infobox || box.title || "";
         const qNorm = normalizeTr(q);
@@ -952,14 +950,26 @@ async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, insta
           }
         }
 
+        const rawContent = (box.content || "").trim();
+        const rawEngine = box.engine || (box.engines && box.engines[0]) || "";
+
+        // Wikidata'dan gelen kısa tek satırlık açıklamayı başlık altındaki alt başlık (tagline) olarak al
+        let tagline = "";
+        if (rawEngine === "wikidata" || rawContent.length < 120) {
+          if (rawContent) {
+            tagline = rawContent.charAt(0).toUpperCase() + rawContent.slice(1);
+          }
+        }
+
         const rawBox = {
           title,
           id: box.id || "",
-          content: box.content || "",
+          content: rawContent,
+          tagline,
           imgSrc: foundImg,
           urls: cleanUrls(box.urls || (box.id ? [{ title: "Vikipedi", url: box.id }] : [])),
           attributes: cleanAttrs,
-          engine: box.engine || (box.engines && box.engines[0]) || "",
+          engine: rawEngine,
         };
 
         return {
@@ -970,13 +980,87 @@ async function fetchSearxData({ effectiveQuery, searxUrl, searchParams, q, insta
       })
       .filter((box) => isRelevantInfobox(q, box));
 
-    let infoboxes = rawInfoboxes;
+    // 2. Wikidata ve Vikipedi bilgi kartlarını birleştirme (Merge)
+    let infoboxes = [];
+    if (mappedInfoboxes.length > 1) {
+      // Çoklu kart varsa: zengin metin içeren kartı gövde, Wikidata'yı ise nitelik ve tagline olarak harmanla
+      const textRichBox = mappedInfoboxes.find((b) => b.content && b.content.length > 120) || mappedInfoboxes[0];
+      const attrRichBox = mappedInfoboxes.find((b) => b.attributes && b.attributes.length > 0) || mappedInfoboxes[0];
+      const taglineBox = mappedInfoboxes.find((b) => b.tagline) || null;
 
-    // Eğer SearXNG'den infobox gelmediyse hızlı Wikipedia özet kontrolü yap
-    if (infoboxes.length === 0) {
+      // Nitelikleri tekrarsız birleştir
+      const mergedAttrs = [...(attrRichBox.attributes || [])];
+      for (const a of textRichBox.attributes || []) {
+        if (!mergedAttrs.some((ma) => ma.label.toLowerCase() === a.label.toLowerCase())) {
+          mergedAttrs.push(a);
+        }
+      }
+
+      // Bağlantıları tekrarsız birleştir
+      const mergedUrls = [...(textRichBox.urls || [])];
+      for (const u of attrRichBox.urls || []) {
+        if (!mergedUrls.some((mu) => (mu.url || "").toLowerCase() === (u.url || "").toLowerCase())) {
+          mergedUrls.push(u);
+        }
+      }
+
+      const mergedBox = {
+        title: textRichBox.title || attrRichBox.title,
+        id: textRichBox.id || attrRichBox.id,
+        content: cleanLeadParentheses(textRichBox.content || attrRichBox.content || ""),
+        tagline: taglineBox?.tagline || (attrRichBox.tagline !== textRichBox.content ? attrRichBox.tagline : "") || "",
+        imgSrc: textRichBox.imgSrc || attrRichBox.imgSrc || "",
+        urls: mergedUrls,
+        attributes: mergedAttrs,
+        engine: "merged",
+        entityType: classifyEntity({ ...textRichBox, attributes: mergedAttrs }, q),
+        placeInfo: textRichBox.placeInfo || attrRichBox.placeInfo || null,
+      };
+
+      infoboxes = [mergedBox];
+    } else if (mappedInfoboxes.length === 1) {
+      infoboxes = [...mappedInfoboxes];
+    }
+
+    // 3. Eğer bilgi kartı tek satırlık kısa bir tanımsa (Wikidata tek satır durumu), Vikipedi REST API'sinden zengin özet çek
+    if (infoboxes.length > 0) {
+      const primary = infoboxes[0];
+      if (!primary.content || primary.content.length < 120 || primary.engine === "wikidata") {
+        try {
+          // Vikipedi bağlantısından veya başlıktan makale adını bul
+          let targetWikiTitle = primary.title;
+          const wikiUrlObj = (primary.urls || []).find((u) => (u.url || "").includes("wikipedia.org/wiki/"));
+          if (wikiUrlObj?.url) {
+            const m = wikiUrlObj.url.match(/wikipedia\.org\/wiki\/([^#?]+)/);
+            if (m && m[1]) {
+              targetWikiTitle = decodeURIComponent(m[1]).replace(/_/g, " ");
+            }
+          }
+
+          const wikiData = await fetchWikipediaFallback(targetWikiTitle, customFetch);
+          if (wikiData && wikiData.content) {
+            if (!primary.tagline && primary.content) {
+              primary.tagline = primary.content.charAt(0).toUpperCase() + primary.content.slice(1);
+            }
+            primary.content = cleanLeadParentheses(wikiData.content);
+            if (!primary.imgSrc && wikiData.imgSrc) {
+              primary.imgSrc = wikiData.imgSrc;
+            }
+            if (!primary.urls.some((u) => (u.url || "").includes("wikipedia.org"))) {
+              primary.urls.unshift({ title: "Vikipedi", url: `https://tr.wikipedia.org/wiki/${encodeURIComponent(targetWikiTitle)}` });
+            }
+          }
+        } catch {
+          // ignore
+        }
+      }
+      primary.content = cleanLeadParentheses(primary.content);
+    } else {
+      // Eğer SearXNG'den hiç infobox gelmediyse doğrudan hızlı Wikipedia özet kontrolü yap
       try {
         const wikiFallback = await fetchWikipediaFallback(q, customFetch);
         if (wikiFallback && isRelevantInfobox(q, wikiFallback)) {
+          wikiFallback.content = cleanLeadParentheses(wikiFallback.content);
           infoboxes = [wikiFallback];
         }
       } catch {

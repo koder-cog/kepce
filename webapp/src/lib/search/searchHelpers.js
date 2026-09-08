@@ -106,15 +106,63 @@ export function highlightQuery(text, query) {
   return safe.replace(regex, "<strong>$1</strong>");
 }
 
-export function getYoutubeEmbedUrl(url) {
+export function getYoutubeId(url) {
   if (!url) return null;
   const m = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
   );
-  if (m) {
-    return `https://www.youtube-nocookie.com/embed/${m[1]}?autoplay=1`;
+  return m ? m[1] : null;
+}
+
+export function getYoutubeEmbedUrl(url) {
+  const id = getYoutubeId(url);
+  if (id) {
+    return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
   }
   return null;
+}
+
+export function getYoutubeThumbnail(url) {
+  const id = getYoutubeId(url);
+  return id ? `https://i.ytimg.com/vi/${id}/hqdefault.jpg` : null;
+}
+
+/**
+ * Vikipedi ve bilgi kartı metinlerindeki ansiklopedik telaffuz, IPA ve
+ * doğum/ölüm tarih parantezlerini temizleyerek akıcı bir başlangıç sunar.
+ */
+export function cleanLeadParentheses(text) {
+  if (!text) return "";
+  let str = text.trim();
+
+  // 1. Telaffuz ve IPA parantezleri (örn: (İngilizce telaffuz: [ˈpaɪθɑːn]), ([paʁi]))
+  str = str.replace(/\s*\((?:[A-Za-zÇĞİÖŞÜçğıöşü\s]+telaffuz:\s*)?\[[^\]]+\]\)/gi, "");
+  str = str.replace(/\s*\([A-Za-zÇĞİÖŞÜçğıöşü\s]+telaffuz:\s*[^)]+\)/gi, "");
+
+  // 2. İlk cümledeki yabancı dil / orijinal ad parantezleri (örn: (İngilizce: London), (Japonca: 東京))
+  str = str.replace(
+    /^([^.!?\n]{1,80}?)\s*\((?:İngilizce|Fransızca|Almanca|Arapça|Farsça|Rusça|Yunanca|Latince|Japonca|Çince|Osmanlıca|İtalyanca|İspanyolca|Korece):\s*[^)]+\)/i,
+    "$1"
+  );
+
+  // 3. İlk cümledeki doğum-ölüm tarih parantezleri (örn: (14 Mart 1879 – 18 Nisan 1955), (1881 – 1938))
+  str = str.replace(
+    /^([^.!?\n]{1,80}?)\s*\(\s*(?:d\.\s*|ö\.\s*)?(?:\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]+\s+)?\d{3,4}[^)]*(?:–|-)[^)]*\d{3,4}[^)]*\)/i,
+    "$1"
+  );
+  str = str.replace(
+    /^([^.!?\n]{1,80}?)\s*\(\s*(?:d\.\s*|ö\.\s*)\d{3,4}[^)]*\)/i,
+    "$1"
+  );
+
+  // Noktalama ve boşluk düzeltmesi (örn: "Atatürk , Türk" -> "Atatürk, Türk")
+  str = str
+    .replace(/\s+([,.:;!?])/g, "$1")
+    .replace(/([,.:;!?])\1+/g, "$1")
+    .replace(/\s{2,}/g, " ")
+    .trim();
+
+  return str;
 }
 
 export function buildSearchUrl(params, isSubdomain = false) {

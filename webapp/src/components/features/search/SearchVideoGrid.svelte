@@ -1,6 +1,7 @@
 <script>
   import {
     getYoutubeEmbedUrl,
+    getYoutubeThumbnail,
     formatUrlBreadcrumb,
   } from "$lib/search/searchHelpers.js";
   import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
@@ -14,6 +15,8 @@
 <div class="c-search-videos-grid">
   {#each results as item, idx}
     {@const embedUrl = getYoutubeEmbedUrl(item.url)}
+    {@const ytThumb = getYoutubeThumbnail(item.url)}
+    {@const thumbUrl = item.thumbnailSrc || item.thumbnail || item.imgSrc || ytThumb}
     <article class="c-search-video-card" style="--index: {idx}">
       {#if activeVideoEmbed === item.url && embedUrl}
         <div class="c-search-video-embed-wrap">
@@ -28,12 +31,18 @@
         </div>
       {:else}
         <div class="c-search-video-thumb-wrap">
-          {#if item.thumbnail || item.imgSrc}
+          {#if thumbUrl}
             <img
-              src={item.thumbnail || item.imgSrc}
+              src={thumbUrl}
               alt={item.title}
               class="c-search-video-thumb"
               loading="lazy"
+              decoding="async"
+              onerror={(e) => {
+                if (ytThumb && e.currentTarget.src !== ytThumb) {
+                  e.currentTarget.src = ytThumb;
+                }
+              }}
             />
           {/if}
           {#if embedUrl}
