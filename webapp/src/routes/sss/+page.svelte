@@ -11,8 +11,18 @@
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
-          { "@type": "ListItem", position: 2, name: "Sıkça Sorulan Sorular", item: "https://kepce.org/sss" },
+          {
+            "@type": "ListItem",
+            position: 1,
+            name: "Ana Sayfa",
+            item: "https://kepce.org/",
+          },
+          {
+            "@type": "ListItem",
+            position: 2,
+            name: "Sıkça Sorulan Sorular",
+            item: "https://kepce.org/sss",
+          },
         ],
       },
       {
@@ -56,12 +66,21 @@
     Menü verilerini nereden alıyorsunuz?
   </h2>
   <p>
-    Elime geçen listelerden (biz de yurtta kalıyoruz sonuçta), veri
-    erişimine olanak sağlayan diğer sitelerden ve diğer yurt mağdurlarının
-    gönderdiği eklerden derleniyor. Elinizde menü varsa <a
-      href="/menu-gonder"
-      data-link>şuracıktan</a
+    Elime geçen listelerden (biz de yurtta kalıyoruz sonuçta), veri erişimine
+    olanak sağlayan diğer sitelerden ve diğer yurt mağdurlarının gönderdiği
+    eklerden derleniyor. Elinizde menü varsa <a href="/menu-gonder" data-link
+      >şuracıktan</a
     > göndermeniz beni müteşekkir kılar.
+  </p>
+
+  <h2 id="butun-yurtlarda-ayni-yemek-mi-cikiyor">
+    Türkiye'deki bütün KYK yurtlarında aynı yemek mi çıkıyor?
+  </h2>
+  <p>
+    Hayır, her ilin Gençlik ve Spor İl Müdürlüğü kendi yemek ihalesini ayrı
+    açıyor yani Ankara'da kavurma varken İzmir'de pırasayla imtihan ediliyor
+    olabilirsiniz ancak aynı il sınırları içindeki tüm devlet yurtlarında menü
+    ortaktır.
   </p>
 
   <h2 id="hata-verirse-ne-yapmaliyim">
@@ -70,27 +89,25 @@
   <p>
     Önce telefonu yavaşça yere bırakın ve derin bir nefes alın zira mutfaktaki
     aşçının o gün eşiyle kavga etmiş olması veya salçanın kamyonda kalması gibi
-    kelebek etkileri menüyü değiştirebilir. Ayrıca 81 ilde kuantum
-    dolanıklığına sahip olmadığım için bütün menüleri doğrulayamam.
+    kelebek etkileri menüyü değiştirebilir. Ayrıca 81 ilde kuantum dolanıklığına
+    sahip olmadığım için bütün menüleri doğrulayamam.
   </p>
   <p>
     Eğer site hata veriyorsa, muhtemelen sunucu o anki yükü kaldıramamıştır.
     Hata koduna ve açıklamasına bakın (404, 500 vb.), sitede standart HTTP
-    kodları kullanıldığı için arama motoruna yazdığınızda ne olduğu doğrudan çıkar,
-    eğer gösteremezse <a
-      href="/iletisim"
-      data-link>iletişim</a
-    > sayfası her zaman açıktır. Menü yanlışsa "Hata Bildir" butonuna bastığınız
-    takdirde size bazı güzellikler olabilir (olmayabilir de).
+    kodları kullanıldığı için arama motoruna yazdığınızda ne olduğu doğrudan
+    çıkar, eğer gösteremezse <a href="/iletisim" data-link>iletişim</a> sayfası her
+    zaman açıktır. Menü yanlışsa "Hata Bildir" butonuna bastığınız takdirde size
+    bazı güzellikler olabilir (olmayabilir de).
   </p>
 
   <h2 id="neden-agpl-v3">Neden AGPL v3 lisansı?</h2>
   <p>
-    "Kimse kodu alıp kapatmasın" fikri hoşuma gitti. MIT seçebilirdim,
-    Apache seçebilirdim ancak gönlüm en katı copyleft lisanslardan birini seçti.
-    Artı olarak bu projeyi açık kaynak yapmak; açıkların bulunmasını ve ben
-    mezun olunca bu bayrağı başka bir öğrencinin taşımasını kolaylaştırır...
-    eğer taşıyacak biri olursa tabii.
+    "Kimse kodu alıp kapatmasın" fikri hoşuma gitti. MIT seçebilirdim, Apache
+    seçebilirdim ancak gönlüm en katı copyleft lisanslardan birini seçti. Artı
+    olarak bu projeyi açık kaynak yapmak; açıkların bulunmasını ve ben mezun
+    olunca bu bayrağı başka bir öğrencinin taşımasını kolaylaştırır... eğer
+    taşıyacak biri olursa tabii.
   </p>
 
   <h2 id="kepce-bot-nedir">Kepçe Bot Nedir?</h2>
@@ -101,8 +118,8 @@
   </p>
   <p>
     Yemek menülerinin yanında zuhur eden Kepçe Bot ise, bir dil modeli
-    kullanılarak ayda bir çalıştırılır ve o ayın her günü için teker teker
-    menü yorumu üretir. Amacı, deneyime ufak tefek teknolojik fanteziler katmaktır.
+    kullanılarak ayda bir çalıştırılır ve o ayın her günü için teker teker menü
+    yorumu üretir. Amacı, deneyime ufak tefek teknolojik fanteziler katmaktır.
   </p>
 
   <h2 id="kepce-botu-kapatabilir-miyim">Kepçe Bot'u (YZ) Kapatabilir miyim?</h2>
