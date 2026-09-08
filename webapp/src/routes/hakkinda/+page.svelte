@@ -105,7 +105,7 @@
   </ul>
 
   <p>
-    Menülere yorum yazmak, toplulukla sohbet etmek veya API'den faydalanmak
+    Menülere yorum yazmak ve toplulukla etkileşime geçmek
     isterseniz <a href="/kayit">kayıt olabilir</a>; halihazırda bir Kepçe
     kullanıcısıysanız doğrudan <a href="/giris">giriş yapabilirsiniz</a>.
   </p>

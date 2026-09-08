@@ -68,7 +68,7 @@
         subtitle:
           "Yurdunda verilen Al Götür kahvaltı/öğün paketlerinin içeriğini veya fotoğraflarını paylaş.",
         fileLabel: "Al Götür Belgesi veya Fotoğrafı",
-        fileHint: ".png, .jpg, .pdf veya .xlsx (Dosya başı maks 10MB)",
+        fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
       };
     }
     if (contributionType === "fiyat-listesi") {
@@ -77,7 +77,7 @@
         subtitle:
           "Yurt kantininde asılı olan resmi tavan fiyat listesinin fotoğrafını veya tablosunu paylaş.",
         fileLabel: "Kantin Fiyat Panosu veya Belgesi",
-        fileHint: ".png, .jpg, .pdf veya .xlsx (Dosya başı maks 10MB)",
+        fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
       };
     }
     return {

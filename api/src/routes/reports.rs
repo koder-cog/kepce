@@ -6,7 +6,7 @@ use uuid::Uuid;
 
 use crate::{
     error::AppError,
-    extractors::auth::AuthenticatedUser,
+    extractors::auth::{AuthenticatedUser, OptionalUser},
     extractors::validated::ValidatedJson,
 };
 use shared::entities::{prelude::*, reports, sea_orm_active_enums::ReportStatusEnum};
@@ -38,7 +38,7 @@ pub struct UpdateReportStatusDto {
 
 async fn submit_report(
     State(state): State<crate::config::AppState>,
-    user: AuthenticatedUser,
+    user: OptionalUser,
     ValidatedJson(payload): ValidatedJson<SubmitReportDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     if (payload.reason == "other" || payload.reason == "bot_other" || payload.reason == "Diğer")
@@ -46,8 +46,10 @@ async fn submit_report(
             return Err(AppError::BadRequest("Lütfen detaylı açıklama giriniz.".to_string()));
         }
 
+    let reporter_id = user.0.as_ref().map(|u| u.id);
+
     let mut report = reports::ActiveModel {
-        reporter_id: Set(user.id),
+        reporter_id: Set(reporter_id),
         reason: Set(Some(payload.reason)),
         description: Set(payload.description),
         status: Set(ReportStatusEnum::Pending),
@@ -60,12 +62,14 @@ async fn submit_report(
             let comment_exists = Comments::find_by_id(comment_id).one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?.is_some();
             if !comment_exists { return Err(AppError::NotFound("Yorum bulunamadı.".into())); }
             
-            let existing_report = Reports::find()
-                .filter(reports::Column::ReporterId.eq(user.id))
-                .filter(reports::Column::ReportedCommentId.eq(comment_id))
-                .filter(reports::Column::Status.eq(ReportStatusEnum::Pending))
-                .one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
-            if existing_report.is_some() { return Err(AppError::BadRequest("Zaten şikayetiniz var.".into())); }
+            if let Some(uid) = reporter_id {
+                let existing_report = Reports::find()
+                    .filter(reports::Column::ReporterId.eq(uid))
+                    .filter(reports::Column::ReportedCommentId.eq(comment_id))
+                    .filter(reports::Column::Status.eq(ReportStatusEnum::Pending))
+                    .one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+                if existing_report.is_some() { return Err(AppError::BadRequest("Zaten şikayetiniz var.".into())); }
+            }
             
             report.reported_comment_id = Set(Some(comment_id));
             report.r#type = Set(Some("comment".into()));

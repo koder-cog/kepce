@@ -261,6 +261,10 @@
   }
 
   @media (max-width: 600px) {
+    .day-selector-wrapper {
+      margin-bottom: var(--space-md);
+    }
+
     .calendar-grid__day {
       font-size: var(--text-xs);
       padding: var(--space-xs);

@@ -17,7 +17,7 @@
         "@type": "Article",
         headline: "KYK Beslenme Yardımı",
         description:
-          "KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.",
+          "KYK yurtlarında beslenme yardımı, fiks menü işleyişi, günlük kota ve tavan fiyat kuralları.",
         datePublished: "2026-08-20",
         dateModified: "2026-08-20",
         inLanguage: "tr-TR",
@@ -39,7 +39,7 @@
 
 <Seo
   title="2026-2027 KYK Beslenme Yardımı Ne Kadar? (Günlük Ücret & Limit) | Kepçe"
-  description="2026-2027 KYK beslenme yardımı kaç TL oldu? Kahvaltı ve akşam yemeği günlük limitleri, tabldot farkı ve hesaplama rehberi."
+  description="2026-2027 KYK beslenme yardımı kaç TL oldu? Kahvaltı ve akşam yemeği günlük limitleri, fiks menü işleyişi ve hesaplama rehberi."
   image="https://kepce.org/api/v1/public/og/page/rehber"
   canonical="https://kepce.org/kyk-beslenme-yardimi"
   schema={guideSchema}
@@ -55,22 +55,16 @@
     yatmaz; doğrudan yemekhane kasalarında indirim fişi olarak kullanılır.
   </p>
 
-  <h2>Tabldot ve Alakart Nedir?</h2>
+  <h2>Menü Düzeni ve Fiks Menü Mantığı</h2>
   <p>
-    Yemekhaneye ilk kez girenlerin en çok karıştırdığı iki kavram şunlardır:
+    KYK yurt yemekhanelerinde yemek servisi fiks menü (standart tabldot) olarak verilir.
+    Her öğünde mutfak tarafından belirlenen 4 kap yemek sunulur: çorba, ana yemek,
+    yan yemek ve tamamlayıcı bir ürün (tatlı, meyve veya yoğurt).
   </p>
   <p>
-    Tabldot: O gün mutfağın belirlediği standart fiks menüdür. Genellikle çorba,
-    ana yemek, yan yemek ve tamamlayıcı bir ürün (tatlı, meyve, yoğurt vb.)
-    olmak üzere 4 kaptan oluşur. Tabldot menünün toplam fiyatı, o öğün için
-    tanımlanan devlet beslenme yardımına tam denk gelecek şekilde ayarlanır.
-    Yani standart tabldot menü aldığınızda cebinizden ekstra para çıkmaz.
-  </p>
-  <p>
-    Alakart: Büfede sergilenen yemeklerden kendi isteğinize göre tek tek seçim
-    yapmanızdır. Örneğin tabldot ana yemeği yerine tost, sandviç, pide, lahmacun
-    veya ekstra tatlı/içecek seçebilirsiniz. Bu ürünlerin her birinin gramajına
-    göre resmi birim fiyatı vardır.
+    Devlet tarafından tanımlanan günlük beslenme yardımı tutarı, bu standart tabldot menünün
+    ücretini tam olarak karşılayacak şekilde ayarlanır. Dolayısıyla menüyü eksiksiz
+    aldığınızda cebinizden herhangi bir ek ücret çıkmaz.
   </p>
 
   <h2>Kota Nasıl İşler?</h2>
@@ -81,27 +75,26 @@
   </p>
   <p>
     Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanmadığınız yardım
-    hakkı o gün bittiğinde sıfırlanır, birikmez veya nakit olarak geri alınamaz.
+    hakkı o gün bittiğinde sıfırlanır, sonraki güne devretmez veya nakit olarak geri alınamaz.
   </p>
 
-  <h2>Limit Aşımı Durumunda Ne Olur?</h2>
+  <h2>Ekstra Seçenekler ve Limitler</h2>
   <p>
-    Alakart ürünler seçtiğinizde ve sepet tutarınız o öğünün beslenme yardım
-    limitini aştığında, aradaki farkı kasada banka kartı, kredi kartı veya nakit
-    ile ödeyerek alışverişinizi tamamlayabilirsiniz.
+    Yemekhanelerde standart menü haricinde sunulan ilave ürün veya kantin seçimlerinde
+    Bakanlığın belirlediği resmi tavan fiyatlar geçerlidir. Yardım limitini aşan
+    ekstra taleplerde aradaki fark kasada banka kartı, kredi kartı veya nakit ile ödenir.
   </p>
 
   <h2>Yurttan İzinli Olduğunuz Günler</h2>
   <p>
     Hafta sonu izne çıktığınızda veya tatil dönemlerinde yemekhaneyi
-    kullanmadığınız günlerin beslenme yardımı kaybolur, geriye dönük hak talep
+    kullanmadığınız günlerin beslenme yardımı geçerliliğini yitirir, geriye dönük hak talep
     edilemez.
   </p>
   <p>
     Bugün şehrinizde hangi tabldot menünün çıktığını ve besin değerlerini görmek
-    için <a href="/" data-link>ana sayfaya</a> bakabilir, alakart büfeden yapacağınız
-    seçimlerin resmi tavan fiyatlarını ve fiş farkını ise aşağıdaki hesaplayıcıdan
-    inceleyebilirsiniz.
+    için <a href="/" data-link>ana sayfaya</a> bakabilir, resmi tavan fiyat listesini ve
+    yardım hesaplamasını aşağıdaki tablodan inceleyebilirsiniz.
   </p>
 
   <PricingCalculator />

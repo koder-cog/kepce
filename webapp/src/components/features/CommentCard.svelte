@@ -17,6 +17,7 @@
     import { openSpamInfoModal } from "../../lib/dom/spam-modal.js";
     import { createModal } from "./modal.js";
     import { initCharCounter } from "../../utils/char-counter.js";
+    import { openCommentReportModal } from "./report-modal.js";
 
     let { comment, depth = 0, menuId, onloadData } = $props();
 
@@ -228,16 +229,19 @@
 
     async function handleDropdownAction(action, e) {
         if (e) e.stopPropagation();
+
+        if (action === "report") {
+            openCommentReportModal(comment);
+            return;
+        }
+
         if (!globalState?.user) {
             authActions.triggerLogin();
             return;
         }
 
         try {
-            if (action === "report") {
-                await api.reportComment(comment.id);
-                showToast("Şikayetin alındı, moderatörlerimize ilettik.");
-            } else if (action === "block") {
+            if (action === "block") {
                 await api.blockUser(comment.user.id);
                 showToast(`${comment.user.nickname} engellendi.`);
             } else if (action === "delete") {

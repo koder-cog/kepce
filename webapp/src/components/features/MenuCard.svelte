@@ -735,10 +735,6 @@
                         role="menuitem"
                         onclick={(e) => {
                             isMoreMenuOpen = false;
-                            if (!globalState?.user) {
-                                authActions.triggerLogin();
-                                return;
-                            }
                             openMenuReportModal(menu, e.currentTarget);
                         }}
                     >

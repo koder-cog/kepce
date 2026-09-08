@@ -5,26 +5,29 @@
  * dikkate alarak taşmayı engeller ve max-height'ı dinamik olarak hesaplar.
  */
 export function popover(node, params) {
-    let { triggerEl, align = 'left' } = params;
+    let { triggerEl, align = 'left', disabled = false } = params || {};
 
     const GAP = 4;       // Trigger ile menü arası boşluk (px)
     const EDGE = 16;     // Ekran kenarından minimum mesafe (px)
     const MAX_H = 300;   // Mutlak max yükseklik sınırı (px)
 
-    function computePosition() {
-        if (!triggerEl || !node) return;
+    function clearStyles() {
+        if (!node) return;
+        node.style.position = '';
+        node.style.top = '';
+        node.style.bottom = '';
+        node.style.left = '';
+        node.style.right = '';
+        node.style.transformOrigin = '';
+        node.style.maxHeight = '';
+        node.style.width = '';
+        node.style.minWidth = '';
+    }
 
-        // Modal modda popover konumlandırması devre dışı
-        if (node.classList.contains('c-menu--modal')) {
-            node.style.position = '';
-            node.style.top = '';
-            node.style.bottom = '';
-            node.style.left = '';
-            node.style.right = '';
-            node.style.transformOrigin = '';
-            node.style.maxHeight = '';
-            node.style.width = '';
-            node.style.minWidth = '';
+    function computePosition() {
+        if (!node) return;
+        if (disabled || !triggerEl || node.classList.contains('c-menu--modal')) {
+            clearStyles();
             return;
         }
 
@@ -116,9 +119,14 @@ export function popover(node, params) {
 
     return {
         update(newParams) {
-            triggerEl = newParams.triggerEl;
-            align = newParams.align || 'left';
-            computePosition();
+            triggerEl = newParams?.triggerEl;
+            align = newParams?.align || 'left';
+            disabled = Boolean(newParams?.disabled);
+            if (disabled) {
+                clearStyles();
+            } else {
+                computePosition();
+            }
         },
         destroy() {
             window.removeEventListener('resize', updatePosition);

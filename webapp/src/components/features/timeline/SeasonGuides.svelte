@@ -11,7 +11,7 @@
         <div class="season-guides__content">
             <span class="season-guides__title">Beslenme Yardımı</span>
             <span class="season-guides__desc">
-                KYK yurtlarında beslenme yardımı, tabldot ve alakart farkı, kota ve limit aşımı kuralları.
+                KYK yurtlarında beslenme yardımı, fiks menü işleyişi ve günlük kota kuralları.
             </span>
         </div>
         <span class="season-guides__arrow" aria-hidden="true">

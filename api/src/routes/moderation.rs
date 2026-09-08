@@ -652,11 +652,15 @@ async fn get_complaints(
             None
         };
         
-        let reporter_username = Users::find_by_id(r.reporter_id)
-            .one(&db)
-            .await
-            .map_err(|e| AppError::Internal(e.to_string()))?
-            .map(|u| u.username);
+        let reporter_username = if let Some(rid) = r.reporter_id {
+            Users::find_by_id(rid)
+                .one(&db)
+                .await
+                .map_err(|e| AppError::Internal(e.to_string()))?
+                .map(|u| u.username)
+        } else {
+            None
+        };
             
         let created_at_str = r.created_at.map(|dt| dt.to_rfc3339());
         

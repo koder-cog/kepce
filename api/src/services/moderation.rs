@@ -76,7 +76,7 @@ impl ModerationService {
         }
 
         let new_report = reports::ActiveModel {
-            reporter_id: Set(reporter_id),
+            reporter_id: Set(Some(reporter_id)),
             reported_comment_id: Set(Some(reported_comment_id)),
             reason: Set(Some(reason)),
             status: Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending),

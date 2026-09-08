@@ -57,7 +57,7 @@ body.is-app .statistics-page__title {
 html.is-app .c-toast-container,
 body.is-app .c-toast-container {
   bottom: calc(var(--native-tabbar-height, 76px) + 12px) !important;
-  z-index: 99999 !important;
+  z-index: var(--z-toast) !important;
 }
 
 /* 4. Menü Yorum Alanı & Mobil Yorum Giriş Kapsülü (Tab-Bar gizli olduğundan doğrudan alt insets'e oturur) */
@@ -72,7 +72,7 @@ body.is-app .comments-page {
   body.is-app .ci-container {
     bottom: 0 !important;
     padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px) !important;
-    z-index: 100 !important;
+    z-index: var(--z-sticky) !important;
     transition: bottom var(--dur-fast) var(--ease-standard) !important;
   }
 }

@@ -175,13 +175,13 @@
                     >
                 {/if}
             {:else if variant === "responsive"}
-                {#if opt.icon}
-                    <span class="c-segmented-control__icon"
-                        >{@html opt.icon}</span
-                    >
-                {/if}
-                {#if opt.label}
+                {#if opt.icon && opt.label}
+                    <span class="c-segmented-control__icon">{@html opt.icon}</span>
                     <span class="c-segmented-control__label">{opt.label}</span>
+                {:else if opt.icon}
+                    <span class="c-segmented-control__icon c-segmented-control__icon--standalone">{@html opt.icon}</span>
+                {:else if opt.label}
+                    <span class="c-segmented-control__label c-segmented-control__label--standalone">{opt.label}</span>
                 {/if}
             {:else}
                 <!-- Default (text) variant -->

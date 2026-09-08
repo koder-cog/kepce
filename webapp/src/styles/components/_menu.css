@@ -344,12 +344,12 @@
       left: 0 !important;
       right: 0 !important;
       bottom: 0 !important;
-      transform: translateY(100%) !important;
+      transform: translateY(100%);
       width: 100vw !important;
-      max-width: none;
+      max-width: 100vw !important;
       max-height: 80dvh !important;
       border-radius: var(--radius-xl) var(--radius-xl) 0 0;
-      transform-origin: bottom center !important;
+      transform-origin: bottom center;
       padding: var(--space-lg) var(--space-lg)
         calc(var(--space-lg) + env(safe-area-inset-bottom)) !important;
       background: var(--color-surface-elevated);
@@ -359,7 +359,7 @@
     }
 
     .c-menu--modal.c-menu--open {
-      transform: translateY(0) !important;
+      transform: translateY(0);
     }
 
     .c-menu--modal .c-menu__item--special {

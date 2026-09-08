@@ -151,7 +151,7 @@
     #app.is-app .banner--online {
         position: sticky;
         top: var(--native-header-height, 54px);
-        z-index: 900;
+        z-index: calc(var(--z-navbar) - 100);
         box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 }

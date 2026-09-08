@@ -422,7 +422,7 @@
         background: rgba(var(--color-background-rgb), 0.85);
         -webkit-backdrop-filter: blur(var(--blur-md));
         backdrop-filter: blur(var(--blur-md));
-        z-index: 1000;
+        z-index: var(--z-sticky);
         padding: var(--space-sm) var(--space-md);
         margin: 0;
         border-top: 1px solid var(--color-border);
@@ -1015,7 +1015,7 @@
     position: absolute;
     top: calc(100% + var(--space-xs));
     right: 0;
-    z-index: 999;
+    z-index: var(--z-popover);
     min-width: 160px;
     background: var(--color-card);
     border: 1px solid var(--color-border-light);

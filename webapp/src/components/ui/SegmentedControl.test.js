@@ -67,4 +67,33 @@ describe('SegmentedControl Component', () => {
     await fireEvent.keyDown(radiogroup, { key: 'Home' });
     expect(onChange).toHaveBeenNthCalledWith(4, 'tab1', expect.anything());
   });
+
+  it('renders responsive variant with paired and standalone options correctly', () => {
+    const responsiveOptions = [
+      { value: 'both', label: 'İkisi Var', icon: '<svg data-testid="icon-both"></svg>' },
+      { value: 'iconOnly', icon: '<svg data-testid="icon-only"></svg>' },
+      { value: 'labelOnly', label: 'Yazı Var' },
+    ];
+
+    const { container } = render(SegmentedControl, {
+      value: 'both',
+      options: responsiveOptions,
+      variant: 'responsive',
+    });
+
+    const buttons = container.querySelectorAll('.c-segmented-control__btn');
+    expect(buttons.length).toBe(3);
+
+    // First button has both icon and label
+    expect(buttons[0].querySelector('.c-segmented-control__icon')).toBeTruthy();
+    expect(buttons[0].querySelector('.c-segmented-control__label')).toBeTruthy();
+
+    // Second button has only icon (marked standalone)
+    expect(buttons[1].querySelector('.c-segmented-control__icon--standalone')).toBeTruthy();
+    expect(buttons[1].querySelector('.c-segmented-control__label')).toBeFalsy();
+
+    // Third button has only label (marked standalone)
+    expect(buttons[2].querySelector('.c-segmented-control__icon')).toBeFalsy();
+    expect(buttons[2].querySelector('.c-segmented-control__label--standalone')).toBeTruthy();
+  });
 });

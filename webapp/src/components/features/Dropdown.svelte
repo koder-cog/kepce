@@ -101,7 +101,11 @@
     });
 
     // ── Lifecycle ──────────────────────────────────────────────
-    function checkMobile() { isMobile = window.innerWidth <= 600; }
+    function checkMobile() {
+        if (typeof window !== 'undefined') {
+            isMobile = window.matchMedia('(max-width: 600px)').matches;
+        }
+    }
 
     onMount(() => {
         checkMobile();
@@ -168,6 +172,7 @@
     // ── Open / Close / Toggle ──────────────────────────────────
     async function open() {
         if (isOpen || disabled) return;
+        checkMobile();
         if (activeDropdownClose && activeDropdownClose !== close) activeDropdownClose();
         activeDropdownClose = close;
 
@@ -457,7 +462,7 @@
             class:c-menu--modal={useModal}
             role="listbox"
             use:portal
-            use:popover={{ triggerEl, align: 'left' }}
+            use:popover={{ triggerEl, align: 'left', disabled: useModal }}
         >
         {#if isLongList}
             <div class="c-menu__search">

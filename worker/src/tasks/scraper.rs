@@ -464,8 +464,22 @@ async fn fetch_and_save(
         body_text
     };
 
-    if !html_content.contains("cardStyle") && !html_content.contains("card-body") && html_content.len() > 100 {
-        let alert_msg = format!("KYK HTML şablon anomalisi algılandı! {} şehri için dönen HTML beklenenden farklı (`.cardStyle` bulunamadı).", city.name);
+    if !html_content.contains("cardStyle")
+        && !html_content.contains("card-body")
+        && !html_content.contains("Menü bulunamadı")
+        && !html_content.contains("bulunamadı")
+        && html_content.len() > 100
+    {
+        let sample: String = html_content
+            .chars()
+            .take(200)
+            .collect::<String>()
+            .replace('\n', " ")
+            .replace('\r', "");
+        let alert_msg = format!(
+            "KYK HTML şablon anomalisi algılandı! Şehir: {}, Öğün: {}, Shift: {}. Dönen içerik `.cardStyle` içermiyor. Kesit: `{}`",
+            city.name, kyk_meal_type, month_shift, sample.trim()
+        );
         tracing::warn!("{}", alert_msg);
         let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
     }

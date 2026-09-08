@@ -136,16 +136,16 @@
 
   /* ── Responsive Variant (Apple HIG Compact Icon Mode) ── */
 
-  /* Masaüstünde (>600px): Sadece yazı göster, ikonu gizle (HIG: Mix yasak) */
-  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon,
-  .c-segmented-control--responsive .c-segmented-control__icon {
+  /* Masaüstünde (>600px): İkonu gizle, sadece yazı göster (eğer yazı varsa) */
+  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone),
+  .c-segmented-control--responsive .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
     display: none;
   }
 
-  /* Mobilde (600px ve altı): Yazıyı gizle, ikonu göster (Kompakt Trailing Modu) */
+  /* Mobilde (600px ve altı): Yazıyı gizle, ikonu göster (eğer ikon varsa) */
   @media (max-width: 600px) {
-    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label,
-    .c-segmented-control--responsive .c-segmented-control__label {
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label:not(.c-segmented-control__label--standalone),
+    .c-segmented-control--responsive .c-segmented-control__label:not(.c-segmented-control__label--standalone) {
       display: none !important;
     }
 

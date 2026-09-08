@@ -256,7 +256,7 @@
   .pricing-calc__sticky-wrap {
     position: sticky;
     bottom: calc(var(--space-sm) + env(safe-area-inset-bottom, 0px));
-    z-index: var(--z-sticky, 100);
+    z-index: var(--z-sticky);
     margin-top: var(--space-xs);
     width: 100%;
   }
