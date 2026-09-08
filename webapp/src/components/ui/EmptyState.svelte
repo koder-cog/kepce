@@ -34,7 +34,7 @@
         ],
         "5xx": [
             { code: 500, title: "Sunucu içi hata", icon: "server", desc: "Sunucu tarafında beklenmedik bir aksilik çıktı. Arka planda bir şeyler ters gitmiş olmalı." },
-            { code: 501, title: "Uygulanmadı", icon: "server", desc: "Sunucu bu isteği yerine getirecek yeteneğe henüz sahip değil." },
+            { code: 501, title: "Henüz Hazır Değil", icon: "server", desc: "Bu özellik henüz kullanıma açılmadı; üzerinde çalışılıyor." },
             { code: 502, title: "Kötü ağ geçidi", icon: "server", desc: "Sunucular arası iletişimde bir kopukluk yaşandı." },
             { code: 503, title: "Hizmet yok", icon: "server", desc: "Şu an servis veremiyoruz. Muhtemelen bakım yapıyoruz veya içerisi çok kalabalık." },
             { code: 504, title: "Ağ geçidi zaman aşımı", icon: "timeout", desc: "Üst sunucudan zamanında yanıt alınamadı, arka taraf biraz meşgul görünüyor." },

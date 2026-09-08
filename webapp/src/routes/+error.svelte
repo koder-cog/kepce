@@ -4,6 +4,12 @@
 	import Seo from "@/components/ui/Seo.svelte";
 
 	let status = $derived($page.status);
+	let message = $derived($page.error?.message);
+	let customDesc = $derived(
+		message && message !== "Not Found" && message !== "Internal Error"
+			? message
+			: undefined
+	);
 </script>
 
 <Seo
@@ -13,7 +19,7 @@
 />
 
 <div class="error-page">
-	<EmptyState statusCode={status}>
+	<EmptyState statusCode={status} desc={customDesc}>
 		<button
 			class="btn btn--primary"
 			onclick={() => (window.location.href = "/")}
