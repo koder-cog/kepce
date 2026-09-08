@@ -1,12 +1,12 @@
-//! IndexNow otomasyonu (Faz 1 - 1.6).
+//! IndexNow arama motoru dizinleme otomasyonu.
 //!
-//! Scraper döngüsü sonunda, bu turda yeni INSERT edilen menülerin kanonik
-//! `/{sehir}/{tarih}` gün URL'leri tek POST ile IndexNow'a bildirilir.
+//! Scraper döngüsü sonunda yeni eklenen menülerin ait olduğu şehirler için kanonik
+//! `/{sehir}` hub URL'leri tek POST ile IndexNow'a bildirilir.
 //!
-//! KRİTİK (canonical uyumu): ASLA `/menu/{id}` URL'i gönderilmez - gün
-//! sayfası konsolidasyonu sonrası `/menu/{id}` ikincildir ve canonical'ı
-//! gün sayfasına işaret eder; kanonik olmayan URL bildirmek sinyal
-//! karmaşası yaratır.
+//! `/{sehir}` sayfaları kanoniktir; `/{sehir}/{tarih}` istekleri 301 ile query paramına
+//! (`/{sehir}?gun={tarih}`) yönlendiği, `/menu/{id}` ise ikincil kalıp canonical sinyalini
+//! şehir sayfasına devrettiği için IndexNow'a yalnızca doğrudan `/{sehir}` bildirilir.
+//!
 //!
 //! Env:
 //! - `INDEXNOW_KEY` (zorunlu; boş/atanmamışsa özellik kapalı - geriye uyumlu)
@@ -66,9 +66,9 @@ struct IndexNowPayload<'a> {
     url_list: Vec<String>,
 }
 
-/// Döngü sonunda çağrılır: kayıtlı yeni insert'leri gün URL'lerine çevirip
-/// IndexNow'a bildirir. Hata durumunda yalnızca `tracing::warn!` - asla
-/// scraper döngüsünü düşürmez. Kayıt listesi boşsa no-op.
+/// Döngü sonunda çağrılır: yeni eklenen menülerin şehirlerini kanonik URL'lere
+/// (`/{sehir}`) çevirip IndexNow'a bildirir. Hata durumunda yalnızca `tracing::warn!`
+/// basılır, scraper döngüsü kesintiye uğramaz. Kayıt listesi boşsa işlem yapmaz.
 pub async fn ping_new_day_urls(db: &DatabaseConnection, client: &Client, config: &IndexNowConfig) {
     if let Err(e) = ping_inner(db, client, config).await {
         tracing::warn!("IndexNow ping başarısız (döngü etkilenmez): {:?}", e);

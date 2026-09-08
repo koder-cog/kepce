@@ -1,5 +1,8 @@
-// Kepçe Worker - Task: Zamanlanmış Öğün Bildirim Görevcisi (Meal Notifier)
-// ======================================================================
+//! Zamanlanmış öğün web push bildirim görevcisi.
+//!
+//! Kullanıcıların şehir ve öğün abonelik tercihlerine göre günün menüsünü
+//! VAPID imzalı Web Push bildirimleri olarak gönderir.
+
 
 use anyhow::Result;
 use base64::Engine;

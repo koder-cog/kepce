@@ -1,5 +1,4 @@
-// Kepçe API - Dinamik OG Image Motoru (resvg + tiny-skia)
-// =======================================================
+//! Dinamik Open Graph (OG) görsel üretim motoru (resvg + tiny-skia).
 
 use std::sync::{Arc, OnceLock};
 use resvg::usvg::{self, fontdb, Tree};

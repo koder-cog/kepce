@@ -59,9 +59,7 @@ export function createModal(options) {
         },
         updateTitle: (newTitle) => {
             stateObj.title = newTitle;
-            // Hack to trigger reactivity if simple object mutation isn't picked up
-            // Ideally should be handled properly, but let's assume Svelte 5 catches object mutations if passed as state
-            // If it doesn't, we might need a workaround. Let's just mutate the DOM for backward compatibility if reactivity fails
+            // Svelte reaktivitesine ek olarak dinamik DOM başlığını senkronize et.
             const titleEl = modalElement.querySelector('.c-modal__title');
             if (titleEl) titleEl.textContent = newTitle;
         },

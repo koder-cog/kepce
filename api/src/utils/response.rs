@@ -1,5 +1,4 @@
-// Kepçe API - Utils: Response & HTTP Caching Helpers
-// ====================================================
+//! HTTP yanıt ve önbellekleme yardımcıları (ETag, Cache-Control).
 
 use axum::{
     body::Body,

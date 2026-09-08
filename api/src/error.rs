@@ -1,16 +1,9 @@
-// Kepçe API - Birleşik Hata Yönetimi
-// ====================================
-//
-// Tüm API genelinde tutarlı hata yanıtları sağlar.
-// Her route'ta tekrar tekrar (StatusCode, String) döndürmek yerine,
-// merkezi bir AppError enum'u kullanılır.
-//
-// Avantajları:
-//   - Her endpoint aynı hata formatını döndürür
-//   - Axum'ın IntoResponse trait'i ile otomatik dönüşüm
-//   - Hata loglama tek noktadan yapılır
-//
-// Örnek:
+//! Kepçe API birleşik hata yönetim katmanı.
+//!
+//! Route seviyesinde elle `(StatusCode, String)` türetmek yerine,
+//! `IntoResponse` trait'ini uygulayan merkezi `AppError` enum'u kullanılır.
+//! Bu sayede tüm endpoint'ler istemciye standart hata şemasında JSON yanıt döner.
+
 use axum::{
     http::StatusCode,
     response::{IntoResponse, Response},

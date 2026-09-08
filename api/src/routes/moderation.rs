@@ -1,9 +1,6 @@
-// Kepçe API - Routes: Moderasyon Endpoint'leri
-// ==============================================
-//
-// İnce zarf. ModerationService kullanır.
-// Tüm endpoint'ler kimlik doğrulaması gerektirir (AuthenticatedUser).
-//
+//! Topluluk denetimi, yorum moderasyonu ve rapor yönetim endpoint'leri.
+//!
+//! Yalnızca yetkili moderatör veya yönetici rolündeki kullanıcılar erişebilir.
 use axum::{
     routing::{get, post, put, delete},
     Router,

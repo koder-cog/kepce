@@ -19,8 +19,7 @@
     let freeText = $state('');
     let isSubmitting = $state(false);
 
-    // Görev #16: Yazılan yorum, kullanıcı sayfadan yanlışlıkla ayrılsa bile
-    // kaybolmasın diye menü+thread bazlı localStorage taslağı tutulur.
+    // Kullanıcı sayfadan ayrılsa bile metin kaybını önlemek için menü ve thread bazlı localStorage taslağı tutulur.
     let draftKey = $derived(
         menuObj?.id ? `kepce_comment_draft:${menuObj.id}:${parentId || 'root'}` : null
     );
@@ -31,19 +30,18 @@
             const saved = localStorage.getItem(draftKey);
             if (saved) {
                 freeText = saved;
-                // Görev #16 Hata Çözümü: Taslak yüklendiyse kullanıcının
-                // bunu görebilmesi için doğrudan "Serbest" moda geçir.
+                // Kaydedilmiş taslak varsa kullanıcının görebilmesi için doğrudan serbest metin moduna geç.
                 mode = 'freetext';
             }
         } catch {}
     });
 
-    // Debounce'lu taslak kaydı: her tuşta değil, yazım duraklayınca yaz.
+    // Debounce'lu taslak kaydı: her tuşta değil, yazım duraklayınca diske yaz.
     function saveDraftNow() {
         if (!draftKey) return;
         const text = freeText;
         try {
-            if (text.trim()) {
+            if (text && text.trim()) {
                 localStorage.setItem(draftKey, text);
             } else {
                 localStorage.removeItem(draftKey);
@@ -53,22 +51,17 @@
 
     $effect(() => {
         if (!draftKey) return;
-        // Serbest yazım değiştiğinde, ancak kullanıcı gerçekten bir şey yazdıysa
-        // (örneğin sadece silme yaptıysa da kaydetmeli). 
-        // Burada derived bağımlılık `freeText` üzerine.
         const t = setTimeout(saveDraftNow, 400);
         return () => clearTimeout(t);
     });
 
-    // Görev #16: Kullanıcı sayfadan aniden çıkarsa 400ms beklemeyi es geçip
-    // hemen kaydet, böylece hiçbir zaman data kaybı (data loss) olmaz.
+    // Sayfa kapatılırken debounce süresini beklemeden taslağı anında diske yaz.
     function handleBeforeUnload() {
         saveDraftNow();
     }
 
     import { onDestroy } from 'svelte';
     onDestroy(() => {
-        // Bileşen (yani sayfa) kapatılırken taslak varsa toast göster.
         if (draftKey && freeText.trim()) {
             saveDraftNow();
             showToast('Gönderilmeyen yorumunuz taslak olarak kaydedildi.', { timeout: 4000 });
@@ -105,14 +98,6 @@
         mode === 'freetext' && freeText.length > 280 ? "Yorumunuz en fazla 280 karakter olabilir" :
         "Gönder"
     );
-
-    // Eski kodda default `selectedFood` `'Yemek'` string'iydi ve placeholder
-    // için kullanılıyordu. Şu anki default `'all'`; placeholder ise Dropdown
-    // bileşeninde ayrı tutuluyor. Yani `'Yemek'` koşulu artık hiçbir zaman
-    // doğrulanmıyor ve eskiden "ilk gerçek yemeği otomatik seç" davranışını
-    // sağlayan blok ölü koddu. Kullanıcı ilk yemeği seçtiğinde dropdown'ın
-    // seçili öğesi zaten güncelleniyor; ekstra bir otomatik seçim gereksiz.
-    // (Refactor sonrası blok bilinçli olarak kaldırıldı.)
 
     function handleTextInput(e) {
         const cleanValue = e.target.value.replace(/\n\n\n+/g, '\n\n');

@@ -1,3 +1,9 @@
+//! Yemek adı normalizasyonu ve resmi fiyat kategorisi eşleştirme servisi.
+//!
+//! Bakanlığın resmi tabldot fiyatlandırma kategorileri ile menüdeki yemek adlarını
+//! anahtar kelime kurallarına göre eşleştirir. Kural motoru "ilk eşleşen kural kazanır"
+//! mantığıyla çalışır.
+
 use serde::Deserialize;
 use std::sync::OnceLock;
 
@@ -11,6 +17,10 @@ pub struct CategoryRule {
 
 static RULES: OnceLock<Vec<CategoryRule>> = OnceLock::new();
 
+/// Derleme anında ikiliye (binary) gömülen resmi kategori kuralları JSON verisi.
+///
+/// Dosya sistemindeki kural değişikliklerinin geçerli olması için uygulamanın
+/// yeniden derlenmesi gerekir.
 const EMBEDDED_RULES_JSON: &str = include_str!("../../../config/pricing/category_rules.json");
 
 pub fn get_rules() -> &'static [CategoryRule] {
@@ -50,6 +60,9 @@ fn matches_keyword(text: &str, keyword: &str) -> bool {
 }
 
 /// Verilen yemek adını analiz ederek bakanlığın resmi kategori adını döndürür.
+///
+/// İlk eşleşen kural kazanır (first-match-wins). JSON dosyasında spesifik kural blokları
+/// genel bloklardan önce yer almalıdır.
 pub fn categorize_dish(dish_name: &str) -> Option<String> {
     let normalized = normalize_turkish(dish_name);
     if normalized.is_empty() {
@@ -148,9 +161,8 @@ mod tests {
         assert_ne!(categorize_dish("Balık"), Some("PİKNİK BAL".to_string()));
     }
 
-    /// Faz 1 (1.5): kalan fiyat kategori kuralları - SALAM (HİNDİ/PİLİÇ),
-    /// SÜRÜLEBİLİR ÇİKOLATA, TAHİNLİ PEKMEZ. Resmi kategori adları
-    /// db/seeds/prod/02_pricing_2025_2026.sql ile birebir uyumlu olmalı.
+    /// Tohum verileriyle (db/seeds/prod/02_pricing_2025_2026.sql) uyumlu salam,
+    /// sürülebilir çikolata ve tahinli pekmez kategori kurallarını doğrular.
     #[test]
     fn test_remaining_pricing_categories() {
         // Pozitif eşleşmeler

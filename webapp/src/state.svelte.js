@@ -62,8 +62,7 @@ export const authActions = {
         clearLoggedCookie();
         if (typeof window !== 'undefined') localStorage.removeItem('kepce_user_cache');
         globalState.hasSession = false;
-        // Eski kodda kullanıcı burada sessizce düşürülüyordu; UI sonsuz
-        // "yükleniyor" durumunda kalıyordu. Şimdi login sayfasına yönlendir.
+        // Oturum geçersizse state'i temizle ve kullanıcıyı giriş sayfasına yönlendir.
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/giris')) {
           const currentPath = window.location.pathname + window.location.search;
           goto(`/giris?redirect=${encodeURIComponent(currentPath)}`);
@@ -78,10 +77,8 @@ export const authActions = {
   },
 
   async triggerLogin(reason = null) {
-    // Görev #13-15: Misafir etkileşimlerinde sayfa yönlendirmesi yerine
-    // hızlı giriş modalı açılır; kullanıcının sayfa state'i korunur.
-    // Dynamic import: auth-gate → AuthGateModal → state.svelte.js
-    // döngüsel bağımlılığını kırar.
+    // Misafir etkileşimlerinde sayfa yönlendirmesi yerine hızlı giriş modalı açılır.
+    // Dynamic import, modüller arasındaki döngüsel bağımlılığı önler.
     if (typeof window === 'undefined') return;
     const { openAuthGate } = await import('./components/features/auth-gate.js');
     openAuthGate({ reason });

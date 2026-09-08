@@ -1,5 +1,4 @@
-// Kepçe API - Routes: Dinamik OG Image Endpoint'leri
-// =======================================================
+//! Dinamik Open Graph (OG) görsel üretim endpoint'leri.
 
 use axum::{
     extract::{Path, State},

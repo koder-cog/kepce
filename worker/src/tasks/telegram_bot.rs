@@ -1,9 +1,9 @@
-// Kepçe Worker - Task: Telegram Operatör Botu (İki Yönlü Ops & Alarm)
-// =====================================================================
-//
-// Long-polling mekanizmasıyla Telegram Bot API üzerinden yöneticiden gelen
-// komutları dinler ve anlık yanıt döner. Dışa port açma veya webhook SSL
-// sertifikası gerektirmez.
+//! Telegram operatör botu dinleyicisi.
+//!
+//! Long-polling yöntemiyle Telegram Bot API üzerinden gelen yönetici komutlarını
+//! işler ve anlık sistem durumu/işlem yanıtlarını döner. Dışa açık port veya
+//! webhook sertifikası gerektirmez.
+
 
 use std::time::Duration;
 use sea_orm::*;

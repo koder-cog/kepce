@@ -1,8 +1,4 @@
-// Kepçe API - Service: Bildirim Yönetimi ve Olay Dağıtımı
-// ========================================================
-//
-// Uygulama içi bildirimlerin kullanıcı tercihlerine göre filtrelenerek
-// oluşturulması ve iletilmesini yönetir.
+//! Uygulama içi bildirim yönetimi ve kullanıcı tercihlerine göre olay dağıtım servisi.
 
 use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set};
 use uuid::Uuid;

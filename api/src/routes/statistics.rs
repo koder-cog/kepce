@@ -1,8 +1,4 @@
-// Kepçe API - Routes: İstatistik Endpoint'leri
-// ==============================================
-//
-// İnce zarf. StatisticsService kullanır.
-//
+//! Platform istatistikleri, liderlik tabloları ve trend endpoint'leri.
 use axum::{
     routing::get,
     Router,

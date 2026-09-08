@@ -413,7 +413,7 @@ impl AuthService {
             .map_err(|_| AuthError::InvalidCredentials)?;
 
         let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
-        // Magic link her zaman 'remember: true' gibi uzun süreli refresh token verebilir veya vermeyebilir. Biz false verelim.
+        // Magic link ile giriş yapan kullanıcıların oturumu kalıcı (remember: true) olarak açılır.
         let refresh_token = Self::generate_refresh_token(db, user_id, jwt_secret, true, ip_address, user_agent).await?;
 
         Ok((access_token, refresh_token, profile))

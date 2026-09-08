@@ -1,6 +1,5 @@
 @layer components {
 
-  /* Listeye giriş animasyonunu tanımlayalım */
   @keyframes file-item-enter {
     0% {
       opacity: 0;
@@ -11,8 +10,6 @@
       transform: scale(1);
     }
   }
-
-
 
   .c-file-list {
     display: flex;
@@ -37,8 +34,6 @@
     padding: var(--space-sm) var(--space-md);
     background: transparent;
     border-bottom: 1px solid var(--color-border-light);
-    
-    /* Animasyon ve Performanslı Transition */
     animation: file-item-enter var(--dur-default) var(--ease-spatial-default) both;
     transition: background-color var(--dur-fast) var(--ease-standard);
   }
@@ -50,7 +45,6 @@
   .c-file-item:hover {
     background-color: rgba(0, 0, 0, 0.02);
   }
-
 
   .c-file-item__info {
     display: flex;
@@ -67,7 +61,6 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    /* İkonun biraz daha tok durması için */
     padding: 4px;
     background: var(--color-accent-primary-alpha-10);
     border-radius: var(--radius-sm);
@@ -78,7 +71,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 280px;
-    /* Metnin daha pürüzsüz render edilmesi için */
     -webkit-font-smoothing: antialiased;
   }
 
@@ -92,27 +84,22 @@
     display: flex;
     align-items: center;
     justify-content: center;
-
-    /* Benmari Standartlarına uygun geçişler */
     transition:
       background-color var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
       transform var(--dur-fast) var(--ease-standard);
   }
 
-  /* Silme Butonu Hover */
   .c-file-item__remove:hover {
     color: var(--color-accent-negative);
     background-color: var(--color-accent-negative-alpha-10);
   }
 
-  /* Tıklanma (Active) hissiyatı (Squish Effect) */
   .c-file-item__remove:active {
     background-color: var(--color-accent-negative-alpha-20);
     transform: scale(0.98);
   }
 
-  /* Klavyeyle odaklanma (Accessibility) */
   .c-file-item__remove:focus-visible {
     outline: 2px solid var(--color-accent-negative);
     outline-offset: 2px;
@@ -124,7 +111,7 @@
     }
   }
 
-  /* EXTRA: Eğer liste elemanları sırayla gelsin (Staggering) istersen: */
+  /* Staggered entrance */
   .c-file-item:nth-child(1) {
     animation-delay: 0.08s;
   }

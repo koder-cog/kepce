@@ -1,17 +1,16 @@
-// Kepçe API - Service: Menü Servisi
-// ===================================
-//
-// Menü verilerini okuma ve formatlama işlemleri.
-//
-// Sorumlulukları:
-//   1. Bugünkü menüyü getirme (şehre göre)
-//   2. Arşiv menülerini listeleme (tarih aralığı, sayfalama)
-//   3. Tek menü detayı (ID ile)
-//   4. Menü öğelerini dish ilişkileriyle birlikte çekme
-//   5. MenuDto'ya dönüştürme
-//
-// Menü yazma (upsert) işlemleri worker tarafındadır,
-// burada sadece okuma + formatlama var.
+//! Menü verilerini okuma, filtreleme ve DTO formatlama servisi.
+//!
+//! Sorumluluklar ve Mimari İlkeler:
+//! - Salt Okunur (Read-Only): Menü yazma ve ayrıştırma (upsert/ingest) işlemleri
+//!   worker katmanındadır; API servisi yalnızca okuma, sorgulama ve formatlama yapar.
+//! - Dinamik Fiyatlandırma: Fiyatlar veritabanındaki menü tablosuna yazılmaz; okuma
+//!   anında `pricing::get_pricing_info_for_city` servisi üzerinden şehre, tarihe ve
+//!   yemek kategorisine göre dinamik hesaplanır (Temmuz ve Ağustos aylarında bilinçli
+//!   olarak gizlenir).
+//! - Toplu Yükleme (Batch Loading): N+1 sorgu maliyetlerini engellemek adına menülere
+//!   bağlı yemekler, takma adlar, ana yemekler, yorum ve oy sayıları toplu olarak çekilip
+//!   bellekte eşleştirilir.
+
 
 use sea_orm::*;
 use std::collections::HashMap;
@@ -134,7 +133,6 @@ impl MenuService {
             
         let city = city_opt.ok_or(MenuError::NotFound)?;
 
-        // Menüdeki yemekleri (order_index'e göre sıralı) ve o yemeğin "Alias" verisini çekiyoruz
         let menu_dishes_with_aliases = menu_dishes::Entity::find()
             .filter(menu_dishes::Column::MenuId.eq(menu_id))
             .find_also_related(dish_aliases::Entity)
@@ -143,7 +141,6 @@ impl MenuService {
             .await
             .map_err(MenuError::DatabaseError)?;
             
-        // Master (asıl) yemekleri bulk olarak çekmek için id'leri topluyoruz
         let dish_ids: Vec<i32> = menu_dishes_with_aliases
             .iter()
             .filter_map(|(_, alias_opt)| alias_opt.as_ref().and_then(|a| a.dish_id))
@@ -165,7 +162,6 @@ impl MenuService {
         }
         let dish_stats_map = Self::get_dish_vote_stats_map(db, &dish_ids).await;
         
-        // Response formatına (DTO) çeviriyoruz
         let mut items = Vec::new();
         let mut takeaway_map: HashMap<String, Vec<MenuItemDto>> = HashMap::new();
         for (md, alias_opt) in menu_dishes_with_aliases {
@@ -238,7 +234,6 @@ impl MenuService {
                     }
                 }
             } else {
-                // Standard Mode
                 if !is_celiac_pkg {
                     if md.package_name != "NORMAL" {
                         takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
@@ -344,7 +339,8 @@ impl MenuService {
         let city = menus_with_cities[0].1.clone().ok_or(MenuError::NotFound)?;
         let menus: Vec<menus::Model> = menus_with_cities.into_iter().map(|(m, _)| m).collect();
         
-        // 1. MenuDishes load
+        // N+1 sorgularını önlemek için menülere ait yemek, takma ad ve ana yemek kayıtları
+        // hiyerarşik olarak tek seferde toplu yüklenir.
         let menu_dishes_groups = menus.load_many(
             menu_dishes::Entity::find().order_by_asc(menu_dishes::Column::OrderIndex),
             db
@@ -352,17 +348,14 @@ impl MenuService {
 
         let flat_menu_dishes: Vec<menu_dishes::Model> = menu_dishes_groups.iter().flatten().cloned().collect();
 
-        // 2. DishAliases load
         let dish_aliases_opts = flat_menu_dishes.load_one(dish_aliases::Entity, db)
             .await.map_err(MenuError::DatabaseError)?;
 
         let flat_dish_aliases: Vec<dish_aliases::Model> = dish_aliases_opts.iter().flatten().cloned().collect();
 
-        // 3. Dishes load
         let dishes_opts = flat_dish_aliases.load_one(dishes::Entity, db)
             .await.map_err(MenuError::DatabaseError)?;
 
-        // 4. Comments and Votes load
         let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
         let mut comment_counts = Vec::with_capacity(menus.len());
         for m in &menus {
@@ -500,7 +493,6 @@ impl MenuService {
                             }
                         }
                     } else {
-                        // Standard Mode
                         if !is_celiac_pkg {
                             if md.package_name != "NORMAL" {
                                 takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
@@ -557,7 +549,7 @@ impl MenuService {
         db: &DatabaseConnection,
         city_slug: Option<String>,
         date: Option<NaiveDate>,
-        _dietary_type: Option<String>,
+        dietary_type: Option<String>,
         year: Option<i32>,
         month: Option<u32>,
         user_id: Option<uuid::Uuid>,
@@ -593,10 +585,6 @@ impl MenuService {
             }
         }
 
-        // V2'de dietary_type menus tablosundan kalktı.
-        // let diet = dietary_type.unwrap_or_else(|| "standard".to_string());
-        // query = query.filter(menus::Column::DietaryType.eq(diet));
-
         let menus_with_cities = query
             .order_by_asc(menus::Column::ServeDate)
             .order_by_asc(menus::Column::MealType)
@@ -611,7 +599,8 @@ impl MenuService {
 
         let menus: Vec<menus::Model> = menus_with_cities.iter().map(|(m, _)| m.clone()).collect();
 
-        // 1. MenuDishes load
+        // N+1 sorgularını önlemek için menülerin yemekleri, takma adları, ana yemekleri
+        // ve oy/yorum istatistikleri toplu olarak sorgulanır.
         let menu_dishes_groups = menus.load_many(
             menu_dishes::Entity::find().order_by_asc(menu_dishes::Column::OrderIndex),
             db
@@ -619,17 +608,14 @@ impl MenuService {
 
         let flat_menu_dishes: Vec<menu_dishes::Model> = menu_dishes_groups.iter().flatten().cloned().collect();
 
-        // 2. DishAliases load
         let dish_aliases_opts = flat_menu_dishes.load_one(dish_aliases::Entity, db)
             .await.map_err(MenuError::DatabaseError)?;
 
         let flat_dish_aliases: Vec<dish_aliases::Model> = dish_aliases_opts.iter().flatten().cloned().collect();
 
-        // 3. Dishes load
         let dishes_opts = flat_dish_aliases.load_one(dishes::Entity, db)
             .await.map_err(MenuError::DatabaseError)?;
 
-        // 4. Comments load
         let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
         let mut comment_counts = Vec::with_capacity(menus.len());
         for m in &menus {
@@ -641,7 +627,6 @@ impl MenuService {
             comment_counts.push(c as i32);
         }
 
-        // 5. Vote stats load
         let mut rating_sums = HashMap::new();
         let mut vote_counts = HashMap::new();
         if !menu_ids.is_empty() {
@@ -664,7 +649,6 @@ impl MenuService {
             }
         }
 
-        // 6. My Votes load
         let mut my_votes_map = HashMap::new();
         if let Some(uid) = user_id {
             if !menu_ids.is_empty() {
@@ -689,7 +673,7 @@ impl MenuService {
         let mut alias_idx = 0;
         let mut dish_idx = 0;
 
-        let is_celiac_mode = _dietary_type.as_deref() == Some("celiac");
+        let is_celiac_mode = dietary_type.as_deref() == Some("celiac");
 
         let dish_ids: Vec<i32> = dishes_opts.iter().flatten().map(|d| d.id).collect();
         let dish_stats_map = Self::get_dish_vote_stats_map(db, &dish_ids).await;
@@ -763,9 +747,6 @@ impl MenuService {
                             category: dish_category,
                             master_data,
                         };
-
-                        tracing::info!("DEBUG: celiac_mode={}, pkg={}, is_celiac_pkg={}, is_takeaway={}", 
-                            is_celiac_mode, md.package_name, is_celiac_pkg, is_takeaway_pkg);
                         
                         if is_celiac_mode {
                             if is_celiac_pkg || (md.package_name == "NORMAL" && dish_is_celiac) {
@@ -776,7 +757,6 @@ impl MenuService {
                                 }
                             }
                         } else {
-                            // Standard Mode
                             if !is_celiac_pkg {
                                 if md.package_name != "NORMAL" {
                                     takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
@@ -821,7 +801,7 @@ impl MenuService {
                     calculated_calories,
                 });
             } else {
-                // If city is None, skip it but still consume indices correctly
+                // Şehir kaydı bulunamayan menü yanıttan çıkarılsa da düzleştirilmiş dizi indekslerinin senkron kalması için sayaçlar ilerletilir.
                 for _ in &menu_dishes_groups[i] {
                     if dish_aliases_opts[alias_idx].is_some() {
                         dish_idx += 1;

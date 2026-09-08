@@ -348,10 +348,10 @@ pub async fn run_kykyemek_scraper(
         }
     }
 
-    // Faz 1.6: bu turda yeni açılan gün URL'lerini IndexNow'a bildir.
-    // INDEXNOW_KEY atanmamışsa no-op; hata durumunda yalnızca warn loglanır,
-    // asla döngüyü düşürmez. Yalnızca kanonik /{sehir}/{tarih} URL'leri
-    // gönderilir (/menu/{id} ASLA gönderilmez).
+    // Bu turda yeni eklenen menülerin şehirlerini arama motoru dizinlemesi için IndexNow'a bildir.
+    // INDEXNOW_KEY atanmamışsa işlem yapmaz; hata durumunda yalnızca warn loglanır.
+    // Yalnızca kanonik /{sehir} hub URL'leri gönderilir (yönlendirme URL'leri veya
+    // ikincil /menu/{id} gönderilmez).
     if let Some(config) = super::indexnow::IndexNowConfig::from_env() {
         super::indexnow::ping_new_day_urls(db, client, &config).await;
     }
@@ -685,7 +685,7 @@ pub async fn upsert_menu(
             ..Default::default()
         };
         let res = new_menu.insert(&txn).await?;
-        // Faz 1.6: yeni insert'i IndexNow bildirim kaydına yaz
+        // Yeni eklenen menü gününü IndexNow bildirim kuyruğuna kaydet
         record_inserted_menu(city_id, date);
         res.id
     };

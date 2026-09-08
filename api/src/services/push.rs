@@ -1,5 +1,4 @@
-// Kepçe API - Service: Web Push Bildirim Motoru & VAPID Dağıtımı
-// =============================================================
+//! Web Push (RFC 8291 / RFC 8292) bildirim motoru ve VAPID dağıtım servisi.
 
 use anyhow::Result;
 use base64::Engine;

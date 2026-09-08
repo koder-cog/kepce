@@ -1,5 +1,4 @@
-// Kepçe API - Routes: Web Push Abonelik ve VAPID Endpoint'leri
-// ============================================================
+//! Web push bildirim aboneliği ve VAPID anahtar dağıtım endpoint'leri.
 
 use axum::{
     extract::{State, Json},

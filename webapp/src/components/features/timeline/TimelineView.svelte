@@ -19,14 +19,14 @@
         isSummer = false
     } = $props();
 
-    // Görev #20: Ayarlar'daki "Boş içerik kartlarını göster" tercihi.
+    // Ayarlar sayfasındaki "Boş içerik kartlarını göster" kullanıcı tercihi.
     // (ssr=false olduğu için bileşen yalnızca istemcide kurulur.)
     let showEmptyCards = $state(
         typeof window !== "undefined" &&
             localStorage.getItem("kepce_show_empty_cards") !== "false",
     );
 
-    // Bot yorumu ham verisi (yoksa kart kompakt empty-state'e düşer, #19)
+    // Bot yorumu ham verisi (yoksa kart kompakt empty-state'e düşer)
     let botCommentaryRaw = $derived(
         (timelineState.breakfastData[0] || timelineState.dinnerData[0] || {})
             .bot_commentary,
@@ -36,8 +36,7 @@
     // binding için yerel derived referanslar.
     // Render edilebilir içeriği olmayan menüler (items/dishes/foods boş ya da
     // tamamen placeholder) kart olarak çizilmez; slot wrapper'daki kompakt
-    // empty-state devreye girer (#19 mimarisi: empty-state yalnızca
-    // timeline__meal-wrapper içinde yaşar, meal-card içinde değil).
+    // empty-state devreye girer (empty-state yalnızca timeline__meal-wrapper içinde yaşar).
     let breakfasts = $derived(
         timelineState.breakfastData.filter((m) => normalizeItems(m).length > 0),
     );
@@ -54,7 +53,7 @@
         isOffSeason && breakfasts.length === 0 && dinners.length > 0,
     );
 
-    // Görev #20: Sezon dışındayken kahvaltı verisi yoksa boş kart basma;
+    // Sezon dışındayken kahvaltı verisi yoksa boş kart basma;
     // Sezon içinde ise kullanıcının showEmptyCards tercihine bak.
     let hideBreakfastSlot = $derived.by(() => {
         if (breakfasts.length > 0) return false;

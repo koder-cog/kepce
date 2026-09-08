@@ -23,9 +23,8 @@
     });
 
     onMount(() => {
-        // Görev #24: URL üzerinden diyet modu zorlaması (?diyet=celiac).
-        // Çölyaksız bir ayda bile mod korunur ve "çölyak menüsü yok"
-        // empty-state'i gösterilir.
+        // URL parametresi üzerinden diyet modu zorlaması (?diyet=celiac).
+        // Çölyaksız bir ayda bile mod korunur ve "çölyak menüsü yok" empty-state'i gösterilir.
         const params = new URLSearchParams(window.location.search);
         const dietParam = params.get("diyet") || params.get("diet");
         if (dietParam === "celiac" || dietParam === "colyak") {

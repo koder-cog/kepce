@@ -1,3 +1,8 @@
+//! JWT kimlik doğrulama extractor'ları.
+//!
+//! İstek başlıklarındaki `kepce_token` çerezini veya `Authorization: Bearer`
+//! başlığını çözümleyerek doğrulanmış kullanıcı oturumunu (`AuthenticatedUser`) sağlar.
+
 use axum::{
     async_trait,
     extract::{FromRequestParts, FromRef},
@@ -49,7 +54,6 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app_state = AppState::from_ref(state);
         
-        // 1. Try Cookie first
         let mut token_opt = parts.headers.get(axum::http::header::COOKIE)
             .and_then(|h| h.to_str().ok())
             .and_then(|cookie_str| {
@@ -59,7 +63,6 @@ where
                     .map(|pair| &pair["kepce_token=".len()..])
             });
 
-        // 2. Fallback to Authorization Header
         if token_opt.is_none() {
             token_opt = parts.headers.get(axum::http::header::AUTHORIZATION)
                 .and_then(|h| h.to_str().ok())

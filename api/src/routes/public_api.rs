@@ -1,3 +1,9 @@
+//! Herkese açık (public) REST API uç noktaları.
+//!
+//! Şehir listesi, konum tabanlı şehir tespiti, tekil ve günlük menü sorguları ile
+//! sitemap index veri kaynaklarını sunar. Uç noktaların birçoğu HTTP önbellekleme
+//! (`Cache-Control`) başlıklarıyla desteklenir.
+
 use axum::{
     routing::get,
     Router,
@@ -150,10 +156,9 @@ async fn get_single_menu(
     crate::utils::response::cached_json_response(&headers, &menu, 300)
 }
 
-// ============================================================
-// Sitemap veri kaynakları - aylık bölünmüş sitemap index yapısı
-// Yalnızca id + serve_date döner; item join'i YOKTUR (ucuz sorgu).
-// ============================================================
+// Sitemap index için aylık bölünmüş veri kaynakları: Yalnızca id ve serve_date
+// okunur; N+1 ve gereksiz item join maliyetini önlemek için ham menü tablosu taranır.
+
 
 /// GET /api/v1/public/menus/months
 /// Onaylı menülerin bulunduğu aylar (YYYY-MM), yeniden eskiden.

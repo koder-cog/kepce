@@ -24,17 +24,15 @@ export function createTimelineStore() {
     let monthNavDirection = $state(1); // 1: sonraki ay, -1: önceki ay
     let isUpdating = $state(false); // Arka planda veri güncellenirken stale-while-revalidate karartması
 
-    // Görev #21-24: Ay bazlı çölyak menüsü mevcudiyeti.
-    // "city:YYYY:M" → boolean. Problar aylık endpoint ile yapılır ve
-    // önbelleğe alınır (her gün değişiminde tekrar istek atılmaz).
+    // Ay bazlı çölyak menüsü mevcudiyeti önbelleği ("city:YYYY:M" → boolean).
+    // Problar aylık endpoint ile yapılır ve gün değişiminde tekrar istek atılmasını önler.
     let celiacAvailability = $state({});
     let celiacProbeKey = null;
-    // Kullanıcı URL (?diyet=celiac) ile zorladıysa true olur; bu durumda
-    // çölyaksız ayda bile otomatik standart'a dönülmez, empty-state
-    // gösterilir (#24). Kullanıcı selector'den seçim yapınca sıfırlanır.
+    // URL parametresi (?diyet=celiac) ile zorlanan diyet modu; çölyaksız ayda bile
+    // otomatik standarda dönülmez, empty-state gösterilir.
     let dietForcedViaUrl = $state(false);
 
-    const START_YEAR = 2026; // Kullanıcı isteği doğrultusunda başlangıç Ocak 2026
+    const START_YEAR = 2026; // Kepçe veri başlangıcı (Ocak 2026)
     const MAY_2026 = new Date(2026, 4, 1);
 
     // Derived states

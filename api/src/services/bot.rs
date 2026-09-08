@@ -1,13 +1,7 @@
-// Kepçe API - Service: Bot Servisi
-// ==================================
-//
-// İsteğe bağlı AI yorum üretici.
-// Moderasyon panelinden manuel tetiklenebilir.
-// Ayrı bir API üzerinden de çağrılabilir (Gemini/GPT).
-//
-// AppState'te ağırlık oluşturmaz.
-// Sadece moderasyon servisi tarafından çağrılır.
-// Yapılandırma yoksa sessizce devre dışı kalır.
+//! Menüler için yapay zeka tabanlı yorum ve duygu üretim servisi.
+//!
+//! Moderasyon paneli üzerinden tetiklenerek boş günlere içerik sağlar.
+//! Yapılandırma ortam değişkeni yoksa servis pasif kalır.
 
 use reqwest::Client;
 use serde_json::{json, Value};

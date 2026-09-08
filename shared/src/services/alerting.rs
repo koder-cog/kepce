@@ -1,13 +1,13 @@
-// Kepçe Shared - Service: Alerting (Webhook & Telegram Uyarı Servisi)
-// ===================================================================
-//
-// Scraper ve sistem hatalarında Discord webhook'larına veya Telegram botuna
-// uyarı bildirimi gönderir.
-//
-// Desteklenen Ortam Değişkenleri:
-// - `TELEGRAM_BOT_TOKEN`: BotFather'dan alınan bot token'ı
-// - `TELEGRAM_ADMIN_CHAT_ID` veya `TELEGRAM_CHAT_ID`: Bildirimin düşeceği chat/kullanıcı ID'si
-// - `ALERT_WEBHOOK_URL` veya `DISCORD_WEBHOOK_URL`: Discord/Slack uyumlu webhook URL'si
+//! Webhook ve Telegram alarm bildirim servisi.
+//!
+//! Scraper ve sistem seviyesindeki kritik hataları Discord/Slack uyumlu webhook'lara
+//! veya Telegram bot yöneticisine iletir.
+//!
+//! Desteklenen ortam değişkenleri:
+//! - `TELEGRAM_BOT_TOKEN`: BotFather bot token değeri
+//! - `TELEGRAM_ADMIN_CHAT_ID` / `TELEGRAM_CHAT_ID`: Bildirimin iletileceği hedef sohbet ID'si
+//! - `ALERT_WEBHOOK_URL` / `DISCORD_WEBHOOK_URL`: Discord veya Slack uyumlu webhook adresi
+
 
 use reqwest::Client;
 use serde_json::json;

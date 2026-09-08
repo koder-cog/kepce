@@ -1,3 +1,8 @@
+//! Moderasyon ve yönetim paneli veri transfer nesneleri (DTO).
+//!
+//! Menü onaylama/reddetme, yorum şikayetleri, kullanıcı durum yönetimi ve
+//! moderatör işlem loglarına ait girdi ve çıktı modellerini içerir.
+
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
@@ -47,7 +52,7 @@ pub struct MenuDishItemDto {
     pub name: String,
 }
 
-// TODO: Wire up in update_menu_items handler when menu-item editing is implemented
+/// Moderasyon panelinde menü içerisindeki yemek eşleşmelerini güncellemek için kullanılan girdi modeli.
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateMenuItemsDto {
     pub dish_ids: Vec<i32>,

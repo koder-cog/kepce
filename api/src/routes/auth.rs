@@ -1,7 +1,4 @@
-// Kepçe API - Routes: Kimlik Doğrulama Endpoint'leri
-// ===================================================
-//
-// İnce zarf. AuthService kullanır.
+//! Kimlik doğrulama, kayıt, oturum yönetimi ve OAuth callback endpoint'leri.
 use axum::{
     routing::{get, post, put, delete},
     Router,
@@ -1156,9 +1153,8 @@ async fn delete_all_notifications(
     Ok(Json(serde_json::json!({ "status": "success" })))
 }
 
-// ===================================================
-// Developer Portal Handlers
-// ===================================================
+// Geliştirici portalı (Developer Portal) uç noktaları
+
 
 use crate::services::developer::DeveloperService;
 use crate::dto::developer::{CreateProjectDto, ProjectResponseDto, CreateApiKeyDto, ApiKeyResponseDto, ApiUsageDto};

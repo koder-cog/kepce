@@ -1,8 +1,4 @@
-// Kepçe API - Routes: Profil Endpoint'leri
-// ==========================================
-//
-// İnce zarf. UserService + CommentService kullanır.
-//
+//! Kullanıcı profili, istatistikleri ve hesap yönetim endpoint'leri.
 use axum::{
     routing::{get, post},
     Router,

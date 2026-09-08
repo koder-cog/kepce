@@ -255,7 +255,7 @@ export async function solveTdkDefinition(query) {
       };
     }
   } catch {
-    // gracefully ignore
+    // TDK servis kesintilerinde veya timeout durumunda arama akışını kesmeden sessizce devam et.
   }
 
   return null;
@@ -332,7 +332,7 @@ export async function solveCryptoPrice(query) {
       };
     }
   } catch {
-    // gracefully ignore
+    // CoinGecko API kesintisinde veya rate-limit durumunda arama akışını kesmeden sessizce devam et.
   }
 
   return null;

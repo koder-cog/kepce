@@ -1,5 +1,7 @@
-// Kepçe API - Kütüphane Giriş Noktası
-// ====================================
+//! Kepçe REST API kütüphane çekirdeği.
+//!
+//! Axum tabanlı HTTP yönlendirmeleri, middleware katmanları, veritabanı bağlantı
+//! yönetimi ve servis bootstrap adımlarını içerir.
 
 pub mod config;
 pub mod dto;

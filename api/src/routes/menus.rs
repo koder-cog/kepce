@@ -1,8 +1,4 @@
-// Kepçe API - Routes: Menü Endpoint'leri
-// ========================================
-//
-// İnce zarf. İş mantığı yok - MenuService'e delege eder.
-//
+//! Şehir ve gün bazlı KYK menü sorgulama endpoint'leri.
 use axum::{
     routing::get,
     Router,

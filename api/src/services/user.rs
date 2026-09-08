@@ -1,15 +1,4 @@
-// Kepçe API - Service: Kullanıcı Servisi
-// ========================================
-//
-// Kullanıcı profili, karma, rozetler ve hesap yönetimi.
-//
-// Sorumlulukları:
-//   1. Herkese açık profil bilgisi (nickname ile arama)
-//   2. Karma hesaplama ve seviye belirleme
-//   3. Rozet kontrolü ve atama
-//   4. Favori yemekhaneler / sabitlenmiş yemekler
-//   5. Kullanıcı engelleme (block/unblock)
-//   6. Hesap güncelleme / silme
+//! Kullanıcı profili, karma puanları, rozetler ve hesap yönetimi servisi.
 
 use sea_orm::*;
 use chrono::{DateTime, Utc};
@@ -585,8 +574,7 @@ impl UserService {
 
         let mut user_model: users::ActiveModel = user.clone().into();
 
-        // SA-12: Kullanıcı adı, e-posta veya şifre değişikliği step-up auth ister.
-        // (Eskiden kullanıcı adı şifresiz değiştirilebiliyordu.)
+        // Hassas profil değişiklikleri (kullanıcı adı, e-posta, şifre) mevcut şifre doğrulaması (step-up auth) gerektirir.
         let needs_password_check = dto.username.is_some() || dto.email.is_some() || dto.password.is_some();
         if needs_password_check {
             let current_password = dto.current_password.clone().ok_or(AuthError::InvalidCredentials)?;

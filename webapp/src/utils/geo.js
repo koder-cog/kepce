@@ -88,6 +88,15 @@ const TURKEY_PROVINCE_COORDS = {
   duzce: { lat: 40.8438, lng: 31.1565 },
 };
 
+/**
+ * İki koordinat noktası arasındaki küresel mesafeyi (km) Haversine formülü ile hesaplar.
+ *
+ * @param {number} lat1
+ * @param {number} lng1
+ * @param {number} lat2
+ * @param {number} lng2
+ * @returns {number} Kilometre cinsinden mesafe
+ */
 function haversineDistance(lat1, lng1, lat2, lng2) {
   const R = 6371; // km
   const dLat = ((lat2 - lat1) * Math.PI) / 180;
@@ -101,8 +110,9 @@ function haversineDistance(lat1, lng1, lat2, lng2) {
 }
 
 /**
- * Detect user's city SILENTLY using backend IP detection.
- * Does NOT prompt for permission.
+ * Arka plan IP çözümlemesi üzerinden kullanıcının ilini sessizce tespit eder (izin istemez).
+ *
+ * @returns {Promise<string|null>} Şehir slug'ı veya null
  */
 export async function detectCitySilent() {
   try {
@@ -114,6 +124,11 @@ export async function detectCitySilent() {
   }
 }
 
+/**
+ * Cloudflare başlıkları üzerinden kullanıcının ilini tespit eder.
+ *
+ * @returns {Promise<string|null>} Şehir slug'ı veya null
+ */
 export async function detectCityIP() {
   try {
     const city = await api.detectCity();
@@ -127,9 +142,9 @@ export async function detectCityIP() {
 }
 
 /**
- * Find user's city from GPS coordinates and match against active city slugs.
- * Prompts user for permission.
- * @param {string[]} availableSlugs - List of city slugs that have active menu data
+ * GPS koordinatları üzerinden en yakın ili tespit eder ve aktif menüsü olan illerle eşleştirir.
+ *
+ * @param {string[]} availableSlugs - Menü verisi bulunan aktif şehir slug'ları
  * @returns {Promise<{success: boolean, slug?: string, unsupported?: boolean}|null>}
  */
 export function detectCityPrecise(availableSlugs) {
@@ -145,7 +160,7 @@ export function detectCityPrecise(availableSlugs) {
         let nearestSlug = null;
         let minDist = Infinity;
 
-        // 1. Aşama: 81 il arasından en yakın gerçek Türkiye ilini bul
+        // 81 il merkez koordinatı içinden en yakın ili belirle
         for (const [slug, coords] of Object.entries(TURKEY_PROVINCE_COORDS)) {
           const dist = haversineDistance(latitude, longitude, coords.lat, coords.lng);
           if (dist < minDist) {
@@ -160,7 +175,7 @@ export function detectCityPrecise(availableSlugs) {
           return;
         }
 
-        // 2. Aşama: Tespit edilen il sistemde (menüsü olan iller arasında) var mı kontrol et
+        // Tespit edilen ilin menü sisteminde aktif olup olmadığını doğrula
         const isSupported = Array.isArray(availableSlugs) && availableSlugs.includes(nearestSlug);
 
         if (isSupported) {
@@ -169,7 +184,7 @@ export function detectCityPrecise(availableSlugs) {
           resolve({ success: false, unsupported: true, slug: nearestSlug });
         }
       },
-      () => resolve(null), // permission denied or error
+      () => resolve(null),
       { timeout: 8000, enableHighAccuracy: false }
     );
   });

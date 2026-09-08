@@ -1,8 +1,7 @@
-// Kepçe API - Middleware: Rate Limiter
-// =====================================
-//
-// IP, Cihaz (X-Client-ID) ve Kullanıcı bazlı çalışan in-memory rate limiter.
-// Uygulama sunucusunu DoS ve brute-force saldırılarına karşı korur.
+//! IP, cihaz ve kullanıcı bazlı bellek içi rate limiter katmanı.
+//!
+//! DoS ve brute-force saldırılarına karşı istekleri kategorilerine göre
+//! (genel, auth, veri yükleme, moderasyon) sınırlandırır.
 
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};

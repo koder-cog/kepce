@@ -92,7 +92,7 @@ export function extractQueryDate(query, referenceDateStr) {
   const q = query.toLowerCase().trim();
   const refYear = referenceDateStr ? parseInt(referenceDateStr.slice(0, 4), 10) : new Date().getFullYear();
 
-  // 1. Bağıl günler (Dün, Bugün, Yarın)
+  // Bağıl günler (dün, bugün, yarın)
   if (/(?:^|[^\p{L}\p{N}])(?:dün|dünkü)(?=[^\p{L}\p{N}]|$)/iu.test(q)) {
     const d = new Date((referenceDateStr || new Date().toISOString().split('T')[0]) + 'T12:00:00Z');
     d.setUTCDate(d.getUTCDate() - 1);
@@ -107,7 +107,7 @@ export function extractQueryDate(query, referenceDateStr) {
     return referenceDateStr;
   }
 
-  // 2. ISO Formatı: YYYY-MM-DD (örn. 2026-06-30)
+  // ISO formatı (YYYY-MM-DD)
   const isoMatch = q.match(/\b(20\d{2})-(0?[1-9]|1[0-2])-(0?[1-9]|[12]\d|3[01])\b/);
   if (isoMatch) {
     const y = parseInt(isoMatch[1], 10);
@@ -116,7 +116,7 @@ export function extractQueryDate(query, referenceDateStr) {
     if (isValidYmd(y, m, d)) return formatYmd(y, m, d);
   }
 
-  // 3. Gün Ay Yıl kelime formatı (örn. "30 haziran 2026", "30 haziran", "30 haziran'da", "30 hazirandaki")
+  // Doğal Türkçe ay ve gün kalıpları (örn. "30 Haziran", "30 Haziran'daki")
   const monthRegex = /(?:^|[^\p{L}\p{N}])(\d{1,2})\s*(?:nci|ncı|inci|ıncı|\.)?\s*(ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik)(?:['’]?(?:daki|deki|taki|teki|da|de|ta|te|nın|nin|nun|nün|ın|in|un|ün|e|a))?(?:\s+(20\d{2}|\d{2}))?(?=[^\p{L}\p{N}]|$)/iu;
   const textMonthMatch = q.match(monthRegex);
   if (textMonthMatch) {
@@ -132,7 +132,7 @@ export function extractQueryDate(query, referenceDateStr) {
     }
   }
 
-  // 4. Sayısal Ayraçlı Formatlar (DD.MM.YYYY, DD/MM/YYYY, DD-MM-YYYY, DD.MM, DD/MM)
+  // Sayısal ayraçlı formatlar (DD.MM.YYYY, DD/MM/YYYY)
   const numMatch = q.match(/\b(\d{1,2})[./-](\d{1,2})(?:[./-](\d{2,4}))?\b/);
   if (numMatch) {
     const day = parseInt(numMatch[1], 10);

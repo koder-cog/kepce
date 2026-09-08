@@ -1,8 +1,4 @@
-// Kepçe API - Service: Şehir Servisi
-// ===================================
-//
-// Şehir verilerini okuma işlemleri.
-//
+//! Şehir listesi, aktif menü mevcudiyeti ve coğrafi konum çözümleme servisi.
 use sea_orm::*;
 use std::collections::HashSet;
 use shared::entities::{cities, menus};

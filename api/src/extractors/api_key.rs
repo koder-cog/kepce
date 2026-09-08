@@ -1,12 +1,7 @@
-// Kepçe API - Extractors: Public API Key
-// ========================================
-//
-// 3. parti geliştiricilerin X-API-Key header'ı ile
-// erişim sağlaması için kullanılır.
-//
-// API anahtarını veritabanından doğrular,
-// kullanıcının tier bilgisini (standart/ticari) çözer,
-// rate limit ve kullanım istatistiği için bilgi sağlar.
+//! Public API anahtarı (X-API-Key) ve veri alım yetkilendirme extractor'ları.
+//!
+//! Geliştirici API anahtarının SHA-256 özetini veritabanından doğrular,
+//! hesap seviyesini (tier) çözer ve günlük kullanım limitlerini denetler.
 
 use axum::{
     async_trait,
@@ -40,13 +35,11 @@ where
             .and_then(|h| h.to_str().ok())
             .ok_or_else(|| AppError::Unauthorized("API Key eksik (X-API-Key header'ı gerekli)".to_string()))?;
 
-        // Hash raw key using SHA-256
         let mut hasher = Sha256::new();
         hasher.update(api_key_header.as_bytes());
         let hash_result = hasher.finalize();
         let key_hash: String = hash_result.iter().map(|b| format!("{:02x}", b)).collect();
 
-        // Query database
         let api_key_model = ApiKeys::find()
             .filter(api_keys::Column::KeyHash.eq(&key_hash))
             .filter(api_keys::Column::IsActive.eq(true))
@@ -58,7 +51,6 @@ where
             })?
             .ok_or_else(|| AppError::Unauthorized("Geçersiz veya pasif API Key".to_string()))?;
 
-        // Record request & Check daily rate limits
         app_state.usage_tracker.record_request(
             &app_state.db,
             api_key_model.id,
@@ -90,14 +82,11 @@ where
         let has_bearer = parts.headers.contains_key(axum::http::header::AUTHORIZATION);
         let has_api_key = parts.headers.contains_key("X-API-Key");
 
-        // 1. Try JWT (Cookie or Bearer)
         if has_cookie || has_bearer {
             match AuthenticatedUser::from_request_parts(parts, state).await {
                 Ok(user) => return Ok(IngestionAuth::User(user)),
                 Err(e) => {
-                    // Sadece API Key verilmemişse hemen hata dönüyoruz.
-                    // Çünkü tarayıcılardan gelen alakasız bir çerez (örn. Cloudflare) 
-                    // bu bloğu tetikleyip valid API Key'i engelleyebilir.
+                    // Tarayıcıdan gelen alakasız çerezlerin API Key yetkilendirmesini engellemesini önle.
                     if !has_api_key {
                         return Err(e);
                     }
@@ -105,7 +94,6 @@ where
             }
         }
 
-        // 2. Try API Key
         if has_api_key {
             match ValidApiKey::from_request_parts(parts, state).await {
                 Ok(api_key) => return Ok(IngestionAuth::Developer(api_key.model)),
@@ -113,7 +101,6 @@ where
             }
         }
 
-        // 3. Neither present
         Err(AppError::Unauthorized("Bu işlem için giriş yapmalı veya geçerli bir X-API-Key sağlamalısınız.".to_string()))
     }
 }

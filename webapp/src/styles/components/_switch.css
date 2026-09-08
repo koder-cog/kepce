@@ -1,5 +1,5 @@
 @layer components {
-  /* ── Switch Row (for consents and settings) ── */
+  /* ── Switch Satırı (Onay ve ayarlar) ── */
   .form-switch-row {
     display: flex;
     align-items: center;
@@ -14,7 +14,7 @@
     color: var(--color-text);
   }
 
-  /* ── Hybrid Switch (Benmari) ──────────────────────────── */
+  /* ── Hibrit Switch ──────────────────────────────────────── */
 
   .c-switch {
     width: 64px;
@@ -96,7 +96,7 @@
     transform: translateX(16px);
   }
 
-  /* ── Switch Indicators (Mechanical I/O) ── */
+  /* ── Mekanik Durum Göstergeleri (I/O) ── */
   body.show-indicators .c-switch::before,
   body.show-indicators .c-switch::after {
     position: absolute;
@@ -110,17 +110,16 @@
     transition: opacity var(--dur-fast) var(--ease-standard);
   }
 
-  /* 'I' (ON) - Placed on the left */
+  /* Açık ('I') göstergesi: Sol konum, kapalıyken buton tutamağının altında kalır */
   body.show-indicators .c-switch::before {
     content: 'I';
     left: 14px;
     color: var(--color-text-on-accent);
     opacity: 0;
-    /* Hidden by default, handle will be here when OFF */
     z-index: 1;
   }
 
-  /* 'O' (OFF) - Placed on the right */
+  /* Kapalı ('○') göstergesi: Sağ konum */
   body.show-indicators .c-switch::after {
     content: '○';
     right: 11px;
@@ -129,19 +128,16 @@
     z-index: 1;
   }
 
-  /* Toggle visibility based on state */
+  /* Duruma göre gösterge görünürlükleri */
   body.show-indicators .c-input-hidden:checked+.c-switch::before {
     opacity: 1;
-    /* Revealed when handle moves to the right */
   }
 
   body.show-indicators .c-input-hidden:not(:checked)+.c-switch::after {
     opacity: 0.45;
-    /* Visible when handle is on the left */
   }
 
   body.show-indicators .c-input-hidden:checked+.c-switch::after {
     opacity: 0;
-    /* Covered/Hidden when handle moves to the right */
   }
 }

@@ -1,13 +1,7 @@
-// Kepçe API - Extractors: Doğrulanmış JSON
-// ============================================
-//
-// Axum'ın Json<T> extractor'ı sadece deserialization yapar.
-// Bu custom extractor hem deserialize eder hem de validator crate'ini çalıştırır.
-// Böylece DTO'lardaki #[validate] anotasyonları (min/max length, email vb.) 
-// otomatik olarak devreye girer.
-//
-// Kullanım:
-//   async fn handler(ValidatedJson(payload): ValidatedJson<CreateCommentDto>) { ... }
+//! Otomatik veri doğrulama (`validator`) destekli JSON extractor'ı.
+//!
+//! Axum'ın varsayılan `Json<T>` extractor'ına ek olarak DTO tiplerinde tanımlı
+//! `#[validate]` kurallarını çalıştırır; geçersiz girdilerde istemciye standart `AppError` döner.
 
 use axum::{
     async_trait,

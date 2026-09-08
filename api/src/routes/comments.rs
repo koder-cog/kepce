@@ -1,8 +1,4 @@
-// Kepçe API - Routes: Yorum ve Reaksiyon Endpoint'leri
-// =====================================================
-//
-// İnce zarf. CommentService (okuma) ve ReactionService (yazma) kullanır.
-//
+//! Menü yorumları, duygu oyları ve kullanıcı reaksiyon endpoint'leri.
 use axum::{
     routing::{get, post, put},
     Router,

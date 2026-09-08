@@ -1,15 +1,4 @@
-// Kepçe API - Service: İstatistik Servisi
-// =========================================
-//
-// Tüm istatistik hesaplamaları.
-//
-// Sorumlulukları:
-//   1. En çok / en az beğenilen yemekler
-//   2. Trend etiketler
-//   3. En beğenilen yorumlar (CommentService.enrich kullanır)
-//   4. Son yorumlar
-//   5. Moderasyon aktivitesi
-//   6. İnsanlık istatistikleri (toplam yorum, kullanıcı sayısı vb.)
+//! Menü beğenileri, popüler yemekler ve platform aktivitesi istatistik servisi.
 
 use sea_orm::*;
 use shared::entities::{prelude::*, reports, dish_tags, sea_orm_active_enums::ReportStatusEnum};
