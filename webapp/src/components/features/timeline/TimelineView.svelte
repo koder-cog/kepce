@@ -57,6 +57,12 @@
         isOffSeason && breakfasts.length === 0 && dinners.length > 0,
     );
 
+    let botPlaceholder = $derived(
+        breakfasts.length > 0 && showEmptyCards && !isOffSeason
+            ? getBotPlaceholderComment(timelineState.selectedDate)
+            : null
+    );
+
     // Sezon dışındayken kahvaltı verisi yoksa boş kart basma;
     // Sezon içinde ise kullanıcının showEmptyCards tercihine bak.
     let hideBreakfastSlot = $derived.by(() => {
@@ -200,15 +206,15 @@
                                 </button>
                             </div>
                         </div>
-                    {:else if breakfasts.length > 0 && showEmptyCards && !isOffSeason}
-                        <!-- Kahvaltı var ama bot yorumu yoksa ve boş kartlar gizlenmiyorsa, snarky sahte bot yorumu gösterilir -->
+                    {:else if botPlaceholder}
+                        <!-- Kahvaltı var ama bot yorumu yoksa (ve anma günü değilse), placeholder bot yorumu gösterilir -->
                         <div class="bot-card ai-element">
                             <h3 class="bot-card__title">Kepçe Bot köşesi</h3>
                             <div class="bot-card__text">
-                                <p>{getBotPlaceholderComment(timelineState.selectedDate)}</p>
+                                <p>{botPlaceholder}</p>
                             </div>
                         </div>
-                    {:else if showEmptyCards && !isOffSeason}
+                    {:else if showEmptyCards && !isOffSeason && breakfasts.length === 0}
                         <!-- Kahvaltı da yok, bot yorumu da yok ve boş kartlar gizlenmiyor -->
                         <div class="bot-card ai-element">
                             <EmptyState

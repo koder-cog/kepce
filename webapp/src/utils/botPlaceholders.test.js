@@ -91,10 +91,18 @@ describe("botPlaceholders Utility", () => {
         expect(typeof jan1).toBe("string");
     });
 
-    it("Herhangi bir tarih için geçerli bir placeholder metni dönmeli", () => {
-        const comment = getBotPlaceholderComment("2026-11-10");
-        expect(typeof comment).toBe("string");
-        expect(comment.length).toBeGreaterThan(10);
+    it("10 Kasım'da vakur Atatürk anma placeholder'ı dönmeli, diğer günlerde standart havuz işlemeli", () => {
+        const nov10 = getBotPlaceholderComment("2026-11-10");
+        const feb06 = getBotPlaceholderComment("2026-02-06");
+        const normalDay = getBotPlaceholderComment("2026-11-09");
+
+        expect(nov10).toContain("Gazi Mustafa Kemal Atatürk");
+        expect(nov10).toContain("lakayt şakalar yapacak gün değil");
+
+        expect(typeof feb06).toBe("string");
+        expect(feb06?.length).toBeGreaterThan(10);
+        expect(typeof normalDay).toBe("string");
+        expect(normalDay?.length).toBeGreaterThan(10);
     });
 });
 

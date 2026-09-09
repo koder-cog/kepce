@@ -1,3 +1,5 @@
+import { parseDateKey } from "./specialDates.js";
+
 /**
  * Menü verisi mevcut olduğu halde bot yorumu işlenmemiş/enjekte edilmemiş günlerde
  * gösterilecek 14 metinlik havuz ve deterministik rotasyon mekanizması.
@@ -66,14 +68,23 @@ function mulberry32(seed) {
     };
 }
 
+export const ATATURK_MEMORIAL_PLACEHOLDER =
+    "Normalde bu köşe boş kaldığında arkadaki geliştiricinin tembelliğine laf yetiştirirdim ama bugün öyle lakayt şakalar yapacak gün değil. Yorum motoru çalışmamış olsa bile bu boşluğun sessiz kalması, takvimdeki tarihin ciddiyeti karşısında zaten daha isabetli duruyor. Bize bu cumhuriyeti bırakan Gazi Mustafa Kemal Atatürk'ü saygı ve minnetle anıyoruz.";
+
 /**
  * Belirtilen gün için 14 günlük periyotlarla karılmış deterministik bir bot placeholder metni döner.
  * Her 14 günde bir havuzdaki tüm metinler benzersiz bir permütasyonla tam bir kez tüketilir.
+ * 10 Kasım Atatürk'ü Anma Günü'nde vakur ve saygılı özel mesaj döner.
  *
  * @param {Date|string} date
  * @returns {string}
  */
 export function getBotPlaceholderComment(date) {
+    const { mmdd } = parseDateKey(date);
+    if (mmdd === "11-10") {
+        return ATATURK_MEMORIAL_PLACEHOLDER;
+    }
+
     const epochDay = getEpochDay(date);
     const chunkIndex = Math.floor(epochDay / 14);
     const dayOffset = ((epochDay % 14) + 14) % 14;

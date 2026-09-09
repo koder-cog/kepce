@@ -27,14 +27,14 @@ export function parseDateKey(date) {
 }
 
 /**
- * Verilen tarihin 10 Kasım Atatürk'ü Anma Günü (matem/saygı günü) olup olmadığını döner.
+ * Verilen tarihin milli matem / anma günü (10 Kasım, 6 Şubat, 17 Ağustos vb.) olup olmadığını döner.
  *
  * @param {Date|string} date
  * @returns {boolean}
  */
 export function isMourningDay(date) {
     const { mmdd } = parseDateKey(date);
-    return mmdd === "11-10";
+    return Boolean(specialDatesData.national[mmdd]?.isMourning);
 }
 
 /**

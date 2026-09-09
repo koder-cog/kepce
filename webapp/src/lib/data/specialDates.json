@@ -2,7 +2,7 @@
   "national": {
     "01-01": { "name": "Yılbaşı" },
     "01-10": { "name": "Çalışan Gazeteciler Günü" },
-    "02-06": { "name": "6 Şubat Depremleri Anma Günü", "isMourning": true },
+    "02-06": { "name": "6 Şubat Depremleri Anma Günü" },
     "03-14": { "name": "Tıp Bayramı" },
     "03-18": { "name": "Çanakkale Deniz Zaferi ve Şehitleri Anma Günü" },
     "04-01": { "name": "1 Nisan" },
@@ -10,7 +10,7 @@
     "05-01": { "name": "Emek ve Dayanışma Günü" },
     "05-19": { "name": "Atatürk'ü Anma, Gençlik ve Spor Bayramı", "isCelebration": true },
     "07-15": { "name": "Demokrasi ve Milli Birlik Günü" },
-    "08-17": { "name": "17 Ağustos Depremi Anma Günü", "isMourning": true },
+    "08-17": { "name": "17 Ağustos Depremi Anma Günü" },
     "08-26": { "name": "Malazgirt Zaferi ve Büyük Taarruz'un Başlangıcı" },
     "08-30": { "name": "Zafer Bayramı", "isCelebration": true },
     "10-29": { "name": "Cumhuriyet Bayramı", "isCelebration": true },

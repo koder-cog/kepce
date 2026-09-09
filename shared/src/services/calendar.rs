@@ -10,6 +10,7 @@ use chrono::{Datelike, NaiveDate};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct NationalDay {
     pub name: String,
     #[serde(default)]
@@ -40,9 +41,14 @@ fn get_calendar_data() -> &'static CalendarData {
     })
 }
 
-/// Verilen tarihin 10 Kasım (Atatürk'ü Anma Günü / milli matem) olup olmadığını döner.
+/// Verilen tarihin milli matem / anma günü olup olmadığını döner.
 pub fn is_mourning_day(date: NaiveDate) -> bool {
-    date.month() == 11 && date.day() == 10
+    let data = get_calendar_data();
+    let mm_dd = format!("{:02}-{:02}", date.month(), date.day());
+    data.national
+        .get(&mm_dd)
+        .map(|d| d.is_mourning)
+        .unwrap_or(false)
 }
 
 /// Verilen tarihin KYK burs/kredi ödeme dönemi (her ayın 6-10'u) olup olmadığını döner.
@@ -127,8 +133,11 @@ mod tests {
 
     #[test]
     fn test_mourning_day() {
-        let date = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
-        assert!(is_mourning_day(date));
+        let nov10 = NaiveDate::from_ymd_opt(2026, 11, 10).unwrap();
+        assert!(is_mourning_day(nov10));
+
+        let feb06 = NaiveDate::from_ymd_opt(2026, 2, 6).unwrap();
+        assert!(!is_mourning_day(feb06));
 
         let non_mourning = NaiveDate::from_ymd_opt(2026, 11, 9).unwrap();
         assert!(!is_mourning_day(non_mourning));

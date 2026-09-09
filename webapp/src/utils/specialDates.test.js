@@ -17,10 +17,12 @@ describe("specialDates Utility", () => {
         expect(dateRes.day).toBe(6);
     });
 
-    it("10 Kasım gününü doğru matem günü olarak tanımalı", () => {
+    it("10 Kasım gününü matem/anma günü olarak tanımalı, diğer günleri tanımamalı", () => {
         expect(isMourningDay("2026-11-10")).toBe(true);
+        expect(isMourningDay("2026-02-06")).toBe(false);
+        expect(isMourningDay("2026-08-17")).toBe(false);
         expect(isMourningDay("2026-11-09")).toBe(false);
-        expect(isMourningDay(new Date(2026, 10, 10))).toBe(true);
+        expect(isMourningDay("2026-04-23")).toBe(false);
 
         const info = getSpecialDayInfo("2026-11-10");
         expect(info?.isMourning).toBe(true);
@@ -75,10 +77,10 @@ describe("specialDates Utility", () => {
         expect(info?.isLocal).toBe(true);
     });
 
-    it("6 Şubat milli matem günü olarak tanınmalı", () => {
+    it("6 Şubat anma günü olarak tanınmalı", () => {
         const info = getSpecialDayInfo("2026-02-06");
-        expect(info?.isMourning).toBe(true);
         expect(info?.name).toContain("6 Şubat");
+        expect(info?.isMourning).toBe(false);
     });
 });
 
