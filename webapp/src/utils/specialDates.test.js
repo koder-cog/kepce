@@ -62,4 +62,23 @@ describe("specialDates Utility", () => {
         const normal = getSpecialDayInfo("2026-02-15", "istanbul");
         expect(normal).toBeNull();
     });
+
+    it("Giresun için 19 Eylül'de Atatürk'ün Gelişi dönmeli", () => {
+        const info = getSpecialDayInfo("2026-09-19", "giresun");
+        expect(info?.name).toBe("Atatürk'ün Giresun'a Gelişi");
+        expect(info?.isLocal).toBe(true);
+    });
+
+    it("Denizli için 4 Şubat'ta Atatürk'ün Gelişi dönmeli", () => {
+        const info = getSpecialDayInfo("2026-02-04", "denizli");
+        expect(info?.name).toBe("Atatürk'ün Denizli'ye Gelişi");
+        expect(info?.isLocal).toBe(true);
+    });
+
+    it("6 Şubat milli matem günü olarak tanınmalı", () => {
+        const info = getSpecialDayInfo("2026-02-06");
+        expect(info?.isMourning).toBe(true);
+        expect(info?.name).toContain("6 Şubat");
+    });
 });
+

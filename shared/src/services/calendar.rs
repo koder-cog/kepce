@@ -153,4 +153,11 @@ mod tests {
         let header = format_bot_day_header(date, "Ankara", "ankara");
         assert_eq!(header, "=== 2026-02-02 [Şehir: Ankara] ===");
     }
+
+    #[test]
+    fn test_giresun_special_day() {
+        let date = NaiveDate::from_ymd_opt(2026, 9, 19).unwrap();
+        let name = get_special_day_name(date, "giresun");
+        assert_eq!(name.as_deref(), Some("Atatürk'ün Giresun'a Gelişi"));
+    }
 }
