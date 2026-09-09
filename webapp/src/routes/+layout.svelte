@@ -29,13 +29,12 @@
 		}
 	});
 
-	const dateStr = data?.serverToday || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
-	const [year, month, day] = dateStr.split("-");
-
-	const mmdd = `${month}-${day}`;
-	const yyyymmdd = dateStr;
-
-	const currentHoliday = holidays[yyyymmdd] || holidays[mmdd];
+	let currentHoliday = $derived.by(() => {
+		const str = data?.serverToday || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+		const parts = str.split("-");
+		const mmdd = `${parts[1]}-${parts[2]}`;
+		return holidays[str] || holidays[mmdd];
+	});
 
 
 	let navHeight = $state(64);
