@@ -5,6 +5,7 @@ export async function GET({ url }) {
   <ShortName>Kepçe Ara</ShortName>
   <Description>Gizlilik odaklı, açık kaynaklı meta arama motoru</Description>
   <InputEncoding>UTF-8</InputEncoding>
+  <Image width="128" height="128" type="image/svg+xml">${origin}/favicon-ara.svg</Image>
   <Image width="16" height="16" type="image/x-icon">${origin}/favicon.ico</Image>
   <Url type="text/html" template="${origin}/ara?q={searchTerms}"/>
   <Url type="application/x-suggestions+json" template="${origin}/ara/api/suggest?q={searchTerms}"/>

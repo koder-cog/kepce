@@ -25,8 +25,10 @@ export async function handle({ event, resolve }) {
   const hostname = event.url.hostname.toLowerCase();
   const isAraSubdomain = hostname.startsWith("ara.") || hostname === "ara.localhost";
 
+  const isAraRoute = isAraSubdomain || event.url.pathname.startsWith("/ara");
+
   // Arama motorunda katı No-Referrer ve Güvenlik Başlıkları İzolasyonu (A4.1)
-  if (isAraSubdomain || event.url.pathname.startsWith("/ara")) {
+  if (isAraRoute) {
     event.setHeaders({
       "Referrer-Policy": "no-referrer",
       "X-Content-Type-Options": "nosniff",
@@ -44,5 +46,15 @@ export async function handle({ event, resolve }) {
     throw redirect(302, `https://ara.kepce.org${cleanPath}${event.url.search}`);
   }
 
-  return resolve(event);
+  return resolve(event, {
+    transformPageChunk: ({ html }) => {
+      if (isAraRoute) {
+        return html
+          .replace(/<link rel="icon" href="\/favicon\.ico"[^>]*>/, '<link rel="icon" type="image/svg+xml" href="/favicon-ara.svg" />')
+          .replace(/<link rel="icon" type="image\/svg\+xml" href="\/favicon\.svg"[^>]*>/, '')
+          .replace(/<link rel="icon" type="image\/png"[^>]*>/g, '');
+      }
+      return html;
+    }
+  });
 }

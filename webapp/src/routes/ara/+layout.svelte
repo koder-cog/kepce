@@ -3,6 +3,7 @@
 </script>
 
 <svelte:head>
+  <link rel="icon" type="image/svg+xml" href="/favicon-ara.svg" />
   <link
     rel="search"
     type="application/opensearchdescription+xml"

@@ -358,6 +358,12 @@
 
 <svelte:window onclick={handleGlobalClick} />
 
+<svelte:head>
+	{#if !isSearchRoute}
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+	{/if}
+</svelte:head>
+
 {#if isSearchRoute}
 	{@render children()}
 {:else}

@@ -48,7 +48,7 @@ kepce.org, www.kepce.org {
 
     # Statik meta ve simge dosyaları için önbellek kuralları (manifest.json, favicon vb.)
     @static_meta {
-        path /manifest.json /favicon.ico /favicon.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png
+        path /manifest.json /favicon.ico /favicon.svg /favicon-ara.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png
     }
     header @static_meta Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
 
@@ -99,6 +99,10 @@ ara.kepce.org {
     # Arama motorlarının dinamik arama sorgu sayfalarını indekslemesini engelle
     @search_results query q=*
     header @search_results X-Robots-Tag "noindex, nofollow, noarchive"
+
+    # Favicon yönlendirmesi
+    rewrite /favicon.ico /favicon-ara.svg
+    rewrite /favicon.svg /favicon-ara.svg
 
     log {
         output file /var/log/caddy/ara_access.log {
