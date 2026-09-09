@@ -19,7 +19,6 @@
 	import OfflineBanner from "@/components/ui/OfflineBanner.svelte";
 
 	import { timelineState } from "@/stores/timeline.svelte.js";
-	import { isMourningDay } from "@/utils/specialDates.js";
 
 	let { data, children } = $props();
 
@@ -38,15 +37,6 @@
 
 	const currentHoliday = holidays[yyyymmdd] || holidays[mmdd];
 
-	let isMourningActive = $derived(
-		Boolean(data?.isMourning) ||
-		(timelineState.selectedDateString ? isMourningDay(timelineState.selectedDateString) : false)
-	);
-
-	$effect(() => {
-		if (typeof document === "undefined") return;
-		document.documentElement.classList.toggle("theme-mourning", Boolean(isMourningActive));
-	});
 
 	let navHeight = $state(64);
 
@@ -372,7 +362,7 @@
 {#if isSearchRoute}
 	{@render children()}
 {:else}
-	<div id="app" class:is-app={globalState.isApp} class:theme-mourning={isMourningActive}>
+	<div id="app" class:is-app={globalState.isApp}>
 		{#if !globalState.isApp}
 			<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
 			<a href="#page-content" class="skip-link">Ana içeriğe geç</a>

@@ -5,7 +5,6 @@
     import { isMotionEnabled } from "@/lib/dom/motion.js";
     import { timelineState } from "@/stores/timeline.svelte.js";
     import holidays from "$lib/data/holidays.json";
-    import { getSpecialDayInfo } from "@/utils/specialDates.js";
 
     const FULL_WEEKDAYS = [
         "Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi",
@@ -56,14 +55,6 @@
             Array.isArray(holidays[mmdd]) ? dayHolidays.push(...holidays[mmdd]) : dayHolidays.push(holidays[mmdd]);
         }
 
-        const dateStr = `${year}-${m}-${d}`;
-        const special = getSpecialDayInfo(dateStr, timelineState.currentCity);
-        if (special && !dayHolidays.some(h => h.name === special.name)) {
-            dayHolidays.push({
-                name: special.name,
-                theme: special.isMourning ? "black" : (special.isCelebration ? "red" : "primary")
-            });
-        }
         
         return dayHolidays;
     }

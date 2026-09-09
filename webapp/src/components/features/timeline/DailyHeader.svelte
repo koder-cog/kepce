@@ -50,13 +50,11 @@
             </button>
         </div>
         {#if specialDay}
-            <div class="ambient-badge-container">
-                <span
-                    class="ambient-badge {specialDay.isLocal ? 'ambient-badge--local' : ''} {specialDay.isMourning ? 'ambient-badge--mourning' : ''} {specialDay.isCelebration ? 'ambient-badge--celebration' : ''}"
-                >
-                    {specialDay.name}
-                </span>
-            </div>
+            <span
+                class="ambient-badge {specialDay.isLocal ? 'ambient-badge--local' : ''} {specialDay.isMourning ? 'ambient-badge--mourning' : ''} {specialDay.isCelebration ? 'ambient-badge--celebration' : ''}"
+            >
+                {specialDay.name}
+            </span>
         {/if}
     </div>
 
