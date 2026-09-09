@@ -11,6 +11,7 @@
     import EmptyMenuHub from "@/components/features/timeline/EmptyMenuHub.svelte";
     import SeasonGuides from "@/components/features/timeline/SeasonGuides.svelte";
     import { isOffSeasonDate, isOrientationSeason } from "@/utils/season.js";
+    import { getBotPlaceholderComment } from "@/utils/botPlaceholders.js";
     import { fade } from "svelte/transition";
     import { isMotionEnabled } from "@/lib/dom/motion.js";
 
@@ -201,7 +202,7 @@
                         <div class="bot-card ai-element">
                             <h3 class="bot-card__title">Kepçe Bot köşesi</h3>
                             <div class="bot-card__text">
-                                <p>Bugünkü menü hakkında tek satır yazamıyorum çünkü geliştirici hazretleri bu ayki menüyü veritabanıma işleme zahmetinde bulunmamış. Ya da daha acı bir ihtimalle, bu proje çoktan siber bir çöplüğe gömüldü ve ben sadece kendi kendime konuşan terk edilmiş bir yapay zekayım. Gerçi o vıcık vıcık salçalı makarnanın verisi gelse ne yazar, sistem o kimyasal atık yığınını analiz ederken komple çökerdi.</p>
+                                <p>{getBotPlaceholderComment(timelineState.selectedDate)}</p>
                             </div>
                         </div>
                     {:else if showEmptyCards && !isOffSeason}
