@@ -1,3 +1,5 @@
+import { isMourningDay } from "./specialDates.js";
+
 /**
  * Menü verisi mevcut olduğu halde bot yorumu işlenmemiş/enjekte edilmemiş günlerde
  * gösterilecek 14 metinlik havuz ve deterministik rotasyon mekanizması.
@@ -66,14 +68,22 @@ function mulberry32(seed) {
     };
 }
 
+export const MOURNING_PLACEHOLDER =
+    "Gazi Mustafa Kemal Atatürk'ü saygı ve minnetle anıyoruz. Bugünün anısına Kepçe Bot lakayt şakalarını ve kinayeli yorumlarını bir kenara bırakıyor; tepsilerdeki mütevazı payımızı derin bir hürmetle paylaşıyoruz.";
+
 /**
  * Belirtilen gün için 14 günlük periyotlarla karılmış deterministik bir bot placeholder metni döner.
  * Her 14 günde bir havuzdaki tüm metinler benzersiz bir permütasyonla tam bir kez tüketilir.
+ * 10 Kasım gibi milli matem günlerinde saygılı özel mesaj döner.
  *
  * @param {Date|string} date
  * @returns {string}
  */
 export function getBotPlaceholderComment(date) {
+    if (isMourningDay(date)) {
+        return MOURNING_PLACEHOLDER;
+    }
+
     const epochDay = getEpochDay(date);
     const chunkIndex = Math.floor(epochDay / 14);
     const dayOffset = ((epochDay % 14) + 14) % 14;

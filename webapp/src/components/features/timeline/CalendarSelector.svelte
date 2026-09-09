@@ -5,6 +5,7 @@
     import { isMotionEnabled } from "@/lib/dom/motion.js";
     import { timelineState } from "@/stores/timeline.svelte.js";
     import holidays from "$lib/data/holidays.json";
+    import { getSpecialDayInfo } from "@/utils/specialDates.js";
 
     const FULL_WEEKDAYS = [
         "Pazar", "Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi",
@@ -53,6 +54,15 @@
         }
         if (holidays[mmdd]) {
             Array.isArray(holidays[mmdd]) ? dayHolidays.push(...holidays[mmdd]) : dayHolidays.push(holidays[mmdd]);
+        }
+
+        const dateStr = `${year}-${m}-${d}`;
+        const special = getSpecialDayInfo(dateStr, timelineState.currentCity);
+        if (special && !dayHolidays.some(h => h.name === special.name)) {
+            dayHolidays.push({
+                name: special.name,
+                theme: special.isMourning ? "black" : (special.isCelebration ? "red" : "primary")
+            });
         }
         
         return dayHolidays;
@@ -121,10 +131,13 @@
                             day === timelineState.selectedDate.getDate() &&
                             timelineState.viewMonth === timelineState.selectedDate.getMonth() &&
                             timelineState.viewYear === timelineState.selectedDate.getFullYear()}
-                        {@const isToday =
-                            day === new Date().getDate() &&
-                            timelineState.viewMonth === new Date().getMonth() &&
-                            timelineState.viewYear === new Date().getFullYear()}
+                        {@const isToday = timelineState.serverTodayParts
+                            ? (day === timelineState.serverTodayParts.day &&
+                               timelineState.viewMonth === timelineState.serverTodayParts.month &&
+                               timelineState.viewYear === timelineState.serverTodayParts.year)
+                            : (day === now.getDate() &&
+                               timelineState.viewMonth === now.getMonth() &&
+                               timelineState.viewYear === now.getFullYear())}
                         {@const dayHols = getHolidays(timelineState.viewYear, timelineState.viewMonth, day)}
                         {@const tooltipText = dayHols.length > 0 ? dayHols.map(h => h.name).join(', ') : undefined}
                         <a
@@ -158,10 +171,13 @@
                         day === timelineState.selectedDate.getDate() &&
                         timelineState.viewMonth === timelineState.selectedDate.getMonth() &&
                         timelineState.viewYear === timelineState.selectedDate.getFullYear()}
-                    {@const isToday =
-                        day === now.getDate() &&
-                        timelineState.viewMonth === now.getMonth() &&
-                        timelineState.viewYear === now.getFullYear()}
+                    {@const isToday = timelineState.serverTodayParts
+                        ? (day === timelineState.serverTodayParts.day &&
+                           timelineState.viewMonth === timelineState.serverTodayParts.month &&
+                           timelineState.viewYear === timelineState.serverTodayParts.year)
+                        : (day === now.getDate() &&
+                           timelineState.viewMonth === now.getMonth() &&
+                           timelineState.viewYear === now.getFullYear())}
                     {@const dayHols = getHolidays(timelineState.viewYear, timelineState.viewMonth, day)}
                     {@const tooltipText = dayHols.length > 0 ? dayHols.map(h => h.name).join(', ') : undefined}
                     <a

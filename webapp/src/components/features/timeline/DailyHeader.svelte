@@ -8,11 +8,16 @@
     import { isMotionEnabled } from "@/lib/dom/motion.js";
 
     import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
+    import { getSpecialDayInfo } from "@/utils/specialDates.js";
 
     const MONTHS = [
         "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
         "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
     ];
+
+    let specialDay = $derived(
+        getSpecialDayInfo(timelineState.selectedDateString, timelineState.currentCity)
+    );
 
     function handleDietSelect(mode) {
         timelineState.selectDietMode(mode);
@@ -44,6 +49,15 @@
                 {@html icon("chevronRight", 20)}
             </button>
         </div>
+        {#if specialDay}
+            <div class="ambient-badge-container">
+                <span
+                    class="ambient-badge {specialDay.isLocal ? 'ambient-badge--local' : ''} {specialDay.isMourning ? 'ambient-badge--mourning' : ''} {specialDay.isCelebration ? 'ambient-badge--celebration' : ''}"
+                >
+                    {specialDay.name}
+                </span>
+            </div>
+        {/if}
     </div>
 
     <div class="header-controls">

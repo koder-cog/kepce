@@ -18,17 +18,35 @@
 	import ExternalLinkWarningModal from "@/components/features/ExternalLinkWarningModal.svelte";
 	import OfflineBanner from "@/components/ui/OfflineBanner.svelte";
 
-	let { children } = $props();
+	import { timelineState } from "@/stores/timeline.svelte.js";
+	import { isMourningDay } from "@/utils/specialDates.js";
 
-	const today = new Date();
-	const month = String(today.getMonth() + 1).padStart(2, "0");
-	const day = String(today.getDate()).padStart(2, "0");
-	const year = today.getFullYear();
+	let { data, children } = $props();
+
+	// Sunucu tarafında hesaplanan Türkiye saatini store'a senkronize et
+	$effect(() => {
+		if (data?.serverToday) {
+			timelineState.setServerToday(data.serverToday);
+		}
+	});
+
+	const dateStr = data?.serverToday || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(new Date().getDate()).padStart(2, "0")}`;
+	const [year, month, day] = dateStr.split("-");
 
 	const mmdd = `${month}-${day}`;
-	const yyyymmdd = `${year}-${month}-${day}`;
+	const yyyymmdd = dateStr;
 
 	const currentHoliday = holidays[yyyymmdd] || holidays[mmdd];
+
+	let isMourningActive = $derived(
+		Boolean(data?.isMourning) ||
+		(timelineState.selectedDateString ? isMourningDay(timelineState.selectedDateString) : false)
+	);
+
+	$effect(() => {
+		if (typeof document === "undefined") return;
+		document.documentElement.classList.toggle("theme-mourning", Boolean(isMourningActive));
+	});
 
 	let navHeight = $state(64);
 
@@ -354,7 +372,7 @@
 {#if isSearchRoute}
 	{@render children()}
 {:else}
-	<div id="app" class:is-app={globalState.isApp}>
+	<div id="app" class:is-app={globalState.isApp} class:theme-mourning={isMourningActive}>
 		{#if !globalState.isApp}
 			<!-- #70: Klavye kullanıcıları navigasyonu atlayabilsin -->
 			<a href="#page-content" class="skip-link">Ana içeriğe geç</a>

@@ -32,6 +32,18 @@ export function createTimelineStore() {
     // otomatik standarda dönülmez, empty-state gösterilir.
     let dietForcedViaUrl = $state(false);
 
+    // Sunucu tarafında (UTC+3) hesaplanan güncel tarih ('YYYY-MM-DD').
+    // İstemci cihaz saati manipülasyonlarına karşı referanstır.
+    let serverToday = $state(null);
+    let serverTodayParts = $derived.by(() => {
+        if (!serverToday) return null;
+        const p = serverToday.split('-').map(Number);
+        if (p.length === 3 && !p.some(isNaN)) {
+            return { year: p[0], month: p[1] - 1, day: p[2] };
+        }
+        return null;
+    });
+
     const START_YEAR = 2026; // Kepçe veri başlangıcı (Ocak 2026)
     const MAY_2026 = new Date(2026, 4, 1);
 
@@ -355,9 +367,17 @@ export function createTimelineStore() {
     }
 
 
+    function setServerToday(dateStr) {
+        if (dateStr && typeof dateStr === 'string') {
+            serverToday = dateStr;
+        }
+    }
+
     return {
         get cities() { return cities; },
         get selectedDate() { return selectedDate; },
+        get serverToday() { return serverToday; },
+        get serverTodayParts() { return serverTodayParts; },
         get viewMonth() { return viewMonth; },
         get viewYear() { return viewYear; },
         get viewType() { return viewType; },
@@ -385,6 +405,7 @@ export function createTimelineStore() {
         set viewType(val) { updateView(undefined, undefined, val); },
 
         init,
+        setServerToday,
         prevMonth,
         nextMonth,
         selectDate,

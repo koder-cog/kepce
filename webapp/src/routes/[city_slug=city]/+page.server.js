@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { apiGet, normalizeMenuList, istanbulToday } from '@/lib/server/api.js';
 import { CITY_MAP } from '@/utils/turkish.js';
+import { isOffSeasonDate } from '@/utils/season.js';
 
 /**
  * Şehir sayfası: SSR'da o şehrin bugünkü menülerini API'den (container içi)
@@ -17,6 +18,7 @@ export async function load({ params, url, setHeaders }) {
 	const gunParam = url.searchParams.get('gun') || url.searchParams.get('tarih') || url.searchParams.get('date');
 	const date = gunParam && /^\d{4}-\d{2}-\d{2}$/.test(gunParam) ? gunParam : istanbulToday();
 	const isSummer = ['07', '08'].includes(date.slice(5, 7));
+	const isOffSeason = isOffSeasonDate(date);
 
 	setHeaders({
 		'cache-control': 'public, s-maxage=120, stale-while-revalidate=600'
@@ -64,7 +66,9 @@ export async function load({ params, url, setHeaders }) {
 		date,
 		menus,
 		isSummer,
+		isOffSeason,
 		noindex: false,
 		lastMenuDay
 	};
 }
+

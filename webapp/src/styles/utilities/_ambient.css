@@ -1,0 +1,38 @@
+/* Altin.in tarzı 10 Kasım Atatürk'ü Anma ve milli matem modu */
+html.theme-mourning,
+body.theme-mourning,
+.theme-mourning {
+    filter: grayscale(100%) contrast(104%);
+    transition: filter var(--dur-standard) var(--ease-standard);
+}
+
+.ambient-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--text-xs);
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: var(--radius-full);
+    background-color: var(--color-surface-sunken);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+}
+
+.ambient-badge--local {
+    background-color: rgba(230, 81, 0, 0.08);
+    color: var(--color-primary);
+    border-color: rgba(230, 81, 0, 0.25);
+}
+
+.ambient-badge--mourning {
+    background-color: var(--color-surface-sunken);
+    color: var(--color-text-primary);
+    border-color: var(--color-border-strong, #555);
+}
+
+.ambient-badge--celebration {
+    background-color: rgba(211, 47, 47, 0.08);
+    color: var(--color-error);
+    border-color: rgba(211, 47, 47, 0.25);
+}

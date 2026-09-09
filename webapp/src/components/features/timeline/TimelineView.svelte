@@ -17,7 +17,8 @@
 
     let {
         lastMenuDay = null,
-        isSummer = false
+        isSummer = false,
+        isOffSeason: propIsOffSeason = undefined
     } = $props();
 
     // Ayarlar sayfasındaki "Boş içerik kartlarını göster" kullanıcı tercihi.
@@ -45,7 +46,9 @@
         timelineState.dinnerData.filter((m) => normalizeItems(m).length > 0),
     );
 
-    let isOffSeason = $derived(isOffSeasonDate(timelineState.selectedDate));
+    let isOffSeason = $derived(
+        propIsOffSeason !== undefined ? propIsOffSeason : isOffSeasonDate(timelineState.selectedDate)
+    );
     let showSeasonGuides = $derived(isOrientationSeason(timelineState.selectedDate));
 
     // Tek öğün / nöbetçi modu: Sezon dışındayken ve kahvaltı yoksa (yalnızca akşam yemeği varsa)

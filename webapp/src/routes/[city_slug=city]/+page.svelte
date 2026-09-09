@@ -142,4 +142,5 @@
 <TimelineView
     lastMenuDay={data?.lastMenuDay}
     isSummer={data?.isSummer}
+    isOffSeason={data?.isOffSeason}
 />
