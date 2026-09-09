@@ -203,6 +203,8 @@ pub struct BotExportMonthlyQuery {
 /// export-monthly yanıtı
 #[derive(Debug, Serialize)]
 pub struct BotExportMonthlyResponseDto {
+    pub directive: String,
+    pub menu_data: String,
     pub prompt: String,
     pub schema: serde_json::Value,
 }

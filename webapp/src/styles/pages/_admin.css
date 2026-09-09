@@ -778,13 +778,14 @@
 
   /* ── Bot Action Buttons ── */
   .kepce-bot-actions {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
     gap: var(--space-sm);
   }
 
   @media (max-width: 600px) {
     .kepce-bot-actions {
-      flex-direction: column;
+      grid-template-columns: 1fr;
     }
   }
 

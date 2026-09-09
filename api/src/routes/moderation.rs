@@ -123,11 +123,16 @@ async fn export_monthly_menu_for_bot(
     let schema: serde_json::Value = serde_json::from_str(BotService::BOT_OUTPUT_SCHEMA)
         .map_err(|e| AppError::Internal(format!("Bot şeması çözümlenemedi: {}", e)))?;
 
-    let instruction = "\n\nYukarıdaki aylık menü verisini kullanarak HER GÜN için, yönergelerdeki Kepçe Bot kişiliğine uygun tek bir yorum üret. Çıktını belirtilen JSON şemasına göre formatla: tarih alanı ISO 8601 (YYYY-MM-DD), yorum alanı ham Türkçe metin (Markdown/madde işareti yok).";
+    let directive = config.bot_directive.clone();
+    let menu_data = menu_text.trim().to_string();
+    let prompt = format!("{}\n\n{}", directive, menu_data);
 
-    let prompt = format!("{}{}{}", config.bot_directive, instruction, menu_text);
-
-    Ok(Json(BotExportMonthlyResponseDto { prompt, schema }))
+    Ok(Json(BotExportMonthlyResponseDto {
+        directive,
+        menu_data,
+        prompt,
+        schema,
+    }))
 }
 
 /// Admin-only: Bot yorumlarını menülere yazar (gün bazlı, tüm öğünler).

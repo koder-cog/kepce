@@ -51,11 +51,19 @@
     return cachedBotData;
   }
 
-  async function exportForAI() {
+  async function exportDirective() {
     try {
       const data = await getBotData();
-      await navigator.clipboard.writeText(JSON.stringify(data.prompt, null, 2));
-      showToast('İçerik/Girdi kopyalandı.');
+      await navigator.clipboard.writeText(data.directive);
+      showToast('Sistem direktifi kopyalandı.');
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  async function exportMenuData() {
+    try {
+      const data = await getBotData();
+      await navigator.clipboard.writeText(data.menu_data);
+      showToast('Menü verisi kopyalandı.');
     } catch (err) { showToast(err.message, 'error'); }
   }
 
@@ -63,7 +71,15 @@
     try {
       const data = await getBotData();
       await navigator.clipboard.writeText(JSON.stringify(data.schema, null, 2));
-      showToast('JSON Şeması kopyalandı.');
+      showToast('JSON şeması kopyalandı.');
+    } catch (err) { showToast(err.message, 'error'); }
+  }
+
+  async function exportCombined() {
+    try {
+      const data = await getBotData();
+      await navigator.clipboard.writeText(data.prompt);
+      showToast('Tüm girdi (tek parça) kopyalandı.');
     } catch (err) { showToast(err.message, 'error'); }
   }
 
@@ -127,7 +143,7 @@
         <div class="kepce-bot-step__title">
           <h3 class="u-text-md">1. Dışa aktar</h3>
           <p class="u-text-sm">
-            Bot için aylık menü girdisini ve çıktı şemasını kopyala.
+            Bot için sistem direktifini, aylık menü verisini veya çıktı şemasını kopyala.
           </p>
         </div>
       </div>
@@ -150,11 +166,17 @@
         </div>
 
         <div class="kepce-bot-actions">
-          <button class="btn btn--primary u-flex-1" onclick={exportForAI}>
-            Girdiyi kopyala
+          <button class="btn btn--primary" onclick={exportDirective}>
+            Direktifi kopyala
           </button>
-          <button class="btn btn--secondary u-flex-1" onclick={exportSchema}>
+          <button class="btn btn--primary" onclick={exportMenuData}>
+            Menüyü kopyala
+          </button>
+          <button class="btn btn--secondary" onclick={exportSchema}>
             Şemayı kopyala
+          </button>
+          <button class="btn btn--secondary" onclick={exportCombined}>
+            Tümünü kopyala
           </button>
         </div>
       </div>
