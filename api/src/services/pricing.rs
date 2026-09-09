@@ -157,7 +157,7 @@ pub fn get_pricing_info_for_city(
     category: Option<&str>,
     name: &str,
 ) -> Option<PriceInfo> {
-    let target_date = serve_date.unwrap_or_else(|| chrono::Local::now().date_naive());
+    let target_date = serve_date.unwrap_or_else(crate::utils::time::istanbul_today);
 
     // Sezon dışı / nöbetçi yurt döneminde fiyat gösterilmez
     if is_off_season_date(target_date) {

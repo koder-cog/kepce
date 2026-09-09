@@ -6,7 +6,7 @@ use axum::{
     Json,
 };
 use serde::Deserialize;
-use chrono::{NaiveDate, Utc};
+use chrono::NaiveDate;
 use crate::services::menu::{MenuService, MenuError};
 use crate::services::vote::{VoteService, VoteError};
 use crate::error::AppError;
@@ -54,7 +54,7 @@ async fn get_today(
     Query(filter): Query<MenuFilterQueryDto>,
 ) -> Result<axum::response::Response, AppError> {
     let today = match filter.date.as_deref() {
-        Some("today") | None => Utc::now().date_naive(),
+        Some("today") | None => crate::utils::time::istanbul_today(),
         Some(s) => NaiveDate::parse_from_str(s, "%Y-%m-%d")
             .map_err(|_| AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string()))?,
     };
@@ -88,7 +88,7 @@ async fn get_menus(
 ) -> Result<axum::response::Response, AppError> {
     let user_id = user.map(|u| u.id);
     let parsed_date = match query.date.as_deref() {
-        Some("today") => Some(Utc::now().date_naive()),
+        Some("today") => Some(crate::utils::time::istanbul_today()),
         Some(s) => match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
             Ok(d) => Some(d),
             Err(_) => return Err(AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string())),
@@ -115,7 +115,7 @@ async fn get_today_city(
     Path(city_slug): Path<String>,
     Query(query): Query<MenuFilterQueryDto>,
 ) -> Result<axum::response::Response, AppError> {
-    let today = Utc::now().date_naive();
+    let today = crate::utils::time::istanbul_today();
     let user_id = user.map(|u| u.id);
     let menus = MenuService::get_menus_by_filter(&db, Some(city_slug), Some(today), query.dietary_type, None, None, user_id).await?;
     crate::utils::response::cached_json_response(&headers, &menus, 300)

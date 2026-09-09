@@ -12,7 +12,7 @@ use shared::entities::{
     cities, comments, menu_dishes, menus, users, vote_reactions,
     sea_orm_active_enums::MealTypeEnum,
 };
-use chrono::{Datelike, Local, NaiveDate};
+use chrono::{Datelike, NaiveDate};
 use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use std::path::Path as StdPath;
 use crate::config::AppState;
@@ -112,7 +112,7 @@ async fn get_city_og(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::NOT_FOUND)?;
 
-    let today = Local::now().date_naive();
+    let today = crate::utils::time::istanbul_today();
     let date_str = format_turkish_date(today);
 
     // Şehrin bugünkü menülerini çek

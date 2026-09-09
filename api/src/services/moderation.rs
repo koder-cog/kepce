@@ -523,7 +523,12 @@ impl ModerationService {
 
         for (i, menu) in menus_list.iter().enumerate() {
             if last_date != Some(menu.serve_date) {
-                text.push_str(&format!("\n=== {} ===\n", menu.serve_date));
+                let header = shared::services::calendar::format_bot_day_header(
+                    menu.serve_date,
+                    &city.name,
+                    city_slug,
+                );
+                text.push_str(&format!("\n{}\n", header));
                 last_date = Some(menu.serve_date);
             }
             text.push_str(&format!("--- {} ---\n", Self::meal_label(&menu.meal_type)));
