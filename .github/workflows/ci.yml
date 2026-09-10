@@ -36,6 +36,11 @@ jobs:
 
       - name: Install PostgreSQL client
         run: |
+          # Google Chrome'un CDN'i zaman zaman stale paket listesi serviyle
+          # hash uyumsuzluğuna yol açıyor. ubuntu-latest runner'ında bu repo
+          # varsayılan olarak geliyor; biz sadece postgresql-client kurduğumuz
+          # için kaldırmak güvenli.
+          sudo rm -f /etc/apt/sources.list.d/google-chrome.list
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
