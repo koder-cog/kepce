@@ -129,11 +129,13 @@
       <a href={`${basePath}/ayarlar`} class="c-search-home-footer__link"
         >Ayarlar</a
       >
-      <a href={`${basePath}/gizlilik`} class="c-search-home-footer__link"
-        >Gizlilik</a
+      <a
+        href={`${basePath}/gizlilik-politikasi`}
+        class="c-search-home-footer__link">Gizlilik</a
       >
-      <a href={`${basePath}/kosullar`} class="c-search-home-footer__link"
-        >Koşullar</a
+      <a
+        href={`${basePath}/kullanim-kosullari`}
+        class="c-search-home-footer__link">Koşullar</a
       >
       <a href={`${basePath}/iletisim`} class="c-search-home-footer__link"
         >İletişim</a

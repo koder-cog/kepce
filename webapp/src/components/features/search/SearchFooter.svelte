@@ -36,10 +36,10 @@
 
     <div class="site-footer__col">
       <div class="site-footer__col-title">Yasal</div>
-      <a href={`${basePath}/gizlilik`} class="site-footer__link"
+      <a href={`${basePath}/gizlilik-politikasi`} class="site-footer__link"
         >Gizlilik Politikası</a
       >
-      <a href={`${basePath}/kosullar`} class="site-footer__link"
+      <a href={`${basePath}/kullanim-kosullari`} class="site-footer__link"
         >Kullanım Koşulları</a
       >
       <a href={`${basePath}/iletisim`} class="site-footer__link">İletişim</a>
@@ -47,7 +47,7 @@
 
     <div class="site-footer__col">
       <div class="site-footer__col-title">Kepçe</div>
-      <a href="/" class="site-footer__link">Yemekhane Menüleri</a>
+      <a href="https://kepce.org/" class="site-footer__link">Yemekhane Menüleri</a>
       <a href={`${basePath}/ayarlar`} class="site-footer__link"
         >Arama Ayarları</a
       >
@@ -62,11 +62,7 @@
 
   <div class="site-footer__bottom">
     <div class="site-footer__agpl">
-      <div
-        class="site-footer__agpl-badge"
-        role="img"
-        aria-label="AGPLv3"
-      ></div>
+      <div class="site-footer__agpl-badge" role="img" aria-label="AGPLv3"></div>
     </div>
   </div>
 </footer>
