@@ -15,7 +15,15 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Kepçe Distributed Ingestion Worker başlatılıyor...");
 
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let db: DbConn = Database::connect(&db_url).await?;
+    // Worker arka planda sıralı görevler çalıştırır; API kadar bağlantıya ihtiyacı yok.
+    let mut db_opts = sea_orm::ConnectOptions::new(&db_url);
+    db_opts
+        .max_connections(4)
+        .min_connections(1)
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .idle_timeout(std::time::Duration::from_secs(600))
+        .sqlx_logging(false);
+    let db: DbConn = Database::connect(db_opts).await?;
     tracing::info!("Veritabanı bağlantısı başarılı.");
 
     // One-shot lokal dosya ingest (admin/kullanıcı Excel-PDF drop-zone).

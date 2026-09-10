@@ -80,7 +80,21 @@ pub async fn run() -> anyhow::Result<()> {
     tracing::info!("Kepçe API v2 başlatılıyor...");
 
     // Veritabanı bağlantısı
-    let db = Database::connect(&config.database_url).await?;
+    // Bağlantı havuzu: varsayılan 10 bağlantı yük altında yeterli;
+    // yüksek trafik veya çok sayıda worker thread durumunda
+    // DATABASE_POOL_MAX_CONNECTIONS env değişkeniyle artırılabilir.
+    let pool_max: u32 = std::env::var("DATABASE_POOL_MAX_CONNECTIONS")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(10);
+    let mut db_opts = sea_orm::ConnectOptions::new(&config.database_url);
+    db_opts
+        .max_connections(pool_max)
+        .min_connections(2)
+        .connect_timeout(std::time::Duration::from_secs(10))
+        .idle_timeout(std::time::Duration::from_secs(600))
+        .sqlx_logging(false);
+    let db = Database::connect(db_opts).await?;
     tracing::info!("Veritabanı bağlantısı başarılı.");
 
     // Veritabanı Şema Migrasyonu
