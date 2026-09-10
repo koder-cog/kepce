@@ -529,8 +529,10 @@ fn get_source_priority(source: &str) -> i32 {
     match source {
         "kepce-admin" => 10,
         "kepce-kullanici" => 8,
+        // kykyemek nöbetçi yurt modunda kalabildiğinden (eylül başı vb.) yurtmenu.net
+        // bu dönemlerde gerçek menüyü daha erken yayınlıyor; bu yüzden yurtmenu 1 puan önde.
         "kykyemek.com" | "kykyemek" | "kyk-yemek" => 6,
-        "yurtmenu" | "yurtmenu.net" | "yurtmenu_live" => 5,
+        "yurtmenu" | "yurtmenu.net" | "yurtmenu_live" => 7,
         "kykmenum" | "kykmenum.com" => 5,
         "kykmenu" | "kykmenu.com.tr" | "kykmenulistesi.com.tr" => 4,
         "kepce-anonim" | "anonim" => 3,

@@ -36,11 +36,11 @@
     { value: "yearly", label: "Geçen Yıl" },
   ];
 
-  let hasInitial = Boolean(data?.initialTopDishes && data.initialTopDishes.length > 0);
-  let isLoading = $state(!hasInitial);
+  let hasInitial = $derived(Boolean(data?.initialTopDishes && data.initialTopDishes.length > 0));
+  let isLoading = $state(true);
   let errorMsg = $state(null);
   let errorCode = $state(null);
-  let contentData = $state(hasInitial ? data.initialTopDishes : null);
+  let contentData = $state(null);
   let currentLoadToken = 0;
   let isFirstLoad = true;
 
@@ -51,6 +51,8 @@
       cachedCities = [];
     }
     if (isFirstLoad && hasInitial) {
+      contentData = data.initialTopDishes;
+      isLoading = false;
       isFirstLoad = false;
       return;
     }

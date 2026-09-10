@@ -12,7 +12,7 @@ use crate::parser::models::MenuComponent;
 use crate::tasks::scraper::upsert_menu;
 
 /// Fallback kaynak hiyerarşisi (düşükten yükseğe güven):
-///   kykyemek.com (6) > kykmenum.com / yurtmenu.net (5) > kykmenu.com.tr (4)
+///   yurtmenu.net (7) > kykyemek.com (6) > kykmenum.com (5) > kykmenu.com.tr (4)
 ///
 /// Bu task SADECE birincil kaynakta (kykyemek) o şehir/o gün için kayıt
 /// bulunamadığında devreye girer ("boşa debelenme"yi önler). Kayıt zaten

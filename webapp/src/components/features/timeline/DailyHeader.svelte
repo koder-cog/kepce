@@ -11,51 +11,74 @@
     import { getSpecialDayInfo } from "@/utils/specialDates.js";
 
     const MONTHS = [
-        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+        "Ocak",
+        "Şubat",
+        "Mart",
+        "Nisan",
+        "Mayıs",
+        "Haziran",
+        "Temmuz",
+        "Ağustos",
+        "Eylül",
+        "Ekim",
+        "Kasım",
+        "Aralık",
     ];
 
     let specialDay = $derived(
-        getSpecialDayInfo(timelineState.selectedDateString, timelineState.currentCity)
+        getSpecialDayInfo(
+            timelineState.selectedDateString,
+            timelineState.currentCity,
+        ),
     );
 
     function handleDietSelect(mode) {
         timelineState.selectDietMode(mode);
     }
-
 </script>
 
 <div class="daily-header">
     <div class="month-nav-wrapper">
         <div class="month-nav">
-            <button class="month-nav__btn" aria-label="Önceki ay" onclick={timelineState.prevMonth} disabled={!timelineState.canPrevMonth || timelineState.isUpdating}>
+            <button
+                class="month-nav__btn"
+                aria-label="Önceki ay"
+                onclick={timelineState.prevMonth}
+                disabled={!timelineState.canPrevMonth ||
+                    timelineState.isUpdating}
+            >
                 {@html icon("chevronLeft", 20)}
             </button>
-            <div class="month-nav__label-wrapper" class:is-updating={timelineState.isUpdating}>
+            <div
+                class="month-nav__label-wrapper"
+                class:is-updating={timelineState.isUpdating}
+            >
                 {#key `${timelineState.viewYear}-${timelineState.viewMonth}`}
                     <span
                         class="month-nav__label"
                         in:fly={{
-                            x: isMotionEnabled() ? timelineState.monthNavDirection * 14 : 0,
+                            x: isMotionEnabled()
+                                ? timelineState.monthNavDirection * 14
+                                : 0,
                             duration: isMotionEnabled() ? 160 : 0,
-                            easing: cubicOut
+                            easing: cubicOut,
                         }}
                     >
-                        {MONTHS[timelineState.viewMonth]} {timelineState.viewYear}
+                        {MONTHS[timelineState.viewMonth]}
+                        {timelineState.viewYear}
                     </span>
                 {/key}
             </div>
-            <button class="month-nav__btn" aria-label="Sonraki ay" onclick={timelineState.nextMonth} disabled={!timelineState.canNextMonth || timelineState.isUpdating}>
+            <button
+                class="month-nav__btn"
+                aria-label="Sonraki ay"
+                onclick={timelineState.nextMonth}
+                disabled={!timelineState.canNextMonth ||
+                    timelineState.isUpdating}
+            >
                 {@html icon("chevronRight", 20)}
             </button>
         </div>
-        {#if specialDay}
-            <span
-                class="ambient-badge {specialDay.isLocal ? 'ambient-badge--local' : ''} {specialDay.isMourning ? 'ambient-badge--mourning' : ''} {specialDay.isCelebration ? 'ambient-badge--celebration' : ''}"
-            >
-                {specialDay.name}
-            </span>
-        {/if}
     </div>
 
     <div class="header-controls">
@@ -64,20 +87,44 @@
             value={timelineState.viewType}
             variant="responsive"
             options={[
-                { value: "timeline", icon: icon("cards", 18), label: "Zaman Çizelgesi", tooltip: "Zaman çizelgesi" },
-                { value: "calendar", icon: icon("calendar", 18), label: "Takvim", tooltip: "Takvim görünümü" }
+                {
+                    value: "timeline",
+                    icon: icon("cards", 18),
+                    label: "Zaman Çizelgesi",
+                    tooltip: "Zaman çizelgesi",
+                },
+                {
+                    value: "calendar",
+                    icon: icon("calendar", 18),
+                    label: "Takvim",
+                    tooltip: "Takvim görünümü",
+                },
             ]}
-            onChange={(val) => { timelineState.viewType = val; }}
+            onChange={(val) => {
+                timelineState.viewType = val;
+            }}
         />
 
-        <div class="diet-mode-selector {timelineState.isDietVisible ? '' : 'is-hidden'}">
+        <div
+            class="diet-mode-selector {timelineState.isDietVisible
+                ? ''
+                : 'is-hidden'}"
+        >
             <SegmentedControl
                 value={timelineState.currentDietMode}
                 variant="responsive"
                 id="diet-mode-switcher"
                 options={[
-                    { value: "standard", icon: icon("utensils", 18), label: "Standart" },
-                    { value: "celiac", icon: icon("wheat", 18), label: "Çölyak" }
+                    {
+                        value: "standard",
+                        icon: icon("utensils", 18),
+                        label: "Standart",
+                    },
+                    {
+                        value: "celiac",
+                        icon: icon("wheat", 18),
+                        label: "Çölyak",
+                    },
                 ]}
                 onChange={(mode) => handleDietSelect(mode)}
             />
@@ -95,7 +142,9 @@
         <CitySelector
             value={timelineState.currentCity}
             cities={timelineState.cities}
-            onChange={(city) => { timelineState.currentCity = city; }}
+            onChange={(city) => {
+                timelineState.currentCity = city;
+            }}
         />
     </div>
 </div>

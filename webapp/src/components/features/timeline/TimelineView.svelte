@@ -140,6 +140,8 @@
         </div>
     {:else}
         <div class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
+            <!-- Sezon dışı + tek menü varsa (breakfast=0, dinner>0) off-season layout devreye girer.
+                 Sezon dışı olsa da breakfast varsa (çift menü) normal layout kalır. -->
             <div class="timeline__line"></div>
 
             <!-- Breakfast Slot -->
@@ -258,9 +260,10 @@
                 </div>
             </div>
 
-            {#if showSeasonGuides}
-                <SeasonGuides />
-            {/if}
         </div>
+
+        {#if showSeasonGuides}
+            <SeasonGuides />
+        {/if}
     {/if}
 </div>
