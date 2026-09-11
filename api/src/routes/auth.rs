@@ -96,7 +96,7 @@ async fn register(
 
     // E-posta doğrulama linki gönder (Eğer EmailService yapılandırılmışsa)
     if let Ok(verify_token) = AuthService::generate_verification_token(user.id, &config.jwt_secret) {
-        let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+        let email_service = crate::services::email::EmailService::from_config(&config);
         
         // E-posta gönderimini bloklamaması için arka planda çalıştır
         tokio::spawn(async move {
@@ -421,7 +421,7 @@ async fn update_me(
     // Şifre değiştiyse ve güvenlik e-postaları tercihi açıksa e-posta bildirimi gönder
     if password_changed && profile.email_security.unwrap_or(false) {
         if let Some(ref email) = profile.email {
-            let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+            let email_service = crate::services::email::EmailService::from_config(&config);
             let to_email = email.clone();
             let username = profile.username.clone();
             tokio::spawn(async move {
@@ -686,7 +686,7 @@ async fn resend_verification(
 
     // Send email
     let verify_token = AuthService::generate_verification_token(user.id, &config.jwt_secret)?;
-    let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+    let email_service = crate::services::email::EmailService::from_config(&config);
     let email_clone = db_user.email;
     
     tokio::spawn(async move {
@@ -723,7 +723,7 @@ async fn forgot_password(
         // Token türü artık `kepce-reset` (SA-5): access/verify token'larıyla karışmaz.
         let reset_token = AuthService::generate_reset_token(user.id, &config.jwt_secret)?;
         
-        let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+        let email_service = crate::services::email::EmailService::from_config(&config);
         let email_clone = payload.email.clone();
         
         // E-posta gönderimini bloklamaması için arka planda çalıştır
@@ -760,7 +760,7 @@ async fn reset_password(
     
     // Şifre sıfırlandıktan sonra kullanıcıya güvenlik e-postası gönder
     if user.email_security {
-        let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+        let email_service = crate::services::email::EmailService::from_config(&config);
         let to_email = user.email.clone();
         let username = user.username.clone();
         tokio::spawn(async move {
@@ -1256,7 +1256,7 @@ async fn request_passwordless(
         let token = AuthService::generate_passwordless_token(user.id, &config.jwt_secret)
             .map_err(|_| AppError::Internal("Token üretilemedi".into()))?;
         
-        let email_service = crate::services::email::EmailService::new(config.resend_api_key.clone(), config.base_url.clone());
+        let email_service = crate::services::email::EmailService::from_config(&config);
         
         // E-postayı arka planda asenkron gönder
         tokio::spawn(async move {

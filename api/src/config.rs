@@ -19,6 +19,10 @@ pub struct Config {
     pub google_client_secret: Option<String>,
     pub google_redirect_uri: Option<String>,
     pub searxng_url: Option<String>,
+    pub smtp_host: Option<String>,
+    pub smtp_port: u16,
+    pub smtp_username: Option<String>,
+    pub smtp_password: Option<String>,
 }
 
 impl Config {
@@ -43,6 +47,10 @@ impl Config {
             google_client_secret: env::var("GOOGLE_CLIENT_SECRET").ok(),
             google_redirect_uri: env::var("GOOGLE_REDIRECT_URI").ok(),
             searxng_url: env::var("SEARXNG_URL").ok(),
+            smtp_host: env::var("SMTP_HOST").ok(),
+            smtp_port: env::var("SMTP_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(587),
+            smtp_username: env::var("SMTP_USERNAME").ok(),
+            smtp_password: env::var("SMTP_PASSWORD").ok(),
         }
 
     }
