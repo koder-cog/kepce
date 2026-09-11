@@ -246,7 +246,20 @@
   </div>
 {:else}
   <div class="auth-form-container auth-form-container--wide">
-    <h1 class="auth-page__title u-mb-xs">Kayıt formu</h1>
+    <h1 class="auth-page__title u-mb-lg">Kayıt ol</h1>
+
+    <div class="auth-social-buttons">
+      <button
+        type="button"
+        class="btn btn--secondary auth-social-btn"
+        onclick={() => (window.location.href = "/api/v1/auth/google/login")}
+      >
+        Google Hesabı ile devam et
+      </button>
+    </div>
+
+    <div class="auth-divider">veya</div>
+
     <div
       class="form-footer-hint u-mb-xl u-text-sm u-weight-semibold u-color-secondary"
     >
@@ -415,7 +428,10 @@
             aria-label={showRepeatPassword ? "Şifreyi gizle" : "Şifreyi göster"}
             onclick={() => (showRepeatPassword = !showRepeatPassword)}
           >
-            {@html icon(showRepeatPassword ? "eyeNotLooking" : "eyeLooking", 20)}
+            {@html icon(
+              showRepeatPassword ? "eyeNotLooking" : "eyeLooking",
+              20,
+            )}
           </button>
         </div>
       </div>
