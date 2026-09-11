@@ -6,9 +6,8 @@
 export function isPlaceholderDishText(name) {
   if (typeof name !== "string") return false;
   // Site navigasyon/başlık kalıntıları da duyurudur, yemek değildir
-  // (örn. "←İstanbul KYK Menüsü", "Kahvaltı Yemek Listesi", "Gün Menüsü").
-  if (/^(?:[-–-•*\s]*)(?:[←→↞↠]\s*)/.test(name)) return true;
-  return /veri yok|sahipseniz|mail atabilirsiniz|e-?posta|yemek listesi|kyk men[üu]s?[üu]?|^g[üu]n men[üu]s[üu]$|kahvalt[ıi]ak[şs]am/i.test(name);
+  if (/^(?:[-–—•*\s]*)(?:[←→↞↠]\s*)/.test(name)) return true;
+  return /veri yok|sahipseniz|mail atabilirsiniz|e-?posta|yemek listesi|kyk men[üu]s?[üu]?|^g[üu]n men[üu]s[üu]$|kahvalt[ıi]ak[şs]am|yeni d[öo]nem|girilmeye ba[sş]lanacak|ba[sş]ar[ıi]lar dileriz|itibar[ıi]yl?a|itibar[ıi]yle|duyuru|afiyet olsun|iyi dersler|hay[ıi]rl[ıi] ramazanlar|ramazan ay[ıi]|men[üu]de de[gğ]i[sş]iklik/i.test(name);
 }
 
 /**

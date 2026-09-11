@@ -5,6 +5,13 @@ describe("isPlaceholderDishText", () => {
   it("duyuru metinlerini yakalar", () => {
     expect(isPlaceholderDishText("Veri yok. Menüye sahipseniz bize yazın")).toBe(true);
     expect(isPlaceholderDishText("Lütfen mail atabilirsiniz")).toBe(true);
+    expect(
+      isPlaceholderDishText(
+        "14 Eylül İtibarıyla Yeni Dönem Listeleri Girilmeye Başlanacak. Herkese Yeni Dönemde Başarılar Dileriz"
+      )
+    ).toBe(true);
+    expect(isPlaceholderDishText("Yeni dönemde tüm öğrencilere başarılar dileriz")).toBe(true);
+    expect(isPlaceholderDishText("Duyuru: Ramazan ayı boyunca yemek saatleri...")).toBe(true);
   });
 
   it("site navigasyon kalıntılarını yakalar (kykmenu scrape çöpleri)", () => {
