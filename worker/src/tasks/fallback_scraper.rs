@@ -3,9 +3,10 @@ use chrono::{Datelike, NaiveDate};
 use reqwest::Client;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use shared::entities::{
-    cities,
-    sea_orm_active_enums::MealTypeEnum,
+    cities, dish_aliases, menu_dishes,
+    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
 };
+use shared::services::content_guard::ContentGuard;
 use std::sync::OnceLock;
 
 use crate::parser::models::MenuComponent;
@@ -120,7 +121,6 @@ pub async fn run_historical_gap_fill(
     // Onceki aylar: bu ay haric (o zaten run_fallback_scrape'in isi), geriye dogru
     for back in (1..=months_back).rev() {
         let Some(target) = shift_month(today, -(back as i32)) else { continue };
-        let Some((start, end)) = month_bounds(target.year(), target.month()) else { continue };
         tracing::info!(
             "[HISTORY] {}-{:02} bosluk taramasi basliyor...",
             target.year(),
@@ -139,14 +139,6 @@ pub async fn run_historical_gap_fill(
                 continue;
             };
 
-            // Ayin mevcut ogunlerini TEK sorguda cek; eksik gunleri hafizada hesapla
-            let rows = shared::entities::menus::Entity::find()
-                .filter(shared::entities::menus::Column::CityId.eq(city.id))
-                .filter(shared::entities::menus::Column::ServeDate.gte(start))
-                .filter(shared::entities::menus::Column::ServeDate.lt(end))
-                .all(db)
-                .await?;
-
             for day in 1..=days_in_month(target.year(), target.month()) {
                 if *shutdown_rx.borrow() {
                     return Ok(total_saved);
@@ -154,8 +146,7 @@ pub async fn run_historical_gap_fill(
                 let Some(date) = NaiveDate::from_ymd_opt(target.year(), target.month(), day) else {
                     continue;
                 };
-                let has_breakfast = rows.iter().any(|m| m.serve_date == date && m.meal_type == MealTypeEnum::Breakfast);
-                let has_dinner = rows.iter().any(|m| m.serve_date == date && m.meal_type == MealTypeEnum::Dinner);
+                let (has_breakfast, has_dinner) = menus_missing_check(db, city.id, date).await?;
                 if has_breakfast && has_dinner {
                     continue;
                 }
@@ -295,8 +286,36 @@ async fn menus_missing_check(
         .all(db)
         .await?;
 
-    let has_breakfast = rows.iter().any(|m| m.meal_type == MealTypeEnum::Breakfast);
-    let has_dinner = rows.iter().any(|m| m.meal_type == MealTypeEnum::Dinner);
+    let mut has_breakfast = false;
+    let mut has_dinner = false;
+
+    for m in rows {
+        if m.status == MenuStatusEnum::Rejected {
+            continue;
+        }
+
+        let dishes = menu_dishes::Entity::find()
+            .filter(menu_dishes::Column::MenuId.eq(m.id))
+            .find_also_related(dish_aliases::Entity)
+            .all(db)
+            .await?;
+
+        let has_valid_dish = dishes.iter().any(|(_, alias)| {
+            alias
+                .as_ref()
+                .map(|a| !ContentGuard::is_junk_dish_text(&a.name))
+                .unwrap_or(false)
+        });
+
+        if has_valid_dish {
+            match m.meal_type {
+                MealTypeEnum::Breakfast => has_breakfast = true,
+                MealTypeEnum::Dinner => has_dinner = true,
+                MealTypeEnum::Lunch => {}
+            }
+        }
+    }
+
     Ok((has_breakfast, has_dinner))
 }
 

@@ -531,15 +531,24 @@ impl ModerationService {
                 text.push_str(&format!("\n{}\n", header));
                 last_date = Some(menu.serve_date);
             }
-            text.push_str(&format!("--- {} ---\n", Self::meal_label(&menu.meal_type)));
+            let mut meal_lines = Vec::new();
             for md in &menu_dishes_groups[i] {
                 let alias_opt = &dish_aliases_opts[alias_idx];
                 alias_idx += 1;
                 if let Some(alias) = alias_opt {
                     let _ = &dishes_opts[dish_idx];
                     dish_idx += 1;
+                    if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                        continue;
+                    }
                     let tag = if md.is_alternative { " (alternatif)" } else { "" };
-                    text.push_str(&format!("- {}{}\n", alias.name, tag));
+                    meal_lines.push(format!("- {}{}\n", alias.name, tag));
+                }
+            }
+            if !meal_lines.is_empty() {
+                text.push_str(&format!("--- {} ---\n", Self::meal_label(&menu.meal_type)));
+                for line in meal_lines {
+                    text.push_str(&line);
                 }
             }
         }

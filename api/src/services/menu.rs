@@ -188,6 +188,9 @@ impl MenuService {
         let mut takeaway_map: HashMap<String, Vec<MenuItemDto>> = HashMap::new();
         for (md, alias_opt) in menu_dishes_with_aliases {
             let alias = alias_opt.ok_or_else(|| MenuError::DatabaseError(DbErr::Custom("Yabancı anahtar bozuk: Alias bulunamadı".into())))?;
+            if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                continue;
+            }
             
             let master_data = alias.dish_id.and_then(|did| master_map.get(&did)).map(|dish| {
                 let stats = dish_stats_map
@@ -457,6 +460,10 @@ impl MenuService {
                 if let Some(alias) = alias_opt {
                     let dish_opt = &dishes_opts[dish_idx];
                     dish_idx += 1;
+
+                    if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                        continue;
+                    }
                     
                     let master_data = dish_opt.as_ref().map(|dish| {
                         let stats = dish_stats_map
@@ -549,6 +556,9 @@ impl MenuService {
 
             let (vote_count, rating_sum) = vote_stats_map.get(&menu.id).copied().unwrap_or((0, 0));
             let my_vote = my_votes_map.get(&menu.id).cloned();
+            if items.is_empty() && takeaways.is_empty() {
+                continue;
+            }
 
             result.push(MenuResponseDto {
                 id: menu.id,
@@ -731,6 +741,10 @@ impl MenuService {
                     if let Some(alias) = alias_opt {
                         let dish_opt = &dishes_opts[dish_idx];
                         dish_idx += 1;
+
+                        if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                            continue;
+                        }
                         
                         let master_data = dish_opt.as_ref().map(|dish| {
                             let stats = dish_stats_map
@@ -820,6 +834,10 @@ impl MenuService {
                 
                 let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
                 let calculated_calories = Self::calculate_total_calories(&items);
+
+                if items.is_empty() && takeaways.is_empty() {
+                    continue;
+                }
 
                 result.push(MenuResponseDto {
                     id: menu.id,

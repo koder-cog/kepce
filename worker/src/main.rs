@@ -64,6 +64,24 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    if std::env::var("WORKER_FALLBACK_INGEST").is_ok() {
+        tracing::info!("[FALLBACK] Tek seferlik fallback menü taraması başlatılıyor...");
+        let (_tx, rx) = tokio::sync::watch::channel(false);
+        let client = reqwest::Client::builder()
+            .cookie_store(true)
+            .timeout(std::time::Duration::from_secs(600))
+            .build()?;
+        if let Err(e) = tasks::fallback_scraper::run_fallback_scrape(&db, &client, rx).await {
+            tracing::error!("[FALLBACK] Fallback tarama hatası: {:?}", e);
+        } else {
+            tracing::info!("[FALLBACK] Fallback taraması tamamlandı.");
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[FALLBACK] Tek seferlik fallback taraması tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     if std::env::var("WORKER_RECATEGORIZE").is_ok() {
         tracing::info!("[RECATEGORIZE] Yemek kategorileri yeniden sınıflandırılıyor...");
         if let Err(e) = tasks::historical_ingest::recategorize_all_dishes(&db).await {
