@@ -21,11 +21,11 @@
         isOffSeason: propIsOffSeason = undefined
     } = $props();
 
-    // Ayarlar sayfasındaki "Boş içerik kartlarını göster" kullanıcı tercihi.
-    // (ssr=false olduğu için bileşen yalnızca istemcide kurulur.)
+    // Ayarlar sayfasındaki "Boş içerik kartlarını göster" kullanıcı tercihi (varsayılan: true).
     let showEmptyCards = $state(
-        typeof window !== "undefined" &&
-            localStorage.getItem("kepce_show_empty_cards") !== "false",
+        typeof window !== "undefined"
+            ? localStorage.getItem("kepce_show_empty_cards") !== "false"
+            : true,
     );
 
     // Bot yorumu ham verisi (yoksa kart kompakt empty-state'e düşer)

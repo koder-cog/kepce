@@ -534,8 +534,10 @@
     color: var(--color-text);
     cursor: pointer;
     transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       border-color var(--dur-fast) var(--ease-standard),
       background-color var(--dur-fast) var(--ease-standard);
+    will-change: transform;
   }
 
   .season-guides__card:hover {
@@ -544,7 +546,9 @@
   }
 
   .season-guides__card:active {
-    transform: scale(0.98);
+    transform: scale(0.98) rotate(0.001deg);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .season-guides__content {

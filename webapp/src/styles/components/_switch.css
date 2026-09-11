@@ -36,6 +36,8 @@
 
   .c-switch:active {
     transform: scale(0.98);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .c-switch:active .c-switch__handle {

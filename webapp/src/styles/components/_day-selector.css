@@ -145,6 +145,7 @@
   .calendar-grid__day:active:not(.calendar-grid__day--empty) {
     transform: scale(0.98);
     transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .calendar-grid__day--selected {
@@ -220,9 +221,11 @@
     }
   }
 
-  .day-selector__item:active {
+  .day-selector__item:active,
+  .day-selector__item--active:active {
     transform: scale(0.98);
     transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .day-selector__item--active {
@@ -230,7 +233,6 @@
     border-color: var(--color-accent-primary);
     color: var(--color-text-on-accent);
     box-shadow: var(--shadow-accent-sm);
-    transform: scale(1);
     z-index: 5;
   }
 

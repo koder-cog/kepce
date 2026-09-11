@@ -96,7 +96,7 @@
     font-weight: var(--font-weight-medium);
     cursor: pointer;
     transition: color var(--dur-fast) var(--ease-standard),
-                transform var(--dur-fast) var(--ease-standard);
+                transform var(--dur-default) var(--ease-spring-bounce);
     white-space: nowrap;
     z-index: 1;
     flex: 1;
@@ -115,6 +115,8 @@
 
   .c-segmented-control__btn:active {
     transform: scale(0.98);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .c-segmented-control__btn--active {

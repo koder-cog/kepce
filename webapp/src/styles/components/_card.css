@@ -509,9 +509,18 @@
     background: none;
     cursor: pointer;
     border-radius: var(--radius-sm);
-    transition: all var(--motion-effects-fast);
+    transition: transform var(--dur-default) var(--ease-spring-bounce),
+      color var(--dur-fast) var(--ease-standard),
+      background-color var(--dur-fast) var(--ease-standard);
+    will-change: transform;
     color: var(--color-muted);
     padding: 0;
+  }
+
+  .meal-card__vote-btn:active {
+    transform: scale(0.92);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .meal-card__vote-btn:hover {
@@ -601,6 +610,8 @@
 
   .meal-card__action-btn:active {
     transform: scale(0.98);
+    transition-duration: var(--dur-instant);
+    transition-timing-function: var(--ease-tactile);
   }
 
   .meal-card__action-btn svg {

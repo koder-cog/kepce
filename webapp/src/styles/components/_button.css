@@ -4,6 +4,7 @@
   /* Global tactile "squish" effect for all buttons */
   button,
   .btn,
+  .btn--squish,
   .nav-bar__link,
   .month-nav__btn,
   .day-selector__item,
@@ -22,6 +23,7 @@
 
   button:active,
   .btn:active,
+  .btn--squish:active,
   .nav-bar__link:active,
   .month-nav__btn:active,
   .day-selector__item:active,
