@@ -83,27 +83,11 @@ pub fn get_special_day_name(date: NaiveDate, city_slug: &str) -> Option<String> 
 }
 
 /// Bot prompt girdi metninde günün başlığını formatlar.
-/// Örnek:
-/// `=== 2026-10-06 [Şehir: İstanbul | Günün Anlamı: İstanbul'un Kurtuluşu] ===`
-pub fn format_bot_day_header(date: NaiveDate, city_name: &str, city_slug: &str) -> String {
+/// Örnek: `[2026-10-06 (İstanbul'un Kurtuluşu)]` veya `[2026-09-01]`
+pub fn format_bot_day_header(date: NaiveDate, city_slug: &str) -> String {
     match get_special_day_name(date, city_slug) {
-        Some(special) => {
-            if city_name.is_empty() {
-                format!("=== {} [Günün Anlamı: {}] ===", date, special)
-            } else {
-                format!(
-                    "=== {} [Şehir: {} | Günün Anlamı: {}] ===",
-                    date, city_name, special
-                )
-            }
-        }
-        None => {
-            if city_name.is_empty() {
-                format!("=== {} ===", date)
-            } else {
-                format!("=== {} [Şehir: {}] ===", date, city_name)
-            }
-        }
+        Some(special) => format!("[{} ({})]", date, special),
+        None => format!("[{}]", date),
     }
 }
 
@@ -117,10 +101,10 @@ mod tests {
         let name = get_special_day_name(date, "istanbul");
         assert_eq!(name.as_deref(), Some("İstanbul'un Kurtuluşu"));
 
-        let header = format_bot_day_header(date, "İstanbul", "istanbul");
+        let header = format_bot_day_header(date, "istanbul");
         assert_eq!(
             header,
-            "=== 2026-10-06 [Şehir: İstanbul | Günün Anlamı: İstanbul'un Kurtuluşu] ==="
+            "[2026-10-06 (İstanbul'un Kurtuluşu)]"
         );
     }
 
@@ -159,8 +143,8 @@ mod tests {
     #[test]
     fn test_regular_day_header() {
         let date = NaiveDate::from_ymd_opt(2026, 2, 2).unwrap();
-        let header = format_bot_day_header(date, "Ankara", "ankara");
-        assert_eq!(header, "=== 2026-02-02 [Şehir: Ankara] ===");
+        let header = format_bot_day_header(date, "ankara");
+        assert_eq!(header, "[2026-02-02]");
     }
 
     #[test]

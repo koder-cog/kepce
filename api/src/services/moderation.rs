@@ -11,7 +11,6 @@ use shared::entities::{
     menus,
     menu_dishes,
     dish_aliases,
-    dishes,
     sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
 };
 use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto};
@@ -509,44 +508,51 @@ impl ModerationService {
             .load_one(dish_aliases::Entity, db)
             .await
             .map_err(ModerationError::DatabaseError)?;
-        let flat_dish_aliases: Vec<dish_aliases::Model> =
-            dish_aliases_opts.iter().flatten().cloned().collect();
-        let dishes_opts = flat_dish_aliases
-            .load_one(dishes::Entity, db)
-            .await
-            .map_err(ModerationError::DatabaseError)?;
-
-        let mut text = String::new();
+        let mut text = format!("Şehir: {}\n", city.name);
         let mut alias_idx = 0usize;
-        let mut dish_idx = 0usize;
         let mut last_date: Option<NaiveDate> = None;
 
         for (i, menu) in menus_list.iter().enumerate() {
-            if last_date != Some(menu.serve_date) {
-                let header = shared::services::calendar::format_bot_day_header(
-                    menu.serve_date,
-                    &city.name,
-                    city_slug,
-                );
-                text.push_str(&format!("\n{}\n", header));
-                last_date = Some(menu.serve_date);
-            }
-            let mut meal_lines = Vec::new();
+            let mut slot_dishes: std::collections::BTreeMap<i32, Vec<String>> =
+                std::collections::BTreeMap::new();
+
             for md in &menu_dishes_groups[i] {
                 let alias_opt = &dish_aliases_opts[alias_idx];
                 alias_idx += 1;
+
+                if !md.package_name.is_empty() && md.package_name != "NORMAL" {
+                    continue;
+                }
+
                 if let Some(alias) = alias_opt {
-                    let _ = &dishes_opts[dish_idx];
-                    dish_idx += 1;
                     if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
                         continue;
                     }
-                    let tag = if md.is_alternative { " (alternatif)" } else { "" };
-                    meal_lines.push(format!("- {}{}\n", alias.name, tag));
+                    slot_dishes
+                        .entry(md.order_index)
+                        .or_default()
+                        .push(alias.name.clone());
                 }
             }
+
+            let mut meal_lines = Vec::new();
+            for (_order_idx, names) in slot_dishes {
+                if names.is_empty() {
+                    continue;
+                }
+                meal_lines.push(format!("- {}\n", names.join(" ya da ")));
+            }
+
             if !meal_lines.is_empty() {
-                text.push_str(&format!("--- {} ---\n", Self::meal_label(&menu.meal_type)));
+                if last_date != Some(menu.serve_date) {
+                    let header = shared::services::calendar::format_bot_day_header(
+                        menu.serve_date,
+                        city_slug,
+                    );
+                    text.push_str(&format!("\n{}\n", header));
+                    last_date = Some(menu.serve_date);
+                }
+                text.push_str(&format!("{}:\n", Self::meal_label(&menu.meal_type)));
                 for line in meal_lines {
                     text.push_str(&line);
                 }
