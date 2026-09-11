@@ -57,8 +57,9 @@
         isOffSeason && breakfasts.length === 0 && dinners.length > 0,
     );
 
+    // Çift menü varsa sezon dışı olsa bile varsayılan sezon içi görünüme (60/40 bot köşesi) döner.
     let botPlaceholder = $derived(
-        breakfasts.length > 0 && showEmptyCards && !isOffSeason
+        breakfasts.length > 0 && showEmptyCards && !isSingleMealLayout
             ? getBotPlaceholderComment(timelineState.selectedDate)
             : null
     );
@@ -72,9 +73,9 @@
     });
     let hideDinnerSlot = $derived(!showEmptyCards && dinners.length === 0);
 
-    // Eğer bot yorumu yoksa ve boş kartlar gösterilmiyorsa (veya sezon dışındaysak), sağ taraf (bot köşesi) iptal edilir.
+    // Eğer bot yorumu yoksa ve boş kartlar gösterilmiyorsa (veya tek menülü nöbetçi düzenindeysek), sağ taraf (bot köşesi) iptal edilir.
     let showBotArea = $derived(
-        botCommentaryRaw || (showEmptyCards && !isOffSeason),
+        botCommentaryRaw || (showEmptyCards && !isSingleMealLayout),
     );
 
     function renderBotCommentary(raw, currentDate) {
