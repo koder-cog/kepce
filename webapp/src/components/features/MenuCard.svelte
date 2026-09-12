@@ -149,40 +149,37 @@
     let sourceIcon = $derived(sourceConfig.icon);
     let sourceClass = $derived(`meal-card__source--${sourceConfig.class}`);
 
-    let richTooltip = $derived(
-        (() => {
-            let nameObj = menu.meal_type === "breakfast" ? "kahvaltı" : "menü";
-            let nameGenitive =
-                menu.meal_type === "breakfast" ? "kahvaltının" : "menünün";
-            if (
-                menu.source_type === "kepce-admin" ||
-                menu.source_type === "kepce" ||
-                (!menu.source_type && menu.verified)
-            ) {
-                return `Bu ${nameObj}, Kepçe ekibinin (otomasyon) el emeği göz nurudur. Lakin yurdunuzun planları ve aşçının o günkü psikolojisi yüzünden tabağınızda başka bir şeyle karşılaşma ihtimali de mevcuttur.`;
-            } else if (menu.source_type === "kepce-kullanici") {
-                return `Bu ${nameObj}, KYK'nin derinliklerinden bilgi sızdıran isimsiz bir cengaverin yolladığı istihbarat ışığında, moderasyon ekibimiz tarafından deşifre edilip önünüze atılmıştır. Tam bir KYK Leaks vakası.`;
-            } else if (
-                menu.source_type === "kykyemek" ||
-                menu.source_type === "kykyemek.com" ||
-                menu.source_type === "kyk-yemek" ||
-                menu.source_type === "yurtmenu" ||
-                menu.source_type === "yurtmenu.net" ||
-                menu.source_type === "kykmenu" ||
-                menu.source_type === "kykmenu.com.tr" ||
-                menu.source_type === "kykmenulistesi.com.tr"
-            ) {
-                return `Bu ${nameObj}, harici platformlardan bot marifetiyle devşirilmiştir. Mutfağa bizzat sızamadığımız için tutarlılık garantisi veremiyoruz. Menü tutarsa mucize, tutmazsa fıtrat.`;
-            } else if (
-                menu.source_type === "kepce-anonim" ||
-                menu.source_type === "anonim"
-            ) {
-                return `Bu ${nameObj}, sisteme giriş yapmamış bir Kepçe kullanıcısı tarafından bildirilmiştir. Bilgiye güvenmek istiyoruz ama mutfakta her an her şey yaşanabilir, temkini elden bırakmayın.`;
-            } else {
-                return `Bu ${nameGenitive} nereden geldiği, kimin hazırladığı veya bizim sisteme nasıl düştüğü hakkında en ufak bir fikrimiz yok. Muhtemelen deponun karanlık köşelerinde unutulan 3 yıllık salçaların hüznüyle kendi kendine spawn olmuş, boyut kapısı açılarak tepsinize düşmüş kozmik bir tabldot.`;
-            }
-        })(),
-    );
+    const SCRAPER_SOURCES = new Set([
+        "kykyemek",
+        "kykyemek.com",
+        "kyk-yemek",
+        "yurtmenu",
+        "yurtmenu.net",
+        "kykmenu",
+        "kykmenu.com.tr",
+        "kykmenulistesi.com.tr",
+    ]);
+
+    let richTooltip = $derived.by(() => {
+        const isBreakfast = menu.meal_type === "breakfast";
+        const nameObj = isBreakfast ? "kahvaltı" : "menü";
+        const nameGenitive = isBreakfast ? "kahvaltının" : "menünün";
+        const src = menu.source_type;
+
+        if (src === "kepce-admin" || src === "kepce" || (!src && menu.verified)) {
+            return `Bu ${nameObj}, Kepçe ekibinin (otomasyon) el emeği göz nurudur. Lakin yurdunuzun planları ve aşçının o günkü psikolojisi yüzünden tabağınızda başka bir şeyle karşılaşma ihtimali de mevcuttur.`;
+        }
+        if (src === "kepce-kullanici") {
+            return `Bu ${nameObj}, KYK'nın derinliklerinden bir yurtzedenin yolladığı istihbarat ışığında deşifre edilip önünüze atılmıştır. Tam bir KYK Leaks vakası.`;
+        }
+        if (SCRAPER_SOURCES.has(src)) {
+            return `Bu ${nameObj}, harici platformlardan bot marifetiyle devşirilmiştir. Mutfağa bizzat sızamadığımız için tutarlılık garantisi veremiyoruz. Menü tutarsa mucize, tutmazsa fıtrat.`;
+        }
+        if (src === "kepce-anonim" || src === "anonim") {
+            return `Bu ${nameObj}, sisteme giriş yapmamış bir Kepçe kullanıcısı tarafından bildirilmiştir. Bilgiye güvenmek istiyoruz ama mutfakta her an her şey yaşanabilir, temkini elden bırakmayın.`;
+        }
+        return `Bu ${nameGenitive} nereden geldiği, kimin hazırladığı veya bizim sisteme nasıl düştüğü hakkında en ufak bir fikrimiz yok. Muhtemelen deponun karanlık köşelerinde unutulan 3 yıllık salçaların hüznüyle kendi kendine spawn olmuş, boyut kapısı açılarak tepsinize düşmüş kozmik bir tabldot.`;
+    });
 
     let forceUpdate = $state(0);
     let items = $derived.by(() => {
