@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy } from "svelte";
-    import { fly } from "svelte/transition";
+    import { fly, fade } from "svelte/transition";
     import { cubicOut } from "svelte/easing";
     import { isMotionEnabled } from "@/lib/dom/motion.js";
     import { timelineState } from "@/stores/timeline.svelte.js";
@@ -15,6 +15,7 @@
     const WEEKDAYS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
 
     let daySelectorWrapper = $state(null);
+    let contentHeight = $state(0);
 
     const now = new Date();
 
@@ -91,17 +92,23 @@
     class="day-selector-wrapper"
     class:is-updating={timelineState.isUpdating}
     bind:this={daySelectorWrapper}
+    style={contentHeight ? `--content-height: ${contentHeight}px;` : ""}
 >
     {#key `${timelineState.viewYear}-${timelineState.viewMonth}`}
         <div
             class="day-selector-inner"
+            bind:clientHeight={contentHeight}
             in:fly={{
                 x: isMotionEnabled() ? timelineState.monthNavDirection * 24 : 0,
                 duration: isMotionEnabled() ? 180 : 0,
                 easing: cubicOut
             }}
         >
-            <div class="day-selector {timelineState.viewType === 'calendar' ? 'day-selector--calendar' : ''}">
+            {#key timelineState.viewType}
+                <div
+                    class="day-selector {timelineState.viewType === 'calendar' ? 'day-selector--calendar' : ''}"
+                    in:fade={{ duration: isMotionEnabled() ? 130 : 0 }}
+                >
             {#if timelineState.viewType === "calendar"}
                 <div class="calendar-grid">
                     {#each [1, 2, 3, 4, 5, 6, 0] as d}
@@ -192,7 +199,8 @@
                     </a>
                 {/each}
             {/if}
+                </div>
+            {/key}
         </div>
-    </div>
     {/key}
 </div>

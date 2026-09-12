@@ -300,12 +300,20 @@
   /* ── Meals Container ───────────────────────────────────────── */
 
   #meals-container {
-    transition: opacity var(--dur-fast) var(--ease-standard);
+    transition: opacity var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
   }
 
   #meals-container.is-updating {
     opacity: 0.55;
+    transform: scale(0.996);
     pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #meals-container.is-updating {
+      transform: none;
+    }
   }
 
   .timeline-empty-wrapper {
