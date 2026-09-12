@@ -135,7 +135,7 @@
     <div class="auth-social-buttons">
       <button
         type="button"
-        class="btn btn--secondary auth-social-btn"
+        class="btn btn--secondary btn--large btn--squish"
         onclick={() => (window.location.href = "/api/v1/auth/google/login")}
       >
         Google Hesabı ile giriş yap

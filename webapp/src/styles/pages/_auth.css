@@ -61,28 +61,9 @@
     gap: var(--space-md);
   }
 
-  .auth-social-btn {
+  .auth-social-buttons .btn {
     width: 100%;
-    min-height: var(--control-height);
     justify-content: center;
-    border-radius: var(--radius-md) !important;
-    font-weight: var(--font-weight-bold);
-    letter-spacing: var(--tracking-slight);
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border) !important;
-    transition: all var(--dur-fast) var(--ease-standard);
-  }
-
-  @media (hover: hover) {
-    .auth-social-btn:hover {
-      background: var(--color-card);
-      border-color: var(--color-accent-primary) !important;
-      box-shadow: var(--shadow-sm);
-    }
-  }
-
-  .auth-social-btn:active {
-    transform: scale(0.98);
   }
 
   .auth-divider {
