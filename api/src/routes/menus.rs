@@ -18,6 +18,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/today", get(get_today))
         .route("/today/:city_slug", get(get_today_city))
         .route("/archive/years", get(get_archive_years))
+        .route("/archive/highlights", get(get_archive_highlights))
         .route("/:menu_id", get(get_menu))
         .route("/:menu_id/vote", axum::routing::post(vote_menu))
 }
@@ -133,6 +134,21 @@ async fn get_archive_years(
 ) -> Result<axum::response::Response, AppError> {
     let years = MenuService::get_archive_years(&db, query.city).await?;
     crate::utils::response::cached_json_response(&headers, &years, 3600)
+}
+
+#[derive(Deserialize)]
+pub struct ArchiveHighlightsQuery {
+    pub limit: Option<u64>,
+}
+
+async fn get_archive_highlights(
+    State(db): State<sea_orm::DatabaseConnection>,
+    headers: http::HeaderMap,
+    Query(query): Query<ArchiveHighlightsQuery>,
+) -> Result<axum::response::Response, AppError> {
+    let limit = query.limit.unwrap_or(4);
+    let highlights = MenuService::get_archive_highlights(&db, limit).await?;
+    crate::utils::response::cached_json_response(&headers, &highlights, 300)
 }
 
 #[derive(Deserialize)]

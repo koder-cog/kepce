@@ -19,7 +19,7 @@ use sea_orm::sea_query::Expr;
 use shared::entities::{
     prelude::*, menus, menu_dishes, dish_aliases, dishes, cities, sea_orm_active_enums::MealTypeEnum, comments, menu_votes, dish_votes,
 };
-use crate::dto::menu::{MenuResponseDto, MenuItemDto, DishMasterDataDto, MealType};
+use crate::dto::menu::{MenuResponseDto, MenuItemDto, DishMasterDataDto, MealType, ArchiveHighlightDto};
 
 #[derive(Debug)]
 pub enum MenuError {
@@ -907,6 +907,56 @@ impl MenuService {
             .map_err(MenuError::DatabaseError)?;
 
         Ok(res.into_iter().map(|(y,)| y).collect())
+    }
+
+    /// Onaylı menüsü bulunan şehirlerin en son menü yıl ve ay bilgisini döner.
+    /// Arşiv sayfasındaki hızlı keşif kartlarını dinamik ve geçerli verilerle besler.
+    pub async fn get_archive_highlights(
+        db: &DatabaseConnection,
+        limit: u64,
+    ) -> Result<Vec<ArchiveHighlightDto>, MenuError> {
+        let safe_limit = limit.clamp(1, 12) as i64;
+        let sql = match db.get_database_backend() {
+            DatabaseBackend::Sqlite => r#"
+                SELECT c.slug AS city_slug, c.name AS city_name,
+                       CAST(strftime('%Y', m.max_date) AS INTEGER) AS year,
+                       CAST(strftime('%m', m.max_date) AS INTEGER) AS month
+                FROM (
+                    SELECT city_id, MAX(serve_date) as max_date
+                    FROM menus
+                    WHERE status = 'approved'
+                    GROUP BY city_id
+                ) m
+                JOIN cities c ON c.id = m.city_id
+                ORDER BY RANDOM()
+                LIMIT ?
+            "#,
+            _ => r#"
+                SELECT c.slug AS city_slug, c.name AS city_name,
+                       EXTRACT(YEAR FROM m.max_date)::int AS year,
+                       EXTRACT(MONTH FROM m.max_date)::int AS month
+                FROM (
+                    SELECT city_id, MAX(serve_date) as max_date
+                    FROM menus
+                    WHERE status = 'approved'
+                    GROUP BY city_id
+                ) m
+                JOIN cities c ON c.id = m.city_id
+                ORDER BY RANDOM()
+                LIMIT $1
+            "#,
+        };
+
+        let query = Statement::from_sql_and_values(
+            db.get_database_backend(),
+            sql,
+            vec![safe_limit.into()],
+        );
+
+        ArchiveHighlightDto::find_by_statement(query)
+            .all(db)
+            .await
+            .map_err(MenuError::DatabaseError)
     }
 }
 

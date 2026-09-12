@@ -74,3 +74,12 @@ pub struct DishMasterDataDto {
     pub dislike_ratio: Option<f64>,
     pub like_ratio: Option<f64>,
 }
+
+/// Arşiv sayfasında onaylı menüsü olan şehirlerin son menü yıl-ay bilgisi
+#[derive(Debug, Clone, Serialize, Deserialize, sea_orm::FromQueryResult)]
+pub struct ArchiveHighlightDto {
+    pub city_slug: String,
+    pub city_name: String,
+    pub year: i32,
+    pub month: i32,
+}
