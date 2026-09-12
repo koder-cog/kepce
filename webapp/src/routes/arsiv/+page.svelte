@@ -49,7 +49,9 @@
   let groupedMenus = $state(null);
   let errorMsg = $state(null);
   let errorCode = $state(null);
-  let currentLoadToken = 0;
+  let yearsLoadToken = 0;
+  let menusLoadToken = 0;
+  let quickArchivePicks = $state([]);
 
   let isLoading = $state(false);
 
@@ -71,15 +73,30 @@
     } catch (err) {
       console.error("Failed to fetch cities:", err);
     }
+
+    try {
+      const highlights = await api.getArchiveHighlights(4);
+      if (Array.isArray(highlights)) {
+        quickArchivePicks = highlights.map((h) => ({
+          city: h.city_slug,
+          cityName: h.city_name,
+          year: String(h.year),
+          month: String(h.month),
+          monthName: `${getMonthName(h.month)} ${h.year}`,
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch archive highlights:", err);
+    }
   });
 
   $effect(() => {
     if (selectedCity) {
-      const token = ++currentLoadToken;
+      const token = ++yearsLoadToken;
       api
         .getArchiveYears(selectedCity)
         .then((years) => {
-          if (token !== currentLoadToken) return;
+          if (token !== yearsLoadToken) return;
           yearOptions = years.map((y) => ({
             value: String(y),
             label: String(y),
@@ -94,7 +111,7 @@
           }
         })
         .catch((err) => {
-          if (token !== currentLoadToken) return;
+          if (token !== yearsLoadToken) return;
           console.error("Failed to load archive years:", err);
           yearOptions = [];
         });
@@ -127,9 +144,9 @@
     errorCode = null;
     groupedMenus = null;
 
-    const token = ++currentLoadToken;
+    const token = ++menusLoadToken;
     const showLoadingTimeout = setTimeout(() => {
-      if (currentLoadToken === token && !abortController.signal.aborted) {
+      if (menusLoadToken === token && !abortController.signal.aborted) {
         isLoading = true;
       }
     }, 150);
@@ -142,7 +159,7 @@
       );
       // Bu noktada ya abort edilmiş olabilir ya da daha yeni bir istek başlamış olabilir;
       // her iki durumda da state'i bozmadan erken çık.
-      if (abortController.signal.aborted || currentLoadToken !== token) {
+      if (abortController.signal.aborted || menusLoadToken !== token) {
         return;
       }
       lastLoadedKey = currentKey;
@@ -165,7 +182,7 @@
       clearTimeout(showLoadingTimeout);
       // Spinner gizlemeyi her zaman çalıştır; eğer arada yeni istek başladıysa
       // onun `setTimeout`'ı tekrar `true` yapar - UI tutarlı kalır.
-      if (currentLoadToken === token) {
+      if (menusLoadToken === token) {
         isLoading = false;
       }
     }
@@ -196,6 +213,13 @@
       }
     }
   });
+
+  function handleQuickSelect(pick) {
+    selectedCity = pick.city;
+    selectedYear = pick.year;
+    selectedMonth = pick.month;
+    handleLoad();
+  }
 </script>
 
 <div class="archive-header">
@@ -267,6 +291,35 @@
         {/each}
       </div>
     {/if}
+  {:else}
+    <section class="archive-discovery u-fade-in">
+      <div class="archive-discovery__header">
+        <h2 class="archive-discovery__title">Hızlı Göz At</h2>
+        <span class="archive-discovery__subtitle">Son eklenen arşiv kayıtları</span>
+      </div>
+
+      {#if quickArchivePicks.length > 0}
+        <div class="archive-quick-grid">
+          {#each quickArchivePicks as pick (pick.city + '-' + pick.year + '-' + pick.month)}
+            <button
+              type="button"
+              class="archive-quick-card btn--squish"
+              onclick={() => handleQuickSelect(pick)}
+            >
+              <span class="archive-quick-card__city">{pick.cityName}</span>
+              <span class="archive-quick-card__date">{pick.monthName}</span>
+            </button>
+          {/each}
+        </div>
+      {/if}
+
+      <div class="archive-contrib-card">
+        <p class="archive-contrib-card__text">
+          Eski aylardan elinizde kalan liste veya pano fotoğrafı varsa sisteme ekleyebiliriz.
+        </p>
+        <a href="/menu-gonder" class="archive-contrib-card__link">Menü Gönder &rarr;</a>
+      </div>
+    </section>
   {/if}
 </div>
 

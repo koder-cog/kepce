@@ -85,6 +85,7 @@ export const menusApi = {
     return normalizeMenuList(data);
   },
   getArchiveYears: (city) => request(`/menus/archive/years${buildQuery({ city })}`),
+  getArchiveHighlights: (limit = 4) => request(`/menus/archive/highlights${buildQuery({ limit })}`),
   getMenu: async (menuId, dietary_type = 'standard') => {
     const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`);
     return normalizeMenu(data);
