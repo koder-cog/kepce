@@ -35,6 +35,9 @@
   ];
 
   const MAX_FILES = 5;
+  const ALLOWED_EXTENSIONS = ["xlsx", "xls", "pdf", "png", "jpg", "jpeg"];
+  const FILE_HINT = `${ALLOWED_EXTENSIONS.map((e) => `.${e}`).join(", ")} (Dosya başı maks 10MB)`;
+  const ACCEPT_ATTRIBUTE = `${ALLOWED_EXTENSIONS.map((e) => `.${e}`).join(",")},image/*`;
 
   const tabs = [
     { id: "menu", label: "Aylık Menü", icon: icon("calendar", 18) },
@@ -68,7 +71,7 @@
         subtitle:
           "Yurdunda verilen Al Götür kahvaltı/öğün paketlerinin içeriğini veya fotoğraflarını paylaş.",
         fileLabel: "Al Götür Belgesi veya Fotoğrafı",
-        fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
+        fileHint: FILE_HINT,
       };
     }
     if (contributionType === "fiyat-listesi") {
@@ -77,7 +80,7 @@
         subtitle:
           "Yurt kantininde asılı olan resmi tavan fiyat listesinin fotoğrafını veya tablosunu paylaş.",
         fileLabel: "Kantin Fiyat Panosu veya Belgesi",
-        fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
+        fileHint: FILE_HINT,
       };
     }
     return {
@@ -85,7 +88,7 @@
       subtitle:
         "Yurdunun yemek listesini paylaş, diğer öğrenciler de menüden haberdar olsun.",
       fileLabel: "Menü Dosyası (Excel, PDF veya Resim)",
-      fileHint: ".xlsx, .xls, .pdf, .png veya .jpg (Dosya başı maks 10MB)",
+      fileHint: FILE_HINT,
     };
   });
 
@@ -172,11 +175,9 @@
       return;
     }
 
-    const validExts = ["xlsx", "xls", "pdf", "png", "jpg", "jpeg"];
-
     for (const file of fileArray) {
       const ext = file.name.split(".").pop().toLowerCase();
-      if (!validExts.includes(ext)) {
+      if (!ALLOWED_EXTENSIONS.includes(ext)) {
         showToast(`${file.name}: Geçersiz format.`, "error");
         continue;
       }
@@ -410,7 +411,7 @@
             id="file-input"
             aria-label={typeMeta.fileLabel}
             bind:this={fileInput}
-            accept=".xlsx,.xls,.pdf,image/*"
+            accept={ACCEPT_ATTRIBUTE}
             class="u-hidden"
             multiple
             onchange={(e) => handleFileSelect(e.target.files)}

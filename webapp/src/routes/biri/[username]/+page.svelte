@@ -9,6 +9,7 @@
   import Dropdown from "@/components/features/Dropdown.svelte";
   import ActionMenu from "@/components/features/ActionMenu.svelte";
   import { createModal } from "@/components/features/modal.js";
+  import { openCommentReportModal } from "@/components/features/report-modal.js";
   import { showToast } from "@/components/ui/toast.js";
   import Loader from "@/components/ui/Loader.svelte";
   import { getCommentContextHtml } from "@/utils/turkish.js";
@@ -151,7 +152,7 @@
   function handleCommentAction(action, comment) {
     const commentId = comment.id || comment.hash;
     const menuId = comment.menu_id || comment.menu?.id || "";
-    const requiresLogin = ["reply", "delete", "report"].includes(action);
+    const requiresLogin = ["reply", "delete"].includes(action);
     if (requiresLogin && !globalState?.user) {
       authActions.triggerLogin();
       return;
@@ -168,26 +169,7 @@
         .writeText(url)
         .then(() => showToast("Yorum linki kopyalandı!"));
     } else if (action === "report") {
-      createModal({
-        title: "Yorumu Şikayet et",
-        contentHtml:
-          "<p>Bu yorumun topluluk kurallarını ihlal ettiğini mi düşünüyorsun?</p>",
-        buttons: [
-          { label: "Vazgeç", variant: "secondary" },
-          {
-            label: "Şikayet et",
-            variant: "danger",
-            onClick: async () => {
-              try {
-                await api.reportComment(commentId);
-                showToast("Şikayetin alındı.");
-              } catch (e) {
-                showToast(e.message, "error");
-              }
-            },
-          },
-        ],
-      });
+      openCommentReportModal(comment);
     } else if (action === "edit") {
       const currentText = comment.comment || "";
       const modalObj = createModal({
