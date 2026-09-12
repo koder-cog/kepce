@@ -141,7 +141,7 @@
         <div class="form-group">
           <label class="form-label" for="project-name">Projenin ismi</label>
           <textarea id="project-name" class="form-textarea--resizable" placeholder="Proje ismini buraya yazınız..." maxlength="30"></textarea>
-          <span class="form-help">En az 4, en fazla 30 karakter uzunluğunda; yalnızca harf, sayı, tire, tırnak işareti, boşluk ve ünlem işareti kullanılabilir.</span>
+          <span class="form-help">En az 4, en fazla 30 karakter uzunluğunda olmalıdır. Yalnızca harf, sayı, tire, tırnak işareti, boşluk ve ünlem işareti kullanılabilir.</span>
         </div>
       `,
       buttons: [
@@ -443,7 +443,7 @@
           <input type="text" id="edit-project-name" class="form-input" placeholder=" " maxlength="30" value="${sanitizeText(projectName)}">
           <label class="form-label" for="edit-project-name">Projenin yeni ismi</label>
         </div>
-        <span class="form-help">En az 4, en fazla 30 karakter uzunluğunda; yalnızca harf, sayı, tire, tırnak işareti, boşluk ve ünlem işareti kullanılabilir.</span>
+        <span class="form-help">En az 4, en fazla 30 karakter uzunluğunda olmalıdır. Yalnızca harf, sayı, tire, tırnak işareti, boşluk ve ünlem işareti kullanılabilir.</span>
       `,
       buttons: [
         { label: "Vazgeç", variant: "secondary" },
@@ -1592,7 +1592,7 @@
     {#snippet children()}
       <div class="u-flex u-flex-column u-gap-md">
         <p class="u-text-sm u-color-muted">
-          Kepçe API; öğrenci projeleri, topluluklar ve açık kaynak geliştiriciler
+          Kepçe API, öğrenci projeleri, topluluklar ve açık kaynak geliştiriciler
           için tamamen ücretsizdir. Yüksek hacimli veya ticari projelerde ise
           sunucu yükünü karşılamak ve ekosistemi büyütmek için ücret yerine <strong
             >açık veri dayanışması ve kaynak atfı</strong

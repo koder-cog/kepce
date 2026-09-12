@@ -67,7 +67,7 @@
     paketlerin servisi normal kahvaltı saatinden çok daha erken biter (örneğin
     İstanbul yurtlarında 10:30 idi). Yurttan yurda içerik değişmekle birlikte
     gözlemeli olanlar genelde iyi çıkarken diğerleri eh işte seviyesindedir,
-    kağıt üzerinde görünen çorbalı varyantın ise fiilen verildiğine pek
+    kâğıt üzerinde görünen çorbalı varyantın ise fiilen verildiğine pek
     rastlanmaz.
   </p>
 
@@ -78,7 +78,7 @@
     eskiden 22:00 olan kapanış saati Mayıs 2026 itibarıyla 23:00'e çekilmiştir.
   </p>
   <p>
-    Ancak saat kağıt üzerinde 23:00 yazsa bile işin mutfak tarafında durum biraz
+    Ancak saat kâğıt üzerinde 23:00 yazsa bile işin mutfak tarafında durum biraz
     farklı işler. Akşam saat 21:00'den sonra yemekler soğumaya başlar ve en
     önemlisi popüler yemekler tükenebilir. Tavuk burger umuduyla gidip ıspanak
     gratenle baş başa kalmak istemiyorsanız işinizi erken halletmenizde fayda
@@ -96,7 +96,7 @@
     Ramazan boyunca akşam yemeği yine 16:00'da başlar ve isteyen erken saatte
     yiyebilir. Ancak asıl devasa kuyruklar ve yoğunluk iftara dakikalar kala
     oluşur. Oruç tutuyor olsanız bile iftardan en az 10-15 dakika sonra gitmeniz
-    tavsiye edilir; çünkü tam iftar anındaki izdihamda "herkese yetsin"
+    tavsiye edilir çünkü tam iftar anındaki izdihamda "herkese yetsin"
     telaşıyla porsiyonların biraz daha az konulduğuna şahit olabilirsiniz.
   </p>
   <p>

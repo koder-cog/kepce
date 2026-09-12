@@ -111,7 +111,7 @@
 
 <Seo
   title="Giriş Yap - Kepçe"
-  description="Kepçe hesabınıza giriş yapın; favori yemeklerinizi kaydedin, menülere yorum yapın ve bildirimleri takip edin."
+  description="Kepçe hesabınıza giriş yapın, favori yemeklerinizi kaydedin, menülere yorum yapın ve bildirimleri takip edin."
 />
 
 {#if globalState.isReady && user && !isRedirecting}
@@ -170,7 +170,7 @@
           </div>
           <h3 class="passwordless-success__title">Bağlantı Yola Çıktı!</h3>
           <p class="passwordless-success__desc">
-            Eğer <strong>{username}</strong> sistemde kayıtlıysa, giriş bağlantını
+            Eğer <strong>{username}</strong> sistemde kayıtlıysa giriş bağlantını
             e-postana gönderdik.
           </p>
           <p class="passwordless-success__note">

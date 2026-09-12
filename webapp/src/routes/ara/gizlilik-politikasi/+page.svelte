@@ -68,7 +68,7 @@
           erişim ve trafik kayıtlarını (bağlantı tarihi, saati, IP adresi ve
           port bilgisi) kanunen 1 yıldan az ve 2 yıldan fazla olmamak üzere
           saklamakla yükümlüdür. Bu yasal kayıtlar arama sorgularınızla veya
-          kişisel kimliğinizle eşleştirilmez; yasal sürenin sonunda sistemden
+          kişisel kimliğinizle eşleştirilmez. Yasal sürenin sonunda sistemden
           kalıcı olarak silinir.
         </p>
       </section>
@@ -80,7 +80,7 @@
         <p class="u-leading-comfortable">
           Kepçe Ara üçüncü taraf takip çerezi kullanmaz. Tema, dil, güvenli
           arama ve arayüz tercihleriniz yalnızca kendi tarayıcınızın yerel
-          hafızasında tutulur. Bu ayarlar sunucuya iletilmez; tarayıcı
+          hafızasında tutulur. Bu ayarlar sunucuya iletilmez. Tarayıcı
           geçmişinizi temizleyerek veya ayarlar sayfasından dilediğiniz an
           silebilirsiniz.
         </p>

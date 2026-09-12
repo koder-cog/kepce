@@ -49,7 +49,7 @@
   <div id="reset-message-container">
     {#if isSuccess}
       <div class="auth-success">
-        Eğer bu e-posta adresi sistemimizde kayıtlıysa, şifre sıfırlama
+        Eğer bu e-posta adresi sistemimizde kayıtlıysa şifre sıfırlama
         talimatlarını gönderdik. Lütfen kutunu (ve spam klasörünü) kontrol et.
       </div>
     {/if}

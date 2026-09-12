@@ -611,7 +611,7 @@
     <div class="c-modal__form-group">
       <label for="edit-dish-name" class="c-modal__label">Yemek ismi</label>
       <input id="edit-dish-name" type="text" class="c-modal__input" bind:value={editDishState.name}>
-      <p class="c-modal__help">İsim değişirse, eski isim otomatik olarak bir takma ad olarak kaydedilir.</p>
+      <p class="c-modal__help">İsim değişirse eski isim otomatik olarak bir takma ad olarak kaydedilir.</p>
     </div>
     <div class="c-modal__form-group">
       <div class="c-modal__label">Kategori</div>

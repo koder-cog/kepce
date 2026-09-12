@@ -52,7 +52,7 @@
   <p>
     KYK yurtlarında kalan her öğrenciye kahvaltı ve akşam yemeği için günlük
     nakdi beslenme yardımı tanımlanır. Bu tutar öğrencinin hesabına para olarak
-    yatmaz; doğrudan yemekhane kasalarında indirim fişi olarak kullanılır.
+    yatmaz. Doğrudan yemekhane kasalarında indirim fişi olarak kullanılır.
   </p>
 
   <h2>Menü Düzeni ve Fiks Menü Mantığı</h2>

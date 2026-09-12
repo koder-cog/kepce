@@ -76,7 +76,7 @@
     </li>
     <li>
       Geliştiriciyseniz ve kendi arayüzünüzü geliştirmek veya otomasyon kurmak
-      istiyorsanız; Kepçe size diğer platformların sunmadığı ücretsiz bir API
+      istiyorsanız Kepçe size diğer platformların sunmadığı ücretsiz bir API
       sağlar.
     </li>
   </ul>
@@ -106,7 +106,7 @@
 
   <p>
     Menülere yorum yazmak ve toplulukla etkileşime geçmek
-    isterseniz <a href="/kayit">kayıt olabilir</a>; halihazırda bir Kepçe
+    isterseniz <a href="/kayit">kayıt olabilir</a> veya halihazırda bir Kepçe
     kullanıcısıysanız doğrudan <a href="/giris">giriş yapabilirsiniz</a>.
   </p>
 </ContentPage>

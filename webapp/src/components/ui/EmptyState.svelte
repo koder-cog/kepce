@@ -20,7 +20,7 @@
             { code: 403, title: "Yasak", icon: "login", desc: "Kim olduğunuzu biliyoruz ama bu içeriğe erişim izniniz bulunmuyor." },
             { code: 404, title: "Yok böyle bişii", icon: "ghost", desc: "Aradığınız sayfa veya veri bulunamadı. Belki hiç var olmadı, belki de biz bir yerlerde kaybettik." },
             { code: 405, title: "Yöntem yasak", icon: "keyboard", desc: "Bu işlem için kullandığınız yöntem burada geçersizdir." },
-            { code: 406, title: "Kabul edilemez", icon: "keyboard", desc: "Sunucu, istediğiniz formatta bir yanıt üretemiyor; menüde bu seçenek yok." },
+            { code: 406, title: "Kabul edilemez", icon: "keyboard", desc: "Sunucu, istediğiniz formatta bir yanıt üretemiyor. Menüde bu seçenek yok." },
             { code: 408, title: "Zaman aşımı", icon: "timeout", desc: "Sunucu isteği beklerken zaman aşımına uğradı. Bağlantınızı kontrol edip tekrar deneyin." },
             { code: 409, title: "Çakışma", icon: "keyboard", desc: "Gönderdiğiniz veriler sunucudaki mevcut durumla bir çakışma yaşıyor." },
             { code: 410, title: "Artık yok", icon: "ghost", desc: "Bu içerik artık aramızda değil, sunucudan kalıcı olarak kaldırılmış." },
@@ -34,7 +34,7 @@
         ],
         "5xx": [
             { code: 500, title: "Sunucu içi hata", icon: "server", desc: "Sunucu tarafında beklenmedik bir aksilik çıktı. Arka planda bir şeyler ters gitmiş olmalı." },
-            { code: 501, title: "Henüz Hazır Değil", icon: "server", desc: "Bu özellik henüz kullanıma açılmadı; üzerinde çalışılıyor." },
+            { code: 501, title: "Henüz Hazır Değil", icon: "server", desc: "Bu özellik henüz kullanıma açılmadı. Üzerinde çalışılıyor." },
             { code: 502, title: "Kötü ağ geçidi", icon: "server", desc: "Sunucular arası iletişimde bir kopukluk yaşandı." },
             { code: 503, title: "Hizmet yok", icon: "server", desc: "Şu an servis veremiyoruz. Muhtemelen bakım yapıyoruz veya içerisi çok kalabalık." },
             { code: 504, title: "Ağ geçidi zaman aşımı", icon: "timeout", desc: "Üst sunucudan zamanında yanıt alınamadı, arka taraf biraz meşgul görünüyor." },

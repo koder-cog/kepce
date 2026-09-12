@@ -228,7 +228,7 @@
 
 <Seo
   title="Kayıt Ol - Kepçe"
-  description="Ücretsiz Kepçe hesabı oluşturun; yurt yemeklerini değerlendirin, yorum yapın ve menü takibi yapın."
+  description="Ücretsiz Kepçe hesabı oluşturun, yurt yemeklerini değerlendirin, yorum yapın ve menü takibi yapın."
 />
 
 {#if user}

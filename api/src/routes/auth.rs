@@ -1267,7 +1267,7 @@ async fn request_passwordless(
     }
 
     Ok(Json(serde_json::json!({
-        "message": "Eğer e-posta adresi kayıtlıysa, şifresiz giriş bağlantısı gönderildi."
+        "message": "Eğer e-posta adresi kayıtlıysa şifresiz giriş bağlantısı gönderildi."
     })))
 }
 

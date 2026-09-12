@@ -161,7 +161,7 @@
             ) {
                 return `Bu ${nameObj}, Kepçe ekibinin (otomasyon) el emeği göz nurudur. Lakin yurdunuzun planları ve aşçının o günkü psikolojisi yüzünden tabağınızda başka bir şeyle karşılaşma ihtimali de mevcuttur.`;
             } else if (menu.source_type === "kepce-kullanici") {
-                return `Bu ${nameObj}, KYK’nin derinliklerinden bilgi sızdıran isimsiz bir cengaverin yolladığı istihbarat ışığında, moderasyon ekibimiz tarafından deşifre edilip önünüze atılmıştır. Adeta bir KYK Leaks vakası.`;
+                return `Bu ${nameObj}, KYK'nin derinliklerinden bilgi sızdıran isimsiz bir cengaverin yolladığı istihbarat ışığında, moderasyon ekibimiz tarafından deşifre edilip önünüze atılmıştır. Tam bir KYK Leaks vakası.`;
             } else if (
                 menu.source_type === "kykyemek" ||
                 menu.source_type === "kykyemek.com" ||
@@ -172,7 +172,7 @@
                 menu.source_type === "kykmenu.com.tr" ||
                 menu.source_type === "kykmenulistesi.com.tr"
             ) {
-                return `Bu ${nameObj}, harici platformlardan bot marifetiyle devşirilmiştir. Mutfağa bizzat sızamadığımız için tutarlılık garantisi veremiyoruz; menü tutarsa mucize tutmazsa fıtrat.`;
+                return `Bu ${nameObj}, harici platformlardan bot marifetiyle devşirilmiştir. Mutfağa bizzat sızamadığımız için tutarlılık garantisi veremiyoruz. Menü tutarsa mucize, tutmazsa fıtrat.`;
             } else if (
                 menu.source_type === "kepce-anonim" ||
                 menu.source_type === "anonim"

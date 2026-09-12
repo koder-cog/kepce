@@ -93,7 +93,7 @@
     sahip olmadığım için bütün menüleri doğrulayamam.
   </p>
   <p>
-    Eğer site hata veriyorsa, muhtemelen sunucu o anki yükü kaldıramamıştır.
+    Eğer site hata veriyorsa muhtemelen sunucu o anki yükü kaldıramamıştır.
     Hata koduna ve açıklamasına bakın (404, 500 vb.), sitede standart HTTP
     kodları kullanıldığı için arama motoruna yazdığınızda ne olduğu doğrudan
     çıkar, eğer gösteremezse <a href="/iletisim" data-link>iletişim</a> sayfası her
@@ -105,7 +105,7 @@
   <p>
     "Kimse kodu alıp kapatmasın" fikri hoşuma gitti. MIT seçebilirdim, Apache
     seçebilirdim ancak gönlüm en katı copyleft lisanslardan birini seçti. Artı
-    olarak bu projeyi açık kaynak yapmak; açıkların bulunmasını ve ben mezun
+    olarak bu projeyi açık kaynak yapmak, açıkların bulunmasını ve ben mezun
     olunca bu bayrağı başka bir öğrencinin taşımasını kolaylaştırır... eğer
     taşıyacak biri olursa tabii.
   </p>
@@ -117,7 +117,7 @@
     birçok fasilitesi vardır.
   </p>
   <p>
-    Yemek menülerinin yanında zuhur eden Kepçe Bot ise, bir dil modeli
+    Yemek menülerinin yanında zuhur eden Kepçe Bot ise bir dil modeli
     kullanılarak ayda bir çalıştırılır ve o ayın her günü için teker teker menü
     yorumu üretir. Amacı, deneyime ufak tefek teknolojik fanteziler katmaktır.
   </p>
