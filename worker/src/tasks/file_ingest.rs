@@ -70,6 +70,16 @@ pub async fn process_local_files(db: &DatabaseConnection, reqwest_client: &reqwe
                         }
                         Err(e) => Err(anyhow::anyhow!("Excel parse hatası: {}", e))
                     }
+                } else if ext.to_lowercase() == "json" {
+                    match crate::parser::json::parse_json_file(&path_str, &city_slug) {
+                        Ok(mut file_db) => {
+                            for day_data in file_db.values_mut() {
+                                crate::parser::validation::finalize_day_metadata(day_data);
+                            }
+                            crate::parser::save_menu_database(db, city_id, &source_type, file_db, &city_slug).await
+                        }
+                        Err(e) => Err(anyhow::anyhow!("JSON parse hatası: {}", e))
+                    }
                 } else if ext.to_lowercase() == "pdf" {
                     if let Some(key) = gemini_api_key {
                         match crate::parser::llm::parse_pdf_with_llm(reqwest_client, key, std::path::Path::new(&path_str)).await {

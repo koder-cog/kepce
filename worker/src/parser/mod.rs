@@ -2,6 +2,7 @@ pub mod anomaly;
 pub mod core;
 pub mod dictionary;
 pub mod excel;
+pub mod json;
 pub mod kykmenum;
 pub mod kykyemek;
 pub mod yurtmenu;
