@@ -1150,42 +1150,40 @@
 />
 
 {#if !user}
-  <div class="content-page">
-    <header class="content-page__header">
-      <h1 class="content-page__title">Geliştirici Panosu</h1>
-      <div class="content-page__meta">
+  <div class="dev-page">
+    <header class="dev-page__header">
+      <h1 class="dev-page__title">Geliştirici Panosu</h1>
+      <div class="dev-page__meta">
         <button
           type="button"
-          class="content-page__archive-link"
+          class="dev-page__link"
           onclick={() => (isCommercialModalOpen = true)}
         >
           Ticari API nedir?
         </button>
       </div>
     </header>
-    <div class="content-page__body">
-      <div class="empty-state-container">
-        <EmptyState
-          statusCode={401}
-          desc={"API anahtarlarınızı ve projelerinizi yönetebilmek için giriş yapmanız gerekmektedir."}
+    <div class="empty-state-container">
+      <EmptyState
+        statusCode={401}
+        desc={"API anahtarlarınızı ve projelerinizi yönetebilmek için giriş yapmanız gerekmektedir."}
+      >
+        <a
+          href="/giris?redirect=%2Fgelistirici"
+          class="btn btn--primary btn--squish"
+          data-link>Giriş yap</a
         >
-          <a
-            href="/giris?redirect=%2Fgelistirici"
-            class="btn btn--primary btn--squish"
-            data-link>Giriş yap</a
-          >
-        </EmptyState>
-      </div>
+      </EmptyState>
     </div>
   </div>
 {:else}
-  <div class="content-page">
-    <header class="content-page__header">
-      <h1 class="content-page__title">Geliştirici Panosu</h1>
-      <div class="content-page__meta">
+  <div class="dev-page">
+    <header class="dev-page__header">
+      <h1 class="dev-page__title">Geliştirici Panosu</h1>
+      <div class="dev-page__meta">
         <button
           type="button"
-          class="content-page__archive-link"
+          class="dev-page__link"
           onclick={() => (isCommercialModalOpen = true)}
         >
           Ticari API nedir?
@@ -1193,17 +1191,16 @@
       </div>
     </header>
 
-    <div class="content-page__body">
-      <!-- PROJELER -->
-      <section id="projeler" class="u-mb-xl">
-        <div class="u-flex u-flex-justify-between u-flex-align-center u-mb-md">
-          <h2>Projeler</h2>
-          <button
-            class="btn btn--primary btn--sm btn--squish"
-            id="btn-create-project"
-            onclick={handleCreateProject}>Proje oluştur</button
-          >
-        </div>
+    <!-- PROJELER -->
+    <section id="projeler" class="dev-section">
+      <div class="dev-section__header">
+        <h2 class="dev-section__title">Projeler</h2>
+        <button
+          class="btn btn--primary btn--sm btn--squish"
+          id="btn-create-project"
+          onclick={handleCreateProject}>Proje oluştur</button
+        >
+      </div>
         <div id="projects-list-container">
           {#if isLoading}
             <div class="card u-p-lg u-text-center u-opacity-dim">
@@ -1218,8 +1215,8 @@
               Henüz projeniz yok
             </div>
           {:else}
-            <div class="table-wrapper">
-              <table class="table">
+            <div class="dev-table-wrapper">
+            <table class="dev-table">
                 <thead>
                   <tr>
                     <th class="u-text-center">Proje</th>
@@ -1297,14 +1294,14 @@
             </div>
           {/if}
         </div>
-      </section>
+    </section>
 
-      <!-- API ANAHTARLARI -->
-      <section id="api-anahtarlari" class="u-mb-xl">
-        <div class="u-flex u-flex-justify-between u-flex-align-center u-mb-md">
-          <h2>API anahtarları</h2>
+    <!-- API ANAHTARLARI -->
+    <section id="api-anahtarlari" class="dev-section">
+        <div class="dev-section__header">
+          <h2 class="dev-section__title">API anahtarları</h2>
           <button
-            class="btn btn--primary btn--sm"
+            class="btn btn--primary btn--sm btn--squish"
             id="btn-create-apikey"
             disabled={projects.length === 0}
             onclick={handleCreateApiKey}>API anahtarı oluştur</button
@@ -1322,8 +1319,8 @@
               API anahtarı bulunmuyor
             </div>
           {:else}
-            <div class="table-wrapper">
-              <table class="table">
+            <div class="dev-table-wrapper">
+              <table class="dev-table">
                 <thead>
                   <tr>
                     <th class="u-text-center">Anahtar</th>
@@ -1397,13 +1394,15 @@
             </div>
           {/if}
         </div>
-      </section>
+    </section>
 
-      <!-- KULLANIM -->
-      <section id="kullanim" class="u-mb-xl">
-        <h2 class="u-mb-md">Kullanım</h2>
+    <!-- KULLANIM -->
+    <section id="kullanim" class="dev-section">
+        <div class="dev-section__header">
+          <h2 class="dev-section__title">Kullanım</h2>
+        </div>
 
-        <div class="dev-filters-row u-mb-lg">
+        <div class="dev-filters-row">
           <div class="dev-filter-group">
             <span class="dev-filter-label">Proje:</span>
             <div class="dev-filter-select-wrapper">
@@ -1488,13 +1487,15 @@
             ></div>
           </div>
         </div>
-      </section>
+    </section>
 
-      <!-- SINIRLAR -->
-      <section id="sinirlar" class="u-mb-xl">
-        <h2 class="u-mb-md">Sınırlar</h2>
+    <!-- SINIRLAR -->
+    <section id="sinirlar" class="dev-section">
+        <div class="dev-section__header">
+          <h2 class="dev-section__title">Sınırlar</h2>
+        </div>
 
-        <div class="dev-filters-row u-mb-lg">
+        <div class="dev-filters-row">
           <div class="dev-filter-group">
             <span class="dev-filter-label">Proje:</span>
             <div class="dev-filter-select-wrapper">
@@ -1579,8 +1580,7 @@
             ></div>
           </div>
         </div>
-      </section>
-    </div>
+    </section>
   </div>
 {/if}
 
