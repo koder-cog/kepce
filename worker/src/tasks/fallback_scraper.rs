@@ -308,10 +308,17 @@ async fn menus_missing_check(
         });
 
         if has_valid_dish {
-            match m.meal_type {
-                MealTypeEnum::Breakfast => has_breakfast = true,
-                MealTypeEnum::Dinner => has_dinner = true,
-                MealTypeEnum::Lunch => {}
+            let priority = crate::tasks::scraper::get_source_priority(m.source_type.as_deref().unwrap_or(""));
+            // Eğer mevcut kaynak önceliği en yüksek açık kaynak olan yurtmenu.net (7)
+            // veya daha yüksek (kepce-kullanici: 8, kepce-admin: 10) ise gün tam dolu kabul edilir.
+            // Daha düşük bir kaynaktan (kykyemek: 6, kykmenum: 5 vb.) geldiyse yurtmenu.net ile
+            // yükseltilebilmesi (reconciliation) için eksik/güncellenebilir bırakılır.
+            if priority >= 7 {
+                match m.meal_type {
+                    MealTypeEnum::Breakfast => has_breakfast = true,
+                    MealTypeEnum::Dinner => has_dinner = true,
+                    MealTypeEnum::Lunch => {}
+                }
             }
         }
     }
@@ -334,42 +341,7 @@ async fn fill_day_from_fallbacks(
     let mut need_dinner = gaps.dinner;
     let mut saved = 0usize;
 
-    // --- 1) kykmenum.com (JSON-LD Menu) ---
-    if need_breakfast || need_dinner {
-        if *shutdown_rx.borrow() {
-            return Ok(saved);
-        }
-        let url = format!("https://kykmenum.com/{}/{}", slug, date.format("%Y-%m-%d"));
-        if let Ok(res) = client
-            .get(&url)
-            .header("User-Agent", UA)
-            .timeout(std::time::Duration::from_secs(20))
-            .send()
-            .await
-        {
-            if let Ok(html) = res.text().await {
-                if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
-                    if need_breakfast {
-                        if let Some(dishes) = menu.breakfast {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
-                            need_breakfast = false;
-                        }
-                    }
-                    if need_dinner {
-                        if let Some(dishes) = menu.dinner {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
-                            need_dinner = false;
-                        }
-                    }
-                }
-            }
-        }
-        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
-    }
-
-    // --- 2) yurtmenu.net (SSR HTML kartları) ---
+    // --- 1) yurtmenu.net (SSR HTML kartları - öncelik 7) ---
     if need_breakfast || need_dinner {
         if *shutdown_rx.borrow() {
             return Ok(saved);
@@ -399,6 +371,41 @@ async fn fill_day_from_fallbacks(
                         upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
                         saved += 1;
                         need_dinner = false;
+                    }
+                }
+            }
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    }
+
+    // --- 2) kykmenum.com (JSON-LD Menu - öncelik 5) ---
+    if need_breakfast || need_dinner {
+        if *shutdown_rx.borrow() {
+            return Ok(saved);
+        }
+        let url = format!("https://kykmenum.com/{}/{}", slug, date.format("%Y-%m-%d"));
+        if let Ok(res) = client
+            .get(&url)
+            .header("User-Agent", UA)
+            .timeout(std::time::Duration::from_secs(20))
+            .send()
+            .await
+        {
+            if let Ok(html) = res.text().await {
+                if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
+                    if need_breakfast {
+                        if let Some(dishes) = menu.breakfast {
+                            upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
+                            saved += 1;
+                            need_breakfast = false;
+                        }
+                    }
+                    if need_dinner {
+                        if let Some(dishes) = menu.dinner {
+                            upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
+                            saved += 1;
+                            need_dinner = false;
+                        }
                     }
                 }
             }

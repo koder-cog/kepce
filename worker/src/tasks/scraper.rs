@@ -525,14 +525,14 @@ async fn fetch_and_save(
 // operatörün lokal drop-zone klasöründen (file_ingest) gelmelidir. Kullanıcı
 // kaynaklı API akışları (ingestion) bu fonksiyona bağlanırsa otomatik onay
 // moderation bypass'ına dönüşür - bu tabloyu değiştirirken bunu göz önünde tut.
-fn get_source_priority(source: &str) -> i32 {
+pub(crate) fn get_source_priority(source: &str) -> i32 {
     match source {
         "kepce-admin" => 10,
         "kepce-kullanici" => 8,
         // kykyemek nöbetçi yurt modunda kalabildiğinden (eylül başı vb.) yurtmenu.net
         // bu dönemlerde gerçek menüyü daha erken yayınlıyor; bu yüzden yurtmenu 1 puan önde.
+        "yurtmenu" | "yurtmenu.net" | "yurtmenu.com" | "yurtmenu_live" => 7,
         "kykyemek.com" | "kykyemek" | "kyk-yemek" => 6,
-        "yurtmenu" | "yurtmenu.net" | "yurtmenu_live" => 7,
         "kykmenum" | "kykmenum.com" => 5,
         "kykmenu" | "kykmenu.com.tr" | "kykmenulistesi.com.tr" => 4,
         "kepce-anonim" | "anonim" => 3,
