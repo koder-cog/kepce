@@ -1,5 +1,6 @@
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
+use rand::Rng;
 use reqwest::Client;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use shared::entities::{
@@ -96,6 +97,114 @@ pub async fn run_fallback_scrape(
 
     tracing::info!("[FALLBACK] Alternatif kaynak taraması tamamlandı: {} menü kaydedildi.", total_saved);
     Ok(total_saved)
+}
+
+/// Gece derin uzlaşma (deep reconciliation) taraması.
+///
+/// Harici kaynaklardaki (yurtmenu.net, kykmenum.com vb.) sonradan güncellenen veya revize edilen
+/// menüleri yakalar. Mevcut ayın tamamını ve (ayın ilk 10 günündeysek) ay devirlerindeki gecikmeleri
+/// ve nöbetçi yurt menüsü değişikliklerini telafi etmek adına geçen ayın son 10 gününü kontrol eder.
+///
+/// Nezaketli tarama (polite crawling) ilkeleri gereği her istek arasına 1200ms - 2200ms arası
+/// rastgele gecikme (jitter) ekler. Gelen veriler `upsert_menu` içindeki no-op kontrolü
+/// sayesinde veritabanını ve geçmiş tablosunu gereksiz yere meşgul etmez; sadece gerçek bir
+/// içerik değişikliği veya kaynak yükseltmesi varsa menüyü günceller ve önceki halini
+/// `menu_history` tablosuna arşivler.
+pub async fn run_deep_reconciliation_scrape(
+    db: &DatabaseConnection,
+    client: &Client,
+    shutdown_rx: tokio::sync::watch::Receiver<bool>,
+) -> Result<usize> {
+    let now = chrono::Local::now().naive_local().date();
+    let mut dates_to_check = Vec::new();
+
+    // Ayın ilk 10 günündeysek geçen ayın son 10 gününü de kontrol et
+    if now.day() <= 10 {
+        if let Some(prev) = shift_month(now, -1) {
+            let prev_total = days_in_month(prev.year(), prev.month());
+            let start_day = prev_total.saturating_sub(9);
+            for d in start_day..=prev_total {
+                if let Some(date) = NaiveDate::from_ymd_opt(prev.year(), prev.month(), d) {
+                    dates_to_check.push(date);
+                }
+            }
+        }
+    }
+
+    // Mevcut ayın tamamı
+    let cur_total = days_in_month(now.year(), now.month());
+    for d in 1..=cur_total {
+        if let Some(date) = NaiveDate::from_ymd_opt(now.year(), now.month(), d) {
+            dates_to_check.push(date);
+        }
+    }
+
+    tracing::info!(
+        "[RECONCILE] Gece derin uzlaşma taraması başlıyor: {} gün, {} aktif şehir.",
+        dates_to_check.len(),
+        ACTIVE_CITIES.len()
+    );
+
+    let mut total_updated = 0usize;
+
+    for slug in ACTIVE_CITIES {
+        if *shutdown_rx.borrow() {
+            tracing::info!("[RECONCILE] Kapatma sinyali algılandı. Taramadan çıkılıyor.");
+            return Ok(total_updated);
+        }
+
+        let Some(city) = cities::Entity::find()
+            .filter(cities::Column::Slug.eq(slug))
+            .one(db)
+            .await?
+        else {
+            continue;
+        };
+
+        for date in &dates_to_check {
+            if *shutdown_rx.borrow() {
+                tracing::info!("[RECONCILE] Kapatma sinyali algılandı. Taramadan çıkılıyor.");
+                return Ok(total_updated);
+            }
+
+            // Derin uzlaşmada hem kahvaltı hem akşam için güncel kontrol yapılır
+            let gaps = DayGaps {
+                breakfast: true,
+                dinner: true,
+            };
+
+            let updated = fill_day_from_fallbacks(
+                db,
+                client,
+                &city.slug,
+                city.id,
+                *date,
+                &gaps,
+                &shutdown_rx,
+            )
+            .await?;
+
+            if updated > 0 {
+                tracing::info!(
+                    "[RECONCILE] Menü güncellendi: {} ({}), {} öğün yenilendi.",
+                    city.slug,
+                    date,
+                    updated
+                );
+                total_updated += updated;
+            }
+
+            // Nezaketli tarama gecikmesi (1200ms - 2200ms arası jitter)
+            let delay_ms = rand::thread_rng().gen_range(1200..=2200);
+            tokio::time::sleep(std::time::Duration::from_millis(delay_ms)).await;
+        }
+    }
+
+    tracing::info!(
+        "[RECONCILE] Gece derin uzlaşma tamamlandı: toplam {} menü güncellendi.",
+        total_updated
+    );
+    Ok(total_updated)
 }
 
 /// Gecmis aylardaki eksik ogunleri doldurur.
@@ -199,15 +308,17 @@ async fn fill_day_from_history(
                 if need_breakfast {
                     if let Some(dishes) = menu.breakfast {
                         let (min, max) = parse_kcal_range(menu.breakfast_kcal.as_deref());
-                        upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
-                        saved += 1;
+                        if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                            saved += 1;
+                        }
                     }
                 }
                 if need_dinner {
                     if let Some(dishes) = menu.dinner {
                         let (min, max) = parse_kcal_range(menu.dinner_kcal.as_deref());
-                        upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
-                        saved += 1;
+                        if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                            saved += 1;
+                        }
                     }
                 }
             }
@@ -232,14 +343,16 @@ async fn fill_day_from_history(
                 if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
                     if need_breakfast {
                         if let Some(dishes) = menu.breakfast {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
+                            if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                                saved += 1;
+                            }
                         }
                     }
                     if need_dinner {
                         if let Some(dishes) = menu.dinner {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
+                            if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                                saved += 1;
+                            }
                         }
                     }
                 }
@@ -360,16 +473,18 @@ async fn fill_day_from_fallbacks(
                 if need_breakfast {
                     if let Some(dishes) = menu.breakfast {
                         let (min, max) = parse_kcal_range(menu.breakfast_kcal.as_deref());
-                        upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
-                        saved += 1;
+                        if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                            saved += 1;
+                        }
                         need_breakfast = false;
                     }
                 }
                 if need_dinner {
                     if let Some(dishes) = menu.dinner {
                         let (min, max) = parse_kcal_range(menu.dinner_kcal.as_deref());
-                        upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await?;
-                        saved += 1;
+                        if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                            saved += 1;
+                        }
                         need_dinner = false;
                     }
                 }
@@ -395,15 +510,17 @@ async fn fill_day_from_fallbacks(
                 if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
                     if need_breakfast {
                         if let Some(dishes) = menu.breakfast {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
+                            if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                                saved += 1;
+                            }
                             need_breakfast = false;
                         }
                     }
                     if need_dinner {
                         if let Some(dishes) = menu.dinner {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
+                            if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                                saved += 1;
+                            }
                             need_dinner = false;
                         }
                     }
@@ -435,14 +552,16 @@ async fn fill_day_from_fallbacks(
                 if let Some((breakfast, dinner)) = parse_kykmenu_api(&body) {
                     if need_breakfast {
                         if let Some(dishes) = breakfast {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenu.com.tr".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
+                            if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenu.com.tr".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                                saved += 1;
+                            }
                         }
                     }
                     if need_dinner {
                         if let Some(dishes) = dinner {
-                            upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenu.com.tr".to_string(), None, dishes, vec![], vec![], None, None, None).await?;
-                            saved += 1;
+                            if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenu.com.tr".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                                saved += 1;
+                            }
                         }
                     }
                 }
@@ -536,3 +655,81 @@ fn parse_kcal_range(meta: Option<&str>) -> (Option<i32>, Option<i32>) {
 
 // NOT: upsert_menu içindeki status mantığı "kykmenum.com" / "yurtmenu.net" /
 // "kykmenu.com.tr" kaynaklarını otomatik Approved yapar (bkz. scraper.rs).
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_kcal_range() {
+        assert_eq!(parse_kcal_range(Some("650-850 kcal")), (Some(650), Some(850)));
+        assert_eq!(parse_kcal_range(Some("500 kcal")), (Some(500), Some(500)));
+        assert_eq!(parse_kcal_range(None), (None, None));
+        assert_eq!(parse_kcal_range(Some("bilinmiyor")), (None, None));
+    }
+
+    #[test]
+    fn test_days_in_month_and_shift() {
+        // Şubat 2024 artık yıl -> 29 gün
+        assert_eq!(days_in_month(2024, 2), 29);
+        // Şubat 2025 normal yıl -> 28 gün
+        assert_eq!(days_in_month(2025, 2), 28);
+        // Mart -> 31 gün
+        assert_eq!(days_in_month(2025, 3), 31);
+        // Nisan -> 30 gün
+        assert_eq!(days_in_month(2025, 4), 30);
+
+        let date = NaiveDate::from_ymd_opt(2025, 3, 5).unwrap();
+        let prev = shift_month(date, -1).unwrap();
+        assert_eq!(prev.month(), 2);
+        assert_eq!(prev.year(), 2025);
+
+        let jan = NaiveDate::from_ymd_opt(2025, 1, 5).unwrap();
+        let dec = shift_month(jan, -1).unwrap();
+        assert_eq!(dec.month(), 12);
+        assert_eq!(dec.year(), 2024);
+    }
+
+    #[test]
+    fn test_deep_reconciliation_date_range_logic() {
+        // Ayın ilk 10 günündeysek (örn: 5 Mart)
+        let now = NaiveDate::from_ymd_opt(2025, 3, 5).unwrap();
+        let mut dates = Vec::new();
+        if now.day() <= 10 {
+            if let Some(prev) = shift_month(now, -1) {
+                let prev_total = days_in_month(prev.year(), prev.month());
+                let start_day = prev_total.saturating_sub(9);
+                for d in start_day..=prev_total {
+                    if let Some(date) = NaiveDate::from_ymd_opt(prev.year(), prev.month(), d) {
+                        dates.push(date);
+                    }
+                }
+            }
+        }
+        let cur_total = days_in_month(now.year(), now.month());
+        for d in 1..=cur_total {
+            if let Some(date) = NaiveDate::from_ymd_opt(now.year(), now.month(), d) {
+                dates.push(date);
+            }
+        }
+
+        // Şubat 2025'in son 10 günü (19-28) + Mart 2025'in tamamı (31 gün) = 41 gün
+        assert_eq!(dates.len(), 41);
+        assert_eq!(dates.first().unwrap(), &NaiveDate::from_ymd_opt(2025, 2, 19).unwrap());
+        assert_eq!(dates.last().unwrap(), &NaiveDate::from_ymd_opt(2025, 3, 31).unwrap());
+
+        // Ayın 15'indeysek yalnızca mevcut ay taranmalı
+        let mid_month = NaiveDate::from_ymd_opt(2025, 3, 15).unwrap();
+        let mut mid_dates = Vec::new();
+        if mid_month.day() <= 10 {
+            // çalışmaz
+        }
+        let cur_total = days_in_month(mid_month.year(), mid_month.month());
+        for d in 1..=cur_total {
+            if let Some(date) = NaiveDate::from_ymd_opt(mid_month.year(), mid_month.month(), d) {
+                mid_dates.push(date);
+            }
+        }
+        assert_eq!(mid_dates.len(), 31);
+    }
+}

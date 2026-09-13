@@ -82,6 +82,24 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    if std::env::var("WORKER_DEEP_RECONCILE").is_ok() {
+        tracing::info!("[RECONCILE] Tek seferlik gece derin uzlaşma taraması başlatılıyor...");
+        let (_tx, rx) = tokio::sync::watch::channel(false);
+        let client = reqwest::Client::builder()
+            .cookie_store(true)
+            .timeout(std::time::Duration::from_secs(600))
+            .build()?;
+        if let Err(e) = tasks::fallback_scraper::run_deep_reconciliation_scrape(&db, &client, rx).await {
+            tracing::error!("[RECONCILE] Derin uzlaşma tarama hatası: {:?}", e);
+        } else {
+            tracing::info!("[RECONCILE] Derin uzlaşma taraması tamamlandı.");
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[RECONCILE] Tek seferlik derin uzlaşma tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     if std::env::var("WORKER_RECATEGORIZE").is_ok() {
         tracing::info!("[RECATEGORIZE] Yemek kategorileri yeniden sınıflandırılıyor...");
         if let Err(e) = tasks::historical_ingest::recategorize_all_dishes(&db).await {
@@ -280,6 +298,49 @@ async fn main() -> anyhow::Result<()> {
         }
     });
 
+    let db_reconcile = db.clone();
+    let client_reconcile = reqwest_client.clone();
+    let mut rx_reconcile = shutdown_rx.clone();
+
+    // Gece Derin Uzlaşma Döngüsü (Her 30 dakikada bir kontrol eder, gece 03:00 - 05:00 arasında çalışır)
+    let reconciliation_task = tokio::spawn(async move {
+        use chrono::Timelike;
+        let mut last_reconcile_date: Option<chrono::NaiveDate> = None;
+
+        loop {
+            if *rx_reconcile.borrow() {
+                tracing::info!("[RECONCILE] Kapatma sinyali algılandı. Döngüden çıkılıyor.");
+                break;
+            }
+
+            let now = chrono::Local::now();
+            let today = now.naive_local().date();
+            let hour = now.hour();
+
+            // Gece 03:00 ile 05:00 aralığında ve bugün henüz çalışmadıysa
+            if (3..5).contains(&hour) && last_reconcile_date != Some(today) {
+                tracing::info!("--- [RECONCILE] GECE DERİN UZLAŞMA DÖNGÜSÜ BAŞLIYOR ---");
+                match tasks::fallback_scraper::run_deep_reconciliation_scrape(&db_reconcile, &client_reconcile, rx_reconcile.clone()).await {
+                    Ok(updated) => {
+                        last_reconcile_date = Some(today);
+                        tracing::info!("--- [RECONCILE] GECE DERİN UZLAŞMA TAMAMLANDI ({} menü güncellendi) ---", updated);
+                    }
+                    Err(e) => {
+                        tracing::error!("[RECONCILE] Gece derin uzlaşma hatası: {:?}", e);
+                    }
+                }
+            }
+
+            tokio::select! {
+                _ = tokio::time::sleep(Duration::from_secs(1800)) => {},
+                _ = rx_reconcile.changed() => {
+                    tracing::info!("[RECONCILE] Uyku sırasında kapatma sinyali alındı. Döngüden çıkılıyor.");
+                    break;
+                }
+            }
+        }
+    });
+
     // Graceful Shutdown dinleyicisi
     let shutdown_signal = async {
         #[cfg(unix)]
@@ -310,7 +371,7 @@ async fn main() -> anyhow::Result<()> {
     let _ = shutdown_tx.send(true);
 
     // Görevlerin bitmesini bekle
-    let _ = tokio::join!(local_task, scraper_task, notifier_task, telegram_task);
+    let _ = tokio::join!(local_task, scraper_task, notifier_task, telegram_task, reconciliation_task);
     tracing::info!("Tüm görevler başarıyla durduruldu. Worker güvenli bir şekilde kapatıldı.");
 
     Ok(())

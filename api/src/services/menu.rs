@@ -13,7 +13,7 @@
 
 
 use sea_orm::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use chrono::NaiveDate;
 use sea_orm::sea_query::Expr;
 use shared::entities::{
@@ -134,6 +134,23 @@ impl MenuService {
             items,
             calories: None,
         })
+    }
+
+    fn compute_menu_dishes_signature(items: &[MenuItemDto]) -> Vec<String> {
+        let mut names: Vec<String> = items
+            .iter()
+            .map(|it| {
+                it.raw_name
+                    .trim()
+                    .to_lowercase()
+                    .chars()
+                    .filter(|c| c.is_alphanumeric())
+                    .collect::<String>()
+            })
+            .filter(|s| !s.is_empty())
+            .collect();
+        names.sort();
+        names
     }
 
     pub(crate) fn calculate_total_calories(items: &[MenuItemDto]) -> Option<i32> {
@@ -516,6 +533,7 @@ impl MenuService {
         let history_records: Vec<menu_history::Model> = MenuHistory::find()
             .filter(menu_history::Column::CityId.eq(city_id))
             .filter(menu_history::Column::ServeDate.eq(date))
+            .order_by_desc(menu_history::Column::Id)
             .all(db)
             .await
             .unwrap_or_default();
@@ -654,10 +672,20 @@ impl MenuService {
             let mut alternatives = Vec::new();
             if let Some(hist_list) = history_map.get(meal_type_str) {
                 let current_src = menu.source_type.as_deref().unwrap_or("unknown");
+                let main_sig = Self::compute_menu_dishes_signature(&items);
+                let mut seen_signatures = HashSet::new();
+                if !main_sig.is_empty() {
+                    seen_signatures.insert(main_sig);
+                }
+                let mut seen_sources = HashSet::new();
+
                 for hist in hist_list {
-                    if hist.source_type != current_src {
+                    if hist.source_type != current_src && seen_sources.insert(hist.source_type.clone()) {
                         if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
-                            alternatives.push(alt_dto);
+                            let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
+                            if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
+                                alternatives.push(alt_dto);
+                            }
                         }
                     }
                 }
@@ -746,6 +774,7 @@ impl MenuService {
             MenuHistory::find()
                 .filter(menu_history::Column::CityId.is_in(city_ids))
                 .filter(menu_history::Column::ServeDate.is_in(dates))
+                .order_by_desc(menu_history::Column::Id)
                 .all(db)
                 .await
                 .unwrap_or_default()
@@ -968,10 +997,20 @@ impl MenuService {
                 let mut alternatives = Vec::new();
                 if let Some(hist_list) = history_map.get(&(menu.city_id, menu.serve_date, meal_type_str.to_string())) {
                     let current_src = menu.source_type.as_deref().unwrap_or("unknown");
+                    let main_sig = Self::compute_menu_dishes_signature(&items);
+                    let mut seen_signatures = HashSet::new();
+                    if !main_sig.is_empty() {
+                        seen_signatures.insert(main_sig);
+                    }
+                    let mut seen_sources = HashSet::new();
+
                     for hist in hist_list {
-                        if hist.source_type != current_src {
+                        if hist.source_type != current_src && seen_sources.insert(hist.source_type.clone()) {
                             if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
-                                alternatives.push(alt_dto);
+                                let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
+                                if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
+                                    alternatives.push(alt_dto);
+                                }
                             }
                         }
                     }
@@ -1205,6 +1244,60 @@ mod tests {
         let alt = MenuService::parse_alternative_from_history(&hist, MealType::Dinner).unwrap();
         assert_eq!(alt.items.len(), 1);
         assert_eq!(alt.items[0].raw_name, "Ezogelin Çorbası");
+    }
+
+    #[test]
+    fn test_compute_menu_dishes_signature_deduplication() {
+        let items1 = vec![
+            MenuItemDto {
+                order_index: 0,
+                raw_name: "Mercimek Çorbası".into(),
+                is_alternative: false,
+                amount: None,
+                calories: None,
+                price: None,
+                category: None,
+                master_data: None,
+            },
+            MenuItemDto {
+                order_index: 1,
+                raw_name: "Pirinç Pilavı".into(),
+                is_alternative: false,
+                amount: None,
+                calories: None,
+                price: None,
+                category: None,
+                master_data: None,
+            },
+        ];
+
+        let items2 = vec![
+            MenuItemDto {
+                order_index: 0,
+                raw_name: "  pirinç pilavı  ".into(),
+                is_alternative: false,
+                amount: None,
+                calories: None,
+                price: None,
+                category: None,
+                master_data: None,
+            },
+            MenuItemDto {
+                order_index: 1,
+                raw_name: "Mercimek Çorbası.".into(),
+                is_alternative: false,
+                amount: None,
+                calories: None,
+                price: None,
+                category: None,
+                master_data: None,
+            },
+        ];
+
+        assert_eq!(
+            MenuService::compute_menu_dishes_signature(&items1),
+            MenuService::compute_menu_dishes_signature(&items2)
+        );
     }
 }
 

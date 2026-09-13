@@ -42,13 +42,18 @@ jobs:
       - name: Imajlari derle ve gonder
         env:
           OWNER: ${{ github.repository_owner }}
+          SHA: ${{ github.sha }}
         run: |
-          docker build -f api/Dockerfile       -t ghcr.io/$OWNER/kepce-api:latest       .
-          docker build -f worker/Dockerfile    -t ghcr.io/$OWNER/kepce-worker:latest    .
-          docker build -f webapp/Dockerfile    -t ghcr.io/$OWNER/kepce-webapp:latest    ./webapp
+          SHORT_SHA="${SHA:0:7}"
+          docker build -f api/Dockerfile       -t ghcr.io/$OWNER/kepce-api:latest -t ghcr.io/$OWNER/kepce-api:$SHORT_SHA       .
+          docker build -f worker/Dockerfile    -t ghcr.io/$OWNER/kepce-worker:latest -t ghcr.io/$OWNER/kepce-worker:$SHORT_SHA    .
+          docker build -f webapp/Dockerfile    -t ghcr.io/$OWNER/kepce-webapp:latest -t ghcr.io/$OWNER/kepce-webapp:$SHORT_SHA    ./webapp
           docker push ghcr.io/$OWNER/kepce-api:latest
+          docker push ghcr.io/$OWNER/kepce-api:$SHORT_SHA
           docker push ghcr.io/$OWNER/kepce-worker:latest
+          docker push ghcr.io/$OWNER/kepce-worker:$SHORT_SHA
           docker push ghcr.io/$OWNER/kepce-webapp:latest
+          docker push ghcr.io/$OWNER/kepce-webapp:$SHORT_SHA
 
   deploy-server:
     needs: build-images

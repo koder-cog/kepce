@@ -560,7 +560,7 @@ pub async fn upsert_menu(
     target_status_override: Option<MenuStatusEnum>,
     calorie_range_min: Option<i32>,
     calorie_range_max: Option<i32>,
-) -> Result<()> {
+) -> Result<bool> {
     // Yapısal kalite kapısı: içeriği tamamen boş olan kayıtlar (parser tüm
     // satırları çöp diye elerse ya da kaynak site boş döndüyse) slot işgal
     // etmesin. Böyle bir menü insert edilirse fallback/gap-fill "kayıt var"
@@ -574,7 +574,7 @@ pub async fn upsert_menu(
             "upsert_menu reddedildi: geçerli içeriği olmayan kayıt (city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
             city_id, date, meal_type, source_type
         );
-        return Ok(());
+        return Ok(false);
     }
 
     let target_status = match target_status_override {
@@ -597,7 +597,9 @@ pub async fn upsert_menu(
         .await?;
         
     let mut existing_map = HashMap::new();
-    let menu_id = if let Some(m) = existing_menu {
+    let mut existing_dishes_list = Vec::new();
+
+    if let Some(ref m) = existing_menu {
         let current_priority = get_source_priority(m.source_type.as_deref().unwrap_or(""));
         
         if incoming_priority < current_priority {
@@ -606,14 +608,30 @@ pub async fn upsert_menu(
                 "dishes": dishes,
                 "takeaways": takeaways
             });
+            let meal_str = match meal_type {
+                MealTypeEnum::Breakfast => "breakfast",
+                MealTypeEnum::Lunch => "lunch",
+                MealTypeEnum::Dinner => "dinner",
+            };
+            let existing_hist = shared::entities::menu_history::Entity::find()
+                .filter(shared::entities::menu_history::Column::CityId.eq(city_id))
+                .filter(shared::entities::menu_history::Column::ServeDate.eq(date))
+                .filter(shared::entities::menu_history::Column::MealType.eq(meal_str))
+                .filter(shared::entities::menu_history::Column::SourceType.eq(&source_type))
+                .one(&txn)
+                .await?;
+
+            if let Some(eh) = existing_hist {
+                if eh.dishes_payload == payload {
+                    txn.rollback().await?;
+                    return Ok(false);
+                }
+            }
+
             let hist = shared::entities::menu_history::ActiveModel {
                 city_id: Set(city_id),
                 serve_date: Set(date),
-                meal_type: Set(match meal_type {
-                    MealTypeEnum::Breakfast => "breakfast".to_string(),
-                    MealTypeEnum::Lunch => "lunch".to_string(),
-                    MealTypeEnum::Dinner => "dinner".to_string(),
-                }),
+                meal_type: Set(meal_str.to_string()),
                 source_type: Set(source_type),
                 submitted_by: Set(submitted_by),
                 dishes_payload: Set(payload),
@@ -621,7 +639,7 @@ pub async fn upsert_menu(
             };
             hist.insert(&txn).await?;
             txn.commit().await?;
-            return Ok(());
+            return Ok(true);
         }
 
         let existing_dishes = menu_dishes::Entity::find()
@@ -629,68 +647,17 @@ pub async fn upsert_menu(
             .find_also_related(shared::entities::dish_aliases::Entity)
             .all(&txn)
             .await?;
-            
-        let payload = serde_json::json!(existing_dishes.iter().map(|(md, alias)| {
-            serde_json::json!({
-                "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
-                "package_name": md.package_name.clone(),
-                "order_index": md.order_index,
-                "is_alternative": md.is_alternative
-            })
-        }).collect::<Vec<_>>());
-        
-        let hist = shared::entities::menu_history::ActiveModel {
-            city_id: Set(m.city_id),
-            serve_date: Set(m.serve_date),
-            meal_type: Set(match m.meal_type {
-                MealTypeEnum::Breakfast => "breakfast".to_string(),
-                MealTypeEnum::Lunch => "lunch".to_string(),
-                MealTypeEnum::Dinner => "dinner".to_string(),
-            }),
-            source_type: Set(m.source_type.clone().unwrap_or_else(|| "unknown".to_string())),
-            submitted_by: Set(m.submitted_by),
-            dishes_payload: Set(payload),
-            ..Default::default()
-        };
-        hist.insert(&txn).await?;
-        
-        for (d, _) in existing_dishes {
+
+        for (d, _) in &existing_dishes {
             let key = if d.is_alternative {
                 DishSlotKey::Alternative(d.package_name.clone(), d.order_index, d.dish_alias_id)
             } else {
                 DishSlotKey::Primary(d.package_name.clone(), d.order_index)
             };
-            existing_map.insert(key, d);
+            existing_map.insert(key, d.clone());
         }
-        
-        let mut update_m: menus::ActiveModel = m.clone().into();
-        update_m.source_type = Set(Some(source_type));
-        update_m.submitted_by = Set(submitted_by);
-        update_m.status = Set(target_status.clone());
-        if calorie_range_min.is_some() || calorie_range_max.is_some() {
-            update_m.calorie_range_min = Set(calorie_range_min.or(m.calorie_range_min));
-            update_m.calorie_range_max = Set(calorie_range_max.or(m.calorie_range_max));
-        }
-        update_m.update(&txn).await?;
-        
-        m.id
-    } else {
-        let new_menu = menus::ActiveModel {
-            city_id: Set(city_id),
-            serve_date: Set(date),
-            meal_type: Set(meal_type),
-            source_type: Set(Some(source_type)),
-            submitted_by: Set(submitted_by),
-            status: Set(target_status.clone()),
-            calorie_range_min: Set(calorie_range_min),
-            calorie_range_max: Set(calorie_range_max),
-            ..Default::default()
-        };
-        let res = new_menu.insert(&txn).await?;
-        // Yeni eklenen menü gününü IndexNow bildirim kuyruğuna kaydet
-        record_inserted_menu(city_id, date);
-        res.id
-    };
+        existing_dishes_list = existing_dishes;
+    }
     
     // Build target_map
     let mut target_map: HashMap<DishSlotKey, (i32, Option<String>, Option<i32>)> = HashMap::new();
@@ -801,6 +768,84 @@ pub async fn upsert_menu(
         }
     }
     
+    let menu_id = if let Some(ref m) = existing_menu {
+        let same_len = existing_map.len() == target_map.len();
+        let same_dishes = same_len && target_map.iter().all(|(key, (alias_id, amt, cals))| {
+            if let Some(existing) = existing_map.get(key) {
+                existing.dish_alias_id == *alias_id
+                    && (amt.is_none() || amt.as_deref() == existing.amount.as_deref())
+                    && (cals.is_none() || *cals == existing.calories)
+            } else {
+                false
+            }
+        });
+        let same_calories = m.calorie_range_min == calorie_range_min && m.calorie_range_max == calorie_range_max;
+        let same_source = m.source_type.as_deref() == Some(&source_type);
+
+        if same_dishes && same_calories && same_source {
+            tracing::trace!(
+                "upsert_menu no-op: menü ve yemekler zaten güncel (city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
+                city_id, date, meal_type, source_type
+            );
+            txn.rollback().await?;
+            return Ok(false);
+        }
+
+        // Eğer mevcut menüden farklı bir içerik geldiyse (revize edildiyse veya yeni kaynak geldiyse),
+        // mevcut halini menu_history tablosuna arşivle
+        let payload = serde_json::json!(existing_dishes_list.iter().map(|(md, alias)| {
+            serde_json::json!({
+                "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
+                "package_name": md.package_name.clone(),
+                "order_index": md.order_index,
+                "is_alternative": md.is_alternative
+            })
+        }).collect::<Vec<_>>());
+
+        let hist = shared::entities::menu_history::ActiveModel {
+            city_id: Set(m.city_id),
+            serve_date: Set(m.serve_date),
+            meal_type: Set(match m.meal_type {
+                MealTypeEnum::Breakfast => "breakfast".to_string(),
+                MealTypeEnum::Lunch => "lunch".to_string(),
+                MealTypeEnum::Dinner => "dinner".to_string(),
+            }),
+            source_type: Set(m.source_type.clone().unwrap_or_else(|| "unknown".to_string())),
+            submitted_by: Set(m.submitted_by),
+            dishes_payload: Set(payload),
+            ..Default::default()
+        };
+        hist.insert(&txn).await?;
+
+        let mut update_m: menus::ActiveModel = m.clone().into();
+        update_m.source_type = Set(Some(source_type));
+        update_m.submitted_by = Set(submitted_by);
+        update_m.status = Set(target_status.clone());
+        if calorie_range_min.is_some() || calorie_range_max.is_some() {
+            update_m.calorie_range_min = Set(calorie_range_min.or(m.calorie_range_min));
+            update_m.calorie_range_max = Set(calorie_range_max.or(m.calorie_range_max));
+        }
+        update_m.update(&txn).await?;
+
+        m.id
+    } else {
+        let new_menu = menus::ActiveModel {
+            city_id: Set(city_id),
+            serve_date: Set(date),
+            meal_type: Set(meal_type),
+            source_type: Set(Some(source_type)),
+            submitted_by: Set(submitted_by),
+            status: Set(target_status.clone()),
+            calorie_range_min: Set(calorie_range_min),
+            calorie_range_max: Set(calorie_range_max),
+            ..Default::default()
+        };
+        let res = new_menu.insert(&txn).await?;
+        // Yeni eklenen menü gününü IndexNow bildirim kuyruğuna kaydet
+        record_inserted_menu(city_id, date);
+        res.id
+    };
+
     // Delete existing dishes for this menu in the transaction to prevent unique constraint collisions
     menu_dishes::Entity::delete_many()
         .filter(menu_dishes::Column::MenuId.eq(menu_id))
@@ -851,7 +896,7 @@ pub async fn upsert_menu(
         }
     }
 
-    Ok(())
+    Ok(true)
 }
 
 pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<i32> {

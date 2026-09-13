@@ -55,9 +55,27 @@ export function normalizeMenu(raw) {
     }
   }
 
-  const alternatives = Array.isArray(raw.alternatives)
+  const seenSigs = new Set();
+  const mainSig = Array.isArray(items)
+    ? items.map(i => (i.raw_name || '').trim().toLowerCase().replace(/[^a-z0-9ğüşıöç]/gi, '')).filter(Boolean).sort().join('|')
+    : '';
+  if (mainSig) seenSigs.add(mainSig);
+
+  const rawAlternatives = Array.isArray(raw.alternatives)
     ? raw.alternatives.map(normalizeMenu)
     : [];
+
+  const alternatives = rawAlternatives.filter(alt => {
+    if (!alt || !Array.isArray(alt.items) || alt.items.length === 0) return false;
+    const sig = alt.items
+      .map(i => (i.raw_name || '').trim().toLowerCase().replace(/[^a-z0-9ğüşıöç]/gi, ''))
+      .filter(Boolean)
+      .sort()
+      .join('|');
+    if (!sig || seenSigs.has(sig)) return false;
+    seenSigs.add(sig);
+    return true;
+  });
 
   // API tekil menüde `serve_date` döndürür; sayfalar `date` alanını okur.
   return {

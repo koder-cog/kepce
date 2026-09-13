@@ -597,7 +597,7 @@
   .meal-alternate-row {
     display: flex;
     width: 100%;
-    margin-top: var(--space-xs);
+    margin-block: var(--space-sm);
   }
 
   .meal-alternate-row .meal-card__takeaway-btn {
@@ -605,7 +605,7 @@
     justify-content: space-between;
     align-items: center;
     width: 100%;
-    padding: var(--space-xs) 0;
+    padding: var(--space-sm) 0;
   }
 
   .alternate-view {
