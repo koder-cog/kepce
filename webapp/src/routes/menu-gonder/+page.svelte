@@ -78,7 +78,7 @@
       return {
         title: "Menü Gönder",
         subtitle:
-          "Yurt kantininde asılı olan resmi tavan fiyat listesinin fotoğrafını veya tablosunu paylaş.",
+          "Yurt kantininde asılı olan tavan fiyat listesinin fotoğrafını veya tablosunu paylaş.",
         fileLabel: "Kantin Fiyat Panosu veya Belgesi",
         fileHint: FILE_HINT,
       };

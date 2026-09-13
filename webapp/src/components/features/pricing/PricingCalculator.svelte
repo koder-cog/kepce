@@ -151,10 +151,10 @@
 
       if (exactCombos.length > 0) {
         tray = exactCombos[Math.floor(Math.random() * exactCombos.length)];
-        showToast("Tam 0 TL fark ile menü oluşturuldu.", "success");
+        showToast("Bütçeye tam denk tepsi oluşturuldu.", "success");
       } else {
         showToast(
-          "Bu bütçeye tam 0 TL oturan bir kombinasyon bulunamadı.",
+          "Bu bütçeye tam denk gelen bir tepsi bulunamadı.",
           "warning",
         );
       }
@@ -189,7 +189,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast("Rastgele protein menüsü oluşturuldu.", "success");
+        showToast("Protein ağırlıklı tepsi oluşturuldu.", "success");
       }
     } else if (type === "classic") {
       const classicKeywords = [
@@ -221,7 +221,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast("Rastgele büfe menüsü oluşturuldu.", "success");
+        showToast("Büfe tepsisi oluşturuldu.", "success");
       }
     } else if (type === "sweet") {
       const sweetKeywords = [
@@ -256,7 +256,7 @@
       if (Object.keys(combo).length > 0) {
         tray = combo;
         showToast(
-          "Rastgele tatlı & atıştırmalık menüsü oluşturuldu.",
+          "Tatlı ve atıştırmalık tepsisi oluşturuldu.",
           "success",
         );
       }
@@ -272,7 +272,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast("Rastgele menü kombinasyonu oluşturuldu.", "success");
+        showToast("Rastgele tepsi oluşturuldu.", "success");
       }
     }
   }
@@ -297,8 +297,8 @@
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Kepçe KYK Fiş Hesaplayıcı",
-          text: `Bugünkü yurt menü seçimim (${totalTrayPrice.toFixed(0)} TL):`,
+          title: "Kepçe KYK Tepsi Simülatörü",
+          text: `Bugünkü yemekhane tepsim (${totalTrayPrice.toFixed(0)} TL):`,
           url: url,
         });
         return;
@@ -310,7 +310,7 @@
     }
 
     navigator.clipboard.writeText(url).then(() => {
-      showToast("Menü bağlantısı panoya kopyalandı.", "success");
+      showToast("Tepsi bağlantısı panoya kopyalandı.", "success");
     });
   }
 
@@ -378,10 +378,10 @@
   aria-labelledby="pricing-calc-title"
 >
   <div class="pricing-calc__header">
-    <h2 id="pricing-calc-title" class="pricing-calc__title">Fiş Hesaplayıcı</h2>
+    <h2 id="pricing-calc-title" class="pricing-calc__title">Tepsi Simülatörü</h2>
     <p class="pricing-calc__subtitle">
-      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi resmi tavan
-      fiyatlarıdır.
+      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi tavan fiyat
+      tarifesi baz alınmıştır.
     </p>
   </div>
 
@@ -416,15 +416,15 @@
       type="button"
       class="btn btn--secondary btn--squish"
       onclick={() => applyPreset("zero")}
-      title="Bütçeye tam oturan menü türet"
+      title="Bütçeye tam denk kombinasyon"
     >
-      Sıfır Fark
+      Tam Denk
     </button>
     <button
       type="button"
       class="btn btn--secondary btn--squish"
       onclick={() => applyPreset("protein")}
-      title="Yüksek proteinli rastgele menü türet"
+      title="Protein ağırlıklı kombinasyon"
     >
       Protein
     </button>
@@ -432,7 +432,7 @@
       type="button"
       class="btn btn--secondary btn--squish"
       onclick={() => applyPreset("classic")}
-      title="Büfe klasiği rastgele menü türet"
+      title="Büfe ürünlerinden kombinasyon"
     >
       Büfe Klasiği
     </button>
@@ -440,7 +440,7 @@
       type="button"
       class="btn btn--secondary btn--squish"
       onclick={() => applyPreset("sweet")}
-      title="Tatlı & atıştırmalık menüsü türet"
+      title="Tatlı ve atıştırmalık kombinasyonu"
     >
       Tatlı
     </button>
@@ -448,7 +448,7 @@
       type="button"
       class="btn btn--secondary btn--squish"
       onclick={() => applyPreset("random")}
-      title="Tamamen rastgele menü keşfet"
+      title="Rastgele kombinasyon"
     >
       Rastgele
     </button>
@@ -543,7 +543,7 @@
             {#if isUnderQuota}
               {#if difference === 0}
                 <span class="pricing-calc__sticky-tag is-ok"
-                  >Tam limittesin (0 TL fark)</span
+                  >Tam limittesin</span
                 >
               {:else}
                 <span class="pricing-calc__sticky-tag is-ok"

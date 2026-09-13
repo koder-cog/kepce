@@ -38,7 +38,7 @@ Menü veya Al Götür paketi içindeki her bir yemek bileşeni.
 | `is_alternative` | `boolean` | Ana yemek yerine seçilebilen alternatif seçenek olup olmadığı. |
 | `amount` | `string \| null` | Gramaj veya porsiyon bilgisi (örnek: `"250 g"`, `"1 adet L boy"`). |
 | `calories` | `integer \| null` | Yemeğe ait porsiyon kalori değeri (örnek: `180`). |
-| `price` | `number \| null` | Resmi tavan fiyat listesindeki porsiyon tutarı (örnek: `35.0`). |
+| `price` | `number \| null` | Tavan fiyat tarifesindeki porsiyon tutarı (örnek: `35.0`). |
 | `category` | `string \| null` | Yemek kategorisi (örnek: `"Çorba"`, `"Ana Yemek"`, `"Kahvaltılık Sıcak"`). |
 | `master_data` | `DishMasterDataDto \| null` | Yemek merkezi yemek kataloğuyla eşleşmişse ek besin ve beğeni verisi. |
 

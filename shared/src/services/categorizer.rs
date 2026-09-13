@@ -1,6 +1,6 @@
-//! Yemek adı normalizasyonu ve resmi fiyat kategorisi eşleştirme servisi.
+//! Yemek adı normalizasyonu ve tavan fiyat kategorisi eşleştirme servisi.
 //!
-//! Bakanlığın resmi tabldot fiyatlandırma kategorileri ile menüdeki yemek adlarını
+//! Yurt tabldot fiyatlandırma kategorileri ile menüdeki yemek adlarını
 //! anahtar kelime kurallarına göre eşleştirir. Kural motoru "ilk eşleşen kural kazanır"
 //! mantığıyla çalışır.
 

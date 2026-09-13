@@ -1,6 +1,6 @@
 # Kepçe API Dokümantasyonu
 
-Kepçe REST API, KYK yurtlarında servis edilen günlük ve aylık menüleri, Al Götür paketlerini, yemek bazlı porsiyon gramajı veya kalori bilgilerini ve resmi tavan fiyat karşılıklarını geliştiricilere JSON formatında sunar.
+Kepçe REST API, KYK yurtlarında servis edilen günlük ve aylık menüleri, Al Götür paketlerini, yemek bazlı porsiyon gramajı veya kalori bilgilerini ve tavan fiyat tarifesi karşılıklarını geliştiricilere JSON formatında sunar.
 
 Bu doküman, Discord veya Telegram botu yazarları, üniversite kulüpleri, kampüs panoları ve mobil widget geliştiricileri için sıfırdan entegrasyon rehberidir.
 

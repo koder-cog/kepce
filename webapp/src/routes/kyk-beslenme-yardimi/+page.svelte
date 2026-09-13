@@ -81,8 +81,8 @@
   <h2>Ekstra Seçenekler ve Limitler</h2>
   <p>
     Yemekhanelerde standart menü haricinde sunulan ilave ürün veya kantin seçimlerinde
-    Bakanlığın belirlediği resmi tavan fiyatlar geçerlidir. Yardım limitini aşan
-    ekstra taleplerde aradaki fark kasada banka kartı, kredi kartı veya nakit ile ödenir.
+    yurtlar için belirlenen tavan fiyat tarifesi geçerlidir. Yardım limitini aşan
+    ekstra taleplerde aradaki fark kasada ödenir.
   </p>
 
   <h2>Yurttan İzinli Olduğunuz Günler</h2>
@@ -93,8 +93,8 @@
   </p>
   <p>
     Bugün şehrinizde hangi tabldot menünün çıktığını ve besin değerlerini görmek
-    için <a href="/" data-link>ana sayfaya</a> bakabilir, resmi tavan fiyat listesini ve
-    yardım hesaplamasını aşağıdaki tablodan inceleyebilirsiniz.
+    için <a href="/" data-link>ana sayfaya</a> bakabilir, tavan fiyat tarifesini ve
+    seçimlerinizin toplam tutarını aşağıdaki simülatörden görebilirsiniz.
   </p>
 
   <PricingCalculator />
