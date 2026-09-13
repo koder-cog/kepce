@@ -8,6 +8,7 @@
     suggestions = [],
     isSuggestionsOpen = false,
     selectedSuggestionIndex = -1,
+    instantPreview = null,
     randomShortcuts = [],
     basePath = "",
     onSearch = () => {},
@@ -71,8 +72,23 @@
         {@html icon("search", 20)}
       </button>
 
-      {#if isSuggestionsOpen && suggestions.length > 0}
+      {#if (isSuggestionsOpen && suggestions.length > 0) || instantPreview}
         <ul class="c-search-autocomplete" role="listbox">
+          {#if instantPreview}
+            <li
+              class="c-search-autocomplete__item is-instant-preview"
+              onmousedown={() => onSearch()}
+              role="option"
+              aria-selected="false"
+            >
+              <span class="c-search-autocomplete__preview-badge"
+                >{instantPreview.badge}</span
+              >
+              <strong class="c-search-autocomplete__preview-text"
+                >{instantPreview.text}</strong
+              >
+            </li>
+          {/if}
           {#each suggestions as item, idx}
             {#if item.isBang}
               <li

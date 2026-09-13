@@ -592,6 +592,7 @@
     {suggestions}
     {isSuggestionsOpen}
     {selectedSuggestionIndex}
+    {instantPreview}
     {randomShortcuts}
     {basePath}
     onSearch={handleSearch}

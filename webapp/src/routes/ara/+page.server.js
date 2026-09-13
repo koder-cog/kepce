@@ -3,6 +3,7 @@ import { env } from "$env/dynamic/private";
 import { resolveBang } from "$lib/search/bangs.js";
 import {
   solveUnitConversion,
+  suggestUnitCorrection,
   solveWorldTime,
   solveTdkDefinition,
   solveCryptoPrice,
@@ -731,6 +732,12 @@ async function solveInstantQuery(query, customFetch = fetch) {
     return unitAnswer;
   }
 
+  // 4. Dünya Saatleri & Zaman Dilimleri (örn: "tokyo saati", "saat kaç", "new york saati")
+  const timeAnswer = solveWorldTime(query);
+  if (timeAnswer) {
+    return timeAnswer;
+  }
+
   // 5. TDK Sözlük & Tanım Çözücü (örn: "tabldot nedir", "pragmatik ne demek")
   const defAnswer = await solveTdkDefinition(query);
   if (defAnswer) {
@@ -1366,6 +1373,14 @@ export async function load({ url, fetch }) {
     customFetch: fetch,
   });
 
+  const unitCorrection = suggestUnitCorrection(q);
+  let effectiveCorrections = searxData.corrections || [];
+  if (unitCorrection && !effectiveCorrections.includes(unitCorrection.correctedQuery)) {
+    effectiveCorrections = [unitCorrection.correctedQuery, ...effectiveCorrections];
+  }
+
+  const effectiveAnswer = searxData.answer || instantAnswer || (unitCorrection?.solved ? unitCorrection.solved : null);
+
   const responseData = {
     isHome: false,
     query: q,
@@ -1375,12 +1390,12 @@ export async function load({ url, fetch }) {
     timeRange,
     safeSearch,
     ...filterFields,
-    answer: searxData.answer || instantAnswer,
+    answer: effectiveAnswer,
     kepceCard,
     results: searxData.results || [],
     infoboxes: searxData.infoboxes || [],
     suggestions: searxData.suggestions || [],
-    corrections: searxData.corrections || [],
+    corrections: effectiveCorrections,
     numberOfResults: searxData.numberOfResults || 0,
     error: searxData.error || null,
   };

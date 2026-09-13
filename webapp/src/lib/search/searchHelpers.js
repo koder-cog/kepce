@@ -1,4 +1,9 @@
 // Pure search helper functions & constants for Kepçe Ara
+import {
+  solveWorldTime,
+  solveUnitConversion,
+  suggestUnitCorrection,
+} from "./instantSolvers.js";
 
 export const CATEGORIES = [
   { id: "general", label: "Web" },
@@ -203,6 +208,34 @@ export function checkInstantPreview(val, preferences = {}) {
         }
       }
     } catch {}
+  }
+
+  if (preferences.pluginTimezones !== false) {
+    const timeAnswer = solveWorldTime(q);
+    if (timeAnswer) {
+      return {
+        badge: "Saat",
+        text: `${timeAnswer.city}: ${timeAnswer.currentTime} (${timeAnswer.diffText})`,
+      };
+    }
+  }
+
+  if (preferences.pluginUnitConverter !== false) {
+    const unitAnswer = solveUnitConversion(q);
+    if (unitAnswer) {
+      return {
+        badge: "Birim",
+        text: `${unitAnswer.fromAmount} ${unitAnswer.fromUnitName} = ${unitAnswer.toAmount} ${unitAnswer.toUnitName}`,
+      };
+    }
+
+    const unitCorrection = suggestUnitCorrection(q);
+    if (unitCorrection && unitCorrection.solved) {
+      return {
+        badge: "Birim Önerisi",
+        text: `${unitCorrection.correctedQuery} (≈ ${unitCorrection.solved.toAmount} ${unitCorrection.solved.toUnitName})`,
+      };
+    }
   }
 
   if (preferences.pluginCalculator || preferences.pluginUnitConverter) {
