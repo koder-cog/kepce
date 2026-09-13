@@ -41,7 +41,7 @@
 </script>
 
 <Seo
-  title="Şifresiz Giriş - Kepçe"
+  title="Şifresiz Giriş | Kepçe"
   description="Kepçe şifresiz giriş bağlantısı doğrulanıyor."
   noindex={true}
 />

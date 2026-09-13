@@ -85,7 +85,7 @@
 </script>
 
 <Seo
-  title="Denetim İstatistikleri - Kepçe"
+  title="Denetim İstatistikleri | Kepçe"
   description="Kepçe şeffaflık raporu, moderasyon hareketleri ve içerik denetim istatistikleri."
   image="https://kepce.org/api/v1/public/og/page/istatistikler"
 />

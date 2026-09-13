@@ -38,8 +38,8 @@
 </script>
 
 <Seo
-  title="2026-2027 KYK Beslenme Yardımı Ne Kadar? (Günlük Ücret & Limit) | Kepçe"
-  description="2026-2027 KYK beslenme yardımı kaç TL oldu? Kahvaltı ve akşam yemeği günlük limitleri, fiks menü işleyişi ve hesaplama rehberi."
+  title="KYK Beslenme Yardımı | Kepçe"
+  description="KYK yurtlarında kahvaltı ve akşam yemeği için tanımlanan günlük beslenme yardımı ve yemekhane harcama kuralları."
   image="https://kepce.org/api/v1/public/og/page/rehber"
   canonical="https://kepce.org/kyk-beslenme-yardimi"
   schema={guideSchema}

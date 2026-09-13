@@ -258,7 +258,7 @@
 </script>
 
 <Seo
-  title="Bildirimler - Kepçe"
+  title="Bildirimler | Kepçe"
   description="Kullanıcı bildirimleri ve güncellemeler."
   noindex={true}
 />

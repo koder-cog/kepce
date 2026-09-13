@@ -13,8 +13,8 @@ use std::sync::OnceLock;
 use crate::parser::models::MenuComponent;
 use crate::tasks::scraper::upsert_menu;
 
-/// Fallback kaynak hiyerarşisi (düşükten yükseğe güven):
-///   yurtmenu.net (7) > kykyemek.com (6) > kykmenum.com (5) > kykmenu.com.tr (4)
+/// Fallback kaynak hiyerarşisi:
+///   kykyemek.com (6) > yurtmenu.net (karantina: 5) > kykmenum.com (4) > kykmenu.com.tr (3)
 ///
 /// Bu task SADECE birincil kaynakta (kykyemek) o şehir/o gün için kayıt
 /// bulunamadığında devreye girer ("boşa debelenme"yi önler). Kayıt zaten
@@ -422,11 +422,12 @@ async fn menus_missing_check(
 
         if has_valid_dish {
             let priority = crate::tasks::scraper::get_source_priority(m.source_type.as_deref().unwrap_or(""));
-            // Eğer mevcut kaynak önceliği en yüksek açık kaynak olan yurtmenu.net (7)
-            // veya daha yüksek (kepce-kullanici: 8, kepce-admin: 10) ise gün tam dolu kabul edilir.
-            // Daha düşük bir kaynaktan (kykyemek: 6, kykmenum: 5 vb.) geldiyse yurtmenu.net ile
-            // yükseltilebilmesi (reconciliation) için eksik/güncellenebilir bırakılır.
-            if priority >= 7 {
+            let is_quarantined = crate::tasks::scraper::is_quarantined_source(m.source_type.as_deref().unwrap_or(""));
+            // Eğer mevcut kaynak güvenilir bülten (kykyemek: 6) veya daha yüksek
+            // (kepce-kullanici: 8, kepce-admin: 10) ise ve karantinada değilse gün tam dolu kabul edilir.
+            // Karantinadaki kaynaklar (yurtmenu vb.) veya daha düşük açık kaynaklar,
+            // kykyemek tarafından doldurulabilmesi için eksik/güncellenebilir bırakılır.
+            if priority >= 6 && !is_quarantined {
                 match m.meal_type {
                     MealTypeEnum::Breakfast => has_breakfast = true,
                     MealTypeEnum::Dinner => has_dinner = true,

@@ -76,7 +76,7 @@
 </script>
 
 <Seo
-  title="Yeni Şifre Belirleme - Kepçe"
+  title="Yeni Şifre Belirleme | Kepçe"
   description="Yeni şifrenizi belirleyin."
   noindex={true}
 />

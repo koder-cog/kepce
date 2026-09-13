@@ -525,19 +525,37 @@ async fn fetch_and_save(
 // operatörün lokal drop-zone klasöründen (file_ingest) gelmelidir. Kullanıcı
 // kaynaklı API akışları (ingestion) bu fonksiyona bağlanırsa otomatik onay
 // moderation bypass'ına dönüşür - bu tabloyu değiştirirken bunu göz önünde tut.
+pub(crate) fn is_quarantined_source(source: &str) -> bool {
+    shared::services::source_registry::SourceRegistry::is_quarantined(source)
+}
+
 pub(crate) fn get_source_priority(source: &str) -> i32 {
-    match source {
-        "kepce-admin" => 10,
-        "kepce-kullanici" => 8,
-        // kykyemek nöbetçi yurt modunda kalabildiğinden (eylül başı vb.) yurtmenu.net
-        // bu dönemlerde gerçek menüyü daha erken yayınlıyor; bu yüzden yurtmenu 1 puan önde.
-        "yurtmenu" | "yurtmenu.net" | "yurtmenu.com" | "yurtmenu_live" => 7,
-        "kykyemek.com" | "kykyemek" | "kyk-yemek" => 6,
-        "kykmenum" | "kykmenum.com" => 5,
-        "kykmenu" | "kykmenu.com.tr" | "kykmenulistesi.com.tr" => 4,
-        "kepce-anonim" | "anonim" => 3,
-        _ => 1,
+    shared::services::source_registry::SourceRegistry::resolve(source).priority
+}
+
+pub(crate) fn check_dish_consensus(
+    existing_dishes: &[(menu_dishes::Model, Option<shared::entities::dish_aliases::Model>)],
+    incoming_dishes: &[Vec<crate::parser::models::MenuComponent>],
+) -> bool {
+    let existing_names: std::collections::HashSet<String> = existing_dishes
+        .iter()
+        .filter(|(md, _)| !md.is_alternative)
+        .filter_map(|(_, alias)| alias.as_ref().map(|a| crate::parser::normalizer::normalize_food_name(&a.name)))
+        .filter(|n| !n.is_empty())
+        .collect();
+
+    let incoming_names: std::collections::HashSet<String> = incoming_dishes
+        .iter()
+        .filter_map(|group| group.first().map(|c| crate::parser::normalizer::normalize_food_name(&c.name)))
+        .filter(|n| !n.is_empty())
+        .collect();
+
+    if existing_names.is_empty() || incoming_names.is_empty() {
+        return false;
     }
+
+    let common_count = existing_names.intersection(&incoming_names).count();
+    common_count >= 2 || (common_count >= 1 && (common_count * 2 >= existing_names.len() || common_count * 2 >= incoming_names.len()))
 }
 
 #[derive(Hash, PartialEq, Eq, Clone, Debug)]
@@ -579,9 +597,13 @@ pub async fn upsert_menu(
 
     let target_status = match target_status_override {
         Some(status) => status,
-        None => match source_type.as_str() {
-            "kepce-admin" | "kepce-kullanici" | "kykyemek" | "kykyemek.com" | "yurtmenu" | "yurtmenu.net" | "kykmenum" | "kykmenum.com" | "kykmenu" | "kykmenu.com.tr" => MenuStatusEnum::Approved,
-            _ => MenuStatusEnum::Pending,
+        None => {
+            let meta = shared::services::source_registry::SourceRegistry::resolve(&source_type);
+            if meta.is_auto_approvable {
+                MenuStatusEnum::Approved
+            } else {
+                MenuStatusEnum::Pending
+            }
         }
     };
     let incoming_priority = get_source_priority(&source_type);
@@ -601,9 +623,18 @@ pub async fn upsert_menu(
 
     if let Some(ref m) = existing_menu {
         let current_priority = get_source_priority(m.source_type.as_deref().unwrap_or(""));
-        
-        if incoming_priority < current_priority {
-            tracing::debug!("Incoming menu for {} (meal: {:?}) from {} has lower priority than {}. Archiving incoming.", date, meal_type, source_type, m.source_type.as_deref().unwrap_or(""));
+        let existing_source = m.source_type.as_deref().unwrap_or("");
+        let incoming_is_quarantined = is_quarantined_source(&source_type);
+        let existing_is_quarantined = is_quarantined_source(existing_source);
+
+        let should_archive_incoming = incoming_priority < current_priority
+            || (incoming_is_quarantined && !existing_is_quarantined);
+
+        if should_archive_incoming {
+            tracing::debug!(
+                "Incoming menu for {} (meal: {:?}) from {} has lower priority or is quarantined compared to {}. Archiving incoming.",
+                date, meal_type, source_type, existing_source
+            );
             let payload = serde_json::json!({
                 "dishes": dishes,
                 "takeaways": takeaways
@@ -621,25 +652,57 @@ pub async fn upsert_menu(
                 .one(&txn)
                 .await?;
 
+            let mut already_in_hist = false;
             if let Some(eh) = existing_hist {
                 if eh.dishes_payload == payload {
-                    txn.rollback().await?;
-                    return Ok(false);
+                    already_in_hist = true;
                 }
             }
 
-            let hist = shared::entities::menu_history::ActiveModel {
-                city_id: Set(city_id),
-                serve_date: Set(date),
-                meal_type: Set(meal_str.to_string()),
-                source_type: Set(source_type),
-                submitted_by: Set(submitted_by),
-                dishes_payload: Set(payload),
-                ..Default::default()
-            };
-            hist.insert(&txn).await?;
+            if !already_in_hist {
+                let hist = shared::entities::menu_history::ActiveModel {
+                    city_id: Set(city_id),
+                    serve_date: Set(date),
+                    meal_type: Set(meal_str.to_string()),
+                    source_type: Set(source_type.clone()),
+                    submitted_by: Set(submitted_by),
+                    dishes_payload: Set(payload),
+                    ..Default::default()
+                };
+                hist.insert(&txn).await?;
+            }
+
+            // Konsensüs zenginleştirmesi: Eğer mevcut menü Onaylı ise ve gelen karantina kaynağı
+            // kalori bilgisi getiriyorsa, çapraz aile konsensüsü ve yemek eşleşmesi sağlandığı takdirde kalori aralığı güncellenir.
+            if m.status == MenuStatusEnum::Approved
+                && (calorie_range_min.is_some() || calorie_range_max.is_some())
+                && shared::services::source_registry::SourceRegistry::is_cross_family_consensus(existing_source, &source_type)
+            {
+                let existing_dishes = menu_dishes::Entity::find()
+                    .filter(menu_dishes::Column::MenuId.eq(m.id))
+                    .find_also_related(shared::entities::dish_aliases::Entity)
+                    .all(&txn)
+                    .await?;
+
+                if check_dish_consensus(&existing_dishes, &dishes) {
+                    let mut update_m: menus::ActiveModel = m.clone().into();
+                    let mut changed = false;
+                    if m.calorie_range_min.is_none() && calorie_range_min.is_some() {
+                        update_m.calorie_range_min = Set(calorie_range_min);
+                        changed = true;
+                    }
+                    if m.calorie_range_max.is_none() && calorie_range_max.is_some() {
+                        update_m.calorie_range_max = Set(calorie_range_max);
+                        changed = true;
+                    }
+                    if changed {
+                        update_m.update(&txn).await?;
+                    }
+                }
+            }
+
             txn.commit().await?;
-            return Ok(true);
+            return Ok(!already_in_hist);
         }
 
         let existing_dishes = menu_dishes::Entity::find()
@@ -1106,6 +1169,70 @@ mod tests {
         let body = res.text().await.unwrap();
         println!("Body length: {}", body.len());
         assert!(body.contains("Kremal"));
+    }
+
+    #[test]
+    fn test_quarantined_source_priority_and_identification() {
+        assert!(super::is_quarantined_source("yurtmenu"));
+        assert!(super::is_quarantined_source("yurtmenu.net"));
+        assert!(super::is_quarantined_source("yurtmenu.com"));
+        assert!(super::is_quarantined_source("yurtmenu_live"));
+        assert!(!super::is_quarantined_source("kykyemek.com"));
+        assert!(!super::is_quarantined_source("kykmenum.com"));
+        assert!(!super::is_quarantined_source("kepce-admin"));
+
+        // Yurtmenu önceliği (5), kykyemek (6) altında, kykmenum (4) üstündedir
+        let kykyemek_prio = super::get_source_priority("kykyemek.com");
+        let yurtmenu_prio = super::get_source_priority("yurtmenu.net");
+        let kykmenum_prio = super::get_source_priority("kykmenum.com");
+        assert!(kykyemek_prio > yurtmenu_prio);
+        assert!(yurtmenu_prio > kykmenum_prio);
+    }
+
+    #[test]
+    fn test_check_dish_consensus() {
+        use shared::entities::{dish_aliases, menu_dishes};
+
+        let make_alias = |id: i32, name: &str| dish_aliases::Model {
+            id,
+            name: name.to_string(),
+            dish_id: Some(id),
+            created_at: None,
+        };
+
+        let make_menu_dish = |dish_alias_id: i32| menu_dishes::Model {
+            id: 1,
+            menu_id: 1,
+            dish_alias_id,
+            order_index: 0,
+            package_name: "NORMAL".to_string(),
+            amount: None,
+            calories: None,
+            is_alternative: false,
+        };
+
+        let existing = vec![
+            (make_menu_dish(1), Some(make_alias(1, "Mercimek Çorbası"))),
+            (make_menu_dish(2), Some(make_alias(2, "Orman Kebabı"))),
+            (make_menu_dish(3), Some(make_alias(3, "Pirinç Pilavı"))),
+            (make_menu_dish(4), Some(make_alias(4, "Ayran"))),
+        ];
+
+        // 1. En az 2 yemek eşleşiyorsa konsensüs vardır
+        let incoming_match = vec![
+            vec![crate::parser::models::MenuComponent::from("Mercimek Çorbası")],
+            vec![crate::parser::models::MenuComponent::from("Orman Kebabı")],
+            vec![crate::parser::models::MenuComponent::from("Bulgur Pilavı")],
+        ];
+        assert!(super::check_dish_consensus(&existing, &incoming_match));
+
+        // 2. Tamamen alakasız menüde konsensüs yoktur
+        let incoming_conflict = vec![
+            vec![crate::parser::models::MenuComponent::from("Tarhana Çorbası")],
+            vec![crate::parser::models::MenuComponent::from("Tavuk Sote")],
+            vec![crate::parser::models::MenuComponent::from("Makarna")],
+        ];
+        assert!(!super::check_dish_consensus(&existing, &incoming_conflict));
     }
 }
 

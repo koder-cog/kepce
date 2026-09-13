@@ -37,7 +37,7 @@
   });
 </script>
 
-<Seo title="E-Posta Doğrulama - Kepçe" noindex={true} />
+<Seo title="E-Posta Doğrulama | Kepçe" noindex={true} />
 
 <div class="auth-form-container">
   <h1 class="auth-page__title u-mb-lg">E-Posta Doğrulama</h1>

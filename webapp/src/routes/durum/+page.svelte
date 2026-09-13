@@ -292,7 +292,7 @@
 </div>
 
 <Seo
-  title="Sistem Durumu ve Çalışma Süresi - Kepçe"
-  description="Kepçe API, web uygulaması, veri tabanı ve arka plan servislerinin anlık çalışma durumu ve geçmiş kesinti raporları."
+  title="Sistem Durumu | Kepçe"
+  description="Kepçe API, web uygulaması, veri tabanı ve arka plan servislerinin anlık çalışma durumu ve kesinti raporları."
   image="https://kepce.org/api/v1/public/og/page/durum"
 />

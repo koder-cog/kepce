@@ -13,7 +13,7 @@
 </script>
 
 <Seo
-	title="{status} - Kepçe"
+	title="{status} | Kepçe"
 	description="Kepçe'de bir hata oluştu."
 	noindex={true}
 />

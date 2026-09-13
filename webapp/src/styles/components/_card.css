@@ -807,11 +807,89 @@
     padding: var(--space-md) 0;
   }
 
+  /* ── Project Cards (Öbür Projeler) ────────────────────────── */
+
+  .project-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: var(--space-lg);
+    margin-top: var(--space-xl);
+  }
+
+  .project-card {
+    background: var(--color-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    position: relative;
+    transition: background-color var(--motion-effects-default),
+      border-color var(--motion-effects-default),
+      transform var(--dur-default) var(--ease-spring-bounce),
+      box-shadow var(--dur-default) var(--ease-spring-bounce);
+    will-change: transform;
+  }
+
+  .project-card:hover {
+    border-color: var(--color-border);
+  }
+
+  .project-card__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .project-card__title {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-black);
+    font-size: var(--text-xl);
+    color: var(--color-text);
+    line-height: var(--leading-heading);
+    margin: 0;
+  }
+
+  .project-card__desc {
+    font-family: var(--font-body);
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-relaxed);
+    margin: 0;
+    flex: 1;
+  }
+
+  .project-card__meta {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .project-card__author {
+    font-size: var(--text-base);
+    color: var(--color-muted);
+    font-weight: var(--font-weight-medium);
+  }
+
+  .project-card__footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: var(--space-xs);
+  }
+
   /* ── Responsive Overrides ── */
 
   @media (max-width: 600px) {
-    .meal-cards {
+    .meal-cards,
+    .project-cards {
       grid-template-columns: 1fr;
+    }
+
+    .project-card {
+      padding: var(--space-lg);
     }
   }
 

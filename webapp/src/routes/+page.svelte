@@ -40,10 +40,10 @@
     const now = new Date();
     const todayTurkishStr = `${now.getDate()} ${turkishMonths[now.getMonth()]} ${now.getFullYear()}`;
 
-    let pageTitle = "KYK Yemek Menüsü - Bugün KYK'da Ne Yemek Var? | Kepçe";
+    let pageTitle = "KYK Yemek Menüsü | Kepçe";
 
     let pageDescription = $derived(
-        `${todayTurkishStr} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il güncel tabldot listeleri, kalori ve beslenme yardımı detayları.`,
+        `KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüleri, kalori ve beslenme yardımı detayları.`,
     );
     let ogImage = "https://kepce.org/og_image.png";
 

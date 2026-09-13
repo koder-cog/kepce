@@ -38,7 +38,7 @@
 </script>
 
 <Seo
-  title="Şifremi Unuttum - Kepçe"
+  title="Şifremi Unuttum | Kepçe"
   description="Kepçe şifre sıfırlama talebi."
   noindex={true}
 />

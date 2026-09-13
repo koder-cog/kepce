@@ -101,7 +101,7 @@
   }
 </script>
 
-<Seo title="Profili Tamamla - Kepçe" noindex={true} />
+<Seo title="Profili Tamamla | Kepçe" noindex={true} />
 
 {#if !isInitializing}
   {#if !isNewOAuth}

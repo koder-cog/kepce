@@ -19,7 +19,7 @@
 </script>
 
 <Seo
-  title="Ben • Kepçe"
+  title="Profilim | Kepçe"
   description="Kepçe kullanıcı profiliniz, favorileriniz ve ayarlarınız."
 />
 

@@ -79,7 +79,7 @@
   }
 </script>
 
-<Seo title="Yönetim Paneli - Kepçe" noindex={true} />
+<Seo title="Yönetim Paneli | Kepçe" noindex={true} />
 
 <h1 class="sr-only">Yönetim Paneli</h1>
 

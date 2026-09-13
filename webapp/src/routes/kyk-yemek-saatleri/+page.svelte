@@ -37,8 +37,8 @@
 </script>
 
 <Seo
-  title="2026-2027 KYK Yemek Saatleri (Sabah & Akşam) | Kepçe"
-  description="2026-2027 GSB KYK yurtlarında kahvaltı ve akşam yemeği saatleri kaçta başlıyor, kaçta bitiyor? Hafta sonu, Al-Götür ve Ramazan düzeni rehberi."
+  title="KYK Yemek Saatleri | Kepçe"
+  description="KYK yurtlarında kahvaltı ve akşam yemeği saatleri, hafta sonu farkları ve yemekhane işleyişi."
   image="https://kepce.org/api/v1/public/og/page/rehber"
   canonical="https://kepce.org/kyk-yemek-saatleri"
   schema={guideSchema}

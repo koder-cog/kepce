@@ -55,17 +55,11 @@
         };
     });
 
-    let academicYear = $derived.by(() => {
-        const y = dateParts.year;
-        const m = dateParts.month;
-        return m >= 9 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
-    });
-
     let todayTurkishStr = $derived(`${dateParts.day} ${dateParts.monthName} ${dateParts.year}`);
 
-    let pageTitle = $derived(`Bugünkü ${cityName} KYK Yemek Menüsü (${academicYear}) - Güncel Tabldot | Kepçe`);
+    let pageTitle = $derived(`${cityName} KYK Yemek Menüsü | Kepçe`);
     let pageDescription = $derived(
-        `Bugünkü ${cityName} KYK yurt yemekhane menüsü: ${todayTurkishStr} kahvaltı ve akşam yemeği tabldot listesi, kalori ve beslenme yardımı detayları.`
+        `${cityName} KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü, kalori ve beslenme yardımı detayları.`
     );
     let canonicalUrl = $derived(`https://kepce.org/${citySlug}`);
     let ogImage = $derived(`https://kepce.org/api/v1/public/og/city/${citySlug}`);

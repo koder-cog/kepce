@@ -50,7 +50,7 @@
   });
 </script>
 
-<Seo title="Giriş Yapılıyor... - Kepçe" noindex={true} />
+<Seo title="Giriş Yapılıyor... | Kepçe" noindex={true} />
 
 <h1 class="sr-only">Giriş Yapılıyor</h1>
 

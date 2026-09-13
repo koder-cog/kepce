@@ -15,7 +15,7 @@
     });
 </script>
 
-<Seo title="Yönlendiriliyorsunuz... - Kepçe" noindex={true} />
+<Seo title="Yönlendiriliyorsunuz... | Kepçe" noindex={true} />
 
 <h1 class="sr-only">Yönlendiriliyorsunuz</h1>
 

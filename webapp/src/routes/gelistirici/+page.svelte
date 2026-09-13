@@ -1143,7 +1143,7 @@
 </script>
 
 <Seo
-  title="Geliştirici Portalı - Kepçe"
+  title="Geliştirici Portalı | Kepçe"
   description="Proje Yönetimi ve API Anahtarları."
   image="https://kepce.org/api/v1/public/og/page/gelistirici"
   noindex={true}
@@ -1159,7 +1159,7 @@
           class="content-page__archive-link"
           onclick={() => (isCommercialModalOpen = true)}
         >
-          Ticari / Yüksek hacimli API nedir?
+          Ticari API nedir?
         </button>
       </div>
     </header>
@@ -1188,7 +1188,7 @@
           class="content-page__archive-link"
           onclick={() => (isCommercialModalOpen = true)}
         >
-          Ticari / Yüksek hacimli API nedir?
+          Ticari API nedir?
         </button>
       </div>
     </header>
@@ -1586,46 +1586,27 @@
 
 {#if isCommercialModalOpen}
   <Modal
-    options={{ title: "Yüksek Hacimli ve Ticari API" }}
+    options={{ title: "Ticari API nedir?" }}
     onClose={() => (isCommercialModalOpen = false)}
   >
     {#snippet children()}
-      <div class="u-flex u-flex-column u-gap-md">
-        <p class="u-text-sm u-color-muted">
-          Kepçe API, öğrenci projeleri, topluluklar ve açık kaynak geliştiriciler
-          için tamamen ücretsizdir. Yüksek hacimli veya ticari projelerde ise
-          sunucu yükünü karşılamak ve ekosistemi büyütmek için ücret yerine <strong
-            >açık veri dayanışması ve kaynak atfı</strong
-          > modelini uyguluyoruz.
-        </p>
-        <div class="card u-p-md u-bg-surface-sunken">
-          <h4 class="u-font-bold u-text-sm u-mb-xs">İş Birliği Koşulları</h4>
-          <ul
-            class="u-text-xs u-color-muted"
-            style="padding-left: 1.25rem; line-height: 1.6;"
-          >
-            <li>
-              <strong>Kaynak Atfı:</strong> Uygulamanızda veya sitenizde "Veriler Kepçe (kepce.org)
-              tarafından sağlanmaktadır" ibaresine ve bağlantısına yer verilmesi.
-            </li>
-            <li>
-              <strong>Veri Paylaşımı:</strong> Toplanan menü veya fiyat fotoğraflarının
-              doğrudan Kepçe veri tabanına iletilmesi.
-            </li>
-            <li>
-              <strong>Önbellek Kullanımı:</strong> Sunucu yükünü makul seviyede tutmak
-              için uygulamanızda uygun bir önbellek mekanizması işletilmesi.
-            </li>
-          </ul>
-        </div>
-        <p class="u-text-xs u-color-muted">
-          Özel bir entegrasyon veya yüksek hacimli kullanım talebiniz varsa <a
-            href="/iletisim"
-            class="u-font-bold"
-            data-link>iletişim sayfası</a
-          > üzerinden bize yazabilirsiniz.
-        </p>
-      </div>
+      <p>
+        Kepçe API, öğrenci projeleri, kişisel işler ve açık kaynak geliştirmeler için tamamen ücretsizdir. Ticari veya yüksek hacimli kullanımlarda ise ücret talep etmek yerine açık veri akışının sürmesini bekliyoruz.
+      </p>
+
+      <p>
+        Ticari veya yoğun kullanımlardaki temel beklentilerimiz şunlar:
+      </p>
+
+      <ul>
+        <li>Uygulamanızda veya sitenizde verilerin Kepçe'den alındığını belirtmeniz ve kepce.org bağlantısına yer vermeniz</li>
+        <li>Toplanan menü veya fiyat verilerini Kepçe ile de paylaşmanız</li>
+        <li>Sunucuyu gereksiz yormamak adına uygulamanızda önbellek mekanizması işletmeniz</li>
+      </ul>
+
+      <p>
+        Mevcut limitlerin üzerinde bir istek hacmine ihtiyacınız varsa veya özel bir entegrasyon düşünüyorsanız <a href="/iletisim" data-link>iletişim sayfası</a> üzerinden yazabilirsiniz.
+      </p>
     {/snippet}
     {#snippet footer()}
       <button

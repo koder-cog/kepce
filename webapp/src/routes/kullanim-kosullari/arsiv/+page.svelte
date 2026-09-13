@@ -7,7 +7,7 @@
 </script>
 
 <Seo
-  title="Kullanım Koşulları Arşivi - Kepçe"
+  title="Kullanım Koşulları Arşivi | Kepçe"
   description="Kepçe kullanım koşulları geçmiş sürümleri ve değişiklik kayıtları."
   noindex={true}
 />

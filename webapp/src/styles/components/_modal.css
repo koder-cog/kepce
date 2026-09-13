@@ -112,6 +112,25 @@
     line-height: var(--leading-relaxed);
   }
 
+  .c-modal__content ul {
+    list-style-type: disc;
+    padding-left: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  .c-modal__content a:not(.btn) {
+    color: var(--color-link);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+
+  .c-modal__content a:not(.btn):hover {
+    color: var(--color-link-hover);
+  }
+
   /* ── 6. Forms inside Modal ──────────────────────────────────── */
   .c-modal__form-group {
     display: flex;
