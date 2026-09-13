@@ -14,6 +14,8 @@
     import { getBotPlaceholderComment } from "@/utils/botPlaceholders.js";
     import { fade } from "svelte/transition";
     import { isMotionEnabled } from "@/lib/dom/motion.js";
+    import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
+    import { onMount } from "svelte";
 
     let {
         lastMenuDay = null,
@@ -102,6 +104,76 @@
         } catch {}
         return `<p>${sanitizeText(raw)}</p>`;
     }
+
+    let showingAlternatives = $state(null);
+    let currentCityAndDate = $derived(`${timelineState.currentCity}:${timelineState.selectedDateString}`);
+    let prevCityAndDate = $state("");
+
+    function openAlternativeView(mealType, alts) {
+        showingAlternatives = { mealType, alts };
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.set("kaynak", "diger");
+            if (mealType) url.searchParams.set("ogun", mealType);
+            window.history.pushState({ kepceAlternativeView: true }, "", url.toString());
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }
+
+    function closeAlternativeView() {
+        showingAlternatives = null;
+        if (typeof window !== "undefined") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("kaynak");
+            url.searchParams.delete("ogun");
+            window.history.pushState({}, "", url.toString());
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    }
+
+    $effect(() => {
+        if (prevCityAndDate && currentCityAndDate !== prevCityAndDate && showingAlternatives) {
+            showingAlternatives = null;
+            if (typeof window !== "undefined") {
+                const url = new URL(window.location.href);
+                url.searchParams.delete("kaynak");
+                url.searchParams.delete("ogun");
+                window.history.replaceState({}, "", url.toString());
+            }
+        }
+        prevCityAndDate = currentCityAndDate;
+    });
+
+    onMount(() => {
+        const checkUrlParams = () => {
+            if (typeof window === "undefined") return;
+            const url = new URL(window.location.href);
+            if (url.searchParams.get("kaynak") === "diger") {
+                const ogun = url.searchParams.get("ogun");
+                if (ogun === "breakfast" && breakfasts[0]?.alternatives?.length > 0) {
+                    showingAlternatives = { mealType: "breakfast", alts: breakfasts[0].alternatives };
+                } else if (ogun === "dinner" && dinners[0]?.alternatives?.length > 0) {
+                    showingAlternatives = { mealType: "dinner", alts: dinners[0].alternatives };
+                } else {
+                    const allAlts = [
+                        ...(breakfasts[0]?.alternatives || []),
+                        ...(dinners[0]?.alternatives || []),
+                    ];
+                    if (allAlts.length > 0) {
+                        showingAlternatives = { mealType: "all", alts: allAlts };
+                    }
+                }
+            } else {
+                showingAlternatives = null;
+            }
+        };
+
+        checkUrlParams();
+        window.addEventListener("popstate", checkUrlParams);
+        return () => {
+            window.removeEventListener("popstate", checkUrlParams);
+        };
+    });
 </script>
 
 <div id="meals-container" class:is-updating={timelineState.isUpdating}>
@@ -120,7 +192,15 @@
             <EmptyState
                 statusCode={timelineState.errorState.statusCode}
                 desc={timelineState.errorState.desc}
-            />
+            >
+                <button
+                    type="button"
+                    class="btn btn--secondary btn--sm btn--squish"
+                    onclick={() => timelineState.reload()}
+                >
+                    <span>Tekrar Dene</span>
+                </button>
+            </EmptyState>
         </div>
     {:else if breakfasts.length === 0 && dinners.length === 0}
         <div class="timeline-empty-wrapper" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
@@ -138,6 +218,39 @@
                 title={"Bugün çölyak menüsü yok"}
                 desc={"Seçtiğin tarih için herhangi bir çölyak menüsü bulamadık."}
             />
+        </div>
+    {:else if showingAlternatives}
+        <div class="alternate-view" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
+            <div class="alternate-view__nav">
+                <button
+                    type="button"
+                    class="btn btn--secondary btn--sm btn--squish"
+                    onclick={closeAlternativeView}
+                >
+                    {@html icon("chevronLeft", 16)}
+                    <span>Günün Menüsüne Dön</span>
+                </button>
+                <span class="text-sm color-muted">
+                    {formatFullTurkishDate(timelineState.selectedDate)} • {CITY_MAP[timelineState.currentCity] || timelineState.currentCity}
+                </span>
+            </div>
+
+            <header class="content-page__header">
+                <h2 class="content-page__title">Bazı kaynaklar böyle demektedir</h2>
+                <p class="color-muted">Bu tarih için diğer kaynaklarda aşağıdaki menü listesi bildirilmiştir:</p>
+            </header>
+
+            <div class="alternate-view__stack">
+                {#each showingAlternatives.alts as altMenu (altMenu.id || altMenu.source_type)}
+                    <MenuCard
+                        menu={altMenu}
+                        options={{
+                            isAlternative: true,
+                            dietMode: timelineState.currentDietMode,
+                        }}
+                    />
+                {/each}
+            </div>
         </div>
     {:else}
         <div class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}" in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}>
@@ -161,6 +274,20 @@
                                         takeaways: [],
                                     }}
                                 />
+                                {#if breakfasts[i].alternatives?.length > 0}
+                                    <div class="meal-alternate-row">
+                                        <button
+                                            type="button"
+                                            class="meal-card__takeaway-btn"
+                                            onclick={() => openAlternativeView("breakfast", breakfasts[i].alternatives)}
+                                        >
+                                            <span class="meal-card__dish-name">Kahvaltı için başka kaynakların dedikleri</span>
+                                            <div class="meal-card__dish-actions">
+                                                {@html icon("chevronRight", 18)}
+                                            </div>
+                                        </button>
+                                    </div>
+                                {/if}
                             {/each}
                         {:else if showEmptyCards && !isOffSeason}
                             <!-- #19: Kartı tamamen gizlemek yerine kompakt empty-state -->
@@ -248,6 +375,20 @@
                                         isOffSeason: isSingleMealLayout,
                                     }}
                                 />
+                                {#if dinners[i].alternatives?.length > 0}
+                                    <div class="meal-alternate-row">
+                                        <button
+                                            type="button"
+                                            class="meal-card__takeaway-btn"
+                                            onclick={() => openAlternativeView("dinner", dinners[i].alternatives)}
+                                        >
+                                            <span class="meal-card__dish-name">{isSingleMealLayout ? "Yemek" : "Akşam yemeği"} için başka kaynakların dedikleri</span>
+                                            <div class="meal-card__dish-actions">
+                                                {@html icon("chevronRight", 18)}
+                                            </div>
+                                        </button>
+                                    </div>
+                                {/if}
                             {/each}
                         {:else if showEmptyCards}
                             <EmptyState

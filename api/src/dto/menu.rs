@@ -1,12 +1,22 @@
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum MealType {
     Breakfast,
     Lunch,
     Dinner,
+}
+
+/// Alternatif kaynaktan gelen menü bilgisi
+#[derive(Debug, Serialize, Clone)]
+pub struct AlternativeMenuDto {
+    pub id: Option<i32>,
+    pub source_type: String,
+    pub meal_type: MealType,
+    pub items: Vec<MenuItemDto>,
+    pub calories: Option<String>,
 }
 
 /// Menünün dışarıya verilen ana yanıt yapısı
@@ -22,6 +32,8 @@ pub struct MenuResponseDto {
     pub bot_commentary: Option<String>,
     pub items: Vec<MenuItemDto>, // Menüdeki standart yemeklerin listesi
     pub takeaways: Vec<TakeawayMenuDto>, // Al Götür menüleri
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub alternatives: Vec<AlternativeMenuDto>, // Başka kaynakların dedikleri
     pub comment_count: i32,
     pub rating_sum: i32,
     pub vote_count: i32,
@@ -33,14 +45,14 @@ pub struct MenuResponseDto {
 }
 
 /// Al Götür paketinin detayı
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct TakeawayMenuDto {
     pub name: String,
     pub items: Vec<MenuItemDto>,
 }
 
 /// Menü içindeki her bir yemeğin detayı
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, Clone)]
 pub struct MenuItemDto {
     pub order_index: i32,
     

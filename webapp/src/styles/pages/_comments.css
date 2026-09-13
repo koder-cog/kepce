@@ -44,7 +44,7 @@
     .comments-page__header {
       display: flex;
       flex-direction: column;
-      gap: var(--space-xs);
+      gap: var(--space-lg);
       margin-bottom: var(--space-lg);
       text-align: left;
     }

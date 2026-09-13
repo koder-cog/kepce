@@ -8,7 +8,7 @@ import { request, buildQuery } from './client.js';
  * `items: [{ raw_name, master_data? }]` dizisi içerir; MenuCard
  * zaten bu şekli biliyor.
  */
-function normalizeMenu(raw) {
+export function normalizeMenu(raw) {
   if (!raw || typeof raw !== 'object') return raw;
 
   // Bazı response'larda öğeler doğrudan `foods` veya `meals` altında
@@ -55,8 +55,17 @@ function normalizeMenu(raw) {
     }
   }
 
+  const alternatives = Array.isArray(raw.alternatives)
+    ? raw.alternatives.map(normalizeMenu)
+    : [];
+
   // API tekil menüde `serve_date` döndürür; sayfalar `date` alanını okur.
-  return { ...raw, date: raw.date ?? raw.serve_date, items: items || [] };
+  return {
+    ...raw,
+    date: raw.date ?? raw.serve_date,
+    items: items || [],
+    alternatives,
+  };
 }
 
 function normalizeMenuList(payload) {

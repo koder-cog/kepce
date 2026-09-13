@@ -591,5 +591,44 @@
   .season-guides__card:hover .season-guides__arrow {
     color: var(--color-accent-primary);
   }
+
+  /* ── Alternatif Menü ("Başka Kaynakların Dedikleri") ──────── */
+
+  .meal-alternate-row {
+    display: flex;
+    width: 100%;
+    margin-top: var(--space-xs);
+  }
+
+  .meal-alternate-row .meal-card__takeaway-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: var(--space-xs) 0;
+  }
+
+  .alternate-view {
+    width: 100%;
+  }
+
+  .alternate-view__nav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xl);
+  }
+
+  .alternate-view__stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+    width: 100%;
+  }
+
+  .alternate-view__stack > :global(.meal-card) {
+    width: 100%;
+    max-width: 100%;
+  }
 }
 

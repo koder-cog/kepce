@@ -17,9 +17,9 @@ use std::collections::HashMap;
 use chrono::NaiveDate;
 use sea_orm::sea_query::Expr;
 use shared::entities::{
-    prelude::*, menus, menu_dishes, dish_aliases, dishes, cities, sea_orm_active_enums::MealTypeEnum, comments, menu_votes, dish_votes,
+    prelude::*, menus, menu_dishes, dish_aliases, dishes, cities, sea_orm_active_enums::MealTypeEnum, comments, menu_votes, dish_votes, menu_history,
 };
-use crate::dto::menu::{MenuResponseDto, MenuItemDto, DishMasterDataDto, MealType, ArchiveHighlightDto};
+use crate::dto::menu::{MenuResponseDto, MenuItemDto, DishMasterDataDto, MealType, ArchiveHighlightDto, AlternativeMenuDto};
 
 #[derive(Debug)]
 pub enum MenuError {
@@ -78,6 +78,62 @@ impl MenuService {
             (None, Some(max_val)) => Some(format!("{} kcal", max_val)),
             (None, None) => None,
         }
+    }
+
+    fn parse_alternative_from_history(
+        hist: &shared::entities::menu_history::Model,
+        meal_type: MealType,
+    ) -> Option<AlternativeMenuDto> {
+        let mut items = Vec::new();
+        let payload = &hist.dishes_payload;
+
+        let dish_list_opt: Option<&Vec<serde_json::Value>> = payload
+            .get("dishes")
+            .and_then(|d| d.as_array())
+            .or_else(|| payload.as_array());
+
+        if let Some(arr) = dish_list_opt {
+            for (idx, val) in arr.iter().enumerate() {
+                let name = if let Some(s) = val.as_str() {
+                    s.to_string()
+                } else if let Some(n) = val.get("name").and_then(|s| s.as_str()) {
+                    n.to_string()
+                } else if let Some(r) = val.get("raw_name").and_then(|s| s.as_str()) {
+                    r.to_string()
+                } else {
+                    continue;
+                };
+
+                if shared::services::content_guard::ContentGuard::is_junk_dish_text(&name) {
+                    continue;
+                }
+
+                let is_alt = val.get("is_alternative").and_then(|b| b.as_bool()).unwrap_or(false);
+
+                items.push(MenuItemDto {
+                    order_index: idx as i32,
+                    raw_name: name,
+                    is_alternative: is_alt,
+                    amount: None,
+                    calories: None,
+                    price: None,
+                    category: None,
+                    master_data: None,
+                });
+            }
+        }
+
+        if items.is_empty() {
+            return None;
+        }
+
+        Some(AlternativeMenuDto {
+            id: Some(hist.id),
+            source_type: hist.source_type.clone(),
+            meal_type,
+            items,
+            calories: None,
+        })
     }
 
     pub(crate) fn calculate_total_calories(items: &[MenuItemDto]) -> Option<i32> {
@@ -348,6 +404,7 @@ impl MenuService {
             my_vote,
             items,
             takeaways,
+            alternatives: vec![],
             calorie_range_min: menu.calorie_range_min,
             calorie_range_max: menu.calorie_range_max,
             calorie_range,
@@ -455,6 +512,18 @@ impl MenuService {
         } else {
             HashMap::new()
         };
+
+        let history_records: Vec<menu_history::Model> = MenuHistory::find()
+            .filter(menu_history::Column::CityId.eq(city_id))
+            .filter(menu_history::Column::ServeDate.eq(date))
+            .all(db)
+            .await
+            .unwrap_or_default();
+
+        let mut history_map: HashMap<String, Vec<menu_history::Model>> = HashMap::new();
+        for hist in history_records {
+            history_map.entry(hist.meal_type.to_lowercase()).or_default().push(hist);
+        }
 
         let mut result = Vec::with_capacity(menus.len());
         let mut alias_idx = 0;
@@ -575,12 +644,31 @@ impl MenuService {
                 continue;
             }
 
+            let meal_type_enum = Self::map_meal_type(&menu.meal_type);
+            let meal_type_str = match menu.meal_type {
+                MealTypeEnum::Breakfast => "breakfast",
+                MealTypeEnum::Lunch => "lunch",
+                MealTypeEnum::Dinner => "dinner",
+            };
+
+            let mut alternatives = Vec::new();
+            if let Some(hist_list) = history_map.get(meal_type_str) {
+                let current_src = menu.source_type.as_deref().unwrap_or("unknown");
+                for hist in hist_list {
+                    if hist.source_type != current_src {
+                        if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
+                            alternatives.push(alt_dto);
+                        }
+                    }
+                }
+            }
+
             result.push(MenuResponseDto {
                 id: menu.id,
                 city_name: city.name.clone(),
                 city_slug: city.slug.clone(),
                 serve_date: menu.serve_date,
-                meal_type: Self::map_meal_type(&menu.meal_type),
+                meal_type: meal_type_enum,
                 source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),
                 status: Self::map_menu_status(&menu.status),
                 bot_commentary: menu.bot_commentary.clone(),
@@ -590,6 +678,7 @@ impl MenuService {
                 my_vote,
                 items,
                 takeaways,
+                alternatives,
                 calorie_range_min: menu.calorie_range_min,
                 calorie_range_max: menu.calorie_range_max,
                 calorie_range,
@@ -650,6 +739,25 @@ impl MenuService {
         }
 
         let menus: Vec<menus::Model> = menus_with_cities.iter().map(|(m, _)| m.clone()).collect();
+
+        let dates: Vec<NaiveDate> = menus.iter().map(|m| m.serve_date).collect();
+        let city_ids: Vec<i32> = menus.iter().map(|m| m.city_id).collect();
+        let history_records: Vec<menu_history::Model> = if !dates.is_empty() && !city_ids.is_empty() {
+            MenuHistory::find()
+                .filter(menu_history::Column::CityId.is_in(city_ids))
+                .filter(menu_history::Column::ServeDate.is_in(dates))
+                .all(db)
+                .await
+                .unwrap_or_default()
+        } else {
+            vec![]
+        };
+
+        let mut history_map: HashMap<(i32, NaiveDate, String), Vec<menu_history::Model>> = HashMap::new();
+        for hist in history_records {
+            let key = (hist.city_id, hist.serve_date, hist.meal_type.to_lowercase());
+            history_map.entry(key).or_default().push(hist);
+        }
 
         // N+1 sorgularını önlemek için menülerin yemekleri, takma adları, ana yemekleri
         // ve oy/yorum istatistikleri toplu olarak sorgulanır.
@@ -850,12 +958,31 @@ impl MenuService {
                     continue;
                 }
 
+                let meal_type_enum = Self::map_meal_type(&menu.meal_type);
+                let meal_type_str = match menu.meal_type {
+                    MealTypeEnum::Breakfast => "breakfast",
+                    MealTypeEnum::Lunch => "lunch",
+                    MealTypeEnum::Dinner => "dinner",
+                };
+
+                let mut alternatives = Vec::new();
+                if let Some(hist_list) = history_map.get(&(menu.city_id, menu.serve_date, meal_type_str.to_string())) {
+                    let current_src = menu.source_type.as_deref().unwrap_or("unknown");
+                    for hist in hist_list {
+                        if hist.source_type != current_src {
+                            if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
+                                alternatives.push(alt_dto);
+                            }
+                        }
+                    }
+                }
+
                 result.push(MenuResponseDto {
                     id: menu.id,
                     city_name: city.name,
                     city_slug: city.slug.clone(),
                     serve_date: menu.serve_date,
-                    meal_type: Self::map_meal_type(&menu.meal_type),
+                    meal_type: meal_type_enum,
                     source_type: menu.source_type.unwrap_or_else(|| "unknown".to_string()),
                     status: Self::map_menu_status(&menu.status),
                     bot_commentary: menu.bot_commentary.clone(),
@@ -865,6 +992,7 @@ impl MenuService {
                     my_vote: my_votes_map.get(&menu.id).cloned(),
                     items,
                     takeaways,
+                    alternatives,
                     calorie_range_min: menu.calorie_range_min,
                     calorie_range_max: menu.calorie_range_max,
                     calorie_range,
@@ -1029,6 +1157,54 @@ mod tests {
             make_test_item(3, false, Some(350)),
         ];
         assert_eq!(MenuService::calculate_total_calories(&items), Some(600));
+    }
+
+    #[test]
+    fn test_parse_alternative_from_history_dishes_array() {
+        let hist = shared::entities::menu_history::Model {
+            id: 10,
+            city_id: 34,
+            serve_date: chrono::NaiveDate::from_ymd_opt(2026, 9, 13).unwrap(),
+            meal_type: "dinner".into(),
+            source_type: "kykyemek".into(),
+            submitted_by: None,
+            dishes_payload: serde_json::json!({
+                "dishes": [
+                    { "name": "Mercimek Çorbası", "is_alternative": false },
+                    { "name": "Kuru Fasulye", "is_alternative": false }
+                ]
+            }),
+            created_at: None,
+        };
+
+        let alt = MenuService::parse_alternative_from_history(&hist, MealType::Dinner).unwrap();
+        assert_eq!(alt.id, Some(10));
+        assert_eq!(alt.source_type, "kykyemek");
+        assert_eq!(alt.meal_type, MealType::Dinner);
+        assert_eq!(alt.items.len(), 2);
+        assert_eq!(alt.items[0].raw_name, "Mercimek Çorbası");
+        assert_eq!(alt.items[1].raw_name, "Kuru Fasulye");
+    }
+
+    #[test]
+    fn test_parse_alternative_from_history_filters_junk() {
+        let hist = shared::entities::menu_history::Model {
+            id: 11,
+            city_id: 34,
+            serve_date: chrono::NaiveDate::from_ymd_opt(2026, 9, 13).unwrap(),
+            meal_type: "dinner".into(),
+            source_type: "kykmenu".into(),
+            submitted_by: None,
+            dishes_payload: serde_json::json!([
+                "Veri yok. Menüye sahipseniz bize yazın",
+                "Ezogelin Çorbası"
+            ]),
+            created_at: None,
+        };
+
+        let alt = MenuService::parse_alternative_from_history(&hist, MealType::Dinner).unwrap();
+        assert_eq!(alt.items.len(), 1);
+        assert_eq!(alt.items[0].raw_name, "Ezogelin Çorbası");
     }
 }
 
