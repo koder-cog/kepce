@@ -52,7 +52,7 @@ pub struct MenuItemDto {
     
     pub amount: Option<String>,
     pub calories: Option<i32>,
-    pub price: Option<String>,
+    pub price: Option<f64>,
     pub category: Option<String>,
     
     // Eğer yemek admin tarafından resmi listeyle (master) eşleştirildiyse bu obje dolu gelir.

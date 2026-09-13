@@ -585,9 +585,7 @@
                                             <span
                                                 class="c-badge-pill c-badge-pill--price"
                                                 data-tooltip="Ekstra alındığında veya ücretli durumda geçerli fiyattır. Fiyatlar şehre ve döneme göre değişiklik gösterebilir."
-                                                >{sanitizeText(
-                                                    dish.price,
-                                                )}</span
+                                                >{typeof dish.price === 'number' ? `${dish.price.toFixed(2)} ₺` : sanitizeText(dish.price)}</span
                                             >
                                         {/if}
                                         {#if typeof dish.id === "number"}

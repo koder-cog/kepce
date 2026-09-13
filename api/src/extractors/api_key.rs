@@ -64,6 +64,51 @@ where
     }
 }
 
+#[derive(Debug)]
+pub struct OptionalApiKey(pub Option<api_keys::Model>);
+
+#[async_trait]
+impl<S> FromRequestParts<S> for OptionalApiKey
+where
+    AppState: FromRef<S>,
+    S: Send + Sync,
+{
+    type Rejection = AppError;
+
+    async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
+        let app_state = AppState::from_ref(state);
+
+        let Some(api_key_header) = parts.headers.get("X-API-Key").and_then(|h| h.to_str().ok()) else {
+            return Ok(OptionalApiKey(None));
+        };
+
+        let mut hasher = Sha256::new();
+        hasher.update(api_key_header.as_bytes());
+        let hash_result = hasher.finalize();
+        let key_hash: String = hash_result.iter().map(|b| format!("{:02x}", b)).collect();
+
+        let api_key_model = ApiKeys::find()
+            .filter(api_keys::Column::KeyHash.eq(&key_hash))
+            .filter(api_keys::Column::IsActive.eq(true))
+            .one(&app_state.db)
+            .await
+            .map_err(|e| {
+                tracing::error!("DB error checking API Key: {}", e);
+                AppError::Internal("Veritabanı hatası".to_string())
+            })?
+            .ok_or_else(|| AppError::Unauthorized("Geçersiz veya pasif API Key".to_string()))?;
+
+        app_state.usage_tracker.record_request(
+            &app_state.db,
+            api_key_model.id,
+            &api_key_model.tier,
+            false
+        ).await.map_err(AppError::TooManyRequests)?;
+
+        Ok(OptionalApiKey(Some(api_key_model)))
+    }
+}
+
 pub enum IngestionAuth {
     User(AuthenticatedUser),
     Developer(api_keys::Model),

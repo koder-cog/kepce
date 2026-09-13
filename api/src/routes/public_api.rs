@@ -80,7 +80,7 @@ pub struct MenuQuery {
 /// Kanonik anahtar slug'dır; geriye dönük uyumluluk için sayısal id de kabul edilir.
 async fn get_today_menu(
     State(db): State<sea_orm::DatabaseConnection>,
-    _key: crate::extractors::api_key::ValidApiKey,
+    _key: crate::extractors::api_key::OptionalApiKey,
     headers: HeaderMap,
     Path(city): Path<String>,
     Query(query): Query<MenuQuery>,
@@ -147,7 +147,7 @@ pub async fn detect_city(
 
 async fn get_single_menu(
     State(db): State<sea_orm::DatabaseConnection>,
-    _key: crate::extractors::api_key::ValidApiKey,
+    _key: crate::extractors::api_key::OptionalApiKey,
     headers: HeaderMap,
     Path(id): Path<i32>,
     Query(query): Query<MenuQuery>,

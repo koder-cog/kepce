@@ -39,6 +39,21 @@ pub struct DishVoteStats {
 pub struct MenuService;
 
 impl MenuService {
+    /// Şehir parametresini hem plaka ID (örn: 34) hem de slug (örn: istanbul) üzerinden çözer.
+    pub async fn resolve_city(
+        db: &DatabaseConnection,
+        city_param: &str,
+    ) -> Result<Option<cities::Model>, DbErr> {
+        if let Ok(id) = city_param.parse::<i32>() {
+            cities::Entity::find_by_id(id).one(db).await
+        } else {
+            cities::Entity::find()
+                .filter(cities::Column::Slug.eq(city_param.to_lowercase()))
+                .one(db)
+                .await
+        }
+    }
+
     /// Veritabanı MealType enumunu DTO enumuna çevirir
     fn map_meal_type(db_meal_type: &MealTypeEnum) -> MealType {
         match db_meal_type {
@@ -237,7 +252,7 @@ impl MenuService {
             );
 
             let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
-            let price = price_info.map(|p| format!("{:.2} ₺", p.price));
+            let price = price_info.map(|p| p.price as f64);
 
             let item_dto = MenuItemDto {
                 order_index: md.order_index,
@@ -509,7 +524,7 @@ impl MenuService {
                     );
 
                     let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
-                    let price = price_info.map(|p| format!("{:.2} ₺", p.price));
+                    let price = price_info.map(|p| p.price as f64);
                     
                     let item_dto = MenuItemDto {
                         order_index: md.order_index,
@@ -599,11 +614,7 @@ impl MenuService {
             .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved));
 
         if let Some(slug) = city_slug {
-            let city = cities::Entity::find()
-                .filter(cities::Column::Slug.eq(&slug))
-                .one(db)
-                .await
-                .map_err(MenuError::DatabaseError)?;
+            let city = Self::resolve_city(db, &slug).await.map_err(MenuError::DatabaseError)?;
                 
             if let Some(c) = city {
                 query = query.filter(menus::Column::CityId.eq(c.id));
@@ -790,7 +801,7 @@ impl MenuService {
                         );
 
                         let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
-                        let price = price_info.map(|p| format!("{:.2} ₺", p.price));
+                        let price = price_info.map(|p| p.price as f64);
                         
                         let item_dto = MenuItemDto {
                             order_index: md.order_index,
@@ -882,11 +893,7 @@ impl MenuService {
             .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved));
         
         if let Some(slug) = city_slug {
-            let city = cities::Entity::find()
-                .filter(cities::Column::Slug.eq(&slug))
-                .one(db)
-                .await
-                .map_err(MenuError::DatabaseError)?;
+            let city = Self::resolve_city(db, &slug).await.map_err(MenuError::DatabaseError)?;
                 
             if let Some(c) = city {
                 query = query.filter(menus::Column::CityId.eq(c.id));

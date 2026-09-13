@@ -11,12 +11,17 @@ use crate::services::menu::{MenuService, MenuError};
 use crate::services::vote::{VoteService, VoteError};
 use crate::error::AppError;
 use crate::extractors::auth::{OptionalUser, AuthenticatedUser};
+use crate::extractors::api_key::OptionalApiKey;
 use shared::entities::sea_orm_active_enums::SentimentEnum;
+
 pub fn router() -> Router<crate::config::AppState> {
     Router::new()
         .route("/", get(get_menus))
         .route("/today", get(get_today))
-        .route("/today/:city_slug", get(get_today_city))
+        .route("/today/:city", get(get_today_city))
+        .route("/months", get(crate::routes::public_api::get_menu_months))
+        .route("/days", get(crate::routes::public_api::get_menu_days))
+        .route("/index", get(crate::routes::public_api::get_menu_index))
         .route("/archive/years", get(get_archive_years))
         .route("/archive/highlights", get(get_archive_highlights))
         .route("/:menu_id", get(get_menu))
@@ -83,6 +88,7 @@ pub struct MenuFilterQueryDto {
 
 async fn get_menus(
     State(db): State<sea_orm::DatabaseConnection>,
+    _key: OptionalApiKey,
     OptionalUser(user): OptionalUser,
     headers: http::HeaderMap,
     Query(query): Query<MenuFilterQueryDto>,
@@ -111,14 +117,15 @@ async fn get_menus(
 
 async fn get_today_city(
     State(db): State<sea_orm::DatabaseConnection>,
+    _key: OptionalApiKey,
     OptionalUser(user): OptionalUser,
     headers: http::HeaderMap,
-    Path(city_slug): Path<String>,
+    Path(city): Path<String>,
     Query(query): Query<MenuFilterQueryDto>,
 ) -> Result<axum::response::Response, AppError> {
     let today = crate::utils::time::istanbul_today();
     let user_id = user.map(|u| u.id);
-    let menus = MenuService::get_menus_by_filter(&db, Some(city_slug), Some(today), query.dietary_type, None, None, user_id).await?;
+    let menus = MenuService::get_menus_by_filter(&db, Some(city), Some(today), query.dietary_type, None, None, user_id).await?;
     crate::utils::response::cached_json_response(&headers, &menus, 300)
 }
 
@@ -158,6 +165,7 @@ pub struct MenuDetailQueryDto {
 
 async fn get_menu(
     State(db): State<sea_orm::DatabaseConnection>,
+    _key: OptionalApiKey,
     OptionalUser(user): OptionalUser,
     headers: http::HeaderMap,
     Path(menu_id): Path<i32>,
