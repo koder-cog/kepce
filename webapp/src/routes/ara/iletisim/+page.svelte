@@ -97,13 +97,18 @@
         <h2>Dikkat edilecek hususlar</h2>
         <ol>
           <li>
-            Kepçe Ara bir meta arama aracıdır. Arama sonuçlarında listelenen sayfaların içeriği ilgili web sitelerine aittir.
+            Kepçe Ara bir meta arama aracıdır. Arama sonuçlarında listelenen
+            sayfaların içeriği ilgili web sitelerine aittir.
           </li>
           <li>
-            5651 sayılı Kanun m. 5/2 kapsamında hukuka aykırı veya kişilik haklarını ihlal eden bağlantılar için "Yasal / Uyar-Kaldır" kategorisini seçebilirsiniz. Bildiriminizde ihlale konu bağlantı adresini (URL) ve yasal gerekçenizi belirtiniz.
+            5651 sayılı Kanun m. 5/2 kapsamında hukuka aykırı veya kişilik
+            haklarını ihlal eden bağlantılar için "Yasal / Uyar-Kaldır"
+            kategorisini seçebilirsiniz. Bildiriminizde ihlale konu bağlantı
+            adresini (URL) ve yasal gerekçenizi belirtiniz.
           </li>
           <li>
-            Arama motoru arayüzü veya sonuç listelemeyle ilgili teknik aksaklıkları "Hata Bildirimi" kategorisi üzerinden iletebilirsiniz.
+            Arama motoru arayüzü veya sonuç listelemeyle ilgili teknik
+            aksaklıkları "Hata Bildirimi" kategorisi üzerinden iletebilirsiniz.
           </li>
         </ol>
       </section>
@@ -179,7 +184,9 @@
                 placeholder=" "
                 rows="6"
               ></textarea>
-              <label class="form-label" for="contact-description">Açıklama</label>
+              <label class="form-label" for="contact-description"
+                >Açıklama</label
+              >
             </div>
             <span
               class="c-char-counter"
@@ -204,26 +211,38 @@
       <section class="contact-info-section">
         <h2>Proje bilgileri</h2>
         <p>
-          5651 sayılı Kanun uyarınca yer sağlayıcıya ilişkin tanıtıcı bilgiler aşağıdadır:
+          5651 sayılı Kanun uyarınca yer sağlayıcıya ilişkin tanıtıcı bilgiler
+          aşağıdadır:
           <br /><br />
           <strong>Yer Sağlayıcı:</strong> Kazım Geleş<br />
           <strong>E-posta:</strong>
           <a href="mailto:yasal@kepce.org">yasal@kepce.org</a><br />
-          <strong>İletişim:</strong> Yukarıdaki form veya e-posta adresi üzerinden resmi başvurularınızı iletebilirsiniz.
+          <strong>İletişim:</strong> Yukarıdaki form veya e-posta adresi üzerinden
+          resmi başvurularınızı iletebilirsiniz.
         </p>
       </section>
 
       <section class="u-mt-xl">
         <h2>Açık kaynak depoları</h2>
         <p>
-          Kepçe Ara yazılımı ve SearXNG altyapısıyla ilgili doğrudan kod katkısı veya geliştirici tartışmaları için aşağıdaki açık depoları da kullanabilirsiniz:
+          Kepçe Ara yazılımı ve SearXNG altyapısıyla ilgili doğrudan kod katkısı
+          veya geliştirici tartışmaları için aşağıdaki açık depoları da
+          kullanabilirsiniz:
         </p>
         <ul>
           <li>
-            <a href="https://github.com/koder-cog/kepce" target="_blank" rel="noopener noreferrer">Kepçe GitHub Deposu</a>
+            <a
+              href="https://github.com/koder-cog/kepce"
+              target="_blank"
+              rel="noopener noreferrer">Kepçe GitHub Deposu</a
+            >
           </li>
           <li>
-            <a href="https://github.com/searxng/searxng" target="_blank" rel="noopener noreferrer">SearXNG GitHub Deposu</a>
+            <a
+              href="https://github.com/searxng/searxng"
+              target="_blank"
+              rel="noopener noreferrer">SearXNG GitHub Deposu</a
+            >
           </li>
         </ul>
       </section>
