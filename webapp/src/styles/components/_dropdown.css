@@ -101,7 +101,6 @@
 
   /* Açık durum */
   .dropdown__trigger--open {
-    border-color: var(--color-accent-primary);
     background: var(--color-surface);
     box-shadow: var(--shadow-focus);
   }

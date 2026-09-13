@@ -935,12 +935,18 @@
           <div class="c-list-row__title">Animasyon efektleri</div>
         </div>
         <div class="c-list-row__control u-flex u-align-center u-gap-sm">
-          <div
+          <button
+            type="button"
             class="c-list-row__info-icon"
             data-tooltip="Bu anahtar kapatılırsa hareketler tamamen kapatılmak yerine azaltılır."
+            aria-label="Animasyon efektleri hakkında bilgi"
+            onclick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
           >
             {@html icon("info", 20)}
-          </div>
+          </button>
           <input
             type="checkbox"
             id="settings-animations-toggle"

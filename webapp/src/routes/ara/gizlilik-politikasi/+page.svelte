@@ -25,7 +25,7 @@
         Gizlilik Politikası (KVKK Aydınlatma Metni)
       </h1>
       <div class="content-page__meta">
-        <time class="content-page__date">Yürürlük Tarihi: 2 Eylül 2026</time>
+        <time class="content-page__date">Yürürlük Tarihi: 13 Eylül 2026</time>
       </div>
     </header>
 
@@ -54,8 +54,8 @@
           Arama kutusuna yazdığınız terimler sunucu veritabanına kaydedilmez.
           Yapılan arama anlık olarak ilgili motorlara iletilir, sonuçlar
           tarayıcınıza ulaştıktan sonra bellekten silinir. Arama geçmişi
-          tutulmaz, kullanıcı profili çıkarılmaz ve davranışsal reklam
-          hedeflemesi yapılmaz.
+          tutulmaz, kullanıcı profili çıkarılmaz, otomatik karar alma sistemi
+          işletilmez ve davranışsal reklam hedeflemesi yapılmaz.
         </p>
       </section>
 
@@ -99,7 +99,10 @@
         <h2 class="u-text-lg u-font-bold u-mb-xs">6. Başvuru ve İletişim</h2>
         <p class="u-leading-comfortable">
           Kişisel Verilerin Korunması Kanunu kapsamındaki haklarınız ve gizlilik
-          uygulamalarımızla ilgili sorularınız için <a
+          uygulamalarımızla ilgili talepleriniz için <a
+            href="mailto:yasal@kepce.org"
+            class="text-link">yasal@kepce.org</a
+          > veya <a
             href="mailto:iletisim@kepce.org"
             class="text-link">iletisim@kepce.org</a
           > adresinden bize ulaşabilirsiniz.

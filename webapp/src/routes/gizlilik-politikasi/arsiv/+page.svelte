@@ -12,7 +12,7 @@
   noindex={true}
 />
 
-<ContentPage title="Gizlilik Politikası Geçmiş Sürümler">
+<ContentPage title="Gizlilik Politikası Arşivi">
   <p>Aşağıda gizlilik politikamızın geçmiş sürümlerini bulabilirsiniz.</p>
   <ul>
     {#each versions as v}

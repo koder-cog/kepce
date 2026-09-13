@@ -295,7 +295,7 @@
     <section class="archive-discovery u-fade-in">
       <div class="archive-discovery__header">
         <h2 class="archive-discovery__title">Hızlı Göz At</h2>
-        <span class="archive-discovery__subtitle">Son eklenen arşiv kayıtları</span>
+        <span class="archive-discovery__subtitle">Rastgele şehirler</span>
       </div>
 
       {#if quickArchivePicks.length > 0}

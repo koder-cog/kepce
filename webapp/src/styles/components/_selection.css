@@ -95,6 +95,15 @@
     border-radius: var(--radius-full);
     flex-shrink: 0;
     overflow: visible;
+    background: transparent;
+    border: none;
+    padding: 0;
+    outline: none;
+  }
+
+  .c-list-row__info-icon:focus-visible {
+    outline: 2px solid var(--color-focus, var(--color-accent-primary));
+    outline-offset: 2px;
   }
 
   .c-list-row__info-icon svg {

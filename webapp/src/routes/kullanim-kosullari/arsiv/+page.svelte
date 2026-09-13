@@ -12,7 +12,7 @@
   noindex={true}
 />
 
-<ContentPage title="Kullanım Koşulları Geçmiş Sürümler">
+<ContentPage title="Kullanım Koşulları Arşivi">
   <p>Aşağıda kullanım koşullarımızın geçmiş sürümlerini bulabilirsiniz.</p>
   <ul>
     {#each versions as v}

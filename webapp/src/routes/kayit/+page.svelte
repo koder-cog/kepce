@@ -527,8 +527,8 @@
             >nı ve
             <a href="/gizlilik-politikasi" target="_blank"
               >Gizlilik Politikası</a
-            >nı (KVKK Aydınlatma Metni) okuduğunuzu, yurt dışı aktarımı ve özel
-            nitelikli veri işlenmesine açık rıza verdiğinizi kabul edersiniz.
+            >nı (KVKK Aydınlatma Metni) okuduğunuzu ve verilerinizin yurt dışındaki
+            sunucularda barındırılmasına açık rıza verdiğinizi kabul edersiniz.
           </p>
         </div>
 

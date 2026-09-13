@@ -200,8 +200,16 @@ export function initTooltipManager() {
         }
       }
 
+      // c-list-row veya form satırları içindeki bilgi ikonlarına tıklandığında
+      // satırın veya form kontrolünün (switch/checkbox) tetiklenmesini önle
+      const infoIcon = trigger.closest('.c-list-row__info-icon');
+      if (infoIcon) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+
       // Toggle off if clicking the same trigger on touch devices OR if it's explicitly click-triggered
-      if (window.matchMedia('(pointer: coarse)').matches || trigger.dataset.tooltipTrigger === 'click') {
+      if (window.matchMedia('(pointer: coarse)').matches || trigger.dataset.tooltipTrigger === 'click' || infoIcon) {
         if (activeTooltip && activeTooltip._trigger === trigger) {
           startDismissal();
           return;
@@ -210,7 +218,8 @@ export function initTooltipManager() {
       
       // On all devices: clicking an actionable element (button/link) implies action taken.
       // Dismiss the tooltip immediately to prevent it from overlaying subsequent UI changes (e.g. modals)
-      if (trigger.tagName === 'BUTTON' || trigger.closest('button, a')) {
+      // Ancak bilgi ikonları (c-list-row__info-icon) doğrudan tooltip gösterme amaçlıdır; istisnadır.
+      if ((trigger.tagName === 'BUTTON' || trigger.closest('button, a')) && !infoIcon) {
         startDismissal();
         return;
       }
@@ -224,7 +233,7 @@ export function initTooltipManager() {
         startDismissal();
       }
     }
-  }, { capture: true, passive: true });
+  }, { capture: true, passive: false });
 
   document.addEventListener('mouseout', (e) => {
     // 0. Suppress on touch devices to prevent synthetic event conflicts (e.g. sticky/flickering)

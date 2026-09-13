@@ -26,12 +26,13 @@
     let rawItems = $derived(normalizeItems(menu));
     let items = $derived(groupItems(rawItems));
 
-    // Şehir iniş sayfası konsolidasyonu: doğrudan /{slug}?gun={day} bağlantısı
-    // verilerek lüzumsuz 301 yönlendirmesi önlenir.
-    let dayUrl = $derived.by(() => {
+    // Tekil menü detay bağlantısı: öğünün yemek, besin ve yorum detaylarına doğrudan
+    // /menu/[id] üzerinden gidilir; id yoksa geriye dönük şehir gününe düşülür.
+    let menuUrl = $derived.by(() => {
+        if (menu?.id) return `/menu/${menu.id}`;
         const slug = menu?.city_slug;
         const day = menu?.date ?? menu?.serve_date;
-        return slug && day ? `/${slug}?gun=${day}` : `/menu/${menu?.id}`;
+        return slug && day ? `/${slug}?gun=${day}` : '/';
     });
     
     let dishesText = $derived(
@@ -55,5 +56,5 @@
     <div class="archive-row__content">
     <span class="archive-row__items">{dishesText}</span>
     </div>
-    <a href={dayUrl} class="archive-row__btn" data-link>İncele</a>
+    <a href={menuUrl} class="archive-row__btn" data-link>İncele</a>
 </div>

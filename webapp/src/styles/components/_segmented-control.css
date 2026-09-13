@@ -139,9 +139,11 @@
   /* ── Responsive Variant (Apple HIG Compact Icon Mode) ── */
 
   /* Masaüstünde (>600px): İkonu gizle, sadece yazı göster (eğer yazı varsa) */
-  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone),
-  .c-segmented-control--responsive .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
-    display: none;
+  @media (min-width: 601px) {
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone),
+    .c-segmented-control--responsive .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
+      display: none !important;
+    }
   }
 
   /* Mobilde (600px ve altı): Yazıyı gizle, ikonu göster (eğer ikon varsa) */
@@ -153,14 +155,20 @@
 
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon,
     .c-segmented-control--responsive .c-segmented-control__icon {
-      display: flex;
+      display: flex !important;
       align-items: center;
       justify-content: center;
     }
 
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon svg,
+    .c-segmented-control--responsive .c-segmented-control__icon svg {
+      display: block;
+    }
+
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn,
     .c-segmented-control--responsive .c-segmented-control__btn {
-      min-width: 32px;
+      min-width: 36px;
+      min-height: 32px;
       padding: var(--space-xs) var(--space-sm);
     }
   }

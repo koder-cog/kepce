@@ -23,7 +23,7 @@
     <header class="content-page__header">
       <h1 class="content-page__title">Kullanım Koşulları</h1>
       <div class="content-page__meta">
-        <time class="content-page__date">Yürürlük Tarihi: 2 Eylül 2026</time>
+        <time class="content-page__date">Yürürlük Tarihi: 13 Eylül 2026</time>
       </div>
     </header>
 
@@ -63,16 +63,16 @@
 
       <section class="u-mb-lg">
         <h2 class="u-text-lg u-font-bold u-mb-xs">
-          3. Hukuka Aykırı İçerik Bildirimi
+          3. Hukuka Aykırı İçerik Bildirimi (Uyar-Kaldır)
         </h2>
         <p class="u-leading-comfortable">
-          5651 sayılı Kanun gereğince, hukuka aykırı veya kişilik haklarını
+          5651 sayılı Kanun m. 5/2 gereğince, hukuka aykırı veya kişilik haklarını
           ihlal eden bir içerikten haberdar edilmesi hâlinde gerekli inceleme
           yapılır. Arama sonuçlarında hukuka aykırı olduğunu düşündüğünüz bir
           bağlantı bulunması durumunda, ilgili internet adresi ve yasal
           gerekçenizi belirten bildiriminizi <a
-            href="mailto:iletisim@kepce.org"
-            class="text-link">iletisim@kepce.org</a
+            href="mailto:yasal@kepce.org"
+            class="text-link">yasal@kepce.org</a
           > adresine iletebilirsiniz. Yapılan bildirimler incelenerek uygun görülen
           bağlantılar arama dizininden çıkarılır.
         </p>
