@@ -123,9 +123,6 @@
 
 {#if cfg}
   <Modal options={modalOptions} {onClose} {controller}>
-      <p class="form-hint u-mb-md">
-        Giriş yapmadan da bildirim gönderebilirsiniz. Bildirimler moderasyon ekibimiz tarafından incelenir.
-      </p>
       <div class="form-group">
         <div class="form-label">Sebep</div>
         <Dropdown options={cfg.options} bind:value={selectedType} />

@@ -13,6 +13,20 @@
     } = $props();
 
     const ERROR_REGISTRY = {
+        "network": [
+            {
+                code: "offline",
+                title: "İnternet bağlantısı yok",
+                icon: "noConnection",
+                desc: "İnternetin çekmiyor gibi görünüyor. Bağlantını kontrol et ya da mutfağın kapısına git de aşçı abla ne diyor bir bak."
+            },
+            {
+                code: "network_error",
+                title: "Sunucuya erişilemiyor",
+                icon: "server",
+                desc: "Kepçe sunucuları şu an biraz nefes nefese kalmış veya mutfakta bilinmeyen bir isyan var. Birkaç dakika sonra tekrar dene."
+            }
+        ],
         "4xx": [
             { code: 400, title: "Kötü istek", icon: "keyboard", desc: "Gönderilen istek sunucu tarafında bir kafa karışıklığına yol açtı. Parametreleri kontrol etmekte fayda var." },
             { code: 401, title: "Yetkisiz", icon: "login", desc: "Buradan geçmek için önce kim olduğunuzu göstermeniz gerekiyor. Giriş yapıp tekrar deneyin." },
@@ -42,32 +56,33 @@
         ]
     };
 
+    function findError(code) {
+        if (!code) return null;
+        if (code === 'offline' || code === 'network_error') {
+            return ERROR_REGISTRY.network?.find(e => e.code === code) || null;
+        }
+        const num = Number(code);
+        if (Number.isInteger(num)) {
+            const group = num >= 500 ? '5xx' : '4xx';
+            return ERROR_REGISTRY[group]?.find(e => e.code === num) || null;
+        }
+        return null;
+    }
+
+    let errorData = $derived(findError(statusCode));
+
     let finalTitle = $derived.by(() => {
-        if (statusCode) {
-            const group = statusCode >= 500 ? '5xx' : '4xx';
-            const errorData = ERROR_REGISTRY[group]?.find(e => e.code === statusCode);
-            if (errorData) return title || `${statusCode}: ${errorData.title}`;
+        if (title) return title;
+        if (errorData) {
+            return typeof errorData.code === 'number'
+                ? `${errorData.code}: ${errorData.title}`
+                : errorData.title;
         }
-        return title || 'Sonuç bulunamadı';
+        return 'Sonuç bulunamadı';
     });
 
-    let finalDesc = $derived.by(() => {
-        if (statusCode) {
-            const group = statusCode >= 500 ? '5xx' : '4xx';
-            const errorData = ERROR_REGISTRY[group]?.find(e => e.code === statusCode);
-            if (errorData) return desc || errorData.desc;
-        }
-        return desc || '';
-    });
-
-    let finalIcon = $derived.by(() => {
-        if (statusCode) {
-            const group = statusCode >= 500 ? '5xx' : '4xx';
-            const errorData = ERROR_REGISTRY[group]?.find(e => e.code === statusCode);
-            if (errorData) return iconName || errorData.icon;
-        }
-        return iconName || 'info';
-    });
+    let finalDesc = $derived(desc || errorData?.desc || '');
+    let finalIcon = $derived(iconName || errorData?.icon || 'info');
 </script>
 
 <div class="empty-state {compact ? 'empty-state--compact' : ''} {className}">

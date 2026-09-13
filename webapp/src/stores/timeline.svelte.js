@@ -74,6 +74,14 @@ export function createTimelineStore() {
 
 
 
+    function resolveStatusCode(err) {
+        if (err?.status) return err.status;
+        if (typeof navigator !== 'undefined' && !navigator.onLine) return 'offline';
+        const parsed = parseInt(err?.message?.match(/\d{3}/)?.[0]);
+        if (parsed) return parsed;
+        return 'network_error';
+    }
+
     let loadDebounceTimer = null;
 
     async function loadMenus(debounceMs = 0) {
@@ -112,7 +120,7 @@ export function createTimelineStore() {
                 if (currentLoadToken !== token) return;
                 console.error("loadMenus failed:", err);
                 errorState = {
-                    statusCode: parseInt(err.message.match(/\d{3}/)?.[0]) || 500,
+                    statusCode: resolveStatusCode(err),
                     desc: err.message,
                 };
             } finally {
@@ -163,7 +171,7 @@ export function createTimelineStore() {
             } catch (err) {
                 console.error("Month nav load failed:", err);
                 error = {
-                    statusCode: parseInt(err.message?.match(/\d{3}/)?.[0]) || 500,
+                    statusCode: resolveStatusCode(err),
                     desc: err.message || "Menü yüklenemedi",
                 };
             }
@@ -373,6 +381,18 @@ export function createTimelineStore() {
         }
     }
 
+    function reload() {
+        return loadMenus(0);
+    }
+
+    if (typeof window !== 'undefined') {
+        window.addEventListener('online', () => {
+            if (errorState?.statusCode === 'offline') {
+                loadMenus(0);
+            }
+        });
+    }
+
     return {
         get cities() { return cities; },
         get selectedDate() { return selectedDate; },
@@ -406,6 +426,7 @@ export function createTimelineStore() {
 
         init,
         setServerToday,
+        reload,
         prevMonth,
         nextMonth,
         selectDate,

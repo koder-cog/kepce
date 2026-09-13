@@ -284,26 +284,26 @@
                                     href="/{targetCitySlug}/{data.prevDate}"
                                     data-link
                                     class="day-nav__btn"
-                                    title="Önceki Gün"
-                                    aria-label="Önceki Gün"
+                                    title="Önceki güne git"
+                                    aria-label="Önceki güne git"
                                 >
                                     {@html icon("chevronLeft", 14)}
-                                    <span class="day-nav__btn-text">Önceki Gün</span>
+                                    <span class="day-nav__btn-text">Önceki gün</span>
                                 </a>
                             {/if}
-                            <a href={dayUrl} data-link class="day-nav__btn" title="Tüm Gün Menüsü">
+                            <a href={dayUrl} data-link class="day-nav__btn" title="Günün tüm menüsünü gör" aria-label="Günün tüm menüsünü gör">
                                 {@html icon("cards", 14)}
-                                <span class="day-nav__btn-text">Tüm Gün</span>
+                                <span class="day-nav__btn-text">Tüm gün</span>
                             </a>
                             {#if data?.nextDate && targetCitySlug}
                                 <a
                                     href="/{targetCitySlug}/{data.nextDate}"
                                     data-link
                                     class="day-nav__btn"
-                                    title="Sonraki Gün"
-                                    aria-label="Sonraki Gün"
+                                    title="Sonraki güne git"
+                                    aria-label="Sonraki güne git"
                                 >
-                                    <span class="day-nav__btn-text">Sonraki Gün</span>
+                                    <span class="day-nav__btn-text">Sonraki gün</span>
                                     {@html icon("chevronRight", 14)}
                                 </a>
                             {/if}

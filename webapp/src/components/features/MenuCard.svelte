@@ -17,6 +17,7 @@
 
     let dietMode = $derived(options.dietMode || "standard");
     let hideComment = $derived(options.hideComment || false);
+    let isAlternative = $derived(options.isAlternative || false);
     let takeaways = $derived(options.takeaways || []);
 
     // Yorum aksiyonu doğrudan menünün yorum akışına gider (/menu/[id]);
@@ -431,9 +432,9 @@
             })
             .filter(Boolean);
 
-        const shareUrl = dateStr
-            ? `https://kepce.org/${citySlug}?gun=${dateStr}`
-            : `https://kepce.org/${citySlug}`;
+        const shareUrl = menu.id
+            ? `https://kepce.org/menu/${menu.id}`
+            : (dateStr ? `https://kepce.org/${citySlug}?gun=${dateStr}` : `https://kepce.org/${citySlug}`);
         const headerTitle = `${dateLabel}${cityName} KYK ${mealLabel}`.trim();
         const header = dishNames.length > 0 ? `${headerTitle}:` : headerTitle;
         const dishesList = dishNames.map((name) => `• ${name}`).join("\n");
@@ -652,6 +653,7 @@
         {/if}
     </div>
 
+    {#if !isAlternative}
     <div class="meal-card__footer">
         <div class="meal-card__votes">
             <button
@@ -739,4 +741,5 @@
             </div>
         </div>
     </div>
+    {/if}
 </div>

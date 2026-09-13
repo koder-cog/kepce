@@ -60,8 +60,8 @@
         class="pagination__btn pagination__btn--compact"
         disabled={currentPage <= 1}
         onclick={() => goTo(currentPage - 1)}
-        title="Önceki Sayfa"
-        aria-label="Önceki Sayfa"
+        title="Önceki sayfaya git"
+        aria-label="Önceki sayfaya git"
       >
         {@html icon("chevronLeft", 16)}
       </button>
@@ -70,8 +70,8 @@
         class="pagination__btn pagination__btn--compact"
         disabled={currentPage >= totalPages}
         onclick={() => goTo(currentPage + 1)}
-        title="Sonraki Sayfa"
-        aria-label="Sonraki Sayfa"
+        title="Sonraki sayfaya git"
+        aria-label="Sonraki sayfaya git"
       >
         {@html icon("chevronRight", 16)}
       </button>
@@ -82,7 +82,8 @@
         class="pagination__btn pagination__btn--nav"
         disabled={currentPage <= 1}
         onclick={() => goTo(currentPage - 1)}
-        aria-label="Önceki sayfa"
+        title="Önceki sayfaya git"
+        aria-label="Önceki sayfaya git"
       >
         {@html icon("chevronLeft", 18)}
         <span class="pagination__btn-text">Önceki</span>
@@ -117,7 +118,8 @@
         class="pagination__btn pagination__btn--nav"
         disabled={currentPage >= totalPages}
         onclick={() => goTo(currentPage + 1)}
-        aria-label="Sonraki sayfa"
+        title="Sonraki sayfaya git"
+        aria-label="Sonraki sayfaya git"
       >
         <span class="pagination__btn-text">Sonraki</span>
         {@html icon("chevronRight", 18)}

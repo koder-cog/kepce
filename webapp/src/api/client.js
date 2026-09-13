@@ -66,12 +66,20 @@ export async function request(path, options = {}) {
   try {
     res = await fetch(url, fetchOptions);
   } catch (err) {
-    throw new Error('İnternetin çekmiyor ya da sunucu bayılmış, mutfağın kapısına git de aşçı abla ne diyor bir bak.');
+    const isOffline = typeof navigator !== 'undefined' && !navigator.onLine;
+    const message = isOffline
+      ? 'İnternetin çekmiyor gibi görünüyor. Bağlantını kontrol et ya da mutfağın kapısına git de aşçı abla ne diyor bir bak.'
+      : 'Kepçe sunucuları şu an biraz nefes nefese kalmış veya mutfakta bilinmeyen bir isyan var. Birkaç dakika sonra tekrar dene.';
+    const error = new Error(message);
+    error.status = isOffline ? 'offline' : 'network_error';
+    error.isOffline = isOffline;
+    error.isNetworkError = !isOffline;
+    throw error;
   }
 
   const hasLoggedInCookie = typeof document !== 'undefined' && document.cookie.includes('kepce_logged_in');
 
-if (res.status === 401 && hasLoggedInCookie && path !== '/auth/refresh' && path !== '/auth/login' && path !== '/auth/register') {
+  if (res.status === 401 && hasLoggedInCookie && path !== '/auth/refresh' && path !== '/auth/login' && path !== '/auth/register') {
     if (!isRefreshing) {
       isRefreshing = true;
       try {
@@ -82,7 +90,7 @@ if (res.status === 401 && hasLoggedInCookie && path !== '/auth/refresh' && path 
         isRefreshing = false;
         onRefreshFailed(err);
         if (typeof document !== 'undefined') {
-          document.cookie = "kepce_logged_in=; Path=/; Max-Age=0; SameSite=Strict" + 
+          document.cookie = "kepce_logged_in=; Path=/; Max-Age=0; SameSite=Strict" +
             (window.location.protocol === "https:" ? "; Secure" : "");
         }
         throw new Error('Oturumunuz sonlanmış, lütfen tekrar giriş yapın.');
@@ -104,8 +112,8 @@ if (res.status === 401 && hasLoggedInCookie && path !== '/auth/refresh' && path 
     let body = {};
     try {
       body = JSON.parse(bodyText);
-    } catch (e) {}
-    
+    } catch (e) { }
+
     let detail = body.error || body.message || body.detail || (bodyText.length > 0 ? bodyText : `Hata oluştu (Durum: ${res.status})`);
     if (typeof detail === 'object') {
       detail = JSON.stringify(detail);
