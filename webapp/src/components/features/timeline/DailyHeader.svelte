@@ -85,7 +85,7 @@
         <SegmentedControl
             class="view-toggle {!timelineState.isDietVisible ? 'is-alone' : ''}"
             value={timelineState.viewType}
-            variant="responsive"
+            variant="icons"
             options={[
                 {
                     value: "timeline",

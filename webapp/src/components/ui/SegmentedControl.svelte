@@ -20,10 +20,6 @@
                 console.warn(
                     `[Kepçe Uyarı] SegmentedControl (id: ${compId || "bilinmeyen"}) içinde "${opt.value}" değeri için hem ikon hem yazı eksik.`,
                 );
-            } else if (variant === "responsive" && (!hasLabel || !hasIcon)) {
-                console.warn(
-                    `[Kepçe Uyarı] SegmentedControl (id: ${compId || "bilinmeyen"}) responsive modda "${opt.value}" için ikon veya yazı eksik.`,
-                );
             }
         }
     };
@@ -55,7 +51,7 @@
         const activeBtn =
             containerEl.querySelector(`[data-value="${value}"]`) ||
             containerEl.querySelectorAll(".c-segmented-control__btn")[activeIndex];
-        if (activeBtn) {
+        if (activeBtn && activeBtn.offsetWidth > 0) {
             indicatorLeft = activeBtn.offsetLeft;
             indicatorWidth = activeBtn.offsetWidth;
         }
@@ -166,30 +162,13 @@
                 ? opt.label || opt.tooltip
                 : null}
         >
-            {#if variant === "icons"}
-                {#if opt.icon}
-                    {@html opt.icon}
-                {:else}
-                    <span class="c-segmented-control__fallback-text"
-                        >{opt.label}</span
-                    >
-                {/if}
-            {:else if variant === "responsive"}
-                {#if opt.icon && opt.label}
-                    <span class="c-segmented-control__icon">{@html opt.icon}</span>
-                    <span class="c-segmented-control__label">{opt.label}</span>
-                {:else if opt.icon}
-                    <span class="c-segmented-control__icon c-segmented-control__icon--standalone">{@html opt.icon}</span>
-                {:else if opt.label}
-                    <span class="c-segmented-control__label c-segmented-control__label--standalone">{opt.label}</span>
-                {/if}
-            {:else}
-                <!-- Default (text) variant -->
-                {#if opt.label}
-                    <span>{opt.label}</span>
-                {:else if opt.icon}
-                    {@html opt.icon}
-                {/if}
+            {#if opt.icon && opt.label}
+                <span class="c-segmented-control__icon">{@html opt.icon}</span>
+                <span class="c-segmented-control__label">{opt.label}</span>
+            {:else if opt.icon}
+                <span class="c-segmented-control__icon c-segmented-control__icon--standalone">{@html opt.icon}</span>
+            {:else if opt.label}
+                <span class="c-segmented-control__label c-segmented-control__label--standalone">{opt.label}</span>
             {/if}
         </button>
     {/each}

@@ -72,6 +72,24 @@
     width: var(--indicator-width, 36px);
   }
 
+  .c-segmented-control[data-variant="icons"] .c-segmented-control__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .c-segmented-control[data-variant="icons"] .c-segmented-control__label {
+    display: none;
+  }
+
+  .c-segmented-control[data-variant="icons"] .c-segmented-control__label--standalone {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+
   .c-segmented-control.is-ready .c-segmented-control__indicator {
     opacity: 1;
     transition: 
@@ -128,6 +146,20 @@
     flex-shrink: 0;
   }
 
+  .c-segmented-control__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .c-segmented-control__label {
+    display: inline-block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .c-segmented-control__fallback-text {
     overflow: hidden;
     text-overflow: ellipsis;
@@ -136,26 +168,31 @@
     display: inline-block;
   }
 
-  /* ── Responsive Variant (Apple HIG Compact Icon Mode) ── */
+  /* ── Responsive Variant (Apple HIG Adaptive Mode) ─────── */
 
-  /* Masaüstünde (>600px): İkonu gizle, sadece yazı göster (eğer yazı varsa) */
+  /* Masaüstünde (>600px): İkonu gizle, sadece yazı göster (eğer hem ikon hem yazı varsa) */
   @media (min-width: 601px) {
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone),
     .c-segmented-control--responsive .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
-      display: none !important;
+      display: none;
+    }
+
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label,
+    .c-segmented-control--responsive .c-segmented-control__label {
+      display: inline-block;
     }
   }
 
-  /* Mobilde (600px ve altı): Yazıyı gizle, ikonu göster (eğer ikon varsa) */
+  /* Mobilde (600px ve altı): Yazıyı gizle, ikonu göster (eğer hem ikon hem yazı varsa) */
   @media (max-width: 600px) {
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__label:not(.c-segmented-control__label--standalone),
     .c-segmented-control--responsive .c-segmented-control__label:not(.c-segmented-control__label--standalone) {
-      display: none !important;
+      display: none;
     }
 
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon,
     .c-segmented-control--responsive .c-segmented-control__icon {
-      display: flex !important;
+      display: flex;
       align-items: center;
       justify-content: center;
     }

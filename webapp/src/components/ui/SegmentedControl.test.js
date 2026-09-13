@@ -96,4 +96,26 @@ describe('SegmentedControl Component', () => {
     expect(buttons[2].querySelector('.c-segmented-control__icon')).toBeFalsy();
     expect(buttons[2].querySelector('.c-segmented-control__label--standalone')).toBeTruthy();
   });
+
+  it('renders icons variant with proper attributes and elements', () => {
+    const iconOptions = [
+      { value: 'timeline', label: 'Zaman Çizelgesi', icon: '<svg data-testid="icon-timeline"></svg>' },
+      { value: 'calendar', label: 'Takvim', icon: '<svg data-testid="icon-calendar"></svg>' },
+    ];
+
+    const { container } = render(SegmentedControl, {
+      value: 'timeline',
+      options: iconOptions,
+      variant: 'icons',
+    });
+
+    const radiogroup = container.querySelector('.c-segmented-control');
+    expect(radiogroup.getAttribute('data-variant')).toBe('icons');
+
+    const buttons = container.querySelectorAll('.c-segmented-control__btn');
+    expect(buttons.length).toBe(2);
+    expect(buttons[0].querySelector('.c-segmented-control__icon')).toBeTruthy();
+    expect(buttons[0].querySelector('.c-segmented-control__label')).toBeTruthy();
+    expect(buttons[0].getAttribute('aria-label')).toBe('Zaman Çizelgesi');
+  });
 });
