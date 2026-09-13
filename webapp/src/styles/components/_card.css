@@ -843,7 +843,7 @@
     gap: var(--space-sm);
   }
 
-  .project-card__title {
+  .project-card .project-card__title {
     font-family: var(--font-body);
     font-weight: var(--font-weight-black);
     font-size: var(--text-xl);
@@ -852,7 +852,7 @@
     margin: 0;
   }
 
-  .project-card__desc {
+  .project-card .project-card__desc {
     font-family: var(--font-body);
     font-size: var(--text-base);
     color: var(--color-text-secondary);
@@ -861,19 +861,19 @@
     flex: 1;
   }
 
-  .project-card__meta {
+  .project-card .project-card__meta {
     display: flex;
     align-items: center;
     gap: var(--space-sm);
   }
 
-  .project-card__author {
+  .project-card .project-card__author {
     font-size: var(--text-base);
     color: var(--color-muted);
     font-weight: var(--font-weight-medium);
   }
 
-  .project-card__footer {
+  .project-card .project-card__footer {
     display: flex;
     align-items: center;
     justify-content: flex-start;

@@ -15,9 +15,9 @@ button,
 .c-link,
 .text-link,
 .auth-footer__link,
-.legal-consents a,
+.legal-consents a:not([class*="btn"]),
 .comments-page__breadcrumb a,
-.content-page__body a,
+.content-page__body a:not([class*="btn"]),
 p a:not([class]),
 li a:not([class]) {
   /* Button Resets (allowing buttons to act as links seamlessly) */
@@ -40,9 +40,9 @@ li a:not([class]) {
 .c-link:hover,
 .text-link:hover,
 .auth-footer__link:hover,
-.legal-consents a:hover,
+.legal-consents a:not([class*="btn"]):hover,
 .comments-page__breadcrumb a:hover,
-.content-page__body a:hover,
+.content-page__body a:not([class*="btn"]):hover,
 p a:not([class]):hover,
 li a:not([class]):hover {
   color: var(--color-link-hover);
@@ -53,9 +53,9 @@ li a:not([class]):hover {
 .c-link:active,
 .text-link:active,
 .auth-footer__link:active,
-.legal-consents a:active,
+.legal-consents a:not([class*="btn"]):active,
 .comments-page__breadcrumb a:active,
-.content-page__body a:active,
+.content-page__body a:not([class*="btn"]):active,
 p a:not([class]):active,
 li a:not([class]):active {
   transform: none !important;

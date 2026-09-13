@@ -1,3 +1,4 @@
+@layer components {
   .disclaimer-card {
     background: var(--color-card);
     border: 1px solid var(--color-border);
@@ -20,4 +21,4 @@
     font-weight: var(--font-weight-semibold);
     color: var(--color-text);
   }
-
+}
