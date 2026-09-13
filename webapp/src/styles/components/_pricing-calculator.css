@@ -13,7 +13,7 @@
 
   @media (max-width: 600px) {
     .pricing-calc-card {
-      padding: var(--space-md) var(--space-sm) !important;
+      padding: var(--space-sm);
       margin-top: var(--space-lg);
       gap: var(--space-sm);
       border-radius: var(--radius-md);
@@ -93,8 +93,9 @@
     }
   }
 
-  /* ── Hazır Menü Presets (Yatay Akıcı Kaydırma / Wrap) ── */
-  .pricing-calc__presets-bar {
+  /* ── Hazır Menü Presets & Kategori Çipleri (Yatay Akıcı Kaydırma) ── */
+  .pricing-calc__presets-bar,
+  .pricing-calc__chips-scroll {
     display: flex;
     align-items: center;
     gap: var(--space-xs);
@@ -104,11 +105,13 @@
     padding-bottom: 2px;
   }
 
-  .pricing-calc__presets-bar::-webkit-scrollbar {
+  .pricing-calc__presets-bar::-webkit-scrollbar,
+  .pricing-calc__chips-scroll::-webkit-scrollbar {
     display: none;
   }
 
-  .pricing-calc__presets-bar .btn {
+  .pricing-calc__presets-bar .btn,
+  .pricing-calc__chips-scroll .btn {
     padding: var(--space-xs) var(--space-md);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
@@ -116,32 +119,11 @@
   }
 
   @media (max-width: 480px) {
-    .pricing-calc__presets-bar .btn {
+    .pricing-calc__presets-bar .btn,
+    .pricing-calc__chips-scroll .btn {
       padding: var(--space-xs) var(--space-sm);
       font-size: var(--text-xs);
     }
-  }
-
-  /* ── Category Filter Chips (Yatay Akıcı Kaydırma) ── */
-  .pricing-calc__chips-scroll {
-    display: flex;
-    gap: var(--space-xs);
-    overflow-x: auto;
-    padding: var(--space-2xs) 0 var(--space-xs) 0;
-    scrollbar-width: none;
-    min-height: min-content;
-    align-items: center;
-    width: 100%;
-  }
-
-  .pricing-calc__chips-scroll::-webkit-scrollbar {
-    display: none;
-  }
-
-  .pricing-calc__chips-scroll .chip {
-    padding: var(--space-xs) var(--space-md);
-    font-size: var(--text-xs);
-    flex-shrink: 0;
   }
 
   /* ── Item Grid: Masaüstü: 2, Mobil: 1 Sütun ── */

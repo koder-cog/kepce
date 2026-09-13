@@ -456,7 +456,7 @@
 
   <!-- Kategori Filtre Çipleri -->
   {#if availableCategories.length > 2}
-    <div class="pricing-calc__chips-scroll" aria-label="Yemek kategorileri">
+    <div class="pricing-calc__presets-bar" aria-label="Yemek kategorileri">
       {#each availableCategories as cat}
         <button
           type="button"
