@@ -47,8 +47,10 @@
         if (min) return `${min} kcal`;
         if (max) return `${max} kcal`;
         if (menu.calorie_range) return menu.calorie_range;
-        if (menu.calculated_calories) return `~${menu.calculated_calories} kcal`;
-        if (menu.total_calories) return `${sanitizeText(menu.total_calories)} kcal`;
+        if (menu.calculated_calories)
+            return `~${menu.calculated_calories} kcal`;
+        if (menu.total_calories)
+            return `${sanitizeText(menu.total_calories)} kcal`;
         return "";
     });
 
@@ -167,7 +169,11 @@
         const nameGenitive = isBreakfast ? "kahvaltının" : "menünün";
         const src = menu.source_type;
 
-        if (src === "kepce-admin" || src === "kepce" || (!src && menu.verified)) {
+        if (
+            src === "kepce-admin" ||
+            src === "kepce" ||
+            (!src && menu.verified)
+        ) {
             return `Bu ${nameObj}, Kepçe ekibinin (otomasyon) el emeği göz nurudur. Lakin yurdunuzun planları ve aşçının o günkü psikolojisi yüzünden tabağınızda başka bir şeyle karşılaşma ihtimali de mevcuttur.`;
         }
         if (src === "kepce-kullanici") {
@@ -397,7 +403,11 @@
         if (e) e.stopPropagation();
         isMoreMenuOpen = false;
 
-        const citySlug = menu.city_slug || options.citySlug || getCurrentCity() || "istanbul";
+        const citySlug =
+            menu.city_slug ||
+            options.citySlug ||
+            getCurrentCity() ||
+            "istanbul";
         const cityName = CITY_MAP[citySlug] || citySlug;
         const dateStr = menu.serve_date || menu.date || "";
 
@@ -406,8 +416,19 @@
             const parts = dateStr.split("-");
             if (parts.length === 3) {
                 const months = [
-                    "", "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-                    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+                    "",
+                    "Ocak",
+                    "Şubat",
+                    "Mart",
+                    "Nisan",
+                    "Mayıs",
+                    "Haziran",
+                    "Temmuz",
+                    "Ağustos",
+                    "Eylül",
+                    "Ekim",
+                    "Kasım",
+                    "Aralık",
                 ];
                 const dayNum = parseInt(parts[2], 10);
                 const monthName = months[parseInt(parts[1], 10)] || "";
@@ -434,7 +455,9 @@
 
         const shareUrl = menu.id
             ? `https://kepce.org/menu/${menu.id}`
-            : (dateStr ? `https://kepce.org/${citySlug}?gun=${dateStr}` : `https://kepce.org/${citySlug}`);
+            : dateStr
+              ? `https://kepce.org/${citySlug}?gun=${dateStr}`
+              : `https://kepce.org/${citySlug}`;
         const headerTitle = `${dateLabel}${cityName} KYK ${mealLabel}`.trim();
         const header = dishNames.length > 0 ? `${headerTitle}:` : headerTitle;
         const dishesList = dishNames.map((name) => `• ${name}`).join("\n");
@@ -532,7 +555,8 @@
                                                     &bull;
                                                 {/if}
                                                 {#if dish.calories || dish.estimated_calories}{dish.calories ||
-                                                        dish.estimated_calories} kcal{/if}
+                                                        dish.estimated_calories}
+                                                    kcal{/if}
                                             </span>
                                         {/if}
 
@@ -566,14 +590,23 @@
                                                     class="c-badge-pill c-badge-pill--warning"
                                                     data-tooltip={`Öğrencilerin %${Math.round((dish.dislike_ratio || 0) * 100)}'i bu yemeğe olumsuz oy verdi`}
                                                 >
-                                                    {@html icon("warning", 12)} %{Math.round((dish.dislike_ratio || 0) * 100)} Eleştiri
+                                                    {@html icon("warning", 12)} %{Math.round(
+                                                        (dish.dislike_ratio ||
+                                                            0) * 100,
+                                                    )} Eleştiri
                                                 </span>
                                             {:else if (dish.like_ratio || 0) >= 0.8}
                                                 <span
                                                     class="c-badge-pill c-badge-pill--positive"
                                                     data-tooltip={`Öğrencilerin %${Math.round((dish.like_ratio || 0) * 100)}'i bu yemeği beğendi`}
                                                 >
-                                                    {@html icon("starFilled", 12)} %{Math.round((dish.like_ratio || 0) * 100)} Sevilen
+                                                    {@html icon(
+                                                        "starFilled",
+                                                        12,
+                                                    )} %{Math.round(
+                                                        (dish.like_ratio || 0) *
+                                                            100,
+                                                    )} Sevilen
                                                 </span>
                                             {/if}
                                         {/if}
@@ -585,8 +618,12 @@
                                         {#if dish.price}
                                             <span
                                                 class="c-badge-pill c-badge-pill--price"
-                                                data-tooltip="Ekstra alındığında veya ücretli durumda geçerli fiyattır. Fiyatlar şehre ve döneme göre değişiklik gösterebilir."
-                                                >{typeof dish.price === 'number' ? `${dish.price.toFixed(2)} ₺` : sanitizeText(dish.price)}</span
+                                                data-tooltip="Ekstra alım fiyatıdır. Menü hakkı dahilinde ayrıca ücretlendirilmez."
+                                                >{typeof dish.price === "number"
+                                                    ? `${dish.price.toFixed(2)} ₺`
+                                                    : sanitizeText(
+                                                          dish.price,
+                                                      )}</span
                                             >
                                         {/if}
                                         {#if typeof dish.id === "number"}
@@ -623,7 +660,9 @@
 
         {#if calorieText}
             <!-- "Kalori:" öneki yok; kcal birimi anlamı tek başına taşır. -->
-            <div class="text-sm color-muted u-flex u-flex-align-center calorie-info">
+            <div
+                class="text-sm color-muted u-flex u-flex-align-center calorie-info"
+            >
                 <span>{calorieText}</span>
             </div>
         {/if}
@@ -654,92 +693,98 @@
     </div>
 
     {#if !isAlternative}
-    <div class="meal-card__footer">
-        <div class="meal-card__votes">
-            <button
-                class="meal-card__vote-btn {myVote === 'positive'
-                    ? 'is-active'
-                    : ''}"
-                data-vote="up"
-                aria-label="Menüyü Beğen"
-                onclick={() => handleVote("positive")}
-            >
-                {@html icon(
-                    myVote === "positive" ? "voteUpFilled" : "voteUp",
-                    18,
-                )}
-            </button>
-            <span class="meal-card__vote-count {scoreClass}">{ratingSum}</span>
-            <button
-                class="meal-card__vote-btn {myVote === 'negative'
-                    ? 'is-active'
-                    : ''}"
-                data-vote="down"
-                aria-label="Menüyü Beğenme"
-                onclick={() => handleVote("negative")}
-            >
-                {@html icon(
-                    myVote === "negative" ? "voteDownFilled" : "voteDown",
-                    18,
-                )}
-            </button>
-        </div>
-
-        <div class="meal-card__actions">
-            {#if !hideComment && commentUrl}
-                <a
-                    href={commentUrl}
-                    class="meal-card__action-btn"
-                    data-link
-                    data-tooltip="Yorumlar"
-                    aria-label="Yorumlar"
-                >
-                    {@html icon("chat", 18)}
-                    {#if menu.comment_count > 0}
-                        <span class="meal-card__action-badge"
-                            >{menu.comment_count}</span
-                        >
-                    {/if}
-                </a>
-            {/if}
-            <div class="meal-card__more-wrapper" bind:this={moreWrapperEl}>
+        <div class="meal-card__footer">
+            <div class="meal-card__votes">
                 <button
-                    class="meal-card__action-btn {isMoreMenuOpen ? 'meal-card__action-btn--active' : ''}"
-                    onclick={toggleMoreMenu}
-                    onkeydown={handleKeydown}
-                    data-tooltip="Diğer işlemler"
-                    aria-label="Diğer işlemler"
-                    aria-haspopup="true"
-                    aria-expanded={isMoreMenuOpen}
+                    class="meal-card__vote-btn {myVote === 'positive'
+                        ? 'is-active'
+                        : ''}"
+                    data-vote="up"
+                    aria-label="Menüyü Beğen"
+                    onclick={() => handleVote("positive")}
                 >
-                    {@html icon("more", 18)}
+                    {@html icon(
+                        myVote === "positive" ? "voteUpFilled" : "voteUp",
+                        18,
+                    )}
                 </button>
-
-                <div
-                    class="c-menu meal-card__more-menu {isMoreMenuOpen ? 'c-menu--open' : ''}"
-                    role="menu"
-                    aria-hidden={!isMoreMenuOpen}
+                <span class="meal-card__vote-count {scoreClass}"
+                    >{ratingSum}</span
                 >
-                    <button
-                        class="c-menu__item btn--squish"
-                        role="menuitem"
-                        onclick={handleShare}
+                <button
+                    class="meal-card__vote-btn {myVote === 'negative'
+                        ? 'is-active'
+                        : ''}"
+                    data-vote="down"
+                    aria-label="Menüyü Beğenme"
+                    onclick={() => handleVote("negative")}
+                >
+                    {@html icon(
+                        myVote === "negative" ? "voteDownFilled" : "voteDown",
+                        18,
+                    )}
+                </button>
+            </div>
+
+            <div class="meal-card__actions">
+                {#if !hideComment && commentUrl}
+                    <a
+                        href={commentUrl}
+                        class="meal-card__action-btn"
+                        data-link
+                        data-tooltip="Yorumlar"
+                        aria-label="Yorumlar"
                     >
-                        Paylaş
-                    </button>
+                        {@html icon("chat", 18)}
+                        {#if menu.comment_count > 0}
+                            <span class="meal-card__action-badge"
+                                >{menu.comment_count}</span
+                            >
+                        {/if}
+                    </a>
+                {/if}
+                <div class="meal-card__more-wrapper" bind:this={moreWrapperEl}>
                     <button
-                        class="c-menu__item btn--squish"
-                        role="menuitem"
-                        onclick={(e) => {
-                            isMoreMenuOpen = false;
-                            openMenuReportModal(menu, e.currentTarget);
-                        }}
+                        class="meal-card__action-btn {isMoreMenuOpen
+                            ? 'meal-card__action-btn--active'
+                            : ''}"
+                        onclick={toggleMoreMenu}
+                        onkeydown={handleKeydown}
+                        data-tooltip="Diğer işlemler"
+                        aria-label="Diğer işlemler"
+                        aria-haspopup="true"
+                        aria-expanded={isMoreMenuOpen}
                     >
-                        Hata bildir
+                        {@html icon("more", 18)}
                     </button>
+
+                    <div
+                        class="c-menu meal-card__more-menu {isMoreMenuOpen
+                            ? 'c-menu--open'
+                            : ''}"
+                        role="menu"
+                        aria-hidden={!isMoreMenuOpen}
+                    >
+                        <button
+                            class="c-menu__item btn--squish"
+                            role="menuitem"
+                            onclick={handleShare}
+                        >
+                            Paylaş
+                        </button>
+                        <button
+                            class="c-menu__item btn--squish"
+                            role="menuitem"
+                            onclick={(e) => {
+                                isMoreMenuOpen = false;
+                                openMenuReportModal(menu, e.currentTarget);
+                            }}
+                        >
+                            Hata bildir
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
     {/if}
 </div>
