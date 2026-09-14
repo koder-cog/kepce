@@ -75,4 +75,20 @@ describe("normalizeItems", () => {
     expect(dish.dislike_ratio).toBe(0.8);
     expect(dish.like_ratio).toBe(0.2);
   });
+
+  it("bitişik artı içeren yemek isimlerini arayüzde ferahlatır", () => {
+    const mockMenu = {
+      items: [
+        {
+          order_index: 0,
+          raw_name: "Bal+tereyağ",
+          is_alternative: false
+        }
+      ]
+    };
+    const normalized = normalizeItems(mockMenu);
+    expect(normalized[0].name).toBe("Bal + tereyağ");
+    expect(normalized[0].dishes[0].name).toBe("Bal + tereyağ");
+  });
 });
+

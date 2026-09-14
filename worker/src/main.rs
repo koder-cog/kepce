@@ -124,6 +124,25 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    if std::env::var("WORKER_RECONCILE_DISHES").is_ok() {
+        tracing::info!("[DISH-RECONCILE] Yemek ve alias normalizasyon uzlaşması başlatılıyor...");
+        match tasks::dish_reconciler::reconcile_and_normalize_dishes(&db).await {
+            Ok(report) => {
+                tracing::info!(
+                    "[DISH-RECONCILE] Uzlaşma tamamlandı: {} yemek güncellendi, {} yemek birleştirildi, {} alias güncellendi, {} alias birleştirildi.",
+                    report.dishes_updated, report.dishes_merged, report.aliases_updated, report.aliases_merged
+                );
+            }
+            Err(e) => {
+                tracing::error!("[DISH-RECONCILE] Uzlaşma hatası: {:?}", e);
+            }
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[DISH-RECONCILE] Tek seferlik yemek uzlaşması tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     if std::env::var("WORKER_HISTORICAL_INGEST").is_ok() {
         let historical_file = std::env::var("WORKER_HISTORICAL_FILE")
             .unwrap_or_else(|_| ".scratch/archive/historical_menus/unified/master_historical_menus.json".to_string());
@@ -327,6 +346,19 @@ async fn main() -> anyhow::Result<()> {
                     }
                     Err(e) => {
                         tracing::error!("[RECONCILE] Gece derin uzlaşma hatası: {:?}", e);
+                    }
+                }
+
+                tracing::info!("--- [RECONCILE] GECE YEMEK VE ALIAS NORMALİZASYON UZLAŞMASI BAŞLIYOR ---");
+                match tasks::dish_reconciler::reconcile_and_normalize_dishes(&db_reconcile).await {
+                    Ok(report) => {
+                        tracing::info!(
+                            "--- [RECONCILE] GECE YEMEK UZLAŞMASI TAMAMLANDI: {} yemek güncellendi, {} yemek birleştirildi, {} alias güncellendi, {} alias birleştirildi. ---",
+                            report.dishes_updated, report.dishes_merged, report.aliases_updated, report.aliases_merged
+                        );
+                    }
+                    Err(e) => {
+                        tracing::error!("[RECONCILE] Gece yemek uzlaşması hatası: {:?}", e);
                     }
                 }
             }

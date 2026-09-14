@@ -83,10 +83,18 @@ pub fn normalize_food_name(raw: &str) -> String {
          .trim_end_matches(|c: char| c == '*' || c == '-' || c == '•' || c == '⁃' || c.is_whitespace())
          .to_string();
 
-    // 2. Normalize whitespace (collapse multiple spaces into one)
+    // 2. Pad plus signs & normalize whitespace (collapse multiple spaces into one)
+    static RE_PLUS: OnceLock<Regex> = OnceLock::new();
+    let re_plus = RE_PLUS.get_or_init(|| Regex::new(r"\s*\+\s*").unwrap());
+    s = re_plus.replace_all(&s, " + ").to_string();
+
     static RE_SPACES: OnceLock<Regex> = OnceLock::new();
     let re_spaces = RE_SPACES.get_or_init(|| Regex::new(r"\s+").unwrap());
     s = re_spaces.replace_all(&s, " ").to_string();
+
+    s = s.trim_start_matches(|c: char| c == '+' || c.is_whitespace())
+         .trim_end_matches(|c: char| c == '+' || c.is_whitespace())
+         .to_string();
 
     // 3. Normalize liquid and volume units
     static RE_500ML_SU: OnceLock<Regex> = OnceLock::new();
@@ -109,11 +117,32 @@ pub fn normalize_food_name(raw: &str) -> String {
     let re_330ml_salgam = RE_330ML_SALGAM.get_or_init(|| Regex::new(r"(?i)\b330\s*ml\.?\s*şalgam\b").unwrap());
     s = re_330ml_salgam.replace_all(&s, "330 ml Şalgam").to_string();
 
+    static RE_UNIT_DOTS: OnceLock<Regex> = OnceLock::new();
+    let re_unit_dots = RE_UNIT_DOTS.get_or_init(|| Regex::new(r"(?i)\b(\d+)\s*(ml|g|gr|kg|l|lt)\.").unwrap());
+    s = re_unit_dots.replace_all(&s, "$1 $2").to_string();
+
     static RE_GENERIC_ML: OnceLock<Regex> = OnceLock::new();
     let re_generic_ml = RE_GENERIC_ML.get_or_init(|| Regex::new(r"(?i)\b(\d+)\s*ml\.?\b").unwrap());
     s = re_generic_ml.replace_all(&s, "$1 ml").to_string();
 
-    // 4. Bread & Gluten-Free standardizations
+    // 4. TDK Compound Word Standardizations
+    static RE_DEREOTU: OnceLock<Regex> = OnceLock::new();
+    let re_dereotu = RE_DEREOTU.get_or_init(|| Regex::new(r"(?i)\bdere\s+ot(u|lu)?\b").unwrap());
+    s = re_dereotu.replace_all(&s, "dereot$1").to_string();
+
+    static RE_SEMIZOTU: OnceLock<Regex> = OnceLock::new();
+    let re_semizotu = RE_SEMIZOTU.get_or_init(|| Regex::new(r"(?i)\bsemiz\s+ot(u|lu)?\b").unwrap());
+    s = re_semizotu.replace_all(&s, "semizot$1").to_string();
+
+    static RE_COREKOTU: OnceLock<Regex> = OnceLock::new();
+    let re_corekotu = RE_COREKOTU.get_or_init(|| Regex::new(r"(?i)\bçöre[k]?\s+ot(u|lu)?\b").unwrap());
+    s = re_corekotu.replace_all(&s, "çöreot$1").to_string();
+
+    static RE_KURUFASULYE: OnceLock<Regex> = OnceLock::new();
+    let re_kurufasulye = RE_KURUFASULYE.get_or_init(|| Regex::new(r"(?i)\bkurufasulye\b").unwrap());
+    s = re_kurufasulye.replace_all(&s, "kuru fasulye").to_string();
+
+    // 5. Bread & Gluten-Free standardizations
     static RE_GLUTENSIZ_ROLL: OnceLock<Regex> = OnceLock::new();
     let re_glutensiz_roll = RE_GLUTENSIZ_ROLL.get_or_init(|| Regex::new(r"(?i)\bglutensiz\s+roll(?:\s+ekmek)?\b").unwrap());
     s = re_glutensiz_roll.replace_all(&s, "Glutensiz Roll Ekmek").to_string();
@@ -122,7 +151,7 @@ pub fn normalize_food_name(raw: &str) -> String {
     let re_ceyrek_ekmek = RE_CEYREK_EKMEK.get_or_init(|| Regex::new(r"(?i)\bçeyrek\s+ekmek\b").unwrap());
     s = re_ceyrek_ekmek.replace_all(&s, "Çeyrek Ekmek").to_string();
 
-    // 5. Expand Common Abbreviations (Most specific first)
+    // 6. Expand Common Abbreviations (Most specific first)
     // Pilav abbreviations: "Şeh. Bulgur P.", "Sebzeli Bulgur P.", "Salçalı Bulgur P.", "Bulgur P.", "Pirinç P."
     static RE_SEH_BULGUR_P: OnceLock<Regex> = OnceLock::new();
     let re_seh_bulgur_p = RE_SEH_BULGUR_P.get_or_init(|| Regex::new(r"(?i)\bşeh(?:\.|\s+)\s*bulgur(?:\s+p\.?)?\b").unwrap());
@@ -144,12 +173,29 @@ pub fn normalize_food_name(raw: &str) -> String {
     let re_pirinc_p = RE_PIRINC_P.get_or_init(|| Regex::new(r"(?i)\bpirinç\s+p\.?\b").unwrap());
     s = re_pirinc_p.replace_all(&s, "Pirinç Pilavı").to_string();
 
-    // Çorba abbreviations: "Mercimek Ç.", "Ezogelin Ç.", "Domates Ç."
+    // Çorba abbreviations: "K. Mercimek Çorba", "Y. Mercimek Çorba", "Mercimek Ç.", "Ezogelin Ç.", etc.
+    static RE_K_MERCIMEK: OnceLock<Regex> = OnceLock::new();
+    let re_k_mercimek = RE_K_MERCIMEK.get_or_init(|| Regex::new(r"(?i)\bk(?:\.|\s+)\s*mercimek\s*çorba(?:sı)?\b").unwrap());
+    s = re_k_mercimek.replace_all(&s, "Kırmızı Mercimek Çorbası").to_string();
+
+    static RE_Y_MERCIMEK: OnceLock<Regex> = OnceLock::new();
+    let re_y_mercimek = RE_Y_MERCIMEK.get_or_init(|| Regex::new(r"(?i)\b(erişteli\s+)?y(?:\.|\s+)\s*mercimek\s*çorba(?:sı)?\b").unwrap());
+    s = re_y_mercimek.replace_all(&s, "${1}Yeşil Mercimek Çorbası").to_string();
+
     static RE_CORBA_ABBR: OnceLock<Regex> = OnceLock::new();
     let re_corba_abbr = RE_CORBA_ABBR.get_or_init(|| Regex::new(
         r"(?i)\b(mercimek|ezogelin|domates|yayla|tarhana|tavuk|düğün|şehriye|köz\s*biber|ayran\s*aşı|yeşil\s*mercimek|mahluta|brokoli|dövme|tutmaç)\s+ç\.?\b"
     ).unwrap());
     s = re_corba_abbr.replace_all(&s, "$1 Çorbası").to_string();
+
+    // Salata/Piyaz abbreviations
+    static RE_K_FASULYE_PIYAZ: OnceLock<Regex> = OnceLock::new();
+    let re_k_fasulye_piyaz = RE_K_FASULYE_PIYAZ.get_or_init(|| Regex::new(r"(?i)\bk(?:\.|\s+)\s*fasulye\s*piyazı\b").unwrap());
+    s = re_k_fasulye_piyaz.replace_all(&s, "Kuru Fasulye Piyazı").to_string();
+
+    static RE_ARPA_SEH_SALATA: OnceLock<Regex> = OnceLock::new();
+    let re_arpa_seh_salata = RE_ARPA_SEH_SALATA.get_or_init(|| Regex::new(r"(?i)\barpa\s+şeh(?:\.|\s+)\s*salatası\b").unwrap());
+    s = re_arpa_seh_salata.replace_all(&s, "Arpa Şehriye Salatası").to_string();
 
     // Yemek abbreviations: "Taze Fasulye Y.", "Etsiz Nohut Y.", "Kurufasulye Y."
     static RE_YEMEK_ABBR: OnceLock<Regex> = OnceLock::new();
@@ -158,24 +204,24 @@ pub fn normalize_food_name(raw: &str) -> String {
     ).unwrap());
     s = re_yemek_abbr.replace_all(&s, "$1 Yemeği").to_string();
 
-    // Kızartma abbreviations: "Patates Kız.", "Karışık Kız."
+    // Kızartma abbreviations: "Patates Kız.", "Pat. Kız.", "Karışık Kız."
     static RE_PATATES_KIZ: OnceLock<Regex> = OnceLock::new();
-    let re_patates_kiz = RE_PATATES_KIZ.get_or_init(|| Regex::new(r"(?i)\bpatates\s+kız\.?\b").unwrap());
+    let re_patates_kiz = RE_PATATES_KIZ.get_or_init(|| Regex::new(r"(?i)\b(?:patates|pat)\.?\s*kız\.?\b").unwrap());
     s = re_patates_kiz.replace_all(&s, "Patates Kızartması").to_string();
 
     static RE_KARISIK_KIZ: OnceLock<Regex> = OnceLock::new();
     let re_karisik_kiz = RE_KARISIK_KIZ.get_or_init(|| Regex::new(r"(?i)\bkarışık\s+kız\.?\b").unwrap());
     s = re_karisik_kiz.replace_all(&s, "Karışık Kızartma").to_string();
 
-    // Zeytinyağlı abbreviation: "Z.yağlı", "Z. yağlı"
+    // Zeytinyağlı abbreviation: "Z.yağlı", "Z. yağlı", "Zyt. Fasulye", "Zeyt. Pırasa"
     static RE_Z_YAGLI: OnceLock<Regex> = OnceLock::new();
-    let re_z_yagli = RE_Z_YAGLI.get_or_init(|| Regex::new(r"(?i)\bz\.?\s*yağlı\b").unwrap());
-    s = re_z_yagli.replace_all(&s, "Zeytinyağlı").to_string();
+    let re_z_yagli = RE_Z_YAGLI.get_or_init(|| Regex::new(r"(?i)\b(?:z\.?\s*yağlı|zyt\.?|zeyt\.)\s*").unwrap());
+    s = re_z_yagli.replace_all(&s, "Zeytinyağlı ").to_string();
 
-    // 6. Clean trailing dots that were leftover from abbreviations (e.g. "Pilavı.")
+    // 7. Clean trailing dots that were leftover from abbreviations (e.g. "Pilavı.")
     s = s.trim_end_matches('.').trim().to_string();
 
-    // 7. Apply proper Turkish Title Casing
+    // 8. Apply proper Turkish Title Casing
     turkish_title_case(&s)
 }
 
@@ -280,6 +326,8 @@ mod tests {
         assert_eq!(normalize_food_name("200 ml. ayran"), "200 ml Ayran");
         assert_eq!(normalize_food_name("200ml Ayran"), "200 ml Ayran");
         assert_eq!(normalize_food_name("330 ml. şalgam"), "330 ml Şalgam");
+        assert_eq!(normalize_food_name("200 gr. Yoğurt"), "200 gr Yoğurt");
+        assert_eq!(normalize_food_name("1 kg. Elma"), "1 kg Elma");
     }
 
     #[test]
@@ -294,7 +342,32 @@ mod tests {
         assert_eq!(normalize_food_name("Domates Ç."), "Domates Çorbası");
         assert_eq!(normalize_food_name("Taze Fasulye Y."), "Taze Fasulye Yemeği");
         assert_eq!(normalize_food_name("Patates Kız."), "Patates Kızartması");
+        assert_eq!(normalize_food_name("Pat. Kız."), "Patates Kızartması");
         assert_eq!(normalize_food_name("Z.yağlı Pırasa"), "Zeytinyağlı Pırasa");
+        assert_eq!(normalize_food_name("Zyt. Fasulye"), "Zeytinyağlı Fasulye");
+        assert_eq!(normalize_food_name("Zeyt. Pırasa"), "Zeytinyağlı Pırasa");
+        assert_eq!(normalize_food_name("K. Mercimek Çorba"), "Kırmızı Mercimek Çorbası");
+        assert_eq!(normalize_food_name("Erişteli Y. Mercimek Çorba"), "Erişteli Yeşil Mercimek Çorbası");
+        assert_eq!(normalize_food_name("K. Fasulye Piyazı"), "Kuru Fasulye Piyazı");
+        assert_eq!(normalize_food_name("Arpa Şeh. Salatası"), "Arpa Şehriye Salatası");
+    }
+
+    #[test]
+    fn test_normalize_tight_plus() {
+        assert_eq!(normalize_food_name("Bal+tereyağ"), "Bal + Tereyağ");
+        assert_eq!(normalize_food_name("Tavuk Sote+Pilav"), "Tavuk Sote + Pilav");
+        assert_eq!(normalize_food_name("+Bal+tereyağ+"), "Bal + Tereyağ");
+        assert_eq!(normalize_food_name("Reçel +Tereyağ"), "Reçel + Tereyağ");
+    }
+
+    #[test]
+    fn test_tdk_rules() {
+        assert_eq!(normalize_food_name("Dere Otlu Poğaça"), "Dereotlu Poğaça");
+        assert_eq!(normalize_food_name("dere otu"), "Dereotu");
+        assert_eq!(normalize_food_name("semiz otu salatası"), "Semizotu Salatası");
+        assert_eq!(normalize_food_name("çörek otlu poğaça"), "Çöreotlu Poğaça");
+        assert_eq!(normalize_food_name("Kurufasulye"), "Kuru Fasulye");
+        assert_eq!(normalize_food_name("Kurufasulye Y."), "Kuru Fasulye Yemeği");
     }
 
     #[test]

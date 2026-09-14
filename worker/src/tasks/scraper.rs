@@ -1024,7 +1024,11 @@ pub fn sanitize_dish_name(name: &str) -> String {
         .replace("&#39;", "'")
         .replace("&apos;", "'");
 
-    decoded.split_whitespace().collect::<Vec<_>>().join(" ")
+    static RE_PLUS: OnceLock<regex::Regex> = OnceLock::new();
+    let re_plus = RE_PLUS.get_or_init(|| regex::Regex::new(r"\s*\+\s*").unwrap());
+    let spaced = re_plus.replace_all(&decoded, " + ").into_owned();
+
+    spaced.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(test)]
@@ -1039,6 +1043,8 @@ mod tests {
         assert_eq!(sanitize_dish_name("Köfte &lt;Leziz&gt;"), "Köfte <Leziz>");
         assert_eq!(sanitize_dish_name("Köfte < 100g"), "Köfte < 100g");
         assert_eq!(sanitize_dish_name("  Çorba   ve   Ekmek  "), "Çorba ve Ekmek");
+        assert_eq!(sanitize_dish_name("Bal+tereyağ"), "Bal + tereyağ");
+        assert_eq!(sanitize_dish_name("Tavuk Sote +Pilav"), "Tavuk Sote + Pilav");
     }
 
     #[tokio::test]

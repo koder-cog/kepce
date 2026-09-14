@@ -11,6 +11,14 @@ export function isPlaceholderDishText(name) {
 }
 
 /**
+ * Yemek ismindeki bitişik '+' karakterlerini ve fazlalık boşlukları formatlar.
+ */
+export function formatDishDisplayName(name) {
+  if (typeof name !== "string") return name;
+  return name.replace(/\s*\+\s*/g, " + ").trim();
+}
+
+/**
  * Normalize raw items from the API to handle the different response formats
  * (items, dishes, foods) and ensure a uniform format for the UI.
  * Placeholder duyuru satırları (isPlaceholderDishText) elenir.
@@ -19,45 +27,58 @@ export function normalizeItems(menu) {
   if (Array.isArray(menu.items) && menu.items.length > 0) {
     return menu.items
       .filter(i => !isPlaceholderDishText(i.master_data ? i.master_data.name : (i.raw_name || i.name)))
-      .map(i => ({
-        sort_order: i.order_index,
-        name: i.master_data ? i.master_data.name : (i.raw_name || i.name),
-        id: i.master_data ? i.master_data.dish_id : null,
-        is_alternative: i.is_alternative,
-        // Favori durumu kaynak item'dan dish'e taşınır ki UI reaktif
-        // olarak güncellensin (handleFavorite menu.items'i mutasyona uğratır).
-        my_favorite: i.my_favorite || false,
-        dishes: [{
+      .map(i => {
+        const rawName = i.master_data ? i.master_data.name : (i.raw_name || i.name);
+        const name = formatDishDisplayName(rawName);
+        return {
+          sort_order: i.order_index,
+          name,
           id: i.master_data ? i.master_data.dish_id : null,
-          name: i.master_data ? i.master_data.name : (i.raw_name || i.name),
-          is_vegan: i.master_data ? !!i.master_data.is_vegan : false,
-          is_vegetarian: i.master_data ? !!i.master_data.is_vegetarian : false,
-          is_celiac: i.master_data ? !!i.master_data.is_celiac : false,
           is_alternative: i.is_alternative,
+          // Favori durumu kaynak item'dan dish'e taşınır ki UI reaktif
+          // olarak güncellensin (handleFavorite menu.items'i mutasyona uğratır).
           my_favorite: i.my_favorite || false,
-          weight: i.amount || null,
-          price: i.price || null,
-          calories: i.calories || null,
-          total_votes: i.master_data ? (i.master_data.total_votes || 0) : 0,
-          positive_votes: i.master_data ? (i.master_data.positive_votes || 0) : 0,
-          negative_votes: i.master_data ? (i.master_data.negative_votes || 0) : 0,
-          dislike_ratio: i.master_data ? (i.master_data.dislike_ratio ?? null) : null,
-          like_ratio: i.master_data ? (i.master_data.like_ratio ?? null) : null
-        }]
-      }));
+          dishes: [{
+            id: i.master_data ? i.master_data.dish_id : null,
+            name,
+            is_vegan: i.master_data ? !!i.master_data.is_vegan : false,
+            is_vegetarian: i.master_data ? !!i.master_data.is_vegetarian : false,
+            is_celiac: i.master_data ? !!i.master_data.is_celiac : false,
+            is_alternative: i.is_alternative,
+            my_favorite: i.my_favorite || false,
+            weight: i.amount || null,
+            price: i.price || null,
+            calories: i.calories || null,
+            total_votes: i.master_data ? (i.master_data.total_votes || 0) : 0,
+            positive_votes: i.master_data ? (i.master_data.positive_votes || 0) : 0,
+            negative_votes: i.master_data ? (i.master_data.negative_votes || 0) : 0,
+            dislike_ratio: i.master_data ? (i.master_data.dislike_ratio ?? null) : null,
+            like_ratio: i.master_data ? (i.master_data.like_ratio ?? null) : null
+          }]
+        };
+      });
   }
   if (Array.isArray(menu.dishes) && menu.dishes.length > 0) {
     return menu.dishes
       .filter(d => !isPlaceholderDishText(typeof d === "string" ? d : d?.name))
-      .map(d => ({ dishes: [d] }));
+      .map(d => {
+        if (typeof d === "string") {
+          return { dishes: [{ name: formatDishDisplayName(d) }] };
+        }
+        return { dishes: [{ ...d, name: formatDishDisplayName(d?.name) }] };
+      });
   }
   if (Array.isArray(menu.foods) && menu.foods.length > 0) {
     return menu.foods
       .filter(f => !isPlaceholderDishText(f.name || f))
-      .map(f => ({
-        name: f.name || f,
-        dishes: [{ id: typeof f === 'object' ? f.id : null, name: f.name || f }]
-      }));
+      .map(f => {
+        const rawName = f.name || f;
+        const name = formatDishDisplayName(rawName);
+        return {
+          name,
+          dishes: [{ id: typeof f === 'object' ? f.id : null, name }]
+        };
+      });
   }
   return [];
 }
