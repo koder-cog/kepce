@@ -680,6 +680,10 @@ impl MenuService {
                 let mut seen_sources = HashSet::new();
 
                 for hist in hist_list {
+                    let meta = shared::services::source_registry::SourceRegistry::resolve(&hist.source_type);
+                    if meta.tier == shared::services::source_registry::TrustTier::Quarantined {
+                        continue;
+                    }
                     if hist.source_type != current_src && seen_sources.insert(hist.source_type.clone()) {
                         if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
                             let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
@@ -1005,6 +1009,10 @@ impl MenuService {
                     let mut seen_sources = HashSet::new();
 
                     for hist in hist_list {
+                        let meta = shared::services::source_registry::SourceRegistry::resolve(&hist.source_type);
+                        if meta.tier == shared::services::source_registry::TrustTier::Quarantined {
+                            continue;
+                        }
                         if hist.source_type != current_src && seen_sources.insert(hist.source_type.clone()) {
                             if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
                                 let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);

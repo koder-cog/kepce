@@ -622,6 +622,17 @@ pub async fn upsert_menu(
     let mut existing_dishes_list = Vec::new();
 
     if let Some(ref m) = existing_menu {
+        // Eğer mevcut menü bu kaynak için daha önce reddedildiyse (Rejected),
+        // aynı kaynaktan gelen verilerle menüyü tekrar diriltme veya güncelleme.
+        if m.status == MenuStatusEnum::Rejected && m.source_type.as_deref() == Some(&source_type) {
+            tracing::debug!(
+                "upsert_menu atlandı: menü bu kaynak ({}) için daha önce reddedilmiş (city_id: {}, tarih: {}, öğün: {:?})",
+                source_type, city_id, date, meal_type
+            );
+            txn.rollback().await?;
+            return Ok(false);
+        }
+
         let current_priority = get_source_priority(m.source_type.as_deref().unwrap_or(""));
         let existing_source = m.source_type.as_deref().unwrap_or("");
         let incoming_is_quarantined = is_quarantined_source(&source_type);
