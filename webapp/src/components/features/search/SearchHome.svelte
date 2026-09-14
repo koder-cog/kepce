@@ -47,7 +47,7 @@
   <main class="c-search-home__center">
     <!-- Stabil Logo -->
     <div class="c-search-home__logo" aria-label="Kepçe">
-      {@html icon("logoExperimental", null, "Kepçe")}
+      {@html icon("logoExperimental", null, "", "Kepçe")}
     </div>
 
     <form class="c-search-box" onsubmit={onSearch}>

@@ -301,7 +301,7 @@ export const icons = {
  * Render an SVG icon with size and accessibility attributes.
  *
  * @param {string} name - Icon name (key in `icons` map)
- * @param {number|string} [size=16] - Icon size in pixels (applied to width and height)
+ * @param {number|string|object} [size=16] - Icon size in pixels, or options object { size, className, ariaLabel }
  * @param {string} [className=''] - Additional CSS class(es)
  * @param {string} [ariaLabel=''] - Accessibility label for screen readers
  * @returns {string} The SVG markup as a string, ready for {@html icon(...)}
@@ -313,6 +313,19 @@ export function icon(name, size = 16, className = '', ariaLabel = '') {
       console.warn(`[icons] Unknown icon: "${name}"`);
     }
     return '';
+  }
+
+  if (size && typeof size === 'object') {
+    ariaLabel = size.ariaLabel || '';
+    className = size.className || '';
+    size = size.size !== undefined ? size.size : 16;
+  }
+
+  // Defensive fallback: if 3rd parameter is a human-readable label (contains whitespace or non-ASCII)
+  // while ariaLabel is omitted, re-route it to ariaLabel to prevent invalid class names and keep a11y intact.
+  if (className && !ariaLabel && (/\s/.test(className) || /[^\x20-\x7E]/.test(className))) {
+    ariaLabel = className;
+    className = '';
   }
 
   let attrs = '';
@@ -340,3 +353,25 @@ export function icon(name, size = 16, className = '', ariaLabel = '') {
     return `<svg ${attrs}${cleaned ? ' ' + cleaned : ''}>`;
   });
 }
+
+/**
+ * Convert raw SVG markup into a safe data URI for <img>, canvas, or background-image.
+ * Safely handles multibyte UTF-8 characters without btoa Latin1 exceptions.
+ *
+ * @param {string} svg - Raw SVG markup
+ * @param {boolean} [base64=false] - Whether to produce base64 encoding instead of URL encoding
+ * @returns {string} Safe data URI
+ */
+export function svgToDataUri(svg, base64 = false) {
+  if (!svg) return '';
+  if (base64) {
+    const utf8Bytes = new TextEncoder().encode(svg);
+    let binary = '';
+    for (let i = 0; i < utf8Bytes.length; i++) {
+      binary += String.fromCharCode(utf8Bytes[i]);
+    }
+    return `data:image/svg+xml;base64,${btoa(binary)}`;
+  }
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+

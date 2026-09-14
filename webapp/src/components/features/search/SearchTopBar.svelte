@@ -35,7 +35,7 @@
       aria-label="Kepçe Ara"
       title="Kepçe Ara"
     >
-      {@html icon("logoSmallExperimental", 36, "Kepçe Logosu")}
+      {@html icon("logoSmallExperimental", 36, "", "Kepçe Logosu")}
     </a>
 
     <div class="c-search-results__search-wrap">

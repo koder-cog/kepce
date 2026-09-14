@@ -152,10 +152,10 @@
     }}
 >
     <div class="nav-bar__logo-large">
-        {@html icon("logoExperimental", null, "Kepçe Logosu")}
+        {@html icon("logoExperimental", null, "", "Kepçe Logosu")}
     </div>
     <div class="nav-bar__logo-small">
-        {@html icon("logoSmallExperimental", null, "Kepçe Logosu")}
+        {@html icon("logoSmallExperimental", null, "", "Kepçe Logosu")}
     </div>
 </a>
 
