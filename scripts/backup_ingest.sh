@@ -2,12 +2,13 @@
 # ==============================================================================
 # KEPÇE - KYKYEMEK Backup Ingestion Utility
 # ==============================================================================
-# Usage:
-#   ./scripts/backup_ingest.sh [options] [backup_directory]
+# Kullanım:
+#   ./scripts/backup_ingest.sh <yedek_dizini> [SEÇENEKLER]
 #
-# Options:
-#   --remote    Ingest into production server database via SSH/Docker
-#   --local     Ingest into local database using local worker
+# Seçenekler:
+#   --local     Yerel veritabanına aktar (varsayılan)
+#   --remote    Canlı sunucuya aktar (SSH ve Docker ile)
+#   -h, --help  Yardım iletisini göster
 # ==============================================================================
 
 set -euo pipefail
@@ -18,11 +19,29 @@ if [ -f ".env" ]; then
     export $(grep -v '^#' .env | xargs -0 -d '\n' 2>/dev/null || grep -v '^#' .env | xargs)
 fi
 
-BACKUP_DIR="${1:-.scratch/archive/misc/kykyemek-şmnmh-yedek}"
+show_help() {
+    echo "Kullanım:"
+    echo "  $0 <yedek_dizini> [SEÇENEKLER]"
+    echo ""
+    echo "Seçenekler:"
+    echo "  --local     Yerel veritabanına aktar (varsayılan)"
+    echo "  --remote    Canlı sunucuya aktar (SSH ve Docker ile)"
+    echo "  -h, --help  Bu yardım iletisini göster"
+    echo ""
+    echo "Örnekler:"
+    echo "  $0 /path/to/backup_folder"
+    echo "  $0 /path/to/backup_folder --remote"
+}
+
+BACKUP_DIR=""
 IS_REMOTE=false
 
 for arg in "$@"; do
     case "$arg" in
+        -h|--help)
+            show_help
+            exit 0
+            ;;
         --remote)
             IS_REMOTE=true
             ;;
@@ -30,17 +49,29 @@ for arg in "$@"; do
             IS_REMOTE=false
             ;;
         -*)
-            echo "Bilinmeyen parametre: $arg"
+            echo "Hata: Bilinmeyen parametre: $arg" >&2
+            echo "Yardım için: $0 --help" >&2
             exit 1
             ;;
         *)
+            if [ -n "$BACKUP_DIR" ]; then
+                echo "Hata: Birden fazla yedek dizini belirtildi: '$BACKUP_DIR' ve '$arg'" >&2
+                exit 1
+            fi
             BACKUP_DIR="$arg"
             ;;
     esac
 done
 
+if [ -z "$BACKUP_DIR" ]; then
+    echo "Hata: Yedek dizini belirtilmedi." >&2
+    echo "Kullanım: $0 <yedek_dizini> [--local|--remote]" >&2
+    echo "Yardım için: $0 --help" >&2
+    exit 1
+fi
+
 if [ ! -d "$BACKUP_DIR" ]; then
-    echo "Hata: Belirtilen yedek dizini bulunamadı: $BACKUP_DIR"
+    echo "Hata: Belirtilen yedek dizini bulunamadı: $BACKUP_DIR" >&2
     exit 1
 fi
 
@@ -56,7 +87,7 @@ if [ "$IS_REMOTE" = true ]; then
     DEPLOY_DEST="${KEPCE_DEPLOY_DEST:-/home/ubuntu/kepce}"
 
     if [ -z "$DEPLOY_HOST" ] || [ -z "$DEPLOY_KEY" ]; then
-        echo "Hata: KEPCE_DEPLOY_HOST veya KEPCE_DEPLOY_KEY tanımlı değil (.env dosyasını kontrol edin)."
+        echo "Hata: KEPCE_DEPLOY_HOST veya KEPCE_DEPLOY_KEY tanımlı değil (.env dosyasını kontrol edin)." >&2
         exit 1
     fi
 

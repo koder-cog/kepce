@@ -499,7 +499,8 @@ case "$COMMAND" in
         echo -e "${GREEN}ARM64 derlemesi tamamlandı: target/aarch64-unknown-linux-gnu/release/{api,worker}${NC}"
         ;;
     backup)
-        ./scripts/backup_db.sh
+        shift
+        ./scripts/backup_db.sh "$@"
         ;;
     ingest-backup)
         shift
