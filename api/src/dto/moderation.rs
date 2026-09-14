@@ -50,12 +50,35 @@ pub struct UpdateMenuCommentaryDto {
 pub struct MenuDishItemDto {
     pub id: i32,
     pub name: String,
+    pub order_index: i32,
+    pub is_alternative: bool,
+    pub package_name: String,
+    pub category: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct MenuDishItemInputDto {
+    pub dish_id: i32,
+    #[serde(default)]
+    pub order_index: i32,
+    #[serde(default)]
+    pub is_alternative: bool,
+    #[serde(default = "default_package_name")]
+    pub package_name: String,
+}
+
+fn default_package_name() -> String {
+    "NORMAL".to_string()
 }
 
 /// Moderasyon panelinde menü içerisindeki yemek eşleşmelerini güncellemek için kullanılan girdi modeli.
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateMenuItemsDto {
+    #[serde(default)]
     pub dish_ids: Vec<i32>,
+    pub items: Option<Vec<MenuDishItemInputDto>>,
+    pub notice: Option<String>,
+    pub source_type: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Validate)]
@@ -96,6 +119,8 @@ pub struct MenuModerationResponseDto {
     pub date: String,
     pub meal_type: String,
     pub status: String,
+    pub source_type: Option<String>,
+    pub notice: Option<String>,
     pub bot_commentary: Option<String>,
     pub city: Option<MenuModerationCityDto>,
 }

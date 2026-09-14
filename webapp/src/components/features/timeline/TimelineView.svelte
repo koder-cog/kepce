@@ -36,6 +36,12 @@
             .bot_commentary,
     );
 
+    let dayNotice = $derived(
+        timelineState.dinnerData.find((m) => m.notice)?.notice ||
+            timelineState.breakfastData.find((m) => m.notice)?.notice ||
+            null,
+    );
+
     // Runes modunda each-blok argümanına bind geçersiz; indeks bazlı
     // binding için yerel derived referanslar.
     // Render edilebilir içeriği olmayan menüler (items/dishes/foods boş ya da
@@ -313,6 +319,17 @@
             class="timeline{isSingleMealLayout ? ' timeline--off-season' : ''}"
             in:fade={{ duration: isMotionEnabled() ? 150 : 0 }}
         >
+            {#if dayNotice}
+                <div class="timeline__notice-wrapper">
+                    <div class="status-card--main status-card--yavas status-card--notice">
+                        <span class="status-card__notice-icon">
+                            {@html icon("info", 20)}
+                        </span>
+                        <span class="status-card__notice-text">{dayNotice}</span>
+                    </div>
+                </div>
+            {/if}
+
             <!-- Sezon dışı + tek menü varsa (breakfast=0, dinner>0) off-season layout devreye girer.
                  Sezon dışı olsa da breakfast varsa (çift menü) normal layout kalır. -->
             <div class="timeline__line"></div>

@@ -277,6 +277,8 @@ async fn get_pending_menus(
                 shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner".to_string(),
             },
             status: "pending".to_string(),
+            source_type: m.source_type,
+            notice: m.notice,
             bot_commentary: m.bot_commentary,
             city: city_opt.map(|c| crate::dto::moderation::MenuModerationCityDto { name: c.name }),
         });
@@ -380,6 +382,8 @@ async fn get_menus(
                 shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved => "approved".to_string(),
                 shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected => "rejected".to_string(),
             },
+            source_type: m.source_type,
+            notice: m.notice,
             bot_commentary: m.bot_commentary,
             city: city_opt.map(|c| crate::dto::moderation::MenuModerationCityDto { name: c.name }),
         });
@@ -473,7 +477,7 @@ async fn update_menu_items(
     ValidatedJson(payload): ValidatedJson<crate::dto::moderation::UpdateMenuItemsDto>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    ModerationService::update_menu_items(&db, menu_id, payload.dish_ids)
+    ModerationService::update_menu_items(&db, menu_id, payload)
         .await
         .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
 
@@ -498,6 +502,8 @@ async fn get_menu_items(
     require_admin(&user)?;
     let menu_dishes = shared::entities::menu_dishes::Entity::find()
         .filter(shared::entities::menu_dishes::Column::MenuId.eq(menu_id))
+        .order_by_asc(shared::entities::menu_dishes::Column::OrderIndex)
+        .order_by_asc(shared::entities::menu_dishes::Column::IsAlternative)
         .find_also_related(shared::entities::dish_aliases::Entity)
         .all(&db)
         .await
@@ -522,12 +528,25 @@ async fn get_menu_items(
         vec![]
     };
     
+    let dishes_map: std::collections::HashMap<i32, shared::entities::dishes::Model> =
+        dishes.into_iter().map(|d| (d.id, d)).collect();
+
     let mut result = Vec::new();
-    for dish in dishes {
-        result.push(crate::dto::moderation::MenuDishItemDto {
-            id: dish.id,
-            name: dish.name.clone(),
-        });
+    for (md, alias_opt) in menu_dishes {
+        if let Some(alias) = alias_opt {
+            if let Some(d_id) = alias.dish_id {
+                if let Some(dish) = dishes_map.get(&d_id) {
+                    result.push(crate::dto::moderation::MenuDishItemDto {
+                        id: dish.id,
+                        name: dish.name.clone(),
+                        order_index: md.order_index,
+                        is_alternative: md.is_alternative,
+                        package_name: md.package_name,
+                        category: dish.category.clone(),
+                    });
+                }
+            }
+        }
     }
         
     Ok(Json(result))

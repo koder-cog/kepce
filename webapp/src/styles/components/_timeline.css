@@ -678,5 +678,37 @@
     .alternate-view__title {
       font-size: var(--text-xl);
     }
+  /* ── Timeline Notice Banner ────────────────────────────────── */
+
+  .timeline__notice-wrapper {
+    margin-bottom: var(--space-xl);
+    width: 100%;
+  }
+
+  .status-card--notice {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: rgba(var(--color-accent-disclaimer-rgb), 0.1);
+    color: var(--color-text);
+    text-align: left;
+    transition: all var(--dur-fast) var(--ease-standard);
+  }
+
+  .status-card__notice-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-warning);
+  }
+
+  .status-card__notice-text {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-relaxed);
+    color: var(--color-text);
   }
 }

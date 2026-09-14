@@ -56,10 +56,10 @@ export const moderationApi = {
     }),
   deleteTag: (tagId) => request(`/moderation/tags/${tagId}`, { method: 'DELETE' }),
 
-  updateMenuItems: (menuId, dishIds) =>
+  updateMenuItems: (menuId, payload) =>
     request(`/moderation/${menuId}/items`, {
       method: 'PUT',
-      body: JSON.stringify({ dish_ids: dishIds }),
+      body: JSON.stringify(Array.isArray(payload) ? { dish_ids: payload } : payload),
     }),
     
   exportMonthlyMenuForBot: (city, month) => request(`/moderation/bot/export-monthly${buildQuery({ city_slug: city, month })}`),

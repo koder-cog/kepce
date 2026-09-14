@@ -30,6 +30,7 @@ pub struct MenuResponseDto {
     pub source_type: String,
     pub status: String,
     pub bot_commentary: Option<String>,
+    pub notice: Option<String>,
     pub items: Vec<MenuItemDto>, // Menüdeki standart yemeklerin listesi
     pub takeaways: Vec<TakeawayMenuDto>, // Al Götür menüleri
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

@@ -11,6 +11,7 @@ use shared::entities::{
     menus,
     menu_dishes,
     dish_aliases,
+    dishes,
     sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
 };
 use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto};
@@ -372,13 +373,49 @@ impl ModerationService {
         Ok(())
     }
 
-    /// Update menu items (menu_dishes)
+    /// Update menu items (menu_dishes) and optional menu-level attributes (notice, source_type)
     pub async fn update_menu_items(
         db: &DatabaseConnection,
         menu_id: i32,
-        dish_alias_ids: Vec<i32>,
+        payload: crate::dto::moderation::UpdateMenuItemsDto,
     ) -> Result<(), ModerationError> {
         let txn = db.begin().await.map_err(ModerationError::DatabaseError)?;
+
+        // Update notice or source_type if provided
+        if payload.notice.is_some() || payload.source_type.is_some() {
+            if let Some(menu) = menus::Entity::find_by_id(menu_id)
+                .one(&txn)
+                .await
+                .map_err(ModerationError::DatabaseError)?
+            {
+                let mut active: menus::ActiveModel = menu.into();
+                if let Some(notice) = payload.notice {
+                    let trimmed = notice.trim();
+                    active.notice = Set(if trimmed.is_empty() { None } else { Some(trimmed.to_string()) });
+                }
+                if let Some(source_type) = payload.source_type {
+                    let trimmed = source_type.trim();
+                    active.source_type = Set(if trimmed.is_empty() { None } else { Some(trimmed.to_string()) });
+                }
+                active.update(&txn).await.map_err(ModerationError::DatabaseError)?;
+            }
+        }
+
+        // Determine items to insert
+        let items_to_process: Vec<crate::dto::moderation::MenuDishItemInputDto> = if let Some(items) = payload.items {
+            items
+        } else {
+            payload.dish_ids
+                .into_iter()
+                .enumerate()
+                .map(|(index, id)| crate::dto::moderation::MenuDishItemInputDto {
+                    dish_id: id,
+                    order_index: index as i32,
+                    is_alternative: false,
+                    package_name: "NORMAL".to_string(),
+                })
+                .collect()
+        };
 
         // Delete existing menu_dishes for this menu
         shared::entities::menu_dishes::Entity::delete_many()
@@ -388,15 +425,22 @@ impl ModerationService {
             .map_err(ModerationError::DatabaseError)?;
 
         // Insert new ones
-        if !dish_alias_ids.is_empty() {
+        if !items_to_process.is_empty() {
             let mut inserts = Vec::new();
-            for (index, alias_id) in dish_alias_ids.into_iter().enumerate() {
+            for item in items_to_process {
+                let alias_id = Self::resolve_dish_alias_id(&txn, item.dish_id).await?;
+                let pkg = if item.package_name.trim().is_empty() {
+                    "NORMAL".to_string()
+                } else {
+                    item.package_name.trim().to_string()
+                };
+
                 inserts.push(shared::entities::menu_dishes::ActiveModel {
                     menu_id: Set(menu_id),
                     dish_alias_id: Set(alias_id),
-                    order_index: Set(index as i32),
-                    is_alternative: Set(false), // Assuming false for now based on default usecase
-                    package_name: Set("Standard".to_string()),
+                    order_index: Set(item.order_index),
+                    is_alternative: Set(item.is_alternative),
+                    package_name: Set(pkg),
                     ..Default::default()
                 });
             }
@@ -408,6 +452,50 @@ impl ModerationService {
 
         txn.commit().await.map_err(ModerationError::DatabaseError)?;
         Ok(())
+    }
+
+    async fn resolve_dish_alias_id(
+        txn: &DatabaseTransaction,
+        dish_id: i32,
+    ) -> Result<i32, ModerationError> {
+        if let Some(direct) = dish_aliases::Entity::find_by_id(dish_id)
+            .one(txn)
+            .await
+            .map_err(ModerationError::DatabaseError)?
+        {
+            if direct.dish_id == Some(dish_id) {
+                return Ok(direct.id);
+            }
+        }
+
+        if let Some(alias) = dish_aliases::Entity::find()
+            .filter(dish_aliases::Column::DishId.eq(dish_id))
+            .order_by_asc(dish_aliases::Column::Id)
+            .one(txn)
+            .await
+            .map_err(ModerationError::DatabaseError)?
+        {
+            return Ok(alias.id);
+        }
+
+        if let Some(dish) = dishes::Entity::find_by_id(dish_id)
+            .one(txn)
+            .await
+            .map_err(ModerationError::DatabaseError)?
+        {
+            let new_alias = dish_aliases::ActiveModel {
+                name: Set(dish.name),
+                dish_id: Set(Some(dish.id)),
+                ..Default::default()
+            };
+            let inserted = new_alias.insert(txn).await.map_err(ModerationError::DatabaseError)?;
+            return Ok(inserted.id);
+        }
+
+        Err(ModerationError::DatabaseError(DbErr::Custom(format!(
+            "Yemek bulunamadı: {}",
+            dish_id
+        ))))
     }
 
     // --- Kepçe Bot: Aylık batch (export-monthly / inject) yardımcıları ---
