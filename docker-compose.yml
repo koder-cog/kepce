@@ -64,6 +64,9 @@ services:
       - INITIAL_ADMIN_EMAIL=${INITIAL_ADMIN_EMAIL}
       - INITIAL_ADMIN_PASSWORD=${INITIAL_ADMIN_PASSWORD}
       - SEARXNG_URL=${SEARXNG_URL:-http://searxng:8080}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:iletisim@kepce.org}
     volumes:
       - uploads:/app/uploads
       - avatars:/app/static/avatars
@@ -92,6 +95,9 @@ services:
       - INDEXNOW_ENDPOINT=${INDEXNOW_ENDPOINT:-https://api.indexnow.org/indexnow}
       - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
       - TELEGRAM_ADMIN_CHAT_ID=${TELEGRAM_ADMIN_CHAT_ID:-}
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:iletisim@kepce.org}
     volumes:
       - menuler:/app/data/menuler
       - ./config:/app/config:ro

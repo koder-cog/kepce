@@ -30,8 +30,9 @@ pub struct PushPayload {
 
 pub struct PushService;
 
-// Varsayılan VAPID anahtarları
-const DEFAULT_VAPID_PUBLIC: &str = "BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8U";
+// Varsayılan kalıcı VAPID anahtarları (P-256 / Prime256v1)
+const DEFAULT_VAPID_PUBLIC: &str = "BFIVpgfTLBrLYmdjhS9fsQd1hvZ0MwuRUN4XYVDTuWFwFNL5m2bb4WJCUp8BFjIwIkALY5PkVyy1PM8o8ut6gqQ";
+const DEFAULT_VAPID_PRIVATE: &str = "-----BEGIN PRIVATE KEY-----\nREMOVED_VAPID_PRIVATE_KEY\nIp5C1K7bDM3VVkDwnN9Hhq5G9RihRANCAARSFaYH0yway2JnY4UvX7EHdYb2dDML\nkVDeF2FQ07lhcBTS+Ztm2+FiQlKfARYyMCJAC2OT5FcstTzPKPLreoKk\n-----END PRIVATE KEY-----";
 
 impl PushService {
     pub fn get_vapid_public_key() -> String {
@@ -45,13 +46,15 @@ impl PushService {
     fn get_key_pair() -> &'static ES256KeyPair {
         static KEYPAIR: OnceLock<ES256KeyPair> = OnceLock::new();
         KEYPAIR.get_or_init(|| {
-            if let Ok(pem) = env::var("VAPID_PRIVATE_KEY") {
-                let normalized = pem.replace("\\n", "\n");
-                if let Ok(kp) = ES256KeyPair::from_pem(&normalized) {
-                    return kp;
+            let pem = env::var("VAPID_PRIVATE_KEY").unwrap_or_else(|_| DEFAULT_VAPID_PRIVATE.to_string());
+            let normalized = pem.replace("\\n", "\n");
+            match ES256KeyPair::from_pem(&normalized) {
+                Ok(kp) => kp,
+                Err(e) => {
+                    tracing::error!("VAPID_PRIVATE_KEY ayrıştırılamadı ({:?}), varsayılan anahtar çifti kullanılıyor.", e);
+                    ES256KeyPair::from_pem(DEFAULT_VAPID_PRIVATE).expect("Varsayılan VAPID anahtarı geçerli olmalı")
                 }
             }
-            ES256KeyPair::generate()
         })
     }
 
@@ -106,8 +109,17 @@ impl PushService {
                 let _ = sub.clone().delete(db).await;
                 Ok(false)
             }
+            Ok(res) if res.status().as_u16() == 401 || res.status().as_u16() == 400 => {
+                let status = res.status();
+                let body = res.text().await.unwrap_or_default();
+                tracing::warn!("Push gateway anahtar uyuşmazlığı veya yetkisiz istek (HTTP {}): {} - {}", status, sub.endpoint, body);
+                let _ = sub.clone().delete(db).await;
+                Ok(false)
+            }
             Ok(res) => {
-                tracing::warn!("Push gateway beklenmeyen durum döndürdü (HTTP {}): {}", res.status(), sub.endpoint);
+                let status = res.status();
+                let body = res.text().await.unwrap_or_default();
+                tracing::warn!("Push gateway beklenmeyen durum döndürdü (HTTP {}): {} - {}", status, sub.endpoint, body);
                 Ok(false)
             }
             Err(e) => {
@@ -241,5 +253,24 @@ impl PushService {
                 PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use web_push_native::jwt_simple::algorithms::ES256KeyPair;
+
+    #[test]
+    fn test_vapid_keys() {
+        let pem = "-----BEGIN PRIVATE KEY-----\nREMOVED_VAPID_PRIVATE_KEY\nIp5C1K7bDM3VVkDwnN9Hhq5G9RihRANCAARSFaYH0yway2JnY4UvX7EHdYb2dDML\nkVDeF2FQ07lhcBTS+Ztm2+FiQlKfARYyMCJAC2OT5FcstTzPKPLreoKk\n-----END PRIVATE KEY-----";
+        let kp = ES256KeyPair::from_pem(pem).expect("Failed to parse PEM");
+        let pk = kp.public_key();
+        let der = pk.to_der().expect("Failed to get DER");
+        let uncompressed = &der[der.len() - 65..];
+        let derived_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(uncompressed);
+        let expected = "BFIVpgfTLBrLYmdjhS9fsQd1hvZ0MwuRUN4XYVDTuWFwFNL5m2bb4WJCUp8BFjIwIkALY5PkVyy1PM8o8ut6gqQ";
+        assert_eq!(derived_b64, expected);
+        println!("Key verification passed!");
     }
 }

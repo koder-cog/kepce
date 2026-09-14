@@ -182,6 +182,6 @@ async fn send_test_push(
             "message": "Test bildirimi cihazınıza başarıyla iletildi."
         })))
     } else {
-        Err(AppError::Internal("Bildirim iletilemedi, abonelik geçersiz veya süresi dolmuş olabilir.".to_string()))
+        Err(AppError::BadRequest("Bildirim iletilemedi. Tarayıcınızdaki bildirim aboneliği eski veya geçersiz kalmış olabilir. Lütfen bildirimleri kapatıp yeniden açın.".to_string()))
     }
 }

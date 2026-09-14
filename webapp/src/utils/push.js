@@ -11,6 +11,17 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+function areBuffersEqual(buf1, buf2) {
+  if (!buf1 || !buf2) return false;
+  const u1 = new Uint8Array(buf1);
+  const u2 = new Uint8Array(buf2);
+  if (u1.byteLength !== u2.byteLength) return false;
+  for (let i = 0; i < u1.byteLength; i++) {
+    if (u1[i] !== u2[i]) return false;
+  }
+  return true;
+}
+
 export function isPushSupported() {
   return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 }
@@ -65,6 +76,13 @@ export async function subscribeToPush(options = {}) {
   // 4. PushManager ile Abone Ol
   const convertedKey = urlBase64ToUint8Array(public_key);
   let sub = await reg.pushManager.getSubscription();
+  if (sub) {
+    const existingKey = sub.options?.applicationServerKey;
+    if (existingKey && !areBuffersEqual(existingKey, convertedKey.buffer)) {
+      await sub.unsubscribe();
+      sub = null;
+    }
+  }
   if (!sub) {
     sub = await reg.pushManager.subscribe({
       userVisibleOnly: true,
@@ -133,9 +151,38 @@ export async function sendTestPush() {
   }
 
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.getSubscription();
+  let sub = await reg.pushManager.getSubscription();
   if (!sub) {
     throw new Error('Aktif bildirim aboneliği bulunamadı. Lütfen önce bildirimleri açın.');
+  }
+
+  // Sunucudaki güncel VAPID anahtarı ile yerel aboneliğin eşleşip eşleşmediğini kontrol et
+  const keyRes = await fetch(`${API_BASE}/public/push/vapid-public-key`);
+  if (keyRes.ok) {
+    const { public_key } = await keyRes.json();
+    const serverKey = urlBase64ToUint8Array(public_key);
+    const existingKey = sub.options?.applicationServerKey;
+    if (existingKey && !areBuffersEqual(existingKey, serverKey.buffer)) {
+      await sub.unsubscribe();
+      sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: serverKey
+      });
+      const subJson = sub.toJSON();
+      await fetch(`${API_BASE}/public/push/subscribe`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          endpoint: sub.endpoint,
+          keys: {
+            p256dh: subJson.keys.p256dh,
+            auth: subJson.keys.auth
+          },
+          user_agent: navigator.userAgent
+        })
+      });
+    }
   }
 
   const res = await fetch(`${API_BASE}/public/push/test`, {
@@ -152,3 +199,4 @@ export async function sendTestPush() {
 
   return await res.json();
 }
+

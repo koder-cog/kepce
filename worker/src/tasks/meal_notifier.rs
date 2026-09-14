@@ -38,6 +38,9 @@ pub struct PushPayload {
     pub url: Option<String>,
 }
 
+// Varsayılan kalıcı VAPID özel anahtarı (P-256 / Prime256v1 PKCS#8)
+const DEFAULT_VAPID_PRIVATE: &str = "-----BEGIN PRIVATE KEY-----\nREMOVED_VAPID_PRIVATE_KEY\nIp5C1K7bDM3VVkDwnN9Hhq5G9RihRANCAARSFaYH0yway2JnY4UvX7EHdYb2dDML\nkVDeF2FQ07lhcBTS+Ztm2+FiQlKfARYyMCJAC2OT5FcstTzPKPLreoKk\n-----END PRIVATE KEY-----";
+
 fn get_vapid_subject() -> String {
     env::var("VAPID_SUBJECT").unwrap_or_else(|_| "mailto:iletisim@kepce.org".to_string())
 }
@@ -45,13 +48,15 @@ fn get_vapid_subject() -> String {
 fn get_key_pair() -> &'static ES256KeyPair {
     static KEYPAIR: OnceLock<ES256KeyPair> = OnceLock::new();
     KEYPAIR.get_or_init(|| {
-        if let Ok(pem) = env::var("VAPID_PRIVATE_KEY") {
-            let normalized = pem.replace("\\n", "\n");
-            if let Ok(kp) = ES256KeyPair::from_pem(&normalized) {
-                return kp;
+        let pem = env::var("VAPID_PRIVATE_KEY").unwrap_or_else(|_| DEFAULT_VAPID_PRIVATE.to_string());
+        let normalized = pem.replace("\\n", "\n");
+        match ES256KeyPair::from_pem(&normalized) {
+            Ok(kp) => kp,
+            Err(e) => {
+                tracing::error!("VAPID_PRIVATE_KEY ayrıştırılamadı ({:?}), varsayılan anahtar çifti kullanılıyor.", e);
+                ES256KeyPair::from_pem(DEFAULT_VAPID_PRIVATE).expect("Varsayılan VAPID anahtarı geçerli olmalı")
             }
         }
-        ES256KeyPair::generate()
     })
 }
 
@@ -104,8 +109,17 @@ pub async fn send_to_subscription(
             let _ = sub.clone().delete(db).await;
             Ok(false)
         }
+        Ok(res) if res.status().as_u16() == 401 || res.status().as_u16() == 400 => {
+            let status = res.status();
+            let body = res.text().await.unwrap_or_default();
+            tracing::warn!("Push gateway yetkisiz istek veya anahtar uyuşmazlığı (HTTP {}): {} - {}", status, sub.endpoint, body);
+            let _ = sub.clone().delete(db).await;
+            Ok(false)
+        }
         Ok(res) => {
-            tracing::warn!("Push gateway beklenmeyen durum döndürdü (HTTP {}): {}", res.status(), sub.endpoint);
+            let status = res.status();
+            let body = res.text().await.unwrap_or_default();
+            tracing::warn!("Push gateway beklenmeyen durum döndürdü (HTTP {}): {} - {}", status, sub.endpoint, body);
             Ok(false)
         }
         Err(e) => {
