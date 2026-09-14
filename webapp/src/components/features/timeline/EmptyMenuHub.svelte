@@ -3,7 +3,6 @@
     import EmptyState from "@/components/ui/EmptyState.svelte";
     import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
     import { normalizeItems } from "@/utils/menu.js";
-    import { timelineState } from "@/stores/timeline.svelte.js";
     import SeasonGuides from "@/components/features/timeline/SeasonGuides.svelte";
     import { isOrientationSeason } from "@/utils/season.js";
 
@@ -104,49 +103,54 @@
                 >
             </div>
 
-            <button
-                type="button"
-                class="empty-hub__menu-body"
-                onclick={() => timelineState.selectDate(lastMenuDay.date)}
-                aria-label="{formatFullTurkishDate(lastMenuDay.date)} menüsünü görüntüle"
-            >
+            <div class="empty-hub__meals-list">
                 {#if lastBreakfast}
-                    <div class="empty-hub__meal-row">
-                        <span class="empty-hub__meal-label">Kahvaltı:</span>
-                        <span class="empty-hub__meal-items"
-                            >{lastBreakfast.itemsText}</span
-                        >
-                        {#if lastBreakfast.totalCount > 0}
-                            <span class="empty-hub__count-badge"
-                                >({lastBreakfast.totalCount} çeşit)</span
+                    <div class="empty-hub__meal-card">
+                        <div class="empty-hub__meal-head">
+                            <span class="empty-hub__meal-badge">Kahvaltı</span>
+                            {#if lastBreakfast.totalCount > 0}
+                                <span class="empty-hub__count-badge"
+                                    >({lastBreakfast.totalCount} çeşit)</span
+                                >
+                            {/if}
+                        </div>
+                        <div class="empty-hub__meal-content">
+                            <span class="empty-hub__meal-items"
+                                >{lastBreakfast.itemsText}</span
                             >
-                        {/if}
+                        </div>
                     </div>
                 {/if}
 
                 {#if lastDinner}
-                    <div class="empty-hub__meal-row">
-                        <span class="empty-hub__meal-label">Akşam Yemeği:</span>
-                        <span class="empty-hub__meal-items"
-                            >{lastDinner.itemsText}</span
-                        >
-                        {#if lastDinner.totalCount > 0}
-                            <span class="empty-hub__count-badge"
-                                >({lastDinner.totalCount} çeşit)</span
+                    <div class="empty-hub__meal-card">
+                        <div class="empty-hub__meal-head">
+                            <span class="empty-hub__meal-badge">Akşam Yemeği</span>
+                            {#if lastDinner.totalCount > 0}
+                                <span class="empty-hub__count-badge"
+                                    >({lastDinner.totalCount} çeşit)</span
+                                >
+                            {/if}
+                        </div>
+                        <div class="empty-hub__meal-content">
+                            <span class="empty-hub__meal-items"
+                                >{lastDinner.itemsText}</span
                             >
-                        {/if}
+                        </div>
                     </div>
                 {/if}
-            </button>
+            </div>
 
             <div class="empty-hub__archive-wrapper">
                 <a
                     href="/arsiv"
-                    class="btn btn--primary u-w-full btn--squish empty-hub__archive-btn"
+                    class="btn--row-action empty-hub__archive-btn"
                     data-link
                 >
-                    <span>Arşiv</span>
-                    {@html icon("chevronRight", 18)}
+                    <span class="btn--row-action__label">Arşiv</span>
+                    <div class="btn--row-action__icon">
+                        {@html icon("chevronRight", 18)}
+                    </div>
                 </a>
             </div>
         </section>
@@ -182,8 +186,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding-bottom: var(--space-xs);
-        border-bottom: 1px solid var(--color-border-light);
     }
 
     .empty-hub__menu-title {
@@ -200,61 +202,57 @@
         color: var(--color-muted);
     }
 
-    .empty-hub__menu-body {
+    .empty-hub__meals-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-sm);
+    }
+
+    .empty-hub__meal-card {
+        background: var(--color-surface-sunken);
+        border: 1px solid var(--color-border-light);
+        border-radius: var(--radius-md);
+        padding: var(--space-md);
         display: flex;
         flex-direction: column;
         gap: var(--space-xs);
-        padding: var(--space-sm) 0;
-        text-decoration: none;
+    }
+
+    .empty-hub__meal-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-sm);
+    }
+
+    .empty-hub__meal-badge {
+        font-family: var(--font-display);
+        font-size: var(--text-sm);
+        font-weight: var(--font-weight-bold);
         color: var(--color-text);
+        letter-spacing: -0.01em;
+    }
+
+    .empty-hub__count-badge {
+        font-size: var(--text-xs);
+        color: var(--color-muted);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .empty-hub__meal-content {
         font-size: var(--text-sm);
         line-height: var(--leading-relaxed);
-        border-radius: var(--radius-md);
-        background: none;
-        border: none;
-        text-align: left;
-        cursor: pointer;
-        font-family: inherit;
-        width: 100%;
-        transition: color var(--dur-fast) var(--ease-standard);
-    }
-
-    .empty-hub__menu-body:hover {
-        color: var(--color-accent-primary);
-    }
-
-    .empty-hub__menu-body:active {
-        transform: scale(0.98);
-    }
-
-    .empty-hub__meal-row {
-        color: inherit;
-    }
-
-    .empty-hub__meal-label {
-        font-weight: var(--font-weight-bold);
-        margin-right: var(--space-2xs);
+        color: var(--color-text-secondary);
     }
 
     .empty-hub__meal-items {
         color: inherit;
-    }
-
-    .empty-hub__count-badge {
-        color: var(--color-muted);
-        font-size: var(--text-xs);
-        margin-left: var(--space-2xs);
+        word-break: break-word;
     }
 
     .empty-hub__archive-wrapper {
-        margin-top: var(--space-xs);
-    }
-
-    .empty-hub__archive-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--space-xs);
+        padding-top: var(--space-sm);
+        border-top: 1px dashed var(--color-border-light);
     }
 
     @media (max-width: 600px) {

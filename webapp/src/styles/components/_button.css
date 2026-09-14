@@ -194,4 +194,73 @@
   .content-page__body a.btn--danger {
     color: var(--color-accent-negative) !important;
   }
+
+  /* ── Row Action Button / Link (Şevronlu Satır Eylem Butonu) ─── */
+  .btn--row-action,
+  .meal-card__takeaway-btn {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    appearance: none;
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: var(--space-xs) 0;
+    font: inherit;
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color var(--dur-fast) var(--ease-standard);
+  }
+
+  .btn--row-action:hover,
+  .meal-card__takeaway-btn:hover {
+    color: var(--color-text);
+  }
+
+  .btn--row-action:active,
+  .meal-card__takeaway-btn:active {
+    transform: scale(1); /* Satır eylem butonunda genel buton squish yerine şevron hareketi kullanılır */
+  }
+
+  .btn--row-action__label,
+  .meal-card__takeaway-btn .meal-card__dish-name {
+    flex: 1;
+    white-space: normal;
+    word-break: break-word;
+    line-height: var(--leading-comfortable);
+  }
+
+  .btn--row-action__icon,
+  .meal-card__takeaway-btn .meal-card__dish-actions {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-muted);
+    flex-shrink: 0;
+    margin-left: var(--space-sm);
+    transition: transform var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard);
+  }
+
+  .btn--row-action:hover .btn--row-action__icon,
+  .meal-card__takeaway-btn:hover .meal-card__dish-actions {
+    color: var(--color-accent-primary);
+    transform: translateX(4px) scale(1.1);
+  }
+
+  .btn--row-action:active .btn--row-action__icon,
+  .meal-card__takeaway-btn:active .meal-card__dish-actions {
+    transform: translateX(var(--space-sm));
+    color: var(--color-accent-primary-hover);
+  }
+
+  .btn--row-action svg,
+  .meal-card__takeaway-btn svg {
+    margin-top: 1px;
+    fill: currentColor;
+    flex-shrink: 0;
+  }
 }

@@ -600,6 +600,7 @@
     margin-block: var(--space-sm);
   }
 
+  .meal-alternate-row .btn--row-action,
   .meal-alternate-row .meal-card__takeaway-btn {
     display: flex;
     justify-content: space-between;

@@ -675,14 +675,13 @@
                             ? sanitizeText(t.name)
                             : `Al Götür ${idx + 1}`}
                         <button
-                            class="meal-card__dish-part meal-card__takeaway-btn"
+                            class="meal-card__dish-part btn--row-action meal-card__takeaway-btn"
                             data-takeaway-id={t.name || idx}
                             data-takeaway-label={labelText}
                             onclick={() => handleTakeawayClick(t, labelText)}
                         >
-                            <span class="meal-card__dish-name">{labelText}</span
-                            >
-                            <div class="meal-card__dish-actions">
+                            <span class="btn--row-action__label meal-card__dish-name">{labelText}</span>
+                            <div class="btn--row-action__icon meal-card__dish-actions">
                                 {@html icon("chevronRight", 18)}
                             </div>
                         </button>

@@ -345,19 +345,19 @@
                                     <div class="meal-alternate-row">
                                         <button
                                             type="button"
-                                            class="meal-card__takeaway-btn"
+                                            class="btn--row-action meal-card__takeaway-btn"
                                             onclick={() =>
                                                 openAlternativeView(
                                                     "breakfast",
                                                     breakfasts[i].alternatives,
                                                 )}
                                         >
-                                            <span class="meal-card__dish-name"
+                                            <span class="btn--row-action__label meal-card__dish-name"
                                                 >Kahvaltı için başka kaynakların
                                                 dedikleri</span
                                             >
                                             <div
-                                                class="meal-card__dish-actions"
+                                                class="btn--row-action__icon meal-card__dish-actions"
                                             >
                                                 {@html icon("chevronRight", 18)}
                                             </div>
@@ -459,21 +459,21 @@
                                     <div class="meal-alternate-row">
                                         <button
                                             type="button"
-                                            class="meal-card__takeaway-btn"
+                                            class="btn--row-action meal-card__takeaway-btn"
                                             onclick={() =>
                                                 openAlternativeView(
                                                     "dinner",
                                                     dinners[i].alternatives,
                                                 )}
                                         >
-                                            <span class="meal-card__dish-name"
+                                            <span class="btn--row-action__label meal-card__dish-name"
                                                 >{isSingleMealLayout
                                                     ? "Yemek"
                                                     : "Akşam yemeği"} için başka
                                                 kaynakların dedikleri</span
                                             >
                                             <div
-                                                class="meal-card__dish-actions"
+                                                class="btn--row-action__icon meal-card__dish-actions"
                                             >
                                                 {@html icon("chevronRight", 18)}
                                             </div>
