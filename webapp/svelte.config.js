@@ -15,10 +15,30 @@ const config = {
 		},
 		alias: {
 			'@': './src'
+		},
+		csp: {
+			mode: 'auto',
+			directives: {
+				'default-src': ['self'],
+				'base-uri': ['self'],
+				'object-src': ['none'],
+				'font-src': ['self', 'data:'],
+				'img-src': ['self', 'data:', 'blob:', 'https:'],
+				'script-src': [
+					'self',
+					'strict-dynamic',
+					'https://static.cloudflareinsights.com',
+					'https://analitik.kepce.org'
+				],
+				'style-src': ['self', 'unsafe-inline'],
+				'connect-src': [
+					'self',
+					'https://cloudflareinsights.com',
+					'https://analitik.kepce.org'
+				],
+				'frame-ancestors': ['none']
+			}
 		}
-		// CSP not configured here on purpose:
-		// - nginx.conf kaldırıldı; production CSP artık Caddyfile'da yönetiliyor.
-		// - Dev server is intentionally permissive (Vite injects inline scripts dynamically).
 	},
 	compilerOptions: {
 		css: 'external'

@@ -9,6 +9,7 @@ pub mod yurtmenu;
 pub mod llm;
 pub mod models;
 pub mod normalizer;
+pub mod stale_detector;
 pub mod takeaway;
 pub mod validation;
 

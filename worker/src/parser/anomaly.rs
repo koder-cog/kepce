@@ -46,18 +46,64 @@ pub fn cosine_distance(a: &[f32], b: &[f32]) -> f32 {
     1.0 - sim
 }
 
+/// Model yüklenemediğinde veya ağ çevrimdışıyken çalışan sözlük tabanlı anomali puanlayıcısı.
+/// 0.0 ile 1.0 arasında bir mesafe döner; yüksek değer anomaliyi (yemek dışı çöp metin) gösterir.
+pub fn calculate_lexical_fallback_distance(text: &str) -> Option<f32> {
+    if text.trim().is_empty() {
+        return None;
+    }
+    let match_ratio = crate::parser::dictionary::calculate_match_ratio(text);
+    let distance = (1.0 - (match_ratio / 100.0) as f32).clamp(0.0, 1.0);
+    tracing::debug!(
+        "Çevrimdışı anomali analizi uygulandı (oran: {:.1}%, mesafe: {:.2})",
+        match_ratio, distance
+    );
+    Some(distance)
+}
+
 pub fn calculate_menu_distance(text: &str) -> Option<f32> {
     if text.trim().is_empty() {
         return None;
     }
-    let baseline = get_baseline_vector()?;
-    let model_mutex = get_model()?;
-    let mut model = model_mutex.lock().ok()?;
-    
-    if let Ok(mut embeddings) = model.embed(vec![text.to_string()], None) {
-        if let Some(emb) = embeddings.pop() {
-            return Some(cosine_distance(&emb, baseline));
+
+    // Tier 1: Fastembed nöral embedding modeli
+    if let (Some(baseline), Some(model_mutex)) = (get_baseline_vector(), get_model()) {
+        if let Ok(mut model) = model_mutex.lock() {
+            if let Ok(mut embeddings) = model.embed(vec![text.to_string()], None) {
+                if let Some(emb) = embeddings.pop() {
+                    return Some(cosine_distance(&emb, baseline));
+                }
+            }
         }
     }
-    None
+
+    // Tier 2: Model çevrimdışıyken sözlük eşleşme oranından türetilen deterministik mesafe
+    calculate_lexical_fallback_distance(text)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_lexical_fallback_normal_menu() {
+        let text = "Mercimek Çorbası Tavuk Sote Pirinç Pilavı Ayran Çeyrek Ekmek";
+        let dist = calculate_lexical_fallback_distance(text).unwrap();
+        // Tanınan yemeklerde anomali mesafesi düşük olmalı (< 0.40)
+        assert!(dist < 0.40, "Geçerli yemek menüsü için mesafe düşük olmalı: {}", dist);
+    }
+
+    #[test]
+    fn test_lexical_fallback_garbage_text() {
+        let text = "404 Not Found nginx error gateway timeout connection refused unauthorized";
+        let dist = calculate_lexical_fallback_distance(text).unwrap();
+        // Çöp ve hata metinlerinde anomali mesafesi yüksek olmalı (> 0.65)
+        assert!(dist > 0.65, "Çöp/hata metninde anomali mesafesi yüksek olmalı: {}", dist);
+    }
+
+    #[test]
+    fn test_lexical_fallback_empty() {
+        assert!(calculate_lexical_fallback_distance("").is_none());
+        assert!(calculate_lexical_fallback_distance("   ").is_none());
+    }
 }

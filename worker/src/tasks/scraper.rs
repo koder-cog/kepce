@@ -486,6 +486,39 @@ async fn fetch_and_save(
     
     let parsed_menus = parse_kykyemek_html(&html_content, &city.slug, kyk_meal_type);
     let mut count = 0;
+
+    let incoming_days: Vec<(NaiveDate, Vec<String>)> = parsed_menus
+        .iter()
+        .map(|m| {
+            let dishes = m
+                .dishes
+                .iter()
+                .flat_map(|group| group.iter().map(|c| c.name.clone()))
+                .collect();
+            (m.date, dishes)
+        })
+        .collect();
+
+    let stale_match = crate::parser::stale_detector::StaleSequenceDetector::check_stale_for_city(
+        db,
+        city.id,
+        meal_type_enum.clone(),
+        &incoming_days,
+    )
+    .await
+    .unwrap_or(None);
+
+    let (batch_source_type, batch_status_override) = if let Some(ref stale) = stale_match {
+        let alert_msg = format!(
+            "Bayat veri serisi algılandı! Şehir: {}, Öğün: {:?}, Gün aralığı: {}-{} ({} ardışık gün geçen ayla birebir aynı). Gelen bülten karantinaya alınıyor.",
+            city.name, meal_type_enum, stale.start_date, stale.end_date, stale.matching_days_count
+        );
+        tracing::warn!("{}", alert_msg);
+        let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
+        ("kykyemek-stale".to_string(), Some(MenuStatusEnum::Pending))
+    } else {
+        ("kykyemek".to_string(), None)
+    };
     
     for menu in parsed_menus {
         // Öğün Doğrulama Kalkanı: Eğer kart açıkça başka bir öğün olduğunu beyan ediyorsa,
@@ -505,12 +538,12 @@ async fn fetch_and_save(
             city.id, 
             menu.date, 
             meal_type_enum.clone(), 
-            "kykyemek".to_string(), 
+            batch_source_type.clone(), 
             None, 
             menu.dishes,
             vec![], // celiac_dishes
             menu.takeaways,
-            None,
+            batch_status_override.clone(),
             menu.min_calories,
             menu.max_calories,
         ).await?;
@@ -556,6 +589,27 @@ pub(crate) fn check_dish_consensus(
 
     let common_count = existing_names.intersection(&incoming_names).count();
     common_count >= 2 || (common_count >= 1 && (common_count * 2 >= existing_names.len() || common_count * 2 >= incoming_names.len()))
+}
+
+fn parse_dish_calories(raw: &Option<String>) -> Option<i32> {
+    let s = raw.as_ref()?;
+    let cleaned = s
+        .to_lowercase()
+        .replace("kcal", "")
+        .replace("kkal", "")
+        .replace("kalori", "")
+        .trim()
+        .to_string();
+    if let Ok(v) = cleaned.parse::<i32>() {
+        return Some(v);
+    }
+    let parts: Vec<&str> = cleaned.split(&['-', '–'][..]).map(|p| p.trim()).collect();
+    if parts.len() == 2 {
+        if let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
+            return Some((a + b) / 2);
+        }
+    }
+    None
 }
 
 #[derive(Hash, PartialEq, Eq, Clone, Debug)]
@@ -633,18 +687,129 @@ pub async fn upsert_menu(
             return Ok(false);
         }
 
+        let existing_dishes = menu_dishes::Entity::find()
+            .filter(menu_dishes::Column::MenuId.eq(m.id))
+            .find_also_related(shared::entities::dish_aliases::Entity)
+            .all(&txn)
+            .await?;
+
+        for (d, _) in &existing_dishes {
+            let key = if d.is_alternative {
+                DishSlotKey::Alternative(d.package_name.clone(), d.order_index, d.dish_alias_id)
+            } else {
+                DishSlotKey::Primary(d.package_name.clone(), d.order_index)
+            };
+            existing_map.insert(key, d.clone());
+        }
+        existing_dishes_list = existing_dishes;
+
         let current_priority = get_source_priority(m.source_type.as_deref().unwrap_or(""));
         let existing_source = m.source_type.as_deref().unwrap_or("");
         let incoming_is_quarantined = is_quarantined_source(&source_type);
         let existing_is_quarantined = is_quarantined_source(existing_source);
 
-        let should_archive_incoming = incoming_priority < current_priority
-            || (incoming_is_quarantined && !existing_is_quarantined);
+        // Dinamik Kalite Skoru (CQS) Hesaplaması
+        let existing_dish_inputs: Vec<shared::services::quality_score::DishInput> = existing_dishes_list
+            .iter()
+            .map(|(d, alias)| {
+                let name = alias.as_ref().map(|a| a.name.clone()).unwrap_or_default();
+                let weight = d.amount.as_ref().and_then(|a| {
+                    let num: String = a.chars().filter(|c| c.is_ascii_digit()).collect();
+                    num.parse::<i32>().ok()
+                });
+                shared::services::quality_score::DishInput {
+                    name,
+                    weight_g: weight,
+                    calories: d.calories,
+                    is_alternative: d.is_alternative,
+                }
+            })
+            .collect();
+
+        let existing_meal_str = match m.meal_type {
+            MealTypeEnum::Breakfast => "breakfast",
+            MealTypeEnum::Lunch => "lunch",
+            MealTypeEnum::Dinner => "dinner",
+        };
+
+        let existing_quality_input = shared::services::quality_score::MenuQualityInput {
+            meal_type: existing_meal_str.to_string(),
+            primary_dishes: existing_dish_inputs,
+            has_celiac: existing_dishes_list.iter().any(|(d, _)| d.package_name == "celiac" || d.package_name == "glutensiz"),
+            has_takeaways: existing_dishes_list.iter().any(|(d, _)| d.package_name != "standard" && d.package_name != "celiac" && d.package_name != "glutensiz"),
+            calorie_min: m.calorie_range_min,
+            calorie_max: m.calorie_range_max,
+            anomaly_score: None,
+            dictionary_match_ratio: None,
+        };
+        let existing_quality = shared::services::quality_score::QualityScoreService::calculate(&existing_quality_input);
+
+        let incoming_meal_str = match meal_type {
+            MealTypeEnum::Breakfast => "breakfast",
+            MealTypeEnum::Lunch => "lunch",
+            MealTypeEnum::Dinner => "dinner",
+        };
+
+        let mut incoming_dish_inputs = Vec::new();
+        for group in &dishes {
+            for (idx, comp) in group.iter().enumerate() {
+                if comp.name.trim().is_empty() {
+                    continue;
+                }
+                let cal = parse_dish_calories(&comp.calories);
+                let weight = comp.amount.as_ref().and_then(|a| {
+                    let num: String = a.chars().filter(|c| c.is_ascii_digit()).collect();
+                    num.parse::<i32>().ok()
+                });
+                incoming_dish_inputs.push(shared::services::quality_score::DishInput {
+                    name: comp.name.clone(),
+                    weight_g: weight,
+                    calories: cal,
+                    is_alternative: idx > 0,
+                });
+            }
+        }
+
+        let all_text = dishes
+            .iter()
+            .flat_map(|g| g.iter().map(|c| c.name.as_str()))
+            .collect::<Vec<_>>()
+            .join(" ");
+        let dict_ratio = crate::parser::dictionary::calculate_match_ratio(&all_text);
+
+        let incoming_quality_input = shared::services::quality_score::MenuQualityInput {
+            meal_type: incoming_meal_str.to_string(),
+            primary_dishes: incoming_dish_inputs,
+            has_celiac,
+            has_takeaways,
+            calorie_min: calorie_range_min,
+            calorie_max: calorie_range_max,
+            anomaly_score: None,
+            dictionary_match_ratio: Some(dict_ratio),
+        };
+        let incoming_quality = shared::services::quality_score::QualityScoreService::calculate(&incoming_quality_input);
+
+        let incoming_effective = incoming_priority * 100 + incoming_quality.total;
+        let existing_effective = current_priority * 100 + existing_quality.total;
+
+        let existing_is_degraded = existing_quality.total < 30;
+        let incoming_is_high_quality = incoming_quality.total >= 75;
+
+        let should_archive_incoming = if existing_is_degraded && incoming_is_high_quality {
+            tracing::info!(
+                "Bozulmuş kayıt kurtarma: mevcut menü ({}) skoru {} < 30 iken gelen menü ({}) skoru {} >= 75. Gelen menü tercih edildi.",
+                existing_source, existing_quality.total, source_type, incoming_quality.total
+            );
+            false
+        } else {
+            incoming_effective < existing_effective
+                || (incoming_is_quarantined && !existing_is_quarantined)
+        };
 
         if should_archive_incoming {
             tracing::debug!(
-                "Incoming menu for {} (meal: {:?}) from {} has lower priority or is quarantined compared to {}. Archiving incoming.",
-                date, meal_type, source_type, existing_source
+                "Incoming menu for {} (meal: {:?}) from {} has lower effective priority ({} vs {}) or is quarantined compared to {}. Archiving incoming.",
+                date, meal_type, source_type, incoming_effective, existing_effective, existing_source
             );
             let payload = serde_json::json!({
                 "dishes": dishes,
@@ -688,74 +853,30 @@ pub async fn upsert_menu(
             if m.status == MenuStatusEnum::Approved
                 && (calorie_range_min.is_some() || calorie_range_max.is_some())
                 && shared::services::source_registry::SourceRegistry::is_cross_family_consensus(existing_source, &source_type)
+                && check_dish_consensus(&existing_dishes_list, &dishes)
             {
-                let existing_dishes = menu_dishes::Entity::find()
-                    .filter(menu_dishes::Column::MenuId.eq(m.id))
-                    .find_also_related(shared::entities::dish_aliases::Entity)
-                    .all(&txn)
-                    .await?;
-
-                if check_dish_consensus(&existing_dishes, &dishes) {
-                    let mut update_m: menus::ActiveModel = m.clone().into();
-                    let mut changed = false;
-                    if m.calorie_range_min.is_none() && calorie_range_min.is_some() {
-                        update_m.calorie_range_min = Set(calorie_range_min);
-                        changed = true;
-                    }
-                    if m.calorie_range_max.is_none() && calorie_range_max.is_some() {
-                        update_m.calorie_range_max = Set(calorie_range_max);
-                        changed = true;
-                    }
-                    if changed {
-                        update_m.update(&txn).await?;
-                    }
+                let mut update_m: menus::ActiveModel = m.clone().into();
+                let mut changed = false;
+                if m.calorie_range_min.is_none() && calorie_range_min.is_some() {
+                    update_m.calorie_range_min = Set(calorie_range_min);
+                    changed = true;
+                }
+                if m.calorie_range_max.is_none() && calorie_range_max.is_some() {
+                    update_m.calorie_range_max = Set(calorie_range_max);
+                    changed = true;
+                }
+                if changed {
+                    update_m.update(&txn).await?;
                 }
             }
 
             txn.commit().await?;
             return Ok(!already_in_hist);
         }
-
-        let existing_dishes = menu_dishes::Entity::find()
-            .filter(menu_dishes::Column::MenuId.eq(m.id))
-            .find_also_related(shared::entities::dish_aliases::Entity)
-            .all(&txn)
-            .await?;
-
-        for (d, _) in &existing_dishes {
-            let key = if d.is_alternative {
-                DishSlotKey::Alternative(d.package_name.clone(), d.order_index, d.dish_alias_id)
-            } else {
-                DishSlotKey::Primary(d.package_name.clone(), d.order_index)
-            };
-            existing_map.insert(key, d.clone());
-        }
-        existing_dishes_list = existing_dishes;
     }
     
     // Build target_map
     let mut target_map: HashMap<DishSlotKey, (i32, Option<String>, Option<i32>)> = HashMap::new();
-    
-    let parse_dish_calories = |raw: &Option<String>| -> Option<i32> {
-        let s = raw.as_ref()?;
-        let cleaned = s
-            .to_lowercase()
-            .replace("kcal", "")
-            .replace("kkal", "")
-            .replace("kalori", "")
-            .trim()
-            .to_string();
-        if let Ok(v) = cleaned.parse::<i32>() {
-            return Some(v);
-        }
-        let parts: Vec<&str> = cleaned.split(&['-', '–'][..]).map(|p| p.trim()).collect();
-        if parts.len() == 2 {
-            if let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
-                return Some((a + b) / 2);
-            }
-        }
-        None
-    };
 
     let mut seen_package_aliases: std::collections::HashSet<(String, i32)> = std::collections::HashSet::new();
 
@@ -1194,6 +1315,8 @@ mod tests {
         assert!(super::is_quarantined_source("yurtmenu.net"));
         assert!(super::is_quarantined_source("yurtmenu.com"));
         assert!(super::is_quarantined_source("yurtmenu_live"));
+        assert!(super::is_quarantined_source("kykyemek-stale"));
+        assert!(super::is_quarantined_source("source-quarantine"));
         assert!(!super::is_quarantined_source("kykyemek.com"));
         assert!(!super::is_quarantined_source("kykmenum.com"));
         assert!(!super::is_quarantined_source("kepce-admin"));
@@ -1204,6 +1327,14 @@ mod tests {
         let kykmenum_prio = super::get_source_priority("kykmenum.com");
         assert!(kykyemek_prio > yurtmenu_prio);
         assert!(yurtmenu_prio > kykmenum_prio);
+    }
+
+    #[test]
+    fn test_parse_dish_calories() {
+        assert_eq!(super::parse_dish_calories(&Some("350 kcal".to_string())), Some(350));
+        assert_eq!(super::parse_dish_calories(&Some("200 - 300 kkal".to_string())), Some(250));
+        assert_eq!(super::parse_dish_calories(&Some("geçersiz".to_string())), None);
+        assert_eq!(super::parse_dish_calories(&None), None);
     }
 
     #[test]

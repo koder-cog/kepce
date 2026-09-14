@@ -77,7 +77,7 @@ impl SourceRegistry {
 
         // 2. Yurtmenu Ailesi (Karantina / Klon Ekosistemi - Tier 3)
         // yurtmenu.net ve kykyemekliste.com aynı altyapıyı paylaşır.
-        if s.contains("yurtmenu") || s.contains("kykyemekliste") || s.contains("alidnmz05") {
+        if s.contains("yurtmenu") || s.contains("kykyemekliste") || s.contains("alidnmz05") || s.contains("stale") || s.contains("quarantine") {
             return SourceMetadata {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Yurtmenu,
