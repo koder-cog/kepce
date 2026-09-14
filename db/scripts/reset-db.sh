@@ -21,9 +21,15 @@ echo "[UYARI] Lokal veritabanı sıfırlanıyor: $POSTGRES_DB..."
 $CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
 
 echo "[BİLGİ] Migrasyonlar sırayla koşturuluyor..."
+$CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+    "CREATE TABLE IF NOT EXISTS schema_migrations (version VARCHAR(255) PRIMARY KEY, applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP);"
+
 for sql in $(ls db/migrations/*.sql | sort); do
-    echo " -> $sql"
+    fname=$(basename "$sql")
+    echo " -> $fname"
     $CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f - < "$sql"
+    $CMD exec -i "$DB_CONTAINER" psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c \
+        "INSERT INTO schema_migrations (version) VALUES ('$fname') ON CONFLICT DO NOTHING;"
 done
 
 echo "[BİLGİ] Prod seed verileri koşturuluyor..."
