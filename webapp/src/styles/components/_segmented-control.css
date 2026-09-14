@@ -44,8 +44,7 @@
   }
 
   /* Dark mode indicator elevation & subtle top highlight */
-  html.dark .c-segmented-control__indicator,
-  :global(html.dark) .c-segmented-control__indicator {
+  html.dark .c-segmented-control__indicator {
     background: var(--color-surface-elevated, #2a2e2e);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3), inset 0 0.5px 0 rgba(255, 255, 255, 0.12);
     border: 1px solid var(--color-border);

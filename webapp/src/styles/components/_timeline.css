@@ -659,7 +659,7 @@
     width: 100%;
   }
 
-  .alternate-view__stack > :global(.meal-card) {
+  .alternate-view__stack > .meal-card {
     width: 100%;
     max-width: 100%;
   }

@@ -234,11 +234,15 @@
 	});
 
 	let updateCheckTimer;
+	let unsubUpdated;
 	onDestroy(() => {
 		if (updateCheckTimer) clearInterval(updateCheckTimer);
+		if (unsubUpdated) unsubUpdated();
 	});
 
 	onMount(async () => {
+		// SvelteKit updated store'unu initialize et
+		unsubUpdated = updated.subscribe(() => {});
 		updateCheckTimer = setInterval(() => {
 			updated.check().catch(() => {});
 		}, 15 * 60 * 1000);

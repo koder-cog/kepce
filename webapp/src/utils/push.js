@@ -56,7 +56,7 @@ export async function subscribeToPush(options = {}) {
   await navigator.serviceWorker.ready;
 
   // 3. Backend'den VAPID Public Key al
-  const keyRes = await fetch(`${API_BASE}/api/v1/public/push/vapid-public-key`);
+  const keyRes = await fetch(`${API_BASE}/public/push/vapid-public-key`);
   if (!keyRes.ok) {
     throw new Error('VAPID sunucu anahtarı alınamadı.');
   }
@@ -89,7 +89,7 @@ export async function subscribeToPush(options = {}) {
     user_agent: navigator.userAgent
   };
 
-  const saveRes = await fetch(`${API_BASE}/api/v1/public/push/subscribe`, {
+  const saveRes = await fetch(`${API_BASE}/public/push/subscribe`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
@@ -112,7 +112,7 @@ export async function unsubscribeFromPush() {
     const sub = await reg.pushManager.getSubscription();
     if (sub) {
       // Backend'den sil
-      await fetch(`${API_BASE}/api/v1/public/push/unsubscribe`, {
+      await fetch(`${API_BASE}/public/push/unsubscribe`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -138,7 +138,7 @@ export async function sendTestPush() {
     throw new Error('Aktif bildirim aboneliği bulunamadı. Lütfen önce bildirimleri açın.');
   }
 
-  const res = await fetch(`${API_BASE}/api/v1/public/push/test`, {
+  const res = await fetch(`${API_BASE}/public/push/test`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
