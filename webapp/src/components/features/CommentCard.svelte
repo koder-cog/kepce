@@ -109,7 +109,9 @@
         if (e) e.stopPropagation();
         const shortId = comment.id.substring(0, 7);
         const url = `${window.location.origin}/menu/${menuId}/${shortId}`;
-        const author = comment.author_username ? `@${comment.author_username}` : "Öğrenci";
+        const author = comment.author_username
+            ? `@${comment.author_username}`
+            : "Öğrenci";
         const shareData = {
             title: `Kepçe - ${author} yorumu`,
             text: `Kepçe'deki ${author} yorumu:`,
@@ -292,10 +294,18 @@
                             if (onloadData) await onloadData();
                             return true;
                         } catch (err) {
-                            showToast(
-                                err.message || "Yorum güncellenemedi.",
-                                "error",
-                            );
+                            const isSpam =
+                                err.message &&
+                                err.message.toLowerCase().includes("spam");
+                            showToast(err.message || "Yorum güncellenemedi.", {
+                                type: "error",
+                                action: isSpam
+                                    ? {
+                                          text: "Bilgi",
+                                          callback: () => openSpamInfoModal(),
+                                      }
+                                    : null,
+                            });
                             return false;
                         }
                     },

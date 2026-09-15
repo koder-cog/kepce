@@ -1,47 +1,39 @@
 <script>
     import Modal from "../ui/Modal.svelte";
-    import { icon } from "../ui/icons.js";
 
     let { controller, onClose } = $props();
 
     const modalOptions = {
-        title: "Ne oldu?",
+        title: "Yorumum neden yayınlanmadı?",
     };
 </script>
 
 <Modal options={modalOptions} {controller} {onClose}>
     <p class="u-mb-sm">
-        Yorumunuz sistem tarafından spam veya kurallara aykırılık sezdiği için
-        yayınlanmadı.
+        Sistem, yazdığınız yorumu otomatik güvenlik ve spam filtresine takıldığı
+        için yayınlayamadı.
     </p>
 
     <p class="u-mb-sm">
-        Sistemin yorumu spam olarak algılaması için aşağıdaki şartlardan birini
-        karşılaması gerekir:
+        Yorum alanının temiz ve güvenilir kalması adına harici bağlantı içeren,
+        aşırı harf tekrarı barındıran veya reklam şüphesi taşıyan iletiler
+        otomatik olarak durdurulur.
     </p>
-    <ul class="u-mb-md list-disc list-inside u-pl-md">
-        <li class="u-mb-xs">Bir yorumda 2 veya daha fazla link bulunması,</li>
-        <li class="u-mb-xs">
-            Yorumun tamamı (linkler hariç) 50 karakterden kısaysa, içerisinde
-            link bulunması,
-        </li>
-        <li class="u-mb-xs">
-            Aynı karakterin arka arkaya 10 defadan fazla tekrarlanması (örneğin: <em
-                >"aaaaaaaaaaa..."</em
-            >)
-        </li>
-    </ul>
 
-    <p class="color-muted">
-        Eğer yorumunuzun filtreye yanlışlıkla takıldığını veya kuralların aşırı
-        sıkı olduğunu düşünüyorsanız <a href="/iletişim"
+    <p class="u-mb-md">
+        Yorumunuzu sadeleştirip bağlantıları kaldırarak tekrar göndermeyi
+        deneyebilirsiniz.
+    </p>
+
+    <p class="color-muted text-sm">
+        Filtrenin hatalı çalıştığını düşünüyorsanız <a href="/iletisim"
             >iletişime geçebilirsiniz</a
         >.
     </p>
 
     {#snippet footer()}
-        <button class="btn btn--primary" onclick={() => controller.close()}
-            >Anladım</button
-        >
+        <button class="btn btn--primary" onclick={() => controller.close()}>
+            Anladım
+        </button>
     {/snippet}
 </Modal>

@@ -1,4 +1,113 @@
+use std::sync::OnceLock;
 use ammonia;
+
+const EMBEDDED_SHORTENERS_JSON: &str = include_str!("../../../config/security/url_shorteners.json");
+static BLOCKED_URLS: OnceLock<BlockedUrlConfig> = OnceLock::new();
+
+#[derive(Debug, serde::Deserialize)]
+struct BlockedUrlConfig {
+    shortener_domains: Vec<String>,
+    chat_invite_domains: Vec<String>,
+    suspicious_tlds: Vec<String>,
+}
+
+fn get_blocked_urls() -> &'static BlockedUrlConfig {
+    BLOCKED_URLS.get_or_init(|| {
+        serde_json::from_str(EMBEDDED_SHORTENERS_JSON).unwrap_or_else(|e| {
+            tracing::error!("URL shorteners JSON parse hatası: {:?}", e);
+            BlockedUrlConfig {
+                shortener_domains: Vec::new(),
+                chat_invite_domains: Vec::new(),
+                suspicious_tlds: Vec::new(),
+            }
+        })
+    })
+}
+
+fn contains_domain(text: &str, domain: &str) -> bool {
+    for (pos, _) in text.match_indices(domain) {
+        let prefix_ok = if pos == 0 {
+            true
+        } else {
+            let prev_char = text[..pos].chars().last().unwrap();
+            !prev_char.is_alphanumeric()
+        };
+        let after_pos = pos + domain.len();
+        let suffix_ok = if after_pos >= text.len() {
+            true
+        } else {
+            let next_char = text[after_pos..].chars().next().unwrap();
+            !next_char.is_alphanumeric()
+        };
+        if prefix_ok && suffix_ok {
+            return true;
+        }
+    }
+    false
+}
+
+fn contains_suspicious_tld(text: &str, tld: &str) -> bool {
+    for (pos, _) in text.match_indices(tld) {
+        let prefix_has_alphanumeric = if pos == 0 {
+            false
+        } else {
+            let prev_char = text[..pos].chars().last().unwrap();
+            prev_char.is_alphanumeric()
+        };
+        let after_pos = pos + tld.len();
+        let suffix_ok = if after_pos >= text.len() {
+            true
+        } else {
+            let next_char = text[after_pos..].chars().next().unwrap();
+            !next_char.is_alphanumeric()
+        };
+        if prefix_has_alphanumeric && suffix_ok {
+            return true;
+        }
+    }
+    false
+}
+
+fn extract_links(text: &str) -> Vec<String> {
+    let mut links = Vec::new();
+    let normalized = text.to_lowercase();
+    let mut prefixes: Vec<usize> = Vec::new();
+
+    for (pos, _) in normalized.match_indices("http://") {
+        prefixes.push(pos);
+    }
+    for (pos, _) in normalized.match_indices("https://") {
+        prefixes.push(pos);
+    }
+    for (pos, _) in normalized.match_indices("ftp://") {
+        prefixes.push(pos);
+    }
+    for (pos, _) in normalized.match_indices("www.") {
+        if pos < 3 || !normalized[..pos].ends_with("://") {
+            prefixes.push(pos);
+        }
+    }
+
+    prefixes.sort_unstable();
+    prefixes.dedup();
+
+    let mut last_end = 0;
+    for start in prefixes {
+        if start < last_end {
+            continue;
+        }
+        let remainder = &normalized[start..];
+        let link_end = remainder
+            .find(|c: char| c.is_whitespace())
+            .unwrap_or(remainder.len());
+        last_end = start + link_end;
+        let raw_link = &remainder[..link_end];
+        let trimmed = raw_link.trim_end_matches(['.', ',', ';', '!', '?', ')', ']', '>', '"', '\'']);
+        links.push(trimmed.to_string());
+    }
+
+    links
+}
 
 pub struct ContentGuard;
 
@@ -9,22 +118,51 @@ impl ContentGuard {
         ammonia::clean(input)
     }
 
-    /// Basit spam kontrolü (Link tespiti ve anlamsız karakter tekrarı)
+    /// Gelişmiş spam kontrolü:
+    /// 1. Kısaltıcılar (bit.ly, tinyurl vb.) ve sohbet davetleri (t.me, wa.me) tek bir tane dahi olsa engellenir.
+    /// 2. Kötü şöhretli TLD'ler (.xyz, .top, .buzz vb.) tek bağlantıda dahi engellenir.
+    /// 3. İç linkler (kepce.org) spam sayımından düşülür.
+    /// 4. Dış bağlantı sayısı 2 veya daha fazlaysa (veya 1 dış bağlantı varken metin < 50 karakterse) spam sayılır.
+    /// 5. 10'dan fazla aynı harf tekrarı engellenir.
     pub fn is_spam(input: &str) -> bool {
         let normalized = input.to_lowercase();
-        let link_count = normalized.matches("http://").count()
-            + normalized.matches("https://").count()
-            + normalized.matches("www.").count()
-            + normalized.matches("ftp://").count();
-            
-        if link_count >= 2 || (link_count >= 1 && input.len() < 50) {
+        let config = get_blocked_urls();
+
+        // 1. Kısaltıcılar veya sohbet davetleri doğrudan spam
+        for domain in &config.shortener_domains {
+            if contains_domain(&normalized, domain) {
+                return true;
+            }
+        }
+        for domain in &config.chat_invite_domains {
+            if contains_domain(&normalized, domain) {
+                return true;
+            }
+        }
+
+        // 2. Şüpheli TLD'ler (.xyz, .top, .buzz vb.) doğrudan spam
+        for tld in &config.suspicious_tlds {
+            if contains_suspicious_tld(&normalized, tld) {
+                return true;
+            }
+        }
+
+        // 3. Linkleri çıkar ve iç bağlantıları (kepce.org) muaf tut
+        let all_links = extract_links(&normalized);
+        let external_links: Vec<&String> = all_links
+            .iter()
+            .filter(|link| !link.contains("kepce.org") && !link.contains("localhost"))
+            .collect();
+
+        if external_links.len() >= 2 || (external_links.len() == 1 && input.len() < 50) {
             return true;
         }
-        
+
+        // 4. Anlamsız karakter tekrarı kontrolü (10'dan fazla aynı harf)
         let mut max_repeat = 0;
         let mut current_repeat = 1;
         let mut prev_char = '\0';
-        
+
         for c in input.chars() {
             if c.is_alphabetic() {
                 if c == prev_char {
@@ -38,7 +176,7 @@ impl ContentGuard {
                 prev_char = c;
             }
         }
-        
+
         if max_repeat > 10 {
             return true;
         }
@@ -201,6 +339,22 @@ mod tests {
         assert!(ContentGuard::is_spam("Linkler: www.site1.com ve www.site2.com adresleri."));
         assert!(ContentGuard::is_spam("Çooook lezzetliiiiiiiiiii bir yemekti."));
         assert!(!ContentGuard::is_spam("Çooook lezzetliiiii bir yemekti."));
+
+        // İç linkler (kepce.org) spam sayılmaz, birden fazla olsa dahi izin verilir
+        assert!(!ContentGuard::is_spam("Dünkü menü https://kepce.org/istanbul/2026-09-14 ile bugünkü https://www.kepce.org/istanbul/2026-09-15 menüsü çok farklıydı."));
+        assert!(!ContentGuard::is_spam("Menü linki: https://kepce.org/istanbul"));
+
+        // URL kısaltıcılar tek başına dahi olsa anında engellenir
+        assert!(ContentGuard::is_spam("Burs çekilişi için şu bağlantıya tıklayın: bit.ly/kyk-burs"));
+        assert!(ContentGuard::is_spam("Öğrenci indirimleri için tinyurl.com/ogrenci adresini ziyaret edebilirsiniz arkadaslar"));
+        
+        // Telegram ve WhatsApp sohbet davetleri engellenir
+        assert!(ContentGuard::is_spam("Kyk yemekhane grubumuz açıldı katılın: t.me/kykyemekhane"));
+        assert!(ContentGuard::is_spam("Sorular için wa.me/905551234567 numarasından yazabilirsiniz"));
+
+        // Şüpheli TLD'ler (.xyz, .top vb.) engellenir
+        assert!(ContentGuard::is_spam("Yeni bir platform açılmış arkadaşlar: https://kykmenu.xyz/giris"));
+        assert!(ContentGuard::is_spam("Yemek listesi burada mevcut: menuler.top"));
     }
 
     #[test]
