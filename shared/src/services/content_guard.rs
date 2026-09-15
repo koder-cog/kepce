@@ -143,6 +143,13 @@ impl ContentGuard {
             "basarilar dileriz",
             "itibariyla",
             "itibariyle",
+            // Scraper kaynak sitelerindeki (kykyemek.com vb.) liste yok placeholder duyuruları
+            "elimize ulasir",
+            "siteye eklenecektir",
+            "elinizde liste",
+            "bize iletebilir",
+            "odullerden yararlanabilirsiniz",
+            "kykyemek",
         ];
 
         for kw in blocked_keywords {
@@ -224,6 +231,9 @@ mod tests {
         assert!(ContentGuard::is_junk_dish_text("Gün Menüsü"));
         assert!(ContentGuard::is_junk_dish_text(
             "14 Eylül itibarıyla yeni dönem listeleri girilmeye başlanacak. Herkese yeni dönemde başarılar dileriz."
+        ));
+        assert!(ContentGuard::is_junk_dish_text(
+            "Listeler Elimize Ulaşır Ulaşmaz Siteye Eklenecektir. Elinizde Liste Mevcutsa Üye Olarak Bize İletebilir, Ödüllerden Yararlanabilirsiniz"
         ));
 
         // Valid dishes

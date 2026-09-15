@@ -12,6 +12,11 @@ describe("isPlaceholderDishText", () => {
     ).toBe(true);
     expect(isPlaceholderDishText("Yeni dönemde tüm öğrencilere başarılar dileriz")).toBe(true);
     expect(isPlaceholderDishText("Duyuru: Ramazan ayı boyunca yemek saatleri...")).toBe(true);
+    expect(
+      isPlaceholderDishText(
+        "Listeler Elimize Ulaşır Ulaşmaz Siteye Eklenecektir. Elinizde Liste Mevcutsa Üye Olarak Bize İletebilir, Ödüllerden Yararlanabilirsiniz"
+      )
+    ).toBe(true);
   });
 
   it("site navigasyon kalıntılarını yakalar (kykmenu scrape çöpleri)", () => {
