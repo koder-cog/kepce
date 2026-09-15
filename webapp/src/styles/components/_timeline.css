@@ -505,7 +505,7 @@
     }
 
     .timeline__notice-wrapper {
-      padding-left: 0;
+      padding-left: 0 !important;
     }
   }
 
@@ -664,7 +664,7 @@
     width: 100%;
   }
 
-  .alternate-view__stack > .meal-card {
+  .alternate-view__stack>.meal-card {
     width: 100%;
     max-width: 100%;
   }
