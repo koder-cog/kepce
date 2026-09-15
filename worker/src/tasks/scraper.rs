@@ -633,18 +633,67 @@ pub async fn upsert_menu(
     calorie_range_min: Option<i32>,
     calorie_range_max: Option<i32>,
 ) -> Result<bool> {
-    // Yapısal kalite kapısı: içeriği tamamen boş olan kayıtlar (parser tüm
-    // satırları çöp diye elerse ya da kaynak site boş döndüyse) slot işgal
-    // etmesin. Böyle bir menü insert edilirse fallback/gap-fill "kayıt var"
-    // görüp o şehir/gün/öğün kombinasyonunu bir daha doldurmaz.
-    let has_standard = dishes.iter().any(|group| group.iter().any(|c| !c.name.trim().is_empty()));
-    let has_celiac = celiac_dishes.iter().any(|group| group.iter().any(|c| !c.name.trim().is_empty()));
-    let has_takeaways = takeaways.iter().any(|(_, groups)| groups.iter().any(|group| group.iter().any(|c| !c.name.trim().is_empty())));
+    // Yapısal kalite ve çöp metin kapısı:
+    // 1. Her bir bileşeni ContentGuard ile kontrol et; çöp navigasyon ve bürokrat adlarını filtrele.
+    let dishes: Vec<Vec<crate::parser::models::MenuComponent>> = dishes
+        .into_iter()
+        .map(|group| {
+            group
+                .into_iter()
+                .filter(|c| {
+                    let trimmed = c.name.trim();
+                    !trimmed.is_empty() && !shared::services::content_guard::ContentGuard::is_junk_dish_text(trimmed)
+                })
+                .collect::<Vec<_>>()
+        })
+        .filter(|group| !group.is_empty())
+        .collect();
 
-    if !has_standard && !has_celiac && !has_takeaways {
+    let celiac_dishes: Vec<Vec<crate::parser::models::MenuComponent>> = celiac_dishes
+        .into_iter()
+        .map(|group| {
+            group
+                .into_iter()
+                .filter(|c| {
+                    let trimmed = c.name.trim();
+                    !trimmed.is_empty() && !shared::services::content_guard::ContentGuard::is_junk_dish_text(trimmed)
+                })
+                .collect::<Vec<_>>()
+        })
+        .filter(|group| !group.is_empty())
+        .collect();
+
+    let takeaways: Vec<(String, Vec<Vec<crate::parser::models::MenuComponent>>)> = takeaways
+        .into_iter()
+        .map(|(pkg, groups)| {
+            let filtered_groups: Vec<Vec<crate::parser::models::MenuComponent>> = groups
+                .into_iter()
+                .map(|group| {
+                    group
+                        .into_iter()
+                        .filter(|c| {
+                            let trimmed = c.name.trim();
+                            !trimmed.is_empty() && !shared::services::content_guard::ContentGuard::is_junk_dish_text(trimmed)
+                        })
+                        .collect::<Vec<_>>()
+                })
+                .filter(|group| !group.is_empty())
+                .collect();
+            (pkg, filtered_groups)
+        })
+        .filter(|(_, groups)| !groups.is_empty())
+        .collect();
+
+    let valid_primary_count = dishes.len();
+    let has_celiac = !celiac_dishes.is_empty();
+    let has_takeaways = !takeaways.is_empty();
+
+    // Bir KYK menüsünün geçerli sayılabilmesi için en az 2 geçerli yemek içermesi gerekir.
+    // Navigasyon kalıntısı tekil satırlar veya tüm satırları çöp olan menüler veritabanına alınmaz.
+    if valid_primary_count < 2 && !has_celiac && !has_takeaways {
         tracing::warn!(
-            "upsert_menu reddedildi: geçerli içeriği olmayan kayıt (city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
-            city_id, date, meal_type, source_type
+            "upsert_menu reddedildi: yetersiz veya çöp yemek listesi (geçerli kap: {}, city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
+            valid_primary_count, city_id, date, meal_type, source_type
         );
         return Ok(false);
     }

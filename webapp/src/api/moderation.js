@@ -16,6 +16,11 @@ export const moderationApi = {
       method: 'POST',
       body: JSON.stringify({ notes }),
     }),
+  bulkUpdateMenuStatus: (menuIds, status) =>
+    request('/moderation/menus/bulk-status', {
+      method: 'POST',
+      body: JSON.stringify({ menu_ids: menuIds, status }),
+    }),
   updateMenuCommentary: (menuId, bot_commentary) =>
     request(`/moderation/menus/${menuId}/commentary`, {
       method: 'PUT',

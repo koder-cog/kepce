@@ -9,3 +9,4 @@ pub mod indexnow;
 pub mod enrich_takeaway;
 pub mod telegram_bot;
 pub mod dish_reconciler;
+pub mod sanitizer;

@@ -75,7 +75,7 @@ pub fn parse_kykmenum_html(html_content: &str) -> Option<KykMenumDayMenu> {
                     }
                 }
             }
-            if !dish_groups.is_empty() {
+            if dish_groups.len() >= 2 {
                 *target = Some(dish_groups);
             }
         }

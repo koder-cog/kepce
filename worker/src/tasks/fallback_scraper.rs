@@ -611,7 +611,7 @@ fn parse_kykmenu_api(body: &str) -> Option<ParsedMeals> {
             }];
             groups.push(group);
         }
-        if groups.is_empty() {
+        if groups.len() < 2 {
             None
         } else {
             Some(groups)

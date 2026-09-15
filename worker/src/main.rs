@@ -26,6 +26,17 @@ async fn main() -> anyhow::Result<()> {
     let db: DbConn = Database::connect(db_opts).await?;
     tracing::info!("Veritabanı bağlantısı başarılı.");
 
+    // Otomatik Kendini Tamir Eden Temizleyici (Self-Healing Sanitizer)
+    // Worker her açıldığında ve periyodik derin uzlaşma sırasında sisteme sızan
+    // çöp verileri, navigasyon kalıntılarını ve geçersiz menüleri temizler.
+    if let Err(e) = tasks::sanitizer::sanitize_and_repair_database(&db).await {
+        tracing::error!("[SELF-HEAL] Başlangıç veritabanı temizleme hatası: {:?}", e);
+    }
+    if std::env::var("WORKER_SELF_HEAL").is_ok() && std::env::var("WORKER_ONESHOT").is_ok() {
+        tracing::info!("[SELF-HEAL] Tek seferlik sistem temizliği tamamlandı. Çıkış yapılıyor.");
+        return Ok(());
+    }
+
     // One-shot lokal dosya ingest (admin/kullanıcı Excel-PDF drop-zone).
     // Triggered only when WORKER_LOCAL_INGEST is set; safe to re-run.
     // Başarılı dosyalar vault'a taşınır, hatalılar hatali/ klasörüne düşer.
@@ -360,6 +371,11 @@ async fn main() -> anyhow::Result<()> {
                     Err(e) => {
                         tracing::error!("[RECONCILE] Gece yemek uzlaşması hatası: {:?}", e);
                     }
+                }
+
+                tracing::info!("--- [RECONCILE] GECE KENDİNİ TAMİR VE ÇÖP TEMİZLEME BAŞLIYOR ---");
+                if let Err(e) = tasks::sanitizer::sanitize_and_repair_database(&db_reconcile).await {
+                    tracing::error!("[RECONCILE] Gece sistem temizleme hatası: {:?}", e);
                 }
             }
 

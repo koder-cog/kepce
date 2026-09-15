@@ -216,6 +216,8 @@ mod tests {
 
         // Site navigasyon/başlık kalıntıları (kykmenu.com.tr scrape kazıntısı)
         assert!(ContentGuard::is_junk_dish_text("←İstanbul KYK Menüsü"));
+        assert!(ContentGuard::is_junk_dish_text("←adana Kyk Menüsü"));
+        assert!(ContentGuard::is_junk_dish_text("Kahvaltıakşam"));
         assert!(ContentGuard::is_junk_dish_text("→ Kayseri KYK Menüsü"));
         assert!(ContentGuard::is_junk_dish_text("- Kahvaltı Yemek Listesi"));
         assert!(ContentGuard::is_junk_dish_text("- Akşam Yemeği Yemek Listesi"));

@@ -11,7 +11,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 use crate::services::moderation::ModerationService;
 use crate::services::bot::{BotService, BotError};
-use crate::dto::moderation::{ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto, ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto, InjectBotCommentsDto, InjectBotCommentsResponseDto};
+use crate::dto::moderation::{ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto, ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto, InjectBotCommentsDto, InjectBotCommentsResponseDto, BulkUpdateMenuStatusDto, BulkUpdateMenuStatusResponseDto};
 use crate::dto::user::UserRole;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
@@ -30,6 +30,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/reports/:report_id/resolve", post(resolve_report))
         .route("/pending", get(get_pending_menus))
         .route("/menus", get(get_menus))
+        .route("/menus/bulk-status", post(bulk_update_menu_status))
         .route("/:menu_id/approve", post(approve_menu))
         .route("/:menu_id/reject", post(reject_menu))
         .route("/menus/:menu_id/commentary", put(update_menu_commentary))
@@ -453,6 +454,67 @@ async fn reject_menu(
 
     Ok(Json(()))
 }
+
+async fn bulk_update_menu_status(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    ValidatedJson(payload): ValidatedJson<BulkUpdateMenuStatusDto>,
+) -> Result<Json<BulkUpdateMenuStatusResponseDto>, AppError> {
+    require_admin(&user)?;
+
+    let target_status = match payload.status.to_lowercase().as_str() {
+        "approved" => shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved,
+        "rejected" => shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected,
+        _ => return Err(AppError::BadRequest("Geçersiz menü durumu (yalnızca 'approved' veya 'rejected')".to_string())),
+    };
+
+    let target_menus = Menus::find()
+        .filter(menus::Column::Id.is_in(payload.menu_ids.clone()))
+        .all(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let mut updated_count = 0;
+    for original_menu in target_menus {
+        let menu_id = original_menu.id;
+        let submitter_id = original_menu.submitted_by;
+        let mut active: menus::ActiveModel = original_menu.into();
+        active.status = Set(target_status.clone());
+        active.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+        updated_count += 1;
+
+        if target_status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved {
+            let _ = shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id).await;
+            if let Some(sub_id) = submitter_id {
+                let action_url = format!("/menu/{}", menu_id);
+                let _ = crate::services::notification::NotificationService::send_notification(
+                    &db,
+                    sub_id,
+                    "moderation",
+                    "Menü Gönderin Onaylandı",
+                    "Gönderdiğin menü moderatörler tarafından incelendi ve yayına alındı.",
+                    Some("Menüyü Gör"),
+                    Some(&action_url),
+                ).await;
+            }
+        } else if target_status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected {
+            if let Some(sub_id) = submitter_id {
+                let _ = crate::services::notification::NotificationService::send_notification(
+                    &db,
+                    sub_id,
+                    "moderation",
+                    "Menü Gönderin Reddedildi",
+                    "Gönderdiğin menü inceleme sonucunda uygun bulunmadı.",
+                    None,
+                    None,
+                ).await;
+            }
+        }
+    }
+
+    Ok(Json(BulkUpdateMenuStatusResponseDto { updated_count }))
+}
+
 
 async fn update_menu_commentary(
     State(db): State<sea_orm::DatabaseConnection>,

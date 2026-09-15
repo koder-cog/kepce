@@ -255,3 +255,17 @@ pub struct InjectBotCommentEntryDto {
 pub struct InjectBotCommentsResponseDto {
     pub updated_count: usize,
 }
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct BulkUpdateMenuStatusDto {
+    #[validate(length(min = 1, message = "En az bir menü seçilmelidir"))]
+    pub menu_ids: Vec<i32>,
+    #[validate(length(min = 1, max = 20, message = "Durum geçerli olmalıdır"))]
+    pub status: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct BulkUpdateMenuStatusResponseDto {
+    pub updated_count: usize,
+}
+

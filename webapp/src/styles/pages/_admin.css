@@ -87,15 +87,15 @@
 
   /* Action columns - right-aligned by convention */
   .admin-table .col-actions {
-    text-align: right;
     width: 120px;
-    position: relative;
-
+    text-align: right;
+    white-space: nowrap;
   }
 
-  .admin-table .col-actions-wide {
-    text-align: right;
-    width: 150px;
+  .admin-table .col-select {
+    width: 44px;
+    text-align: center;
+    white-space: nowrap;
   }
 
   /* Summary / Total row */
@@ -1081,5 +1081,28 @@
   /* ── Native Details Element ────────────────────────────────── */
   .admin-aliases-expander summary::-webkit-details-marker {
     display: none;
+  }
+
+  /* ── Admin Month Bulk Action Header ────────────────────────── */
+  .admin-month-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .admin-month-title-group {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .admin-month-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
   }
 }

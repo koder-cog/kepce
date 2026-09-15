@@ -293,6 +293,103 @@
     }
   }
 
+  let isBulkProcessing = $state(false);
+  let selectedMenuIds = $state(new Set());
+
+  function toggleSelectMenu(id) {
+    const next = new Set(selectedMenuIds);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
+    selectedMenuIds = next;
+  }
+
+  function toggleSelectAllMonth(menus) {
+    const allSelected = menus.length > 0 && menus.every((m) => selectedMenuIds.has(m.id));
+    const next = new Set(selectedMenuIds);
+    if (allSelected) {
+      menus.forEach((m) => next.delete(m.id));
+    } else {
+      menus.forEach((m) => next.add(m.id));
+    }
+    selectedMenuIds = next;
+  }
+
+  async function handleBulkApprovePending(menus) {
+    const pending = menus.filter((m) => m.status === 'pending');
+    if (pending.length === 0) {
+      showToast("Bu ayda onay bekleyen menü bulunamadı.");
+      return;
+    }
+    isBulkProcessing = true;
+    try {
+      const res = await api.bulkUpdateMenuStatus(pending.map((m) => m.id), 'approved');
+      showToast(`${res.updated_count} menü toplu onaylandı!`);
+      fetchMenus();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      isBulkProcessing = false;
+    }
+  }
+
+  async function handleBulkRejectMonth(menus) {
+    if (!confirm(`Bu aydaki ${menus.length} menünün tamamını reddetmek istediğinize emin misiniz?`)) {
+      return;
+    }
+    isBulkProcessing = true;
+    try {
+      const res = await api.bulkUpdateMenuStatus(menus.map((m) => m.id), 'rejected');
+      showToast(`${res.updated_count} menü toplu reddedildi.`, 'danger');
+      fetchMenus();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      isBulkProcessing = false;
+    }
+  }
+
+  async function handleBulkApproveSelected(menus) {
+    const selected = menus.filter((m) => selectedMenuIds.has(m.id));
+    if (selected.length === 0) return;
+    isBulkProcessing = true;
+    try {
+      const res = await api.bulkUpdateMenuStatus(selected.map((m) => m.id), 'approved');
+      showToast(`${res.updated_count} seçili menü onaylandı!`);
+      const next = new Set(selectedMenuIds);
+      selected.forEach((m) => next.delete(m.id));
+      selectedMenuIds = next;
+      fetchMenus();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      isBulkProcessing = false;
+    }
+  }
+
+  async function handleBulkRejectSelected(menus) {
+    const selected = menus.filter((m) => selectedMenuIds.has(m.id));
+    if (selected.length === 0) return;
+    if (!confirm(`Seçilen ${selected.length} menüyü reddetmek istediğinize emin misiniz?`)) {
+      return;
+    }
+    isBulkProcessing = true;
+    try {
+      const res = await api.bulkUpdateMenuStatus(selected.map((m) => m.id), 'rejected');
+      showToast(`${res.updated_count} seçili menü reddedildi.`, 'danger');
+      const next = new Set(selectedMenuIds);
+      selected.forEach((m) => next.delete(m.id));
+      selectedMenuIds = next;
+      fetchMenus();
+    } catch (err) {
+      showToast(err.message, 'error');
+    } finally {
+      isBulkProcessing = false;
+    }
+  }
+
   async function approveMenu(id) {
     try {
       await api.approveMenu(id);
@@ -386,13 +483,75 @@
       <div class="u-mb-xl">
         <h3 class="u-mb-md">{city}</h3>
         {#each months as { monthKey, monthName, menus } (monthKey)}
+          {@const pendingCount = menus.filter((m) => m.status === 'pending').length}
+          {@const approvedCount = menus.filter((m) => m.status === 'approved').length}
+          {@const rejectedCount = menus.filter((m) => m.status === 'rejected').length}
+          {@const selectedInMonthCount = menus.filter((m) => selectedMenuIds.has(m.id)).length}
+          {@const allSelectedInMonth = menus.length > 0 && selectedInMonthCount === menus.length}
           <div class="u-mb-lg">
-            <h4 class="u-mb-md u-color-accent-primary">{monthName}</h4>
+            <div class="admin-month-header">
+              <div class="admin-month-title-group">
+                <h4 class="u-color-accent-primary">{monthName}</h4>
+                <span class="u-text-xs u-color-muted">
+                  {menus.length} Menü ({pendingCount} Bekleyen, {approvedCount} Onaylı, {rejectedCount} Reddedildi)
+                </span>
+              </div>
+              <div class="admin-month-actions">
+                {#if selectedInMonthCount > 0}
+                  <button
+                    type="button"
+                    class="btn btn--sm btn--success btn--squish"
+                    disabled={isBulkProcessing}
+                    onclick={() => handleBulkApproveSelected(menus)}
+                  >
+                    Seçilenleri Onayla ({selectedInMonthCount})
+                  </button>
+                  <button
+                    type="button"
+                    class="btn btn--sm btn--danger btn--squish"
+                    disabled={isBulkProcessing}
+                    onclick={() => handleBulkRejectSelected(menus)}
+                  >
+                    Seçilenleri Reddet ({selectedInMonthCount})
+                  </button>
+                {:else}
+                  {#if pendingCount > 0}
+                    <button
+                      type="button"
+                      class="btn btn--sm btn--success btn--squish"
+                      disabled={isBulkProcessing}
+                      onclick={() => handleBulkApprovePending(menus)}
+                    >
+                      Bekleyenleri Onayla ({pendingCount})
+                    </button>
+                  {/if}
+                  <button
+                    type="button"
+                    class="btn btn--sm btn--danger btn--squish"
+                    disabled={isBulkProcessing}
+                    onclick={() => handleBulkRejectMonth(menus)}
+                  >
+                    Tümünü Reddet
+                  </button>
+                {/if}
+              </div>
+            </div>
             <div class="admin-table-wrapper">
               <table class="admin-table admin-table--hybrid">
                 <thead>
                   <tr>
-                    <th>Tarih</th>
+                    <th>
+                      <div class="u-flex u-items-center u-gap-xs">
+                        <input
+                          type="checkbox"
+                          checked={allSelectedInMonth}
+                          onchange={() => toggleSelectAllMonth(menus)}
+                          title="Tümünü seç / kaldır"
+                          aria-label="Bu aydaki tüm menüleri seç"
+                        />
+                        <span>Tarih</span>
+                      </div>
+                    </th>
                     <th>Öğün</th>
                     <th>Durum</th>
                     <th>Bot yorumu</th>
@@ -403,11 +562,19 @@
                   {#each menus as menu (menu.id)}
                     <tr data-id={menu.id}>
                       <td>
-                        <div class="admin-table-cell--primary">
-                          {(() => {
-                            const [, m, d] = menu.date.split("-");
-                            return `${parseInt(d, 10)} ${monthsTR[parseInt(m, 10) - 1]}`;
-                          })()}
+                        <div class="u-flex u-items-center u-gap-xs">
+                          <input
+                            type="checkbox"
+                            checked={selectedMenuIds.has(menu.id)}
+                            onchange={() => toggleSelectMenu(menu.id)}
+                            aria-label="Menü seç"
+                          />
+                          <div class="admin-table-cell--primary">
+                            {(() => {
+                              const [, m, d] = menu.date.split("-");
+                              return `${parseInt(d, 10)} ${monthsTR[parseInt(m, 10) - 1]}`;
+                            })()}
+                          </div>
                         </div>
                       </td>
                       <td
