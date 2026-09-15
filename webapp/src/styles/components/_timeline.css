@@ -711,7 +711,7 @@
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
-    color: var(--color-warning);
+    color: var(--color-text);
   }
 
   .status-card__notice-text {
