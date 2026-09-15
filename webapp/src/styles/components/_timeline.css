@@ -503,6 +503,10 @@
       gap: var(--space-lg);
       margin-bottom: var(--space-xl);
     }
+
+    .timeline__notice-wrapper {
+      padding-left: 0;
+    }
   }
 
   /* ── Off-season Single Meal Timeline Layout ─────────────────── */
@@ -510,7 +514,8 @@
     padding-left: 0;
   }
 
-  .timeline--off-season .timeline__content {
+  .timeline--off-season .timeline__content,
+  .timeline--off-season .timeline__notice-wrapper {
     padding-left: 0;
   }
 
@@ -685,6 +690,8 @@
   .timeline__notice-wrapper {
     margin-bottom: var(--space-xl);
     width: 100%;
+    padding-left: var(--space-xl);
+    transition: padding-left var(--dur-standard) var(--ease-standard);
   }
 
   .status-card--notice {
