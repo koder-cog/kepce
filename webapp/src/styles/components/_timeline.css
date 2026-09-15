@@ -320,7 +320,7 @@
     width: 100%;
   }
 
-  /* ── Timeline Layout ───────────────────────────────────────── */
+  /* ── timeline layout ───────────────────────────────────────── */
 
   .timeline {
     position: relative;
@@ -384,9 +384,7 @@
   .timeline__time {
     position: absolute;
     left: -108px;
-    /* Aligned with the 130px line (140px padding - 10px) */
     top: 46px;
-    /* Optimized for text baseline/center of title */
     background: var(--color-background);
     z-index: 10;
     white-space: nowrap;
@@ -424,22 +422,36 @@
     grid-template-columns: 1fr;
   }
 
-  @media (max-width: 600px) {
-    .daily-header {
-      flex-direction: column;
-      align-items: stretch;
-      gap: var(--space-lg);
-    }
+  /* ── timeline notice banner ────────────────────────────────── */
 
-    .month-nav-wrapper {
-      justify-content: center;
-      width: 100%;
-    }
+  .timeline__notice-wrapper {
+    margin-bottom: var(--space-xl);
+    width: 100%;
+    padding-left: var(--space-xl);
+    transition: padding-left var(--dur-standard) var(--ease-standard);
+  }
 
-    .city-pill {
-      width: 100%;
-      justify-content: center;
-    }
+  /* ── off-season single meal timeline layout ─────────────────── */
+
+  .timeline--off-season {
+    padding-left: 0;
+  }
+
+  .timeline--off-season .timeline__content,
+  .timeline--off-season .timeline__notice-wrapper {
+    padding-left: 0;
+  }
+
+  .timeline--off-season .timeline__notice-wrapper {
+    margin-bottom: var(--space-md);
+  }
+
+  .timeline--off-season .timeline__line {
+    display: none;
+  }
+
+  .timeline--off-season .timeline__time {
+    display: none;
   }
 
   @media (max-width: 900px) {
@@ -457,7 +469,9 @@
       display: contents;
     }
 
-
+    .timeline__slot--breakfast.timeline__slot--hidden {
+      display: none !important;
+    }
 
     .timeline__content {
       display: contents;
@@ -496,7 +510,6 @@
       order: 5;
     }
 
-
     .timeline__meal-wrapper {
       display: flex;
       flex-direction: column;
@@ -507,26 +520,10 @@
     .timeline__notice-wrapper {
       padding-left: 0 !important;
     }
-  }
 
-  /* ── Off-season Single Meal Timeline Layout ─────────────────── */
-  .timeline--off-season {
-    padding-left: 0;
-  }
-
-  .timeline--off-season .timeline__content,
-  .timeline--off-season .timeline__notice-wrapper {
-    padding-left: 0;
-  }
-
-  .timeline--off-season .timeline__line {
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .timeline--off-season .timeline__time {
-    opacity: 0;
-    pointer-events: none;
+    .timeline--off-season .timeline__time {
+      display: none !important;
+    }
   }
 
   /* ── Season / Orientation Guides ────────────────────────────── */
