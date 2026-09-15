@@ -678,6 +678,8 @@
     .alternate-view__title {
       font-size: var(--text-xl);
     }
+  }
+
   /* ── Timeline Notice Banner ────────────────────────────────── */
 
   .timeline__notice-wrapper {
