@@ -48,6 +48,9 @@ impl From<ModerationError> for AppError {
             ModerationError::DateParseError(d) => {
                 AppError::BadRequest(format!("Tarih çözümlenemedi: {}", d))
             }
+            ModerationError::MenuAlreadyExists => {
+                AppError::Conflict("Bu tarihte bu şehir ve öğün için menü zaten var.".to_string())
+            }
         }
     }
 }

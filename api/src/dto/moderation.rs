@@ -14,6 +14,17 @@ pub struct GetMenusQuery {
     pub month: Option<String>,
 }
 
+/// Moderasyon panelinden yeni menü oluşturma isteği
+#[derive(Debug, Deserialize, Validate)]
+pub struct CreateMenuDto {
+    pub city_id: i32,
+    pub serve_date: chrono::NaiveDate,
+    #[validate(length(min = 1, max = 50))]
+    pub meal_type: String,
+    pub source_type: Option<String>,
+    pub notice: Option<String>,
+}
+
 #[derive(Debug, Deserialize, Validate)]
 pub struct ReportCommentRequestDto {
     #[validate(length(min = 1, max = 500, message = "Şikayet nedeni 1 ile 500 karakter arasında olmalıdır"))]

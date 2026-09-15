@@ -33,11 +33,10 @@
   let editDishState = $state({
     name: "",
     category: "",
-    weight: "",
-    calories: "",
-    quickPrep: false,
-    prePrepared: false,
-    constraints: []
+    estimated_calories: null,
+    is_celiac: false,
+    is_vegan: false,
+    is_vegetarian: false,
   });
   
   // Split & Merge Specific
@@ -220,6 +219,10 @@
     editDishState = {
       name: searchQuery,
       category: "",
+      estimated_calories: null,
+      is_celiac: false,
+      is_vegan: false,
+      is_vegetarian: false,
     };
     isAddModalOpen = true;
   }
@@ -227,7 +230,14 @@
   async function submitAddDish() {
     if (!editDishState.name) return showToast('İsim zorunlu', 'error');
     try {
-      await api.createDish(editDishState.name, editDishState.category || null);
+      await api.createDish({
+        name: editDishState.name,
+        category: editDishState.category || null,
+        estimated_calories: editDishState.estimated_calories || null,
+        is_celiac: editDishState.is_celiac,
+        is_vegan: editDishState.is_vegan,
+        is_vegetarian: editDishState.is_vegetarian,
+      });
       showToast('Yemek eklendi!');
       isAddModalOpen = false;
       fetchDishes(searchQuery.trim());
@@ -241,11 +251,10 @@
     editDishState = {
       name: dish.name || "",
       category: dish.category || "",
-      weight: dish.weight || "",
-      calories: dish.calories || "",
-      quickPrep: dish.quickPrep || false,
-      prePrepared: dish.prePrepared || false,
-      constraints: [...(dish.constraints || [])]
+      estimated_calories: dish.estimated_calories ?? null,
+      is_celiac: dish.is_celiac ?? false,
+      is_vegan: dish.is_vegan ?? false,
+      is_vegetarian: dish.is_vegetarian ?? false,
     };
     isEditModalOpen = true;
   }
@@ -253,16 +262,16 @@
   async function submitEditDish() {
     const newName = editDishState.name.trim();
     const newCategory = editDishState.category.trim();
-    const newConstraints = editDishState.constraints;
 
     const payload = {};
     if (newName && newName !== selectedDish.name) payload.name = newName;
     if (newCategory !== selectedDish.category) payload.category = newCategory;
-    
-    const oldConstraints = selectedDish.constraints || [];
-    if (JSON.stringify([...newConstraints].sort()) !== JSON.stringify([...oldConstraints].sort())) {
-      payload.constraints = newConstraints;
+    if (editDishState.estimated_calories !== (selectedDish.estimated_calories ?? null)) {
+      payload.estimated_calories = editDishState.estimated_calories || null;
     }
+    if (editDishState.is_celiac !== (selectedDish.is_celiac ?? false)) payload.is_celiac = editDishState.is_celiac;
+    if (editDishState.is_vegan !== (selectedDish.is_vegan ?? false)) payload.is_vegan = editDishState.is_vegan;
+    if (editDishState.is_vegetarian !== (selectedDish.is_vegetarian ?? false)) payload.is_vegetarian = editDishState.is_vegetarian;
 
     if (Object.keys(payload).length === 0) return (isEditModalOpen = false);
 
@@ -597,6 +606,30 @@
         bind:value={editDishState.category}
       />
     </div>
+    <div class="c-modal__form-group">
+      <label for="add-dish-calories" class="c-modal__label">Tahmini Kalori (kcal)</label>
+      <input id="add-dish-calories" type="number" min="0" max="9999" class="c-modal__input" bind:value={editDishState.estimated_calories} placeholder="Bırakılabilir">
+    </div>
+    <div class="c-modal__form-group">
+      <div class="c-modal__label">Diyet Bayrakları</div>
+      <div class="u-mt-xs admin-grid-half u-gap-xs">
+        <label class="form-switch-row u-cursor-pointer u-py-xs">
+          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_celiac}>
+          <div class="c-switch"><div class="c-switch__handle"></div></div>
+          <span class="form-switch-row__text u-ml-sm">Çölyak uyumlu</span>
+        </label>
+        <label class="form-switch-row u-cursor-pointer u-py-xs">
+          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegan}>
+          <div class="c-switch"><div class="c-switch__handle"></div></div>
+          <span class="form-switch-row__text u-ml-sm">Vegan</span>
+        </label>
+        <label class="form-switch-row u-cursor-pointer u-py-xs">
+          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegetarian}>
+          <div class="c-switch"><div class="c-switch__handle"></div></div>
+          <span class="form-switch-row__text u-ml-sm">Vejetaryen</span>
+        </label>
+      </div>
+    </div>
   {/snippet}
   {#snippet footer()}
     <button class="btn btn--secondary" onclick={() => isAddModalOpen = false}>İptal</button>
@@ -624,15 +657,27 @@
       />
     </div>
     <div class="c-modal__form-group">
-      <div class="c-modal__label">Kısıtlamalar</div>
+      <label for="edit-dish-calories" class="c-modal__label">Tahmini Kalori (kcal)</label>
+      <input id="edit-dish-calories" type="number" min="0" max="9999" class="c-modal__input" bind:value={editDishState.estimated_calories} placeholder="Bırakılabilir">
+    </div>
+    <div class="c-modal__form-group">
+      <div class="c-modal__label">Diyet Bayrakları</div>
       <div class="u-mt-xs admin-grid-half u-gap-xs">
-        {#each ["Vegan", "Vejetaryen", "Gluten-free", "Yüksek Protein", "Çiğ"] as c}
-          <label class="form-switch-row u-cursor-pointer u-py-xs">
-            <input type="checkbox" class="c-input-hidden" checked={editDishState.constraints.includes(c)} onchange={() => toggleConstraint(c)}>
-            <div class="c-switch"><div class="c-switch__handle"></div></div>
-            <span class="form-switch-row__text u-ml-sm">{c}</span>
-          </label>
-        {/each}
+        <label class="form-switch-row u-cursor-pointer u-py-xs">
+          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_celiac}>
+          <div class="c-switch"><div class="c-switch__handle"></div></div>
+          <span class="form-switch-row__text u-ml-sm">Çölyak uyumlu</span>
+        </label>
+        <label class="form-switch-row u-cursor-pointer u-py-xs">
+          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegan}>
+          <div class="c-switch"><div class="c-switch__handle"></div></div>
+          <span class="form-switch-row__text u-ml-sm">Vegan</span>
+        </label>
+        <label class="form-switch-row u-cursor-pointer u-py-xs">
+          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegetarian}>
+          <div class="c-switch"><div class="c-switch__handle"></div></div>
+          <span class="form-switch-row__text u-ml-sm">Vejetaryen</span>
+        </label>
       </div>
     </div>
   {/snippet}

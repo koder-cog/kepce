@@ -83,6 +83,7 @@ pub async fn create_dish(db: &DatabaseConnection, dto: CreateDishDto) -> Result<
         is_celiac: Set(dto.is_celiac.unwrap_or(false)),
         is_vegan: Set(dto.is_vegan.unwrap_or(false)),
         is_vegetarian: Set(dto.is_vegetarian.unwrap_or(false)),
+        estimated_calories: Set(dto.estimated_calories),
         ..Default::default()
     };
     Ok(dish.insert(db).await?)
@@ -100,6 +101,7 @@ pub async fn update_dish(db: &DatabaseConnection, id: i32, dto: UpdateDishDto) -
     if let Some(is_celiac) = dto.is_celiac { dish.is_celiac = Set(is_celiac); }
     if let Some(is_vegan) = dto.is_vegan { dish.is_vegan = Set(is_vegan); }
     if let Some(is_vegetarian) = dto.is_vegetarian { dish.is_vegetarian = Set(is_vegetarian); }
+    if let Some(cal) = dto.estimated_calories { dish.estimated_calories = Set(Some(cal)); }
 
     Ok(dish.update(db).await?)
 }

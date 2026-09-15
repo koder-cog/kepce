@@ -9,6 +9,7 @@ pub struct UpdateDishDto {
     pub is_celiac: Option<bool>,
     pub is_vegan: Option<bool>,
     pub is_vegetarian: Option<bool>,
+    pub estimated_calories: Option<i32>,
 }
 
 #[derive(Deserialize, Validate)]
@@ -19,6 +20,7 @@ pub struct CreateDishDto {
     pub is_celiac: Option<bool>,
     pub is_vegan: Option<bool>,
     pub is_vegetarian: Option<bool>,
+    pub estimated_calories: Option<i32>,
 }
 
 #[derive(Deserialize)]

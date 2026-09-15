@@ -5,6 +5,11 @@ export const moderationApi = {
   getMenus: (status = '', city = '', month = '') => {
     return request(`/moderation/menus${buildQuery({ status, city_slug: city, month })}`);
   },
+  createMenu: (payload) =>
+    request('/moderation/menus', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
   getMenuDishIds: (menuId) => request(`/moderation/${menuId}/items`),
   approveMenu: (menuId, notes = '') =>
     request(`/moderation/${menuId}/approve`, {

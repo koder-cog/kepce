@@ -11,7 +11,7 @@ use std::sync::Arc;
 use uuid::Uuid;
 use crate::services::moderation::ModerationService;
 use crate::services::bot::{BotService, BotError};
-use crate::dto::moderation::{ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto, ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto, InjectBotCommentsDto, InjectBotCommentsResponseDto, BulkUpdateMenuStatusDto, BulkUpdateMenuStatusResponseDto};
+use crate::dto::moderation::{ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto, ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto, InjectBotCommentsDto, InjectBotCommentsResponseDto, BulkUpdateMenuStatusDto, BulkUpdateMenuStatusResponseDto, CreateMenuDto};
 use crate::dto::user::UserRole;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
@@ -29,7 +29,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/users/:user_id/warn", post(warn_user))
         .route("/reports/:report_id/resolve", post(resolve_report))
         .route("/pending", get(get_pending_menus))
-        .route("/menus", get(get_menus))
+        .route("/menus", get(get_menus).post(create_menu))
         .route("/menus/bulk-status", post(bulk_update_menu_status))
         .route("/:menu_id/approve", post(approve_menu))
         .route("/:menu_id/reject", post(reject_menu))
@@ -390,6 +390,44 @@ async fn get_menus(
         });
     }
     Ok(Json(result))
+}
+
+async fn create_menu(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    ValidatedJson(dto): ValidatedJson<CreateMenuDto>,
+) -> Result<Json<crate::dto::moderation::MenuModerationResponseDto>, AppError> {
+    require_admin(&user)?;
+
+    let menu = crate::services::moderation::create_menu(&db, dto, user.id).await?;
+
+    let city = shared::entities::cities::Entity::find_by_id(menu.city_id)
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    let meal_type_str = match menu.meal_type {
+        shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => "breakfast".to_string(),
+        shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch".to_string(),
+        shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner".to_string(),
+    };
+
+    let status_str = match menu.status {
+        shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending => "pending".to_string(),
+        shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved => "approved".to_string(),
+        shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected => "rejected".to_string(),
+    };
+
+    Ok(Json(crate::dto::moderation::MenuModerationResponseDto {
+        id: menu.id,
+        date: menu.serve_date.to_string(),
+        meal_type: meal_type_str,
+        status: status_str,
+        source_type: menu.source_type,
+        notice: menu.notice,
+        bot_commentary: menu.bot_commentary,
+        city: city.map(|c| crate::dto::moderation::MenuModerationCityDto { name: c.name }),
+    }))
 }
 
 async fn approve_menu(

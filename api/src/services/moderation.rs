@@ -14,7 +14,7 @@ use shared::entities::{
     dishes,
     sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
 };
-use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto};
+use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto, CreateMenuDto};
 
 #[derive(Debug, Clone, Default)]
 pub struct BlockedRelations {
@@ -28,6 +28,7 @@ pub enum ModerationError {
     UserNotFound,
     SelfBlockNotAllowed,
     SelfReportNotAllowed,
+    MenuAlreadyExists,
     AlreadyReported,
     AlreadyBlocked,
     CommentAlreadyDeleted,
@@ -695,4 +696,49 @@ impl ModerationService {
         txn.commit().await.map_err(ModerationError::DatabaseError)?;
         Ok(updated)
     }
+}
+
+/// Moderasyon panelinden yeni menü oluşturur.
+/// Aynı (city_id, serve_date, meal_type) üçlüsü zaten varsa `ModerationError::MenuAlreadyExists` döner.
+pub async fn create_menu(
+    db: &DatabaseConnection,
+    dto: CreateMenuDto,
+    submitted_by: Uuid,
+) -> Result<menus::Model, ModerationError> {
+    let meal_type = match dto.meal_type.to_lowercase().as_str() {
+        "breakfast" | "kahvalti" | "kahvaltı" => MealTypeEnum::Breakfast,
+        "lunch" | "ogle" | "öğle" => MealTypeEnum::Lunch,
+        "dinner" | "aksam" | "akşam" => MealTypeEnum::Dinner,
+        other => {
+            tracing::warn!(meal_type = other, "Bilinmeyen öğün türü");
+            return Err(ModerationError::DatabaseError(
+                sea_orm::DbErr::Custom(format!("Geçersiz öğün türü: {other}")),
+            ));
+        }
+    };
+
+    let existing = menus::Entity::find()
+        .filter(menus::Column::CityId.eq(dto.city_id))
+        .filter(menus::Column::ServeDate.eq(dto.serve_date))
+        .filter(menus::Column::MealType.eq(meal_type.clone()))
+        .one(db)
+        .await
+        .map_err(ModerationError::DatabaseError)?;
+
+    if existing.is_some() {
+        return Err(ModerationError::MenuAlreadyExists);
+    }
+
+    let new_menu = menus::ActiveModel {
+        city_id: Set(dto.city_id),
+        serve_date: Set(dto.serve_date),
+        meal_type: Set(meal_type),
+        source_type: Set(dto.source_type.or_else(|| Some("kepce-admin".to_string()))),
+        status: Set(MenuStatusEnum::Approved),
+        notice: Set(dto.notice),
+        submitted_by: Set(Some(submitted_by)),
+        ..Default::default()
+    };
+
+    new_menu.insert(db).await.map_err(ModerationError::DatabaseError)
 }

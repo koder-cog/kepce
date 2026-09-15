@@ -1,6 +1,6 @@
 <script>
   import "@/styles/pages/_menu-table.css";
-  import { onMount } from "svelte";
+  import { onMount, tick } from "svelte";
   import { api } from '@/api/index.js';
   import { getCitiesData } from "@/stores/city.svelte.js";
   import EmptyState from "@/components/ui/EmptyState.svelte";
@@ -40,6 +40,15 @@
   let isEditBotModalOpen = $state(false);
   let editBotTarget = $state(null);
   let editBotCommentText = $state("");
+
+  // Yeni Menü Oluşturma State'i
+  let isCreateMenuModalOpen = $state(false);
+  let newMenuCityId = $state(null);
+  let newMenuDate = $state(new Date().toISOString().split('T')[0]);
+  let newMenuMealType = $state("breakfast");
+  let newMenuSourceType = $state("kepce-admin");
+  let newMenuNotice = $state("");
+  let isCreatingMenu = $state(false);
 
   const currentYear = new Date().getFullYear();
   const yearOptions = [
@@ -153,18 +162,22 @@
       const map = new Map();
       for (const d of dishes) {
         const idx = d.order_index ?? 0;
-        if (!map.has(idx)) {
-          map.set(idx, { order_index: idx, primary: null, alternatives: [] });
+        // Aynı slot'ta birden fazla package_name olabilir (NORMAL + ÇÖLYAK), ama
+        // admin düzenleyici tek bir package_name'i slot bazında tutar; NORMAL dışı
+        // paketler ayrı slot olarak gelir.
+        const key = `${idx}::${d.package_name ?? 'NORMAL'}`;
+        if (!map.has(key)) {
+          map.set(key, { order_index: idx, package_name: d.package_name ?? 'NORMAL', primary: null, alternatives: [] });
         }
-        const slot = map.get(idx);
+        const slot = map.get(key);
         if (d.is_alternative) {
           slot.alternatives.push(d);
         } else {
           slot.primary = d;
         }
       }
-      const sorted = Array.from(map.values()).sort((a, b) => a.order_index - b.order_index);
-      editMenuSlots = sorted.length > 0 ? sorted : [{ order_index: 0, primary: null, alternatives: [] }];
+      const sorted = Array.from(map.values()).sort((a, b) => a.order_index - b.order_index || a.package_name.localeCompare(b.package_name));
+      editMenuSlots = sorted.length > 0 ? sorted : [{ order_index: 0, package_name: 'NORMAL', primary: null, alternatives: [] }];
       activeSlotTarget = { slotIndex: 0, isAlternative: false };
     } catch (err) {
       editMenuSlots = [{ order_index: 0, primary: null, alternatives: [] }];
@@ -190,7 +203,7 @@
 
   function addNewSlot() {
     const nextIdx = editMenuSlots.length;
-    editMenuSlots.push({ order_index: nextIdx, primary: null, alternatives: [] });
+    editMenuSlots.push({ order_index: nextIdx, package_name: 'NORMAL', primary: null, alternatives: [] });
     activeSlotTarget = { slotIndex: nextIdx, isAlternative: false };
   }
 
@@ -207,6 +220,13 @@
 
   function setTargetForSlot(slotIndex, isAlternative) {
     activeSlotTarget = { slotIndex, isAlternative };
+    tick().then(() => {
+      const el = document.getElementById('dish-search');
+      if (el) {
+        el.focus({ preventScroll: false });
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
   }
 
   function addDishToSlot(dish) {
@@ -243,12 +263,13 @@
     try {
       const items = [];
       editMenuSlots.forEach((slot, sIdx) => {
+        const pkg = slot.package_name || 'NORMAL';
         if (slot.primary) {
           items.push({
             dish_id: slot.primary.id,
             order_index: sIdx,
             is_alternative: false,
-            package_name: "NORMAL",
+            package_name: pkg,
           });
         }
         if (slot.alternatives && slot.alternatives.length > 0) {
@@ -257,7 +278,7 @@
               dish_id: alt.id,
               order_index: sIdx,
               is_alternative: true,
-              package_name: "NORMAL",
+              package_name: pkg,
             });
           });
         }
@@ -405,6 +426,58 @@
       fetchMenus();
     } catch (err) { showToast(err.message, 'error'); }
   }
+
+  function openCreateMenuModal() {
+    if (menuCityFilter) {
+      const matched = cities.find((c) => c.slug === menuCityFilter);
+      newMenuCityId = matched ? matched.id : (cities[0]?.id || 1);
+    } else {
+      newMenuCityId = cities[0]?.id || 1;
+    }
+    newMenuDate = new Date().toISOString().split('T')[0];
+    newMenuMealType = "breakfast";
+    newMenuSourceType = "kepce-admin";
+    newMenuNotice = "";
+    isCreateMenuModalOpen = true;
+  }
+
+  async function submitCreateMenu() {
+    if (!newMenuCityId) return showToast("Lütfen bir şehir seçin", "error");
+    if (!newMenuDate) return showToast("Lütfen bir tarih seçin", "error");
+    if (!newMenuMealType) return showToast("Lütfen bir öğün seçin", "error");
+
+    isCreatingMenu = true;
+    try {
+      const createdMenu = await api.createMenu({
+        city_id: parseInt(newMenuCityId, 10),
+        serve_date: newMenuDate,
+        meal_type: newMenuMealType,
+        source_type: newMenuSourceType.trim() || "kepce-admin",
+        notice: newMenuNotice.trim() || null,
+      });
+
+      showToast("Menü başarıyla oluşturuldu");
+      isCreateMenuModalOpen = false;
+
+      const createdCity = cities.find((c) => c.id === parseInt(newMenuCityId, 10));
+      if (createdCity) {
+        menuCityFilter = createdCity.slug;
+      }
+      const [year, month] = newMenuDate.split('-');
+      menuYearFilter = year;
+      menuMonthFilter = month;
+
+      await fetchMenus();
+
+      if (createdMenu && createdMenu.id) {
+        handleEditMenuItems(createdMenu);
+      }
+    } catch (err) {
+      showToast(err.message || "Menü oluşturulamadı", "error");
+    } finally {
+      isCreatingMenu = false;
+    }
+  }
 </script>
 
 <svelte:head>
@@ -463,6 +536,15 @@
       />
     </div>
   </div>
+
+  <button
+    type="button"
+    class="btn btn--primary btn--squish u-flex-shrink-0"
+    onclick={openCreateMenuModal}
+  >
+    <span class="u-hidden-mobile">Yeni Menü Ekle</span>
+    <span class="u-hidden-desktop">{@html icon('plus', 16)}</span>
+  </button>
 </div>
 
 <div id="menu-list-container" class="u-mt-lg">
@@ -660,18 +742,28 @@
       <div class="admin-slots-container">
         {#each editMenuSlots as slot, sIdx}
           <div class="admin-slot-card {activeSlotTarget.slotIndex === sIdx ? 'admin-slot-card--active' : ''}">
-            <div class="admin-slot-header">
+          <div class="admin-slot-header">
               <span class="admin-slot-title">Sıra {sIdx + 1}</span>
-              {#if editMenuSlots.length > 1}
-                <button
-                  type="button"
-                  class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-text-xs"
-                  onclick={() => removeSlot(sIdx)}
-                  title="Bu sırayı kaldır"
+              <div class="u-flex u-items-center u-gap-xs">
+                <select
+                  class="c-modal__input u-text-xs u-py-2xs u-px-xs"
+                  bind:value={slot.package_name}
+                  title="Paket"
                 >
-                  Sırayı Sil
-                </button>
-              {/if}
+                  <option value="NORMAL">NORMAL</option>
+                  <option value="ÇÖLYAK MENÜSÜ">ÇÖLYAK MENÜSÜ</option>
+                </select>
+                {#if editMenuSlots.length > 1}
+                  <button
+                    type="button"
+                    class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-text-xs"
+                    onclick={() => removeSlot(sIdx)}
+                    title="Bu sırayı kaldır"
+                  >
+                    Sırayı Sil
+                  </button>
+                {/if}
+              </div>
             </div>
 
             <div class="admin-slot-dishes">
@@ -831,6 +923,90 @@
   {#snippet footer()}
     <button class="btn btn--secondary" onclick={() => (isEditBotModalOpen = false)}>İptal</button>
     <button class="btn btn--primary" onclick={saveBotComment}>Kaydet</button>
+  {/snippet}
+</Modal>
+{/if}
+
+{#if isCreateMenuModalOpen}
+<Modal
+  options={{ title: "Yeni Menü Oluştur", iconHtml: icon('calendar', 24) }}
+  onClose={() => (isCreateMenuModalOpen = false)}
+>
+  {#snippet children()}
+    <div class="c-modal__form-group">
+      <label for="new-menu-city" class="c-modal__label">Şehir</label>
+      <select
+        id="new-menu-city"
+        class="c-modal__input"
+        bind:value={newMenuCityId}
+      >
+        {#each cities as c}
+          <option value={c.id}>{c.name}</option>
+        {/each}
+      </select>
+    </div>
+
+    <div class="c-modal__form-group">
+      <label for="new-menu-date" class="c-modal__label">Tarih</label>
+      <input
+        id="new-menu-date"
+        type="date"
+        class="c-modal__input"
+        bind:value={newMenuDate}
+      />
+    </div>
+
+    <div class="c-modal__form-group">
+      <label for="new-menu-meal" class="c-modal__label">Öğün</label>
+      <select
+        id="new-menu-meal"
+        class="c-modal__input"
+        bind:value={newMenuMealType}
+      >
+        <option value="breakfast">Kahvaltı</option>
+        <option value="dinner">Akşam Yemeği</option>
+      </select>
+    </div>
+
+    <div class="c-modal__form-group">
+      <label for="new-menu-source" class="c-modal__label">Kaynak Türü</label>
+      <input
+        id="new-menu-source"
+        type="text"
+        class="c-modal__input"
+        bind:value={newMenuSourceType}
+        placeholder="kepce-admin"
+      />
+    </div>
+
+    <div class="c-modal__form-group">
+      <label for="new-menu-notice" class="c-modal__label">Günün Uyarısı / Not (Opsiyonel)</label>
+      <input
+        id="new-menu-notice"
+        type="text"
+        class="c-modal__input"
+        bind:value={newMenuNotice}
+        placeholder="Örn: Hafta sonu nöbetçi yurt"
+      />
+    </div>
+  {/snippet}
+  {#snippet footer()}
+    <button
+      type="button"
+      class="btn btn--secondary btn--squish"
+      disabled={isCreatingMenu}
+      onclick={() => (isCreateMenuModalOpen = false)}
+    >
+      İptal
+    </button>
+    <button
+      type="button"
+      class="btn btn--primary btn--squish"
+      disabled={isCreatingMenu}
+      onclick={submitCreateMenu}
+    >
+      {isCreatingMenu ? "Oluşturuluyor..." : "Menü Oluştur"}
+    </button>
   {/snippet}
 </Modal>
 {/if}

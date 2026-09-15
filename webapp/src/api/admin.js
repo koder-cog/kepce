@@ -24,9 +24,9 @@ export const adminApi = {
     }),
   deleteDish: (dishId) =>
     request(`/admin/dishes/${dishId}`, { method: 'DELETE' }),
-  createDish: (name, category = null) =>
+  createDish: (payload) =>
     request('/admin/dishes', {
       method: 'POST',
-      body: JSON.stringify({ name, category }),
+      body: JSON.stringify(payload),
     }),
 };
