@@ -30,13 +30,20 @@ pub struct PushPayload {
 
 pub struct PushService;
 
-// Varsayılan kalıcı VAPID anahtarları (P-256 / Prime256v1)
-const DEFAULT_VAPID_PUBLIC: &str = "BFIVpgfTLBrLYmdjhS9fsQd1hvZ0MwuRUN4XYVDTuWFwFNL5m2bb4WJCUp8BFjIwIkALY5PkVyy1PM8o8ut6gqQ";
-const DEFAULT_VAPID_PRIVATE: &str = "-----BEGIN PRIVATE KEY-----\nREMOVED_VAPID_PRIVATE_KEY\nIp5C1K7bDM3VVkDwnN9Hhq5G9RihRANCAARSFaYH0yway2JnY4UvX7EHdYb2dDML\nkVDeF2FQ07lhcBTS+Ztm2+FiQlKfARYyMCJAC2OT5FcstTzPKPLreoKk\n-----END PRIVATE KEY-----";
-
 impl PushService {
     pub fn get_vapid_public_key() -> String {
-        env::var("VAPID_PUBLIC_KEY").unwrap_or_else(|_| DEFAULT_VAPID_PUBLIC.to_string())
+        if let Ok(pk) = env::var("VAPID_PUBLIC_KEY") {
+            return pk;
+        }
+        let kp = Self::get_key_pair();
+        let pk = kp.public_key();
+        if let Ok(der) = pk.to_der() {
+            if der.len() >= 65 {
+                let uncompressed = &der[der.len() - 65..];
+                return base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(uncompressed);
+            }
+        }
+        String::new()
     }
 
     pub fn get_vapid_subject() -> String {
@@ -46,15 +53,18 @@ impl PushService {
     fn get_key_pair() -> &'static ES256KeyPair {
         static KEYPAIR: OnceLock<ES256KeyPair> = OnceLock::new();
         KEYPAIR.get_or_init(|| {
-            let pem = env::var("VAPID_PRIVATE_KEY").unwrap_or_else(|_| DEFAULT_VAPID_PRIVATE.to_string());
-            let normalized = pem.replace("\\n", "\n");
-            match ES256KeyPair::from_pem(&normalized) {
-                Ok(kp) => kp,
-                Err(e) => {
-                    tracing::error!("VAPID_PRIVATE_KEY ayrıştırılamadı ({:?}), varsayılan anahtar çifti kullanılıyor.", e);
-                    ES256KeyPair::from_pem(DEFAULT_VAPID_PRIVATE).expect("Varsayılan VAPID anahtarı geçerli olmalı")
+            if let Ok(pem) = env::var("VAPID_PRIVATE_KEY") {
+                let normalized = pem.replace("\\n", "\n");
+                match ES256KeyPair::from_pem(&normalized) {
+                    Ok(kp) => return kp,
+                    Err(e) => {
+                        tracing::error!("VAPID_PRIVATE_KEY ayrıştırılamadı ({:?}), geçici anahtar çifti üretiliyor.", e);
+                    }
                 }
+            } else {
+                tracing::warn!("VAPID_PRIVATE_KEY ortam değişkeni bulunamadı, geçici anahtar çifti üretiliyor.");
             }
+            ES256KeyPair::generate()
         })
     }
 
@@ -263,14 +273,29 @@ mod tests {
 
     #[test]
     fn test_vapid_keys() {
-        let pem = "-----BEGIN PRIVATE KEY-----\nREMOVED_VAPID_PRIVATE_KEY\nIp5C1K7bDM3VVkDwnN9Hhq5G9RihRANCAARSFaYH0yway2JnY4UvX7EHdYb2dDML\nkVDeF2FQ07lhcBTS+Ztm2+FiQlKfARYyMCJAC2OT5FcstTzPKPLreoKk\n-----END PRIVATE KEY-----";
-        let kp = ES256KeyPair::from_pem(pem).expect("Failed to parse PEM");
+        // 1. Dinamik olarak üretilen anahtar çiftinden DER ve uncompressed base64url türetim doğrulaması
+        let kp = ES256KeyPair::generate();
         let pk = kp.public_key();
         let der = pk.to_der().expect("Failed to get DER");
+        assert!(der.len() >= 65, "DER encoding must contain at least 65 bytes for uncompressed point");
         let uncompressed = &der[der.len() - 65..];
+        assert_eq!(uncompressed[0], 0x04, "Uncompressed EC point must start with 0x04");
         let derived_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(uncompressed);
-        let expected = "BFIVpgfTLBrLYmdjhS9fsQd1hvZ0MwuRUN4XYVDTuWFwFNL5m2bb4WJCUp8BFjIwIkALY5PkVyy1PM8o8ut6gqQ";
-        assert_eq!(derived_b64, expected);
-        println!("Key verification passed!");
+        assert_eq!(derived_b64.len(), 87, "Base64URL encoded 65 bytes should be 87 chars without padding");
+
+        // 2. Ortamda VAPID_PRIVATE_KEY tanımlıysa, public key eşleşmesini doğrula
+        if let Ok(pem) = std::env::var("VAPID_PRIVATE_KEY") {
+            let normalized = pem.replace("\\n", "\n");
+            if let Ok(env_kp) = ES256KeyPair::from_pem(&normalized) {
+                let env_pk = env_kp.public_key();
+                let env_der = env_pk.to_der().expect("Failed to get DER from env key");
+                let env_uncompressed = &env_der[env_der.len() - 65..];
+                let env_derived_b64 = base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(env_uncompressed);
+
+                if let Ok(expected_pub) = std::env::var("VAPID_PUBLIC_KEY") {
+                    assert_eq!(env_derived_b64, expected_pub, "VAPID_PRIVATE_KEY ve VAPID_PUBLIC_KEY eşleşmeli");
+                }
+            }
+        }
     }
 }
