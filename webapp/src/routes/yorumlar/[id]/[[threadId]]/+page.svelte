@@ -9,7 +9,8 @@
 
     onMount(() => {
         const id = params?.id;
-        const threadId = params?.threadId || page.url.searchParams.get("thread");
+        const threadId =
+            params?.threadId || page.url.searchParams.get("thread");
         const target = threadId ? `/menu/${id}/${threadId}` : `/menu/${id}`;
         goto(target, { replaceState: true });
     });
@@ -19,7 +20,6 @@
 
 <h1 class="sr-only">Yönlendiriliyorsunuz</h1>
 
-<div class="u-flex u-justify-center u-items-center" style="min-height: 40vh;">
+<div class="u-flex u-justify-center u-items-center" style="min-height: 40dvh;">
     <Loader size={48} />
 </div>
-

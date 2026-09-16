@@ -13,6 +13,12 @@
     transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default);
   }
 
+  @media (max-width: 600px) {
+    .daily-header {
+      justify-content: center;
+    }
+  }
+
   .daily-header .month-nav {
     margin-left: -8px;
   }
@@ -260,6 +266,13 @@
     min-width: 140px;
     overflow: hidden;
     transition: opacity var(--dur-fast) var(--ease-standard);
+  }
+
+  @media (max-width: 600px) {
+    .month-nav__label {
+      width: 100%;
+      justify-content: center;
+    }
   }
 
   .month-nav__label-wrapper.is-updating {

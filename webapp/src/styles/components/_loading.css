@@ -36,7 +36,7 @@
   }
 
   /* ── M3 Expressive Loader ────────────────────────────────── */
-  
+
   .m3-loader {
     display: inline-flex;
     align-items: center;
@@ -44,12 +44,28 @@
     animation: m3-spin 3s linear infinite;
   }
 
-  .m3-loader--sm { width: 20px; height: 20px; }
-  .m3-loader--md { width: 48px; height: 48px; }
-  .m3-loader--lg { width: 64px; height: 64px; }
-  
-  .m3-loader--accent { color: var(--color-accent-primary); }
-  .m3-loader--current { color: currentColor; }
+  .m3-loader--sm {
+    width: 20px;
+    height: 20px;
+  }
+
+  .m3-loader--md {
+    width: 48px;
+    height: 48px;
+  }
+
+  .m3-loader--lg {
+    width: 64px;
+    height: 64px;
+  }
+
+  .m3-loader--accent {
+    color: var(--color-accent-primary);
+  }
+
+  .m3-loader--current {
+    color: currentColor;
+  }
 
   .m3-loader svg {
     width: 100%;
@@ -61,8 +77,13 @@
   }
 
   @keyframes m3-spin {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
+    from {
+      transform: rotate(0deg);
+    }
+
+    to {
+      transform: rotate(360deg);
+    }
   }
 
   /* ── Button Loading State ────────────────────────────────── */
@@ -71,8 +92,8 @@
     position: relative;
     overflow: hidden;
     transition: transform var(--dur-default) var(--ease-spatial-default),
-                background var(--dur-fast) var(--ease-standard),
-                opacity var(--dur-fast) var(--ease-standard);
+      background var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard);
   }
 
   .btn--loading {
@@ -82,7 +103,7 @@
   .btn__text {
     display: inline-block;
     transition: transform var(--motion-effects-default),
-                opacity var(--motion-effects-default);
+      opacity var(--motion-effects-default);
   }
 
   .btn--loading .btn__text {
@@ -102,7 +123,7 @@
     align-items: center;
     justify-content: center;
     transition: transform var(--motion-effects-default),
-                opacity var(--motion-effects-default);
+      opacity var(--motion-effects-default);
     color: currentColor;
   }
 
@@ -125,7 +146,7 @@
     justify-content: center;
     text-align: center;
     padding: var(--space-2xl) var(--space-lg);
-    min-height: 40vh;
+    min-height: 40dvh;
   }
 
   .verification-container {

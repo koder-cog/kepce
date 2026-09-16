@@ -43,7 +43,7 @@
 <style>
   .ben-container {
     padding: var(--space-xl) var(--space-md);
-    min-height: 65vh;
+    min-height: 65dvh;
     display: flex;
     flex-direction: column;
     justify-content: center;

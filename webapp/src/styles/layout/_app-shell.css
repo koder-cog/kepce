@@ -20,7 +20,7 @@ body.is-app .page-wrapper {
   padding-top: 0 !important;
   padding-bottom: 0 !important;
   margin-top: 0 !important;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 
 html.is-app #page-content,
@@ -68,6 +68,7 @@ body.is-app .comments-page {
 }
 
 @media (max-width: 600px) {
+
   html.is-app .ci-container,
   body.is-app .ci-container {
     bottom: 0 !important;

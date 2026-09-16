@@ -5,7 +5,7 @@
     padding: var(--space-4xl) var(--space-lg);
     max-width: 520px;
     margin: 0 auto;
-    min-height: 60vh;
+    min-height: 60dvh;
     animation: auth-fade-in 0.4s var(--ease-standard);
   }
 
@@ -33,13 +33,15 @@
   .auth-form-container {
     display: flex;
     flex-direction: column;
-    max-width: 555px; /* Perfect for login */
+    max-width: 555px;
+    /* Perfect for login */
     margin: 0 auto;
     width: 100%;
   }
 
   .auth-form-container--wide {
-    max-width: 760px; /* Wider for registration grid */
+    max-width: 760px;
+    /* Wider for registration grid */
   }
 
   .auth-form-row {
@@ -47,7 +49,7 @@
     grid-template-columns: 1fr;
     gap: var(--space-md);
   }
-  
+
   @media (min-width: 600px) {
     .auth-form-row {
       grid-template-columns: 1fr 1fr;
