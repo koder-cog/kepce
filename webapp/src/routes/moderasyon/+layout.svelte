@@ -18,6 +18,7 @@
       links: [
         { href: "/moderasyon/mutfak/yemekler", label: "Yemekler" },
         { href: "/moderasyon/mutfak/tabela", label: "Tabela" },
+        { href: "/moderasyon/mutfak/gonderimler", label: "Gönderimler" },
         { href: "/moderasyon/mutfak/bot", label: "Kepçe Bot" },
       ],
     },

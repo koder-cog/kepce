@@ -28,6 +28,13 @@
     let shakingId = $state(null);
     let shakeTimeout = null;
     let hasUnreadNotifications = $state(false);
+    let avatarFailed = $state(false);
+
+    $effect(() => {
+        if (user?.avatar_url) {
+            avatarFailed = false;
+        }
+    });
 
     async function checkNotifications() {
         if (!user) return;
@@ -223,12 +230,18 @@
         >
             <div class="nav-bar__user-avatar-container">
                 <div class="nav-bar__user-avatar">
-                    {#if user?.avatar_url}
+                    {#if user?.avatar_url && !avatarFailed}
                         <img
                             class="nav-bar__user-avatar-img"
                             src={api.getAvatarUrl(user.avatar_url)}
                             alt="Profil"
-                            onerror={(e) => (e.target.style.display = "none")}
+                            width="38"
+                            height="38"
+                            loading="eager"
+                            decoding="async"
+                            onerror={() => {
+                                avatarFailed = true;
+                            }}
                         />
                     {:else}
                         {@html icon("avatarEmpty", 38)}

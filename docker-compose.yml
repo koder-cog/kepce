@@ -100,6 +100,7 @@ services:
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:iletisim@kepce.org}
     volumes:
       - menuler:/app/data/menuler
+      - uploads:/app/uploads
       - ./config:/app/config:ro
     networks:
       - backend-net

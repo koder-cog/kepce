@@ -12,9 +12,10 @@ use shared::entities::{
     menu_dishes,
     dish_aliases,
     dishes,
-    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
+    menu_submissions,
+    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum, AccountStatusEnum},
 };
-use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto, CreateMenuDto};
+use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto, CreateMenuDto, SubmissionItemDto};
 
 #[derive(Debug, Clone, Default)]
 pub struct BlockedRelations {
@@ -34,6 +35,7 @@ pub enum ModerationError {
     CommentAlreadyDeleted,
     DatabaseError(DbErr),
     CityNotFound,
+    SubmissionNotFound,
     NoMenusForMonth,
     InvalidMonth(String),
     DateParseError(String),
@@ -695,6 +697,64 @@ impl ModerationService {
 
         txn.commit().await.map_err(ModerationError::DatabaseError)?;
         Ok(updated)
+    }
+
+    pub async fn get_submissions(
+        db: &DatabaseConnection,
+        status_filter: Option<&str>,
+    ) -> Result<Vec<SubmissionItemDto>, ModerationError> {
+        let mut query = menu_submissions::Entity::find()
+            .order_by_desc(menu_submissions::Column::CreatedAt);
+
+        if let Some(s) = status_filter {
+            if !s.trim().is_empty() {
+                query = query.filter(menu_submissions::Column::Status.eq(s));
+            }
+        }
+
+        let submissions = query.all(db).await.map_err(ModerationError::DatabaseError)?;
+        let mut result = Vec::with_capacity(submissions.len());
+
+        for sub in submissions {
+            let user_info = if let Some(uid) = sub.user_id {
+                Users::find_by_id(uid).one(db).await.unwrap_or(None)
+            } else {
+                None
+            };
+
+            result.push(SubmissionItemDto {
+                id: sub.id,
+                user_id: sub.user_id,
+                username: user_info.as_ref().map(|u| u.username.clone()),
+                user_is_banned: user_info.as_ref().map(|u| u.account_status == AccountStatusEnum::Banned),
+                city_slug: sub.city_slug,
+                year: sub.year,
+                month: sub.month,
+                notes: sub.notes,
+                status: sub.status,
+                created_at: sub.created_at.map(|dt| dt.into()),
+            });
+        }
+
+        Ok(result)
+    }
+
+    pub async fn update_submission_status(
+        db: &DatabaseConnection,
+        submission_id: i32,
+        new_status: &str,
+    ) -> Result<menu_submissions::Model, ModerationError> {
+        let sub = menu_submissions::Entity::find_by_id(submission_id)
+            .one(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?
+            .ok_or(ModerationError::SubmissionNotFound)?;
+
+        let mut active: menu_submissions::ActiveModel = sub.into();
+        active.status = Set(new_status.to_string());
+        active.updated_at = Set(Some(chrono::Utc::now().into()));
+
+        active.update(db).await.map_err(ModerationError::DatabaseError)
     }
 }
 

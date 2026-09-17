@@ -39,6 +39,19 @@ export const authActions = {
       return;
     }
 
+    if (!globalState.user && typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('kepce_user_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object') {
+            globalState.user = parsed;
+            globalState.isModerator = parsed.is_admin || false;
+          }
+        }
+      } catch (_) {}
+    }
+
     try {
       globalState.user = await api.getMe();
       if (typeof window !== 'undefined') {
@@ -50,15 +63,16 @@ export const authActions = {
       }
     } catch (err) {
       console.warn('Auth check failed:', err);
-      globalState.user = null;
-      globalState.isModerator = false;
-      const isAuthError = err.status === 401 || err.status === 404 ||
-        err.message.includes('401') || err.message.includes('404') ||
-        err.message.includes('Invalid or expired token') ||
-        err.message.includes('oturum süresi dolmuş') ||
-        err.message.includes('açık anahtar eksik') ||
-        err.message.includes('Kullanıcı bulunamadı');
+      const msg = String(err?.message || '');
+      const isAuthError = err?.status === 401 || err?.status === 404 ||
+        msg.includes('401') || msg.includes('404') ||
+        msg.includes('Invalid or expired token') ||
+        msg.includes('oturum süresi dolmuş') ||
+        msg.includes('açık anahtar eksik') ||
+        msg.includes('Kullanıcı bulunamadı');
       if (isAuthError) {
+        globalState.user = null;
+        globalState.isModerator = false;
         clearLoggedCookie();
         if (typeof window !== 'undefined') localStorage.removeItem('kepce_user_cache');
         globalState.hasSession = false;

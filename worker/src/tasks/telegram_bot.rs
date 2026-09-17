@@ -157,6 +157,7 @@ async fn handle_command(
 Kullanabileceğiniz komutlar:\n\
 • `/durum` - Canlı sunucu, DB ve IP devre kesici sağlığı\n\
 • `/tara [sehir]` - Menü kazımayı anlık tetikle (örn: `/tara` veya `/tara istanbul`)\n\
+• `/yorumlar_uret` - Eksik menüler için otomatik LLM öğrenci yorumu üret\n\
 • `/ban_kaldir` - IP ban devre kesicisini erken sıfırla\n\
 • `/son_menuler` - Sisteme eklenen son 5 güncel menü\n\
 • `/yardim` - Bu yardım menüsü";
@@ -269,6 +270,36 @@ Kullanabileceğiniz komutlar:\n\
                 };
 
                 send_reply(&client_scraper, &bot_token_clone, chat_id, &finish_msg).await;
+            });
+        }
+
+        "/yorumlar_uret" | "yorumlar_uret" => {
+            send_reply(
+                client,
+                bot_token,
+                chat_id,
+                "🤖 *Otomatik LLM yorum üretimi başlatıldı!*\nEksik menüler öncelik sırasına göre işleniyor. Tamamlandığında bildirim gelecektir."
+            ).await;
+
+            let db_clone = db.clone();
+            let client_clone = client.clone();
+            let bot_token_clone = bot_token.to_string();
+
+            tokio::spawn(async move {
+                let start_time = std::time::Instant::now();
+                let gen_res = crate::tasks::comment_generator::run_comment_generation(&db_clone).await;
+                let elapsed = start_time.elapsed().as_secs();
+
+                let finish_msg = match gen_res {
+                    Ok(count) => {
+                        format!("✅ *Yorum Üretimi Tamamlandı!*\n• Güncellenen menü: `{}` adet\n• Geçen süre: `{} sn`", count, elapsed)
+                    }
+                    Err(e) => {
+                        format!("❌ *Yorum Üretimi Sırasında Hata Oluştu!*\nHata detayı: `{:?}`", e)
+                    }
+                };
+
+                send_reply(&client_clone, &bot_token_clone, chat_id, &finish_msg).await;
             });
         }
 

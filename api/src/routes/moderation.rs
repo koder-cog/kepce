@@ -11,7 +11,12 @@ use std::sync::Arc;
 use uuid::Uuid;
 use crate::services::moderation::ModerationService;
 use crate::services::bot::{BotService, BotError};
-use crate::dto::moderation::{ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto, ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto, InjectBotCommentsDto, InjectBotCommentsResponseDto, BulkUpdateMenuStatusDto, BulkUpdateMenuStatusResponseDto, CreateMenuDto};
+use crate::dto::moderation::{
+    ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto,
+    ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto,
+    InjectBotCommentsDto, InjectBotCommentsResponseDto, BulkUpdateMenuStatusDto,
+    BulkUpdateMenuStatusResponseDto, CreateMenuDto, SubmissionItemDto, UpdateSubmissionStatusDto,
+};
 use crate::dto::user::UserRole;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
@@ -19,6 +24,8 @@ use crate::extractors::validated::ValidatedJson;
 
 pub fn router() -> Router<crate::config::AppState> {
     Router::new()
+        .route("/submissions", get(get_submissions))
+        .route("/submissions/:submission_id/status", post(update_submission_status))
         .route("/report/:hash", post(report_comment))
         .route("/bot/generate", post(generate_bot_comment))
         .route("/bot/export-monthly", get(export_monthly_menu_for_bot))
@@ -1110,4 +1117,38 @@ async fn delete_incident(
         .await
         .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
     Ok(Json(()))
+}
+
+#[derive(Debug, serde::Deserialize)]
+pub struct SubmissionsQuery {
+    pub status: Option<String>,
+}
+
+async fn get_submissions(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    Query(params): Query<SubmissionsQuery>,
+) -> Result<Json<Vec<SubmissionItemDto>>, AppError> {
+    require_admin(&user)?;
+    let items = ModerationService::get_submissions(&db, params.status.as_deref())
+        .await
+        .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
+    Ok(Json(items))
+}
+
+async fn update_submission_status(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    Path(submission_id): Path<i32>,
+    ValidatedJson(dto): ValidatedJson<UpdateSubmissionStatusDto>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    require_admin(&user)?;
+    let updated = ModerationService::update_submission_status(&db, submission_id, &dto.status)
+        .await
+        .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
+    Ok(Json(serde_json::json!({
+        "success": true,
+        "id": updated.id,
+        "status": updated.status
+    })))
 }

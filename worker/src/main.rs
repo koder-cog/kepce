@@ -183,6 +183,18 @@ async fn main() -> anyhow::Result<()> {
             return Ok(());
         }
     }
+
+    if std::env::var("WORKER_GENERATE_COMMENTS").is_ok() {
+        tracing::info!("[COMMENT-GEN] Otomatik LLM yorum üretimi başlatılıyor...");
+        match tasks::comment_generator::run_comment_generation(&db).await {
+            Ok(count) => tracing::info!("[COMMENT-GEN] {} menüye yorum üretildi ve kaydedildi.", count),
+            Err(e) => tracing::error!("[COMMENT-GEN] Yorum üretim hatası: {:?}", e),
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[COMMENT-GEN] Tek seferlik yorum üretimi tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
     
     let gemini_api_key = env::var("GEMINI_API_KEY").ok();
     if gemini_api_key.is_none() {

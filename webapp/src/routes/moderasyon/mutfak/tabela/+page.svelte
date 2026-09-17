@@ -201,6 +201,60 @@
     }, 300);
   }
 
+  let isApplyingTemplate = $state(false);
+
+  async function applyBreakfastTemplate() {
+    if (editMenuSlots.some((s) => s.primary)) {
+      if (!confirm("Mevcut yemek sıraları standart kahvaltı şablonuyla değiştirilsin mi?")) {
+        return;
+      }
+    }
+
+    isApplyingTemplate = true;
+    try {
+      const templateItems = [
+        'Haşlanmış Yumurta',
+        'Beyaz Peynir',
+        'Siyah Zeytin',
+        'Reçel',
+        'Ekmek'
+      ];
+
+      const newSlots = [];
+      for (let i = 0; i < templateItems.length; i++) {
+        const itemQuery = templateItems[i];
+        let dishMatch = null;
+        try {
+          const results = await api.getDishStats(itemQuery);
+          if (results && results.length > 0) {
+            dishMatch = results.find((d) => d.name.toLowerCase().includes(itemQuery.toLowerCase())) || results[0];
+          }
+        } catch (_) {}
+
+        if (dishMatch) {
+          newSlots.push({
+            order_index: i,
+            package_name: 'NORMAL',
+            primary: dishMatch,
+            alternatives: []
+          });
+        }
+      }
+
+      if (newSlots.length > 0) {
+        editMenuSlots = newSlots;
+        activeSlotTarget = { slotIndex: 0, isAlternative: false };
+        showToast(`${newSlots.length} kahvaltılık yemek şablondan yüklendi.`);
+      } else {
+        showToast("Kahvaltı yemekleri veritabanında arandı ancak eşleşme bulunamadı.", "warning");
+      }
+    } catch (err) {
+      showToast("Şablon uygulanırken hata oluştu: " + err.message, "error");
+    } finally {
+      isApplyingTemplate = false;
+    }
+  }
+
   function addNewSlot() {
     const nextIdx = editMenuSlots.length;
     editMenuSlots.push({ order_index: nextIdx, package_name: 'NORMAL', primary: null, alternatives: [] });
@@ -735,9 +789,22 @@
     <div class="c-modal__form-group">
       <div class="u-flex u-items-center u-justify-between u-mb-xs">
         <span class="c-modal__label u-mb-0">Yemek Sıraları (Slotlar & Alternatifler)</span>
-        <button type="button" class="btn btn--xs btn--secondary btn--squish" onclick={addNewSlot}>
-          + Yeni Sıra Ekle
-        </button>
+        <div class="u-flex u-items-center u-gap-xs">
+          {#if editMenuTarget?.meal_type === 'breakfast' || !editMenuSlots.some((s) => s.primary)}
+            <button
+              type="button"
+              class="btn btn--xs btn--ghost btn--squish"
+              disabled={isApplyingTemplate}
+              onclick={applyBreakfastTemplate}
+              title="Standart KYK kahvaltı öğelerini (Yumurta, Peynir, Zeytin, Reçel, Ekmek) otomatik doldurur"
+            >
+              {isApplyingTemplate ? 'Yükleniyor...' : 'Kahvaltı Şablonu'}
+            </button>
+          {/if}
+          <button type="button" class="btn btn--xs btn--secondary btn--squish" onclick={addNewSlot}>
+            + Yeni Sıra Ekle
+          </button>
+        </div>
       </div>
       <div class="admin-slots-container">
         {#each editMenuSlots as slot, sIdx}

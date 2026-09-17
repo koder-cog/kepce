@@ -80,16 +80,16 @@ pub async fn process_local_files(db: &DatabaseConnection, reqwest_client: &reqwe
                         }
                         Err(e) => Err(anyhow::anyhow!("JSON parse hatası: {}", e))
                     }
-                } else if ext.to_lowercase() == "pdf" {
+                } else if matches!(ext.to_lowercase().as_str(), "pdf" | "png" | "jpg" | "jpeg" | "webp" | "heic" | "heif") {
                     if let Some(key) = gemini_api_key {
-                        match crate::parser::llm::parse_pdf_with_llm(reqwest_client, key, std::path::Path::new(&path_str)).await {
+                        match crate::parser::llm::parse_document_with_llm(reqwest_client, key, std::path::Path::new(&path_str)).await {
                             Ok(file_db) => {
                                 crate::parser::save_menu_database(db, city_id, &source_type, file_db, &city_slug).await
                             }
-                            Err(e) => Err(anyhow::anyhow!("PDF parse hatası: {}", e))
+                            Err(e) => Err(anyhow::anyhow!("Belge/Görsel LLM parse hatası: {}", e))
                         }
                     } else {
-                        tracing::warn!("{}: PDF parsing devre dışı - GEMINI_API_KEY ayarlanmamış, atlanıyor.", filename);
+                        tracing::warn!("{}: LLM parsing devre dışı - GEMINI_API_KEY ayarlanmamış, atlanıyor.", filename);
                         continue;
                     }
                 } else {

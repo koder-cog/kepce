@@ -280,3 +280,23 @@ pub struct BulkUpdateMenuStatusResponseDto {
     pub updated_count: usize,
 }
 
+#[derive(Debug, Serialize)]
+pub struct SubmissionItemDto {
+    pub id: i32,
+    pub user_id: Option<Uuid>,
+    pub username: Option<String>,
+    pub user_is_banned: Option<bool>,
+    pub city_slug: String,
+    pub year: i32,
+    pub month: i32,
+    pub notes: Option<String>,
+    pub status: String,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdateSubmissionStatusDto {
+    #[validate(length(min = 1, max = 50))]
+    pub status: String,
+}
+

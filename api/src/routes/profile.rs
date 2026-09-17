@@ -51,6 +51,9 @@ impl From<ModerationError> for AppError {
             ModerationError::MenuAlreadyExists => {
                 AppError::Conflict("Bu tarihte bu şehir ve öğün için menü zaten var.".to_string())
             }
+            ModerationError::SubmissionNotFound => {
+                AppError::NotFound("Menü gönderimi bulunamadı.".to_string())
+            }
         }
     }
 }

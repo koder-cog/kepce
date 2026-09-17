@@ -90,4 +90,10 @@ export const moderationApi = {
   deleteIncident: (id) => request(`/moderation/incidents/${id}`, {
     method: 'DELETE'
   }),
+  getSubmissions: (status = '') => request(`/moderation/submissions${buildQuery({ status })}`),
+  updateSubmissionStatus: (submissionId, status) =>
+    request(`/moderation/submissions/${submissionId}/status`, {
+      method: 'POST',
+      body: JSON.stringify({ status }),
+    }),
 };

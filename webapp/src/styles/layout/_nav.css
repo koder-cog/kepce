@@ -251,9 +251,9 @@
     justify-content: center;
     width: 38px;
     height: 38px;
+    aspect-ratio: 1 / 1;
+    flex-shrink: 0;
     border-radius: var(--radius-full);
-    /* v3: görünmez denecek kadar silik sabit renk yerine tema token'ı
-       (görev #48 - koyu temada sınır tamamen kayboluyordu) */
     border: 1px solid var(--color-border);
     overflow: hidden;
   }
