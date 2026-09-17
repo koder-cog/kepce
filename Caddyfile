@@ -113,7 +113,20 @@ ara.kepce.org {
         format json
     }
 
-    reverse_proxy webapp:3000
+    # 1. API istekleri -> Rust API container'ı (api:8000)
+    handle /api/* {
+        reverse_proxy api:8000
+    }
+
+    # 2. Statik yüklemeler (avatarlar vb.) -> Rust API container'ı (api:8000)
+    handle /static/* {
+        reverse_proxy api:8000
+    }
+
+    # 3. Ön yüz (SvelteKit SSR) -> Node container'ı (webapp:3000)
+    handle {
+        reverse_proxy webapp:3000
+    }
 }
 
 analitik.kepce.org {

@@ -106,6 +106,78 @@
   let formattedSingleRate = $derived(
     currentRate.toLocaleString("tr-TR", { minimumFractionDigits: 2, maximumFractionDigits: 4 })
   );
+
+  // İnteraktif Hesap Makinesi Durumu
+  let calcExpression = $state("");
+  let calcDisplay = $state("0");
+  let calcHasResult = $state(false);
+
+  $effect(() => {
+    if (answer?.type === "calculator") {
+      calcExpression = answer.expression || "";
+      calcDisplay = String(answer.result ?? "0");
+      calcHasResult = true;
+    }
+  });
+
+  function calculateString(expr) {
+    try {
+      const sanitized = expr
+        .replace(/×/g, "*")
+        .replace(/÷/g, "/")
+        .replace(/,/g, ".")
+        .replace(/\^/g, "**");
+      if (!/[a-zA-Z_$]/.test(sanitized)) {
+        // eslint-disable-next-line no-new-func
+        const result = Function(`'use strict'; return (${sanitized})`)();
+        if (typeof result === "number") {
+          if (isNaN(result)) return "Tanımsız";
+          if (!isFinite(result)) return "Hata (Sıfıra bölünemez)";
+          return result.toLocaleString("tr-TR", { maximumFractionDigits: 6 });
+        }
+      }
+    } catch {}
+    return null;
+  }
+
+  function handleCalcInput(btn) {
+    if (btn === "C") {
+      calcExpression = "";
+      calcDisplay = "0";
+      calcHasResult = false;
+      return;
+    }
+
+    if (btn === "=") {
+      if (!calcExpression) return;
+      const res = calculateString(calcExpression);
+      if (res !== null) {
+        calcDisplay = res;
+        calcHasResult = true;
+      }
+      return;
+    }
+
+    if (calcHasResult && ["+", "-", "×", "÷"].includes(btn)) {
+      calcExpression = calcDisplay + " " + btn + " ";
+      calcHasResult = false;
+      return;
+    }
+
+    if (calcHasResult && !["+", "-", "×", "÷"].includes(btn)) {
+      calcExpression = btn;
+      calcDisplay = btn;
+      calcHasResult = false;
+      return;
+    }
+
+    if (["+", "-", "×", "÷"].includes(btn)) {
+      calcExpression += " " + btn + " ";
+    } else {
+      calcExpression += btn;
+    }
+    calcDisplay = calcExpression;
+  }
 </script>
 
 {#if answer}
@@ -126,52 +198,43 @@
           </p>
         </div>
 
-        <!-- Google Tarzı Dikey Yığılmış İki Dönüştürücü Kutusu (Kepçe Dropdown ile) -->
-        <div class="c-answer-fx-stack">
-          <!-- Üst Satır: Kaynak Tutar + Para Birimi -->
-          <div class="c-answer-fx-row">
+        <div class="c-answer-card__right">
+          <div class="c-answer-row">
             <input
               type="number"
-              class="c-answer-fx-input"
+              class="c-answer-input"
               value={fromAmount}
               oninput={handleFromInput}
               min="0"
               step="any"
               aria-label="Kaynak Tutar"
             />
-            <div class="c-answer-fx-divider"></div>
             <div class="c-answer-fx-dropdown-wrap">
               <Dropdown
-                variant="ghost"
-                value={fromCurrency}
                 options={dropdownOptions}
-                onChange={(val) => {
-                  fromCurrency = val;
-                }}
+                bind:value={fromCurrency}
+                variant="ghost"
+                fullWidth={false}
               />
             </div>
           </div>
 
-          <!-- Alt Satır: Hedef Tutar + Para Birimi -->
-          <div class="c-answer-fx-row">
+          <div class="c-answer-row">
             <input
               type="number"
-              class="c-answer-fx-input"
+              class="c-answer-input"
               value={toAmount}
               oninput={handleToInput}
               min="0"
               step="any"
               aria-label="Hedef Tutar"
             />
-            <div class="c-answer-fx-divider"></div>
             <div class="c-answer-fx-dropdown-wrap">
               <Dropdown
-                variant="ghost"
-                value={toCurrency}
                 options={dropdownOptions}
-                onChange={(val) => {
-                  toCurrency = val;
-                }}
+                bind:value={toCurrency}
+                variant="ghost"
+                fullWidth={false}
               />
             </div>
           </div>
@@ -179,9 +242,28 @@
       </div>
 
     {:else if answer.type === "calculator"}
-      <div class="c-answer-card__calc">
-        <div class="c-answer-card__sub-title">{answer.expression} =</div>
-        <div class="c-answer-card__headline">{answer.result}</div>
+      <div class="c-answer-card__calc-app" role="region" aria-label="Hesap Makinesi">
+        <div class="c-calc-screen">
+          <div class="c-calc-screen__sub">{calcExpression || answer.expression || "0"} =</div>
+          <div class="c-calc-screen__main">{calcDisplay}</div>
+        </div>
+        <div class="c-calc-keypad">
+          {#each [
+            ["C", "btn--danger"], ["(", ""], [")", ""], ["÷", "btn--operator"],
+            ["7", ""], ["8", ""], ["9", ""], ["×", "btn--operator"],
+            ["4", ""], ["5", ""], ["6", ""], ["-", "btn--operator"],
+            ["1", ""], ["2", ""], ["3", ""], ["+", "btn--operator"],
+            ["0", ""], [".", ""], ["%", ""], ["=", "btn--equals"]
+          ] as [label, modifier]}
+            <button
+              type="button"
+              class="c-calc-btn btn--squish {modifier}"
+              onclick={() => handleCalcInput(label)}
+            >
+              {label}
+            </button>
+          {/each}
+        </div>
       </div>
 
     {:else if answer.type === "unit"}

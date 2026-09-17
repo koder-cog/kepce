@@ -141,6 +141,24 @@
 
     onMount(() => {
         loadData();
+
+        const handleCommentSubmitted = async (e) => {
+            if (e.detail?.menuId && String(e.detail.menuId) === String(menuId)) {
+                try {
+                    const commentsData = await api.getMenuComments(menuId);
+                    allComments = Array.isArray(commentsData)
+                        ? commentsData
+                        : (commentsData?.comments || []);
+                } catch (err) {
+                    console.error("Yorumlar güncellenirken hata:", err);
+                }
+            }
+        };
+
+        window.addEventListener("comment-submitted", handleCommentSubmitted);
+        return () => {
+            window.removeEventListener("comment-submitted", handleCommentSubmitted);
+        };
     });
 
     let ogImageUrl = $derived(

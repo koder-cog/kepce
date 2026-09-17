@@ -26,6 +26,7 @@
   let errors = $state({});
 
   let descLength = $derived(description.length);
+  let subjLength = $derived(subject.length);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -174,6 +175,13 @@
                 >Konu <span class="form-required-mark">*</span></label
               >
             </div>
+            <span
+              class="c-char-counter"
+              class:c-char-counter--over={subjLength > MAX_SUBJ}
+              id="contact-subject-char-counter"
+            >
+              {subjLength} / {MAX_SUBJ}
+            </span>
 
             <div
               class="form-group form-group--floating"

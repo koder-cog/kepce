@@ -37,6 +37,9 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/menus/latest-by-city", get(get_menu_latest_by_city))
         .route("/menus/today/:city", get(get_today_menu))
         .route("/menus/:id", get(get_single_menu))
+        .nest("/contact", crate::routes::contact::router())
+        .nest("/og", crate::routes::og::router())
+        .nest("/push", crate::routes::push::router())
 }
 
 pub fn cities_router() -> Router<crate::config::AppState> {

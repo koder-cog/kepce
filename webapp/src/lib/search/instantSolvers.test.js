@@ -5,6 +5,7 @@ import {
   solveWorldTime,
   levenshteinDistance,
   findClosestUnit,
+  solveTdkDefinition,
 } from "./instantSolvers.js";
 
 describe("instantSolvers - levenshteinDistance", () => {
@@ -153,5 +154,21 @@ describe("instantSolvers - solveWorldTime", () => {
     expect(solveWorldTime("saat tamircisi")).toBeNull();
     expect(solveWorldTime("istanbul yemekleri")).toBeNull();
     expect(solveWorldTime("")).toBeNull();
+  });
+});
+
+describe("instantSolvers - solveTdkDefinition", () => {
+  it("resolves definition for 'tabldot nedir' via 'tabildot' alias", async () => {
+    const res = await solveTdkDefinition("tabldot nedir");
+    if (res) {
+      expect(res.type).toBe("definition");
+      expect(res.word).toBe("tabildot");
+      expect(res.meanings.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("returns null for non-definition queries", async () => {
+    expect(await solveTdkDefinition("istanbul hava durumu")).toBeNull();
+    expect(await solveTdkDefinition("100 dolar kaç tl")).toBeNull();
   });
 });

@@ -374,13 +374,19 @@
         const formData = new FormData();
         formData.append("file", blob, "avatar.jpg");
         const uploadRes = await api.uploadAvatar(formData);
-        const url = uploadRes.avatar_url;
+        const rawUrl = uploadRes.avatar_url;
+        const freshTimestamp = Date.now();
+        const urlWithCacheBuster = `${rawUrl}?t=${freshTimestamp}`;
         if (globalState?.user && globalState.user.id === profile.id) {
-          globalState.user.avatar_url = url;
+          globalState.user.avatar_url = urlWithCacheBuster;
+          try {
+            localStorage.setItem("kepce_user_cache", JSON.stringify(globalState.user));
+          } catch {}
         }
-        profile.avatar_url = url;
-        avatarTimestamp = Date.now();
+        profile.avatar_url = rawUrl;
+        avatarTimestamp = freshTimestamp;
         showToast("Profil fotoğrafı güncellendi!", "success");
+        window.dispatchEvent(new CustomEvent("avatar-updated", { detail: { avatar_url: urlWithCacheBuster } }));
         modalObj.close();
       } catch (err) {
         showToast(err.message, "error");

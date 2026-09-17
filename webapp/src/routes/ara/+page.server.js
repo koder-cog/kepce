@@ -144,11 +144,17 @@ function matchKepceIntent(query) {
   }
 
   // 2. Şehir + Yemek/Yurt Niyeti Eşleştirmesi (Çift Kademeli)
-  const mealKeywords = ["yemek", "menu", "menü", "tabldot", "kyk", "yurt", "yurdu", "yurtlar", "yemekhane", "kahvalti", "kahvaltı", "ogle", "öğle", "aksam", "akşam", "saatleri", "yardim", "yardım"];
-  const hasMealIntent = tokens.some((t) => mealKeywords.some((mk) => t.includes(mk)));
+  // Kurumsal/yurt/öğrenci yemekhanesi veya menü niyeti aranır.
+  // "İstanbul yemek" veya "Adana yemek yerleri" gibi aramalar lokanta veya yöresel mutfak
+  // arayışı olduğundan KYK kartı basmaz; "kyk", "yurt", "yemekhane", "tabldot" veya "menü" aranmalıdır.
+  const institutionalKeywords = [
+    "kyk", "yurt", "yurdu", "yurtlar", "yemekhane", "yemekhanesi",
+    "tabldot", "tabildot", "menu", "menü", "menüsü", "menusu"
+  ];
+  const hasInstitutionalIntent = tokens.some((t) => institutionalKeywords.some((ik) => t.includes(ik)));
 
-  // Eğer yemek/yurt/menü niyeti YOKSA kesinlikle şehir kartı basma (False-positive engeli)
-  if (!hasMealIntent) return null;
+  // Eğer kurumsal yemekhane veya menü niyeti yoksa şehir kartı basma (False-positive engeli)
+  if (!hasInstitutionalIntent) return null;
 
   const matchedCity = resolveCityFromQuery(query);
   if (matchedCity) {

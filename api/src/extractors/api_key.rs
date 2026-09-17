@@ -112,6 +112,7 @@ where
 pub enum IngestionAuth {
     User(AuthenticatedUser),
     Developer(api_keys::Model),
+    Anonymous,
 }
 
 #[async_trait]
@@ -130,11 +131,8 @@ where
         if has_cookie || has_bearer {
             match AuthenticatedUser::from_request_parts(parts, state).await {
                 Ok(user) => return Ok(IngestionAuth::User(user)),
-                Err(e) => {
-                    // Tarayıcıdan gelen alakasız çerezlerin API Key yetkilendirmesini engellemesini önle.
-                    if !has_api_key {
-                        return Err(e);
-                    }
+                Err(_) => {
+                    // Tarayıcıdan gelen geçersiz/süresi dolmuş oturum durumunda anonim devam et veya API Key dene
                 }
             }
         }
@@ -146,6 +144,6 @@ where
             }
         }
 
-        Err(AppError::Unauthorized("Bu işlem için giriş yapmalı veya geçerli bir X-API-Key sağlamalısınız.".to_string()))
+        Ok(IngestionAuth::Anonymous)
     }
 }

@@ -60,12 +60,21 @@
         };
         window.addEventListener("kepce:dropdown-open", onExternalDropdown);
 
+        const onAvatarUpdated = (e) => {
+            avatarFailed = false;
+            if (globalState?.user && e.detail?.avatar_url) {
+                globalState.user = { ...globalState.user, avatar_url: e.detail.avatar_url };
+            }
+        };
+        window.addEventListener("avatar-updated", onAvatarUpdated);
+
         return () => {
             window.removeEventListener("scroll", closeDropdown);
             window.removeEventListener(
                 "kepce:dropdown-open",
                 onExternalDropdown,
             );
+            window.removeEventListener("avatar-updated", onAvatarUpdated);
         };
     });
 
@@ -290,7 +299,7 @@
 
             {#if globalState.hasSession}
                 <a
-                    href={user ? `/biri/${user.username}` : "#"}
+                    href={user ? `/biri/${user.username}` : "/ben"}
                     class="c-menu__item"
                     id="dropdown-profile"
                     data-link

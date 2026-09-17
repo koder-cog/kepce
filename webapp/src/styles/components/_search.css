@@ -2006,6 +2006,99 @@
   line-height: 1.15;
 }
 
+/* İnteraktif Hesap Makinesi */
+.c-answer-card__calc-app {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-width: 360px;
+  width: 100%;
+}
+
+.c-calc-screen {
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  text-align: right;
+  min-height: 64px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.c-calc-screen__sub {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c-calc-screen__main {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.c-calc-keypad {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.c-calc-btn {
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: var(--font-mono);
+  font-size: var(--text-base);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background var(--dur-fast) var(--ease-standard),
+              border-color var(--dur-fast) var(--ease-standard);
+}
+
+.c-calc-btn:hover {
+  background: var(--color-surface-sunken);
+}
+
+.c-calc-btn:active {
+  transform: scale(var(--press-scale));
+}
+
+.c-calc-btn.btn--operator {
+  background: var(--color-surface-sunken);
+  color: var(--color-accent-text);
+  font-weight: var(--font-weight-bold);
+}
+
+.c-calc-btn.btn--danger {
+  color: var(--color-error);
+  font-weight: var(--font-weight-bold);
+}
+
+.c-calc-btn.btn--equals {
+  background: var(--color-accent-primary);
+  color: var(--color-text-on-accent);
+  border-color: var(--color-accent-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.c-calc-btn.btn--equals:hover {
+  background: var(--color-accent-primary-hover);
+}
+
 /* TDK Anlam Listesi */
 .c-answer-card__meanings {
   margin-top: var(--space-md);

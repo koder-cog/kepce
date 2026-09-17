@@ -180,13 +180,19 @@ export function checkInstantPreview(val, preferences = {}) {
   const q = (val || "").trim().toLowerCase();
   if (!q) return null;
 
+  const mathNormalized = q
+    .replace(/=\s*$/, "")
+    .replace(/×/g, "*")
+    .replace(/÷/g, "/")
+    .replace(/(\d+)\s*[xX]\s*(\d+)/g, "$1 * $2");
+
   if (
     preferences.pluginCalculator &&
-    /^[\d\s.,+\-*/()^%]+$/.test(q) &&
-    /[+\-*/^%]/.test(q)
+    /^[\d\s.,+\-*/()^%]+$/.test(mathNormalized) &&
+    /[+\-*/^%]/.test(mathNormalized)
   ) {
     try {
-      const sanitized = q.replace(/,/g, ".").replace(/\^/g, "**");
+      const sanitized = mathNormalized.replace(/,/g, ".").replace(/\^/g, "**");
       if (!/[a-zA-Z_$]/.test(sanitized)) {
         // eslint-disable-next-line no-new-func
         const result = Function(`'use strict'; return (${sanitized})`)();

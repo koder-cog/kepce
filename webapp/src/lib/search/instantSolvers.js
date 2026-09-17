@@ -451,6 +451,21 @@ export function solveWorldTime(query) {
   return null;
 }
 
+const TDK_WORD_ALIASES = {
+  tabldot: "tabildot",
+  tabldöt: "tabildot",
+  vejeteryan: "vejetaryen",
+  orjinal: "orijinal",
+  laboratuar: "laboratuvar",
+  karnıbahar: "karnabahar",
+  yalnış: "yanlış",
+  yanlız: "yalnız",
+  traş: "tıraş",
+  egsoz: "egzoz",
+  egzozt: "egzoz",
+  makina: "makine",
+};
+
 // ── 3. TDK Sözlük & Tanım Çözücü ───────────────────────────────────────────
 export async function solveTdkDefinition(query) {
   const q = query.trim().toLowerCase();
@@ -465,11 +480,13 @@ export async function solveTdkDefinition(query) {
   }
   if (!m) return null;
 
-  const word = m[1].trim();
-  if (word.length < 2) return null;
+  const rawWord = m[1].trim();
+  if (rawWord.length < 2) return null;
+
+  const lookupWord = TDK_WORD_ALIASES[rawWord] || rawWord;
 
   try {
-    const res = await fetch(`https://sozluk.gov.tr/gts?ara=${encodeURIComponent(word)}`, {
+    const res = await fetch(`https://sozluk.gov.tr/gts?ara=${encodeURIComponent(lookupWord)}`, {
       signal: AbortSignal.timeout(3000),
     });
     if (!res.ok) return null;

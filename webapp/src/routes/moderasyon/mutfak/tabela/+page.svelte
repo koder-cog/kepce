@@ -1,6 +1,7 @@
 <script>
   import "@/styles/pages/_menu-table.css";
   import { onMount, tick } from "svelte";
+  import { page } from "$app/state";
   import { api } from '@/api/index.js';
   import { getCitiesData } from "@/stores/city.svelte.js";
   import EmptyState from "@/components/ui/EmptyState.svelte";
@@ -95,6 +96,19 @@
     try {
       cities = await getCitiesData();
     } catch (err) { console.error(err); }
+
+    const pCity = page.url.searchParams.get("sehir");
+    const pGun = page.url.searchParams.get("gun");
+
+    if (pCity) {
+      menuCityFilter = pCity;
+    }
+    if (pGun && /^\d{4}-\d{2}/.test(pGun)) {
+      const parts = pGun.split("-");
+      menuYearFilter = parts[0];
+      menuMonthFilter = parts[1];
+    }
+
     fetchMenus();
   }
 

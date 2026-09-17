@@ -90,6 +90,7 @@ async fn submit_menu(
     let user_id = match auth {
         IngestionAuth::User(user) => Some(user.id),
         IngestionAuth::Developer(key) => Some(key.user_id),
+        IngestionAuth::Anonymous => None,
     };
 
     let input = MenuSubmissionInput {
