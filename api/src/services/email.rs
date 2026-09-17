@@ -127,7 +127,7 @@ impl EmailService {
         Ok(())
     }
 
-    async fn send_email(&self, to: &str, subject: &str, html: String) -> Result<(), EmailError> {
+    pub async fn send_email(&self, to: &str, subject: &str, html: String) -> Result<(), EmailError> {
         // Eğer API anahtarı boşsa veya mock_key ise ve SMTP yapılandırılmamışsa atla (test/yerel ortam)
         if (self.api_key.is_empty() || self.api_key == "mock_key") && self.smtp_config.is_none() {
             tracing::info!("Mock Email sent to {}: Subject: {}", to, subject);

@@ -52,6 +52,8 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/users", get(get_users))
         .route("/tags", get(get_tags).post(create_tag))
         .route("/tags/:tag_id", put(update_tag).delete(delete_tag))
+        .route("/kitchen/coverage", get(get_kitchen_coverage))
+        .nest("/database", crate::routes::database_admin::router())
         .route("/incidents", get(get_incidents).post(create_incident))
         .route("/incidents/:incident_id", put(update_incident).delete(delete_incident))
 }
@@ -1150,5 +1152,130 @@ async fn update_submission_status(
         "success": true,
         "id": updated.id,
         "status": updated.status
+    })))
+}
+
+#[derive(serde::Deserialize)]
+pub struct KitchenCoverageQuery {
+    pub year: Option<i32>,
+    pub month: Option<i32>,
+}
+
+async fn get_kitchen_coverage(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    Query(query): Query<KitchenCoverageQuery>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    require_admin(&user)?;
+
+    let now = chrono::Utc::now();
+    let year = query.year.unwrap_or_else(|| now.format("%Y").to_string().parse().unwrap_or(2026));
+    let month = query.month.unwrap_or_else(|| now.format("%m").to_string().parse().unwrap_or(9));
+
+    let days_in_month = match month {
+        1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
+        4 | 6 | 9 | 11 => 30,
+        2 => {
+            if (year % 4 == 0 && year % 100 != 0) || (year % 400 == 0) {
+                29
+            } else {
+                28
+            }
+        }
+        _ => 30,
+    };
+
+    use sea_orm::{ConnectionTrait, Statement};
+    let sql = r#"
+        SELECT 
+            c.id AS city_id,
+            c.name AS city_name,
+            c.slug AS city_slug,
+            m.id AS menu_id,
+            TO_CHAR(m.date, 'YYYY-MM-DD') AS menu_date,
+            EXTRACT(DAY FROM m.date)::int AS day_num,
+            m.meal_type::text AS meal_type,
+            m.is_approved AS is_approved,
+            m.source AS source,
+            (m.bot_commentary IS NOT NULL AND m.bot_commentary != '') AS has_bot_commentary,
+            (SELECT COUNT(*) FROM menu_dishes md WHERE md.menu_id = m.id)::int AS dish_count
+        FROM cities c
+        LEFT JOIN menus m ON m.city_id = c.id 
+            AND EXTRACT(YEAR FROM m.date) = $1 
+            AND EXTRACT(MONTH FROM m.date) = $2
+        ORDER BY c.id ASC, m.date ASC;
+    "#;
+
+    let stmt = Statement::from_sql_and_values(
+        db.get_database_backend(),
+        sql,
+        vec![year.into(), month.into()],
+    );
+
+    let rows = db.query_all(stmt).await.map_err(|e| AppError::Internal(e.to_string()))?;
+
+    use std::collections::BTreeMap;
+    struct CityItem {
+        id: i32,
+        name: String,
+        slug: String,
+        days: BTreeMap<i32, serde_json::Map<String, serde_json::Value>>,
+    }
+
+    let mut cities_map: BTreeMap<i32, CityItem> = BTreeMap::new();
+
+    for row in rows {
+        let city_id: i32 = row.try_get("", "city_id").unwrap_or(0);
+        let city_name: String = row.try_get("", "city_name").unwrap_or_default();
+        let city_slug: String = row.try_get("", "city_slug").unwrap_or_default();
+
+        let entry = cities_map.entry(city_id).or_insert_with(|| CityItem {
+            id: city_id,
+            name: city_name,
+            slug: city_slug,
+            days: BTreeMap::new(),
+        });
+
+        if let Ok(Some(d)) = row.try_get::<Option<i32>>("", "day_num") {
+            let menu_id: Option<i32> = row.try_get("", "menu_id").ok();
+            let meal_type: Option<String> = row.try_get("", "meal_type").ok();
+            let is_approved: Option<bool> = row.try_get("", "is_approved").ok();
+            let source: Option<String> = row.try_get("", "source").ok();
+            let has_bot_commentary: Option<bool> = row.try_get("", "has_bot_commentary").ok();
+            let dish_count: Option<i32> = row.try_get("", "dish_count").ok();
+
+            if let Some(m_type) = meal_type {
+                let day_entry = entry.days.entry(d).or_default();
+                day_entry.insert(
+                    m_type.to_lowercase(),
+                    serde_json::json!({
+                        "menu_id": menu_id,
+                        "is_approved": is_approved.unwrap_or(false),
+                        "source": source,
+                        "has_bot_commentary": has_bot_commentary.unwrap_or(false),
+                        "dish_count": dish_count.unwrap_or(0),
+                    }),
+                );
+            }
+        }
+    }
+
+    let cities_list: Vec<serde_json::Value> = cities_map
+        .into_values()
+        .map(|c| {
+            serde_json::json!({
+                "id": c.id,
+                "name": c.name,
+                "slug": c.slug,
+                "days": c.days,
+            })
+        })
+        .collect();
+
+    Ok(Json(serde_json::json!({
+        "year": year,
+        "month": month,
+        "days_in_month": days_in_month,
+        "cities": cities_list,
     })))
 }

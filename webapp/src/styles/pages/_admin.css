@@ -1105,4 +1105,278 @@
     align-items: center;
     gap: var(--space-xs);
   }
+
+  /* ── Kapsama Matrisi (Coverage Matrix) ──────────────────────── */
+  .coverage-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-bottom: var(--space-lg);
+  }
+
+  .coverage-filters {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+    flex-wrap: wrap;
+  }
+
+  .coverage-legend {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    flex-wrap: wrap;
+  }
+
+  .coverage-legend__item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .coverage-legend__dot {
+    width: 10px;
+    height: 10px;
+    border-radius: var(--radius-sm);
+    display: inline-block;
+  }
+
+  .coverage-legend__dot--full {
+    background: rgba(34, 197, 94, 0.7);
+  }
+
+  .coverage-legend__dot--partial {
+    background: rgba(234, 179, 8, 0.7);
+  }
+
+  .coverage-legend__dot--empty {
+    background: var(--color-border);
+  }
+
+  .coverage-subtext {
+    font-size: 9px;
+  }
+
+  .coverage-matrix-container {
+    overflow-x: auto;
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    max-height: 720px;
+  }
+
+  .coverage-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: var(--text-xs);
+    font-family: var(--font-body);
+  }
+
+  .coverage-table th,
+  .coverage-table td {
+    padding: var(--space-xs);
+    text-align: center;
+    border-bottom: 1px solid var(--color-border-light);
+    border-right: 1px solid var(--color-border-light);
+  }
+
+  .coverage-table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--color-surface-sunken);
+    z-index: 3;
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-muted);
+    padding: var(--space-sm) var(--space-xs);
+  }
+
+  .coverage-table thead th:first-child {
+    left: 0;
+    z-index: 4;
+    text-align: left;
+    padding-left: var(--space-md);
+    min-width: 130px;
+  }
+
+  .coverage-table tbody th {
+    position: sticky;
+    left: 0;
+    background: var(--color-card);
+    z-index: 2;
+    text-align: left;
+    padding-left: var(--space-md);
+    font-weight: var(--font-weight-medium);
+    white-space: nowrap;
+    border-right: 2px solid var(--color-border);
+  }
+
+  .coverage-table tbody tr:hover th {
+    background: var(--color-surface-sunken);
+  }
+
+  .coverage-cell {
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    padding: 0;
+    margin: 0 auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: var(--font-weight-semibold);
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    transition: transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard);
+  }
+
+  .coverage-cell:active {
+    transform: scale(0.92);
+  }
+
+  .coverage-cell--full {
+    background: rgba(34, 197, 94, 0.16);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #166534;
+  }
+
+  :global(.dark) .coverage-cell--full {
+    background: rgba(34, 197, 94, 0.22);
+    border-color: rgba(34, 197, 94, 0.5);
+    color: #86efac;
+  }
+
+  .coverage-cell--partial {
+    background: rgba(234, 179, 8, 0.16);
+    border-color: rgba(234, 179, 8, 0.4);
+    color: #854d0e;
+  }
+
+  :global(.dark) .coverage-cell--partial {
+    background: rgba(234, 179, 8, 0.22);
+    border-color: rgba(234, 179, 8, 0.5);
+    color: #fde047;
+  }
+
+  .coverage-cell--empty {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border-light);
+    color: var(--color-muted);
+    opacity: 0.6;
+  }
+
+  .coverage-cell--today {
+    box-shadow: 0 0 0 2px var(--color-accent-primary);
+  }
+
+  /* ── Veritabanı Konsolu (Database Explorer & SQL Runner) ────── */
+  .db-console-layout {
+    display: grid;
+    grid-template-columns: 240px 1fr;
+    gap: var(--space-lg);
+    align-items: start;
+  }
+
+  @media (max-width: 900px) {
+    .db-console-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .db-table-list {
+    background: var(--color-card);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-sm);
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+  }
+
+  .db-table-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    background: transparent;
+    border: none;
+    border-radius: var(--radius-md);
+    color: var(--color-text);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    text-align: left;
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-standard);
+  }
+
+  .db-table-item:hover {
+    background: var(--color-surface-sunken);
+  }
+
+  .db-table-item--active {
+    background: var(--color-accent-primary-light);
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  .db-sql-editor {
+    width: 100%;
+    min-height: 160px;
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    background: var(--color-surface-sunken);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: var(--space-md);
+    line-height: 1.5;
+    resize: vertical;
+  }
+
+  .db-sql-editor:focus {
+    outline: none;
+    border-color: var(--color-accent-primary);
+    box-shadow: 0 0 0 3px var(--color-accent-primary-light);
+  }
+
+  .db-sql-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+    margin-top: var(--space-md);
+  }
+
+  .db-cell-mono {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    max-width: 240px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ── Destek & Şikayet Yanıt Kutusu ────────────────────────── */
+  .ticket-replies-box {
+    background: var(--color-surface-sunken);
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border);
+    margin-top: var(--space-md);
+  }
+
+  .ticket-reply-body {
+    white-space: pre-wrap;
+  }
 }

@@ -96,4 +96,31 @@ export const moderationApi = {
       method: 'POST',
       body: JSON.stringify({ status }),
     }),
+
+  getKitchenCoverage: (year, month) =>
+    request(`/moderation/kitchen/coverage${buildQuery({ year, month })}`),
+
+  getDatabaseTables: () => request('/moderation/database/tables'),
+  getTableData: (tableName, params = {}) =>
+    request(`/moderation/database/tables/${tableName}${buildQuery(params)}`),
+  deleteTableRow: (tableName, pkColumn, pkValue) =>
+    request(`/moderation/database/tables/${tableName}/row`, {
+      method: 'DELETE',
+      body: JSON.stringify({ pk_column: pkColumn, pk_value: pkValue }),
+    }),
+  updateTableRow: (tableName, pkColumn, pkValue, updateColumn, newValue) =>
+    request(`/moderation/database/tables/${tableName}/row`, {
+      method: 'PUT',
+      body: JSON.stringify({
+        pk_column: pkColumn,
+        pk_value: pkValue,
+        update_column: updateColumn,
+        new_value: newValue,
+      }),
+    }),
+  executeDatabaseQuery: (query, writeMode = false) =>
+    request('/moderation/database/query', {
+      method: 'POST',
+      body: JSON.stringify({ query, write_mode: writeMode }),
+    }),
 };

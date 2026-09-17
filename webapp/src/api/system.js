@@ -24,6 +24,13 @@ export const reportsApi = {
     }),
   deleteContactMessage: (id) =>
     request(`/reports/contact/${id}`, { method: 'DELETE' }),
+  replyToContactMessage: (id, reply_body) =>
+    request(`/reports/contact/${id}/reply`, {
+      method: 'POST',
+      body: JSON.stringify({ reply_body }),
+    }),
+  getContactMessageReplies: (id) =>
+    request(`/reports/contact/${id}/replies`),
   updateReportStatus: (reportId, status) =>
     request(`/reports/${reportId}`, {
       method: 'PATCH',

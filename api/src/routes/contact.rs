@@ -1,6 +1,8 @@
 use axum::{
+    extract::State,
+    http::{header, HeaderMap},
     routing::post,
-    Router, Json, extract::State,
+    Json, Router,
 };
 use crate::{
     error::AppError,
@@ -26,14 +28,37 @@ pub struct SubmitContactDto {
     pub subject: String,
     #[validate(length(min = 10, max = 2000, message = "Mesaj en az 10, en fazla 2000 karakter olmalıdır."))]
     pub description: String,
+    pub source: Option<String>,
+    pub page_url: Option<String>,
 }
 
 async fn submit_contact_form(
     State(state): State<crate::config::AppState>,
+    headers: HeaderMap,
     user: OptionalUser,
     ValidatedJson(payload): ValidatedJson<SubmitContactDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    
+    let referer = headers
+        .get(header::REFERER)
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string());
+
+    let user_agent = headers
+        .get(header::USER_AGENT)
+        .and_then(|h| h.to_str().ok())
+        .map(|s| s.to_string());
+
+    let source = payload.source.unwrap_or_else(|| {
+        if let Some(ref ref_url) = referer {
+            if ref_url.contains("ara.kepce.org") || ref_url.contains("/ara") {
+                return "ara".to_string();
+            }
+        }
+        "kepce".to_string()
+    });
+
+    let page_url = payload.page_url.or(referer);
+
     let contact_model = contact_messages::ActiveModel {
         user_id: Set(user.0.map(|u| u.id)),
         email: Set(payload.email),
@@ -41,6 +66,9 @@ async fn submit_contact_form(
         subject: Set(payload.subject),
         message: Set(payload.description),
         status: Set(ReportStatusEnum::Pending),
+        source: Set(source),
+        page_url: Set(page_url),
+        user_agent: Set(user_agent),
         created_at: Set(Some(chrono::Utc::now().into())),
         ..Default::default()
     };

@@ -8,6 +8,7 @@ pub mod badges;
 pub mod cities;
 pub mod comments;
 pub mod contact_messages;
+pub mod contact_message_replies;
 pub mod dish_aliases;
 pub mod dish_tags;
 pub mod dish_votes;

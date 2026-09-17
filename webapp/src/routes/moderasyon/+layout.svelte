@@ -18,6 +18,7 @@
       links: [
         { href: "/moderasyon/mutfak/yemekler", label: "Yemekler" },
         { href: "/moderasyon/mutfak/tabela", label: "Tabela" },
+        { href: "/moderasyon/mutfak/kapsama", label: "Kapsama matrisi" },
         { href: "/moderasyon/mutfak/gonderimler", label: "Gönderimler" },
         { href: "/moderasyon/mutfak/bot", label: "Kepçe Bot" },
       ],
@@ -60,6 +61,7 @@
       title: "Altyapı",
       links: [
         { href: "/moderasyon/altyapi/sistem-sagligi", label: "Sistem sağlığı" },
+        { href: "/moderasyon/altyapi/veritabani", label: "Veritabanı konsolu" },
         { href: "/moderasyon/altyapi/olaylar", label: "Olaylar" },
         { href: "/moderasyon/altyapi/etiketler", label: "Etiketler" },
       ],

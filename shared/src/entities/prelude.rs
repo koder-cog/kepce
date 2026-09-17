@@ -6,6 +6,7 @@ pub use super::badges::Entity as Badges;
 pub use super::cities::Entity as Cities;
 pub use super::comments::Entity as Comments;
 pub use super::contact_messages::Entity as ContactMessages;
+pub use super::contact_message_replies::Entity as ContactMessageReplies;
 pub use super::dish_aliases::Entity as DishAliases;
 pub use super::dish_tags::Entity as DishTags;
 pub use super::dish_votes::Entity as DishVotes;

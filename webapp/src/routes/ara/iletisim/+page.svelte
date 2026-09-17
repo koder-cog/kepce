@@ -61,6 +61,8 @@
         report_type: category,
         subject: subject.trim(),
         description: description.trim(),
+        source: "ara",
+        page_url: typeof window !== "undefined" ? window.location.href : null,
       });
       showToast("Teşekkürler! Mesajınız başarıyla iletildi.");
 

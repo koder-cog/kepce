@@ -23,6 +23,7 @@
   );
 
   let activeReportFilter = $state("pending"); // 'pending' | 'resolved' | 'dismissed'
+  let sourceFilter = $state("all"); // 'all' | 'kepce' | 'ara'
 
   let isLoading = $state(true);
   let allReports = $state([]);
@@ -35,14 +36,18 @@
   let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
   let currentPage = $state(1);
 
-  // Filter lists based on tab and status
+  // Filter lists based on tab, status and source
   let items = $derived.by(() => {
     if (complaintTab === "content") {
       return allReports.filter(r => (r.type === 'comment' || r.type === 'user') && r.status === activeReportFilter);
     } else if (complaintTab === "menu") {
       return allReports.filter(r => (r.type === 'menu' || r.type === 'bot') && r.status === activeReportFilter);
     } else if (complaintTab === "contact") {
-      return contactMessages.filter(m => m.status === activeReportFilter);
+      return contactMessages.filter(m => {
+        const matchesStatus = m.status === activeReportFilter;
+        const matchesSource = sourceFilter === "all" || (m.source || "kepce") === sourceFilter;
+        return matchesStatus && matchesSource;
+      });
     }
     return [];
   });
@@ -139,6 +144,70 @@
     });
   }
 
+  let expandedReplies = $state({});
+  let loadingReplies = $state({});
+
+  async function toggleReplies(id) {
+    if (expandedReplies[id]) {
+      delete expandedReplies[id];
+      expandedReplies = { ...expandedReplies };
+      return;
+    }
+
+    loadingReplies[id] = true;
+    try {
+      const res = await api.getContactMessageReplies(id);
+      expandedReplies[id] = res;
+      expandedReplies = { ...expandedReplies };
+    } catch (err) {
+      showToast(err.message || "Yanıt geçmişi yüklenemedi.", "error");
+    } finally {
+      loadingReplies[id] = false;
+    }
+  }
+
+  function openReplyModal(item) {
+    createModal({
+      title: `${item.email} Yanıtla`,
+      iconHtml: icon("send", 20),
+      contentHtml: `
+        <div class="u-mb-md">
+          <p class="u-text-xs u-color-muted u-mb-sm">Konu: <strong>${sanitizeText(item.subject)}</strong></p>
+          <div class="u-mb-sm u-flex u-gap-xs u-flex-wrap">
+            <button type="button" class="btn btn--secondary btn--sm btn--squish" onclick="document.getElementById('reply-text-input').value = 'Merhaba, bildirdiğiniz menü bilgisi incelenmiş ve sistemde güncellenmiştir. Geri bildiriminiz için teşekkür ederiz.';">Menü Güncellendi</button>
+            <button type="button" class="btn btn--secondary btn--sm btn--squish" onclick="document.getElementById('reply-text-input').value = 'Merhaba, karşılaştığınız teknik aksaklık giderilmiştir. Deneyiminiz için teşekkür ederiz.';">Hata Giderildi</button>
+            <button type="button" class="btn btn--secondary btn--sm btn--squish" onclick="document.getElementById('reply-text-input').value = 'Merhaba, geri bildiriminiz ve öneriniz için teşekkür ederiz. İncelemeye alınmıştır.';">Öneri Alındı</button>
+          </div>
+          <label class="label u-text-xs">E-posta Yanıtı</label>
+          <textarea id="reply-text-input" class="input u-width-full" rows="5" placeholder="Kullanıcıya iletilecek e-posta metnini yazınız..."></textarea>
+        </div>
+      `,
+      buttons: [
+        { label: "Vazgeç", variant: "secondary" },
+        {
+          label: "Gönder ve Çözüldü İşaretle",
+          variant: "primary",
+          onClick: async (close) => {
+            const inputEl = document.getElementById("reply-text-input");
+            const text = inputEl ? inputEl.value.trim() : "";
+            if (!text) {
+              showToast("Lütfen bir yanıt metni yazınız.", "warning");
+              return;
+            }
+            try {
+              await api.replyToContactMessage(item.id, text);
+              showToast("E-posta yanıtı gönderildi ve durum güncellendi.", "success");
+              contactMessages = contactMessages.map(m => m.id === item.id ? { ...m, status: "resolved" } : m);
+              close();
+            } catch (err) {
+              showToast(err.message || "Yanıt gönderilemedi.", "error");
+            }
+          }
+        }
+      ]
+    });
+  }
+
   function formatDate(isoString) {
     if (!isoString) return 'Bilinmeyen Tarih';
     return isoString.substring(0, 10).replace(/-/g, '.') + ' ' + isoString.substring(11, 16);
@@ -156,17 +225,29 @@
   <title>Şikayetler - Moderasyon - Kepçe</title>
 </svelte:head>
 
+<div class="u-mb-lg u-flex u-flex-justify-between u-flex-align-center u-flex-wrap u-gap-md">
+  <div class="u-flex u-flex-align-center u-gap-sm u-flex-wrap">
+    <Dropdown
+      options={[
+        { label: "Bekleyenler", value: "pending" },
+        { label: "Çözülenler", value: "resolved" },
+        { label: "Göz Ardı Edilenler", value: "dismissed" },
+      ]}
+      bind:value={activeReportFilter}
+    />
 
+    {#if complaintTab === 'contact'}
+      <Dropdown
+        options={[
+          { label: "Tüm Kaynaklar", value: "all" },
+          { label: "Kepçe (Ana Site)", value: "kepce" },
+          { label: "Kepçe Ara (ara.kepce.org)", value: "ara" },
+        ]}
+        bind:value={sourceFilter}
+      />
+    {/if}
+  </div>
 
-<div class="u-mb-lg u-flex u-flex-justify-between u-flex-align-center">
-  <Dropdown
-    options={[
-      { label: "Bekleyenler", value: "pending" },
-      { label: "Çözülenler", value: "resolved" },
-      { label: "Göz Ardı Edilenler", value: "dismissed" },
-    ]}
-    bind:value={activeReportFilter}
-  />
   {#if totalPages > 1}
     <Pagination
       compact={true}
@@ -203,8 +284,15 @@
               <span class="u-color-muted u-text-sm">&middot;</span>
               <span class="comment-card__date u-text-sm u-color-muted">{formatDate(item.created_at)}</span>
             </div>
-            <div class="comment-card__meta u-mt-xs">
+            <div class="comment-card__meta u-mt-xs u-flex u-flex-align-center u-gap-xs">
               <span class="u-text-sm u-color-muted">#{item.id.toString().substring(0, 8)}</span>
+              {#if complaintTab === 'contact'}
+                {#if item.source === 'ara'}
+                  <span class="badge badge--warning">Kepçe Ara</span>
+                {:else}
+                  <span class="badge badge--neutral">Kepçe</span>
+                {/if}
+              {/if}
             </div>
           </header>
 
@@ -212,10 +300,35 @@
             {#if complaintTab === 'contact'}
               <div class="u-mb-xs"><strong>Kategori:</strong> <span class="u-color-text">{item.category}</span></div>
               <div class="u-mb-xs"><strong>Konu:</strong> <span class="u-color-text">{item.subject}</span></div>
+              {#if item.page_url}
+                <div class="u-mb-xs u-text-xs">
+                  <strong>Sayfa:</strong>
+                  <a href={item.page_url} target="_blank" class="u-link u-color-primary">{item.page_url}</a>
+                </div>
+              {/if}
               <div class="u-mt-md">
                 <strong>Mesaj:</strong>
                 <p class="u-mt-xs">{item.message}</p>
               </div>
+
+              {#if expandedReplies[item.id]}
+                <div class="ticket-replies-box">
+                  <strong class="u-text-xs u-color-muted u-mb-xs u-display-block">GÖNDERİLEN YANITLAR</strong>
+                  {#if expandedReplies[item.id].length === 0}
+                    <p class="u-text-xs u-color-muted">Henüz bu mesaja yanıt gönderilmemiş.</p>
+                  {:else}
+                    {#each expandedReplies[item.id] as rep}
+                      <div class="u-mb-sm u-pb-sm u-border-bottom">
+                        <div class="u-flex u-flex-justify-between u-text-xs u-color-muted u-mb-xs">
+                          <span>{rep.responder_username || 'Yönetici'}</span>
+                          <span>{formatDate(rep.created_at)}</span>
+                        </div>
+                        <p class="u-text-sm u-color-text ticket-reply-body">{rep.reply_body}</p>
+                      </div>
+                    {/each}
+                  {/if}
+                </div>
+              {/if}
             {:else}
               <div class="u-mb-xs"><strong>Tip:</strong> <span class="u-color-text">{typeLabels[item.type] || item.type}</span></div>
               <div class="u-mb-xs"><strong>Hedef:</strong> 
@@ -231,10 +344,20 @@
             {/if}
           </div>
 
-          <footer class="comment-card__footer">
+          <footer class="comment-card__footer u-flex u-flex-wrap u-gap-xs">
+            {#if complaintTab === 'contact'}
+              <button class="btn btn--primary btn--squish" onclick={() => openReplyModal(item)}>
+                {@html icon("send", 14)}
+                E-posta ile Yanıtla
+              </button>
+              <button class="btn btn--secondary btn--squish" onclick={() => toggleReplies(item.id)}>
+                {expandedReplies[item.id] ? "Yanıtları Gizle" : (loadingReplies[item.id] ? "Yükleniyor..." : "Yanıt Geçmişi")}
+              </button>
+            {/if}
+
             {#if activeReportFilter === 'pending'}
               <button class="btn btn--secondary btn--squish" onclick={() => changeReportStatus(item.id, 'dismissed', complaintTab === 'contact')}>Göz ardı et</button>
-              <button class="btn btn--primary btn--squish" onclick={() => changeReportStatus(item.id, 'resolved', complaintTab === 'contact')}>Çözüldü işaretle</button>
+              <button class="btn btn--secondary btn--squish" onclick={() => changeReportStatus(item.id, 'resolved', complaintTab === 'contact')}>Çözüldü işaretle</button>
             {:else}
               <button class="btn btn--secondary btn--squish" onclick={() => changeReportStatus(item.id, 'pending', complaintTab === 'contact')}>Geri al (inceleniyor)</button>
               {#if complaintTab !== 'contact'}
