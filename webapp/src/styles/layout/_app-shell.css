@@ -1,3 +1,4 @@
+@layer layout {
 /* ── Mobil Uygulama Kabuk Modu (.is-app / WebView Wrapper) ─── */
 html.is-app #main-nav,
 html.is-app .nav-bar,
@@ -81,4 +82,5 @@ body.is-app .comments-page {
 /* 5. Dokunma & Vurgu İyileştirmeleri */
 html.is-app * {
   -webkit-tap-highlight-color: transparent !important;
+}
 }

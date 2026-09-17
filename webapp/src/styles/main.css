@@ -5,7 +5,6 @@
 @import "base/_fonts.css";
 
 /* Tokens */
-@import "tokens/_tokens.css";
 @import "tokens/_colors.css";
 @import "tokens/_typography.css";
 @import "tokens/_spacing.css";
@@ -50,6 +49,7 @@
 @import "components/_pagination.css";
 @import "components/_pricing-calculator.css";
 @import "components/_search.css";
+@import "components/_generative-ui.css";
 
 /* Utilities */
 @import "utilities/_animations.css";

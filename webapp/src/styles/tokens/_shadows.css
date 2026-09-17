@@ -1,3 +1,4 @@
+@layer tokens {
 /*
  * kepçe design tokens - shadows & blur
  *
@@ -77,4 +78,5 @@
     --shadow-accent-md: none;
     --shadow-accent-lg: none;
     --shadow-focus: none;
+}
 }

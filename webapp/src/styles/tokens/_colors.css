@@ -1,3 +1,4 @@
+@layer tokens {
 /*
  * kepçe design tokens - colors
  *
@@ -284,4 +285,5 @@
     --color-switch-handle-border: transparent;
     --color-switch-track-off: var(--color-card);
     --color-switch-track-on: var(--color-accent-primary);
+}
 }

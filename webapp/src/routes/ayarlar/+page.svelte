@@ -737,7 +737,7 @@
     }}
   >
     {#snippet children()}
-      <p class="u-text-base" style="line-height: 1.6;">
+      <p class="u-text-base u-line-height-1-6">
         Kahvaltı ve akşam yemeği menülerini tam vaktinde alabilmeniz ve günün
         tabldotunu kaçırmamanız için sistem bildirim izni gerekmektedir.
       </p>

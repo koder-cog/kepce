@@ -1,3 +1,4 @@
+@layer components {
 /* ==========================================================================
    Kepçe Ara - Arama Motoru Stilleri (Görsel 2 Referans Tasarımı)
    ========================================================================== */
@@ -1075,7 +1076,7 @@
   transition: all var(--dur-normal) var(--ease-standard);
 }
 
-@media (min-width: 680px) {
+@media (min-width: 600px) {
   .c-knowledge-showcase {
     grid-template-columns: 1.4fr 1.6fr;
     height: 220px;
@@ -1112,7 +1113,7 @@
   height: 200px;
 }
 
-@media (min-width: 680px) {
+@media (min-width: 600px) {
 
   .c-knowledge-tile--photo,
   .c-knowledge-tile--org-media {
@@ -1150,7 +1151,7 @@
   height: 100%;
 }
 
-@media (min-width: 680px) {
+@media (min-width: 600px) {
   .c-knowledge-tile--map {
     height: 100%;
   }
@@ -1460,7 +1461,7 @@
   padding: 0 var(--space-xl) var(--space-lg);
 }
 
-@media (min-width: 680px) {
+@media (min-width: 600px) {
   .c-knowledge-org-showcase {
     grid-template-columns: 1.2fr 1fr;
     height: 210px;
@@ -2139,13 +2140,6 @@
   }
 }
 
-@media (min-width: 1200px) {
-  .c-search-videos-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--space-md);
-  }
-}
-
 .c-search-video-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-lg);
@@ -2300,7 +2294,7 @@
   box-shadow: var(--shadow-2xl);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   .c-search-lightbox-content {
     flex-direction: row;
     height: 560px;
@@ -2358,7 +2352,7 @@
   border-top: 1px solid var(--color-border);
 }
 
-@media (min-width: 768px) {
+@media (min-width: 600px) {
   .c-search-lightbox-sidebar {
     width: 320px;
     flex-shrink: 0;
@@ -2845,4 +2839,5 @@
   .c-search-skeleton-line.is-title {
     width: 90%;
   }
+}
 }

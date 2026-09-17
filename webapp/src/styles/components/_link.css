@@ -1,3 +1,4 @@
+@layer components {
 /* ── Interactive Text Links ────────────────────────────────── */
 
 /* Mobil dokunma vurgusunu kaldır (squish efektinin kendisi _button.css'te
@@ -74,3 +75,5 @@ li a:not([class]):active {
   text-decoration: underline;
   filter: none;
 }
+}
+

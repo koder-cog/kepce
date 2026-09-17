@@ -146,9 +146,12 @@
   }
 
   /* ── 3. Variant: RESPONSIVE ───────────────────────────── */
+  /* Masaüstünde varsayılan olarak sadece metin gösterilir */
+  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
+    display: none;
+  }
 
-  /* Mobilde (<=600px): Yazıyı gizle, butonları 'icons' gibi kare/yuvarlak yap */
-  /* Mobilde (<=600px): Responsive varyant */
+  /* Mobilde (<=600px): Yazıyı gizle, ikonları göster ve butonları kompakt yap */
   @media (max-width: 600px) {
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__label:not(.c-segmented-control__label--standalone) {
       display: none;
@@ -160,20 +163,10 @@
 
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn {
       flex: 1;
-      /* Sabit 36px yerine alanı eşit paylaşsınlar */
       height: 36px;
       padding: 0 12px;
       min-width: 36px;
       max-width: none;
-      /* Genişlik sınırını kaldır */
-    }
-  }
-
-  /* Masaüstünde (>600px): Eğer sadece yazı kalsın istiyorsanız (orijinal tercihiniz): */
-  @media (min-width: 601px) {
-    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
-      display: none;
-      /* Masaüstünde de ikon görünsün isterseniz bu kuralı silin */
     }
   }
 }

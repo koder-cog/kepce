@@ -20,6 +20,6 @@
 
 <h1 class="sr-only">Yönlendiriliyorsunuz</h1>
 
-<div class="u-flex u-justify-center u-items-center" style="min-height: 40dvh;">
+<div class="u-flex u-justify-center u-items-center u-min-h-40dvh">
     <Loader size={48} />
 </div>

@@ -103,7 +103,7 @@
         onmouseenter={() => (hoveredIdx = slice.idx)}
         onmouseleave={() => (hoveredIdx = null)}
       >
-        <span class="pie-legend-dot" style="background-color: {slice.color};"
+        <span class="pie-legend-dot" style="--slice-color: {slice.color};"
         ></span>
         <span class="pie-legend-name">{slice.category}</span>
         <span class="pie-legend-pct">%{slice.percentage}</span>

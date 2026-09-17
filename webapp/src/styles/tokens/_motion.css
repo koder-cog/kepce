@@ -1,3 +1,4 @@
+@layer tokens {
 /*
  * kepçe design tokens - motion
  *
@@ -132,4 +133,5 @@
     to {
         opacity: 0;
     }
+}
 }

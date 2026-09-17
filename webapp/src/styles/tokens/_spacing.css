@@ -1,3 +1,4 @@
+@layer tokens {
 /*
  * kepçe design tokens - spacing & layout
  *
@@ -49,4 +50,5 @@
     --footer-bg: var(--color-background);
     --nav-bg-opacity: 0.5;
     --bottom-bar-offset: 180px;
+}
 }

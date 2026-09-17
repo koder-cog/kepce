@@ -118,7 +118,7 @@
     flex-shrink: 0;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     .pricing-calc__presets-bar .btn,
     .pricing-calc__chips-scroll .btn {
       padding: var(--space-xs) var(--space-sm);
@@ -137,7 +137,7 @@
     width: 100%;
   }
 
-  @media (max-width: 640px) {
+  @media (max-width: 600px) {
     .pricing-calc__grid {
       grid-template-columns: 1fr;
       max-height: 360px;
@@ -157,7 +157,7 @@
     transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 600px) {
     .pricing-calc__item {
       padding: var(--space-xs) var(--space-sm);
     }
@@ -257,6 +257,7 @@
 
   .pricing-calc__progress-fill {
     height: 100%;
+    width: var(--progress-width, 0%);
     transition: width var(--dur-fast) ease, background-color var(--dur-fast) ease;
   }
 

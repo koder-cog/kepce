@@ -1,3 +1,4 @@
+@layer components {
 /* 
   _notifications.css 
 */
@@ -190,4 +191,5 @@
     width: 40px;
     height: 40px;
   }
+}
 }

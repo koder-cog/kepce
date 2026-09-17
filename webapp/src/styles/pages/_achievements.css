@@ -1,4 +1,4 @@
-@layer components {
+@layer pages {
 /* Kepçe: Rozetler ve Başarılar */
 
 .achievements-page {
@@ -327,7 +327,7 @@
   }
 }
 
-@media (min-width: 901px) {
+@media (min-width: 900px) {
   .badge-grid {
     grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }

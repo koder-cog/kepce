@@ -700,7 +700,7 @@
             {#if useModal}
                 <div
                     aria-hidden="true"
-                    style="position: absolute; top: 100%; left: 0; right: 0; height: 100vh; background-color: var(--color-surface, #fff); pointer-events: none;"
+                    class="c-menu__sheet-skirt"
                 ></div>
             {/if}
         </div>

@@ -1,4 +1,4 @@
-@layer components {
+@layer pages {
 /* SSR (Static Site Generation) Specific Styles */
 
 .ssr-page-title {

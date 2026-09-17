@@ -394,10 +394,8 @@
     />
 
     <div class="pricing-calc__search-wrap">
-      <label
-        for="pricing-search-input"
-        class="u-hidden"
-        style="display:none !important;">Yemek veya içecek ara</label
+      <label for="pricing-search-input" class="u-sr-only"
+        >Yemek veya içecek ara</label
       >
       <input
         type="search"
@@ -528,7 +526,7 @@
             class="pricing-calc__progress-fill {isUnderQuota
               ? 'is-ok'
               : 'is-warn'}"
-            style="width: {progressPercent}%;"
+            style="--progress-width: {progressPercent}%;"
           ></div>
         </div>
 

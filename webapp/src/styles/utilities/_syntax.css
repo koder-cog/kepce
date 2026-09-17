@@ -1,3 +1,4 @@
+@layer utilities {
   .u-syntax-keyword {
     color: var(--color-accent-primary) !important;
   }
@@ -46,3 +47,4 @@
   .prev-month {
     color: var(--color-text);
   }
+}

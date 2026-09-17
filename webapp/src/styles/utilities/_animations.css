@@ -1,3 +1,4 @@
+@layer utilities {
 /* ── Shake / Pulse Animations ─────────────────────────────── */
 /* Tıklanan zaten-aktif UI öğeleri için sarsılma animasyonu.
    Örn. Nav.svelte'de .anim-shake sınıfı ile kullanılır.
@@ -53,4 +54,5 @@
   animation: shake-disclaimer var(--dur-medium) linear;
   background-color: var(--color-accent-disclaimer);
   color: var(--color-toast-text);
+}
 }

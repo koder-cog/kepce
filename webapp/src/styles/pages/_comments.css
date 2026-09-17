@@ -1,4 +1,4 @@
-@layer components {
+@layer pages {
   /* ── 0. Alt Katman Hiyerarşisi (Cascade Hierarchy) ─────────── */
   @layer reset, layout, elements, capsule, thread, card, legacy;
 

@@ -243,4 +243,14 @@
       max-width: 100% !important;
     }
   }
+
+  .c-menu__sheet-skirt {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    height: 100dvh;
+    background-color: var(--color-surface);
+    pointer-events: none;
+  }
 }

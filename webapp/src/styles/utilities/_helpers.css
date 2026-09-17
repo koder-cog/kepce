@@ -487,6 +487,10 @@
     min-height: 150px;
   }
 
+  .u-min-h-40dvh {
+    min-height: 40dvh;
+  }
+
   .u-resize-none {
     resize: none;
   }

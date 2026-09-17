@@ -1,4 +1,4 @@
-@layer components {
+@layer pages {
 
   /* ── Temel Animasyon Tanımları (Tokens ile Entegre) ──────────── */
   @keyframes pureFadeIn {
@@ -597,6 +597,7 @@
     height: 10px;
     border-radius: var(--radius-full);
     flex-shrink: 0;
+    background-color: var(--slice-color, currentColor);
   }
 
   .pie-legend-name {
