@@ -179,8 +179,8 @@
             .map((d) => {
                 if (typeof d === "string") return { name: d, calories: null };
                 return {
-                    name: d.raw_name ?? d.master_data?.name ?? d.name,
-                    calories: d.master_data?.estimated_calories ?? d.calories ?? null,
+                    name: d.name ?? d.raw_name,
+                    calories: d.calories ?? d.master_data?.estimated_calories ?? null,
                 };
             })
             .filter((d) => d.name);

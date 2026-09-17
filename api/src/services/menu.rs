@@ -71,15 +71,6 @@ impl MenuService {
         }
     }
 
-    fn format_calorie_range(min: Option<i32>, max: Option<i32>) -> Option<String> {
-        match (min, max) {
-            (Some(min_val), Some(max_val)) => Some(format!("{} - {} kcal", min_val, max_val)),
-            (Some(min_val), None) => Some(format!("{} kcal", min_val)),
-            (None, Some(max_val)) => Some(format!("{} kcal", max_val)),
-            (None, None) => None,
-        }
-    }
-
     fn parse_alternative_from_history(
         hist: &shared::entities::menu_history::Model,
         meal_type: MealType,
@@ -88,19 +79,24 @@ impl MenuService {
         let payload = &hist.dishes_payload;
 
         let dish_list_opt: Option<&Vec<serde_json::Value>> = payload
-            .get("dishes")
-            .and_then(|d| d.as_array())
-            .or_else(|| payload.as_array());
+            .as_array()
+            .or_else(|| payload.get("dishes").and_then(|d| d.as_array()));
 
-        if let Some(arr) = dish_list_opt {
-            for (idx, val) in arr.iter().enumerate() {
-                let name = if let Some(s) = val.as_str() {
-                    s.to_string()
-                } else if let Some(n) = val.get("name").and_then(|s| s.as_str()) {
-                    n.to_string()
-                } else if let Some(r) = val.get("raw_name").and_then(|s| s.as_str()) {
-                    r.to_string()
-                } else {
+        if let Some(dish_list) = dish_list_opt {
+            for (idx, val) in dish_list.iter().enumerate() {
+                let name = match val {
+                    serde_json::Value::String(s) => s.trim().to_string(),
+                    serde_json::Value::Object(map) => {
+                        map.get("name")
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string()
+                    }
+                    _ => continue,
+                };
+
+                if name.is_empty() {
                     continue;
                 };
 
@@ -112,7 +108,8 @@ impl MenuService {
 
                 items.push(MenuItemDto {
                     order_index: idx as i32,
-                    raw_name: name,
+                    name: name.clone(),
+                    raw_name: None,
                     is_alternative: is_alt,
                     amount: None,
                     calories: None,
@@ -140,7 +137,8 @@ impl MenuService {
         let mut names: Vec<String> = items
             .iter()
             .map(|it| {
-                it.raw_name
+                let name_str = it.raw_name.as_deref().unwrap_or(&it.name);
+                name_str
                     .trim()
                     .to_lowercase()
                     .chars()
@@ -307,7 +305,10 @@ impl MenuService {
             let is_takeaway_pkg = md.package_name != "NORMAL" && !is_celiac_pkg;
             let is_celiac_mode = dietary_type.as_deref() == Some("celiac");
             
-            let dish_category = alias.dish_id.and_then(|did| master_map.get(&did)).and_then(|dish| dish.category.clone());
+            let dish_category = alias.dish_id
+                .and_then(|did| master_map.get(&did))
+                .and_then(|dish| dish.category.clone())
+                .filter(|c| c != "dish" && !c.is_empty());
             let meal_type_str = match menu.meal_type {
                 MealTypeEnum::Breakfast => "breakfast",
                 MealTypeEnum::Lunch => "lunch",
@@ -327,12 +328,24 @@ impl MenuService {
             let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
             let price = price_info.map(|p| p.price as f64);
 
+            let display_name = master_data.as_ref()
+                .map(|m| m.name.clone())
+                .unwrap_or_else(|| alias.name.clone());
+            let raw_name = if display_name != alias.name {
+                Some(alias.name.clone())
+            } else {
+                None
+            };
+            let effective_calories = md.calories
+                .or_else(|| master_data.as_ref().and_then(|m| m.estimated_calories));
+
             let item_dto = MenuItemDto {
                 order_index: md.order_index,
-                raw_name: alias.name.clone(),
+                name: display_name,
+                raw_name,
                 is_alternative: md.is_alternative,
                 amount,
-                calories: md.calories,
+                calories: effective_calories,
                 price,
                 category: dish_category,
                 master_data,
@@ -403,7 +416,6 @@ impl MenuService {
         let rating_sum = vote_stats.map(|v| v.2 as i32).unwrap_or(0);
         let vote_count = vote_stats.map(|v| v.1 as i32).unwrap_or(0);
 
-        let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
         let calculated_calories = Self::calculate_total_calories(&items);
 
         Ok(MenuResponseDto {
@@ -425,7 +437,6 @@ impl MenuService {
             alternatives: vec![],
             calorie_range_min: menu.calorie_range_min,
             calorie_range_max: menu.calorie_range_max,
-            calorie_range,
             calculated_calories,
         })
     }
@@ -594,7 +605,9 @@ impl MenuService {
                     let is_celiac_pkg = pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
                     let is_takeaway_pkg = md.package_name != "NORMAL" && !is_celiac_pkg;
                     
-                    let dish_category = dish_opt.as_ref().and_then(|dish| dish.category.clone());
+                    let dish_category = dish_opt.as_ref()
+                        .and_then(|dish| dish.category.clone())
+                        .filter(|c| c != "dish" && !c.is_empty());
                     let meal_type_str = match menu.meal_type {
                         MealTypeEnum::Breakfast => "breakfast",
                         MealTypeEnum::Lunch => "lunch",
@@ -614,12 +627,24 @@ impl MenuService {
                     let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
                     let price = price_info.map(|p| p.price as f64);
                     
+                    let display_name = master_data.as_ref()
+                        .map(|m| m.name.clone())
+                        .unwrap_or_else(|| alias.name.clone());
+                    let raw_name = if display_name != alias.name {
+                        Some(alias.name.clone())
+                    } else {
+                        None
+                    };
+                    let effective_calories = md.calories
+                        .or_else(|| master_data.as_ref().and_then(|m| m.estimated_calories));
+
                     let item_dto = MenuItemDto {
                         order_index: md.order_index,
-                        raw_name: alias.name.clone(),
+                        name: display_name,
+                        raw_name,
                         is_alternative: md.is_alternative,
                         amount,
-                        calories: md.calories,
+                        calories: effective_calories,
                         price,
                         category: dish_category,
                         master_data,
@@ -654,7 +679,6 @@ impl MenuService {
             }
             takeaways.sort_by(|a, b| a.name.cmp(&b.name));
             
-            let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
             let calculated_calories = Self::calculate_total_calories(&items);
 
             let (vote_count, rating_sum) = vote_stats_map.get(&menu.id).copied().unwrap_or((0, 0));
@@ -715,7 +739,6 @@ impl MenuService {
                 alternatives,
                 calorie_range_min: menu.calorie_range_min,
                 calorie_range_max: menu.calorie_range_max,
-                calorie_range,
                 calculated_calories,
             });
         }
@@ -926,7 +949,10 @@ impl MenuService {
                         let is_celiac_pkg = pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
                         let is_takeaway_pkg = md.package_name != "NORMAL" && !is_celiac_pkg;
                         
-                        let dish_category = dish_opt.as_ref().and_then(|dish| dish.category.clone());
+                        let dish_category = dish_opt
+                            .as_ref()
+                            .and_then(|dish| dish.category.clone())
+                            .filter(|c| c != "dish" && !c.is_empty());
                         let meal_type_str = match menu.meal_type {
                             MealTypeEnum::Breakfast => "breakfast",
                             MealTypeEnum::Lunch => "lunch",
@@ -945,13 +971,27 @@ impl MenuService {
 
                         let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
                         let price = price_info.map(|p| p.price as f64);
-                        
+
+                        let display_name = master_data
+                            .as_ref()
+                            .map(|m| m.name.clone())
+                            .unwrap_or_else(|| alias.name.clone());
+                        let raw_name = if display_name != alias.name {
+                            Some(alias.name.clone())
+                        } else {
+                            None
+                        };
+                        let effective_calories = md.calories.or_else(|| {
+                            master_data.as_ref().and_then(|m| m.estimated_calories)
+                        });
+
                         let item_dto = MenuItemDto {
                             order_index: md.order_index,
-                            raw_name: alias.name.clone(),
+                            name: display_name,
+                            raw_name,
                             is_alternative: md.is_alternative,
                             amount,
-                            calories: md.calories,
+                            calories: effective_calories,
                             price,
                             category: dish_category,
                             master_data,
@@ -986,7 +1026,6 @@ impl MenuService {
                 }
                 takeaways.sort_by(|a, b| a.name.cmp(&b.name));
                 
-                let calorie_range = Self::format_calorie_range(menu.calorie_range_min, menu.calorie_range_max);
                 let calculated_calories = Self::calculate_total_calories(&items);
 
                 if items.is_empty() && takeaways.is_empty() {
@@ -1045,7 +1084,6 @@ impl MenuService {
                     alternatives,
                     calorie_range_min: menu.calorie_range_min,
                     calorie_range_max: menu.calorie_range_max,
-                    calorie_range,
                     calculated_calories,
                 });
             } else {
@@ -1153,7 +1191,8 @@ mod tests {
     fn make_test_item(order_index: i32, is_alternative: bool, calories: Option<i32>) -> MenuItemDto {
         MenuItemDto {
             order_index,
-            raw_name: "Test Yemek".into(),
+            name: "Test Yemek".into(),
+            raw_name: None,
             is_alternative,
             amount: None,
             calories,
@@ -1232,8 +1271,8 @@ mod tests {
         assert_eq!(alt.source_type, "kykyemek");
         assert_eq!(alt.meal_type, MealType::Dinner);
         assert_eq!(alt.items.len(), 2);
-        assert_eq!(alt.items[0].raw_name, "Mercimek Çorbası");
-        assert_eq!(alt.items[1].raw_name, "Kuru Fasulye");
+        assert_eq!(alt.items[0].name, "Mercimek Çorbası");
+        assert_eq!(alt.items[1].name, "Kuru Fasulye");
     }
 
     #[test]
@@ -1254,7 +1293,7 @@ mod tests {
 
         let alt = MenuService::parse_alternative_from_history(&hist, MealType::Dinner).unwrap();
         assert_eq!(alt.items.len(), 1);
-        assert_eq!(alt.items[0].raw_name, "Ezogelin Çorbası");
+        assert_eq!(alt.items[0].name, "Ezogelin Çorbası");
     }
 
     #[test]
@@ -1262,7 +1301,8 @@ mod tests {
         let items1 = vec![
             MenuItemDto {
                 order_index: 0,
-                raw_name: "Mercimek Çorbası".into(),
+                name: "Mercimek Çorbası".into(),
+                raw_name: None,
                 is_alternative: false,
                 amount: None,
                 calories: None,
@@ -1272,7 +1312,8 @@ mod tests {
             },
             MenuItemDto {
                 order_index: 1,
-                raw_name: "Pirinç Pilavı".into(),
+                name: "Pirinç Pilavı".into(),
+                raw_name: None,
                 is_alternative: false,
                 amount: None,
                 calories: None,
@@ -1285,7 +1326,8 @@ mod tests {
         let items2 = vec![
             MenuItemDto {
                 order_index: 0,
-                raw_name: "  pirinç pilavı  ".into(),
+                name: "pirinç pilavı".into(),
+                raw_name: Some("  pirinç pilavı  ".into()),
                 is_alternative: false,
                 amount: None,
                 calories: None,
@@ -1295,7 +1337,8 @@ mod tests {
             },
             MenuItemDto {
                 order_index: 1,
-                raw_name: "Mercimek Çorbası.".into(),
+                name: "Mercimek Çorbası".into(),
+                raw_name: Some("Mercimek Çorbası.".into()),
                 is_alternative: false,
                 amount: None,
                 calories: None,

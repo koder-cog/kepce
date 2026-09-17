@@ -30,6 +30,7 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
   {
     "id": 1042,
     "city_name": "İstanbul",
+    "city_slug": "istanbul",
     "serve_date": "2026-05-01",
     "meal_type": "dinner",
     "source_type": "kepce",
@@ -37,11 +38,11 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
     "items": [
       {
         "order_index": 0,
-        "raw_name": "Mercimek Çorbası",
+        "name": "Mercimek Çorbası",
         "is_alternative": false,
         "amount": "200 ml",
         "calories": 140,
-        "price": "18.00 ₺",
+        "price": 18.0,
         "category": "ÇORBA ÇEŞİTLERİ",
         "master_data": {
           "dish_id": 10,
@@ -54,11 +55,11 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
       },
       {
         "order_index": 1,
-        "raw_name": "Tavuk Sote",
+        "name": "Tavuk Sote",
         "is_alternative": false,
         "amount": "180 g",
         "calories": 260,
-        "price": "45.00 ₺",
+        "price": 45.0,
         "category": "KEMİKSİZ TAVUK YEMEKLERİ",
         "master_data": {
           "dish_id": 16919,
@@ -71,11 +72,11 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
       },
       {
         "order_index": 2,
-        "raw_name": "Pirinç Pilavı",
+        "name": "Pirinç Pilavı",
         "is_alternative": false,
         "amount": "150 g",
         "calories": 220,
-        "price": "20.00 ₺",
+        "price": 20.0,
         "category": "PİRİNÇ PİLAVI ÇEŞİTLERİ",
         "master_data": {
           "dish_id": 311,
@@ -89,7 +90,8 @@ curl -s "https://kepce.org/api/v1/menus?city=istanbul&date=today"
     ],
     "comment_count": 12,
     "rating_sum": 48,
-    "vote_count": 10
+    "vote_count": 10,
+    "calculated_calories": 620
   }
 ]
 ```

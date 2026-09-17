@@ -95,5 +95,22 @@ describe("normalizeItems", () => {
     expect(normalized[0].name).toBe("Bal + tereyağ");
     expect(normalized[0].dishes[0].name).toBe("Bal + tereyağ");
   });
+
+  it("backend tarafından dönen temiz name ve calories alanlarını doğrudan kullanır", () => {
+    const mockMenu = {
+      items: [
+        {
+          order_index: 0,
+          name: "Mercimek Çorbası",
+          calories: 220,
+          is_alternative: false
+        }
+      ]
+    };
+    const normalized = normalizeItems(mockMenu);
+    expect(normalized[0].name).toBe("Mercimek Çorbası");
+    expect(normalized[0].dishes[0].name).toBe("Mercimek Çorbası");
+    expect(normalized[0].dishes[0].calories).toBe(220);
+  });
 });
 

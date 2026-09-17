@@ -21,11 +21,12 @@ Belirli bir şehir, tarih ve öğün için sunulan menünün ana veri yapısıd�
 | `comment_count` | `integer` | Menüye yapılan onaylı yorum sayısı. |
 | `vote_count` | `integer` | Menü için kullanılan toplam oy sayısı. |
 | `rating_sum` | `integer` | Pozitif ve negatif oyların toplam dengesi. |
-| `my_vote` | `string \| null` | İstek sahibi oturum açmışsa kullandığı oy (`"positive"`, `"negative"` veya `null`). |
+| `my_vote` | `string \| null` | İstek sahibi oturum açmışsa kullandığı oy (`"positive"`, `"negative"` veya atlanır). |
 | `calorie_range_min` | `integer \| null` | Menü için bildirilen en düşük kalori değeri. |
 | `calorie_range_max` | `integer \| null` | Menü için bildirilen en yüksek kalori değeri. |
-| `calorie_range` | `string \| null` | Menü bültenindeki resmi kalori metni (örnek: `"600 - 800 kcal"`). |
 | `calculated_calories` | `integer \| null` | Menüdeki yemeklerin porsiyon kalorilerinden hesaplanan toplam değer. |
+
+Değeri bulunmayan (`null`) opsiyonel alanlar ve boş `takeaways` listesi yanıta dahil edilmez.
 
 ## 2. Yemek Modeli (`MenuItemDto`)
 
@@ -34,10 +35,11 @@ Menü veya Al Götür paketi içindeki her bir yemek bileşeni.
 | Alan Adı | Tip | Açıklama |
 | :--- | :--- | :--- |
 | `order_index` | `integer` | Menüdeki servis sırası indeksi (0 tabanlı). |
-| `raw_name` | `string` | Kaynak listeden okunan ham yemek adı. |
+| `name` | `string` | Gösterime hazır temizlenmiş, normalize edilmiş yemek adı. |
+| `raw_name` | `string \| null` | Kaynak listeden okunan ham yemek adı (yalnızca temiz addan farklıysa serileştirilir). |
 | `is_alternative` | `boolean` | Ana yemek yerine seçilebilen alternatif seçenek olup olmadığı. |
 | `amount` | `string \| null` | Gramaj veya porsiyon bilgisi (örnek: `"250 g"`, `"1 adet L boy"`). |
-| `calories` | `integer \| null` | Yemeğe ait porsiyon kalori değeri (örnek: `180`). |
+| `calories` | `integer \| null` | Yemeğe ait efektif porsiyon kalori değeri (menü değeri veya katalog tahmini). |
 | `price` | `number \| null` | Tavan fiyat tarifesindeki porsiyon tutarı (örnek: `35.0`). |
 | `category` | `string \| null` | Yemek kategorisi (örnek: `"Çorba"`, `"Ana Yemek"`, `"Kahvaltılık Sıcak"`). |
 | `master_data` | `DishMasterDataDto \| null` | Yemek merkezi yemek kataloğuyla eşleşmişse ek besin ve beğeni verisi. |

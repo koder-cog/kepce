@@ -50,19 +50,16 @@ curl -X GET "https://kepce.org/api/v1/menus/today/istanbul" \
     "meal_type": "breakfast",
     "source_type": "table",
     "status": "approved",
-    "bot_commentary": null,
     "calorie_range_min": 750,
     "calorie_range_max": 900,
-    "calorie_range": "750 - 900 kcal",
     "calculated_calories": 820,
     "vote_count": 48,
     "rating_sum": 32,
     "comment_count": 5,
-    "my_vote": null,
     "items": [
       {
         "order_index": 0,
-        "raw_name": "Patates Kızartması",
+        "name": "Patates Kızartması",
         "is_alternative": false,
         "amount": "150 g",
         "calories": 312,
@@ -84,13 +81,12 @@ curl -X GET "https://kepce.org/api/v1/menus/today/istanbul" \
       },
       {
         "order_index": 1,
-        "raw_name": "Haşlanmış Yumurta",
+        "name": "Haşlanmış Yumurta",
         "is_alternative": false,
         "amount": "1 adet L boy",
         "calories": 78,
         "price": 10.0,
-        "category": "Kahvaltılık Protein",
-        "master_data": null
+        "category": "Kahvaltılık Protein"
       }
     ],
     "takeaways": [
@@ -99,13 +95,12 @@ curl -X GET "https://kepce.org/api/v1/menus/today/istanbul" \
         "items": [
           {
             "order_index": 0,
-            "raw_name": "Kaşarlı Soğuk Sandviç",
+            "name": "Kaşarlı Soğuk Sandviç",
             "is_alternative": false,
             "amount": "1 Adet",
             "calories": 320,
             "price": 40.0,
-            "category": "Sandviç",
-            "master_data": null
+            "category": "Sandviç"
           }
         ]
       }

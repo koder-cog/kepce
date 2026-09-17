@@ -46,7 +46,6 @@
         }
         if (min) return `${min} kcal`;
         if (max) return `${max} kcal`;
-        if (menu.calorie_range) return menu.calorie_range;
         if (menu.calculated_calories)
             return `~${menu.calculated_calories} kcal`;
         if (menu.total_calories)

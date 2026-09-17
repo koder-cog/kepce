@@ -42,7 +42,7 @@ export async function GET({ request }) {
 		const cityName = CITY_MAP[citySlug] || citySlug;
 		const mealTitle = m.meal_type === 'breakfast' ? 'Kahvaltı' : 'Akşam Yemeği';
 		const dishes = (m.items || m.dishes || [])
-			.map((d) => (typeof d === 'string' ? d : d.raw_name ?? d.master_data?.name ?? d.name))
+			.map((d) => (typeof d === 'string' ? d : d.name ?? d.raw_name))
 			.filter(Boolean);
 
 		const title = `${cityName} - ${mealTitle} (${today})`;

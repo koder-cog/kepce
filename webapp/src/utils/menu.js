@@ -26,10 +26,9 @@ export function formatDishDisplayName(name) {
 export function normalizeItems(menu) {
   if (Array.isArray(menu.items) && menu.items.length > 0) {
     return menu.items
-      .filter(i => !isPlaceholderDishText(i.master_data ? i.master_data.name : (i.raw_name || i.name)))
+      .filter(i => !isPlaceholderDishText(i.name || i.raw_name || i.master_data?.name))
       .map(i => {
-        const rawName = i.master_data ? i.master_data.name : (i.raw_name || i.name);
-        const name = formatDishDisplayName(rawName);
+        const name = formatDishDisplayName(i.name || i.raw_name || i.master_data?.name || "");
         return {
           sort_order: i.order_index,
           name,
