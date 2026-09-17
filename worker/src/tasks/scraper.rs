@@ -484,6 +484,49 @@ async fn fetch_and_save(
         let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
     }
     
+    // Dinamik Al Götür (Takeaway) Ön-Yükleme ve Önbellekleme:
+    // Kartlardaki tüm data-fastmenus UUID'lerini topla; henüz önbellekte olmayanları
+    // /Menu/GetFastMenuFoods üzerinden tek seferlik çekip parse_fast_menu_foods_html ile önbelleğe yaz.
+    // std::sync::RwLock kilitleri get_cached_fastmenu / insert_cached_fastmenu içinde nanosaniyelik açılıp
+    // kapandığından, await çağrısı sırasında elde hiçbir kilit tutulmaz (Send trait & thread starvation koruması).
+    let fastmenu_items = crate::parser::kykyemek::extract_fastmenu_items(&html_content);
+    for (fast_id, fast_name) in fastmenu_items {
+        if crate::parser::takeaway::get_cached_fastmenu(&fast_id).is_none() {
+            let fast_url = "https://kykyemek.com/Menu/GetFastMenuFoods";
+            let req = with_xhr_headers(client.get(fast_url).query(&[("id", fast_id.as_str())]))
+                .header("X-Requested-With", "XMLHttpRequest")
+                .header("Referer", "https://kykyemek.com/")
+                .timeout(std::time::Duration::from_secs(10));
+
+            match req.send().await {
+                Ok(res) if res.status().is_success() => {
+                    if let Ok(foods_html) = res.text().await {
+                        let slots = crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
+                        if !slots.is_empty() {
+                            tracing::info!(
+                                "[TAKEAWAY] Dinamik Al Götür menüsü başarıyla çekildi: {} (id: {}, {} slot)",
+                                fast_name, fast_id, slots.len()
+                            );
+                            crate::parser::takeaway::insert_cached_fastmenu(fast_id, slots);
+                        }
+                    }
+                }
+                Ok(res) => {
+                    tracing::warn!(
+                        "[TAKEAWAY] Dinamik Al Götür çekilemedi (HTTP {}): {} (id: {}). Statik fallback kullanılacak.",
+                        res.status(), fast_name, fast_id
+                    );
+                }
+                Err(err) => {
+                    tracing::warn!(
+                        "[TAKEAWAY] Dinamik Al Götür isteği başarısız oldu: {} (id: {}): {}. Statik fallback kullanılacak.",
+                        fast_name, fast_id, err
+                    );
+                }
+            }
+        }
+    }
+
     let parsed_menus = parse_kykyemek_html(&html_content, &city.slug, kyk_meal_type);
     let mut count = 0;
 

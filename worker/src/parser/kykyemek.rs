@@ -110,9 +110,21 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
             if let Some(fast_json) = btn.value().attr("data-fastmenus") {
                 if let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json) {
                     for item in items {
+                        let id_val = item.get("id").and_then(|v| v.as_str());
                         let name_val = item.get("name").or_else(|| item.get("title")).and_then(|t| t.as_str()).unwrap_or("Al Götür");
-                        if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(name_val, city_slug, meal_type) {
-                            takeaways.append(&mut pkgs);
+
+                        let mut resolved = false;
+                        if let Some(uuid) = id_val {
+                            if let Some(slots) = crate::parser::takeaway::get_cached_fastmenu(uuid) {
+                                takeaways.push((name_val.to_string(), slots));
+                                resolved = true;
+                            }
+                        }
+
+                        if !resolved {
+                            if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(name_val, city_slug, meal_type) {
+                                takeaways.append(&mut pkgs);
+                            }
                         }
                     }
                 }
@@ -153,6 +165,41 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
 }
 
 pub use parse_kykyemek_html as parse_kyk_html;
+
+/// HTML içeriğindeki tüm kartlardan benzersiz fastmenu (id, name) ikililerini toplar.
+/// Scraper bu listeyi kullanarak henüz önbellekte olmayan UUID'leri tek seferde çeker.
+pub fn extract_fastmenu_items(html_content: &str) -> Vec<(String, String)> {
+    let document = Html::parse_document(html_content);
+    let selector = match Selector::parse("[data-fastmenus]") {
+        Ok(s) => s,
+        Err(_) => return Vec::new(),
+    };
+
+    let mut items_map = std::collections::HashMap::new();
+
+    for el in document.select(&selector) {
+        if let Some(fast_json) = el.value().attr("data-fastmenus") {
+            if let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json) {
+                for item in items {
+                    if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
+                        let id_str = id.trim().to_string();
+                        if !id_str.is_empty() {
+                            let name = item.get("name")
+                                .or_else(|| item.get("title"))
+                                .and_then(|t| t.as_str())
+                                .unwrap_or("Al Götür")
+                                .trim()
+                                .to_string();
+                            items_map.entry(id_str).or_insert(name);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    items_map.into_iter().collect()
+}
 
 pub fn clean_and_split_dish(mut text: String) -> Vec<crate::parser::models::MenuComponent> {
     if ContentGuard::is_junk_dish_text(&text) {

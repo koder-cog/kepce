@@ -269,4 +269,91 @@ mod tests {
         assert!(menu.takeaways[0].0.contains("Gözleme") || menu.takeaways[0].0.contains("Al Götür 2"));
         assert!(menu.takeaways[1].0.contains("Soğuk Sandviç") || menu.takeaways[1].0.contains("Al Götür 1"));
     }
+
+    #[test]
+    fn test_extract_fastmenu_items() {
+        let html = r#"
+            <div class="card cardStyle">
+                <p data-fastmenus='[{"id":"uuid-1","name":"Al Götür 1"},{"id":"uuid-2","name":"Al Götür 2"}]'></p>
+            </div>
+            <div class="card cardStyle">
+                <p data-fastmenus='[{"id":"uuid-1","name":"Al Götür 1"}]'></p>
+            </div>
+        "#;
+
+        let items = crate::parser::kykyemek::extract_fastmenu_items(html);
+        assert_eq!(items.len(), 2);
+        let ids: std::collections::HashSet<String> = items.into_iter().map(|(id, _)| id).collect();
+        assert!(ids.contains("uuid-1"));
+        assert!(ids.contains("uuid-2"));
+    }
+
+    #[test]
+    fn test_parse_kykyemek_html_with_dynamic_fastmenu_cache() {
+        let test_uuid = "dyn-uuid-test-123";
+        let mock_slots = vec![
+            vec![crate::parser::models::MenuComponent {
+                name: "Özel Dinamik Börek".to_string(),
+                amount: Some("1 Porsiyon".to_string()),
+                calories: None,
+                category: None,
+            }],
+            vec![crate::parser::models::MenuComponent {
+                name: "Kutu Ayran".to_string(),
+                amount: Some("300 ml".to_string()),
+                calories: None,
+                category: None,
+            }],
+        ];
+
+        crate::parser::takeaway::insert_cached_fastmenu(test_uuid.to_string(), mock_slots);
+
+        let card_html = format!(
+            r#"
+            <div class="card cardStyle">
+                <p class="cardDate">18 Eylül 2026 Cuma</p>
+                <div class="card-body">
+                    <div>
+                        <p>Mercimek Çorbası</p>
+                        <p data-fastmenus='[{{"id":"{}","name":"Dinamik Paket 1"}}]' onclick="showFastMenuGroup(this)">
+                            Al Götür Menü
+                        </p>
+                    </div>
+                </div>
+            </div>
+            "#,
+            test_uuid
+        );
+
+        let parsed = crate::parser::kykyemek::parse_kykyemek_html(&card_html, "trabzon", "breakfast");
+        assert_eq!(parsed.len(), 1);
+        let menu = &parsed[0];
+        assert_eq!(menu.takeaways.len(), 1);
+        assert_eq!(menu.takeaways[0].0, "Dinamik Paket 1");
+        assert_eq!(menu.takeaways[0].1.len(), 2);
+        assert_eq!(menu.takeaways[0].1[0][0].name, "Özel Dinamik Börek");
+        assert_eq!(menu.takeaways[0].1[1][0].name, "Kutu Ayran");
+    }
+
+    #[test]
+    fn test_parse_kykyemek_html_no_cache_no_static_config() {
+        let card_html = r#"
+            <div class="card cardStyle">
+                <p class="cardDate">18 Eylül 2026 Cuma</p>
+                <div class="card-body">
+                    <div>
+                        <p>Mercimek Çorbası</p>
+                        <p data-fastmenus='[{"id":"non-cached-uuid","name":"Al Götür Menü 99"}]' onclick="showFastMenuGroup(this)">
+                            Al Götür Menü
+                        </p>
+                    </div>
+                </div>
+            </div>
+        "#;
+
+        // "yozgat" için statik config yok, önbellek de yok -> uydurma veri üretilmemeli
+        let parsed = crate::parser::kykyemek::parse_kykyemek_html(card_html, "yozgat", "breakfast");
+        assert_eq!(parsed.len(), 1);
+        assert_eq!(parsed[0].takeaways.len(), 0);
+    }
 }

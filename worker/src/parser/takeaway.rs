@@ -10,9 +10,25 @@ pub struct TakeawayParsedPackage {
 }
 
 type TakeawayCacheMap = HashMap<String, HashMap<u32, TakeawayParsedPackage>>;
+type DynamicFastMenuMap = HashMap<String, Vec<Vec<crate::parser::models::MenuComponent>>>;
 
 lazy_static::lazy_static! {
     pub(crate) static ref TAKEAWAY_CACHE: RwLock<TakeawayCacheMap> = RwLock::new(HashMap::new());
+    pub(crate) static ref FASTMENU_DYNAMIC_CACHE: RwLock<DynamicFastMenuMap> = RwLock::new(HashMap::new());
+}
+
+/// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür yemek slotlarını önbellekten okur.
+/// Kilit (RwLock) mikrosaniyelik RAM okumasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
+pub fn get_cached_fastmenu(id: &str) -> Option<Vec<Vec<crate::parser::models::MenuComponent>>> {
+    FASTMENU_DYNAMIC_CACHE.read().ok()?.get(id).cloned()
+}
+
+/// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür paketini önbelleğe yazar.
+/// Kilit (RwLock) mikrosaniyelik RAM yazmasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
+pub fn insert_cached_fastmenu(id: String, slots: Vec<Vec<crate::parser::models::MenuComponent>>) {
+    if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
+        cache.insert(id, slots);
+    }
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -140,7 +156,6 @@ fn get_candidate_periods() -> Vec<String> {
 
     vec![
         format!("{}-{}", base_year_start, base_year_end),
-        format!("{}-{}", base_year_start + 1, base_year_end + 1),
         format!("{}-{}", base_year_start - 1, base_year_end - 1),
         format!("{}-{}", base_year_start - 2, base_year_end - 2),
     ]
