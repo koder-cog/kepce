@@ -457,27 +457,27 @@ impl CommentService {
             let mut avatar_url = user_opt.and_then(|u| u.avatar_url);
 
             // Silinen veya maskelenen içerik kontrolü
-            let is_deleted = comment.is_deleted || author_username == "Bilinmeyen Kullanıcı";
+            let is_deleted = comment.is_deleted || author_username == "silinmiş";
             let is_my_blocked = comment.user_id.map(|uid| blocked_relations.my_blocked_ids.contains(&uid)).unwrap_or(false);
             let is_blocked_me = comment.user_id.map(|uid| blocked_relations.blocked_me_ids.contains(&uid)).unwrap_or(false);
             let is_blocked = is_my_blocked || is_blocked_me;
 
             let content = if is_deleted {
-                Some("[Bu içerik silinmiş]".to_string())
+                Some("[bu yorum silinmiş]".to_string())
             } else if is_my_blocked {
                 Some("Engellediğin bir kullanıcının yorumu".to_string())
             } else if is_blocked_me {
-                Some("Bu içeriğe erişiminiz kısıtlanmıştır".to_string())
+                Some("Bu içeriğe erişiminiz kısıtlanmış".to_string())
             } else {
                 comment.content.clone()
             };
 
             let author_username = if is_deleted {
-                "Bilinmeyen Kullanıcı".to_string()
+                "silinmiş".to_string()
             } else if is_my_blocked {
-                "Engellenmiş".to_string()
+                "engellenmiş".to_string()
             } else if is_blocked_me {
-                "Engellemiş".to_string()
+                "engellemiş".to_string()
             } else {
                 author_username
             };
