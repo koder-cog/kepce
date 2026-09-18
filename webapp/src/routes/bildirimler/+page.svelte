@@ -52,7 +52,10 @@
     }
     archivedIds = next;
     try {
-      localStorage.setItem("kepce_archived_notifications", JSON.stringify([...archivedIds]));
+      localStorage.setItem(
+        "kepce_archived_notifications",
+        JSON.stringify([...archivedIds]),
+      );
     } catch {}
   }
 
@@ -274,7 +277,7 @@
           class="btn btn--secondary btn--sm btn--squish"
           onclick={handleMarkAllAsRead}
         >
-          Tümünü okundu yap
+          Tümünü okudum say
         </button>
       {/if}
       {#if notifications.length > 0}
@@ -300,7 +303,11 @@
   <TabBar
     bind:activeId={activeTab}
     tabs={[
-      { id: "inbox", label: "Gelen Kutusu", icon: icon("inbox", 18) || icon("bell", 18) },
+      {
+        id: "inbox",
+        label: "Gelen Kutusu",
+        icon: icon("inbox", 18) || icon("bell", 18),
+      },
       {
         id: "unread",
         label: "Okunmayanlar",
@@ -312,7 +319,11 @@
               : unreadCount
             : undefined,
       },
-      { id: "archived", label: "Arşiv", icon: icon("archive", 18) || icon("folder", 18) },
+      {
+        id: "archived",
+        label: "Arşiv",
+        icon: icon("archive", 18) || icon("folder", 18),
+      },
     ]}
   />
 
@@ -343,8 +354,8 @@
       desc={activeTab === "unread"
         ? "Okunmamış bildiriminiz bulunmuyor."
         : activeTab === "archived"
-        ? "Arşivlenmiş bildiriminiz bulunmuyor."
-        : "Henüz hiç bildiriminiz yok."}
+          ? "Arşivlenmiş bildiriminiz bulunmuyor."
+          : "Henüz hiç bildiriminiz yok."}
       iconHtml={icon("checkCircle", 48)}
     />
   {:else}
@@ -390,13 +401,15 @@
                       class="btn btn--sm btn--secondary btn--squish"
                       onclick={() => handleMarkAsRead(item.id)}
                     >
-                      Okundu yap
+                      Okudum say
                     </button>
                   {/if}
                   <button
                     class="btn btn--sm btn--ghost btn--squish"
                     onclick={() => toggleArchive(item.id)}
-                    title={archivedIds.has(item.id) ? "Arşivden Çıkar" : "Arşive Al"}
+                    title={archivedIds.has(item.id)
+                      ? "Arşivden Çıkar"
+                      : "Arşive Al"}
                   >
                     {archivedIds.has(item.id) ? "Arşivden Çıkar" : "Arşive Al"}
                   </button>

@@ -52,7 +52,10 @@
 
 <ContentPage title="Öbür Projeler">
   <p>
-    Bunlar Kepçe ekibinin veya diğer geliştiricilerinin internetin başka köşelerinde yürüttüğü bağımsız işlerdir. Kepçe'nin tabldot menüsüyle doğrudan bir bağı bulunmaz. Bu sitelerin ve servislerin yol açacağı her türlü sıkıntıyla ilgili kendi adreslerine başvurunuz.
+    Bunlar Kepçe ekibinin veya diğer geliştiricilerinin internetin başka
+    köşelerinde yürüttüğü bağımsız işlerdir. Kepçe'nin tabldot menüsüyle
+    doğrudan bir bağı bulunmaz. Bu sitelerin ve servislerin yol açacağı her
+    türlü sıkıntıyla ilgili kendi adreslerine başvurunuz.
   </p>
 
   <div class="project-cards">
@@ -62,11 +65,18 @@
       </div>
 
       <p class="project-card__desc">
-        Gizlilik odaklı, kullanıcıyı takip etmeyen ve reklam barındırmayan bağımsız açık kaynak arama motoru.
+        Gizlilik odaklı ve reklam barındırmayan SearXNG tabanlı arama motoru.
       </p>
 
       <div class="project-card__meta">
-        <span class="project-card__author">koder-cog</span>
+        <span class="project-card__author"
+          ><a
+            href="https://github.com/koder-cog/"
+            target="_blank"
+            rel="noopener"
+            class="site-footer__link">koder-cog</a
+          ></span
+        >
       </div>
 
       <div class="project-card__footer">
