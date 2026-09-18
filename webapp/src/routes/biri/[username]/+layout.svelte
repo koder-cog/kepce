@@ -119,7 +119,10 @@
       profile.is_blocked = true;
       showToast("Kullanıcı engellendi.", "success");
     } catch (err) {
-      if (err.message && err.message.toLowerCase().includes("already blocked")) {
+      if (
+        err.message &&
+        err.message.toLowerCase().includes("already blocked")
+      ) {
         profile.is_blocked = true;
         showToast("Kullanıcı zaten engellenmiş.", "info");
       } else {
@@ -184,19 +187,19 @@
 
   function getBadgeTier(badge) {
     if (badge.tier) return badge.tier;
-    if (badge.slug && BADGE_TIER_MAP[badge.slug]) return BADGE_TIER_MAP[badge.slug];
+    if (badge.slug && BADGE_TIER_MAP[badge.slug])
+      return BADGE_TIER_MAP[badge.slug];
     return "other";
   }
 
   let showcasedBadges = $derived.by(() => {
     if (!profile?.badges) return [];
     const earned = profile.badges.filter((b) => b.unlocked);
-    const pinnedSlugs = profile.pinned_badges || [];
-    if (pinnedSlugs.length > 0) {
-      const pinned = pinnedSlugs
+    if (Array.isArray(profile.pinned_badges)) {
+      return profile.pinned_badges
         .map((slug) => earned.find((b) => b.slug === slug))
-        .filter(Boolean);
-      if (pinned.length > 0) return pinned.slice(0, 5);
+        .filter(Boolean)
+        .slice(0, 5);
     }
     return earned.slice(0, 5);
   });
@@ -208,41 +211,117 @@
       return;
     }
 
-    const currentPins = new Set(profile.pinned_badges || showcasedBadges.map((b) => b.slug));
+    let pinnedSlugs = Array.isArray(profile.pinned_badges)
+      ? profile.pinned_badges
+          .filter((slug) => earned.some((b) => b.slug === slug))
+          .slice(0, 5)
+      : showcasedBadges.map((b) => b.slug);
+
+    function renderBadgeCard(b, isPinned, index, totalPinned, isMax) {
+      const tier = getBadgeTier(b);
+      const isFirst = index === 0;
+      const isLast = index === totalPinned - 1;
+      const isDisabled = isMax && !isPinned;
+
+      return `
+        <div class="badge-picker-card ${isPinned ? "is-pinned" : ""} ${isDisabled ? "is-disabled" : ""}" data-slug="${sanitizeText(b.slug)}">
+          <div class="badge-picker-card__top">
+            <div class="badge-picker-card__identity">
+              <div class="achievement-badge badge--${tier}">
+                ${icon(b.icon || "starFilled", 20)}
+              </div>
+              <span class="badge-picker-card__name">${sanitizeText(b.name)}</span>
+            </div>
+          </div>
+          <div class="badge-picker-card__bottom">
+            <div class="badge-picker-card__reorder">
+              ${
+                isPinned
+                  ? `
+                <button type="button" class="badge-reorder-btn" data-action="up" data-index="${index}" title="Öne taşı" ${isFirst ? "disabled" : ""}>
+                  ${icon("chevronUp", 16)}
+                </button>
+                <button type="button" class="badge-reorder-btn" data-action="down" data-index="${index}" title="Arkaya taşı" ${isLast ? "disabled" : ""}>
+                  ${icon("chevronDown", 16)}
+                </button>
+              `
+                  : ""
+              }
+            </div>
+            <label class="form-switch-row" title="${isDisabled ? "En fazla 5 rozet seçilebilir" : isPinned ? "Vitrinden çıkar" : "Vitrine ekle"}">
+              <input type="checkbox" class="c-input-hidden" data-action="toggle-pin" data-slug="${sanitizeText(b.slug)}" ${isPinned ? "checked" : ""} ${isDisabled ? "disabled" : ""} />
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
+            </label>
+          </div>
+        </div>
+      `;
+    }
+
+    function buildContentHtml() {
+      const isMax = pinnedSlugs.length >= 5;
+      const pinnedBadges = pinnedSlugs
+        .map((slug) => earned.find((b) => b.slug === slug))
+        .filter(Boolean);
+      const unpinnedBadges = earned.filter(
+        (b) => !pinnedSlugs.includes(b.slug),
+      );
+
+      const progressPercent = Math.min(
+        100,
+        Math.round((pinnedSlugs.length / 5) * 100),
+      );
+
+      const cardsHtml = [
+        ...pinnedBadges.map((b, idx) =>
+          renderBadgeCard(b, true, idx, pinnedBadges.length, isMax),
+        ),
+        ...unpinnedBadges.map((b) =>
+          renderBadgeCard(b, false, -1, 0, isMax),
+        ),
+      ].join("");
+
+      const descText =
+        earned.length <= 5
+          ? "Profilinde sergilenecek rozetleri seç:"
+          : "Profilinde sergilenecek 5 rozeti seç:";
+
+      return `
+        <div class="c-modal__form-group">
+          <div class="badge-picker-header">
+            <p class="badge-picker-desc">
+              ${descText}
+            </p>
+            <div class="badge-picker-status">
+              <div class="badge-picker-bar" role="progressbar" aria-valuenow="${pinnedSlugs.length}" aria-valuemin="0" aria-valuemax="5" style="--badge-progress: ${progressPercent}%;">
+                <div class="badge-picker-bar__fill"></div>
+              </div>
+              <span class="badge-picker-counter">${pinnedSlugs.length} / 5</span>
+            </div>
+          </div>
+          <div class="badge-picker-container" id="badge-picker-container">
+            ${cardsHtml}
+          </div>
+        </div>
+      `;
+    }
 
     const modalObj = createModal({
       title: "Rozet Vitrini",
       iconHtml: icon("trophy", 24),
-      contentHtml: `
-        <div class="c-modal__form-group">
-          <p class="u-text-sm u-color-muted" style="margin-bottom: var(--space-sm);">
-            Profilinde sergilemek istediğin 3-5 rozeti seç:
-          </p>
-          <div class="badge-picker-list" id="badge-picker-list">
-            ${earned.map((b) => `
-              <label class="badge-picker-item">
-                <span>${sanitizeText(b.name)}</span>
-                <input type="checkbox" name="pinned_badge" value="${sanitizeText(b.slug)}" ${currentPins.has(b.slug) ? "checked" : ""} />
-              </label>
-            `).join("")}
-          </div>
-        </div>
-      `,
+      contentHtml: buildContentHtml(),
       buttons: [
         { label: "Vazgeç", variant: "secondary" },
         {
           label: "Kaydet",
           variant: "primary",
-          onClick: async (modalEl) => {
-            const checkedInputs = Array.from(modalEl.querySelectorAll('input[name="pinned_badge"]:checked'));
-            if (checkedInputs.length > 5) {
+          onClick: async () => {
+            if (pinnedSlugs.length > 5) {
               showToast("En fazla 5 rozet seçebilirsin.", "warning");
               return false;
             }
-            const selectedSlugs = checkedInputs.map((input) => input.value);
             try {
-              await api.updatePinnedBadges(selectedSlugs);
-              profile.pinned_badges = selectedSlugs;
+              await api.updatePinnedBadges(pinnedSlugs);
+              profile.pinned_badges = [...pinnedSlugs];
               showToast("Rozet vitrini güncellendi.", "success");
               return true;
             } catch (err) {
@@ -253,6 +332,54 @@
         },
       ],
     });
+
+    function refreshModal() {
+      const container = modalObj.modal?.querySelector(
+        "#badge-picker-container",
+      );
+      const scrollPos = container ? container.scrollTop : 0;
+      modalObj.updateContent(buildContentHtml());
+      const newContainer = modalObj.modal?.querySelector(
+        "#badge-picker-container",
+      );
+      if (newContainer) newContainer.scrollTop = scrollPos;
+    }
+
+    if (modalObj.modal) {
+      modalObj.modal.addEventListener("click", (e) => {
+        const btn = e.target.closest(".badge-reorder-btn");
+        if (btn && !btn.disabled) {
+          const action = btn.dataset.action;
+          const index = parseInt(btn.dataset.index, 10);
+          if (action === "up" && index > 0) {
+            const temp = pinnedSlugs[index];
+            pinnedSlugs[index] = pinnedSlugs[index - 1];
+            pinnedSlugs[index - 1] = temp;
+            refreshModal();
+          } else if (action === "down" && index < pinnedSlugs.length - 1) {
+            const temp = pinnedSlugs[index];
+            pinnedSlugs[index] = pinnedSlugs[index + 1];
+            pinnedSlugs[index + 1] = temp;
+            refreshModal();
+          }
+        }
+      });
+
+      modalObj.modal.addEventListener("change", (e) => {
+        const input = e.target.closest('input[data-action="toggle-pin"]');
+        if (input) {
+          const slug = input.dataset.slug;
+          if (input.checked) {
+            if (pinnedSlugs.length < 5 && !pinnedSlugs.includes(slug)) {
+              pinnedSlugs.push(slug);
+            }
+          } else {
+            pinnedSlugs = pinnedSlugs.filter((s) => s !== slug);
+          }
+          refreshModal();
+        }
+      });
+    }
   }
 
   // --- Setup / Owner actions ---
@@ -467,13 +594,20 @@
         if (globalState?.user && globalState.user.id === profile.id) {
           globalState.user.avatar_url = urlWithCacheBuster;
           try {
-            localStorage.setItem("kepce_user_cache", JSON.stringify(globalState.user));
+            localStorage.setItem(
+              "kepce_user_cache",
+              JSON.stringify(globalState.user),
+            );
           } catch {}
         }
         profile.avatar_url = rawUrl;
         avatarTimestamp = freshTimestamp;
         showToast("Profil fotoğrafı güncellendi!", "success");
-        window.dispatchEvent(new CustomEvent("avatar-updated", { detail: { avatar_url: urlWithCacheBuster } }));
+        window.dispatchEvent(
+          new CustomEvent("avatar-updated", {
+            detail: { avatar_url: urlWithCacheBuster },
+          }),
+        );
         modalObj.close();
       } catch (err) {
         showToast(err.message, "error");
@@ -632,7 +766,9 @@
             >
               {#if profile.avatar_url}
                 <img
-                  src="{api.getAvatarUrl(profile.avatar_url)}?v={avatarTimestamp}"
+                  src="{api.getAvatarUrl(
+                    profile.avatar_url,
+                  )}?v={avatarTimestamp}"
                   alt={safeNickname}
                   onerror={(e) => {
                     e.target.onerror = null;
@@ -651,7 +787,9 @@
             <div class="profile-intro__avatar" id="avatar-display">
               {#if profile.avatar_url}
                 <img
-                  src="{api.getAvatarUrl(profile.avatar_url)}?v={avatarTimestamp}"
+                  src="{api.getAvatarUrl(
+                    profile.avatar_url,
+                  )}?v={avatarTimestamp}"
                   alt={safeNickname}
                   onerror={(e) => {
                     e.target.onerror = null;
@@ -676,7 +814,9 @@
               </h1>
               {#if profile.is_blocked}
                 <div class="profile-intro__flairs">
-                  <span class="profile-flair profile-intro__badge--blocked">Engellendi</span>
+                  <span class="profile-flair profile-intro__badge--blocked"
+                    >Engellendi</span
+                  >
                 </div>
               {:else if getFlairs(profile).length > 0}
                 <div class="profile-intro__flairs">
@@ -687,6 +827,12 @@
               {/if}
             </div>
           </div>
+
+          {#if profile.level_progress?.title || profile.karma_score !== undefined}
+            <div class="profile-intro__flair-rank">
+              {profile.level_progress?.title || "düz tabldotçu"} ({profile.karma_score ?? 0})
+            </div>
+          {/if}
 
           <div class="profile-intro__achievements-dock">
             {#if showcasedBadges.length > 0}
@@ -776,7 +922,10 @@
           title="Bu Kullanıcıyı Engelledin"
           desc="Engellediğin kullanıcıların yorumları ve profil aktiviteleri gizlenir."
         >
-          <button class="btn btn--secondary btn--squish" onclick={handleUnblock}>
+          <button
+            class="btn btn--secondary btn--squish"
+            onclick={handleUnblock}
+          >
             Engeli Kaldır
           </button>
         </EmptyState>

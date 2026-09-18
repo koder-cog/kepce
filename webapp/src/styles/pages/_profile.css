@@ -1,5 +1,11 @@
 @layer pages {
 
+  .comment-card-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
   /* ── 1. Page Base & Animations ───────────────────────────── */
   .profile-page {
     display: flex;
@@ -149,15 +155,22 @@
     flex: 1;
     min-width: 0;
     padding: var(--space-xs) 0;
-    gap: var(--space-md);
+    gap: var(--space-sm);
   }
 
   @media (max-width: 600px) {
     .profile-intro__info-stack {
-      gap: var(--space-md);
+      gap: var(--space-sm);
       align-items: flex-start;
       width: 100%;
     }
+  }
+
+  .profile-intro__flair-rank {
+    font-size: var(--text-sm);
+    color: var(--color-muted);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-normal);
   }
 
   .profile-intro__name-section {
@@ -244,28 +257,166 @@
     transition: transform var(--dur-fast) var(--ease-standard);
   }
 
-  .badge-picker-list {
+  /* ── Rozet Vitrini Seçim Modalı ────────────────────────────────── */
+  .badge-picker-container {
     display: flex;
     flex-direction: column;
-    gap: var(--space-xs);
-    max-height: 280px;
+    gap: var(--space-md);
+    max-height: 420px;
     overflow-y: auto;
+    padding-right: var(--space-2xs);
   }
 
-  .badge-picker-item {
+  .badge-picker-header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .badge-picker-desc {
+    font-size: var(--text-base);
+    color: var(--color-text-muted);
+    margin: 0;
+  }
+
+  .badge-picker-status {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    width: 100%;
+  }
+
+  .badge-picker-bar {
+    flex: 1;
+    height: 8px;
+    background: var(--color-surface-sunken);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+  }
+
+  .badge-picker-bar__fill {
+    height: 100%;
+    width: var(--badge-progress, 0%);
+    background: var(--color-accent-primary);
+    border-radius: var(--radius-full);
+    transition: width var(--dur-fast) var(--ease-standard);
+  }
+
+  .badge-picker-counter {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-muted);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+
+  .badge-picker-empty {
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    padding: var(--space-xs) 0;
+  }
+
+  /* 2 Katmanlı Ferah Kart Yapısı */
+  .badge-picker-card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border-subtle);
+    background: var(--color-surface);
+    transition: background var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard);
+    user-select: none;
+  }
+
+  .badge-picker-card:hover:not(.is-disabled) {
+    background: var(--color-surface-variant);
+  }
+
+  .badge-picker-card.is-pinned {
+    border-color: var(--color-border);
+  }
+
+  .badge-picker-card.is-disabled {
+    opacity: 0.45;
+    background: var(--color-surface-sunken);
+  }
+
+  /* Üst Katman: Rozet İkonu + Rozet Adı */
+  .badge-picker-card__top {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-xs) var(--space-sm);
-    border-radius: var(--radius-md);
-    border: 1px solid var(--color-border-subtle);
-    cursor: pointer;
-    font-size: var(--text-sm);
-    transition: background var(--dur-fast) var(--ease-standard);
+    gap: var(--space-md);
   }
 
-  .badge-picker-item:hover {
+  .badge-picker-card__identity {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    min-width: 0;
+    flex: 1;
+  }
+
+  .badge-picker-card__name {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Alt Katman: Sıralama Butonları (sol) + Switch (sağ) */
+  .badge-picker-card__bottom {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding-top: var(--space-xs);
+    border-top: 1px solid var(--color-border-subtle);
+    min-height: 32px;
+  }
+
+  .badge-picker-card__reorder {
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .badge-reorder-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border-radius: var(--radius-md);
     background: var(--color-surface-variant);
+    border: 1px solid var(--color-border-subtle);
+    color: var(--color-text-muted);
+    cursor: pointer;
+    transition: background var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
+  }
+
+  .badge-reorder-btn:hover:not(:disabled) {
+    background: var(--color-surface-hover);
+    color: var(--color-text);
+  }
+
+  .badge-reorder-btn:active:not(:disabled) {
+    transform: scale(0.92);
+  }
+
+  .badge-reorder-btn:disabled {
+    opacity: 0.25;
+    cursor: not-allowed;
+    pointer-events: none;
   }
 
   /* ── 5. Content Area (Bio & Meta) ──────────────────────────────── */

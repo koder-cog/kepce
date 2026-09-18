@@ -98,6 +98,14 @@
     transform: translateX(16px);
   }
 
+  /* ── Devre Dışı Durumu (Disabled) ────────────────────────── */
+  .c-input-hidden:disabled + .c-switch,
+  .c-switch.is-disabled {
+    opacity: 0.38;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+
   /* ── Mekanik Durum Göstergeleri (I/O) ── */
   body.show-indicators .c-switch::before,
   body.show-indicators .c-switch::after {
