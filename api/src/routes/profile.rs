@@ -18,6 +18,7 @@ use crate::extractors::auth::{AuthenticatedUser, OptionalUser};
 pub fn router() -> Router<crate::config::AppState> {
     Router::new()
         .route("/me", get(get_my_profile))
+        .route("/me/pinned-badges", post(update_my_pinned_badges).put(update_my_pinned_badges))
         .route("/:username", get(get_profile))
         .route("/:username/comments", get(get_profile_comments))
         .route("/:username/stats/dashboard", get(get_profile_dashboard_stats))
@@ -64,6 +65,17 @@ async fn get_my_profile(
 ) -> Result<Json<UserProfileDto>, AppError> {
     let profile = UserService::get_user_profile_by_id(&db, user.id).await?;
     Ok(Json(profile))
+}
+
+async fn update_my_pinned_badges(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    Json(payload): Json<crate::dto::user::UpdatePinnedBadgesDto>,
+) -> Result<Json<Vec<String>>, AppError> {
+    use validator::Validate;
+    payload.validate().map_err(|e| AppError::BadRequest(e.to_string()))?;
+    let updated = UserService::update_pinned_badges(&db, user.id, payload.pinned_badges).await?;
+    Ok(Json(updated))
 }
 
 async fn get_profile(

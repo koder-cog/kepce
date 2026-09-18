@@ -30,90 +30,90 @@ impl UserService {
     /// Kullanıcının karma puanına göre dinamik tabldot unvanını döndürür
     pub fn get_title_for_karma(karma: i32) -> &'static str {
         match karma {
-            k if k > 1000 => "aşçıbaşının yeğeni",
-            1000 => "altın kepçe",
-            950..=999 => "turnikeden ilk geçen",
-            900..=949 => "çift porsiyon tatlı hakkı",
-            880..=899 => "etli yemeği denk getiren",
-            870..=879 => "nohut-pilav gurmesi",
-            860..=869 => "yoğurdu ekşimeyen",
-            850..=859 => "fazladan mandalina koparan",
-            800..=849 => "tabak sıyıran",
-            780..=799 => "somun canavarı",
-            750..=779 => "kalorimetre",
-            720..=749 => "döküm tencere",
-            700..=719 => "cacık sevdalısı",
-            667..=699 => "revani müptelası",
+            k if k > 10000 => "aşçıbaşının yeğeni",
+            10000 => "altın kepçe",
+            9500..=9999 => "turnikeden ilk geçen",
+            9000..=9499 => "çift porsiyon tatlı hakkı",
+            8500..=8999 => "etli yemeği denk getiren",
+            8000..=8499 => "nohut-pilav gurmesi",
+            7500..=7999 => "yoğurdu ekşimeyen",
+            7000..=7499 => "fazladan mandalina koparan",
+            6500..=6999 => "tabak sıyıran",
+            6000..=6499 => "somun canavarı",
+            5500..=5999 => "kalorimetre",
+            5000..=5499 => "döküm tencere",
+            4000..=4999 => "cacık sevdalısı",
+            3000..=3999 => "revani müptelası",
             666 => "ızgara tavuk uğruna ruhunu satmış",
-            650..=665 => "kemik sulu",
-            630..=649 => "fırın sütlaç avcısı",
-            620..=629 => "tuzluğu dolu bulan",
-            600..=619 => "garnitürsüz yaşayan",
-            570..=599 => "ikinci ekmeği cebe atan",
-            550..=569 => "tepsiyi nizami taşıyan",
-            530..=549 => "porselen tabak arayan",
-            500..=529 => "mercimeğe yarım limon sıkan",
-            470..=499 => "tabldot müdavimi",
-            450..=469 => "çatalı peçeteyle silen",
-            430..=449 => "kampüs gurmesi",
-            400..=429 => "vegan reyonu mültecisi",
-            370..=399 => "menü mühendisi",
-            350..=369 => "kyk gazisi",
-            300..=349 => "karbonhidrat aşığı",
-            250..=299 => "turnike fatihi",
-            200..=249 => "tatlıyı önden yiyen",
-            150..=199 => "kart dolum sırası bekleyen",
-            120..=149 => "bayat ekmek kemiren",
-            100..=119 => "çömez tabldotçu",
-            50..=99 => "son dilim karpuz",
-            40..=49 => "çorba sıcak mı diyen",
-            30..=39 => "kantin kaçağı",
-            20..=29 => "porsiyon sayan",
-            10..=19 => "kuyrukta menü okuyan",
-            -1..=9 => "düz tabldotçu",
-            -11..=-2 => "salataya sirke dökmeyen",
-            -31..=-12 => "soğuk mercimek",
-            -51..=-32 => "tavuk sote sansarı",
-            -101..=-52 => "araya kaynak yapan",
-            -121..=-102 => "kayış gibi ciğer",
-            -151..=-122 => "kepçeyi yarım dolduran memur",
-            -161..=-152 => "tuzu bitmiş tuzluk",
-            -171..=-162 => "çatalı masada unutan",
-            -201..=-172 => "bayat ekmek fırlatan",
-            -231..=-202 => "ketçapsız makarna",
-            -251..=-232 => "taşlı pirinç",
-            -271..=-252 => "tepsiyi masada bırakan",
-            -291..=-272 => "dört kişilik masaya tek oturan",
-            -301..=-292 => "tabldotta tel zımba bulan",
-            -311..=-302 => "sulu köfte sabotajcısı",
-            -321..=-312 => "patlak su böreği",
-            -331..=-322 => "turnikede kartı okumayan",
-            -341..=-332 => "soya kıyması savunucusu",
-            -351..=-342 => "ılık ayran",
-            -361..=-352 => "kantin tostu öven",
-            -401..=-362 => "yıkanmamış marul",
-            -411..=-402 => "tencere dibi sıyıran",
-            -421..=-412 => "çiğ patates",
-            -431..=-422 => "yağı donmuş tas kebabı",
-            -441..=-432 => "rektörlük ajanı",
-            -451..=-442 => "bedava ekmek stokçusu",
-            -461..=-452 => "haşlama tavuk derisi",
-            -471..=-462 => "tatlıyı yere düşüren",
-            -481..=-472 => "çatalı yamuk olan",
-            -491..=-482 => "turnike üstünden atlayan",
-            -501..=-492 => "ekşi yoğurt",
-            -511..=-502 => "gaz yapan kuru fasulye",
-            -571..=-512 => "buz gibi bezelye",
-            -601..=-572 => "çürük elma",
-            -651..=-602 => "tahta kaşık kıran",
-            -671..=-652 => "tuzsuz brokoli",
-            -701..=-672 => "yemekhane grev kırıcısı",
-            -711..=-702 => "çiğ tavuk servis eden",
-            -751..=-712 => "bulyon çorbası",
-            -801..=-752 => "bütçe kısıntısı",
-            -851..=-802 => "yemekhane müteahhidi",
-            -871..=-852 => "donmuş margarin tabakası",
-            -901..=-872 => "taşeron yemek firması ceo'su",
+            2500..=2999 => "kemik sulu",
+            2000..=2499 => "fırın sütlaç avcısı",
+            1750..=1999 => "tuzluğu dolu bulan",
+            1500..=1749 => "garnitürsüz yaşayan",
+            1250..=1499 => "ikinci ekmeği cebe atan",
+            1000..=1249 => "tepsiyi nizami taşıyan",
+            850..=999 => "porselen tabak arayan",
+            667..=849 => "mercimeğe yarım limon sıkan",
+            500..=665 => "tabldot müdavimi",
+            400..=499 => "çatalı peçeteyle silen",
+            300..=399 => "kampüs gurmesi",
+            225..=299 => "vegan reyonu mültecisi",
+            160..=224 => "menü mühendisi",
+            110..=159 => "kyk gazisi",
+            75..=109 => "karbonhidrat aşığı",
+            50..=74 => "turnike fatihi",
+            35..=49 => "tatlıyı önden yiyen",
+            25..=34 => "kart dolum sırası bekleyen",
+            18..=24 => "bayat ekmek kemiren",
+            12..=17 => "çömez tabldotçu",
+            8..=11 => "son dilim karpuz",
+            5..=7 => "çorba sıcak mı diyen",
+            3..=4 => "kantin kaçağı",
+            2 => "porsiyon sayan",
+            1 => "kuyrukta menü okuyan",
+            -1..=0 => "düz tabldotçu",
+            -15..=-2 => "salataya sirke dökmeyen",
+            -40..=-16 => "soğuk mercimek",
+            -80..=-41 => "tavuk sote sansarı",
+            -150..=-81 => "araya kaynak yapan",
+            -250..=-151 => "kayış gibi ciğer",
+            -400..=-251 => "kepçeyi yarım dolduran memur",
+            -550..=-401 => "tuzu bitmiş tuzluk",
+            -700..=-551 => "çatalı masada unutan",
+            -900..=-701 => "bayat ekmek fırlatan",
+            -1150..=-901 => "ketçapsız makarna",
+            -1400..=-1151 => "taşlı pirinç",
+            -1700..=-1401 => "tepsiyi masada bırakan",
+            -2050..=-1701 => "dört kişilik masaya tek oturan",
+            -2400..=-2051 => "tabldotta tel zımba bulan",
+            -2800..=-2401 => "sulu köfte sabotajcısı",
+            -3200..=-2801 => "patlak su böreği",
+            -3650..=-3201 => "turnikede kartı okumayan",
+            -4100..=-3651 => "soya kıyması savunucusu",
+            -4600..=-4101 => "ılık ayran",
+            -5100..=-4601 => "kantin tostu öven",
+            -5650..=-5101 => "yıkanmamış marul",
+            -6200..=-5651 => "tencere dibi sıyıran",
+            -6800..=-6201 => "çiğ patates",
+            -7400..=-6801 => "yağı donmuş tas kebabı",
+            -8000..=-7401 => "rektörlük ajanı",
+            -8500..=-8001 => "bedava ekmek stokçusu",
+            -9000..=-8501 => "haşlama tavuk derisi",
+            -9400..=-9001 => "tatlıyı yere düşüren",
+            -9700..=-9401 => "çatalı yamuk olan",
+            -9900..=-9701 => "turnike üstünden atlayan",
+            -10100..=-9901 => "ekşi yoğurt",
+            -10300..=-10101 => "gaz yapan kuru fasulye",
+            -10500..=-10301 => "buz gibi bezelye",
+            -10700..=-10501 => "çürük elma",
+            -10900..=-10701 => "tahta kaşık kıran",
+            -11100..=-10901 => "tuzsuz brokoli",
+            -11300..=-11101 => "yemekhane grev kırıcısı",
+            -11500..=-11301 => "çiğ tavuk servis eden",
+            -11700..=-11501 => "bulyon çorbası",
+            -11900..=-11701 => "bütçe kısıntısı",
+            -12100..=-11901 => "yemekhane müteahhidi",
+            -12300..=-12101 => "donmuş margarin tabakası",
+            -12500..=-12301 => "taşeron yemek firması ceo'su",
             _ => "lavabo açıcı kıvamında hoşaf",
         }
     }
@@ -343,13 +343,23 @@ impl UserService {
             let awarded_at = user_badge_opt.and_then(|ub| ub.awarded_at.map(|dt| dt.into()));
             let count = user_badge_opt.map(|ub| ub.count).unwrap_or(0);
 
+            let slug = badge.slug.clone().unwrap_or_else(|| format!("badge_{}", badge.id));
+            let is_hidden_badge = badge.is_hidden || matches!(slug.as_str(), "muzmin_muhalif" | "linc_kurbani");
+            let is_hidden_and_locked = is_hidden_badge && !unlocked;
+
             dto_badges.push(UserBadgeDto {
-                slug: badge.slug.clone().unwrap_or_else(|| format!("badge_{}", badge.id)),
-                name: badge.name,
-                icon: Some(badge.icon),
+                slug: if is_hidden_and_locked { format!("hidden_{}", badge.id) } else { slug },
+                name: if is_hidden_and_locked { "Gizli Rozet".to_string() } else { badge.name },
+                icon: if is_hidden_and_locked { Some("lock".to_string()) } else { Some(badge.icon) },
                 icon_url: badge.icon_url,
-                description: badge.description,
+                description: if is_hidden_and_locked {
+                    Some(format!("@{} kepçeyi doğru daldırıp denk getirebilirse tabağına düşer.", user.username))
+                } else {
+                    badge.description
+                },
                 category: badge.category,
+                tier: badge.tier,
+                is_hidden: is_hidden_badge,
                 awarded_at,
                 unlocked,
                 karma_reward: badge.karma_reward,
@@ -357,6 +367,16 @@ impl UserService {
                 is_repeatable: badge.is_repeatable,
             });
         }
+
+        let pinned_badges = match user.pinned_badges {
+            Some(ref pins) if !pins.is_empty() => pins.clone(),
+            _ => dto_badges
+                .iter()
+                .filter(|b| b.unlocked && !b.slug.starts_with("hidden_"))
+                .take(5)
+                .map(|b| b.slug.clone())
+                .collect(),
+        };
 
         // Seviye ve ilerleme hesaplama
         let karma = user.karma_score.max(0);
@@ -404,6 +424,7 @@ impl UserService {
             badge_count,
             total_badges,
             badges: dto_badges,
+            pinned_badges,
             opt_out_statistics: user.opt_out_statistics,
             notif_replies: if include_private { Some(user.notif_replies) } else { None },
             notif_interactions: if include_private { Some(user.notif_interactions) } else { None },
@@ -418,6 +439,43 @@ impl UserService {
             is_blocked: None,
             is_blocked_by: None,
         })
+    }
+
+    /// Kullanıcının profilde sergileyeceği rozetleri günceller (en fazla 5)
+    pub async fn update_pinned_badges(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+        pinned_slugs: Vec<String>,
+    ) -> Result<Vec<String>, UserError> {
+        let user = Users::find_by_id(user_id)
+            .one(db)
+            .await
+            .map_err(UserError::DatabaseError)?
+            .ok_or(UserError::NotFound)?;
+
+        let earned_user_badges = user_badges::Entity::find()
+            .filter(user_badges::Column::UserId.eq(user_id))
+            .find_also_related(badges::Entity)
+            .all(db)
+            .await
+            .map_err(UserError::DatabaseError)?;
+
+        let earned_slugs: std::collections::HashSet<String> = earned_user_badges
+            .into_iter()
+            .filter_map(|(_, b_opt)| b_opt.and_then(|b| b.slug))
+            .collect();
+
+        let valid_pins: Vec<String> = pinned_slugs
+            .into_iter()
+            .filter(|slug| earned_slugs.contains(slug))
+            .take(5)
+            .collect();
+
+        let mut user_active: users::ActiveModel = user.into();
+        user_active.pinned_badges = Set(Some(valid_pins.clone()));
+        user_active.update(db).await.map_err(UserError::DatabaseError)?;
+
+        Ok(valid_pins)
     }
 
     /// Profil dashboard istatistikleri (stub / minimal implementasyon)
@@ -838,18 +896,17 @@ mod tests {
 
     #[test]
     fn test_get_title_for_karma() {
-        assert_eq!(UserService::get_title_for_karma(1500), "aşçıbaşının yeğeni");
-        assert_eq!(UserService::get_title_for_karma(1000), "altın kepçe");
-        assert_eq!(UserService::get_title_for_karma(950), "turnikeden ilk geçen");
+        assert_eq!(UserService::get_title_for_karma(15000), "aşçıbaşının yeğeni");
+        assert_eq!(UserService::get_title_for_karma(10000), "altın kepçe");
+        assert_eq!(UserService::get_title_for_karma(9500), "turnikeden ilk geçen");
         assert_eq!(UserService::get_title_for_karma(666), "ızgara tavuk uğruna ruhunu satmış");
-        assert_eq!(UserService::get_title_for_karma(500), "mercimeğe yarım limon sıkan");
+        assert_eq!(UserService::get_title_for_karma(700), "mercimeğe yarım limon sıkan");
         assert_eq!(UserService::get_title_for_karma(0), "düz tabldotçu");
-        assert_eq!(UserService::get_title_for_karma(5), "düz tabldotçu");
         assert_eq!(UserService::get_title_for_karma(-1), "düz tabldotçu");
-        assert_eq!(UserService::get_title_for_karma(-2), "salataya sirke dökmeyen");
-        assert_eq!(UserService::get_title_for_karma(-330), "turnikede kartı okumayan");
-        assert_eq!(UserService::get_title_for_karma(-890), "taşeron yemek firması ceo'su");
-        assert_eq!(UserService::get_title_for_karma(-1200), "lavabo açıcı kıvamında hoşaf");
+        assert_eq!(UserService::get_title_for_karma(-5), "salataya sirke dökmeyen");
+        assert_eq!(UserService::get_title_for_karma(-3500), "turnikede kartı okumayan");
+        assert_eq!(UserService::get_title_for_karma(-12400), "taşeron yemek firması ceo'su");
+        assert_eq!(UserService::get_title_for_karma(-13000), "lavabo açıcı kıvamında hoşaf");
     }
 }
 

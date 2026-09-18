@@ -750,11 +750,24 @@ impl ModerationService {
             .map_err(ModerationError::DatabaseError)?
             .ok_or(ModerationError::SubmissionNotFound)?;
 
-        let mut active: menu_submissions::ActiveModel = sub.into();
+        let was_not_approved = sub.status != "approved";
+        let mut active: menu_submissions::ActiveModel = sub.clone().into();
         active.status = Set(new_status.to_string());
         active.updated_at = Set(Some(chrono::Utc::now().into()));
 
-        active.update(db).await.map_err(ModerationError::DatabaseError)
+        let updated = active.update(db).await.map_err(ModerationError::DatabaseError)?;
+
+        if new_status == "approved" && was_not_approved {
+            if let Some(user_id) = sub.user_id {
+                if let Ok(Some(user)) = shared::entities::users::Entity::find_by_id(user_id).one(db).await {
+                    let mut user_active: shared::entities::users::ActiveModel = user.clone().into();
+                    user_active.karma_score = Set(user.karma_score + 25);
+                    let _ = user_active.update(db).await;
+                }
+            }
+        }
+
+        Ok(updated)
     }
 }
 

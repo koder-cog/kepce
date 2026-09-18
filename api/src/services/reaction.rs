@@ -69,18 +69,31 @@ impl ReactionService {
             ReactionTypeDto::Down => shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote,
         };
 
+        let mut karma_delta = 0;
+
         if let Some(reaction) = existing_reaction {
             if reaction.reaction_type == target_db_enum {
                 // Senaryo A: Aynı oya tekrar tıklandı -> Oyu kaldır (Toggle Off)
+                if reaction.reaction_type == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                    karma_delta = -1;
+                }
                 reaction.delete(db).await.map_err(ReactionError::DatabaseError)?;
             } else {
-                // Senaryo B: Farklı oya tıklandı (Upvote -> Downvote) -> Oyu güncelle
+                // Senaryo B: Farklı oya tıklandı (Upvote <-> Downvote) -> Oyu güncelle
+                if target_db_enum == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                    karma_delta = 1;
+                } else if reaction.reaction_type == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                    karma_delta = -1;
+                }
                 let mut active_reaction: vote_reactions::ActiveModel = reaction.into();
                 active_reaction.reaction_type = Set(target_db_enum);
                 active_reaction.update(db).await.map_err(ReactionError::DatabaseError)?;
             }
         } else {
             // Senaryo C: İlk defa oy veriliyor -> Yeni ekle
+            if target_db_enum == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                karma_delta = 1;
+            }
             let new_reaction = vote_reactions::ActiveModel {
                 user_id: Set(user_id),
                 comment_id: Set(comment_id),
@@ -92,6 +105,18 @@ impl ReactionService {
             // utils::db::is_unique_constraint_violation ile kontrol eklenebilir.
             // Fakat toggle işlemi genelde tek client'tan sıralı gelir.
             new_reaction.insert(db).await.map_err(ReactionError::DatabaseError)?;
+        }
+
+        // Yorum sahibinin karmasını güncelle (kendi kendine oy karma getirmez)
+        if let Some(author_id) = comment.user_id {
+            if author_id != user_id && karma_delta != 0 {
+                if let Ok(Some(author)) = Users::find_by_id(author_id).one(db).await {
+                    let current_karma = author.karma_score;
+                    let mut author_active: shared::entities::users::ActiveModel = author.into();
+                    author_active.karma_score = Set(current_karma + karma_delta);
+                    let _ = author_active.update(db).await;
+                }
+            }
         }
 
         // 3. Güncel Oylama Durumunu (Summary) Çek

@@ -16,6 +16,8 @@ pub struct Model {
     pub category: String,
     pub karma_reward: i32,
     pub icon: String,
+    pub tier: String,
+    pub is_hidden: bool,
     pub is_repeatable: bool,
     pub icon_url: Option<String>,
     pub created_at: Option<DateTimeWithTimeZone>,

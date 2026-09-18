@@ -132,6 +132,7 @@ pub struct UserProfileDto {
     
     // Kullanıcının kazandığı rozetlerin listesi
     pub badges: Vec<UserBadgeDto>,
+    pub pinned_badges: Vec<String>,
     pub opt_out_statistics: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notif_replies: Option<bool>,
@@ -167,11 +168,19 @@ pub struct UserBadgeDto {
     pub icon_url: Option<String>,
     pub description: Option<String>,
     pub category: String,
+    pub tier: String,
+    pub is_hidden: bool,
     pub awarded_at: Option<DateTime<Utc>>,
     pub unlocked: bool,
     pub karma_reward: i32,
     pub count: i32,
     pub is_repeatable: bool,
+}
+
+#[derive(Debug, Deserialize, Validate)]
+pub struct UpdatePinnedBadgesDto {
+    #[validate(length(max = 5, message = "En fazla 5 rozet sabitleyebilirsiniz"))]
+    pub pinned_badges: Vec<String>,
 }
 
 /// Kimlik doğrulama yanıtı: JWT token + kullanıcı profili
