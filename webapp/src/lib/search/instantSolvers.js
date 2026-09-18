@@ -503,7 +503,7 @@ export async function solveTdkDefinition(query) {
 
       return {
         type: "definition",
-        word: first.madde || word,
+        word: first.madde || lookupWord,
         meanings,
         source: "Türk Dil Kurumu Güncel Türkçe Sözlük",
       };

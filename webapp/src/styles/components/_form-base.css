@@ -33,16 +33,18 @@
 
   /* ── Global Form Resets ───────────────────────────────────── */
 
-  input[type="text"],
-  input[type="email"],
-  input[type="password"],
-  input[type="search"],
-  input[type="tel"],
-  input[type="url"],
-  input[type="number"],
-  input[type="month"],
-  input[type="date"],
-  textarea {
+  :where(
+    input[type="text"],
+    input[type="email"],
+    input[type="password"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    input[type="number"],
+    input[type="month"],
+    input[type="date"],
+    textarea
+  ) {
     width: 100%;
     padding: var(--space-md) var(--space-lg);
     background: var(--color-surface-sunken);

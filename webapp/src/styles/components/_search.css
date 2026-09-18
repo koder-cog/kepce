@@ -355,6 +355,7 @@
 .c-search-results__search-wrap .c-search-box__input {
   height: 46px;
   padding: 0 3rem 0 1.25rem;
+  border-radius: var(--radius-full);
 }
 
 .c-search-results__topbar-actions {
@@ -489,6 +490,7 @@
     font-size: var(--text-base);
     padding: 0 2.8rem 0 1rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-full);
   }
 
   .c-search-results__search-wrap .c-search-box__submit {

@@ -131,17 +131,6 @@ function matchKepceIntent(query) {
     };
   }
 
-  if (clean === "kepce" || clean === "kepçe" || clean === "kepce nedir" || clean === "kepçe nedir") {
-    return {
-      type: "module",
-      title: "Kepçe - Açık Menü ve Yemekhane Platformu",
-      subtitle: "Hakkında",
-      description: "81 ilin KYK yurt yemekhanesi menüleri, beslenme saatleri, öğrenci yorumları ve şeffaf beslenme yardımı takibi.",
-      href: "/hakkinda",
-      badge: "Platform",
-      cta: "Keşfet",
-    };
-  }
 
   // 2. Şehir + Yemek/Yurt Niyeti Eşleştirmesi (Çift Kademeli)
   // Kurumsal/yurt/öğrenci yemekhanesi veya menü niyeti aranır.

@@ -400,6 +400,10 @@
       filter var(--dur-fast) var(--ease-standard);
   }
 
+  .meal-card__star-btn svg {
+    fill: currentColor;
+  }
+
   @media (hover: hover) {
     .meal-card__star-btn:hover {
       color: var(--color-accent-disclaimer);
@@ -407,8 +411,9 @@
     }
 
     .meal-card__star-btn.active:hover {
+      color: var(--color-star-active, #ffb400);
       transform: scale(1.15);
-      filter: drop-shadow(0 0 4px rgba(255, 202, 40, 0.4));
+      filter: drop-shadow(0 0 4px rgba(255, 180, 0, 0.4));
     }
   }
 
@@ -429,7 +434,7 @@
   }
 
   .meal-card__star-btn.active {
-    color: var(--color-star-active);
+    color: var(--color-star-active, #ffb400) !important;
     /* Golden star */
     animation: star-burst var(--dur-medium) var(--ease-spring-bounce);
   }

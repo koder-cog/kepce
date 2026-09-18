@@ -562,7 +562,8 @@
 
   /* ── 5. Yorum Ağacı Sistemleri (Thread System) ─────────────── */
   @layer thread {
-    :root {
+    .comment-feed,
+    .comment-node {
       --comment-avatar-size: 28px;
       --comment-line-width: 2px;
       --comment-line-color: var(--color-border-light);
@@ -938,7 +939,8 @@
     }
 
     @media (max-width: 600px) {
-      :root {
+      .comment-feed,
+      .comment-node {
         --avatar-col-width: 20px;
         --comment-avatar-size: 16px;
         --comment-line-width: 1px;

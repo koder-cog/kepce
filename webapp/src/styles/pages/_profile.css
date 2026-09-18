@@ -386,12 +386,16 @@
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
-    background: rgba(255, 107, 107, 0.12);
-    color: var(--color-accent-primary);
+    background: rgba(255, 180, 0, 0.15);
+    color: var(--color-star-active, #ffb400);
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+  }
+
+  .profile-dish-card__icon svg {
+    fill: currentColor;
   }
 
   .profile-dish-card__name {
