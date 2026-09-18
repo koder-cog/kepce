@@ -369,8 +369,8 @@ impl UserService {
         }
 
         let pinned_badges = match user.pinned_badges {
-            Some(ref pins) if !pins.is_empty() => pins.clone(),
-            _ => dto_badges
+            Some(ref pins) => pins.clone(),
+            None => dto_badges
                 .iter()
                 .filter(|b| b.unlocked && !b.slug.starts_with("hidden_"))
                 .take(5)
