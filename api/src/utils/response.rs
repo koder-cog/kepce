@@ -8,12 +8,13 @@ use axum::{
 use sha2::{Digest, Sha256};
 use crate::error::AppError;
 
-/// Serializes data to JSON and returns a response with Cache-Control and ETag headers.
-/// If the request contains a matching If-None-Match header, returns 304 Not Modified.
-pub fn cached_json_response<T: serde::Serialize>(
+/// Serializes data to JSON and returns a response with Cache-Control, Vary, and ETag headers.
+/// If `is_private` is true (e.g. response contains user-specific data), Cache-Control is set to `private, no-cache, must-revalidate`.
+pub fn cached_json_response_with_privacy<T: serde::Serialize>(
     headers: &HeaderMap,
     data: &T,
     max_age_secs: u32,
+    is_private: bool,
 ) -> Result<Response, AppError> {
     let json_bytes = serde_json::to_vec(data).map_err(|e| {
         tracing::error!("JSON serialization error: {}", e);
@@ -27,10 +28,14 @@ pub fn cached_json_response<T: serde::Serialize>(
     let hex_hash: String = hash.iter().map(|b| format!("{:02x}", b)).collect();
     let etag = format!("\"{}\"", hex_hash);
 
-    let cache_control = format!(
-        "public, max-age={}, s-maxage=3600, stale-while-revalidate=86400",
-        max_age_secs
-    );
+    let cache_control = if is_private {
+        "private, no-cache, must-revalidate".to_string()
+    } else {
+        format!(
+            "public, max-age={}, s-maxage=3600, stale-while-revalidate=86400",
+            max_age_secs
+        )
+    };
 
     // Check If-None-Match conditional request
     if let Some(if_none_match) = headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()) {
@@ -44,6 +49,7 @@ pub fn cached_json_response<T: serde::Serialize>(
                 .status(StatusCode::NOT_MODIFIED)
                 .header(header::CACHE_CONTROL, cache_control)
                 .header(header::ETAG, etag)
+                .header(header::VARY, "Cookie, Authorization, Accept-Encoding")
                 .body(Body::empty())
                 .unwrap_or_else(|_| StatusCode::NOT_MODIFIED.into_response()));
         }
@@ -54,6 +60,17 @@ pub fn cached_json_response<T: serde::Serialize>(
         .header(header::CONTENT_TYPE, "application/json")
         .header(header::CACHE_CONTROL, cache_control)
         .header(header::ETAG, etag)
+        .header(header::VARY, "Cookie, Authorization, Accept-Encoding")
         .body(Body::from(json_bytes))
         .unwrap_or_else(|_| StatusCode::INTERNAL_SERVER_ERROR.into_response()))
+}
+
+/// Serializes data to JSON and returns a public response with Cache-Control and ETag headers.
+/// If the request contains a matching If-None-Match header, returns 304 Not Modified.
+pub fn cached_json_response<T: serde::Serialize>(
+    headers: &HeaderMap,
+    data: &T,
+    max_age_secs: u32,
+) -> Result<Response, AppError> {
+    cached_json_response_with_privacy(headers, data, max_age_secs, false)
 }

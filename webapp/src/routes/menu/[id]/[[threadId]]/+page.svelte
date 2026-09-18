@@ -112,7 +112,7 @@
 
         try {
             const [menuData, commentsData] = await Promise.all([
-                api.getMenu(menuId),
+                api.getMenu(menuId, "standard", { noCache: true }),
                 api.getMenuComments(menuId).catch(() => []),
             ]);
 
@@ -155,9 +155,21 @@
             }
         };
 
+        const handleAuthChanged = (e) => {
+            if (e.detail?.user) {
+                api.getMenu(menuId, "standard", { noCache: true }).then((fresh) => {
+                    if (fresh) menu = fresh;
+                }).catch(() => {});
+            } else if (menu) {
+                menu.my_vote = null;
+            }
+        };
+
         window.addEventListener("comment-submitted", handleCommentSubmitted);
+        window.addEventListener("auth-changed", handleAuthChanged);
         return () => {
             window.removeEventListener("comment-submitted", handleCommentSubmitted);
+            window.removeEventListener("auth-changed", handleAuthChanged);
         };
     });
 

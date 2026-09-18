@@ -99,26 +99,26 @@ export const menusApi = {
   // Kanonik yol /public/cities (kökteki duplicate route 308 ile yönlendirir)
   getCities: () => request('/public/cities'),
   detectCity: () => request('/public/cities/detect'),
-  getTodayMenu: async (city, dietary_type = 'standard') => {
-    const data = await request(`/menus${buildQuery({ city, date: 'today', dietary_type })}`);
+  getTodayMenu: async (city, dietary_type = 'standard', options = {}) => {
+    const data = await request(`/menus${buildQuery({ city, date: 'today', dietary_type })}`, options);
     return Array.isArray(data) ? data.map(normalizeMenu) : normalizeMenu(data);
   },
-  getMenusByDate: async (city, date, dietary_type = 'standard') => {
-    const data = await request(`/menus${buildQuery({ city, date, dietary_type })}`);
+  getMenusByDate: async (city, date, dietary_type = 'standard', options = {}) => {
+    const data = await request(`/menus${buildQuery({ city, date, dietary_type })}`, options);
     return normalizeMenuList(data);
   },
-  getMonthlyMenus: async (city, year, month, dietary_type = 'standard') => {
-    const data = await request(`/menus${buildQuery({ city, year, month, dietary_type })}`);
+  getMonthlyMenus: async (city, year, month, dietary_type = 'standard', options = {}) => {
+    const data = await request(`/menus${buildQuery({ city, year, month, dietary_type })}`, options);
     return normalizeMenuList(data);
   },
-  getArchiveYears: (city) => request(`/menus/archive/years${buildQuery({ city })}`),
-  getArchiveHighlights: (limit = 4) => request(`/menus/archive/highlights${buildQuery({ limit })}`),
-  getMenu: async (menuId, dietary_type = 'standard') => {
-    const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`);
+  getArchiveYears: (city, options = {}) => request(`/menus/archive/years${buildQuery({ city })}`, options),
+  getArchiveHighlights: (limit = 4, options = {}) => request(`/menus/archive/highlights${buildQuery({ limit })}`, options),
+  getMenu: async (menuId, dietary_type = 'standard', options = {}) => {
+    const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`, options);
     return normalizeMenu(data);
   },
-  getMenuDetail: async (menuId, dietary_type = 'standard') => {
-    const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`);
+  getMenuDetail: async (menuId, dietary_type = 'standard', options = {}) => {
+    const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`, options);
     return normalizeMenu(data);
   },
   voteMenu: (menuId, sentiment) => {

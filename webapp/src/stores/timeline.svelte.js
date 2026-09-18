@@ -317,7 +317,17 @@ export function createTimelineStore() {
      * Menü verisini store'a enjekte eder → HTML'de menü kartları render edilir.
      */
     function setPrerenderedData(menus, city, dateStr) {
-        menusState = Array.isArray(menus) ? menus : [];
+        const incoming = Array.isArray(menus) ? menus : [];
+        if (menusState.length > 0 && incoming.length > 0) {
+            // İstemcideki mevcut menülerde kullanıcının oyu varsa, SSR'dan gelen null ile ezilmesini önle
+            for (const item of incoming) {
+                const current = menusState.find(m => m.id === item.id);
+                if (current && current.my_vote !== undefined && current.my_vote !== null) {
+                    item.my_vote = current.my_vote;
+                }
+            }
+        }
+        menusState = incoming;
         prerenderedMeta = { city, date: dateStr };
         if (dateStr) {
             const parts = dateStr.split('-').map(Number);
@@ -329,12 +339,42 @@ export function createTimelineStore() {
         }
     }
 
+    async function hydrateUserVotes() {
+        if (!currentCity || menusState.length === 0) return;
+        const hasSession = typeof document !== 'undefined' && document.cookie.includes('kepce_logged_in');
+        if (!hasSession) return;
+
+        const year = selectedDate.getFullYear();
+        const month = String(selectedDate.getMonth() + 1).padStart(2, "0");
+        const day = String(selectedDate.getDate()).padStart(2, "0");
+        const dateQuery = `${year}-${month}-${day}`;
+
+        try {
+            const freshMenus = await api.getMenusByDate(currentCity, dateQuery, currentDietMode, { noCache: true });
+            if (!Array.isArray(freshMenus)) return;
+
+            for (const fresh of freshMenus) {
+                const existing = menusState.find(m => m.id === fresh.id);
+                if (existing) {
+                    existing.my_vote = fresh.my_vote ?? null;
+                    existing.rating_sum = fresh.rating_sum;
+                    existing.vote_count = fresh.vote_count;
+                }
+            }
+        } catch {
+            // Sessiz hata yönetimi; SSR menüleri arayüzde korunur
+        }
+    }
+
     async function init() {
         // Prerender verisi mevcut şehir ile eşleşiyorsa ilk açılışta tekrar API'ye gitme
         const skipInitialLoad = Boolean(prerenderedMeta && prerenderedMeta.city === currentCity);
 
         if (!skipInitialLoad) {
             loadMenus();
+        } else {
+            // SSR anonim üretildiği için oturumlu kullanıcının oylarını arka planda güncelle
+            hydrateUserVotes();
         }
         // Prerender meta'yı temizle - sonraki tarih/şehir değişimlerinde tekrar çekilsin
         prerenderedMeta = null;
@@ -376,7 +416,8 @@ export function createTimelineStore() {
 
 
     function setServerToday(dateStr) {
-        if (dateStr && typeof dateStr === 'string') {
+        if (!dateStr) return;
+        if (!serverToday) {
             serverToday = dateStr;
         }
     }
@@ -389,6 +430,16 @@ export function createTimelineStore() {
         window.addEventListener('online', () => {
             if (errorState?.statusCode === 'offline') {
                 loadMenus(0);
+            }
+        });
+
+        window.addEventListener('auth-changed', (e) => {
+            if (e.detail?.user) {
+                hydrateUserVotes();
+            } else {
+                for (const m of menusState) {
+                    m.my_vote = null;
+                }
             }
         });
     }
@@ -435,6 +486,7 @@ export function createTimelineStore() {
         forceDietMode,
         updateView,
         setPrerenderedData,
+        hydrateUserVotes,
         scrollToActiveDay
     };
 }

@@ -64,7 +64,7 @@ async fn get_today(
         Some(s) => NaiveDate::parse_from_str(s, "%Y-%m-%d")
             .map_err(|_| AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string()))?,
     };
-    let user_id = user.map(|u| u.id);
+    let user_id = user.as_ref().map(|u| u.id);
     let menus = MenuService::get_menus_by_filter(
         &db,
         filter.city,
@@ -74,7 +74,8 @@ async fn get_today(
         None,
         user_id,
     ).await?;
-    crate::utils::response::cached_json_response(&headers, &menus, 300)
+    let is_private = user.is_some();
+    crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
 }
 
 #[derive(Deserialize)]
@@ -93,7 +94,7 @@ async fn get_menus(
     headers: http::HeaderMap,
     Query(query): Query<MenuFilterQueryDto>,
 ) -> Result<axum::response::Response, AppError> {
-    let user_id = user.map(|u| u.id);
+    let user_id = user.as_ref().map(|u| u.id);
     let parsed_date = match query.date.as_deref() {
         Some("today") => Some(crate::utils::time::istanbul_today()),
         Some(s) => match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
@@ -112,7 +113,8 @@ async fn get_menus(
         query.month,
         user_id,
     ).await?;
-    crate::utils::response::cached_json_response(&headers, &menus, 300)
+    let is_private = user.is_some();
+    crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
 }
 
 async fn get_today_city(
@@ -124,9 +126,10 @@ async fn get_today_city(
     Query(query): Query<MenuFilterQueryDto>,
 ) -> Result<axum::response::Response, AppError> {
     let today = crate::utils::time::istanbul_today();
-    let user_id = user.map(|u| u.id);
+    let user_id = user.as_ref().map(|u| u.id);
     let menus = MenuService::get_menus_by_filter(&db, Some(city), Some(today), query.dietary_type, None, None, user_id).await?;
-    crate::utils::response::cached_json_response(&headers, &menus, 300)
+    let is_private = user.is_some();
+    crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
 }
 
 #[derive(Deserialize)]
@@ -171,9 +174,10 @@ async fn get_menu(
     Path(menu_id): Path<i32>,
     Query(query): Query<MenuDetailQueryDto>,
 ) -> Result<axum::response::Response, AppError> {
-    let user_id = user.map(|u| u.id);
+    let user_id = user.as_ref().map(|u| u.id);
     let menu = MenuService::get_menu_with_items(&db, menu_id, query.dietary_type, user_id).await?;
-    crate::utils::response::cached_json_response(&headers, &menu, 300)
+    let is_private = user.is_some();
+    crate::utils::response::cached_json_response_with_privacy(&headers, &menu, 300, is_private)
 }
 
 #[derive(Deserialize)]

@@ -87,6 +87,9 @@ export const authActions = {
         document.body.classList.toggle('is-logged-in', !!globalState.user);
       }
       globalState.isReady = true;
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('auth-changed', { detail: { user: globalState.user } }));
+      }
     }
   },
 
@@ -109,7 +112,10 @@ export const authActions = {
       globalState.favorites = [];
       globalState.hasSession = false;
       clearLoggedCookie();
-      if (typeof window !== 'undefined') localStorage.removeItem('kepce_user_cache');
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('kepce_user_cache');
+        window.dispatchEvent(new CustomEvent('auth-changed', { detail: { user: null } }));
+      }
       if (typeof document !== 'undefined') document.body.classList.remove('is-logged-in');
       try {
         await invalidateAll();
