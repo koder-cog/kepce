@@ -227,8 +227,8 @@
     border-radius: var(--radius-md);
     text-decoration: none !important;
     transition: border-color var(--dur-fast) var(--ease-standard),
-                background-color var(--dur-fast) var(--ease-standard),
-                box-shadow var(--dur-fast) var(--ease-standard);
+      background-color var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard);
   }
 
   .city-directory__card:hover {
