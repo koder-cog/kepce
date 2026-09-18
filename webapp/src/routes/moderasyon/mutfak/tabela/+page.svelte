@@ -98,7 +98,7 @@
     } catch (err) { console.error(err); }
 
     const pCity = page.url.searchParams.get("sehir");
-    const pGun = page.url.searchParams.get("gun");
+    const pGun = page.url.searchParams.get("gun") || page.url.searchParams.get("tarih");
 
     if (pCity) {
       menuCityFilter = pCity;

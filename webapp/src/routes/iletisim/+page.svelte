@@ -7,7 +7,7 @@
   import Seo from "@/components/ui/Seo.svelte";
 
   const MAX_DESC = 2000;
-  const MAX_SUBJ = 128;
+  const MAX_SUBJ = 150;
 
   let email = $state("");
   let category = $state("error");

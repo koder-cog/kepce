@@ -29,6 +29,8 @@
   let error = $state(null);
   let avatarTimestamp = $state(Date.now());
 
+  setContext("profileContext", () => profile);
+
   // Tabs state based on URL
   let currentPath = $derived($page.url.pathname);
 
@@ -37,6 +39,11 @@
       label: "Yorumlar",
       path: `/biri/${username}`,
       icon: icon("chat", 18),
+    },
+    rozetler: {
+      label: "Rozetler",
+      path: `/biri/${username}/rozetler`,
+      icon: icon("trophy", 18),
     },
     sabitlenenler: {
       label: "Favoriler",
@@ -56,6 +63,7 @@
   });
 
   function getActiveTab(path) {
+    if (path.endsWith("/rozetler")) return "rozetler";
     if (path.endsWith("/sabitlenenler")) return "sabitlenenler";
     if (path.endsWith("/begendikleri")) return "begendikleri";
     if (path.endsWith("/yazarlar")) return "yazarlar";
@@ -153,19 +161,98 @@
     return prof.badges.filter((b) => b.unlocked);
   }
 
-  function getCategoryColor(cat) {
-    switch (cat) {
-      case "sadakat":
-        return "var(--color-accent-primary)";
-      case "sosyal":
-        return "var(--color-accent-secondary)";
-      case "denetim":
-        return "var(--color-danger)";
-      case "veri":
-        return "var(--color-success)";
-      default:
-        return "var(--color-text-muted)";
+  const BADGE_TIER_MAP = {
+    hucre_hapsi: "gold",
+    demirbas: "gold",
+    vefakar: "gold",
+    kanaat_onderi: "gold",
+    bakanlik_ajani: "gold",
+    kurumsal_caresizlik: "silver",
+    stokholm_sendromu: "silver",
+    halkin_adami: "silver",
+    fahri_mufettis: "silver",
+    bas_muhbir: "silver",
+    derin_devlet: "silver",
+    demir_mide: "bronze",
+    klavyesor: "bronze",
+    ilk_kepce: "other",
+    muzmin_muhalif: "other",
+    linc_kurbani: "other",
+    caylak_gammaz: "other",
+    kacak_asci: "other",
+  };
+
+  function getBadgeTier(badge) {
+    if (badge.tier) return badge.tier;
+    if (badge.slug && BADGE_TIER_MAP[badge.slug]) return BADGE_TIER_MAP[badge.slug];
+    return "other";
+  }
+
+  let showcasedBadges = $derived.by(() => {
+    if (!profile?.badges) return [];
+    const earned = profile.badges.filter((b) => b.unlocked);
+    const pinnedSlugs = profile.pinned_badges || [];
+    if (pinnedSlugs.length > 0) {
+      const pinned = pinnedSlugs
+        .map((slug) => earned.find((b) => b.slug === slug))
+        .filter(Boolean);
+      if (pinned.length > 0) return pinned.slice(0, 5);
     }
+    return earned.slice(0, 5);
+  });
+
+  function openBadgeShowcaseModal() {
+    const earned = getEarnedBadges(profile);
+    if (earned.length === 0) {
+      showToast("Henüz sergilenecek bir rozetin yok.", "info");
+      return;
+    }
+
+    const currentPins = new Set(profile.pinned_badges || showcasedBadges.map((b) => b.slug));
+
+    const modalObj = createModal({
+      title: "Rozet Vitrini",
+      iconHtml: icon("trophy", 24),
+      contentHtml: `
+        <div class="c-modal__form-group">
+          <p class="u-text-sm u-color-muted" style="margin-bottom: var(--space-sm);">
+            Profilinde sergilemek istediğin 3-5 rozeti seç:
+          </p>
+          <div class="badge-picker-list" id="badge-picker-list">
+            ${earned.map((b) => `
+              <label class="badge-picker-item">
+                <span>${sanitizeText(b.name)}</span>
+                <input type="checkbox" name="pinned_badge" value="${sanitizeText(b.slug)}" ${currentPins.has(b.slug) ? "checked" : ""} />
+              </label>
+            `).join("")}
+          </div>
+        </div>
+      `,
+      buttons: [
+        { label: "Vazgeç", variant: "secondary" },
+        {
+          label: "Kaydet",
+          variant: "primary",
+          onClick: async (modalEl) => {
+            const checkedInputs = Array.from(modalEl.querySelectorAll('input[name="pinned_badge"]:checked'));
+            if (checkedInputs.length > 5) {
+              showToast("En fazla 5 rozet seçebilirsin.", "warning");
+              return false;
+            }
+            const selectedSlugs = checkedInputs.map((input) => input.value);
+            try {
+              await api.updatePinnedBadges(selectedSlugs);
+              profile.pinned_badges = selectedSlugs;
+              showToast("Rozet vitrini güncellendi.", "success");
+              return true;
+            } catch (err) {
+              showToast(err.message || "Kaydedilemedi.", "error");
+              return false;
+            }
+          },
+        },
+      ],
+    });
   }
 
   // --- Setup / Owner actions ---
@@ -602,28 +689,16 @@
           </div>
 
           <div class="profile-intro__achievements-dock">
-            {#if getEarnedBadges(profile).length > 0}
+            {#if showcasedBadges.length > 0}
               <div class="profile-intro__achievements">
-                {#each getEarnedBadges(profile).slice(0, 3) as a}
+                {#each showcasedBadges as a}
                   <div
-                    class="achievement-badge"
-                    style="--badge-color: {getCategoryColor(a.category)}"
+                    class="achievement-badge badge--{getBadgeTier(a)}"
                     title="{a.name}{a.description ? ': ' + a.description : ''}"
                   >
                     {@html icon(a.icon || "starFilled", 20)}
                   </div>
                 {/each}
-                <button
-                  class="achievement-badge achievement-badge--more"
-                  title="Tüm başarımlar ({profile.badge_count ||
-                    getEarnedBadges(profile).length})"
-                  onclick={() => {
-                    goto(`/rozetler/${profile.username}`);
-                  }}
-                >
-                  {@html icon("trophy", 18)}
-                  {@html icon("chevronRight", 16)}
-                </button>
               </div>
             {/if}
           </div>
@@ -659,6 +734,14 @@
                       label: "Biyografiyi düzenle",
                       onClick: () => openBioEditModal(),
                     },
+                    ...(getEarnedBadges(profile).length > 0
+                      ? [
+                          {
+                            label: "Rozet vitrinini düzenle",
+                            onClick: () => openBadgeShowcaseModal(),
+                          },
+                        ]
+                      : []),
                   ]
                 : [
                     ...(profile.is_blocked

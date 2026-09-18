@@ -33,6 +33,8 @@ const config = {
 				'style-src': ['self', 'unsafe-inline'],
 				'connect-src': [
 					'self',
+					'ws:',
+					'wss:',
 					'https://cloudflareinsights.com',
 					'https://analitik.kepce.org'
 				],

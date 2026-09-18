@@ -22,10 +22,39 @@ export function reroute({ url }) {
 }
 
 export async function handle({ event, resolve }) {
+  const { pathname, search } = event.url;
+
+  // Standalone Node / Preview ortamında /api ve /static isteklerini backend API'ye proxy'le
+  if (pathname.startsWith('/api/') || pathname.startsWith('/static/')) {
+    const apiInternal = process.env.API_INTERNAL || 'http://127.0.0.1:8000';
+    const targetUrl = `${apiInternal}${pathname}${search}`;
+    try {
+      const headers = new Headers(event.request.headers);
+      headers.set('host', new URL(apiInternal).host);
+
+      const requestInit = {
+        method: event.request.method,
+        headers,
+        duplex: 'half',
+      };
+
+      if (event.request.method !== 'GET' && event.request.method !== 'HEAD') {
+        requestInit.body = event.request.body;
+      }
+
+      return await fetch(targetUrl, requestInit);
+    } catch {
+      return new Response(JSON.stringify({ error: 'Backend API bağlantı hatası' }), {
+        status: 502,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+  }
+
   const hostname = event.url.hostname.toLowerCase();
   const isAraSubdomain = hostname.startsWith("ara.") || hostname === "ara.localhost";
 
-  const isAraRoute = isAraSubdomain || event.url.pathname.startsWith("/ara");
+  const isAraRoute = isAraSubdomain || pathname.startsWith("/ara");
 
   // Arama motorunda katı No-Referrer ve Güvenlik Başlıkları İzolasyonu (A4.1)
   if (isAraRoute) {

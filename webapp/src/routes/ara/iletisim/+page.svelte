@@ -8,7 +8,7 @@
   import Dropdown from "@/components/features/Dropdown.svelte";
 
   const MAX_DESC = 2000;
-  const MAX_SUBJ = 128;
+  const MAX_SUBJ = 150;
 
   let isSubdomain = $derived(
     $page.url.hostname.startsWith("ara.") ||

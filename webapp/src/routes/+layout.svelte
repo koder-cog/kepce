@@ -4,6 +4,7 @@
 	import { fade } from "svelte/transition";
 	import { beforeNavigate, afterNavigate, onNavigate, goto } from "$app/navigation";
 	import { page, updated } from "$app/stores";
+	import { dev } from "$app/environment";
 	import { globalState, authActions } from "@/state.svelte.js";
 	import { forceUnlockScroll } from "@/lib/dom/scroll-lock.js";
 	import Nav from "@/components/layout/Nav.svelte";
@@ -249,9 +250,26 @@
 		// Remove disabled state on load
 		document.documentElement.classList.remove("no-js");
 
-		// PWA: Tarayıcının yerel uygulama yükleme yeteneğini ve Web Push altyapısını sessizce hazırla
+		// PWA: Üretimde Service Worker ve Web Push; geliştirme (dev) ortamında ise önbellek çakışmalarını önlemek için temizle
 		if (typeof window !== "undefined" && "serviceWorker" in navigator) {
-			navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+			if (dev) {
+				navigator.serviceWorker.getRegistrations().then((registrations) => {
+					for (const registration of registrations) {
+						registration.unregister();
+					}
+				});
+				if ("caches" in window) {
+					caches.keys().then((keys) => {
+						for (const key of keys) {
+							if (key.startsWith("kepce-cache-")) {
+								caches.delete(key);
+							}
+						}
+					});
+				}
+			} else {
+				navigator.serviceWorker.register("/sw.js", { scope: "/" }).catch(() => {});
+			}
 		}
 
 		const animationsEnabled =

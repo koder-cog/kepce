@@ -149,7 +149,7 @@
 
   function handleCellClick(city, day) {
     const dateStr = `${selectedYear}-${pad(selectedMonth)}-${pad(day)}`;
-    goto(`/moderasyon/mutfak/tabela?sehir=${city.slug}&tarih=${dateStr}`);
+    goto(`/moderasyon/mutfak/tabela?sehir=${city.slug}&gun=${dateStr}`);
   }
 </script>
 

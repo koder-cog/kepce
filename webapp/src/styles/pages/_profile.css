@@ -231,34 +231,41 @@
   }
 
   .achievement-badge {
-    width: 40px;
-    height: 40px;
+    width: 36px;
+    height: 36px;
     border-radius: var(--radius-full);
-    background: var(--badge-color, var(--color-surface-sunken));
+    background: color-mix(in srgb, var(--tier-color, #C4C4C4) 50%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--color-text-on-accent);
+    color: var(--tier-color, #C4C4C4);
     box-shadow: var(--shadow-xs);
     flex-shrink: 0;
-    transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+    transition: transform var(--dur-fast) var(--ease-standard);
   }
 
-  .achievement-badge--more {
-    width: auto;
-    padding: 0 var(--space-md);
+  .badge-picker-list {
+    display: flex;
+    flex-direction: column;
     gap: var(--space-xs);
-    background: var(--color-surface-sunken);
-    color: var(--color-text);
-    cursor: pointer;
-    border: 1px solid var(--color-border-light);
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-semibold);
+    max-height: 280px;
+    overflow-y: auto;
   }
 
-  .achievement-badge--more:hover {
-    background: var(--color-border-light);
-    color: var(--color-text);
+  .badge-picker-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-md);
+    border: 1px solid var(--color-border-subtle);
+    cursor: pointer;
+    font-size: var(--text-sm);
+    transition: background var(--dur-fast) var(--ease-standard);
+  }
+
+  .badge-picker-item:hover {
+    background: var(--color-surface-variant);
   }
 
   /* ── 5. Content Area (Bio & Meta) ──────────────────────────────── */

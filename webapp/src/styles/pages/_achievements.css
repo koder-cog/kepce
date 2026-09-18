@@ -1,335 +1,209 @@
 @layer pages {
-/* Kepçe: Rozetler ve Başarılar */
+  /* Kepçe: Rozetler ve Başarılar */
 
-.achievements-page {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-xl);
-  padding-bottom: var(--space-2xl);
-}
-
-/* ── Profile Summary Card ──────────────── */
-.achievements-header {
-  position: relative;
-  padding: var(--space-xl);
-  border-radius: var(--radius-lg);
-  /* `color-surface-glass` bazı tema varyantlarında opak (alpha=1) tanımlı;
-     backdrop-filter görünür olması için yarı saydam olmalı. `color-mix`
-     ile %65 opaklık garantileyip blur'un tutarlı görünmesini sağlıyoruz. */
-  background: color-mix(in srgb, var(--color-surface-glass, var(--color-card, #fff)) 65%, transparent);
-  /* Sabit 12px yerine değişken kullanıldı: kullanıcı "Görsel efektler" ayarını
-     kapattığında :root.disable-effects --blur-md'yi 0px'e çekiyor ve bu da
-     tüm blur efektlerini tutarlı şekilde devre dışı bırakıyor. */
-  -webkit-backdrop-filter: blur(var(--blur-md));
-  border: 1px solid var(--color-border-glass);
-  display: flex;
-  align-items: center;
-  gap: var(--space-xl);
-  overflow: hidden;
-  backdrop-filter: blur(var(--blur-md));
-}
-
-.achievements-header--centered {
-  display: block;
-  text-align: center;
-}
-
-.achievements-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 300px;
-  height: 300px;
-  background: radial-gradient(circle, var(--color-accent-primary-light) 0%, transparent 70%);
-  opacity: 0.1;
-  pointer-events: none;
-}
-
-.achievements-header__avatar {
-  position: relative;
-  width: 120px;
-  height: 120px;
-  flex-shrink: 0;
-}
-
-.achievements-header__avatar img {
-  width: 100%;
-  height: 100%;
-  border-radius: var(--radius-full);
-  object-fit: cover;
-  border: 2px solid var(--color-accent-primary);
-}
-
-.achievements-header__ring {
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  width: 136px;
-  height: 136px;
-  pointer-events: none;
-}
-
-.achievements-header__info {
-  flex: 1;
-}
-
-.achievements-header__nickname {
-  font-size: var(--text-2xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-  margin: 0;
-}
-
-.achievements-header__rank {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-accent-text);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-widest);
-  margin-top: var(--space-xs);
-}
-
-/* ── Stats Grid ────────────────────────── */
-.achievements-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--space-md);
-}
-
-.achievements-stat-card {
-  padding: var(--space-lg);
-  background: var(--color-surface-soft);
-  border-radius: var(--radius-md);
-  text-align: center;
-  border: 1px solid var(--color-border-subtle);
-  transition: transform var(--dur-fast) var(--ease-standard), border-color var(--dur-fast);
-}
-
-.achievements-stat-card:hover {
-  border-color: var(--color-accent-primary-light);
-}
-
-.achievements-stat-value {
-  display: block;
-  font-size: var(--text-xl);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-}
-
-.achievements-stat-label {
-  display: block;
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-  margin-top: var(--space-2xs);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wider);
-}
-
-/* ── Categories & Badge Grid ───────────── */
-.achievements-section {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-lg);
-}
-
-.achievements-section__title {
-  font-size: var(--text-lg);
-  font-weight: var(--font-weight-bold);
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  color: var(--color-text);
-}
-
-.achievements-section__title svg {
-  color: var(--color-accent-primary);
-}
-
-.badge-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: var(--space-md);
-}
-
-/* ── Individual Badge ──────────────────── */
-.badge-item {
-  position: relative;
-  padding: var(--space-xl) var(--space-md) var(--space-lg);
-  background: var(--color-surface-soft);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  gap: var(--space-sm);
-  border: 1px solid var(--color-border-subtle);
-  cursor: pointer;
-  transition: box-shadow var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
-  overflow: hidden;
-}
-
-.badge-item::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 4px;
-  background: var(--color-surface-dim);
-  transition: background var(--dur-medium) var(--ease-standard);
-}
-
-.badge-item--unlocked::after {
-  background: linear-gradient(90deg, var(--color-accent-primary-light), var(--color-accent-primary));
-}
-
-
-.badge-item:active {
-  transform: scale(0.98);
-}
-
-.badge-item--locked {
-  opacity: 0.6;
-  filter: grayscale(1);
-  background: var(--color-surface-dim);
-  border-style: dashed;
-}
-
-.badge-item__icon {
-  width: 64px;
-  height: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: transform var(--dur-medium) var(--ease-standard), filter var(--dur-medium) var(--ease-standard);
-  position: relative;
-  z-index: 1;
-}
-
-
-.badge-item--unlocked .badge-item__icon {
-  color: var(--color-accent-primary);
-  filter: drop-shadow(0 4px 12px var(--color-accent-primary));
-}
-
-.badge-item__name {
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-  margin-top: var(--space-xs);
-  line-height: var(--leading-heading);
-}
-
-.badge-item__desc {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  line-height: var(--leading-normal);
-  margin: var(--space-2xs) 0;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.badge-item__meta {
-  display: flex;
-  align-items: center;
-  gap: var(--space-xs);
-  margin-top: auto;
-}
-
-.badge-item__karma {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-accent-text);
-  background: var(--color-surface-dim);
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--color-border-subtle);
-}
-
-.badge-item__count {
-  font-family: var(--font-mono);
-  font-size: var(--text-xs);
-  color: var(--color-text-on-accent);
-  background: var(--color-accent-primary);
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-}
-
-.badge-item__date {
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-  text-transform: uppercase;
-  letter-spacing: var(--tracking-wider);
-}
-
-.badge-item__repeatable {
-  position: absolute;
-  top: var(--space-xs);
-  right: var(--space-xs);
-  font-size: 9px;
-  font-family: var(--font-mono);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-muted);
-  background: var(--color-surface-variant);
-  border: 1px solid var(--color-border);
-  padding: 2px 5px;
-  border-radius: var(--radius-xs);
-  letter-spacing: var(--tracking-wider);
-  text-transform: uppercase;
-}
-
-/* ── Progress Bar ──────────────────────── */
-.level-progress {
-  width: 100%;
-  height: 8px;
-  background: var(--color-surface-dim);
-  border-radius: var(--radius-full);
-  overflow: hidden;
-  margin-top: var(--space-md);
-  border: 1px solid var(--color-border-subtle);
-}
-
-.level-progress__bar {
-  height: 100%;
-  width: var(--progress-width, 0%);
-  background: linear-gradient(90deg, var(--color-accent-primary-light), var(--color-accent-primary));
-  transition: width var(--dur-medium) var(--ease-standard);
-}
-
-.level-progress__text {
-  display: flex;
-  justify-content: space-between;
-  font-size: var(--text-2xs);
-  color: var(--color-muted);
-  margin-top: var(--space-xs);
-  font-family: var(--font-mono);
-}
-
-/* ── Responsive ────────────────────────── */
-@media (max-width: 600px) {
-  .achievements-header {
+  .achievements-page {
+    display: flex;
     flex-direction: column;
-    text-align: center;
+    gap: var(--space-xl);
+    padding-bottom: var(--space-2xl);
   }
 
+  /* ── Stats Grid ────────────────────────── */
   .achievements-stats {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-md);
+  }
+
+  .achievements-stat-card {
+    padding: var(--space-lg);
+    background: var(--color-surface-soft);
+    border-radius: var(--radius-md);
+    text-align: center;
+    border: 1px solid var(--color-border-subtle);
+    transition: transform var(--dur-fast) var(--ease-standard), border-color var(--dur-fast);
+  }
+
+  .achievements-stat-card:hover {
+    border-color: var(--color-accent-primary-light);
+  }
+
+  .achievements-stat-value {
+    display: block;
+    font-size: var(--text-xl);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+  }
+
+  .achievements-stat-label {
+    display: block;
+    font-size: var(--text-xs);
+    color: var(--color-muted);
+    margin-top: var(--space-2xs);
+    text-transform: uppercase;
+    letter-spacing: var(--tracking-wider);
+  }
+
+  /* ── Sections & Categories ─────────────── */
+  .achievements-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .achievements-section__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding-bottom: var(--space-xs);
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .achievements-section__title {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin: 0;
   }
 
   .badge-grid {
-    grid-template-columns: repeat(2, 1fr);
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: var(--space-md);
   }
-}
 
-@media (min-width: 900px) {
-  .badge-grid {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  /* ── Badge Item Card ───────────────────── */
+  .badge-item {
+    position: relative;
+    padding: var(--space-lg) var(--space-sm) var(--space-md);
+    background: var(--color-surface-soft);
+    border-radius: var(--radius-lg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--space-xs);
+    border: 1px solid var(--color-border-subtle);
+    transition: border-color var(--dur-fast) var(--ease-standard);
+    user-select: none;
   }
-}
+
+  .badge-item:hover {
+    border-color: var(--color-border-glass);
+  }
+
+  .badge-item--locked {
+    opacity: 0.38;
+    filter: grayscale(0.5);
+  }
+
+  .badge-item--unlocked {
+    opacity: 1;
+    border-color: var(--color-border-glass);
+  }
+
+  .badge-item--unlocked .badge-circle {
+    box-shadow: 0 0 14px color-mix(in srgb, var(--tier-color, #C4C4C4) 25%, transparent);
+  }
+
+  .badge-item--unlocked .badge-item__karma {
+    color: var(--color-accent-primary);
+    font-weight: var(--font-weight-semibold);
+  }
+
+  /* ── The Badge Circle (4 Renk: %50 zemin, %100 ikon) ─ */
+  .badge-circle {
+    width: 64px;
+    height: 64px;
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--tier-color, #C4C4C4) 50%, transparent);
+    color: var(--tier-color, #C4C4C4);
+    transition: transform var(--dur-fast) var(--ease-standard);
+    flex-shrink: 0;
+  }
+
+  .badge-circle svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* Figma 4 Kademe Renkleri */
+  .badge--other {
+    --tier-color: #C4C4C4;
+  }
+
+  .badge--silver {
+    --tier-color: #B2BEB5;
+  }
+
+  .badge--bronze {
+    --tier-color: #B67D5E;
+  }
+
+  .badge--gold {
+    --tier-color: #FFB400;
+  }
+
+  /* ── Card Typography ───────────────────── */
+  .badge-item__name {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    margin-top: var(--space-2xs);
+    line-height: var(--leading-tight);
+  }
+
+  .badge-item__desc {
+    font-size: 11px;
+    color: var(--color-muted);
+    line-height: 1.35;
+    margin: var(--space-2xs) 0;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    overflow: hidden;
+  }
+
+  .badge-item__meta {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-xs);
+    margin-top: auto;
+    padding-top: var(--space-2xs);
+  }
+
+  .badge-item__karma {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--color-muted);
+  }
+
+  .badge-item__meta-sep {
+    opacity: 0.45;
+    margin: 0 1px;
+  }
+
+
+  /* ── Responsive ────────────────────────── */
+  @media (max-width: 600px) {
+    .achievements-stats {
+      grid-template-columns: 1fr;
+    }
+
+    .badge-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (min-width: 900px) {
+    .badge-grid {
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    }
+  }
 }

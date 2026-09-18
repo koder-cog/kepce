@@ -135,6 +135,13 @@ import trophy from '../../assets/icons/objects/trophy.svg?raw';
 import usage from '../../assets/icons/objects/usage.svg?raw';
 import user from '../../assets/icons/objects/user.svg?raw';
 import rss from '../../assets/icons/objects/rss.svg?raw';
+import bed from '../../assets/icons/objects/bed.svg?raw';
+import buildingIcon from '../../assets/icons/objects/building.svg?raw';
+import incognito from '../../assets/icons/objects/incognito.svg?raw';
+import policeBadge from '../../assets/icons/objects/police-badge.svg?raw';
+import stamp from '../../assets/icons/objects/stamp.svg?raw';
+import stopwatch from '../../assets/icons/objects/stopwatch.svg?raw';
+import lightning from '../../assets/icons/objects/lightning.svg?raw';
 
 import { dev, building } from '$app/environment';
 
@@ -295,6 +302,19 @@ export const icons = {
   alert: warning,
   'alert-triangle': warning,
   error: infoCritical,
+
+  // Badge icons
+  bed,
+  bedSymbolic: bed,
+  'bed-symbolic': bed,
+  building: buildingIcon,
+  incognito,
+  policeBadge,
+  police_badge: policeBadge,
+  'police-badge': policeBadge,
+  stamp,
+  stopwatch,
+  lightning,
 };
 
 /**

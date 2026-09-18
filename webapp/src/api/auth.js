@@ -59,6 +59,11 @@ export const authApi = {
     }),
   revokeApiKey: (id) => request(`/auth/apikeys/${id}`, { method: 'DELETE' }),
   getPublicProfile: (nickname) => request(`/profile/${nickname}`),
+  updatePinnedBadges: (pinned_badges) =>
+    request('/profile/me/pinned-badges', {
+      method: 'PUT',
+      body: JSON.stringify({ pinned_badges }),
+    }),
   updateProfile: (data) =>
     request('/auth/me', {
       method: 'PUT',
