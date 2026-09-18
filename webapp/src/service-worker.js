@@ -30,8 +30,12 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(event.request.url);
     if (!url.protocol.startsWith('http')) return;
 
-    // API isteklerini veya dinamik backend sorgularını SW önbelleğe almaz
-    if (url.pathname.startsWith('/api/') || url.pathname.includes('/api/v1/')) {
+    // API isteklerini, dinamik backend sorgularını ve kullanıcı medyalarını SW ele almaz
+    if (
+        url.pathname.startsWith('/api/') ||
+        url.pathname.includes('/api/v1/') ||
+        url.pathname.startsWith('/static/avatars/')
+    ) {
         return;
     }
 
@@ -51,21 +55,24 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // 2. HTML ve Sayfa İstekleri için: Network-First (Her zaman en taze menü/HTML)
-    async function networkFirst() {
-        const cache = await caches.open(CACHE);
-        try {
-            const response = await fetch(event.request);
-            if (response.status === 200) {
-                cache.put(event.request, response.clone()).catch(() => {});
+    // 2. HTML ve Sayfa İstekleri (Gezinmeler) için: Network-First (Her zaman en taze menü/HTML)
+    if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+        async function networkFirst() {
+            const cache = await caches.open(CACHE);
+            try {
+                const response = await fetch(event.request);
+                if (response.status === 200) {
+                    cache.put(event.request, response.clone()).catch(() => {});
+                }
+                return response;
+            } catch (err) {
+                const cached = await cache.match(event.request);
+                if (cached) return cached;
+                throw err;
             }
-            return response;
-        } catch (err) {
-            const cached = await cache.match(event.request);
-            if (cached) return cached;
-            throw err;
         }
-    }
 
-    event.respondWith(networkFirst());
+        event.respondWith(networkFirst());
+        return;
+    }
 });

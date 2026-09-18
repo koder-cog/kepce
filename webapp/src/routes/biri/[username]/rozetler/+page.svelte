@@ -46,37 +46,44 @@
   let username = $derived($page.params.username);
   const getLayoutProfile = getContext("profileContext");
 
-  let profile = $state(null);
-  let loading = $state(true);
-  let error = $state(null);
+  let fallbackProfile = $state(null);
+  let fallbackLoading = $state(false);
+  let fallbackError = $state(null);
+
+  let layoutProf = $derived(getLayoutProfile ? getLayoutProfile() : null);
+  let isLayoutProfileMatch = $derived(
+    Boolean(
+      layoutProf &&
+        layoutProf.username?.toLowerCase() === username?.toLowerCase(),
+    ),
+  );
+
+  let profile = $derived(
+    isLayoutProfileMatch ? layoutProf : fallbackProfile,
+  );
+  let loading = $derived(
+    !profile && !fallbackError && (fallbackLoading || !isLayoutProfileMatch),
+  );
 
   $effect(() => {
-    const layoutProf = getLayoutProfile ? getLayoutProfile() : null;
-    if (layoutProf && layoutProf.username === username) {
-      profile = layoutProf;
-      loading = false;
-    } else if (username) {
-      loadProfile(username);
+    if (username && !isLayoutProfileMatch && !fallbackLoading && !fallbackProfile) {
+      loadFallbackProfile(username);
     }
   });
 
-  async function loadProfile(uname) {
-    loading = true;
-    error = null;
+  async function loadFallbackProfile(uname) {
+    fallbackLoading = true;
+    fallbackError = null;
     try {
-      profile = await api.getPublicProfile(uname);
+      fallbackProfile = await api.getPublicProfile(uname);
     } catch (err) {
-      error = err;
+      fallbackError = err;
     } finally {
-      loading = false;
+      fallbackLoading = false;
     }
   }
 
   let badges = $derived(profile?.badges || []);
-  let totalUnlocked = $derived(
-    profile?.badge_count || badges.filter((b) => b.unlocked).length,
-  );
-  let totalBadges = $derived(profile?.total_badges || badges.length);
 
   let groupedBadges = $derived.by(() => {
     const grouped = {};
@@ -94,71 +101,81 @@
     <div class="loading-spinner"></div>
     <p>Rozetler yükleniyor...</p>
   </div>
-{:else if error}
+{:else if fallbackError}
   <div class="empty-state-container">
     <EmptyState
       iconName="warning"
       title="Rozetler Yüklenemedi"
-      desc={error.message || "Bir hata oluştu"}
+      desc={fallbackError.message || "Bir hata oluştu"}
     >
       <button
         class="btn btn--primary btn--squish"
-        onclick={() => loadProfile(username)}
+        onclick={() => loadFallbackProfile(username)}
       >
         Tekrar dene
       </button>
     </EmptyState>
   </div>
 {:else if profile}
-  <div class="achievements-page fade-in">
-    {#each Object.entries(groupedBadges) as [catKey, catBadges]}
-      {@const sectionTitle = CATEGORY_TITLES[catKey] || catKey}
-      <section class="achievements-section">
-        <div class="achievements-section__header">
-          <h2 class="achievements-section__title">{sectionTitle}</h2>
-        </div>
-        <div class="badge-grid">
-          {#each catBadges as badge}
-            {@const tier = getBadgeTier(badge)}
-            {@const isLocked = !badge.unlocked}
-            {@const isHidden = badge.is_hidden || (badge.slug && (badge.slug.startsWith("hidden_") || HIDDEN_BADGE_SLUGS.has(badge.slug)))}
-            {@const isHiddenAndLocked = isHidden && isLocked}
-            <div
-              class="badge-item {badge.unlocked
-                ? 'badge-item--unlocked'
-                : 'badge-item--locked'} badge--{tier}"
-            >
-              <div class="badge-circle">
-                {#if isHiddenAndLocked}
-                  {@html icon("lock", 24)}
-                {:else}
-                  {@html icon(
-                    badge.icon && icons[badge.icon] ? badge.icon : "starFilled",
-                    24,
-                  )}
-                {/if}
-              </div>
-              <span class="badge-item__name">
-                {isHiddenAndLocked ? "Gizli Rozet" : badge.name}
-              </span>
-              <p class="badge-item__desc">
-                {isHiddenAndLocked
-                  ? `@${profile?.username || username} kepçeyi doğru daldırıp denk getirebilirse tabağına düşer.`
-                  : badge.description || ""}
-              </p>
-              <div class="badge-item__meta">
-                <span class="badge-item__karma">
+  {#if badges.length === 0}
+    <div class="empty-state-container">
+      <EmptyState
+        iconName="trophy"
+        title="Henüz Rozet Yok"
+        desc="Bu kullanıcının henüz kazandığı bir rozet bulunmuyor veya rozet kataloğu henüz yüklenmemiş."
+      />
+    </div>
+  {:else}
+    <div class="achievements-page fade-in">
+      {#each Object.entries(groupedBadges) as [catKey, catBadges]}
+        {@const sectionTitle = CATEGORY_TITLES[catKey] || catKey}
+        <section class="achievements-section">
+          <div class="achievements-section__header">
+            <h2 class="achievements-section__title">{sectionTitle}</h2>
+          </div>
+          <div class="badge-grid">
+            {#each catBadges as badge}
+              {@const tier = getBadgeTier(badge)}
+              {@const isLocked = !badge.unlocked}
+              {@const isHidden = badge.is_hidden || (badge.slug && (badge.slug.startsWith("hidden_") || HIDDEN_BADGE_SLUGS.has(badge.slug)))}
+              {@const isHiddenAndLocked = isHidden && isLocked}
+              <div
+                class="badge-item {badge.unlocked
+                  ? 'badge-item--unlocked'
+                  : 'badge-item--locked'} badge--{tier}"
+              >
+                <div class="badge-circle">
                   {#if isHiddenAndLocked}
-                    ? Puan
+                    {@html icon("lock", 24)}
                   {:else}
-                    +{badge.karma_reward} Puan{#if badge.is_repeatable && !badge.unlocked} <span class="badge-item__meta-sep" aria-hidden="true">•</span> Tekrar{:else if badge.is_repeatable && badge.count > 1} × {badge.count}{/if}
+                    {@html icon(
+                      badge.icon && icons[badge.icon] ? badge.icon : "starFilled",
+                      24,
+                    )}
                   {/if}
+                </div>
+                <span class="badge-item__name">
+                  {isHiddenAndLocked ? "Gizli Rozet" : badge.name}
                 </span>
+                <p class="badge-item__desc">
+                  {isHiddenAndLocked
+                    ? `@${profile?.username || username} kepçeyi doğru daldırıp denk getirebilirse tabağına düşer.`
+                    : badge.description || ""}
+                </p>
+                <div class="badge-item__meta">
+                  <span class="badge-item__karma">
+                    {#if isHiddenAndLocked}
+                      ? Puan
+                    {:else}
+                      +{badge.karma_reward} Puan{#if badge.is_repeatable && !badge.unlocked} <span class="badge-item__meta-sep" aria-hidden="true">•</span> Tekrar{:else if badge.is_repeatable && badge.count > 1} × {badge.count}{/if}
+                    {/if}
+                  </span>
+                </div>
               </div>
-            </div>
-          {/each}
-        </div>
-      </section>
-    {/each}
-  </div>
+            {/each}
+          </div>
+        </section>
+      {/each}
+    </div>
+  {/if}
 {/if}
