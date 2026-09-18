@@ -6,6 +6,7 @@
 -->
 
 <script>
+    import { goto } from "$app/navigation";
     import { api } from "../../api/index.js";
     import { icon } from "../ui/icons.js";
     import { globalState, authActions } from "../../state.svelte.js";
@@ -357,33 +358,49 @@
     {/snippet}
 
     <div class="comment-node__left">
-        {#if isLinkable}
-            <a
-                href="/biri/{rawNickname}"
-                class="comment-node__avatar"
-                aria-label="{rawNickname} profilini görüntüle"
-                data-link
-            >
-                {@render avatarSnippet()}
-            </a>
-        {:else}
-            <div class="comment-node__avatar">
-                {@render avatarSnippet()}
-            </div>
-        {/if}
-        {#if hasChildren}
+        {#if isCollapsed}
             <button
-                class="comment-node__thread-line"
+                class="comment-node__collapse-toggle btn--squish"
                 onclick={toggleCollapse}
-                aria-label={isCollapsed
-                    ? "Yorum yanıtlarını genişlet"
-                    : "Yorum yanıtlarını daralt"}
-            ></button>
+                title="Yorumu ve yanıtları genişlet"
+                aria-label="Yorumu ve yanıtları genişlet"
+            >
+                {@html icon("plusCircle", 16)}
+            </button>
+        {:else}
+            {#if isLinkable}
+                <a
+                    href="/biri/{rawNickname}"
+                    class="comment-node__avatar"
+                    aria-label="{rawNickname} profilini görüntüle"
+                    data-link
+                >
+                    {@render avatarSnippet()}
+                </a>
+            {:else}
+                <div class="comment-node__avatar">
+                    {@render avatarSnippet()}
+                </div>
+            {/if}
+            {#if hasChildren}
+                <button
+                    class="comment-node__thread-line"
+                    onclick={toggleCollapse}
+                    aria-label="Yorum yanıtlarını daralt"
+                    title="Yanıtları daralt"
+                ></button>
+            {/if}
         {/if}
     </div>
 
     <div class="comment-node__right">
-        <div class="comment-node__header">
+        <!-- svelte-ignore a11y_click_events_have_key_events -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
+        <div
+            class="comment-node__header {isCollapsed ? 'comment-node__header--collapsed' : ''}"
+            onclick={isCollapsed ? toggleCollapse : undefined}
+            title={isCollapsed ? "Genişletmek için tıkla" : undefined}
+        >
             {#if isLinkable}
                 <a
                     href="/biri/{rawNickname}"
@@ -412,24 +429,21 @@
                 >
             {/if}
 
-            {#if hasChildren}
+            {#if hasChildren && !isCollapsed}
                 <button
-                    class="comment-node__collapse-btn"
+                    class="comment-node__collapse-btn btn--squish"
                     onclick={toggleCollapse}
-                    title={isCollapsed ? "Genişlet" : "Daralt"}
+                    title="Daralt"
+                    aria-label="Daralt"
                 >
-                    {@html icon(isCollapsed ? "plus" : "minus", 14)}
-                    {#if isCollapsed}
-                        <span class="collapsed-count"
-                            >({countAllDescendants(comment)} yanıt)</span
-                        >
-                    {/if}
+                    {@html icon("minus", 14)}
                 </button>
             {/if}
         </div>
 
         {#if !isCollapsed}
-            <div class="comment-node__content">
+            <div class="comment-node__body">
+                <div class="comment-node__content">
                 <div
                     class="comment-node__text-container {isExpanded
                         ? 'is-expanded'
@@ -616,18 +630,18 @@
                                 bind:value={replyText}
                                 autofocus
                                 placeholder="Yanıtınızı buraya yazın..."
-                                class="comment-panel__textarea"
+                                class="comment-reply-textarea"
                             ></textarea>
                             <div
                                 class="u-flex u-flex-justify-end u-flex-gap-sm u-mt-sm"
                             >
                                 <button
-                                    class="btn btn--secondary btn--sm"
+                                    class="btn btn--secondary btn--sm btn--squish"
                                     onclick={() => (replying = false)}
                                     >Vazgeç</button
                                 >
                                 <button
-                                    class="btn btn--primary btn--sm"
+                                    class="btn btn--primary btn--sm btn--squish"
                                     onclick={submitReply}>Yanıtla</button
                                 >
                             </div>
@@ -635,30 +649,31 @@
                     </div>
                 {/if}
             </div>
-        {/if}
 
-        {#if hasChildren}
-            {#if depth >= MAX_INDENT_DEPTH - 1}
-                {#if countAllDescendants(comment) > 0}
-                    <div class="comment-node__more-replies">
-                        <button class="btn-more-replies" onclick={handleFocus}>
-                            {@html icon("plusCircle", 16)}
-                            <span
-                                >{countAllDescendants(comment)} yanıtı daha gör</span
-                            >
-                        </button>
+            {#if hasChildren}
+                {#if depth >= MAX_INDENT_DEPTH - 1}
+                    {#if countAllDescendants(comment) > 0}
+                        <div class="comment-node__more-replies">
+                            <button class="btn-more-replies" onclick={handleFocus}>
+                                {@html icon("plusCircle", 16)}
+                                <span
+                                    >{countAllDescendants(comment)} yanıtı daha gör</span
+                                >
+                            </button>
+                        </div>
+                    {/if}
+                {:else}
+                    <div class="comment-node__replies">
+                        <CommentList
+                            comments={comment.children}
+                            depth={depth + 1}
+                            {menuId}
+                            {onloadData}
+                        />
                     </div>
                 {/if}
-            {:else}
-                <div class="comment-node__replies">
-                    <CommentList
-                        comments={comment.children}
-                        depth={depth + 1}
-                        {menuId}
-                        {onloadData}
-                    />
-                </div>
             {/if}
-        {/if}
-    </div>
+        </div>
+    {/if}
+</div>
 </div>

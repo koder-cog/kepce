@@ -1,53 +1,39 @@
 @layer pages {
-  /* ── 0. Alt Katman Hiyerarşisi (Cascade Hierarchy) ─────────── */
-  @layer reset, layout, elements, capsule, thread, card, legacy;
-
-  /* ── 1. Bağlamsal Sıfırlama (Contextual Reset) ──────────────── */
-  @layer reset {
-
-    .comments-page input,
-    .comments-page textarea,
-    .comments-page button,
-    .comments-page select {
-      font-family: inherit;
-      font-size: inherit;
-      color: inherit;
-      border: none;
-      outline: none;
-      box-shadow: none;
-    }
+  /* ── 1. Sayfa Düzeni (Page Layout & Headers) ──────────────── */
+  .comments-page {
+    margin: 0 auto;
+    padding: var(--space-xl) 0 120px;
+    /* Mobil alt sabit girdi alanı boşluğu */
   }
 
-  /* ── 2. Sayfa Düzeni (Page Layout & Headers) ──────────────── */
-  @layer layout {
-    .comments-page {
-      margin: 0 auto;
-      padding: var(--space-xl) 0 120px;
-      /* Mobil alt sabit girdi alanı boşluğu */
-    }
+  .comments-section {
+    display: flex;
+    flex-direction: column;
+    margin-top: var(--space-xl);
+  }
 
-    .comments-section {
-      display: flex;
-      flex-direction: column;
-      margin-top: var(--space-xl);
-    }
+  #comment-input-container {
+    order: 1;
+    margin-bottom: 0;
+  }
 
-    #comment-input-container {
-      order: 1;
-      margin-bottom: 0;
-    }
+  #comments-list-container {
+    order: 2;
+  }
 
-    #comments-list-container {
-      order: 2;
-    }
+  .comments-page__focus-nav {
+    display: flex;
+    align-items: center;
+    margin-bottom: var(--space-md);
+  }
 
-    .comments-page__header {
-      display: flex;
-      flex-direction: column;
-      gap: var(--space-lg);
-      margin-bottom: var(--space-lg);
-      text-align: left;
-    }
+  .comments-page__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-lg);
+    text-align: left;
+  }
 
     .comments-page__header-top {
       display: flex;
@@ -199,5 +185,4 @@
         margin-bottom: var(--space-md);
       }
     }
-  }
 }
