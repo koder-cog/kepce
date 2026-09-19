@@ -881,27 +881,72 @@ pub async fn upsert_menu(
         };
         let incoming_quality = shared::services::quality_score::QualityScoreService::calculate(&incoming_quality_input);
 
-        let incoming_effective = incoming_priority * 100 + incoming_quality.total;
-        let existing_effective = current_priority * 100 + existing_quality.total;
+        let existing_meta = shared::services::source_registry::SourceRegistry::resolve(existing_source);
+        let incoming_meta = shared::services::source_registry::SourceRegistry::resolve(&source_type);
 
-        let existing_is_degraded = existing_quality.total < 30;
-        let incoming_is_high_quality = incoming_quality.total >= 75;
+        let quality_delta = incoming_quality.total - existing_quality.total;
+        let priority_delta = incoming_priority - current_priority;
 
-        let should_archive_incoming = if existing_is_degraded && incoming_is_high_quality {
-            tracing::info!(
-                "Bozulmuş kayıt kurtarma: mevcut menü ({}) skoru {} < 30 iken gelen menü ({}) skoru {} >= 75. Gelen menü tercih edildi.",
-                existing_source, existing_quality.total, source_type, incoming_quality.total
+        let should_archive_incoming = if incoming_is_quarantined && !existing_is_quarantined {
+            // 1. Karantina Koruması: Karantinadaki kaynak güvenilir kaynağı asla ezemez
+            true
+        } else if existing_meta.tier == shared::services::source_registry::TrustTier::GroundTruth 
+            && incoming_meta.tier < shared::services::source_registry::TrustTier::GroundTruth 
+        {
+            // 2. Saha Gerçeği Koruması: Mevcut menü saha teyitliyse (admin veya teyitli kullanıcı/pano),
+            // merkezi web kazıyıcıları bu menüyü ezemez.
+            tracing::debug!(
+                "Saha gerçeği koruması: Mevcut menü ({}) saha teyitli (GroundTruth), gelen ({}) menüsü ezemez. Arşivleniyor.",
+                existing_source, source_type
             );
-            false
+            true
+        } else if source_type == existing_source {
+            // 3. Aynı Kaynak Güncellemesi (Self-Poisoning / Regresyon Koruması):
+            // Eğer gelen verinin kalitesi mevcut kayıttan belirgin şekilde düşükse
+            // (örneğin scraper 4 kaplık menüyü 1 kaba düşürdü, Cloudflare engeli, eksik parse):
+            if quality_delta < -10 {
+                tracing::warn!(
+                    "Aynı kaynak regresyon koruması: kaynak {} için mevcut skor {} iken gelen skor {}. Gelen arşivleniyor.",
+                    source_type, existing_quality.total, incoming_quality.total
+                );
+                true
+            } else {
+                // Kalite eşit, daha iyi veya tolere edilebilir değişim: Meşru revizyon
+                false
+            }
         } else {
-            incoming_effective < existing_effective
-                || (incoming_is_quarantined && !existing_is_quarantined)
+            // 4. Farklı Kaynaklar Arası Karar (Delta & Dinamik Marjinal Üstünlük):
+            if quality_delta >= 15 && !incoming_is_quarantined {
+                // Gelen menü belirgin şekilde daha zengin/kaliteli (+15 delta)
+                tracing::info!(
+                    "Kalite üstünlüğü ile menü güncellemesi: gelen ({}) skoru {}, mevcut ({}) skoru {}. (Delta: +{})",
+                    source_type, incoming_quality.total, existing_source, existing_quality.total, quality_delta
+                );
+                false
+            } else if existing_quality.total < 45 && incoming_quality.total >= 50 && !incoming_is_quarantined {
+                // Düşük kaliteli kayıt kurtarma
+                tracing::info!(
+                    "Düşük kaliteli kayıt kurtarma: mevcut ({}) skoru {} < 45 iken gelen ({}) skoru {}.",
+                    existing_source, existing_quality.total, source_type, incoming_quality.total
+                );
+                false
+            } else if quality_delta <= -15 && current_priority >= 4 {
+                // Yüksek öncelikli ama bariz düşük kaliteli/eksik gelen veri engellenir
+                tracing::warn!(
+                    "Yüksek öncelikli ama düşük kaliteli kaynak reddedildi: gelen ({}) skoru {}, mevcut ({}) skoru {}.",
+                    source_type, incoming_quality.total, existing_source, existing_quality.total
+                );
+                true
+            } else {
+                // Normal öncelik ve kalite karşılaştırması
+                priority_delta < 0 || (priority_delta == 0 && quality_delta < 0)
+            }
         };
 
         if should_archive_incoming {
             tracing::debug!(
-                "Incoming menu for {} (meal: {:?}) from {} has lower effective priority ({} vs {}) or is quarantined compared to {}. Archiving incoming.",
-                date, meal_type, source_type, incoming_effective, existing_effective, existing_source
+                "Gelen menü ({}, tarih: {}, öğün: {:?}) mevcut menüye ({}) göre arşivleniyor (Mevcut Skor: {}, Gelen Skor: {}, Öncelik Farkı: {}).",
+                source_type, date, meal_type, existing_source, existing_quality.total, incoming_quality.total, priority_delta
             );
             let payload = serde_json::json!({
                 "dishes": dishes,
@@ -1133,19 +1178,34 @@ pub async fn upsert_menu(
         res.id
     };
 
-    // Delete existing dishes for this menu in the transaction to prevent unique constraint collisions
-    menu_dishes::Entity::delete_many()
-        .filter(menu_dishes::Column::MenuId.eq(menu_id))
-        .exec(&txn)
-        .await?;
+    // Akıllı Slot Uzlaşması (In-Place Diff & Preservation):
+    // Tüm kayıtları körlemesine silmek yerine, aynı kalan yemeklerin ID ve ilişkilerini koru.
+    let mut matched_existing_ids = std::collections::HashSet::new();
 
-    // Insert all dishes with preserved & merged metadata
     for (key, (alias_id, amount, calories)) in target_map.into_iter() {
         let (package_name, order_index, is_alternative) = match &key {
             DishSlotKey::Primary(pkg, idx) => (pkg.clone(), *idx, false),
             DishSlotKey::Alternative(pkg, idx, _) => (pkg.clone(), *idx, true),
         };
 
+        if let Some(existing) = existing_map.get(&key) {
+            if existing.dish_alias_id == alias_id {
+                // Yemek aynı: ID'yi ve satırı koru, sadece metadata güncelle
+                matched_existing_ids.insert(existing.id);
+                let final_amount = amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone());
+                let final_calories = calories.or(existing.calories);
+
+                if final_amount != existing.amount || final_calories != existing.calories {
+                    let mut active: menu_dishes::ActiveModel = existing.clone().into();
+                    active.amount = Set(final_amount);
+                    active.calories = Set(final_calories);
+                    active.update(&txn).await?;
+                }
+                continue;
+            }
+        }
+
+        // Yeni veya değişmiş yemek slotu:
         let final_amount = if let Some(existing) = existing_map.get(&key) {
             amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone())
         } else {
@@ -1169,6 +1229,20 @@ pub async fn upsert_menu(
             ..Default::default()
         };
         link.insert(&txn).await?;
+    }
+
+    // Yeni menüde artık yer almayan eski slotları temizle
+    let obsolete_ids: Vec<i32> = existing_dishes_list
+        .iter()
+        .map(|(d, _)| d.id)
+        .filter(|id| !matched_existing_ids.contains(id))
+        .collect();
+
+    if !obsolete_ids.is_empty() {
+        menu_dishes::Entity::delete_many()
+            .filter(menu_dishes::Column::Id.is_in(obsolete_ids))
+            .exec(&txn)
+            .await?;
     }
     
     txn.commit().await?;
@@ -1413,12 +1487,12 @@ mod tests {
         assert!(!super::is_quarantined_source("kykmenum.com"));
         assert!(!super::is_quarantined_source("kepce-admin"));
 
-        // Yurtmenu önceliği (5), kykyemek (6) altında, kykmenum (4) üstündedir
+        // Temiz toplayıcılar (kykyemek, kykmenum), karantinalı yurtmenu (2) üzerinde yer alır
         let kykyemek_prio = super::get_source_priority("kykyemek.com");
-        let yurtmenu_prio = super::get_source_priority("yurtmenu.net");
         let kykmenum_prio = super::get_source_priority("kykmenum.com");
-        assert!(kykyemek_prio > yurtmenu_prio);
-        assert!(yurtmenu_prio > kykmenum_prio);
+        let yurtmenu_prio = super::get_source_priority("yurtmenu.net");
+        assert!(kykyemek_prio >= kykmenum_prio);
+        assert!(kykmenum_prio > yurtmenu_prio);
     }
 
     #[test]
@@ -1473,6 +1547,28 @@ mod tests {
             vec![crate::parser::models::MenuComponent::from("Makarna")],
         ];
         assert!(!super::check_dish_consensus(&existing, &incoming_conflict));
+    }
+
+    #[test]
+    fn test_decision_matrix_hierarchy_and_regression() {
+        use shared::services::source_registry::{SourceRegistry, TrustTier};
+
+        let admin_meta = SourceRegistry::resolve("kepce-admin");
+        let user_meta = SourceRegistry::resolve("kepce-kullanici");
+        let kykyemek_meta = SourceRegistry::resolve("kykyemek");
+        let kykmenum_meta = SourceRegistry::resolve("kykmenum");
+        let yurtmenu_meta = SourceRegistry::resolve("yurtmenu");
+
+        // Saha ve yönetici her zaman toplayıcıların üstündedir
+        assert_eq!(admin_meta.tier, TrustTier::GroundTruth);
+        assert_eq!(user_meta.tier, TrustTier::GroundTruth);
+        assert!(user_meta.priority > kykyemek_meta.priority);
+        assert!(kykyemek_meta.priority >= kykmenum_meta.priority);
+        assert!(kykmenum_meta.priority > yurtmenu_meta.priority);
+
+        // Karantina kaynağı güvenilir kaynağın altında kalmalıdır
+        assert_eq!(yurtmenu_meta.tier, TrustTier::Quarantined);
+        assert_ne!(kykyemek_meta.tier, TrustTier::Quarantined);
     }
 }
 

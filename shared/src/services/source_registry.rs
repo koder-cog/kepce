@@ -55,7 +55,7 @@ impl SourceRegistry {
     pub fn resolve(source_type: &str) -> SourceMetadata {
         let s = source_type.to_lowercase();
 
-        // 1. Saha & Yönetici (Ground Truth - Tier 1)
+        // 1. Saha & Yönetici (Ground Truth - Tier 4)
         if s.starts_with("kepce-admin") {
             return SourceMetadata {
                 source_type: source_type.to_string(),
@@ -65,29 +65,29 @@ impl SourceRegistry {
                 is_auto_approvable: true,
             };
         }
-        if s.starts_with("kepce-kullanici") || s.contains("pano") {
+        if s.starts_with("kepce-kullanici") || s.contains("pano") || s.contains("saha") || s.contains("field") || s.contains("submission") {
             return SourceMetadata {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Field,
                 tier: TrustTier::GroundTruth,
-                priority: 8,
+                priority: 9,
                 is_auto_approvable: true,
             };
         }
 
-        // 2. Yurtmenu Ailesi (Karantina / Klon Ekosistemi - Tier 3)
+        // 2. Yurtmenu Ailesi (Karantina / Klon Ekosistemi - Tier 1)
         // yurtmenu.net ve kykyemekliste.com aynı altyapıyı paylaşır.
         if s.contains("yurtmenu") || s.contains("kykyemekliste") || s.contains("alidnmz05") || s.contains("stale") || s.contains("quarantine") {
             return SourceMetadata {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Yurtmenu,
                 tier: TrustTier::Quarantined,
-                priority: 5,
+                priority: 2,
                 is_auto_approvable: false,
             };
         }
 
-        // 3. Kykyemek Ailesi (Bağımsız Toplayıcı - Tier 2)
+        // 3. Kykyemek Ailesi (Bağımsız Toplayıcı - Tier 3)
         if s.contains("kykyemek") {
             return SourceMetadata {
                 source_type: source_type.to_string(),
@@ -98,13 +98,13 @@ impl SourceRegistry {
             };
         }
 
-        // 4. Kykmenum Ailesi (Bağımsız Toplayıcı - Tier 2)
+        // 4. Kykmenum Ailesi (Bağımsız Toplayıcı - Tier 3)
         if s.contains("kykmenum") {
             return SourceMetadata {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Kykmenum,
                 tier: TrustTier::Aggregator,
-                priority: 4,
+                priority: 5,
                 is_auto_approvable: true,
             };
         }
@@ -115,12 +115,12 @@ impl SourceRegistry {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Unknown,
                 tier: TrustTier::Aggregator,
-                priority: 3,
+                priority: 4,
                 is_auto_approvable: false,
             };
         }
 
-        // 6. Bilinmeyen veya tanımlanamayan kaynaklar
+        // 6. Bilinmeyen veya tanımlanamayan serbest kaynaklar (Tier 2)
         SourceMetadata {
             source_type: source_type.to_string(),
             family: SourceFamily::Unknown,
@@ -175,10 +175,16 @@ mod tests {
         assert_eq!(kykyemek.priority, 6);
         assert!(kykyemek.is_auto_approvable);
 
+        let user_sub = SourceRegistry::resolve("kepce-kullanici");
+        assert_eq!(user_sub.family, SourceFamily::Field);
+        assert_eq!(user_sub.tier, TrustTier::GroundTruth);
+        assert_eq!(user_sub.priority, 9);
+        assert!(user_sub.is_auto_approvable);
+
         let yurtmenu = SourceRegistry::resolve("yurtmenu.net");
         assert_eq!(yurtmenu.family, SourceFamily::Yurtmenu);
         assert_eq!(yurtmenu.tier, TrustTier::Quarantined);
-        assert_eq!(yurtmenu.priority, 5);
+        assert_eq!(yurtmenu.priority, 2);
         assert!(!yurtmenu.is_auto_approvable);
 
         let kykyemekliste = SourceRegistry::resolve("kykyemekliste.com");
@@ -188,7 +194,7 @@ mod tests {
 
         let kykmenum = SourceRegistry::resolve("kykmenum.com");
         assert_eq!(kykmenum.family, SourceFamily::Kykmenum);
-        assert_eq!(kykmenum.priority, 4);
+        assert_eq!(kykmenum.priority, 5);
 
         let unknown = SourceRegistry::resolve("random-bot");
         assert_eq!(unknown.family, SourceFamily::Unknown);
