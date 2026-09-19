@@ -30,7 +30,7 @@
     top: var(--seg-pad);
     bottom: var(--seg-pad);
     left: 0;
-    width: var(--indicator-width, calc((100% - (2 * var(--seg-pad)) - ((var(--total-options, 1) - 1) * var(--seg-gap))) / var(--total-options, 1)));
+    width: var(--indicator-width, 0);
     background: var(--color-surface);
     border-radius: var(--radius-full);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
@@ -38,7 +38,7 @@
     z-index: 0;
     opacity: 0;
     pointer-events: none;
-    transform: translate3d(var(--indicator-left, calc(var(--seg-pad) + var(--active-index, 0) * (100% + var(--seg-gap)))), 0, 0);
+    transform: translate3d(var(--indicator-left, 0), 0, 0);
     will-change: transform, width;
   }
 
@@ -56,7 +56,6 @@
       opacity var(--dur-fast, 150ms) var(--ease-standard, ease);
   }
 
-  /* Animasyon azaltma tercihi (A11y) */
   @media (prefers-reduced-motion: reduce) {
     .c-segmented-control.is-ready .c-segmented-control__indicator {
       transition: none;
@@ -65,15 +64,16 @@
 
   .c-segmented-control__btn {
     position: relative;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: var(--space-xs);
-    padding: var(--space-sm) var(--space-md);
+    padding: 6px 14px;
+    height: 32px;
     border-radius: var(--radius-full);
     border: none;
     background: transparent;
-    color: var(--color-muted);
+    color: var(--color-text-muted);
     font-family: var(--font-body);
     font-size: var(--text-xs);
     font-weight: var(--font-weight-medium);
@@ -82,8 +82,7 @@
       transform var(--dur-default, 200ms) var(--ease-spring-bounce, ease);
     white-space: nowrap;
     z-index: 1;
-    flex: 1;
-    flex-basis: 0;
+    flex: 1 1 0%;
     min-width: max-content;
     box-sizing: border-box;
   }
@@ -98,7 +97,7 @@
   }
 
   .c-segmented-control__btn:active {
-    transform: scale(0.96);
+    transform: scale(0.98);
   }
 
   .c-segmented-control__btn--active,
@@ -108,12 +107,10 @@
   }
 
   .c-segmented-control__btn[aria-checked="false"] {
-    color: var(--color-muted);
-    opacity: 0.75;
+    color: var(--color-text-muted);
   }
 
   .c-segmented-control__btn[aria-checked="false"]:hover {
-    opacity: 1;
     color: var(--color-text);
   }
 
@@ -136,10 +133,10 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    line-height: 1;
   }
 
   /* ── 1. Variant: TEXT ────────────────────────────────── */
-  /* Sadece yazı istendiğinde ikonu gizle */
   .c-segmented-control[data-variant="text"] .c-segmented-control__icon {
     display: none;
   }
@@ -151,12 +148,12 @@
   }
 
   .c-segmented-control[data-variant="icons"] .c-segmented-control__btn {
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    max-width: 36px;
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    max-width: 32px;
     padding: 0;
-    flex: 0 0 36px;
+    flex: 0 0 32px;
   }
 
   .c-segmented-control[data-variant="icons"] .c-segmented-control__label:not(.c-segmented-control__label--standalone) {
@@ -164,26 +161,28 @@
   }
 
   /* ── 3. Variant: RESPONSIVE ───────────────────────────── */
-  /* Masaüstünde varsayılan olarak sadece metin gösterilir */
-  .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
-    display: none;
+  /* Masaüstünde (>600px): İkili butonlarda yazıyı göster, ikonu gizle */
+  @media (min-width: 601px) {
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon:not(.c-segmented-control__icon--standalone) {
+      display: none;
+    }
   }
 
-  /* Mobilde (<=600px): Sadece ikonu bulunan butonların yazısını gizle, ikonları göster ve butonları kompakt yap */
+  /* Mobilde (<=600px): İkili butonlarda yazıyı gizle, ikonu göster ve kompakt yap */
   @media (max-width: 600px) {
-    .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn:has(.c-segmented-control__icon) .c-segmented-control__label:not(.c-segmented-control__label--standalone) {
+    .c-segmented-control[data-variant="responsive"] .c-segmented-control__label:not(.c-segmented-control__label--standalone) {
       display: none;
     }
 
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__icon {
-      display: flex;
+      display: inline-flex;
     }
 
     .c-segmented-control[data-variant="responsive"] .c-segmented-control__btn {
-      flex: 1;
-      height: 36px;
-      padding: 0 12px;
-      min-width: 36px;
+      flex: 1 1 0%;
+      height: 32px;
+      padding: 0;
+      min-width: 32px;
       max-width: none;
     }
   }
