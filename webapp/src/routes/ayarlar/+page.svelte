@@ -1380,8 +1380,8 @@
         </div>
       </label>
 
+      <!--
       {#if globalState.user}
-        <!-- İstatistik tablosunda gizlen -->
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">İstatistikte gizlen</div>
@@ -1401,6 +1401,7 @@
           </div>
         </label>
       {/if}
+      -->
     </div>
   </section>
 

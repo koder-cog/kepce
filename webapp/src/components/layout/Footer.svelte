@@ -39,9 +39,11 @@
     <a href="/sss" class="site-footer__link" data-link
       >Sıkça sorulabilecek sorular</a
     >
+    <!--
     <a href="/istatistikler" class="site-footer__link" data-link
       >İstatistikler</a
     >
+    -->
   </div>
 
   <div class="site-footer__col">
