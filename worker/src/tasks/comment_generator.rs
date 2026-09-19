@@ -22,8 +22,15 @@ pub struct GeneratedCommentEntry {
 
 /// Desteklenen LLM sağlayıcıları
 pub enum LlmProvider {
-    OpenRouter { api_key: String, model: String },
-    Gemini { api_key: String, model: String },
+    OpenRouter {
+        api_key: String,
+        model: String,
+        reasoning_effort: String,
+    },
+    Gemini {
+        api_key: String,
+        model: String,
+    },
 }
 
 impl LlmProvider {
@@ -32,9 +39,12 @@ impl LlmProvider {
             if !key.trim().is_empty() {
                 let model = std::env::var("OPENROUTER_MODEL")
                     .unwrap_or_else(|_| "google/gemini-3.8-flash:floor".to_string());
+                let reasoning_effort = std::env::var("OPENROUTER_REASONING_EFFORT")
+                    .unwrap_or_else(|_| "high".to_string());
                 return Some(Self::OpenRouter {
                     api_key: key.trim().to_string(),
                     model,
+                    reasoning_effort,
                 });
             }
         }
@@ -189,7 +199,11 @@ Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya
 }";
 
     let raw_response = match provider {
-        LlmProvider::OpenRouter { api_key, model } => {
+        LlmProvider::OpenRouter {
+            api_key,
+            model,
+            reasoning_effort,
+        } => {
             let body = json!({
                 "model": model,
                 "messages": [
@@ -197,7 +211,10 @@ Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya
                     { "role": "user", "content": prompt_content }
                 ],
                 "temperature": 0.7,
-                "response_format": { "type": "json_object" }
+                "response_format": { "type": "json_object" },
+                "reasoning": {
+                    "effort": reasoning_effort
+                }
             });
 
             let res = client
