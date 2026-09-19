@@ -31,7 +31,7 @@ impl LlmProvider {
         if let Ok(key) = std::env::var("OPENROUTER_API_KEY") {
             if !key.trim().is_empty() {
                 let model = std::env::var("OPENROUTER_MODEL")
-                    .unwrap_or_else(|_| "google/gemini-2.0-flash-001".to_string());
+                    .unwrap_or_else(|_| "google/gemini-3.8-flash:floor".to_string());
                 return Some(Self::OpenRouter {
                     api_key: key.trim().to_string(),
                     model,
