@@ -378,7 +378,7 @@ pub async fn run_comment_generation(db: &DatabaseConnection) -> Result<usize> {
     };
 
     let client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(60))
+        .timeout(std::time::Duration::from_secs(300))
         .build()?;
 
     let today = Local::now().naive_local().date();
@@ -427,36 +427,42 @@ pub async fn run_comment_generation(db: &DatabaseConnection) -> Result<usize> {
             None => continue,
         };
 
-        let mut dates = city_dates.remove(&city_id).unwrap_or_default();
+        let dates = city_dates.remove(&city_id).unwrap_or_default();
 
-        // Tarihleri önceliklendir:
-        // 1. Güncel ay (today.year() == d.year() && today.month() == d.month())
-        // 2. Varsa geçmiş aylar
-        // Her kademe kendi içinde kronolojik
-        dates.sort_by(|&d1, &d2| {
-            let p1 = if d1.year() == today.year() && d1.month() == today.month() { 1 } else { 2 };
-            let p2 = if d2.year() == today.year() && d2.month() == today.month() { 1 } else { 2 };
-            p1.cmp(&p2).then(d1.cmp(&d2))
+        // Tarihleri takvim ayına göre grupla: Model tüm ayı bir bütün olarak görür,
+        // haftalar arası espri tekrarı önlenir ve hikaye çeşitliliği korunur.
+        let mut monthly_map: BTreeMap<(i32, u32), Vec<NaiveDate>> = BTreeMap::new();
+        for d in dates {
+            monthly_map.entry((d.year(), d.month())).or_default().push(d);
+        }
+
+        let mut months: Vec<((i32, u32), Vec<NaiveDate>)> = monthly_map.into_iter().collect();
+        months.sort_by(|((y1, m1), _), ((y2, m2), _)| {
+            let p1 = if *y1 == today.year() && *m1 == today.month() { 1 } else { 2 };
+            let p2 = if *y2 == today.year() && *m2 == today.month() { 1 } else { 2 };
+            p1.cmp(&p2).then_with(|| (y1, m1).cmp(&(y2, m2)))
         });
 
-        let total_chunks = dates.chunks(7).count();
+        let total_chunks = months.len();
 
-        // 7'şer günlük gruplarla LLM'e gönder
-        for (chunk_idx, chunk) in dates.chunks(7).enumerate() {
+        for (chunk_idx, ((year, month), mut chunk)) in months.into_iter().enumerate() {
+            chunk.sort();
             let start_date = chunk.first().copied().unwrap_or(today);
             let end_date = chunk.last().copied().unwrap_or(today);
 
             tracing::info!(
-                "[COMMENT-GEN] [{}/{}] {} ili için {}-{} aralığında {} günlük parti bot yorumu üretiliyor...",
+                "[COMMENT-GEN] [{}/{}] {} ili için {}-{:02} ({}-{}) {} günlük aylık parti bot yorumu üretiliyor...",
                 chunk_idx + 1,
                 total_chunks,
                 city.name,
+                year,
+                month,
                 start_date,
                 end_date,
                 chunk.len()
             );
 
-            match build_batch_prompt(db, city, chunk).await {
+            match build_batch_prompt(db, city, &chunk).await {
                 Ok(prompt) => {
                     if prompt.trim().is_empty() {
                         continue;
