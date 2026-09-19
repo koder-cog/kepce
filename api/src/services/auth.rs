@@ -65,7 +65,7 @@ impl AuthService {
     pub fn validate_username(name: &str) -> Result<(), AuthError> {
         let trimmed = name.trim();
         let char_count = trimmed.chars().count();
-        if char_count < 3 || char_count > 25 {
+        if !(3..=25).contains(&char_count) {
             return Err(AuthError::InvalidUsername("Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.".to_string()));
         }
         if Self::is_reserved_username(trimmed) {
