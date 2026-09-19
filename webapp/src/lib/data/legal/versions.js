@@ -23,8 +23,13 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260913',
       version: '2026.09.13',
-      current: true,
       note: 'Yapay zekâ denetimi ibaresi kaldırıldı, 5651 m. 5 salt yer sağlayıcı ve uyar-kaldır mekanizması netleştirildi, KVKK m. 5/2-c sözleşme sebebi ve m. 11/g otomatik karar alma yokluğu beyanı eklendi.',
+    },
+    {
+      slug: '20260920',
+      version: '2026.09.20',
+      current: true,
+      note: '7499 sayılı Kanun ile güncellenen KVKK m. 9 (standart sözleşme m. 9/4-c ve sözleşmenin ifası m. 9/6-b) dayanakları netleştirildi; Fransa/Marsilya bulut veri merkezi teyit edildi.',
     },
   ],
   'kullanim-kosullari': [
@@ -41,8 +46,13 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260913',
       version: '2026.09.13',
-      current: true,
       note: 'Yapay zekâ filtreleme ifadesi kaldırıldı, menü verilerinin hukuki niteliği eklendi, 5651 m. 5/1 pasif yer sağlayıcı beyanı ve uyar-kaldır şartları berraklaştırıldı, FSEK Ek m. 8 veri tabanı koruması ve TBK m. 115 dengesi işlendi.',
+    },
+    {
+      slug: '20260920',
+      version: '2026.09.20',
+      current: true,
+      note: 'FSEK Ek m. 8 veri tabanı yapımcısı hakkı ve TTK m. 55 haksız rekabet sınırları pekiştirildi; TBK m. 115 alerjen ve diyet sorumluluk dengesi ile Fransa/Marsilya sunucu konumu teyit edildi.',
     },
   ],
 };

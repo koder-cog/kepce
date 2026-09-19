@@ -168,22 +168,24 @@ export async function sendTestPush() {
         userVisibleOnly: true,
         applicationServerKey: serverKey
       });
-      const subJson = sub.toJSON();
-      await fetch(`${API_BASE}/public/push/subscribe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          endpoint: sub.endpoint,
-          keys: {
-            p256dh: subJson.keys.p256dh,
-            auth: subJson.keys.auth
-          },
-          user_agent: navigator.userAgent
-        })
-      });
     }
   }
+
+  // Backend veritabanında bu aboneliğin varlığını garanti et
+  const subJson = sub.toJSON();
+  await fetch(`${API_BASE}/public/push/subscribe`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({
+      endpoint: sub.endpoint,
+      keys: {
+        p256dh: subJson.keys?.p256dh,
+        auth: subJson.keys?.auth
+      },
+      user_agent: navigator.userAgent
+    })
+  }).catch(() => {});
 
   const res = await fetch(`${API_BASE}/public/push/test`, {
     method: 'POST',

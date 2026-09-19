@@ -244,10 +244,7 @@ pub fn parse_takeaway_menu(
         }
     }
 
-    if menu_ids.is_empty() {
-        // Numara bulunamadıysa varsayılan 1. paket say
-        menu_ids.push(1);
-    }
+    // Eğer numara veya başlık bulunamadıysa boş kalır, kafasına göre paket 1 eklenmez.
 
     let mut packages = Vec::new();
 

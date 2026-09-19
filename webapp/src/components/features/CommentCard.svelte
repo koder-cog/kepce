@@ -51,12 +51,18 @@
                 comment.user?.nickname === "Engellemiş",
         ),
     );
-    let rawNickname = $derived(isUserDeleted ? null : comment.user?.nickname);
+    let rawNickname = $derived(isDeleted || isBlocked ? null : comment.user?.nickname);
     let userName = $derived(
-        isUserDeleted ? "Silinmiş" : rawNickname || "Kepçe Kullanıcısı",
+        isDeleted
+            ? "Silinmiş"
+            : isBlocked
+              ? "Engellenmiş"
+              : rawNickname || "Kepçe Kullanıcısı",
     );
     let isLinkable = $derived(
-        rawNickname &&
+        !isDeleted &&
+            !isBlocked &&
+            Boolean(rawNickname) &&
             rawNickname.toLowerCase() !== "silinmiş" &&
             rawNickname.toLowerCase() !== "anonim" &&
             rawNickname !== "Engellenmiş" &&
@@ -417,7 +423,6 @@
             <button
                 class="comment-node__time comment-node__time-btn"
                 onclick={handleFocus}
-                title="Tartışmaya odaklan"
             >
                 {timeAgo(comment.created_at)}
             </button>
@@ -427,17 +432,6 @@
                     class="comment-node__edited"
                     title="Bu yorum daha sonra düzenlendi">(düzenlendi)</span
                 >
-            {/if}
-
-            {#if hasChildren && !isCollapsed}
-                <button
-                    class="comment-node__collapse-btn btn--squish"
-                    onclick={toggleCollapse}
-                    title="Daralt"
-                    aria-label="Daralt"
-                >
-                    {@html icon("minus", 14)}
-                </button>
             {/if}
         </div>
 
@@ -484,6 +478,7 @@
                     {/if}
                 </div>
 
+                {#if !isDeleted && !isBlocked}
                 <div class="comment-node__actions">
                     <div class="comment-node__vote">
                         <button
@@ -621,6 +616,7 @@
                         ]}
                     />
                 </div>
+                {/if}
 
                 {#if replying}
                     <div class="comment-reply-form-container">

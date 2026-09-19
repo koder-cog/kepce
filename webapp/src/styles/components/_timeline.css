@@ -569,9 +569,7 @@
   }
 
   .season-guides__card:active {
-    transform: scale(0.98) rotate(0.001deg);
-    transition-duration: var(--dur-instant);
-    transition-timing-function: var(--ease-tactile);
+    background-color: var(--color-surface-hover);
   }
 
   .season-guides__content {
@@ -600,10 +598,18 @@
     justify-content: center;
     flex-shrink: 0;
     margin-left: var(--space-md);
-    transition: color var(--dur-fast) var(--ease-standard);
+    transition:
+      color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-tactile, ease);
+    will-change: transform;
   }
 
   .season-guides__card:hover .season-guides__arrow {
+    color: var(--color-accent-primary);
+  }
+
+  .season-guides__card:active .season-guides__arrow {
+    transform: translateX(4px);
     color: var(--color-accent-primary);
   }
 

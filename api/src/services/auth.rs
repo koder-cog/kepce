@@ -29,6 +29,7 @@ pub fn get_resend_cooldowns() -> &'static Mutex<HashMap<Uuid, Instant>> {
 pub enum AuthError {
     UserAlreadyExists,
     InvalidCredentials,
+    InvalidUsername(String),
     /// Hesap yasaklanmış veya askıya alınmış (account_status != Active)
     AccountDisabled,
     DatabaseError(DbErr),
@@ -39,6 +40,44 @@ pub enum AuthError {
 pub struct AuthService;
 
 impl AuthService {
+    pub fn is_reserved_username(name: &str) -> bool {
+        let lower = name.trim().to_lowercase();
+        matches!(
+            lower.as_str(),
+            "silinmis"
+                | "silinmiş"
+                | "deleted"
+                | "anonim"
+                | "anonymous"
+                | "admin"
+                | "kepce"
+                | "kepçe"
+                | "moderator"
+                | "moderasyon"
+                | "destek"
+                | "support"
+                | "system"
+                | "sistem"
+                | "bot"
+        )
+    }
+
+    pub fn validate_username(name: &str) -> Result<(), AuthError> {
+        let trimmed = name.trim();
+        let char_count = trimmed.chars().count();
+        if char_count < 3 || char_count > 25 {
+            return Err(AuthError::InvalidUsername("Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.".to_string()));
+        }
+        if Self::is_reserved_username(trimmed) {
+            return Err(AuthError::InvalidUsername("Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.".to_string()));
+        }
+        let is_valid_char = trimmed.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-');
+        if !is_valid_char {
+            return Err(AuthError::InvalidUsername("Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.".to_string()));
+        }
+        Ok(())
+    }
+
     /// JWT Token Üretici
     pub fn generate_token(user_id: Uuid, username: &str, role: &UserRole, jwt_secret: &str) -> Result<String, AuthError> {
         let claims = Claims {
@@ -107,7 +146,20 @@ impl AuthService {
     ) -> Result<(String, String, UserProfileDto), AuthError> {
         // 1. Username türetme mantığı
         let final_username = match dto.username {
-            Some(u) => u.to_lowercase(), // Kullanıcı elle girdiyse onu kullan ve küçült
+            Some(u) => {
+                let trimmed = u.trim().to_string();
+                Self::validate_username(&trimmed)?;
+                let lower = trimmed.to_lowercase();
+                let exists = Users::find()
+                    .filter(sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(sea_orm::sea_query::Expr::col(users::Column::Username))).eq(&lower))
+                    .one(db)
+                    .await
+                    .map_err(AuthError::DatabaseError)?;
+                if exists.is_some() {
+                    return Err(AuthError::UserAlreadyExists);
+                }
+                trimmed
+            }
             None => {
                 // Elle girmediyse e-postadan üret
                 let base_name = dto.email.split('@').next().unwrap_or("user").to_lowercase();
@@ -120,14 +172,15 @@ impl AuthService {
                 let mut attempt = 0;
                 
                 loop {
+                    let lower = final_username.to_lowercase();
                     let exists = Users::find()
-                        .filter(users::Column::Username.eq(&final_username))
+                        .filter(sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(sea_orm::sea_query::Expr::col(users::Column::Username))).eq(&lower))
                         .one(db)
                         .await
                         .map_err(AuthError::DatabaseError)?;
                     
-                    if exists.is_none() {
-                        // Veritabanında yok, güvenle kullanabiliriz.
+                    if exists.is_none() && !Self::is_reserved_username(&final_username) {
+                        // Veritabanında yok ve rezerve değil, güvenle kullanabiliriz.
                         break final_username;
                     }
                     

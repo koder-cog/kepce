@@ -140,7 +140,7 @@
         <div class="form-group">
           <label class="form-label" for="project-name">Projenin ismi</label>
           <textarea id="project-name" class="form-textarea--resizable" placeholder="Proje ismini buraya yazınız..." maxlength="30"></textarea>
-          <span class="form-help">En az 4, en fazla 30 karakter uzunluğunda olmalıdır. Yalnızca harf, sayı, tire, tırnak işareti, boşluk ve ünlem işareti kullanılabilir.</span>
+          <span class="form-help">En az 3, en fazla 30 karakter uzunluğunda olmalıdır. Harf, rakam, boşluk, tire ve alt çizgi kullanılabilir.</span>
         </div>
       `,
       buttons: [
@@ -157,15 +157,15 @@
               textarea.focus();
               return false;
             }
-            if (value.length < 4 || value.length > 30) {
+            if (value.length < 3 || value.length > 30) {
               showToast(
-                "Proje ismi en az 4, en fazla 30 karakter olmalıdır.",
+                "Proje ismi en az 3, en fazla 30 karakter olmalıdır.",
                 "warning",
               );
               textarea.focus();
               return false;
             }
-            const isValid = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s\-"'!]+$/.test(value);
+            const isValid = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s\-_]+$/.test(value);
             if (!isValid) {
               showToast("Proje ismi geçersiz karakterler içeriyor.", "warning");
               textarea.focus();
@@ -196,11 +196,11 @@
     if (submitBtn) submitBtn.disabled = true;
 
     if (textarea && submitBtn) {
-      const VALID_RE = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s\-"'!]+$/;
+      const VALID_RE = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s\-_]+$/;
       initCharCounter(textarea, {
         onUpdate: (_count, _limit, isOver) => {
           const trimmed = textarea.value.trim();
-          const isLengthValid = trimmed.length >= 4 && trimmed.length <= 30;
+          const isLengthValid = trimmed.length >= 3 && trimmed.length <= 30;
           const isCharValid = VALID_RE.test(trimmed);
           submitBtn.disabled = isOver || !isLengthValid || !isCharValid;
         },
@@ -213,6 +213,13 @@
     name: "",
     projectId: "",
   });
+
+  const API_KEY_NAME_RE = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\s\-_]+$/;
+  let isApiKeyNameValid = $derived(
+    newApiKeyState.name.trim().length >= 3 &&
+      newApiKeyState.name.trim().length <= 30 &&
+      API_KEY_NAME_RE.test(newApiKeyState.name.trim()),
+  );
 
   function handleCreateApiKey() {
     if (!globalState?.user?.is_verified) {
@@ -238,8 +245,20 @@
 
   async function submitCreateApiKey() {
     const { name, projectId } = newApiKeyState;
-    if (!name.trim()) {
-      showToast("Lütfen anahtar için açıklayıcı bir isim girin.", "warning");
+    const trimmed = name.trim();
+    if (!trimmed) {
+      showToast("Lütfen anahtar için bir isim girin.", "warning");
+      return;
+    }
+    if (trimmed.length < 3 || trimmed.length > 30) {
+      showToast(
+        "Anahtar ismi en az 3, en fazla 30 karakter olmalıdır.",
+        "warning",
+      );
+      return;
+    }
+    if (!API_KEY_NAME_RE.test(trimmed)) {
+      showToast("Anahtar ismi geçersiz karakterler içeriyor.", "warning");
       return;
     }
 
@@ -1625,7 +1644,7 @@
     onClose={() => (isCreateApiKeyModalOpen = false)}
   >
     {#snippet children()}
-      <div class="form-group form-group--floating u-mb-md">
+      <div class="form-group form-group--floating u-mb-xs">
         <input
           id="api-key-name"
           type="text"
@@ -1639,6 +1658,9 @@
           >Anahtar ismi (Örn: Telegram botu)</label
         >
       </div>
+      <span class="form-help u-mb-md u-display-block"
+        >En az 3, en fazla 30 karakter uzunluğunda olmalıdır. Harf, rakam, boşluk, tire ve alt çizgi kullanılabilir.</span
+      >
       <div class="form-group u-mb-md">
         <div class="u-display-block u-mb-xs u-text-sm u-color-muted">
           Proje seç
@@ -1661,8 +1683,10 @@
         class="btn btn--secondary"
         onclick={() => (isCreateApiKeyModalOpen = false)}>Vazgeç</button
       >
-      <button class="btn btn--primary" onclick={submitCreateApiKey}
-        >Oluştur</button
+      <button
+        class="btn btn--primary"
+        disabled={!isApiKeyNameValid}
+        onclick={submitCreateApiKey}>Oluştur</button
       >
     {/snippet}
   </Modal>

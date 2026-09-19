@@ -276,9 +276,11 @@
         </div>
 
         <div class="comments-section">
-            <div class="comments-section-title">
-                <h2>{focusId ? "Tartışma" : "Yorumlar"}</h2>
-            </div>
+            {#if !focusId}
+                <div class="comments-section-title">
+                    <h2>Yorumlar</h2>
+                </div>
+            {/if}
             <div id="comments-list-container">
                 <div class="stats-placeholder"><Loader size={48} /></div>
             </div>
@@ -348,9 +350,11 @@
         </div>
 
         <div class="comments-section">
-            <div class="comments-section-title">
-                <h2>{focusId ? "Tartışma" : "Yorumlar"}</h2>
-            </div>
+            {#if !focusId}
+                <div class="comments-section-title">
+                    <h2>Yorumlar</h2>
+                </div>
+            {/if}
 
             {#if !focusId && menu}
                 <CommentInput menuObj={menu} parentId={focusId} />

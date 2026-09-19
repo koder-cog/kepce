@@ -436,10 +436,41 @@
     isNicknameModalOpen = true;
   }
 
+  const USERNAME_RE = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\-_]+$/;
+  const RESERVED_NAMES = [
+    "silinmis",
+    "silinmiş",
+    "deleted",
+    "anonim",
+    "anonymous",
+    "admin",
+    "kepce",
+    "kepçe",
+    "moderator",
+    "moderasyon",
+    "destek",
+    "support",
+    "system",
+    "sistem",
+    "bot",
+  ];
+
   async function saveNickname() {
     const nickname = nicknameInput.trim();
     if (!nickname || nickname === user.username) {
       isNicknameModalOpen = false;
+      return;
+    }
+    if (nickname.length < 3 || nickname.length > 25) {
+      showToast("Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.", "error");
+      return;
+    }
+    if (RESERVED_NAMES.includes(nickname.toLowerCase())) {
+      showToast("Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.", "error");
+      return;
+    }
+    if (!USERNAME_RE.test(nickname)) {
+      showToast("Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.", "error");
       return;
     }
     if (!nicknamePasswordInput) {
@@ -560,10 +591,13 @@
           class="form-input"
           placeholder=" "
           bind:value={nicknameInput}
-          maxlength="20"
+          maxlength="25"
         />
         <label class="form-label" for="new-nickname">Yeni kullanıcı adı</label>
       </div>
+      <span class="form-help u-mb-md u-display-block">
+        En az 3, en fazla 25 karakter. Harf, rakam, alt çizgi ve tire kullanılabilir.
+      </span>
       <div class="form-group form-group--floating">
         <input
           type="password"
@@ -930,10 +964,10 @@
       </label>
 
       <!-- Animasyon efektleri -->
-      <label class="c-list-row c-list-row--clickable c-list-row--tall">
-        <div class="c-list-row__info">
+      <div class="c-list-row c-list-row--tall">
+        <label for="settings-animations-toggle" class="c-list-row__info u-cursor-pointer">
           <div class="c-list-row__title">Animasyon efektleri</div>
-        </div>
+        </label>
         <div class="c-list-row__control u-flex u-align-center u-gap-sm">
           <button
             type="button"
@@ -947,16 +981,18 @@
           >
             {@html icon("info", 20)}
           </button>
-          <input
-            type="checkbox"
-            id="settings-animations-toggle"
-            class="c-input-hidden"
-            bind:checked={animationsEnabled}
-            onchange={handleAnimationsToggle}
-          />
-          <span class="c-switch"><span class="c-switch__handle"></span></span>
+          <label for="settings-animations-toggle" class="u-flex u-align-center u-cursor-pointer">
+            <input
+              type="checkbox"
+              id="settings-animations-toggle"
+              class="c-input-hidden"
+              bind:checked={animationsEnabled}
+              onchange={handleAnimationsToggle}
+            />
+            <span class="c-switch"><span class="c-switch__handle"></span></span>
+          </label>
         </div>
-      </label>
+      </div>
 
       <!-- ==========================================
            2. ERİŞİLEBİLİRLİK
@@ -1275,9 +1311,6 @@
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Bildirimleri Test Et</div>
-            <div class="c-list-row__desc">
-              Cihazınıza anlık bir deneme bildirimi gönderin
-            </div>
           </div>
           <div class="c-list-row__actions">
             <button
@@ -1286,7 +1319,7 @@
               onclick={handleTestPushNotification}
               disabled={isTestingPush}
             >
-              {isTestingPush ? "Gönderiliyor..." : "Test Bildirimi Gönder"}
+              {isTestingPush ? "Gönderiliyor..." : "Test et"}
             </button>
           </div>
         </div>
@@ -1399,17 +1432,7 @@
             {@html icon("arrowRight", 20)}
           </div>
         </a>
-        <a
-          href="/istatistikler"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
-          <div class="c-list-row__info">
-            <div class="c-list-row__title">İstatistikler</div>
-          </div>
-          <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
-          </div>
-        </a>
+
         <a
           href="/durum"
           class="c-list-row c-list-row--clickable c-list-row--regular"

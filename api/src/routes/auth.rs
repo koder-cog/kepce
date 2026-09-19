@@ -58,6 +58,7 @@ impl From<AuthError> for AppError {
         match err {
             AuthError::UserAlreadyExists => AppError::BadRequest("Bu e-posta veya kullanıcı adı sisteme zaten kayıtlı.".to_string()),
             AuthError::InvalidCredentials => AppError::Unauthorized("Giriş bilgileri hatalı. Lütfen bilgilerinizi kontrol edin.".to_string()),
+            AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
             AuthError::AccountDisabled => AppError::Forbidden("Hesabınız askıya alınmış veya yasaklanmış. Destek ile iletişime geçin.".to_string()),
             AuthError::DatabaseError(e) => {
                 tracing::error!("Database error in AuthService: {}", e);
@@ -415,6 +416,7 @@ async fn update_me(
         .map_err(|e| match e {
             crate::services::auth::AuthError::UserAlreadyExists => AppError::BadRequest("Bu kullanıcı adı veya e-posta zaten kullanılıyor".to_string()),
             crate::services::auth::AuthError::InvalidCredentials => AppError::BadRequest("Mevcut şifre hatalı".to_string()),
+            crate::services::auth::AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
             _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
         })?;
 

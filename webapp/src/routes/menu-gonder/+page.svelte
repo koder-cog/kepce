@@ -453,7 +453,7 @@
           bind:value={notes}
           id="notes-textarea"
           name="notes"
-          placeholder=""
+          placeholder="Varsa menünün ait olduğu yurt, blok, tarih veya eklemek istediğiniz detaylar..."
           rows="4"
           maxlength="1024"
           class="contribution-notes-area"

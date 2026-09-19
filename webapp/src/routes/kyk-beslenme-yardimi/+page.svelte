@@ -93,8 +93,9 @@
   </p>
   <p>
     Bugün şehrinizde hangi tabldot menünün çıktığını ve besin değerlerini görmek
-    için <a href="/" data-link>ana sayfaya</a> bakabilir, tavan fiyat tarifesini ve
-    seçimlerinizin toplam tutarını aşağıdaki simülatörden görebilirsiniz.
+    için <a href="/" data-link>ana sayfaya</a> göz atabilir, standart tabldot harici ekstra
+    seçimlerinizin güncel tavan fiyat karşılığını ve beslenme yardımı limitini aşıp
+    aşmadığını aşağıdaki hesaplayıcıdan kontrol edebilirsiniz.
   </p>
 
   <PricingCalculator />

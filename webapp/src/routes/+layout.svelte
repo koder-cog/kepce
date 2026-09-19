@@ -50,6 +50,10 @@
 		const a = e.target.closest("a");
 		if (!a || !a.href) return;
 
+		// Sadece kullanıcıların girdiği yorum metinlerindeki dış bağlantılar için güvenlik uyarısı gösterilir
+		const isCommentLink = !!a.closest(".comment-node__text");
+		if (!isCommentLink) return;
+
 		try {
 			const url = new URL(a.href);
 			if (url.protocol === "http:" || url.protocol === "https:") {

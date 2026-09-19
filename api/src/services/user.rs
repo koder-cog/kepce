@@ -649,9 +649,13 @@ impl UserService {
         }
 
         if let Some(username) = dto.username {
-            // Check if username exists
+            let trimmed = username.trim().to_string();
+            crate::services::auth::AuthService::validate_username(&trimmed)?;
+
+            // Case-insensitive benzersizlik kontrolü
+            let lower_username = trimmed.to_lowercase();
             let exists = Users::find()
-                .filter(users::Column::Username.eq(&username))
+                .filter(sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(sea_orm::sea_query::Expr::col(users::Column::Username))).eq(&lower_username))
                 .filter(users::Column::Id.ne(user_id))
                 .one(db)
                 .await
@@ -659,7 +663,7 @@ impl UserService {
             if exists.is_some() {
                 return Err(AuthError::UserAlreadyExists);
             }
-            user_model.username = Set(username);
+            user_model.username = Set(trimmed);
         }
 
         if let Some(ref email) = dto.email {
