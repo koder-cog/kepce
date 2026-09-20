@@ -60,7 +60,7 @@ impl Config {
 /// Çalışma zamanında `BOT_DIRECTIVE_PATH` env değişkeniyle override edilebilir;
 /// dosya yoksa veya okunamazsa gömülü varsayılana düşer (sessiz fallback).
 fn load_bot_directive() -> String {
-    const DEFAULT_DIRECTIVE: &str = include_str!("../prompts/kepce_bot.md");
+    const DEFAULT_DIRECTIVE: &str = include_str!("../../prompts/kepce_bot.md");
     match env::var("BOT_DIRECTIVE_PATH") {
         Ok(path) => std::fs::read_to_string(&path)
             .map(|s| s.trim().to_string())

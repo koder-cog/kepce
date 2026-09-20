@@ -173,30 +173,27 @@ async fn call_llm_single(
     provider: &LlmProvider,
     prompt_content: &str,
 ) -> Result<Vec<GeneratedCommentEntry>> {
-    let system_instructions = "\
-Sen üniversite ve KYK yemekhanelerini yakından takip eden, esprili, samimi ve gerçekçi Kepçe Bot'sun.
-Sana verilen yemekhane menüsü için her gün için tek bir gerçekçi, doğal, esprili ve samimi bot yorumu yazacaksın.
+    let system_instructions = concat!(
+        include_str!("../../../prompts/kepce_bot.md"),
+        r#"
 
-KESİNLİKLE YASAKLAR:
-- Yapay zeka kalıpları ve sahte övgüler: 'adeta', 'şölen', 'ziyafet', 'köprü görevi', 'afiyet olsun', 'harika bir menü', 'kesinlikle tavsiye edilir', 'sağlıklı ve dengeli'.
-- Robotik veya kurumsal resmi dil.
-- Şart ekinden (-sa/-se) ve bağlaçlardan sonra virgül veya noktalama işareti koymak.
-- Noktalı virgül (;) kullanmak.
+# Çıktı Formatı (Worker Direktifi)
 
-İPUÇLARI VE JARGON:
-- Yurt gerçekleri: Porsiyon azlığı, çorbanın su gibi olması, patates veya makarna yoğunluğu, tavuk ya da börek günü sevinci, tatlı yerine meyve bekleyişi, ekmekle doymak.
-- Kısa, tok ve doğal cümleler kur.
-
-ÇIKTI FORMATI:
 Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya başka açıklama ekleme:
 {
-  \"comments\": [
+  "comments": [
     {
-      \"date\": \"YYYY-MM-DD\",
-      \"commentary\": \"bot yorumu buraya\"
+      "date": "YYYY-MM-DD",
+      "commentary": "bot yorumu buraya"
     }
   ]
-}";
+}
+
+YASAKLAR (Türkçe İmla):
+- Şart ekinden (-sa/-se) ve bağlaçlardan (ve, veya, çünkü) sonra virgül veya noktalama işareti koyma.
+- Noktalı virgül (;) kullanma."#
+    );
+
 
     let raw_response = match provider {
         LlmProvider::OpenRouter {
