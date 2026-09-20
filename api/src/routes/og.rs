@@ -1,7 +1,7 @@
 //! Dinamik Open Graph (OG) görsel üretim endpoint'leri.
 
 use axum::{
-    extract::{Path, State},
+    extract::{Path, Query, State},
     http::{header, StatusCode},
     response::{IntoResponse, Response},
     routing::get,
@@ -26,12 +26,14 @@ pub fn router() -> Router<AppState> {
         //   /thread/:thread_id   <-> yorum derin linki
         //   /biri/:username      <-> /biri/[username]  (eski /user/ yolu da aynı handler'da)
         //   /page/:page_slug     <-> statik sayfalar
+        //   /tepsi               <-> KYK tepsi simülatörü dinamik kartı
         .route("/menu/:id", get(get_menu_og))
         .route("/city/:city_slug", get(get_city_og))
         .route("/thread/:thread_id", get(get_thread_og))
         .route("/biri/:username", get(get_user_og))
         .route("/user/:username", get(get_user_og))
         .route("/page/:page_slug", get(get_page_og))
+        .route("/tepsi", get(get_tray_og))
 }
 
 fn format_turkish_date(date: NaiveDate) -> String {
@@ -418,6 +420,37 @@ async fn get_page_og(
         [
             (header::CONTENT_TYPE, "image/png"),
             (header::CACHE_CONTROL, cache_control),
+        ],
+        png_bytes,
+    ).into_response())
+}
+
+#[derive(serde::Deserialize)]
+pub struct TrayOgQuery {
+    pub title: Option<String>,
+    pub sub1: Option<String>,
+    pub sub2: Option<String>,
+}
+
+/// 6. KYK Tepsi Simülatörü OG Kartı (/tepsi?title=...&sub1=...&sub2=...)
+async fn get_tray_og(
+    Query(query): Query<TrayOgQuery>,
+) -> Result<Response, StatusCode> {
+    let title = query.title.as_deref().unwrap_or("KYK Tepsisi");
+    let sub1 = query.sub1.as_deref().unwrap_or("Kepçe Tepsi Simülatörü");
+    let sub2 = query.sub2.as_deref();
+
+    let png_bytes = render_og_card(
+        Some(title),
+        sub1,
+        sub2,
+        None,
+    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    Ok((
+        [
+            (header::CONTENT_TYPE, "image/png"),
+            (header::CACHE_CONTROL, "public, max-age=86400, s-maxage=604800"),
         ],
         png_bytes,
     ).into_response())

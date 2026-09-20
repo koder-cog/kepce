@@ -12,7 +12,6 @@ fn get_font_db() -> Arc<fontdb::Database> {
         db.load_system_fonts();
         // Gömülü yazı tiplerini yükle
         db.load_font_data(include_bytes!("../../assets/fonts/PaytoneOne-Regular.ttf").to_vec());
-        db.load_font_data(include_bytes!("../../assets/fonts/PaytoneOne-LatinExt.ttf").to_vec());
         db.load_font_data(include_bytes!("../../assets/fonts/PublicSans-Regular.ttf").to_vec());
         db.load_font_data(include_bytes!("../../assets/fonts/PublicSans-SemiBold.ttf").to_vec());
         db.set_sans_serif_family("Public Sans");
@@ -29,6 +28,36 @@ fn escape_xml(s: &str) -> String {
      .replace('\'', "&apos;")
 }
 
+/// Rozetlerin OG kartlarında gösterilip gösterilmeyeceğini kontrol eden bayrak.
+/// Kod yapısını korumak adına tutulur; tasarım kararı gereği kapalıdır.
+const ENABLE_OG_BADGES: bool = false;
+
+fn render_badge_svg(badge_text: Option<&str>) -> String {
+    if !ENABLE_OG_BADGES {
+        return String::new();
+    }
+
+    let Some(badge) = badge_text else {
+        return String::new();
+    };
+
+    if badge == "null" || badge.is_empty() {
+        return String::new();
+    }
+
+    let char_count = badge.chars().count();
+    let badge_width = (char_count as f32 * 17.0 + 64.0).max(120.0);
+    let badge_x = 1050.0 - badge_width;
+    let badge_center = badge_width / 2.0;
+
+    format!(
+        r##"<g transform="translate({badge_x}, 150)">
+            <rect width="{badge_width}" height="77" rx="38.5" fill="#ECBF7F"/>
+            <text x="{badge_center}" y="48" font-family="Public Sans" font-size="28" font-weight="800" fill="#242828" text-anchor="middle" dominant-baseline="central">{badge}</text>
+        </g>"##,
+    )
+}
+
 /// Standart Kart veya Dinamik Sayfa Kartı için SVG Oluşturucu
 pub fn render_og_card(
     title: Option<&str>,
@@ -42,41 +71,30 @@ pub fn render_og_card(
     let safe_sub1 = escape_xml(sub1);
     let safe_sub2 = sub2.map(escape_xml);
     let safe_badge = badge.map(escape_xml);
-
-    // Rozet genişliği dinamik hesaplama (yaklaşık 1 karakter = 17px + 64px padding)
-    let badge_svg = if let Some(badge_text) = safe_badge {
-        if badge_text != "null" && !badge_text.is_empty() {
-            let char_count = badge_text.chars().count();
-            let badge_width = (char_count as f32 * 17.0 + 64.0).max(120.0);
-            let badge_x = 1050.0 - badge_width;
-            format!(
-                r##"<g transform="translate({badge_x}, 150)">
-                    <rect width="{badge_width}" height="77" rx="38.5" fill="#ECBF7F"/>
-                    <text x="{badge_center}" y="48" font-family="Public Sans" font-size="28" font-weight="800" fill="#242828" text-anchor="middle" dominant-baseline="central">{badge_text}</text>
-                </g>"##,
-                badge_x = badge_x,
-                badge_width = badge_width,
-                badge_center = badge_width / 2.0,
-                badge_text = badge_text
-            )
-        } else {
-            String::new()
-        }
-    } else {
-        String::new()
-    };
+    let badge_svg = render_badge_svg(safe_badge.as_deref());
 
     // Başlık ve Alt Metin Konumlandırmaları
     let content_svg = if let Some(sub2_text) = safe_sub2 {
-        // ÇİFT SATIRLI DİNAMİK KART (/:city_slug, /menu/:id, /menu/:id/:threadId)
+        // ÇİFT SATIRLI DİNAMİK KART (/:city_slug, /menu/:id, /menu/:id/:threadId, /tepsi)
         let t_text = safe_title.unwrap_or_default();
+        let sub2_lines: Vec<&str> = sub2_text.split('\n').collect();
+        let sub2_rendered = if sub2_lines.len() > 1 {
+            format!(
+                r##"<text x="150" y="440" font-family="Public Sans" font-size="30" font-weight="500" fill="#D2CFC0">{}</text>
+               <text x="150" y="485" font-family="Public Sans" font-size="30" font-weight="500" fill="#D2CFC0">{}</text>"##,
+                sub2_lines[0], sub2_lines[1]
+            )
+        } else {
+            format!(
+                r##"<text x="150" y="445" font-family="Public Sans" font-size="40" font-weight="600" fill="#F9F5E5">{}</text>"##,
+                sub2_lines[0]
+            )
+        };
+
         format!(
             r##"<text x="150" y="320" font-family="Paytone One" font-size="56" font-weight="400" fill="#F9F5E5">{t_text}</text>
                <text x="150" y="385" font-family="Public Sans" font-size="40" font-weight="600" fill="#F9F5E5">{safe_sub1}</text>
-               <text x="150" y="445" font-family="Public Sans" font-size="40" font-weight="600" fill="#F9F5E5">{sub2_text}</text>"##,
-            t_text = t_text,
-            safe_sub1 = safe_sub1,
-            sub2_text = sub2_text
+               {sub2_rendered}"##,
         )
     } else {
         // TEK METİNLİ KART (Hakkında, SSS, Menü Gönder, vb. - 2 satıra sarma destekli)
@@ -160,9 +178,7 @@ pub fn render_og_profile(
     let safe_user = escape_xml(username);
     let safe_karma = escape_xml(karma_text);
     let safe_badge = escape_xml(badge);
-
-    let badge_width = (safe_badge.chars().count() as f32 * 17.0 + 64.0).max(120.0);
-    let badge_x = 1050.0 - badge_width;
+    let badge_svg = render_badge_svg(Some(&safe_badge));
 
     let body_svg = if let Some(b64) = avatar_base64 {
         format!(
@@ -215,17 +231,12 @@ pub fn render_og_profile(
     <path d="M143 39.7c.7 7.7-4.6 14-12.2 14.8-7.6.8-14.7-3.8-15.4-11.5l20-4.7L133 8.4c-.4-3.8 3.4-8.7 9-8.1 4.2.4 7 4.5 7.3 8.3l-4.6.5c-.1-1.3-1.2-2.2-2.5-2.1s-2.2 1.3-2.1 2.5l2.9 30.2z"/>
   </g>
 
-  <g transform="translate({badge_x}, 150)">
-    <rect width="{badge_width}" height="77" rx="38.5" fill="#ECBF7F"/>
-    <text x="{badge_center}" y="48" font-family="Public Sans" font-size="28" font-weight="800" fill="#242828" text-anchor="middle" dominant-baseline="central">{safe_badge}</text>
-  </g>
+  <!-- Rozet -->
+  {badge_svg}
 
   {body_svg}
 </svg>"##,
-        badge_x = badge_x,
-        badge_width = badge_width,
-        badge_center = badge_width / 2.0,
-        safe_badge = safe_badge,
+        badge_svg = badge_svg,
         body_svg = body_svg
     );
 
