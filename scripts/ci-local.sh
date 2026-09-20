@@ -105,7 +105,7 @@ if smoke "/olmayan-rota-ci-testi" 404; then report "smoke: gerçek 404" true 404
 if smoke "/nirvana-sehir" 404; then report "smoke: bilinmeyen şehir 404" true 404; else report "smoke: bilinmeyen şehir" false "-"; fi
 if smoke "/istanbul/2026-09-04" 301; then report "smoke: gün sayfası 301 yönlendirme" true 301; else report "smoke: gün sayfası 301 yönlendirme" false "-"; fi
 if smoke "/sehirler" 200; then report "smoke: sehirler dizini" true 200; else report "smoke: sehirler dizini" false "-"; fi
-if smoke "/istatistikler" 301; then report "smoke: istatistikler 301 yönlendirme" true 301; else report "smoke: istatistikler 301 yönlendirme" false "-"; fi
+if smoke "/istatistikler" 404; then report "smoke: istatistikler ertelendi (404)" true 404; else report "smoke: istatistikler ertelendi (404)" false "-"; fi
 if smoke "/sitemap.xml" 200; then report "smoke: sitemap" true 200; else report "smoke: sitemap" false "-"; fi
 if smoke "/rss.xml" 200; then report "smoke: rss feed" true 200; else report "smoke: rss feed" false "-"; fi
 
