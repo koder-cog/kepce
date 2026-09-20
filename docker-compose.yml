@@ -88,6 +88,10 @@ services:
       - WORKER_INTERVAL_SECS=${WORKER_INTERVAL_SECS:-3600}
       - WORKER_MENU_DIR=/app/data/menuler
       - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - GEMINI_MODEL=${GEMINI_MODEL:-}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+      - OPENROUTER_REASONING_EFFORT=${OPENROUTER_REASONING_EFFORT:-}
       - RUST_LOG=${RUST_LOG:-info}
       # IndexNow otomasyonu (Faz 1.6): boş/atanmamışsa özellik kapalı
       - INDEXNOW_KEY=${INDEXNOW_KEY:-}

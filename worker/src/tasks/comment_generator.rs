@@ -240,9 +240,10 @@ Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya
                 .to_string()
         }
         LlmProvider::Gemini { api_key, model } => {
+            let clean_model = model.trim().strip_prefix("models/").unwrap_or(model.trim());
             let url = format!(
-                "https://generativelanguage.googleapis.com/v1beta/interactions?key={}",
-                api_key
+                "https://generativelanguage.googleapis.com/v1beta/models/{}:generateContent",
+                clean_model
             );
 
             let schema = json!({
@@ -264,11 +265,15 @@ Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya
             });
 
             let body = json!({
-                "model": model,
-                "input": format!("{}\n\nMENÜLER:\n{}", system_instructions, prompt_content),
-                "generation_config": {
-                    "response_mime_type": "application/json",
-                    "response_schema": schema,
+                "systemInstruction": {
+                    "parts": [{ "text": system_instructions }]
+                },
+                "contents": [{
+                    "parts": [{ "text": prompt_content }]
+                }],
+                "generationConfig": {
+                    "responseMimeType": "application/json",
+                    "responseSchema": schema,
                     "temperature": 0.7
                 }
             });
@@ -288,9 +293,7 @@ Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya
             }
 
             let json_res: serde_json::Value = res.json().await?;
-            if let Some(out) = json_res.get("output_text").and_then(|t| t.as_str()) {
-                out.to_string()
-            } else if let Some(cand) = json_res.get("candidates").and_then(|c| c.as_array()) {
+            if let Some(cand) = json_res.get("candidates").and_then(|c| c.as_array()) {
                 cand.first()
                     .and_then(|c| c.get("content"))
                     .and_then(|c| c.get("parts"))
@@ -300,6 +303,8 @@ Sadece ve sadece aşağıdaki gibi geçerli bir JSON nesnesi dön. Markdown veya
                     .and_then(|t| t.as_str())
                     .unwrap_or_default()
                     .to_string()
+            } else if let Some(out) = json_res.get("output_text").and_then(|t| t.as_str()) {
+                out.to_string()
             } else {
                 return Err(anyhow::anyhow!("Gemini yanıtından metin okunamadı"));
             }
