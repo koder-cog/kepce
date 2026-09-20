@@ -3,6 +3,7 @@
   import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
   import pricingData from "@/lib/data/pricing/istanbul_2025_2026.json";
   import { showToast } from "@/components/ui/toast.js";
+  import { evaluateTrayPersona } from "@/lib/utils/trayPersona.js";
 
   // Svelte 5 State
   let selectedMeal = $state("dinner"); // "breakfast" | "dinner"
@@ -103,6 +104,15 @@
   }
 
   // ── Dynamic Themed Dice Presets (Randomized Knapsack Generators) ──
+  function notifyPresetResult(newTray, defaultMessage) {
+    const res = evaluateTrayPersona(newTray, pricingData.items, allowanceInput);
+    if (res.activePersona) {
+      showToast(`${res.activePersona.title} denk geldi.`, "success");
+    } else {
+      showToast(defaultMessage, "success");
+    }
+  }
+
   function applyPreset(type) {
     const availableItems = pricingData.items.filter(
       (i) => i.mealType === "all" || i.mealType === selectedMeal,
@@ -150,8 +160,10 @@
       }
 
       if (exactCombos.length > 0) {
-        tray = exactCombos[Math.floor(Math.random() * exactCombos.length)];
-        showToast("Bütçeye tam denk tepsi oluşturuldu.", "success");
+        const selected =
+          exactCombos[Math.floor(Math.random() * exactCombos.length)];
+        tray = selected;
+        notifyPresetResult(selected, "Bütçeye tam denk tepsi oluşturuldu.");
       } else {
         showToast(
           "Bu bütçeye tam denk gelen bir tepsi bulunamadı.",
@@ -189,7 +201,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast("Protein ağırlıklı tepsi oluşturuldu.", "success");
+        notifyPresetResult(combo, "Protein ağırlıklı tepsi oluşturuldu.");
       }
     } else if (type === "classic") {
       const classicKeywords = [
@@ -221,7 +233,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast("Büfe tepsisi oluşturuldu.", "success");
+        notifyPresetResult(combo, "Büfe tepsisi oluşturuldu.");
       }
     } else if (type === "sweet") {
       const sweetKeywords = [
@@ -255,9 +267,9 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast(
+        notifyPresetResult(
+          combo,
           "Tatlı ve atıştırmalık tepsisi oluşturuldu.",
-          "success",
         );
       }
     } else if (type === "random") {
@@ -272,7 +284,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        showToast("Rastgele tepsi oluşturuldu.", "success");
+        notifyPresetResult(combo, "Rastgele tepsi oluşturuldu.");
       }
     }
   }
@@ -297,8 +309,6 @@
     if (navigator.share) {
       try {
         await navigator.share({
-          title: "Kepçe KYK Tepsi Simülatörü",
-          text: `Bugünkü yemekhane tepsim (${totalTrayPrice.toFixed(0)} TL):`,
           url: url,
         });
         return;
@@ -371,6 +381,11 @@
       ? Math.min(Math.round((totalTrayPrice / allowanceInput) * 100), 100)
       : 0,
   );
+
+  let personaResult = $derived(
+    evaluateTrayPersona(tray, pricingData.items, allowanceInput),
+  );
+  let activePersona = $derived(personaResult.activePersona);
 </script>
 
 <section
@@ -553,6 +568,14 @@
                 >+{difference.toFixed(0)} TL cepten</span
               >
             {/if}
+            {#if activePersona}
+              <span
+                class="pricing-calc__persona-badge"
+                title={activePersona.description}
+              >
+                {activePersona.emoji} {activePersona.title}
+              </span>
+            {/if}
           </div>
 
           <div class="pricing-calc__sticky-actions">
@@ -612,6 +635,15 @@
         <!-- Açılır/Kapanır Zarif Detay Çekmecesi (Büyütülmüş & Ferah) -->
         <div class="pricing-calc__drawer {isDrawerOpen ? 'is-open' : ''}">
           <div class="pricing-calc__drawer-inner">
+            {#if activePersona}
+              <div class="pricing-calc__persona-card">
+                <span class="pricing-calc__persona-icon">{activePersona.emoji}</span>
+                <div class="pricing-calc__persona-text">
+                  <span class="pricing-calc__persona-name">{activePersona.title}</span>
+                  <span class="pricing-calc__persona-desc">{activePersona.description}</span>
+                </div>
+              </div>
+            {/if}
             <div class="pricing-calc__drawer-list">
               {#each trayItems as item (item.id)}
                 <span class="pricing-calc__drawer-chip">
