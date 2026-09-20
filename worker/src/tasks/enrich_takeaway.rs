@@ -97,7 +97,7 @@ pub async fn enrich_all_takeaways(db: &DatabaseConnection) -> Result<usize> {
             // Şablondaki slot ve alternatifleri ekle
             for (slot_idx, slot) in parsed_pkg.slots.iter().enumerate() {
                 for (alt_idx, alt) in slot.iter().enumerate() {
-                    let alias_id = crate::tasks::scraper::get_or_create_dish_alias(&txn, &alt.name, None).await?;
+                    let (alias_id, _) = crate::tasks::scraper::get_or_create_dish_alias(&txn, &alt.name, None).await?;
                     let cals = alt.calories.as_ref().and_then(|c| {
                         c.chars()
                             .filter(|ch| ch.is_ascii_digit())

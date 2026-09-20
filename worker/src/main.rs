@@ -207,32 +207,34 @@ async fn main() -> anyhow::Result<()> {
         .build()?;
 
     // Gemini model erişilebilirlik kontrolü (startup)
+// gemini model kontrolü (0 rpd / 0 token harcayan saf metadata get sorgusu)
     if let Some(ref api_key) = gemini_api_key {
-        let model_name = env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-flash-latest".to_string());
-        let check_url = "https://generativelanguage.googleapis.com/v1beta/interactions";
-        let check_payload = serde_json::json!({
-            "model": model_name,
-            "input": "ping"
-        });
-        match reqwest_client.post(check_url)
+        let model_name = env::var("GEMINI_MODEL")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .unwrap_or_else(|| "gemini-flash-lite-latest".to_string());
+            
+        let clean_model = model_name.trim().strip_prefix("models/").unwrap_or(model_name.trim());
+        let check_url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}", clean_model);
+        
+        match reqwest_client.get(&check_url)
             .header("x-goog-api-key", api_key)
-            .json(&check_payload)
             .send()
             .await
         {
             Ok(res) if res.status().is_success() => {
-                tracing::info!("Gemini Interactions API ('{}') erişilebilir [OK]", model_name);
+                tracing::info!("Gemini API ('{}') metadata doğrulandı [OK]", clean_model);
             }
             Ok(res) => {
                 tracing::warn!(
-                    "Gemini Interactions API ('{}') erişilebilirlik kontrolü başarısız (HTTP {}). PDF parsing çalışmayabilir.",
-                    model_name, res.status()
+                    "Gemini API ('{}') erişilebilirlik kontrolü başarısız (HTTP {}). PDF parsing çalışmayabilir.",
+                    clean_model, res.status()
                 );
             }
             Err(e) => {
                 tracing::warn!(
-                    "Gemini Interactions API ('{}') erişilebilirlik kontrolü başarısız: {:?}. PDF parsing çalışmayabilir.",
-                    model_name, e
+                    "Gemini API ('{}') erişilebilirlik kontrolü başarısız: {:?}. PDF parsing çalışmayabilir.",
+                    clean_model, e
                 );
             }
         }

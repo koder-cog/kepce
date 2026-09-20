@@ -1014,18 +1014,18 @@ pub async fn upsert_menu(
     
     // Build target_map
     let mut target_map: HashMap<DishSlotKey, (i32, Option<String>, Option<i32>)> = HashMap::new();
-
-    let mut seen_package_aliases: std::collections::HashSet<(String, i32)> = std::collections::HashSet::new();
+    let mut seen_package_dishes: std::collections::HashSet<(String, i32, i32)> = std::collections::HashSet::new();
 
     for (i, dish_group) in dishes.into_iter().enumerate() {
         let order_index = i as i32;
         for (j, comp) in dish_group.into_iter().enumerate() {
             let is_alternative = j > 0;
-            let alias_id = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
+            let (alias_id, dish_id) = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
             let package_name = "NORMAL".to_string();
             let cals = parse_dish_calories(&comp.calories);
 
-            if !seen_package_aliases.insert((package_name.clone(), alias_id)) {
+            // Aynı pakette ve aynı yuvada aynı dish_id tekrar ediyorsa atla
+            if !seen_package_dishes.insert((package_name.clone(), order_index, dish_id)) {
                 continue;
             }
 
@@ -1043,16 +1043,16 @@ pub async fn upsert_menu(
             }
         }
     }
-
+    
     for (i, dish_group) in celiac_dishes.into_iter().enumerate() {
         let order_index = i as i32;
         for (j, comp) in dish_group.into_iter().enumerate() {
             let is_alternative = j > 0;
-            let alias_id = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
+            let (alias_id, dish_id) = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
             let package_name = "ÇÖLYAK MENÜSÜ".to_string();
             let cals = parse_dish_calories(&comp.calories);
 
-            if !seen_package_aliases.insert((package_name.clone(), alias_id)) {
+            if !seen_package_dishes.insert((package_name.clone(), order_index, dish_id)) {
                 continue;
             }
 
@@ -1077,10 +1077,10 @@ pub async fn upsert_menu(
             let order_index = i as i32;
             for (j, comp) in dish_group.into_iter().enumerate() {
                 let is_alternative = j > 0;
-                let alias_id = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
+                let (alias_id, dish_id) = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
                 let cals = parse_dish_calories(&comp.calories);
 
-                if !seen_package_aliases.insert((sanitized_package.clone(), alias_id)) {
+                if !seen_package_dishes.insert((sanitized_package.clone(), order_index, dish_id)) {
                     continue;
                 }
 
@@ -1179,7 +1179,6 @@ pub async fn upsert_menu(
     };
 
     // Akıllı Slot Uzlaşması (In-Place Diff & Preservation):
-    // Tüm kayıtları körlemesine silmek yerine, aynı kalan yemeklerin ID ve ilişkilerini koru.
     let mut matched_existing_ids = std::collections::HashSet::new();
 
     for (key, (alias_id, amount, calories)) in target_map.into_iter() {
@@ -1189,43 +1188,30 @@ pub async fn upsert_menu(
         };
 
         if let Some(existing) = existing_map.get(&key) {
-            if existing.dish_alias_id == alias_id {
-                // Yemek aynı: ID'yi ve satırı koru, sadece metadata güncelle
-                matched_existing_ids.insert(existing.id);
-                let final_amount = amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone());
-                let final_calories = calories.or(existing.calories);
+            // Yuva veritabanında zaten var: yeni satır eklemek yerine var olan satırı
+            // yerinde güncelle ki Postgres unique constraint patlamasın.
+            matched_existing_ids.insert(existing.id);
 
-                if final_amount != existing.amount || final_calories != existing.calories {
-                    let mut active: menu_dishes::ActiveModel = existing.clone().into();
-                    active.amount = Set(final_amount);
-                    active.calories = Set(final_calories);
-                    active.update(&txn).await?;
-                }
-                continue;
-            }
+            let final_amount = amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone());
+            let final_calories = calories.or(existing.calories);
+
+            let mut active: menu_dishes::ActiveModel = existing.clone().into();
+            active.dish_alias_id = Set(alias_id);
+            active.amount = Set(final_amount);
+            active.calories = Set(final_calories);
+            active.update(&txn).await?;
+            continue;
         }
 
-        // Yeni veya değişmiş yemek slotu:
-        let final_amount = if let Some(existing) = existing_map.get(&key) {
-            amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone())
-        } else {
-            amount
-        };
-
-        let final_calories = if let Some(existing) = existing_map.get(&key) {
-            calories.or(existing.calories)
-        } else {
-            calories
-        };
-
+        // Veritabanında daha önce hiç olmayan yepyeni bir slot ise insert et:
         let link = menu_dishes::ActiveModel {
             menu_id: Set(menu_id),
             dish_alias_id: Set(alias_id),
             order_index: Set(order_index),
             is_alternative: Set(is_alternative),
             package_name: Set(package_name),
-            amount: Set(final_amount),
-            calories: Set(final_calories),
+            amount: Set(amount),
+            calories: Set(calories),
             ..Default::default()
         };
         link.insert(&txn).await?;
@@ -1260,18 +1246,11 @@ pub async fn upsert_menu(
     Ok(true)
 }
 
-pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<i32> {
-    // 1. XSS sanitization
+pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<(i32, i32)> {
     let sanitized = sanitize_dish_name(raw_name);
-    // 2. Kanonik isim normalizasyonu
     let canonical_name = crate::parser::normalizer::normalize_food_name(&sanitized);
-
-    // Kategori belirtilmemişse akıllı kural motoruyla otomatik belirle
     let final_category = category.or_else(|| shared::services::categorizer::categorize_dish(&canonical_name));
 
-    // Atomik işlem:
-    // 1. Ana dish'i (yemek) normalize edilmiş kanonik isimle arar veya oluşturur (LOWER(TRIM(name)) tekilliği ile).
-    // 2. Takma adı (sanitized raw alias) bu ana yemeğe bağlar.
     let stmt = sea_orm::Statement::from_sql_and_values(
         sea_orm::DbBackend::Postgres,
         r#"
@@ -1283,7 +1262,7 @@ pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_na
         INSERT INTO dish_aliases (name, dish_id)
         VALUES ($3, (SELECT id FROM upsert_dish))
         ON CONFLICT (name) DO UPDATE SET dish_id = COALESCE(dish_aliases.dish_id, EXCLUDED.dish_id)
-        RETURNING id
+        RETURNING id, dish_id
         "#,
         vec![canonical_name.into(), final_category.into(), sanitized.into()],
     );
@@ -1292,7 +1271,8 @@ pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_na
     
     if let Some(row) = query_res {
         let alias_id: i32 = row.try_get("", "id")?;
-        Ok(alias_id)
+        let dish_id: i32 = row.try_get("", "dish_id")?;
+        Ok((alias_id, dish_id))
     } else {
         Err(anyhow::anyhow!("Upsert işlemi alias ID döndüremedi."))
     }

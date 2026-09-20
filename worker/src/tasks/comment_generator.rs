@@ -52,7 +52,9 @@ impl LlmProvider {
         if let Ok(key) = std::env::var("GEMINI_API_KEY") {
             if !key.trim().is_empty() {
                 let model = std::env::var("GEMINI_MODEL")
-                    .unwrap_or_else(|_| "gemini-flash-latest".to_string());
+                    .ok()
+                    .filter(|s| !s.trim().is_empty())
+                    .unwrap_or_else(|| "gemini-flash-latest".to_string());
                 return Some(Self::Gemini {
                     api_key: key.trim().to_string(),
                     model,

@@ -215,7 +215,10 @@ Ensure every day present in the document is extracted into the 'days' array with
 If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
 Output strictly conforming to the requested JSON schema.";
 
-    let model_name = std::env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-flash-latest".to_string());
+    let model_name = std::env::var("GEMINI_MODEL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "gemini-2.5-flash".to_string());
     
     let payload = json!({
         "model": model_name,
