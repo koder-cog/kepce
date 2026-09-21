@@ -140,6 +140,18 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
     }
     if let Some(steps) = json_res.get("steps").and_then(|s| s.as_array()) {
         for step in steps.iter().rev() {
+            // Interactions API: model çıktısı `steps[].content[].text` alanındadır
+            // (adım tipi `model_output`). Bu şekil eskiden kontrol edilmediği için
+            // metin çıkarılamıyor ve ham zarf ayrıştırıcıya veriliyordu ("0 gün").
+            if let Some(content) = step.get("content").and_then(|c| c.as_array()) {
+                for part in content.iter().rev() {
+                    if let Some(t) = part.get("text").and_then(|t| t.as_str()) {
+                        if !t.trim().is_empty() {
+                            return Some(t.to_string());
+                        }
+                    }
+                }
+            }
             if let Some(t) = step.get("text").and_then(|t| t.as_str()) {
                 if !t.trim().is_empty() {
                     return Some(t.to_string());
@@ -186,6 +198,29 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
         }
     }
     None
+}
+
+/// Yanıt zarfının şekli bilinmese bile içinde `days` anahtarı taşıyan ilk JSON
+/// nesnesini bulur. `extract_response_text()` bilinen şekilleri çözemediğinde
+/// son çare olarak kullanılır; böylece API zarfı değişse de ayrıştırma kırılmaz.
+fn find_menu_json_deep(value: &serde_json::Value) -> Option<String> {
+    match value {
+        serde_json::Value::Object(map) => {
+            if map.contains_key("days") {
+                return Some(serde_json::Value::Object(map.clone()).to_string());
+            }
+            map.values().find_map(find_menu_json_deep)
+        }
+        serde_json::Value::Array(items) => items.iter().find_map(find_menu_json_deep),
+        // Menü JSON'u bazı yanıtlarda string olarak gömülü olabilir.
+        serde_json::Value::String(s) => {
+            let cleaned = clean_json_markdown(s);
+            serde_json::from_str::<serde_json::Value>(cleaned)
+                .ok()
+                .and_then(|parsed| find_menu_json_deep(&parsed))
+        }
+        _ => None,
+    }
 }
 
 fn clean_json_markdown(raw: &str) -> &str {
@@ -315,8 +350,9 @@ Output strictly conforming to the requested JSON schema.";
                 }
 
                 if let Ok(json_res) = serde_json::from_str::<serde_json::Value>(&text_res) {
-                    let extracted =
-                        extract_response_text(&json_res).unwrap_or_else(|| text_res.clone());
+                    let extracted = extract_response_text(&json_res)
+                        .or_else(|| find_menu_json_deep(&json_res))
+                        .unwrap_or_else(|| text_res.clone());
                     let cleaned = clean_json_markdown(&extracted);
 
                     tracing::debug!("LLM Raw Response: {}", cleaned);
@@ -377,3 +413,50 @@ Output strictly conforming to the requested JSON schema.";
 }
 
 pub use parse_document_with_llm as parse_pdf_with_llm;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Gerçek Interactions API zarfları `steps[].content[].text` içinde metin taşır.
+    /// Bu test, kaydedilmiş canlı yanıt şeklini (21.09.2026 canlı çalıştırma) taklit eder.
+    #[test]
+    fn test_extract_text_from_interactions_envelope() {
+        let envelope = serde_json::json!({
+            "status": "completed",
+            "object": "interaction",
+            "model": "gemini-flash-lite-latest",
+            "steps": [
+                { "type": "thought", "signature": "abc123" },
+                {
+                    "type": "model_output",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "{\"days\":[{\"date\":\"14.09.2026\",\"meal_type\":\"dinner\",\"items\":[{\"name\":\"Mercimek Çorbası\",\"amount\":\"250 gr\"}]}]}"
+                        }
+                    ]
+                }
+            ]
+        });
+
+        let text = extract_response_text(&envelope).expect("metin çıkarılabilmeli");
+        assert!(text.contains("Mercimek Çorbası"));
+
+        let db = crate::parser::json::parse_json_str(&text, "test.pdf").expect("parse edilmeli");
+        assert_eq!(db.len(), 1, "bir gün ayrıştırılmalı");
+    }
+
+    /// Zarf şekli tanınmasa bile derin arama `days` nesnesini bulmalı.
+    #[test]
+    fn test_deep_search_fallback_finds_days_object() {
+        let odd = serde_json::json!({
+            "unexpected": { "nested": [ { "days": [ { "date": "2026-09-14", "items": [ { "name": "X" } ] } ] } ] }
+        });
+
+        assert!(extract_response_text(&odd).is_none());
+        let found = find_menu_json_deep(&odd).expect("days nesnesi bulunmalı");
+        assert!(found.contains("\"days\""));
+        assert!(crate::parser::json::parse_json_str(&found, "test.pdf").is_ok());
+    }
+}
