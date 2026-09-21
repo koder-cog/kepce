@@ -236,15 +236,9 @@ async fn main() -> anyhow::Result<()> {
     // Gemini model erişilebilirlik kontrolü (startup)
     // gemini model kontrolü (0 rpd / 0 token harcayan saf metadata get sorgusu)
     if let Some(ref api_key) = gemini_api_key {
-        let model_name = env::var("GEMINI_MODEL")
-            .ok()
-            .filter(|s| !s.trim().is_empty())
-            .unwrap_or_else(|| "gemini-flash-lite-latest".to_string());
-
-        let clean_model = model_name
-            .trim()
-            .strip_prefix("models/")
-            .unwrap_or(model_name.trim());
+        // Model adı tek kaynaktan çözülür (bkz. parser::llm::resolve_gemini_model):
+        // startup doğrulaması ile gerçek ayrıştırma çağrısı aynı varsayılana düşer.
+        let clean_model = crate::parser::llm::resolve_gemini_model();
         let check_url = format!(
             "https://generativelanguage.googleapis.com/v1beta/models/{}",
             clean_model

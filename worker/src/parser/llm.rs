@@ -203,6 +203,27 @@ fn clean_json_markdown(raw: &str) -> &str {
     trimmed
 }
 
+/// Geçerli Gemini model adı için tek kaynak (single source of truth).
+/// `GEMINI_MODEL` boş/ayarsızsa bu varsayılana düşülür.
+pub const DEFAULT_GEMINI_MODEL: &str = "gemini-flash-latest";
+
+/// `GEMINI_MODEL` ortam değişkenini çözer ve temizler.
+///
+/// Başlangıç (startup) erişilebilirlik kontrolü ile gerçek ayrıştırma çağrısı
+/// aynı fonksiyonu kullanır; böylece ikisinin farklı varsayılanlara düşüp
+/// "metadata doğrulandı [OK] ama ayrıştırma 404" gibi sessiz uyumsuzluk
+/// üretmesi yapısal olarak imkânsız hale gelir.
+pub fn resolve_gemini_model() -> String {
+    let raw = std::env::var("GEMINI_MODEL").unwrap_or_default();
+    let trimmed = raw.trim();
+    let clean = trimmed.strip_prefix("models/").unwrap_or(trimmed);
+    if clean.is_empty() {
+        DEFAULT_GEMINI_MODEL.to_string()
+    } else {
+        clean.to_string()
+    }
+}
+
 pub async fn parse_document_with_llm(
     client: &Client,
     api_key: &str,
@@ -233,10 +254,7 @@ Ensure every day present in the document is extracted into the 'days' array with
 If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
 Output strictly conforming to the requested JSON schema.";
 
-    let model_name = std::env::var("GEMINI_MODEL")
-        .ok()
-        .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "gemini-flash".to_string());
+    let model_name = resolve_gemini_model();
 
     let input_type = if mime_type == "application/pdf" {
         "document"
@@ -310,6 +328,20 @@ Output strictly conforming to the requested JSON schema.";
 
                     match crate::parser::json::parse_json_str(cleaned, file_name_hint) {
                         Ok(mut db) => {
+                            if db.is_empty() {
+                                // Boş sonuç = sessiz ayrıştırma başarısızlığı. Yanıt zarfı
+                                // çözülemediğinde ham gövde ayrıştırıcıya verilir; `days`
+                                // alanı `#[serde(default)]` olduğu için boş menü "başarılı"
+                                // sayılır. Sahte başarı dosyayı vault'a taşıyıp veriyi sessizce
+                                // kaybettirir; bunun yerine hata döndürerek görünür kıl.
+                                tracing::warn!(
+                                    "  Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
+                                    cleaned.chars().take(500).collect::<String>()
+                                );
+                                last_error = "Ayrıştırma 0 gün döndürdü (boş menü; LLM yanıt zarfı çözülememiş olabilir)".to_string();
+                                continue;
+                            }
+
                             for day_data in db.values_mut() {
                                 crate::parser::validation::finalize_day_metadata(day_data);
                             }

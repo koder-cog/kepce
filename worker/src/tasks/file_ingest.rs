@@ -5,6 +5,33 @@ use shared::entities::cities;
 use std::env;
 use std::path::PathBuf;
 
+/// Ağ/servis kaynaklı **geçici** hataları ayırt eder.
+///
+/// Geçici hatada dosya `bekleyen` klasöründe bırakılır ve sonraki tarama
+/// döngüsünde yeniden denenir. Kalıcı hatada ise `hatali` klasörüne taşınır.
+/// (Örn. Gemini 503 "high demand" / 429 "rate limit" geçicidir; tek denemede
+/// kalıcı sayılıp `hatali` klasörüne atılması veri kaybına yol açar.)
+fn is_transient_error(err_msg: &str) -> bool {
+    const TRANSIENT_MARKERS: [&str; 13] = [
+        "timeout",
+        "geçici api hatası",
+        "istek atılamadı",
+        "service unavailable",
+        "service_unavailable",
+        "503",
+        "429",
+        "too many requests",
+        "rate limit",
+        "rate_limit",
+        "high demand",
+        "overloaded",
+        "temporarily",
+    ];
+    TRANSIENT_MARKERS
+        .iter()
+        .any(|marker| err_msg.contains(marker))
+}
+
 pub async fn process_local_files(
     db: &DatabaseConnection,
     reqwest_client: &reqwest::Client,
@@ -144,10 +171,7 @@ pub async fn process_local_files(
                     }
                     Err(e) => {
                         let err_msg = format!("{:?}", e).to_lowercase();
-                        if err_msg.contains("timeout")
-                            || err_msg.contains("geçici api hatası")
-                            || err_msg.contains("istek atılamadı")
-                        {
+                        if is_transient_error(&err_msg) {
                             tracing::error!(
                                 "{}: Geçici ağ/API hatası, dosya kuyrukta bekletilecek: {:?}",
                                 filename,
