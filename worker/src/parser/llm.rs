@@ -238,16 +238,24 @@ Output strictly conforming to the requested JSON schema.";
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| "gemini-flash".to_string());
 
+    let input_type = if mime_type == "application/pdf" {
+        "document"
+    } else {
+        "image"
+    };
+
     let payload = json!({
         "model": model_name,
         "store": false,
         "input": [
             {
-                "role": "user",
-                "parts": [
-                    {"text": prompt},
-                    {"inlineData": {"mimeType": mime_type, "data": base64_data}}
-                ]
+                "type": "text",
+                "text": prompt
+            },
+            {
+                "type": input_type,
+                "mime_type": mime_type,
+                "data": base64_data
             }
         ],
         "response_format": {
