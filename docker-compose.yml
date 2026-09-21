@@ -30,7 +30,7 @@ services:
     networks:
       - backend-net
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 5s
       timeout: 5s
       retries: 5
@@ -93,7 +93,6 @@ services:
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
       - OPENROUTER_REASONING_EFFORT=${OPENROUTER_REASONING_EFFORT:-}
       - RUST_LOG=${RUST_LOG:-info}
-      # IndexNow otomasyonu (Faz 1.6): boş/atanmamışsa özellik kapalı
       - INDEXNOW_KEY=${INDEXNOW_KEY:-}
       - INDEXNOW_HOST=${INDEXNOW_HOST:-kepce.org}
       - INDEXNOW_ENDPOINT=${INDEXNOW_ENDPOINT:-https://api.indexnow.org/indexnow}
@@ -103,7 +102,7 @@ services:
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:iletisim@kepce.org}
     volumes:
-      - menuler:/app/data/menuler
+      - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads
       - ./config:/app/config:ro
     networks:
