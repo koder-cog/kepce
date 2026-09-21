@@ -240,13 +240,15 @@ Output strictly conforming to the requested JSON schema.";
 
     let payload = json!({
         "model": model_name,
-        // KVKK veri minimizasyonu: Interactions API varsayılan olarak istekleri
-        // sunucu tarafında saklar (store=true). Kullanıcı menü belgelerinin
-        // Google tarafında tutulmaması için stateless mod zorunlu kılınır.
         "store": false,
         "input": [
-            {"text": prompt},
-            {"inlineData": {"mimeType": mime_type, "data": base64_data}}
+            {
+                "role": "user",
+                "parts": [
+                    {"text": prompt},
+                    {"inlineData": {"mimeType": mime_type, "data": base64_data}}
+                ]
+            }
         ],
         "response_format": {
             "type": "text",
