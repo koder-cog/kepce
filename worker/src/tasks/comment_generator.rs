@@ -273,7 +273,7 @@ YASAKLAR (Türkçe İmla):
                 "generationConfig": {
                     "responseMimeType": "application/json",
                     "responseSchema": schema,
-                    "temperature": 0.7
+                    "temperature": 1
                 }
             });
 

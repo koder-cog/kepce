@@ -8,7 +8,7 @@ use std::path::PathBuf;
 pub async fn process_local_files(db: &DatabaseConnection, reqwest_client: &reqwest::Client, gemini_api_key: Option<&str>) -> Result<()> {
     let base_dir = env::var("WORKER_MENU_DIR").unwrap_or_else(|_| "../data/menuler".to_string());
     
-    let configs = ["admin", "kullanici"];
+    let configs = ["admin", "kullanici", "anonim"];
     let mut processed = 0;
 
     for folder in configs.iter() {
