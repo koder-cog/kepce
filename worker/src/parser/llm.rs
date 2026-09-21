@@ -236,7 +236,7 @@ Output strictly conforming to the requested JSON schema.";
     let model_name = std::env::var("GEMINI_MODEL")
         .ok()
         .filter(|s| !s.trim().is_empty())
-        .unwrap_or_else(|| "gemini-2.5-flash".to_string());
+        .unwrap_or_else(|| "gemini-flash".to_string());
 
     let payload = json!({
         "model": model_name,
