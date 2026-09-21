@@ -4,13 +4,15 @@
 //! işler ve anlık sistem durumu/işlem yanıtlarını döner. Dışa açık port veya
 //! webhook sertifikası gerektirmez.
 
-
-use std::time::Duration;
-use sea_orm::*;
-use serde_json::json;
 use chrono::Local;
 use reqwest::Client;
-use shared::entities::{cities, menus, sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum}};
+use sea_orm::*;
+use serde_json::json;
+use shared::entities::{
+    cities, menus,
+    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
+};
+use std::time::Duration;
 
 /// Telegram botuna Markdown formatında yanıt gönderir.
 async fn send_reply(client: &Client, bot_token: &str, chat_id: i64, text: &str) {
@@ -34,14 +36,14 @@ pub async fn run_telegram_bot_loop(
     let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
         Ok(t) if !t.trim().is_empty() => t.trim().to_string(),
         _ => {
-            tracing::info!("[TELEGRAM-BOT] TELEGRAM_BOT_TOKEN tanımlı değil. Bot döngüsü başlatılmadı.");
+            tracing::info!(
+                "[TELEGRAM-BOT] TELEGRAM_BOT_TOKEN tanımlı değil. Bot döngüsü başlatılmadı."
+            );
             return Ok(());
         }
     };
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(35))
-        .build()?;
+    let client = Client::builder().timeout(Duration::from_secs(35)).build()?;
 
     let mut offset: i64 = 0;
     tracing::info!("[TELEGRAM-BOT] İki yönlü Telegram operatör botu aktif. Dinleniyor...");
@@ -217,7 +219,9 @@ Kullanabileceğiniz komutlar:\n\
                 Ok(items) if !items.is_empty() => {
                     let mut lines = vec!["📋 *Sisteme Eklenen Son 5 Menü:*".to_string()];
                     for (m, city_opt) in items {
-                        let city_name = city_opt.map(|c| c.name).unwrap_or_else(|| "Bilinmeyen".to_string());
+                        let city_name = city_opt
+                            .map(|c| c.name)
+                            .unwrap_or_else(|| "Bilinmeyen".to_string());
                         let meal = match m.meal_type {
                             MealTypeEnum::Breakfast => "Kahvaltı",
                             MealTypeEnum::Lunch => "Öğle",
@@ -242,7 +246,7 @@ Kullanabileceğiniz komutlar:\n\
         cmd if cmd.starts_with("/tara") || cmd.starts_with("tara") => {
             let specific_city = parts.get(1).copied();
             let target_desc = specific_city.unwrap_or("Tüm aktif şehirler");
-            
+
             send_reply(
                 client,
                 bot_token,
@@ -257,7 +261,12 @@ Kullanabileceğiniz komutlar:\n\
 
             tokio::spawn(async move {
                 let start_time = std::time::Instant::now();
-                let scrape_res = crate::tasks::scraper::scrape_today_menus(&db_clone, &client_scraper, shutdown_clone).await;
+                let scrape_res = crate::tasks::scraper::scrape_today_menus(
+                    &db_clone,
+                    &client_scraper,
+                    shutdown_clone,
+                )
+                .await;
                 let elapsed = start_time.elapsed().as_secs();
 
                 let finish_msg = match scrape_res {
@@ -265,7 +274,10 @@ Kullanabileceğiniz komutlar:\n\
                         format!("✅ *Manuel Kazıma Tamamlandı!*\n• Kaydedilen/Güncellenen: `{}` menü\n• Geçen süre: `{} sn`", count, elapsed)
                     }
                     Err(e) => {
-                        format!("❌ *Manuel Kazıma Sırasında Hata Oluştu!*\nHata detayı: `{:?}`", e)
+                        format!(
+                            "❌ *Manuel Kazıma Sırasında Hata Oluştu!*\nHata detayı: `{:?}`",
+                            e
+                        )
                     }
                 };
 
@@ -287,7 +299,8 @@ Kullanabileceğiniz komutlar:\n\
 
             tokio::spawn(async move {
                 let start_time = std::time::Instant::now();
-                let gen_res = crate::tasks::comment_generator::run_comment_generation(&db_clone).await;
+                let gen_res =
+                    crate::tasks::comment_generator::run_comment_generation(&db_clone).await;
                 let elapsed = start_time.elapsed().as_secs();
 
                 let finish_msg = match gen_res {
@@ -295,7 +308,10 @@ Kullanabileceğiniz komutlar:\n\
                         format!("✅ *Yorum Üretimi Tamamlandı!*\n• Güncellenen menü: `{}` adet\n• Geçen süre: `{} sn`", count, elapsed)
                     }
                     Err(e) => {
-                        format!("❌ *Yorum Üretimi Sırasında Hata Oluştu!*\nHata detayı: `{:?}`", e)
+                        format!(
+                            "❌ *Yorum Üretimi Sırasında Hata Oluştu!*\nHata detayı: `{:?}`",
+                            e
+                        )
                     }
                 };
 

@@ -1,5 +1,7 @@
 //! Dinamik Open Graph (OG) görsel üretim endpoint'leri.
 
+use crate::config::AppState;
+use crate::services::og_image::{render_og_card, render_og_profile};
 use axum::{
     extract::{Path, Query, State},
     http::{header, StatusCode},
@@ -7,16 +9,13 @@ use axum::{
     routing::get,
     Router,
 };
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use chrono::{Datelike, NaiveDate};
 use sea_orm::*;
 use shared::entities::{
-    cities, comments, menu_dishes, menus, users, vote_reactions,
-    sea_orm_active_enums::MealTypeEnum,
+    cities, comments, menu_dishes, menus, sea_orm_active_enums::MealTypeEnum, users, vote_reactions,
 };
-use chrono::{Datelike, NaiveDate};
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use std::path::Path as StdPath;
-use crate::config::AppState;
-use crate::services::og_image::{render_og_card, render_og_profile};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -38,8 +37,8 @@ pub fn router() -> Router<AppState> {
 
 fn format_turkish_date(date: NaiveDate) -> String {
     let months = [
-        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim",
+        "Kasım", "Aralık",
     ];
     let month_name = months.get(date.month0() as usize).unwrap_or(&"");
     format!("{} {} {}", date.day(), month_name, date.year())
@@ -67,7 +66,7 @@ async fn get_menu_og(
 
     let city_name = menu.1.map(|c| c.name).unwrap_or_else(|| "Menü".to_string());
     let menu_data = menu.0;
-    
+
     let date_str = format_turkish_date(menu_data.serve_date);
     let meal_str = format_meal_type(&menu_data.meal_type);
     let sub1 = format!("{} · {}", date_str, meal_str);
@@ -86,20 +85,20 @@ async fn get_menu_og(
         (None, None) => format!("{} Çeşit Yemek", dish_count),
     };
 
-    let png_bytes = render_og_card(
-        Some(&city_name),
-        &sub1,
-        Some(&sub2),
-        Some("Öğün"),
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let png_bytes = render_og_card(Some(&city_name), &sub1, Some(&sub2), Some("Öğün"))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((
         [
             (header::CONTENT_TYPE, "image/png"),
-            (header::CACHE_CONTROL, "public, max-age=86400, s-maxage=604800"),
+            (
+                header::CACHE_CONTROL,
+                "public, max-age=86400, s-maxage=604800",
+            ),
         ],
         png_bytes,
-    ).into_response())
+    )
+        .into_response())
 }
 
 /// 2. Günlük Şehir Menüsü OG Kartı (/:city_slug)
@@ -146,7 +145,10 @@ async fn get_city_og(
     }
 
     let sub2 = if total_dishes > 0 && has_cal {
-        format!("{} Çeşit Yemek · {}-{} kkal", total_dishes, total_min, total_max)
+        format!(
+            "{} Çeşit Yemek · {}-{} kkal",
+            total_dishes, total_min, total_max
+        )
     } else if total_dishes > 0 {
         format!("{} Çeşit Yemek", total_dishes)
     } else {
@@ -158,15 +160,20 @@ async fn get_city_og(
         &date_str,
         Some(&sub2),
         Some("Günlük Menü"),
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    )
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((
         [
             (header::CONTENT_TYPE, "image/png"),
-            (header::CACHE_CONTROL, "public, max-age=86400, s-maxage=604800"),
+            (
+                header::CACHE_CONTROL,
+                "public, max-age=86400, s-maxage=604800",
+            ),
         ],
         png_bytes,
-    ).into_response())
+    )
+        .into_response())
 }
 
 /// 3. Tartışma Akışı OG Kartı (/thread/:thread_id)
@@ -181,7 +188,10 @@ async fn get_thread_og(
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
         .ok_or(StatusCode::NOT_FOUND)?;
 
-    let author_name = comment.1.map(|u| u.username).unwrap_or_else(|| "anonim".to_string());
+    let author_name = comment
+        .1
+        .map(|u| u.username)
+        .unwrap_or_else(|| "anonim".to_string());
     let comment_data = comment.0;
 
     // Menü bilgisi
@@ -217,20 +227,20 @@ async fn get_thread_og(
 
     let sub2 = format!("{} Yorum · {} Oy", reply_count + 1, vote_count);
 
-    let png_bytes = render_og_card(
-        Some(&title),
-        &sub1,
-        Some(&sub2),
-        Some("Tartışma"),
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let png_bytes = render_og_card(Some(&title), &sub1, Some(&sub2), Some("Tartışma"))
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((
         [
             (header::CONTENT_TYPE, "image/png"),
-            (header::CACHE_CONTROL, "public, max-age=3600, s-maxage=86400"),
+            (
+                header::CACHE_CONTROL,
+                "public, max-age=3600, s-maxage=86400",
+            ),
         ],
         png_bytes,
-    ).into_response())
+    )
+        .into_response())
 }
 
 /// 4. Kullanıcı Profili OG Kartı (/biri/:username) - eski /user/:username yolu da desteklenir
@@ -247,8 +257,8 @@ async fn get_user_og(
         .ok_or(StatusCode::NOT_FOUND)?;
 
     let months = [
-        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-        "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık",
+        "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim",
+        "Kasım", "Aralık",
     ];
     let joined_str = if let Some(created) = user.created_at {
         let month_name = months.get(created.month0() as usize).unwrap_or(&"");
@@ -283,15 +293,20 @@ async fn get_user_og(
         &karma_sub,
         avatar_b64.as_deref(),
         "Kullanıcı Profili",
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    )
+    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((
         [
             (header::CONTENT_TYPE, "image/png"),
-            (header::CACHE_CONTROL, "public, max-age=3600, s-maxage=86400"),
+            (
+                header::CACHE_CONTROL,
+                "public, max-age=3600, s-maxage=86400",
+            ),
         ],
         png_bytes,
-    ).into_response())
+    )
+        .into_response())
 }
 
 /// 5. Statik ve Genel Sayfalar OG Kartı (/page/:page_slug)
@@ -409,12 +424,8 @@ async fn get_page_og(
         _ => return Err(StatusCode::NOT_FOUND),
     };
 
-    let png_bytes = render_og_card(
-        title,
-        sub1,
-        None,
-        badge,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let png_bytes =
+        render_og_card(title, sub1, None, badge).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((
         [
@@ -422,7 +433,8 @@ async fn get_page_og(
             (header::CACHE_CONTROL, cache_control),
         ],
         png_bytes,
-    ).into_response())
+    )
+        .into_response())
 }
 
 #[derive(serde::Deserialize)]
@@ -433,25 +445,23 @@ pub struct TrayOgQuery {
 }
 
 /// 6. KYK Tepsi Simülatörü OG Kartı (/tepsi?title=...&sub1=...&sub2=...)
-async fn get_tray_og(
-    Query(query): Query<TrayOgQuery>,
-) -> Result<Response, StatusCode> {
+async fn get_tray_og(Query(query): Query<TrayOgQuery>) -> Result<Response, StatusCode> {
     let title = query.title.as_deref().unwrap_or("KYK Tepsisi");
     let sub1 = query.sub1.as_deref().unwrap_or("Kepçe Tepsi Simülatörü");
     let sub2 = query.sub2.as_deref();
 
-    let png_bytes = render_og_card(
-        Some(title),
-        sub1,
-        sub2,
-        None,
-    ).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let png_bytes = render_og_card(Some(title), sub1, sub2, None)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     Ok((
         [
             (header::CONTENT_TYPE, "image/png"),
-            (header::CACHE_CONTROL, "public, max-age=86400, s-maxage=604800"),
+            (
+                header::CACHE_CONTROL,
+                "public, max-age=86400, s-maxage=604800",
+            ),
         ],
         png_bytes,
-    ).into_response())
+    )
+        .into_response())
 }

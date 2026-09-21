@@ -59,7 +59,9 @@ impl IntoResponse for AppError {
 impl From<crate::services::user::UserError> for AppError {
     fn from(err: crate::services::user::UserError) -> Self {
         match err {
-            crate::services::user::UserError::NotFound => AppError::NotFound("User not found".to_string()),
+            crate::services::user::UserError::NotFound => {
+                AppError::NotFound("User not found".to_string())
+            }
             crate::services::user::UserError::DatabaseError(e) => {
                 tracing::error!("Database error in UserService: {}", e);
                 AppError::Internal("Database error".to_string())
@@ -71,10 +73,18 @@ impl From<crate::services::user::UserError> for AppError {
 impl From<crate::services::developer::DeveloperError> for AppError {
     fn from(err: crate::services::developer::DeveloperError) -> Self {
         match err {
-            crate::services::developer::DeveloperError::NotFound => AppError::NotFound("Bulunamadı".to_string()),
-            crate::services::developer::DeveloperError::Unauthorized => AppError::Forbidden("Yetkisiz işlem".to_string()),
-            crate::services::developer::DeveloperError::UnverifiedUser => AppError::Forbidden("Proje veya API anahtarı oluşturmak için e-postanızı onaylamalısınız.".to_string()),
-            crate::services::developer::DeveloperError::InvalidInput(msg) => AppError::BadRequest(msg),
+            crate::services::developer::DeveloperError::NotFound => {
+                AppError::NotFound("Bulunamadı".to_string())
+            }
+            crate::services::developer::DeveloperError::Unauthorized => {
+                AppError::Forbidden("Yetkisiz işlem".to_string())
+            }
+            crate::services::developer::DeveloperError::UnverifiedUser => AppError::Forbidden(
+                "Proje veya API anahtarı oluşturmak için e-postanızı onaylamalısınız.".to_string(),
+            ),
+            crate::services::developer::DeveloperError::InvalidInput(msg) => {
+                AppError::BadRequest(msg)
+            }
             crate::services::developer::DeveloperError::DatabaseError(e) => {
                 tracing::error!("Database error in DeveloperService: {}", e);
                 AppError::Internal("Veritabanı hatası".to_string())
@@ -82,4 +92,3 @@ impl From<crate::services::developer::DeveloperError> for AppError {
         }
     }
 }
-

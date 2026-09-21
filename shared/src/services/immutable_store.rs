@@ -1,7 +1,7 @@
-use sea_orm::*;
 use crate::entities::menus;
-use sha2::{Sha256, Digest};
 use chrono::NaiveDate;
+use sea_orm::*;
+use sha2::{Digest, Sha256};
 
 pub struct ImmutableStore;
 
@@ -20,7 +20,7 @@ impl ImmutableStore {
             .map(|id| id.to_string())
             .collect::<Vec<String>>()
             .join(",");
-        
+
         let payload = format!(
             "{}:{}:{}:{}:{}",
             serve_date.format("%Y-%m-%d"),
@@ -33,7 +33,10 @@ impl ImmutableStore {
         let mut hasher = Sha256::new();
         hasher.update(payload.as_bytes());
         let result = hasher.finalize();
-        result.iter().map(|b| format!("{:02x}", b)).collect::<String>()
+        result
+            .iter()
+            .map(|b| format!("{:02x}", b))
+            .collect::<String>()
     }
 
     /// Retrieve the previous menu hash in the chain for the same city and meal type
@@ -50,15 +53,12 @@ impl ImmutableStore {
             .order_by_desc(menus::Column::ServeDate)
             .one(db)
             .await?;
-        
+
         Ok(prev_menu.and_then(|m| m.merkle_root))
     }
 
     /// Calculate the menu hash and write it along with previous_hash into the database
-    pub async fn write_menu_hash(
-        db: &DatabaseConnection,
-        menu_id: i32,
-    ) -> Result<String, DbErr> {
+    pub async fn write_menu_hash(db: &DatabaseConnection, menu_id: i32) -> Result<String, DbErr> {
         use crate::entities::menu_dishes;
 
         let menu_model = menus::Entity::find_by_id(menu_id)
@@ -74,7 +74,13 @@ impl ImmutableStore {
 
         let sorted_dish_ids: Vec<i32> = dishes.iter().map(|d| d.dish_alias_id).collect();
 
-        let prev_hash = Self::get_previous_hash(db, menu_model.city_id, &menu_model.meal_type, menu_model.serve_date).await?;
+        let prev_hash = Self::get_previous_hash(
+            db,
+            menu_model.city_id,
+            &menu_model.meal_type,
+            menu_model.serve_date,
+        )
+        .await?;
 
         let meal_type_str = match menu_model.meal_type {
             crate::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => "breakfast",
@@ -116,7 +122,7 @@ impl ImmutableStore {
 
         for menu in menus_to_update {
             // write_menu_hash already relies on get_previous_hash.
-            // Since we iterate in ascending order, each menu will automatically pick up 
+            // Since we iterate in ascending order, each menu will automatically pick up
             // the newly recalculated hash from the previous menu in the loop.
             Self::write_menu_hash(db, menu.id).await?;
         }
@@ -134,10 +140,10 @@ mod tests {
     fn test_compute_menu_hash_genesis() {
         let date = NaiveDate::from_ymd_opt(2026, 7, 14).unwrap();
         let dishes = vec![1, 2, 3];
-        
+
         let hash1 = ImmutableStore::compute_menu_hash(date, 1, "lunch", &dishes, None);
         let hash2 = ImmutableStore::compute_menu_hash(date, 1, "lunch", &dishes, None);
-        
+
         assert_eq!(hash1, hash2);
         assert_ne!(hash1, "");
     }
@@ -155,5 +161,3 @@ mod tests {
         assert_ne!(hash1, hash2);
     }
 }
-
-

@@ -51,7 +51,11 @@ impl IndexNowConfig {
             .map(|e| e.trim().to_string())
             .filter(|e| !e.is_empty())
             .unwrap_or_else(|| "https://api.indexnow.org/indexnow".to_string());
-        Some(Self { key, host, endpoint })
+        Some(Self {
+            key,
+            host,
+            endpoint,
+        })
     }
 }
 
@@ -74,7 +78,11 @@ pub async fn ping_new_day_urls(db: &DatabaseConnection, client: &Client, config:
     }
 }
 
-async fn ping_inner(db: &DatabaseConnection, client: &Client, config: &IndexNowConfig) -> Result<()> {
+async fn ping_inner(
+    db: &DatabaseConnection,
+    client: &Client,
+    config: &IndexNowConfig,
+) -> Result<()> {
     let inserted = take_inserted_menus();
     if inserted.is_empty() {
         return Ok(());

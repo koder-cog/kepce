@@ -1,14 +1,13 @@
 //! Platform istatistikleri, liderlik tabloları ve trend endpoint'leri.
-use axum::{
-    routing::get,
-    Router,
-    extract::{State, Query},
-    Json,
-};
-use crate::services::statistics::{StatisticsService, StatsError};
-use crate::services::comment::CommentService;
-use crate::dto::statistics::{TopDishDto, ModerationStatsDto, TrendingTagDto, HumanityStatsDto};
 use crate::dto::comment::CommentResponseDto;
+use crate::dto::statistics::{HumanityStatsDto, ModerationStatsDto, TopDishDto, TrendingTagDto};
+use crate::services::comment::CommentService;
+use crate::services::statistics::{StatisticsService, StatsError};
+use axum::{
+    extract::{Query, State},
+    routing::get,
+    Json, Router,
+};
 
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
@@ -22,8 +21,8 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/humanity", get(get_humanity_stats))
         .route("/dish/:dish_id/tags", get(get_dish_tags))
         .route("/comments/top", get(get_global_top_comments))
-        // NOT: /comments/recent kaldırıldı - kanonik yol /api/v1/comments/recent
-        // (comments.rs). İki handler aynı servisi çağırıyordu (duplicate).
+    // NOT: /comments/recent kaldırıldı - kanonik yol /api/v1/comments/recent
+    // (comments.rs). İki handler aynı servisi çağırıyordu (duplicate).
 }
 
 impl From<StatsError> for AppError {
@@ -37,7 +36,6 @@ impl From<StatsError> for AppError {
     }
 }
 
-
 #[derive(serde::Deserialize)]
 pub struct LimitQuery {
     pub limit: Option<u64>,
@@ -50,7 +48,9 @@ async fn get_top_dishes(
     Query(query): Query<LimitQuery>,
 ) -> Result<Json<Vec<TopDishDto>>, AppError> {
     let limit = query.limit.unwrap_or(10).min(100);
-    let dishes = StatisticsService::get_dish_leaderboard(&db, limit, true, query.city_slug, query.timeframe).await?;
+    let dishes =
+        StatisticsService::get_dish_leaderboard(&db, limit, true, query.city_slug, query.timeframe)
+            .await?;
     Ok(Json(dishes))
 }
 
@@ -59,7 +59,14 @@ async fn get_worst_dishes(
     Query(query): Query<LimitQuery>,
 ) -> Result<Json<Vec<TopDishDto>>, AppError> {
     let limit = query.limit.unwrap_or(10).min(100);
-    let dishes = StatisticsService::get_dish_leaderboard(&db, limit, false, query.city_slug, query.timeframe).await?;
+    let dishes = StatisticsService::get_dish_leaderboard(
+        &db,
+        limit,
+        false,
+        query.city_slug,
+        query.timeframe,
+    )
+    .await?;
     Ok(Json(dishes))
 }
 
@@ -102,6 +109,7 @@ async fn get_global_top_comments(
 ) -> Result<Json<Vec<CommentResponseDto>>, AppError> {
     let limit = query.limit.unwrap_or(10).min(100);
     let current_user_id = user.map(|u| u.id);
-    let comments = CommentService::get_top_comments(&db, current_user_id, limit, query.timeframe).await?;
+    let comments =
+        CommentService::get_top_comments(&db, current_user_id, limit, query.timeframe).await?;
     Ok(Json(comments))
 }

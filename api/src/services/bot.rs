@@ -79,7 +79,10 @@ impl BotService {
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(BotError::ApiError(format!("Gemini API Error: {}", error_text)));
+            return Err(BotError::ApiError(format!(
+                "Gemini API Error: {}",
+                error_text
+            )));
         }
 
         let result_json: serde_json::Value = response
@@ -87,11 +90,16 @@ impl BotService {
             .await
             .map_err(|e| BotError::NetworkError(e.to_string()))?;
 
-        if let Some(generated_text) = result_json["candidates"][0]["content"]["parts"][0]["text"].as_str() {
+        if let Some(generated_text) =
+            result_json["candidates"][0]["content"]["parts"][0]["text"].as_str()
+        {
             Ok(generated_text.trim().to_string())
         } else {
             // Hata yutmamak için logluyoruz
-            tracing::error!("Gemini JSON parsing failed. Raw response: {}", result_json.to_string());
+            tracing::error!(
+                "Gemini JSON parsing failed. Raw response: {}",
+                result_json.to_string()
+            );
             Err(BotError::ApiError("Beklenmeyen JSON formatı".into()))
         }
     }
@@ -137,7 +145,10 @@ impl BotService {
 
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
-            return Err(BotError::ApiError(format!("Gemini API Error: {}", error_text)));
+            return Err(BotError::ApiError(format!(
+                "Gemini API Error: {}",
+                error_text
+            )));
         }
 
         let result_json: Value = response

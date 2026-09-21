@@ -4,20 +4,19 @@
 //! sitemap index veri kaynaklarını sunar. Uç noktaların birçoğu HTTP önbellekleme
 //! (`Cache-Control`) başlıklarıyla desteklenir.
 
+use crate::error::AppError;
+use crate::services::city::CityService;
+use crate::services::menu::MenuService;
 use axum::{
-    routing::get,
-    Router,
-    extract::{State, Path},
+    extract::{Path, State},
     http::HeaderMap,
-    Json,
+    routing::get,
+    Json, Router,
 };
 use chrono::Utc;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde_json::{json, Value};
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
 use shared::entities::cities;
-use crate::error::AppError;
-use crate::services::menu::MenuService;
-use crate::services::city::CityService;
 
 #[derive(serde::Serialize)]
 pub struct CityResponseDto {
@@ -52,12 +51,10 @@ pub async fn get_cities(
     State(db): State<sea_orm::DatabaseConnection>,
     headers: HeaderMap,
 ) -> Result<axum::response::Response, AppError> {
-    let cities_data = CityService::get_active_cities(&db)
-        .await
-        .map_err(|e| {
-            tracing::error!("CityService Error: {:?}", e);
-            AppError::Internal("Database error".to_string())
-        })?;
+    let cities_data = CityService::get_active_cities(&db).await.map_err(|e| {
+        tracing::error!("CityService Error: {:?}", e);
+        AppError::Internal("Database error".to_string())
+    })?;
 
     let response: Vec<CityResponseDto> = cities_data
         .into_iter()
@@ -129,22 +126,25 @@ pub async fn detect_city(
             })?;
 
         if let Some(c) = city {
-            return Ok(Json(json!({"city_slug": c.slug, "city_name": c.name, "source": "cloudflare"})));
+            return Ok(Json(
+                json!({"city_slug": c.slug, "city_name": c.name, "source": "cloudflare"}),
+            ));
         }
     }
 
     // 2) Fallback - ilk şehri döndür
-    let first = cities::Entity::find()
-        .one(&db)
-        .await
-        .map_err(|e| {
-            tracing::error!("DB error fetching fallback city: {}", e);
-            AppError::Internal("DB Error".to_string())
-        })?;
+    let first = cities::Entity::find().one(&db).await.map_err(|e| {
+        tracing::error!("DB error fetching fallback city: {}", e);
+        AppError::Internal("DB Error".to_string())
+    })?;
 
     match first {
-        Some(c) => Ok(Json(json!({"city_slug": c.slug, "city_name": c.name, "source": "fallback"}))),
-        None => Ok(Json(json!({"city_slug": serde_json::Value::Null, "source": "none"}))),
+        Some(c) => Ok(Json(
+            json!({"city_slug": c.slug, "city_name": c.name, "source": "fallback"}),
+        )),
+        None => Ok(Json(
+            json!({"city_slug": serde_json::Value::Null, "source": "none"}),
+        )),
     }
 }
 
@@ -162,14 +162,13 @@ async fn get_single_menu(
 // Sitemap index için aylık bölünmüş veri kaynakları: Yalnızca id ve serve_date
 // okunur; N+1 ve gereksiz item join maliyetini önlemek için ham menü tablosu taranır.
 
-
 /// GET /api/v1/public/menus/months
 /// Onaylı menülerin bulunduğu aylar (YYYY-MM), yeniden eskiden.
 pub async fn get_menu_months(
     State(db): State<sea_orm::DatabaseConnection>,
     headers: HeaderMap,
 ) -> Result<axum::response::Response, AppError> {
-    use sea_orm::{ConnectionTrait, Statement, DatabaseBackend};
+    use sea_orm::{ConnectionTrait, DatabaseBackend, Statement};
     let rows = db
         .query_all(Statement::from_string(
             DatabaseBackend::Postgres,
@@ -203,22 +202,32 @@ pub async fn get_menu_index(
     headers: HeaderMap,
     Query(query): Query<MenuIndexQuery>,
 ) -> Result<axum::response::Response, AppError> {
-    use shared::entities::{menus, sea_orm_active_enums::MenuStatusEnum};
     use sea_orm::QuerySelect;
+    use shared::entities::{menus, sea_orm_active_enums::MenuStatusEnum};
 
     let parts: Vec<&str> = query.month.split('-').collect();
     if parts.len() != 2 {
-        return Err(AppError::BadRequest("Ay formatı YYYY-MM olmalıdır.".to_string()));
+        return Err(AppError::BadRequest(
+            "Ay formatı YYYY-MM olmalıdır.".to_string(),
+        ));
     }
-    let year: i32 = parts[0].parse().map_err(|_| AppError::BadRequest("Geçersiz yıl.".to_string()))?;
-    let month: u32 = parts[1].parse().map_err(|_| AppError::BadRequest("Geçersiz ay.".to_string()))?;
+    let year: i32 = parts[0]
+        .parse()
+        .map_err(|_| AppError::BadRequest("Geçersiz yıl.".to_string()))?;
+    let month: u32 = parts[1]
+        .parse()
+        .map_err(|_| AppError::BadRequest("Geçersiz ay.".to_string()))?;
     if !(1..=12).contains(&month) {
         return Err(AppError::BadRequest("Geçersiz ay.".to_string()));
     }
 
     let start = chrono::NaiveDate::from_ymd_opt(year, month, 1)
         .ok_or_else(|| AppError::BadRequest("Geçersiz ay.".to_string()))?;
-    let (next_y, next_m) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let (next_y, next_m) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
     let end = chrono::NaiveDate::from_ymd_opt(next_y, next_m, 1)
         .ok_or_else(|| AppError::BadRequest("Geçersiz ay.".to_string()))?;
 
@@ -239,7 +248,11 @@ pub async fn get_menu_index(
 
     // Geçmiş aylar değişmez → uzun cache; güncel ay kısa cache
     let now_month = chrono::Utc::now().format("%Y-%m").to_string();
-    let ttl: u32 = if query.month == now_month { 3600 } else { 86400 };
+    let ttl: u32 = if query.month == now_month {
+        3600
+    } else {
+        86400
+    };
     crate::utils::response::cached_json_response(&headers, &items, ttl)
 }
 
@@ -251,15 +264,21 @@ pub async fn get_menu_days(
     headers: HeaderMap,
     Query(query): Query<MenuIndexQuery>,
 ) -> Result<axum::response::Response, AppError> {
-    use sea_orm::{ConnectionTrait, Statement, DatabaseBackend};
+    use sea_orm::{ConnectionTrait, DatabaseBackend, Statement};
 
     let parts: Vec<&str> = query.month.split('-').collect();
     if parts.len() != 2 {
-        return Err(AppError::BadRequest("Ay formatı YYYY-MM olmalıdır.".to_string()));
+        return Err(AppError::BadRequest(
+            "Ay formatı YYYY-MM olmalıdır.".to_string(),
+        ));
     }
     // Yıl bileşeni yalnızca format doğrulaması için ayrıştırılır (sorgu ay bazlı).
-    let _year: i32 = parts[0].parse().map_err(|_| AppError::BadRequest("Geçersiz yıl.".to_string()))?;
-    let month: u32 = parts[1].parse().map_err(|_| AppError::BadRequest("Geçersiz ay.".to_string()))?;
+    let _year: i32 = parts[0]
+        .parse()
+        .map_err(|_| AppError::BadRequest("Geçersiz yıl.".to_string()))?;
+    let month: u32 = parts[1]
+        .parse()
+        .map_err(|_| AppError::BadRequest("Geçersiz ay.".to_string()))?;
     if !(1..=12).contains(&month) {
         return Err(AppError::BadRequest("Geçersiz ay.".to_string()));
     }
@@ -290,7 +309,11 @@ pub async fn get_menu_days(
 
     // Geçmiş aylar değişmez → uzun cache; güncel ay kısa cache
     let now_month = chrono::Utc::now().format("%Y-%m").to_string();
-    let ttl: u32 = if query.month == now_month { 3600 } else { 86400 };
+    let ttl: u32 = if query.month == now_month {
+        3600
+    } else {
+        86400
+    };
     crate::utils::response::cached_json_response(&headers, &days, ttl)
 }
 
@@ -301,7 +324,7 @@ pub async fn get_menu_latest_by_city(
     State(db): State<sea_orm::DatabaseConnection>,
     headers: HeaderMap,
 ) -> Result<axum::response::Response, AppError> {
-    use sea_orm::{ConnectionTrait, Statement, DatabaseBackend};
+    use sea_orm::{ConnectionTrait, DatabaseBackend, Statement};
 
     let rows = db
         .query_all(Statement::from_string(

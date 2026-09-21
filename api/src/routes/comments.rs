@@ -1,17 +1,16 @@
 //! Menü yorumları, duygu oyları ve kullanıcı reaksiyon endpoint'leri.
-use axum::{
-    routing::{get, post, put},
-    Router,
-    extract::{State, Path, Query},
-    Json,
-};
-use uuid::Uuid;
-use crate::services::comment::{CommentService, CommentError};
-use crate::services::reaction::{ReactionService, ReactionError};
-use crate::dto::comment::{CreateCommentDto, UpdateCommentDto, CommentResponseDto};
+use crate::dto::comment::{CommentResponseDto, CreateCommentDto, UpdateCommentDto};
 use crate::dto::reaction::ReactionRequestDto;
 use crate::error::AppError;
 use crate::extractors::validated::ValidatedJson;
+use crate::services::comment::{CommentError, CommentService};
+use crate::services::reaction::{ReactionError, ReactionService};
+use axum::{
+    extract::{Path, Query, State},
+    routing::{get, post, put},
+    Json, Router,
+};
+use uuid::Uuid;
 
 use crate::extractors::auth::{AuthenticatedUser, OptionalUser};
 
@@ -27,14 +26,24 @@ pub fn router() -> Router<crate::config::AppState> {
 impl From<CommentError> for AppError {
     fn from(err: CommentError) -> Self {
         match err {
-            CommentError::MenuNotFound => AppError::NotFound("Menü bulunamadı ya da zaten hiç var olmamıştı.".to_string()),
+            CommentError::MenuNotFound => {
+                AppError::NotFound("Menü bulunamadı ya da zaten hiç var olmamıştı.".to_string())
+            }
             CommentError::UserNotFound => AppError::NotFound("Kullanıcı bulunamadı.".to_string()),
-            CommentError::UnverifiedUser => AppError::Forbidden("Yorum yapmak için e-postanızı onaylamalısınız.".to_string()),
+            CommentError::UnverifiedUser => {
+                AppError::Forbidden("Yorum yapmak için e-postanızı onaylamalısınız.".to_string())
+            }
             CommentError::DishNotFound => AppError::NotFound("Yemek bulunamadı".to_string()),
-            CommentError::DishNotInMenu => AppError::BadRequest("Menüde bu yemek mevcut değil".to_string()),
-            CommentError::ParentCommentNotFound => AppError::NotFound("Baş yorum bulunamadı".to_string()),
+            CommentError::DishNotInMenu => {
+                AppError::BadRequest("Menüde bu yemek mevcut değil".to_string())
+            }
+            CommentError::ParentCommentNotFound => {
+                AppError::NotFound("Baş yorum bulunamadı".to_string())
+            }
             CommentError::InvalidOperation => AppError::BadRequest("Geçersiz işlem".to_string()),
-            CommentError::SpamDetected => AppError::BadRequest("Bu içerik spam olarak işaretlendi.".to_string()),
+            CommentError::SpamDetected => {
+                AppError::BadRequest("Bu içerik spam olarak işaretlendi.".to_string())
+            }
             CommentError::DatabaseError(e) => {
                 tracing::error!("CommentService'te veritabanı hatası: {}", e);
                 AppError::Internal("Veritabanı hatası".to_string())
@@ -47,9 +56,15 @@ impl From<ReactionError> for AppError {
     fn from(err: ReactionError) -> Self {
         match err {
             ReactionError::CommentNotFound => AppError::NotFound("Comment not found".to_string()),
-            ReactionError::Unauthorized => AppError::Unauthorized("Unauthorized to modify this comment".to_string()),
-            ReactionError::UnverifiedUser => AppError::Forbidden("Oy kullanmak için e-postanızı onaylamalısınız.".to_string()),
-            ReactionError::InvalidOperation => AppError::BadRequest("Bu içerik üzerinde işlem yapılamaz.".to_string()),
+            ReactionError::Unauthorized => {
+                AppError::Unauthorized("Unauthorized to modify this comment".to_string())
+            }
+            ReactionError::UnverifiedUser => {
+                AppError::Forbidden("Oy kullanmak için e-postanızı onaylamalısınız.".to_string())
+            }
+            ReactionError::InvalidOperation => {
+                AppError::BadRequest("Bu içerik üzerinde işlem yapılamaz.".to_string())
+            }
             ReactionError::DatabaseError(e) => {
                 tracing::error!("Database error in ReactionService: {}", e);
                 AppError::Internal("Database error".to_string())
@@ -77,7 +92,8 @@ async fn get_comments(
         current_user_id,
         query.limit,
         query.offset,
-    ).await?;
+    )
+    .await?;
     Ok(Json(comments))
 }
 
@@ -87,7 +103,8 @@ async fn create_comment(
     ValidatedJson(payload): ValidatedJson<CreateCommentDto>,
 ) -> Result<Json<CommentResponseDto>, AppError> {
     let parent_id = payload.parent_id;
-    let comment = CommentService::create_comment(&db, user.id, user.username, payload, parent_id).await?;
+    let comment =
+        CommentService::create_comment(&db, user.id, user.username, payload, parent_id).await?;
     Ok(Json(comment))
 }
 

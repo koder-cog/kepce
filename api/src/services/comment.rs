@@ -1,10 +1,12 @@
-use sea_orm::*;
-use shared::entities::{prelude::*, comments, vote_reactions, dish_votes};
-use uuid::Uuid;
+use crate::dto::comment::{
+    CommentResponseDto, CreateCommentDto, ReactionTypeDto, Sentiment as DtoSentiment,
+};
+use crate::services::moderation::{ModerationError, ModerationService};
 use chrono::Utc;
+use sea_orm::*;
+use shared::entities::{comments, dish_votes, prelude::*, vote_reactions};
 use std::collections::HashMap;
-use crate::dto::comment::{CreateCommentDto, CommentResponseDto, Sentiment as DtoSentiment, ReactionTypeDto};
-use crate::services::moderation::{ModerationService, ModerationError};
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub enum CommentError {
@@ -36,7 +38,7 @@ impl CommentService {
             .one(db)
             .await
             .map_err(CommentError::DatabaseError)?;
-        
+
         if let Some(u) = user_opt {
             if !u.is_verified {
                 return Err(CommentError::UnverifiedUser);
@@ -51,7 +53,9 @@ impl CommentService {
             .await
             .map_err(CommentError::DatabaseError)?
             .is_some();
-        if !menu_exists { return Err(CommentError::MenuNotFound); }
+        if !menu_exists {
+            return Err(CommentError::MenuNotFound);
+        }
 
         // 2. Tabldot (Yemek) Kontrolü
         // SA-12: is_tabldot is now passed from the frontend explicitly
@@ -63,7 +67,9 @@ impl CommentService {
                 .await
                 .map_err(CommentError::DatabaseError)?
                 .is_some();
-            if !dish_exists { return Err(CommentError::DishNotFound); }
+            if !dish_exists {
+                return Err(CommentError::DishNotFound);
+            }
 
             // Sonra o menüde (o gün) çıkıyor mu?
             // Veritabanı düzeyinde filtreleme yaparak RAM israfını önlüyoruz (Inner Join)
@@ -76,8 +82,8 @@ impl CommentService {
                 .map_err(CommentError::DatabaseError)?
                 .is_some();
 
-            if !dish_in_menu { 
-                return Err(CommentError::DishNotInMenu); 
+            if !dish_in_menu {
+                return Err(CommentError::DishNotInMenu);
             }
         }
 
@@ -101,11 +107,13 @@ impl CommentService {
 
             // Engellenen (veya engelleyen) kişinin yorumuna yanıt verilemez
             if let Some(parent_author_id) = parent.user_id {
-                let blocked_user_ids = ModerationService::get_blocked_user_ids(db, user_id).await.map_err(|e| match e {
+                let blocked_user_ids = ModerationService::get_blocked_user_ids(db, user_id)
+                    .await
+                    .map_err(|e| match e {
                     ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
                     _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
                 })?;
-                
+
                 if blocked_user_ids.contains(&parent_author_id) {
                     return Err(CommentError::InvalidOperation);
                 }
@@ -131,8 +139,12 @@ impl CommentService {
         }
 
         // Unified Review Model (URM) Kuralları
-        let is_pure_vote = dto.comment.as_ref().map(|s| s.trim().is_empty()).unwrap_or(true);
-        
+        let is_pure_vote = dto
+            .comment
+            .as_ref()
+            .map(|s| s.trim().is_empty())
+            .unwrap_or(true);
+
         if is_pure_vote {
             if dto.sentiment == DtoSentiment::Neutral {
                 return Err(CommentError::InvalidOperation); // Boş bir oy "Nötr" olamaz.
@@ -142,15 +154,21 @@ impl CommentService {
         }
 
         let db_sentiment = match dto.sentiment {
-            DtoSentiment::Positive => shared::entities::sea_orm_active_enums::SentimentEnum::Positive,
-            DtoSentiment::Negative => shared::entities::sea_orm_active_enums::SentimentEnum::Negative,
+            DtoSentiment::Positive => {
+                shared::entities::sea_orm_active_enums::SentimentEnum::Positive
+            }
+            DtoSentiment::Negative => {
+                shared::entities::sea_orm_active_enums::SentimentEnum::Negative
+            }
             DtoSentiment::Neutral => shared::entities::sea_orm_active_enums::SentimentEnum::Neutral,
         };
 
         // 4. İçerik Güvenliği (XSS ve Spam Kontrolü - Kullanıcı metni sansürlenmeden korunur)
         let clean_content = if !is_pure_vote {
-            let sanitized = shared::services::content_guard::ContentGuard::sanitize_html(dto.comment.as_ref().unwrap());
-            
+            let sanitized = shared::services::content_guard::ContentGuard::sanitize_html(
+                dto.comment.as_ref().unwrap(),
+            );
+
             if shared::services::content_guard::ContentGuard::is_spam(&sanitized) {
                 return Err(CommentError::SpamDetected);
             }
@@ -175,10 +193,15 @@ impl CommentService {
 
         let txn = db.begin().await.map_err(CommentError::DatabaseError)?;
 
-        let inserted = new_comment.insert(&txn).await.map_err(CommentError::DatabaseError)?;
-        
+        let inserted = new_comment
+            .insert(&txn)
+            .await
+            .map_err(CommentError::DatabaseError)?;
+
         // 6. Yemek Oylarını (Tabldot) İşle
-        if is_tabldot && db_sentiment != shared::entities::sea_orm_active_enums::SentimentEnum::Neutral {
+        if is_tabldot
+            && db_sentiment != shared::entities::sea_orm_active_enums::SentimentEnum::Neutral
+        {
             if let Some(d_id) = dto.dish_id {
                 let existing_vote = dish_votes::Entity::find()
                     .filter(dish_votes::Column::DishId.eq(d_id))
@@ -187,12 +210,15 @@ impl CommentService {
                     .one(&txn)
                     .await
                     .map_err(CommentError::DatabaseError)?;
-                
+
                 if let Some(existing) = existing_vote {
                     let mut active: dish_votes::ActiveModel = existing.into();
                     active.sentiment = Set(db_sentiment.clone());
                     active.is_explicit = Set(true);
-                    active.update(&txn).await.map_err(CommentError::DatabaseError)?;
+                    active
+                        .update(&txn)
+                        .await
+                        .map_err(CommentError::DatabaseError)?;
                 } else {
                     dish_votes::Entity::insert(dish_votes::ActiveModel {
                         dish_id: Set(d_id),
@@ -201,13 +227,16 @@ impl CommentService {
                         sentiment: Set(db_sentiment.clone()),
                         is_explicit: Set(true),
                         ..Default::default()
-                    }).exec(&txn).await.map_err(CommentError::DatabaseError)?;
+                    })
+                    .exec(&txn)
+                    .await
+                    .map_err(CommentError::DatabaseError)?;
                 }
             }
         }
 
         txn.commit().await.map_err(CommentError::DatabaseError)?;
-        
+
         // Yanıt bildirimi tetikleyici (Parent yorum sahibi kendisi değilse)
         if let Some(p_id) = parent_id {
             if let Ok(Some(parent_comment)) = Comments::find_by_id(p_id).one(db).await {
@@ -220,15 +249,17 @@ impl CommentService {
                             preview.to_string()
                         };
                         let action_href = format!("/yorumlar/{}?thread={}", dto.menu_id, p_id);
-                        let _ = crate::services::notification::NotificationService::send_notification(
-                            db,
-                            parent_author_id,
-                            "reply",
-                            &format!("@{} yorumuna yanıt verdi", author_username),
-                            &truncated,
-                            Some("Yanıta Git"),
-                            Some(&action_href),
-                        ).await;
+                        let _ =
+                            crate::services::notification::NotificationService::send_notification(
+                                db,
+                                parent_author_id,
+                                "reply",
+                                &format!("@{} yorumuna yanıt verdi", author_username),
+                                &truncated,
+                                Some("Yanıta Git"),
+                                Some(&action_href),
+                            )
+                            .await;
                     }
                 }
             }
@@ -268,10 +299,21 @@ impl CommentService {
             comment: inserted.content,
             sentiment: dto.sentiment,
             is_tabldot: inserted.is_tabldot,
-            user: crate::dto::comment::UserSummaryDto { id: user_id, nickname: author_username.clone(), avatar_url: None },
-            reaction_summary: crate::dto::comment::ReactionSummaryDto { up: 0, down: 0, my_vote: None },
+            user: crate::dto::comment::UserSummaryDto {
+                id: user_id,
+                nickname: author_username.clone(),
+                avatar_url: None,
+            },
+            reaction_summary: crate::dto::comment::ReactionSummaryDto {
+                up: 0,
+                down: 0,
+                my_vote: None,
+            },
             children: vec![],
-            created_at: inserted.created_at.unwrap_or_else(|| Utc::now().into()).into(),
+            created_at: inserted
+                .created_at
+                .unwrap_or_else(|| Utc::now().into())
+                .into(),
             is_deleted: false,
             deletion_type: None,
             is_blocked: false,
@@ -312,7 +354,10 @@ impl CommentService {
         let sanitized = shared::services::content_guard::ContentGuard::sanitize_html(trimmed);
 
         let now = Utc::now();
-        let created_at: chrono::DateTime<Utc> = comment.created_at.map(|dt| dt.with_timezone(&Utc)).unwrap_or(now);
+        let created_at: chrono::DateTime<Utc> = comment
+            .created_at
+            .map(|dt| dt.with_timezone(&Utc))
+            .unwrap_or(now);
         let mut active: comments::ActiveModel = comment.clone().into();
         active.content = Set(Some(sanitized));
 
@@ -321,7 +366,10 @@ impl CommentService {
             active.updated_at = Set(Some(now.into()));
         }
 
-        let updated_comment = active.update(db).await.map_err(CommentError::DatabaseError)?;
+        let updated_comment = active
+            .update(db)
+            .await
+            .map_err(CommentError::DatabaseError)?;
 
         let user = shared::entities::users::Entity::find_by_id(user_id)
             .one(db)
@@ -329,11 +377,22 @@ impl CommentService {
             .map_err(CommentError::DatabaseError)?
             .ok_or(CommentError::UserNotFound)?;
 
-        let reaction_summary = crate::services::reaction::ReactionService::get_reaction_summary(db, comment_id, Some(user_id))
-            .await
-            .unwrap_or(crate::dto::reaction::ReactionSummaryDto { upvotes: 0, downvotes: 0, my_vote: None });
+        let reaction_summary = crate::services::reaction::ReactionService::get_reaction_summary(
+            db,
+            comment_id,
+            Some(user_id),
+        )
+        .await
+        .unwrap_or(crate::dto::reaction::ReactionSummaryDto {
+            upvotes: 0,
+            downvotes: 0,
+            my_vote: None,
+        });
 
-        let created_at_utc: chrono::DateTime<Utc> = updated_comment.created_at.unwrap_or_else(|| Utc::now().into()).into();
+        let created_at_utc: chrono::DateTime<Utc> = updated_comment
+            .created_at
+            .unwrap_or_else(|| Utc::now().into())
+            .into();
         let is_edited = if let Some(upd) = updated_comment.updated_at {
             let upd_utc: chrono::DateTime<Utc> = upd.into();
             (upd_utc - created_at_utc).num_seconds() > 180
@@ -342,8 +401,12 @@ impl CommentService {
         };
 
         let dto_sentiment = match updated_comment.sentiment {
-            shared::entities::sea_orm_active_enums::SentimentEnum::Positive => DtoSentiment::Positive,
-            shared::entities::sea_orm_active_enums::SentimentEnum::Negative => DtoSentiment::Negative,
+            shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                DtoSentiment::Positive
+            }
+            shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                DtoSentiment::Negative
+            }
             shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => DtoSentiment::Neutral,
         };
 
@@ -375,15 +438,16 @@ impl CommentService {
         })
     }
 
-
     /// Yorumları zenginleştirme (Reaksiyonlar, Ebeveyn kullanıcı isimleri, Maskeleme)
     pub async fn enrich_comments(
         db: &DatabaseConnection,
-        results: Vec<(shared::entities::comments::Model, Option<shared::entities::users::Model>)>,
+        results: Vec<(
+            shared::entities::comments::Model,
+            Option<shared::entities::users::Model>,
+        )>,
         current_user_id: Option<Uuid>,
         blocked_relations: &crate::services::moderation::BlockedRelations,
     ) -> Result<Vec<(CommentResponseDto, Option<Uuid>)>, CommentError> {
-        
         if results.is_empty() {
             return Ok(vec![]);
         }
@@ -402,15 +466,19 @@ impl CommentService {
         for r in reactions {
             let entry = reaction_map.entry(r.comment_id).or_insert((0, 0, None));
             let is_mine = current_user_id == Some(r.user_id);
-            
+
             match r.reaction_type {
                 shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote => {
                     entry.0 += 1;
-                    if is_mine { entry.2 = Some(ReactionTypeDto::Up); }
+                    if is_mine {
+                        entry.2 = Some(ReactionTypeDto::Up);
+                    }
                 }
                 shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote => {
                     entry.1 += 1;
-                    if is_mine { entry.2 = Some(ReactionTypeDto::Down); }
+                    if is_mine {
+                        entry.2 = Some(ReactionTypeDto::Down);
+                    }
                 }
             }
         }
@@ -453,13 +521,22 @@ impl CommentService {
 
         for (comment, user_opt) in results {
             let _author_id = comment.user_id;
-            let author_username = user_opt.as_ref().map(|u| u.username.clone()).unwrap_or_else(|| "Bilinmeyen Kullanıcı".to_string());
+            let author_username = user_opt
+                .as_ref()
+                .map(|u| u.username.clone())
+                .unwrap_or_else(|| "Bilinmeyen Kullanıcı".to_string());
             let mut avatar_url = user_opt.and_then(|u| u.avatar_url);
 
             // Silinen veya maskelenen içerik kontrolü
             let is_deleted = comment.is_deleted || author_username == "silinmiş";
-            let is_my_blocked = comment.user_id.map(|uid| blocked_relations.my_blocked_ids.contains(&uid)).unwrap_or(false);
-            let is_blocked_me = comment.user_id.map(|uid| blocked_relations.blocked_me_ids.contains(&uid)).unwrap_or(false);
+            let is_my_blocked = comment
+                .user_id
+                .map(|uid| blocked_relations.my_blocked_ids.contains(&uid))
+                .unwrap_or(false);
+            let is_blocked_me = comment
+                .user_id
+                .map(|uid| blocked_relations.blocked_me_ids.contains(&uid))
+                .unwrap_or(false);
             let is_blocked = is_my_blocked || is_blocked_me;
 
             let content = if is_deleted {
@@ -493,16 +570,30 @@ impl CommentService {
             };
 
             let dto_sentiment = match comment.sentiment {
-                shared::entities::sea_orm_active_enums::SentimentEnum::Positive => DtoSentiment::Positive,
-                shared::entities::sea_orm_active_enums::SentimentEnum::Negative => DtoSentiment::Negative,
-                shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => DtoSentiment::Neutral,
+                shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                    DtoSentiment::Positive
+                }
+                shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                    DtoSentiment::Negative
+                }
+                shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => {
+                    DtoSentiment::Neutral
+                }
             };
 
-            let (upvotes, downvotes, my_vote) = reaction_map.get(&comment.id).cloned().unwrap_or((0, 0, None));
-            let parent_username = comment.parent_id.and_then(|pid| parent_user_map.get(&pid).cloned());
+            let (upvotes, downvotes, my_vote) = reaction_map
+                .get(&comment.id)
+                .cloned()
+                .unwrap_or((0, 0, None));
+            let parent_username = comment
+                .parent_id
+                .and_then(|pid| parent_user_map.get(&pid).cloned());
             let dish_name = comment.dish_id.and_then(|did| dish_map.get(&did).cloned());
 
-            let created_at: chrono::DateTime<Utc> = comment.created_at.unwrap_or_else(|| Utc::now().into()).into();
+            let created_at: chrono::DateTime<Utc> = comment
+                .created_at
+                .unwrap_or_else(|| Utc::now().into())
+                .into();
             let is_edited = if let Some(upd) = comment.updated_at {
                 let upd_at: chrono::DateTime<Utc> = upd.into();
                 (upd_at - created_at).num_seconds() > 180
@@ -519,8 +610,16 @@ impl CommentService {
                 comment: content,
                 sentiment: dto_sentiment,
                 is_tabldot: comment.is_tabldot,
-                user: crate::dto::comment::UserSummaryDto { id: user_dto_id, nickname: author_username.clone(), avatar_url },
-                reaction_summary: crate::dto::comment::ReactionSummaryDto { up: upvotes, down: downvotes, my_vote },
+                user: crate::dto::comment::UserSummaryDto {
+                    id: user_dto_id,
+                    nickname: author_username.clone(),
+                    avatar_url,
+                },
+                reaction_summary: crate::dto::comment::ReactionSummaryDto {
+                    up: upvotes,
+                    down: downvotes,
+                    my_vote,
+                },
                 children: vec![],
                 created_at,
                 is_deleted,
@@ -543,12 +642,13 @@ impl CommentService {
         limit: Option<u64>,
         offset: Option<u64>,
     ) -> Result<Vec<CommentResponseDto>, CommentError> {
-        
         let blocked_relations = if let Some(uid) = current_user_id {
-            ModerationService::get_blocked_relations(db, uid).await.map_err(|e| match e {
-                ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
-                _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
-            })?
+            ModerationService::get_blocked_relations(db, uid)
+                .await
+                .map_err(|e| match e {
+                    ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
+                    _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
+                })?
         } else {
             crate::services::moderation::BlockedRelations::default()
         };
@@ -562,7 +662,8 @@ impl CommentService {
             .await
             .map_err(CommentError::DatabaseError)?;
 
-        let enriched_flat = Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
+        let enriched_flat =
+            Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
 
         // HashMap tabanlı lookup için DTO'ları ID ile tutalım
         let mut flat_comments: HashMap<Uuid, (CommentResponseDto, Option<Uuid>)> = HashMap::new();
@@ -602,7 +703,7 @@ impl CommentService {
         fn build_tree(
             id: &Uuid,
             flat_map: &HashMap<Uuid, (CommentResponseDto, Option<Uuid>)>,
-            child_map: &HashMap<Uuid, Vec<Uuid>>
+            child_map: &HashMap<Uuid, Vec<Uuid>>,
         ) -> Option<CommentResponseDto> {
             let mut node = flat_map.get(id)?.0.clone();
             if let Some(children) = child_map.get(id) {
@@ -634,7 +735,11 @@ impl CommentService {
         offset: u64,
     ) -> Result<crate::dto::pagination::PaginatedResponse<CommentResponseDto>, CommentError> {
         let base_query = Comments::find().filter(comments::Column::UserId.eq(target_user_id));
-        let total_items = base_query.clone().count(db).await.map_err(CommentError::DatabaseError)?;
+        let total_items = base_query
+            .clone()
+            .count(db)
+            .await
+            .map_err(CommentError::DatabaseError)?;
 
         let results = base_query
             .find_also_related(shared::entities::users::Entity)
@@ -646,18 +751,21 @@ impl CommentService {
             .map_err(CommentError::DatabaseError)?;
 
         let blocked_relations = if let Some(uid) = current_user_id {
-            ModerationService::get_blocked_relations(db, uid).await.map_err(|e| match e {
-                ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
-                _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
-            })?
+            ModerationService::get_blocked_relations(db, uid)
+                .await
+                .map_err(|e| match e {
+                    ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
+                    _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
+                })?
         } else {
             crate::services::moderation::BlockedRelations::default()
         };
 
-        let enriched = Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
-        
+        let enriched =
+            Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
+
         let items: Vec<_> = enriched.into_iter().map(|(dto, _)| dto).collect();
-        
+
         Ok(crate::dto::pagination::PaginatedResponse {
             items,
             total_items,
@@ -673,10 +781,12 @@ impl CommentService {
         limit: u64,
     ) -> Result<Vec<CommentResponseDto>, CommentError> {
         let blocked_relations = if let Some(uid) = current_user_id {
-            ModerationService::get_blocked_relations(db, uid).await.map_err(|e| match e {
-                ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
-                _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
-            })?
+            ModerationService::get_blocked_relations(db, uid)
+                .await
+                .map_err(|e| match e {
+                    ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
+                    _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
+                })?
         } else {
             crate::services::moderation::BlockedRelations::default()
         };
@@ -691,8 +801,9 @@ impl CommentService {
             .await
             .map_err(CommentError::DatabaseError)?;
 
-        let enriched = Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
-        
+        let enriched =
+            Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
+
         Ok(enriched.into_iter().map(|(dto, _)| dto).collect())
     }
 
@@ -704,10 +815,12 @@ impl CommentService {
         timeframe: Option<String>,
     ) -> Result<Vec<CommentResponseDto>, CommentError> {
         let blocked_relations = if let Some(uid) = current_user_id {
-            ModerationService::get_blocked_relations(db, uid).await.map_err(|e| match e {
-                ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
-                _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
-            })?
+            ModerationService::get_blocked_relations(db, uid)
+                .await
+                .map_err(|e| match e {
+                    ModerationError::DatabaseError(db_err) => CommentError::DatabaseError(db_err),
+                    _ => CommentError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
+                })?
         } else {
             crate::services::moderation::BlockedRelations::default()
         };
@@ -724,27 +837,34 @@ impl CommentService {
             };
             if !interval.is_empty() {
                 // SeaORM raw filter for created_at
-                query = query.filter(sea_orm::sea_query::Expr::cust(format!("created_at >= NOW() - INTERVAL '{}'", interval).as_str()));
+                query = query.filter(sea_orm::sea_query::Expr::cust(
+                    format!("created_at >= NOW() - INTERVAL '{}'", interval).as_str(),
+                ));
             }
         }
 
         let results = query
             .find_also_related(shared::entities::users::Entity)
             .order_by_desc(comments::Column::CreatedAt)
-            .limit(limit * 5) 
+            .limit(limit * 5)
             .all(db)
             .await
             .map_err(CommentError::DatabaseError)?;
 
-        let mut enriched = Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
-        
+        let mut enriched =
+            Self::enrich_comments(db, results, current_user_id, &blocked_relations).await?;
+
         // Sort by score
         enriched.sort_by(|a, b| {
             let a_score = a.0.reaction_summary.up - a.0.reaction_summary.down;
             let b_score = b.0.reaction_summary.up - b.0.reaction_summary.down;
             b_score.cmp(&a_score)
         });
-        
-        Ok(enriched.into_iter().take(limit as usize).map(|(dto, _)| dto).collect())
+
+        Ok(enriched
+            .into_iter()
+            .take(limit as usize)
+            .map(|(dto, _)| dto)
+            .collect())
     }
 }

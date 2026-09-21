@@ -1,17 +1,17 @@
-use axum::{
-    extract::{Path, State},
-    routing::{post, put, delete, get},
-    Json, Router,
-};
-use crate::extractors::validated::ValidatedJson;
-use crate::{
-    config::AppState,
-    dto::admin::{CreateDishDto, UpdateDishDto, MergeDishesDto, SplitDishDto, DetachDishDto},
-    services::admin as admin_service,
-};
 use crate::dto::user::UserRole;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
+use crate::extractors::validated::ValidatedJson;
+use crate::{
+    config::AppState,
+    dto::admin::{CreateDishDto, DetachDishDto, MergeDishesDto, SplitDishDto, UpdateDishDto},
+    services::admin as admin_service,
+};
+use axum::{
+    extract::{Path, State},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
 
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -45,7 +45,7 @@ async fn get_dish_stats(
     let dtos = admin_service::get_dish_stats(&state.db, query.search)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    
+
     Ok(Json(serde_json::json!(dtos)))
 }
 
@@ -55,9 +55,11 @@ async fn create_dish(
     ValidatedJson(payload): ValidatedJson<CreateDishDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     require_admin(&user)?;
-    let dish = admin_service::create_dish(&state.db, payload).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(serde_json::json!({ 
-        "success": true, 
+    let dish = admin_service::create_dish(&state.db, payload)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Json(serde_json::json!({
+        "success": true,
         "dish": {
             "id": dish.id,
             "name": dish.name,
@@ -76,9 +78,11 @@ async fn update_dish(
     ValidatedJson(payload): ValidatedJson<UpdateDishDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     require_admin(&user)?;
-    let dish = admin_service::update_dish(&state.db, id, payload).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(serde_json::json!({ 
-        "success": true, 
+    let dish = admin_service::update_dish(&state.db, id, payload)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Json(serde_json::json!({
+        "success": true,
         "dish": {
             "id": dish.id,
             "name": dish.name,
@@ -96,7 +100,9 @@ async fn delete_dish(
     Path(id): Path<i32>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     require_admin(&user)?;
-    admin_service::delete_dish(&state.db, id).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    admin_service::delete_dish(&state.db, id)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(serde_json::json!({ "success": true })))
 }
 
@@ -106,7 +112,9 @@ async fn merge_dishes(
     Json(payload): Json<MergeDishesDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     require_admin(&user)?;
-    admin_service::merge_dishes(&state.db, payload).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    admin_service::merge_dishes(&state.db, payload)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(serde_json::json!({ "success": true })))
 }
 
@@ -116,9 +124,11 @@ async fn split_dish(
     ValidatedJson(payload): ValidatedJson<SplitDishDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     require_admin(&user)?;
-    let dish = admin_service::split_dish(&state.db, payload).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(serde_json::json!({ 
-        "success": true, 
+    let dish = admin_service::split_dish(&state.db, payload)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Json(serde_json::json!({
+        "success": true,
         "dish": {
             "id": dish.id,
             "name": dish.name,
@@ -136,6 +146,8 @@ async fn detach_dish(
     Json(payload): Json<DetachDishDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     require_admin(&user)?;
-    admin_service::detach_dish(&state.db, payload).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    admin_service::detach_dish(&state.db, payload)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(serde_json::json!({ "success": true })))
 }

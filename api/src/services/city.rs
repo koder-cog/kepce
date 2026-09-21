@@ -1,7 +1,7 @@
 //! Şehir listesi, aktif menü mevcudiyeti ve coğrafi konum çözümleme servisi.
 use sea_orm::*;
-use std::collections::HashSet;
 use shared::entities::{cities, menus};
+use std::collections::HashSet;
 
 #[derive(Debug)]
 pub enum CityError {
@@ -54,11 +54,12 @@ impl CityService {
                 "#.to_string()
             )
         ).all(db).await.map_err(CityError::DatabaseError)?;
-        
-        let celiac_cities: HashSet<i32> = celiac_cities_res.into_iter()
+
+        let celiac_cities: HashSet<i32> = celiac_cities_res
+            .into_iter()
             .map(|row| row.city_id)
             .collect();
-            
+
         tracing::info!("Celiac cities: {:?}", celiac_cities);
 
         if menu_cities.is_empty() {
@@ -79,7 +80,7 @@ impl CityService {
         })
         .await
         .unwrap_or_default(); // Eğer task panik yaparsa (ki sıralama yapmaz) empty array dön.
-        
+
         let result = sorted_cities
             .into_iter()
             .map(|c| {
@@ -95,14 +96,36 @@ impl CityService {
 // Türkçe karakterleri dikkate alan sıralama fonksiyonu
 fn turkish_alphabet_index(c: char) -> usize {
     match c {
-        'A' | 'a' => 1, 'B' | 'b' => 2, 'C' | 'c' => 3, 'Ç' | 'ç' => 4,
-        'D' | 'd' => 5, 'E' | 'e' => 6, 'F' | 'f' => 7, 'G' | 'g' => 8,
-        'Ğ' | 'ğ' => 9, 'H' | 'h' => 10, 'I' | 'ı' => 11, 'İ' | 'i' => 12,
-        'J' | 'j' => 13, 'K' | 'k' => 14, 'L' | 'l' => 15, 'M' | 'm' => 16,
-        'N' | 'n' => 17, 'O' | 'o' => 18, 'Ö' | 'ö' => 19, 'P' | 'p' => 20,
-        'R' | 'r' => 21, 'S' | 's' => 22, 'Ş' | 'ş' => 23, 'T' | 't' => 24,
-        'U' | 'u' => 25, 'Ü' | 'ü' => 26, 'V' | 'v' => 27, 'Y' | 'y' => 28,
-        'Z' | 'z' => 29, _ => 0,
+        'A' | 'a' => 1,
+        'B' | 'b' => 2,
+        'C' | 'c' => 3,
+        'Ç' | 'ç' => 4,
+        'D' | 'd' => 5,
+        'E' | 'e' => 6,
+        'F' | 'f' => 7,
+        'G' | 'g' => 8,
+        'Ğ' | 'ğ' => 9,
+        'H' | 'h' => 10,
+        'I' | 'ı' => 11,
+        'İ' | 'i' => 12,
+        'J' | 'j' => 13,
+        'K' | 'k' => 14,
+        'L' | 'l' => 15,
+        'M' | 'm' => 16,
+        'N' | 'n' => 17,
+        'O' | 'o' => 18,
+        'Ö' | 'ö' => 19,
+        'P' | 'p' => 20,
+        'R' | 'r' => 21,
+        'S' | 's' => 22,
+        'Ş' | 'ş' => 23,
+        'T' | 't' => 24,
+        'U' | 'u' => 25,
+        'Ü' | 'ü' => 26,
+        'V' | 'v' => 27,
+        'Y' | 'y' => 28,
+        'Z' | 'z' => 29,
+        _ => 0,
     }
 }
 
@@ -118,14 +141,20 @@ fn turkish_cmp(a: &str, b: &str) -> std::cmp::Ordering {
 
                 if idx1 != idx2 {
                     if idx1 == 0 || idx2 == 0 {
-                        return c1.to_lowercase().to_string().cmp(&c2.to_lowercase().to_string());
+                        return c1
+                            .to_lowercase()
+                            .to_string()
+                            .cmp(&c2.to_lowercase().to_string());
                     }
                     return idx1.cmp(&idx2);
                 } else if idx1 != 0 {
                     continue;
                 } else {
                     if c1.to_lowercase().to_string() != c2.to_lowercase().to_string() {
-                        return c1.to_lowercase().to_string().cmp(&c2.to_lowercase().to_string());
+                        return c1
+                            .to_lowercase()
+                            .to_string()
+                            .cmp(&c2.to_lowercase().to_string());
                     }
                 }
             }

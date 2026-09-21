@@ -5,19 +5,19 @@ pub mod excel;
 pub mod json;
 pub mod kykmenum;
 pub mod kykyemek;
-pub mod yurtmenu;
 pub mod llm;
 pub mod models;
 pub mod normalizer;
 pub mod stale_detector;
 pub mod takeaway;
 pub mod validation;
+pub mod yurtmenu;
 
-use sea_orm::DatabaseConnection;
-use models::MenuDatabase;
-use shared::entities::sea_orm_active_enums::MenuStatusEnum;
-use chrono::NaiveDate;
 use anyhow::Result;
+use chrono::NaiveDate;
+use models::MenuDatabase;
+use sea_orm::DatabaseConnection;
+use shared::entities::sea_orm_active_enums::MenuStatusEnum;
 
 pub async fn save_menu_database(
     db: &DatabaseConnection,
@@ -28,7 +28,7 @@ pub async fn save_menu_database(
 ) -> Result<()> {
     for (date_str, day_data) in menu_db {
         let date = NaiveDate::parse_from_str(&date_str, "%Y-%m-%d")?;
-        
+
         let target_status = match day_data.metadata.as_ref().map(|m| m.status.as_str()) {
             Some("needs_review") => Some(MenuStatusEnum::Pending),
             Some("approved") => Some(MenuStatusEnum::Approved),
@@ -42,31 +42,39 @@ pub async fn save_menu_database(
         let mut colyak_breakfast: Vec<Vec<models::MenuComponent>> = Vec::new();
         let mut colyak_lunch: Vec<Vec<models::MenuComponent>> = Vec::new();
         let mut colyak_dinner: Vec<Vec<models::MenuComponent>> = Vec::new();
-        
+
         let mut takeaways_breakfast: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
         let mut takeaways_lunch: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
         let mut takeaways_dinner: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
 
-        type ProcessListResult = (Vec<Vec<models::MenuComponent>>, Vec<(String, Vec<Vec<models::MenuComponent>>)>);
-        let process_list = |list: &Vec<models::MenuItem>, is_breakfast: bool| -> ProcessListResult {
-            let mut out = Vec::new();
-            let mut t_out: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
-            
-            for item in list {
-                if let Some(ref num) = item.takeaway_id {
-                    let meal_str = if is_breakfast { "breakfast" } else { "dinner" };
-                    if let Some(parsed_packages) = takeaway::parse_takeaway_menu(&format!("Al Götür {}", num), city_slug, meal_str) {
-                        t_out.extend(parsed_packages);
-                    }
-                } else {
-                    let alts = item.alternatives.clone();
-                    if !alts.is_empty() {
-                        out.push(alts);
+        type ProcessListResult = (
+            Vec<Vec<models::MenuComponent>>,
+            Vec<(String, Vec<Vec<models::MenuComponent>>)>,
+        );
+        let process_list =
+            |list: &Vec<models::MenuItem>, is_breakfast: bool| -> ProcessListResult {
+                let mut out = Vec::new();
+                let mut t_out: Vec<(String, Vec<Vec<models::MenuComponent>>)> = Vec::new();
+
+                for item in list {
+                    if let Some(ref num) = item.takeaway_id {
+                        let meal_str = if is_breakfast { "breakfast" } else { "dinner" };
+                        if let Some(parsed_packages) = takeaway::parse_takeaway_menu(
+                            &format!("Al Götür {}", num),
+                            city_slug,
+                            meal_str,
+                        ) {
+                            t_out.extend(parsed_packages);
+                        }
+                    } else {
+                        let alts = item.alternatives.clone();
+                        if !alts.is_empty() {
+                            out.push(alts);
+                        }
                     }
                 }
-            }
-            (out, t_out)
-        };
+                (out, t_out)
+            };
 
         let (b_out, b_take) = process_list(&day_data.normal.breakfast, true);
         normal_breakfast.extend(b_out);
@@ -79,13 +87,13 @@ pub async fn save_menu_database(
         let (d_out, d_take) = process_list(&day_data.normal.dinner, false);
         normal_dinner.extend(d_out);
         takeaways_dinner.extend(d_take);
-        
+
         let (cb_out, _) = process_list(&day_data.colyak.breakfast, true);
         colyak_breakfast.extend(cb_out);
 
         let (cl_out, _) = process_list(&day_data.colyak.lunch, false);
         colyak_lunch.extend(cl_out);
-        
+
         let (cd_out, _) = process_list(&day_data.colyak.dinner, false);
         colyak_dinner.extend(cd_out);
 
@@ -118,7 +126,10 @@ pub async fn save_menu_database(
             }
         };
 
-        if !normal_breakfast.is_empty() || !takeaways_breakfast.is_empty() || !colyak_breakfast.is_empty() {
+        if !normal_breakfast.is_empty()
+            || !takeaways_breakfast.is_empty()
+            || !colyak_breakfast.is_empty()
+        {
             let (min_cal, max_cal) = parse_calories(&day_data.normal.breakfast_kcal);
             crate::tasks::scraper::upsert_menu(
                 db,
@@ -133,7 +144,8 @@ pub async fn save_menu_database(
                 target_status.clone(),
                 min_cal,
                 max_cal,
-            ).await?;
+            )
+            .await?;
         }
 
         if !normal_lunch.is_empty() || !takeaways_lunch.is_empty() || !colyak_lunch.is_empty() {
@@ -151,7 +163,8 @@ pub async fn save_menu_database(
                 target_status.clone(),
                 min_cal,
                 max_cal,
-            ).await?;
+            )
+            .await?;
         }
 
         if !normal_dinner.is_empty() || !takeaways_dinner.is_empty() || !colyak_dinner.is_empty() {
@@ -169,13 +182,14 @@ pub async fn save_menu_database(
                 target_status.clone(),
                 min_cal,
                 max_cal,
-            ).await?;
+            )
+            .await?;
         }
-        
-        // Also call for colyak if available (currently upsert_menu doesn't cleanly separate colyak unless through meal type or new column, 
+
+        // Also call for colyak if available (currently upsert_menu doesn't cleanly separate colyak unless through meal type or new column,
         // but for now we follow the structure of existing upsert_menu).
     }
-    
+
     Ok(())
 }
 

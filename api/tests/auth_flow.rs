@@ -1,16 +1,16 @@
+use api::{
+    build_cors, build_router,
+    config::{AppState, Config},
+    services::auth::AuthService,
+};
 use axum::{
     body::Body,
     http::{self, Request, StatusCode},
 };
-use sea_orm::{Database, EntityTrait, QueryFilter, ColumnTrait};
+use sea_orm::{ColumnTrait, Database, EntityTrait, QueryFilter};
 use shared::entities::{prelude::Users, users};
 use std::sync::Arc;
 use tower::util::ServiceExt; // the correct oneshot trait
-use api::{
-    config::{AppState, Config},
-    build_cors, build_router,
-    services::auth::AuthService,
-};
 
 async fn setup_app() -> (axum::Router, AppState) {
     let mut config = Config::from_env();
@@ -53,14 +53,24 @@ async fn test_full_auth_flow() {
         .method(http::Method::POST)
         .uri("/api/v1/auth/register")
         .header(http::header::CONTENT_TYPE, "application/json")
-        .extension(axum::extract::connect_info::ConnectInfo(std::net::SocketAddr::from(([127, 0, 0, 1], 8080))))
-        .body(Body::from(serde_json::to_string(&register_payload).unwrap()))
+        .extension(axum::extract::connect_info::ConnectInfo(
+            std::net::SocketAddr::from(([127, 0, 0, 1], 8080)),
+        ))
+        .body(Body::from(
+            serde_json::to_string(&register_payload).unwrap(),
+        ))
         .unwrap();
 
     let response = app.clone().oneshot(req).await.unwrap();
     let status = response.status();
-    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
-    println!("STATUS: {}, BODY: {:?}", status, String::from_utf8_lossy(&body_bytes));
+    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
+    println!(
+        "STATUS: {}, BODY: {:?}",
+        status,
+        String::from_utf8_lossy(&body_bytes)
+    );
     assert_eq!(status, StatusCode::OK);
 
     // Verify user created but not verified in DB
@@ -73,7 +83,8 @@ async fn test_full_auth_flow() {
     assert!(!user_db.is_verified);
 
     // 2. Generate verification token & verify
-    let verification_token = AuthService::generate_verification_token(user_db.id, &state.config.jwt_secret).unwrap();
+    let verification_token =
+        AuthService::generate_verification_token(user_db.id, &state.config.jwt_secret).unwrap();
     let verify_req = Request::builder()
         .method(http::Method::GET)
         .uri(format!("/api/v1/auth/verify?token={}", verification_token))
@@ -103,7 +114,9 @@ async fn test_full_auth_flow() {
         .method(http::Method::POST)
         .uri("/api/v1/auth/login")
         .header(http::header::CONTENT_TYPE, "application/json")
-        .extension(axum::extract::connect_info::ConnectInfo(std::net::SocketAddr::from(([127, 0, 0, 1], 8080))))
+        .extension(axum::extract::connect_info::ConnectInfo(
+            std::net::SocketAddr::from(([127, 0, 0, 1], 8080)),
+        ))
         .body(Body::from(serde_json::to_string(&login_payload).unwrap()))
         .unwrap();
 
@@ -111,12 +124,20 @@ async fn test_full_auth_flow() {
     assert_eq!(response.status(), StatusCode::OK);
 
     // Extract Bearer token from response body to use for authenticated endpoints
-    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let body_bytes = axum::body::to_bytes(response.into_body(), usize::MAX)
+        .await
+        .unwrap();
     let login_res: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
     assert!(login_res.get("user").is_some());
-    
+
     // Actually, axum endpoints extract token from auth header or cookies. Let's make token from AuthService.
-    let jwt_token = AuthService::generate_token(user_db.id, &user_db.username, &api::dto::user::UserRole::User, &state.config.jwt_secret).unwrap();
+    let jwt_token = AuthService::generate_token(
+        user_db.id,
+        &user_db.username,
+        &api::dto::user::UserRole::User,
+        &state.config.jwt_secret,
+    )
+    .unwrap();
 
     // 4. Access protected profile route
     let me_req = Request::builder()

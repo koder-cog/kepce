@@ -1,9 +1,9 @@
+use sea_orm::{Database, DbConn};
 use std::env;
 use std::time::Duration;
-use sea_orm::{Database, DbConn};
 
-pub mod tasks;
 pub mod parser;
+pub mod tasks;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -47,13 +47,15 @@ async fn main() -> anyhow::Result<()> {
             .timeout(std::time::Duration::from_secs(600))
             .build()?;
         let gemini_key = env::var("GEMINI_API_KEY").ok();
-        if let Err(e) = tasks::file_ingest::process_local_files(&db, &client, gemini_key.as_deref())
-            .await
+        if let Err(e) =
+            tasks::file_ingest::process_local_files(&db, &client, gemini_key.as_deref()).await
         {
             tracing::error!("[LOKAL] Lokal dosya ingest hatası: {:?}", e);
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
-            tracing::info!("[LOKAL] Tek seferlik lokal dosya aktarımı tamamlandı. Çıkış yapılıyor.");
+            tracing::info!(
+                "[LOKAL] Tek seferlik lokal dosya aktarımı tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
@@ -88,7 +90,9 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("[FALLBACK] Fallback taraması tamamlandı.");
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
-            tracing::info!("[FALLBACK] Tek seferlik fallback taraması tamamlandı. Çıkış yapılıyor.");
+            tracing::info!(
+                "[FALLBACK] Tek seferlik fallback taraması tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
@@ -100,7 +104,9 @@ async fn main() -> anyhow::Result<()> {
             .cookie_store(true)
             .timeout(std::time::Duration::from_secs(600))
             .build()?;
-        if let Err(e) = tasks::fallback_scraper::run_deep_reconciliation_scrape(&db, &client, rx).await {
+        if let Err(e) =
+            tasks::fallback_scraper::run_deep_reconciliation_scrape(&db, &client, rx).await
+        {
             tracing::error!("[RECONCILE] Derin uzlaşma tarama hatası: {:?}", e);
         } else {
             tracing::info!("[RECONCILE] Derin uzlaşma taraması tamamlandı.");
@@ -116,8 +122,12 @@ async fn main() -> anyhow::Result<()> {
         if let Err(e) = tasks::historical_ingest::recategorize_all_dishes(&db).await {
             tracing::error!("[RECATEGORIZE] Kategori güncelleme hatası: {:?}", e);
         }
-        if std::env::var("WORKER_ONESHOT").is_ok() && std::env::var("WORKER_HISTORICAL_INGEST").is_err() {
-            tracing::info!("[RECATEGORIZE] Tek seferlik kategori güncellemesi tamamlandı. Çıkış yapılıyor.");
+        if std::env::var("WORKER_ONESHOT").is_ok()
+            && std::env::var("WORKER_HISTORICAL_INGEST").is_err()
+        {
+            tracing::info!(
+                "[RECATEGORIZE] Tek seferlik kategori güncellemesi tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
@@ -130,7 +140,9 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("[TAKEAWAY] Al-Götür zenginleştirme tamamlandı.");
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
-            tracing::info!("[TAKEAWAY] Tek seferlik Al-Götür zenginleştirme tamamlandı. Çıkış yapılıyor.");
+            tracing::info!(
+                "[TAKEAWAY] Tek seferlik Al-Götür zenginleştirme tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
@@ -149,22 +161,32 @@ async fn main() -> anyhow::Result<()> {
             }
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
-            tracing::info!("[DISH-RECONCILE] Tek seferlik yemek uzlaşması tamamlandı. Çıkış yapılıyor.");
+            tracing::info!(
+                "[DISH-RECONCILE] Tek seferlik yemek uzlaşması tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
 
     if std::env::var("WORKER_HISTORICAL_INGEST").is_ok() {
-        let historical_file = std::env::var("WORKER_HISTORICAL_FILE")
-            .unwrap_or_else(|_| ".scratch/archive/historical_menus/unified/master_historical_menus.json".to_string());
-        tracing::info!("[HISTORICAL] Tarihsel menü Worker ingest başlatılıyor: {}", historical_file);
-        if let Err(e) = tasks::historical_ingest::ingest_historical_menus(&db, &historical_file).await {
+        let historical_file = std::env::var("WORKER_HISTORICAL_FILE").unwrap_or_else(|_| {
+            ".scratch/archive/historical_menus/unified/master_historical_menus.json".to_string()
+        });
+        tracing::info!(
+            "[HISTORICAL] Tarihsel menü Worker ingest başlatılıyor: {}",
+            historical_file
+        );
+        if let Err(e) =
+            tasks::historical_ingest::ingest_historical_menus(&db, &historical_file).await
+        {
             tracing::error!("[HISTORICAL] Tarihsel menü ingest hatası: {:?}", e);
         } else {
             tracing::info!("[HISTORICAL] Tarihsel menü ingest tamamlandı.");
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
-            tracing::info!("[HISTORICAL] Tek seferlik tarihsel menü aktarımı tamamlandı. Çıkış yapılıyor.");
+            tracing::info!(
+                "[HISTORICAL] Tek seferlik tarihsel menü aktarımı tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
@@ -179,7 +201,9 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("[BACKUP] Backup menü export tamamlandı.");
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
-            tracing::info!("[BACKUP] Tek seferlik yedek dışa aktarımı tamamlandı. Çıkış yapılıyor.");
+            tracing::info!(
+                "[BACKUP] Tek seferlik yedek dışa aktarımı tamamlandı. Çıkış yapılıyor."
+            );
             return Ok(());
         }
     }
@@ -187,7 +211,10 @@ async fn main() -> anyhow::Result<()> {
     if std::env::var("WORKER_GENERATE_COMMENTS").is_ok() {
         tracing::info!("[COMMENT-GEN] Otomatik LLM yorum üretimi başlatılıyor...");
         match tasks::comment_generator::run_comment_generation(&db).await {
-            Ok(count) => tracing::info!("[COMMENT-GEN] {} menüye yorum üretildi ve kaydedildi.", count),
+            Ok(count) => tracing::info!(
+                "[COMMENT-GEN] {} menüye yorum üretildi ve kaydedildi.",
+                count
+            ),
             Err(e) => tracing::error!("[COMMENT-GEN] Yorum üretim hatası: {:?}", e),
         }
         if std::env::var("WORKER_ONESHOT").is_ok() {
@@ -195,29 +222,36 @@ async fn main() -> anyhow::Result<()> {
             return Ok(());
         }
     }
-    
+
     let gemini_api_key = env::var("GEMINI_API_KEY").ok();
     if gemini_api_key.is_none() {
         tracing::warn!("GEMINI_API_KEY bulunamadı. PDF ayrıştırma devre dışı bırakılacak.");
     }
-    
+
     let reqwest_client = reqwest::Client::builder()
         .cookie_store(true)
         .timeout(std::time::Duration::from_secs(600))
         .build()?;
 
     // Gemini model erişilebilirlik kontrolü (startup)
-// gemini model kontrolü (0 rpd / 0 token harcayan saf metadata get sorgusu)
+    // gemini model kontrolü (0 rpd / 0 token harcayan saf metadata get sorgusu)
     if let Some(ref api_key) = gemini_api_key {
         let model_name = env::var("GEMINI_MODEL")
             .ok()
             .filter(|s| !s.trim().is_empty())
             .unwrap_or_else(|| "gemini-flash-lite-latest".to_string());
-            
-        let clean_model = model_name.trim().strip_prefix("models/").unwrap_or(model_name.trim());
-        let check_url = format!("https://generativelanguage.googleapis.com/v1beta/models/{}", clean_model);
-        
-        match reqwest_client.get(&check_url)
+
+        let clean_model = model_name
+            .trim()
+            .strip_prefix("models/")
+            .unwrap_or(model_name.trim());
+        let check_url = format!(
+            "https://generativelanguage.googleapis.com/v1beta/models/{}",
+            clean_model
+        );
+
+        match reqwest_client
+            .get(&check_url)
             .header("x-goog-api-key", api_key)
             .send()
             .await
@@ -266,11 +300,20 @@ async fn main() -> anyhow::Result<()> {
                 break;
             }
             tracing::info!("--- [LOKAL] DOSYA İŞLEME DÖNGÜSÜ BAŞLIYOR ---");
-            if let Err(e) = tasks::file_ingest::process_local_files(&db_local, &client_local, gemini_key_local.as_deref()).await {
+            if let Err(e) = tasks::file_ingest::process_local_files(
+                &db_local,
+                &client_local,
+                gemini_key_local.as_deref(),
+            )
+            .await
+            {
                 tracing::error!("[LOKAL] Dosya taramasında hata: {:?}", e);
             }
-            tracing::info!("--- [LOKAL] DÖNGÜ TAMAMLANDI. Bekleme: {}s ---", local_interval_secs);
-            
+            tracing::info!(
+                "--- [LOKAL] DÖNGÜ TAMAMLANDI. Bekleme: {}s ---",
+                local_interval_secs
+            );
+
             tokio::select! {
                 _ = tokio::time::sleep(Duration::from_secs(local_interval_secs)) => {},
                 _ = rx_local.changed() => {
@@ -293,11 +336,20 @@ async fn main() -> anyhow::Result<()> {
                 break;
             }
             tracing::info!("--- [WEB] KYKYEMEK SCRAPER DÖNGÜSÜ BAŞLIYOR ---");
-            if let Err(e) = tasks::scraper::run_kykyemek_scraper(&db_scraper, &client_scraper, rx_scraper.clone()).await {
+            if let Err(e) = tasks::scraper::run_kykyemek_scraper(
+                &db_scraper,
+                &client_scraper,
+                rx_scraper.clone(),
+            )
+            .await
+            {
                 tracing::error!("[WEB] Kykyemek taramasında hata: {:?}", e);
             }
-            tracing::info!("--- [WEB] DÖNGÜ TAMAMLANDI. Bekleme: {}s ---", scraper_interval_secs);
-            
+            tracing::info!(
+                "--- [WEB] DÖNGÜ TAMAMLANDI. Bekleme: {}s ---",
+                scraper_interval_secs
+            );
+
             tokio::select! {
                 _ = tokio::time::sleep(Duration::from_secs(scraper_interval_secs)) => {},
                 _ = rx_scraper.changed() => {
@@ -318,7 +370,9 @@ async fn main() -> anyhow::Result<()> {
                 tracing::info!("[NOTIFIER] Kapatma sinyali algılandı. Döngüden çıkılıyor.");
                 break;
             }
-            if let Err(e) = tasks::meal_notifier::check_and_dispatch_meal_notifications(&db_notifier).await {
+            if let Err(e) =
+                tasks::meal_notifier::check_and_dispatch_meal_notifications(&db_notifier).await
+            {
                 tracing::error!("[NOTIFIER] Öğün bildirimi tetiklemesinde hata: {:?}", e);
             }
 
@@ -337,7 +391,8 @@ async fn main() -> anyhow::Result<()> {
 
     // İki Yönlü Telegram Operatör Botu Döngüsü (TELEGRAM_BOT_TOKEN varsa başlar)
     let telegram_task = tokio::spawn(async move {
-        if let Err(e) = tasks::telegram_bot::run_telegram_bot_loop(&db_telegram, rx_telegram).await {
+        if let Err(e) = tasks::telegram_bot::run_telegram_bot_loop(&db_telegram, rx_telegram).await
+        {
             tracing::error!("[TELEGRAM-BOT] Bot döngüsünde kritik hata: {:?}", e);
         }
     });
@@ -364,7 +419,13 @@ async fn main() -> anyhow::Result<()> {
             // Gece 03:00 ile 05:00 aralığında ve bugün henüz çalışmadıysa
             if (3..5).contains(&hour) && last_reconcile_date != Some(today) {
                 tracing::info!("--- [RECONCILE] GECE DERİN UZLAŞMA DÖNGÜSÜ BAŞLIYOR ---");
-                match tasks::fallback_scraper::run_deep_reconciliation_scrape(&db_reconcile, &client_reconcile, rx_reconcile.clone()).await {
+                match tasks::fallback_scraper::run_deep_reconciliation_scrape(
+                    &db_reconcile,
+                    &client_reconcile,
+                    rx_reconcile.clone(),
+                )
+                .await
+                {
                     Ok(updated) => {
                         last_reconcile_date = Some(today);
                         tracing::info!("--- [RECONCILE] GECE DERİN UZLAŞMA TAMAMLANDI ({} menü güncellendi) ---", updated);
@@ -374,7 +435,9 @@ async fn main() -> anyhow::Result<()> {
                     }
                 }
 
-                tracing::info!("--- [RECONCILE] GECE YEMEK VE ALIAS NORMALİZASYON UZLAŞMASI BAŞLIYOR ---");
+                tracing::info!(
+                    "--- [RECONCILE] GECE YEMEK VE ALIAS NORMALİZASYON UZLAŞMASI BAŞLIYOR ---"
+                );
                 match tasks::dish_reconciler::reconcile_and_normalize_dishes(&db_reconcile).await {
                     Ok(report) => {
                         tracing::info!(
@@ -388,7 +451,8 @@ async fn main() -> anyhow::Result<()> {
                 }
 
                 tracing::info!("--- [RECONCILE] GECE KENDİNİ TAMİR VE ÇÖP TEMİZLEME BAŞLIYOR ---");
-                if let Err(e) = tasks::sanitizer::sanitize_and_repair_database(&db_reconcile).await {
+                if let Err(e) = tasks::sanitizer::sanitize_and_repair_database(&db_reconcile).await
+                {
                     tracing::error!("[RECONCILE] Gece sistem temizleme hatası: {:?}", e);
                 }
             }
@@ -427,13 +491,21 @@ async fn main() -> anyhow::Result<()> {
     };
 
     shutdown_signal.await;
-    tracing::info!("Kapatma sinyali alındı. Çalışan döngüler tamamlandıktan sonra çıkış yapılacak...");
-    
+    tracing::info!(
+        "Kapatma sinyali alındı. Çalışan döngüler tamamlandıktan sonra çıkış yapılacak..."
+    );
+
     // Kapatma sinyali gönder
     let _ = shutdown_tx.send(true);
 
     // Görevlerin bitmesini bekle
-    let _ = tokio::join!(local_task, scraper_task, notifier_task, telegram_task, reconciliation_task);
+    let _ = tokio::join!(
+        local_task,
+        scraper_task,
+        notifier_task,
+        telegram_task,
+        reconciliation_task
+    );
     tracing::info!("Tüm görevler başarıyla durduruldu. Worker güvenli bir şekilde kapatıldı.");
 
     Ok(())

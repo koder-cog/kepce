@@ -1,31 +1,34 @@
 //! Topluluk denetimi, yorum moderasyonu ve rapor yönetim endpoint'leri.
 //!
 //! Yalnızca yetkili moderatör veya yönetici rolündeki kullanıcılar erişebilir.
-use axum::{
-    routing::{get, post, put, delete},
-    Router,
-    extract::{State, Path, Query},
-    Json,
-};
-use std::sync::Arc;
-use uuid::Uuid;
-use crate::services::moderation::ModerationService;
-use crate::services::bot::{BotService, BotError};
 use crate::dto::moderation::{
-    ReportCommentRequestDto, BotGenerateRequestDto, BotGenerateResponseDto, UpdateUserStatusDto,
-    ResolveReportDto, WarnUserDto, BotExportMonthlyQuery, BotExportMonthlyResponseDto,
-    InjectBotCommentsDto, InjectBotCommentsResponseDto, BulkUpdateMenuStatusDto,
-    BulkUpdateMenuStatusResponseDto, CreateMenuDto, SubmissionItemDto, UpdateSubmissionStatusDto,
+    BotExportMonthlyQuery, BotExportMonthlyResponseDto, BotGenerateRequestDto,
+    BotGenerateResponseDto, BulkUpdateMenuStatusDto, BulkUpdateMenuStatusResponseDto,
+    CreateMenuDto, InjectBotCommentsDto, InjectBotCommentsResponseDto, ReportCommentRequestDto,
+    ResolveReportDto, SubmissionItemDto, UpdateSubmissionStatusDto, UpdateUserStatusDto,
+    WarnUserDto,
 };
 use crate::dto::user::UserRole;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
 use crate::extractors::validated::ValidatedJson;
+use crate::services::bot::{BotError, BotService};
+use crate::services::moderation::ModerationService;
+use axum::{
+    extract::{Path, Query, State},
+    routing::{delete, get, post, put},
+    Json, Router,
+};
+use std::sync::Arc;
+use uuid::Uuid;
 
 pub fn router() -> Router<crate::config::AppState> {
     Router::new()
         .route("/submissions", get(get_submissions))
-        .route("/submissions/:submission_id/status", post(update_submission_status))
+        .route(
+            "/submissions/:submission_id/status",
+            post(update_submission_status),
+        )
         .route("/report/:hash", post(report_comment))
         .route("/bot/generate", post(generate_bot_comment))
         .route("/bot/export-monthly", get(export_monthly_menu_for_bot))
@@ -41,7 +44,10 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/:menu_id/approve", post(approve_menu))
         .route("/:menu_id/reject", post(reject_menu))
         .route("/menus/:menu_id/commentary", put(update_menu_commentary))
-        .route("/:menu_id/items", get(get_menu_items).put(update_menu_items))
+        .route(
+            "/:menu_id/items",
+            get(get_menu_items).put(update_menu_items),
+        )
         .route("/votes/pending", get(get_pending_votes))
         .route("/votes/all", get(get_all_votes))
         .route("/votes/complaints", get(get_complaints))
@@ -55,7 +61,10 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/kitchen/coverage", get(get_kitchen_coverage))
         .nest("/database", crate::routes::database_admin::router())
         .route("/incidents", get(get_incidents).post(create_incident))
-        .route("/incidents/:incident_id", put(update_incident).delete(delete_incident))
+        .route(
+            "/incidents/:incident_id",
+            put(update_incident).delete(delete_incident),
+        )
 }
 
 impl From<BotError> for AppError {
@@ -94,11 +103,15 @@ async fn generate_bot_comment(
 ) -> Result<Json<BotGenerateResponseDto>, AppError> {
     // Sadece admin tetikleyebilir
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
 
     // API anahtarı yapılandırılmış mı?
-    let api_key = config.gemini_api_key.as_deref()
+    let api_key = config
+        .gemini_api_key
+        .as_deref()
         .ok_or_else(|| AppError::Internal("AI servisi yapılandırılmamış".to_string()))?;
 
     let client = reqwest::Client::new();
@@ -112,9 +125,12 @@ async fn generate_bot_comment(
         &config.gemini_model,
         &config.bot_directive,
         &context,
-    ).await?;
+    )
+    .await?;
 
-    Ok(Json(BotGenerateResponseDto { generated_comment: generated }))
+    Ok(Json(BotGenerateResponseDto {
+        generated_comment: generated,
+    }))
 }
 
 /// Admin-only: Aylık menüyü bot girdisi (prompt) + şema olarak dışa aktarır.
@@ -125,10 +141,13 @@ async fn export_monthly_menu_for_bot(
     Query(query): Query<BotExportMonthlyQuery>,
 ) -> Result<Json<BotExportMonthlyResponseDto>, AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
 
-    let menu_text = ModerationService::export_monthly_menu_for_bot(&db, &query.city_slug, &query.month).await?;
+    let menu_text =
+        ModerationService::export_monthly_menu_for_bot(&db, &query.city_slug, &query.month).await?;
 
     let schema: serde_json::Value = serde_json::from_str(BotService::BOT_OUTPUT_SCHEMA)
         .map_err(|e| AppError::Internal(format!("Bot şeması çözümlenemedi: {}", e)))?;
@@ -152,12 +171,17 @@ async fn inject_bot_comments(
     ValidatedJson(payload): ValidatedJson<InjectBotCommentsDto>,
 ) -> Result<Json<InjectBotCommentsResponseDto>, AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
 
-    let updated = ModerationService::inject_bot_comments(&db, &payload.city_slug, &payload.comments).await?;
+    let updated =
+        ModerationService::inject_bot_comments(&db, &payload.city_slug, &payload.comments).await?;
 
-    Ok(Json(InjectBotCommentsResponseDto { updated_count: updated }))
+    Ok(Json(InjectBotCommentsResponseDto {
+        updated_count: updated,
+    }))
 }
 
 async fn update_user_status(
@@ -167,7 +191,9 @@ async fn update_user_status(
     ValidatedJson(payload): ValidatedJson<UpdateUserStatusDto>,
 ) -> Result<Json<()>, AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
     ModerationService::update_user_status(&db, user_id, &payload.status)
         .await
@@ -182,11 +208,19 @@ async fn update_user(
     ValidatedJson(payload): ValidatedJson<crate::dto::moderation::UpdateUserDto>,
 ) -> Result<Json<()>, AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
-    ModerationService::update_user(&db, user_id, payload.is_verified, payload.is_admin, payload.is_banned)
-        .await
-        .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
+    ModerationService::update_user(
+        &db,
+        user_id,
+        payload.is_verified,
+        payload.is_admin,
+        payload.is_banned,
+    )
+    .await
+    .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
     Ok(Json(()))
 }
 
@@ -197,7 +231,9 @@ async fn resolve_report(
     ValidatedJson(payload): ValidatedJson<ResolveReportDto>,
 ) -> Result<Json<()>, AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
     ModerationService::resolve_report(&db, report_id, payload.action_taken)
         .await
@@ -207,12 +243,15 @@ async fn resolve_report(
 
 // --- IMPLEMENTED MODERATION ENDPOINTS ---
 
-use shared::entities::{prelude::*, menus, comments, users, tags};
-use sea_orm::*; use sea_orm::QueryOrder;
+use sea_orm::QueryOrder;
+use sea_orm::*;
+use shared::entities::{comments, menus, prelude::*, tags, users};
 
 fn require_admin(user: &AuthenticatedUser) -> Result<(), AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Bu işlem yalnızca yöneticilere açıktır".to_string()));
+        return Err(AppError::Forbidden(
+            "Bu işlem yalnızca yöneticilere açıktır".to_string(),
+        ));
     }
     Ok(())
 }
@@ -236,21 +275,22 @@ async fn warn_user(
     ValidatedJson(payload): ValidatedJson<WarnUserDto>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    
-    use sea_orm::{ActiveValue::Set, ActiveModelTrait};
+
+    use sea_orm::{ActiveModelTrait, ActiveValue::Set};
     use shared::entities::user_warnings;
-    
+
     let warning = user_warnings::ActiveModel {
         id: sea_orm::ActiveValue::NotSet,
         user_id: Set(user_id),
         message: Set(payload.message.clone()),
         created_at: Set(Some(chrono::Utc::now().into())),
     };
-    
-    warning.insert(&db)
+
+    warning
+        .insert(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let _ = crate::services::notification::NotificationService::send_notification(
         &db,
         user_id,
@@ -259,7 +299,8 @@ async fn warn_user(
         &payload.message,
         None,
         None,
-    ).await;
+    )
+    .await;
 
     Ok(Json(()))
 }
@@ -270,21 +311,28 @@ async fn get_pending_menus(
 ) -> Result<Json<Vec<crate::dto::moderation::MenuModerationResponseDto>>, AppError> {
     require_admin(&user)?;
     let menus_with_cities = Menus::find()
-        .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending))
+        .filter(
+            menus::Column::Status
+                .eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending),
+        )
         .find_also_related(shared::entities::cities::Entity)
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    
+
     let mut result = Vec::new();
     for (m, city_opt) in menus_with_cities {
         result.push(crate::dto::moderation::MenuModerationResponseDto {
             id: m.id,
             date: m.serve_date.to_string(),
             meal_type: match m.meal_type {
-                shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => "breakfast".to_string(),
+                shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
+                    "breakfast".to_string()
+                }
                 shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch".to_string(),
-                shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner".to_string(),
+                shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => {
+                    "dinner".to_string()
+                }
             },
             status: "pending".to_string(),
             source_type: m.source_type,
@@ -302,10 +350,9 @@ async fn get_menus(
     Query(query): Query<crate::dto::moderation::GetMenusQuery>,
 ) -> Result<Json<Vec<crate::dto::moderation::MenuModerationResponseDto>>, AppError> {
     require_admin(&user)?;
-    
+
     use shared::entities::sea_orm_active_enums::MenuStatusEnum;
-    
-    
+
     let mut condition = sea_orm::Condition::all();
 
     if let Some(status) = &query.status {
@@ -322,27 +369,29 @@ async fn get_menus(
 
     if let Some(month) = &query.month {
         if !month.is_empty() {
-            if month.len() == 7 { // YYYY-MM
+            if month.len() == 7 {
+                // YYYY-MM
                 let parts: Vec<&str> = month.split('-').collect();
                 if parts.len() == 2 {
                     if let (Ok(y), Ok(m)) = (parts[0].parse::<i32>(), parts[1].parse::<u32>()) {
                         let next_y = if m == 12 { y + 1 } else { y };
                         let next_m = if m == 12 { 1 } else { m + 1 };
-                        
+
                         if let (Some(start_date), Some(end_date)) = (
                             chrono::NaiveDate::from_ymd_opt(y, m, 1),
-                            chrono::NaiveDate::from_ymd_opt(next_y, next_m, 1)
+                            chrono::NaiveDate::from_ymd_opt(next_y, next_m, 1),
                         ) {
                             condition = condition.add(menus::Column::ServeDate.gte(start_date));
                             condition = condition.add(menus::Column::ServeDate.lt(end_date));
                         }
                     }
                 }
-            } else if month.len() == 4 { // YYYY
+            } else if month.len() == 4 {
+                // YYYY
                 if let Ok(y) = month.parse::<i32>() {
                     if let (Some(start_date), Some(end_date)) = (
                         chrono::NaiveDate::from_ymd_opt(y, 1, 1),
-                        chrono::NaiveDate::from_ymd_opt(y + 1, 1, 1)
+                        chrono::NaiveDate::from_ymd_opt(y + 1, 1, 1),
                     ) {
                         condition = condition.add(menus::Column::ServeDate.gte(start_date));
                         condition = condition.add(menus::Column::ServeDate.lt(end_date));
@@ -361,7 +410,7 @@ async fn get_menus(
                 .one(&db)
                 .await
                 .map_err(|e| AppError::Internal(e.to_string()))?;
-                
+
             if let Some(c) = city {
                 select = select.filter(menus::Column::CityId.eq(c.id));
             } else {
@@ -376,21 +425,31 @@ async fn get_menus(
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    
+
     let mut result = Vec::new();
     for (m, city_opt) in menus_with_cities {
         result.push(crate::dto::moderation::MenuModerationResponseDto {
             id: m.id,
             date: m.serve_date.to_string(),
             meal_type: match m.meal_type {
-                shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => "breakfast".to_string(),
+                shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
+                    "breakfast".to_string()
+                }
                 shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch".to_string(),
-                shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner".to_string(),
+                shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => {
+                    "dinner".to_string()
+                }
             },
             status: match m.status {
-                shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending => "pending".to_string(),
-                shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved => "approved".to_string(),
-                shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected => "rejected".to_string(),
+                shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending => {
+                    "pending".to_string()
+                }
+                shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved => {
+                    "approved".to_string()
+                }
+                shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected => {
+                    "rejected".to_string()
+                }
             },
             source_type: m.source_type,
             notice: m.notice,
@@ -446,12 +505,16 @@ async fn approve_menu(
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
     let original_menu = Menus::find_by_id(menu_id)
-        .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
         .ok_or(AppError::NotFound("Menu not found".into()))?;
     let submitter_id = original_menu.submitted_by;
     let mut menu: menus::ActiveModel = original_menu.into();
     menu.status = Set(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved);
-    menu.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    menu.update(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id)
         .await
@@ -467,7 +530,8 @@ async fn approve_menu(
             "Gönderdiğin menü moderatörler tarafından incelendi ve yayına alındı.",
             Some("Menüyü Gör"),
             Some(&action_url),
-        ).await;
+        )
+        .await;
     }
 
     Ok(Json(()))
@@ -480,12 +544,16 @@ async fn reject_menu(
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
     let original_menu = Menus::find_by_id(menu_id)
-        .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
         .ok_or(AppError::NotFound("Menu not found".into()))?;
     let submitter_id = original_menu.submitted_by;
     let mut menu: menus::ActiveModel = original_menu.into();
     menu.status = Set(shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected);
-    menu.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    menu.update(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     if let Some(sub_id) = submitter_id {
         let _ = crate::services::notification::NotificationService::send_notification(
@@ -496,7 +564,8 @@ async fn reject_menu(
             "Gönderdiğin menü inceleme sonucunda uygun bulunmadı.",
             None,
             None,
-        ).await;
+        )
+        .await;
     }
 
     Ok(Json(()))
@@ -512,7 +581,11 @@ async fn bulk_update_menu_status(
     let target_status = match payload.status.to_lowercase().as_str() {
         "approved" => shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved,
         "rejected" => shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected,
-        _ => return Err(AppError::BadRequest("Geçersiz menü durumu (yalnızca 'approved' veya 'rejected')".to_string())),
+        _ => {
+            return Err(AppError::BadRequest(
+                "Geçersiz menü durumu (yalnızca 'approved' veya 'rejected')".to_string(),
+            ))
+        }
     };
 
     let target_menus = Menus::find()
@@ -527,11 +600,16 @@ async fn bulk_update_menu_status(
         let submitter_id = original_menu.submitted_by;
         let mut active: menus::ActiveModel = original_menu.into();
         active.status = Set(target_status.clone());
-        active.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+        active
+            .update(&db)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?;
         updated_count += 1;
 
         if target_status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved {
-            let _ = shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id).await;
+            let _ =
+                shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id)
+                    .await;
             if let Some(sub_id) = submitter_id {
                 let action_url = format!("/menu/{}", menu_id);
                 let _ = crate::services::notification::NotificationService::send_notification(
@@ -542,9 +620,11 @@ async fn bulk_update_menu_status(
                     "Gönderdiğin menü moderatörler tarafından incelendi ve yayına alındı.",
                     Some("Menüyü Gör"),
                     Some(&action_url),
-                ).await;
+                )
+                .await;
             }
-        } else if target_status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected {
+        } else if target_status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected
+        {
             if let Some(sub_id) = submitter_id {
                 let _ = crate::services::notification::NotificationService::send_notification(
                     &db,
@@ -554,14 +634,14 @@ async fn bulk_update_menu_status(
                     "Gönderdiğin menü inceleme sonucunda uygun bulunmadı.",
                     None,
                     None,
-                ).await;
+                )
+                .await;
             }
         }
     }
 
     Ok(Json(BulkUpdateMenuStatusResponseDto { updated_count }))
 }
-
 
 async fn update_menu_commentary(
     State(db): State<sea_orm::DatabaseConnection>,
@@ -571,11 +651,17 @@ async fn update_menu_commentary(
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
     let mut menu: menus::ActiveModel = Menus::find_by_id(menu_id)
-        .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("Menu not found".into()))?.into();
-    let sanitized_commentary = shared::services::content_guard::ContentGuard::sanitize_html(&payload.content);
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or(AppError::NotFound("Menu not found".into()))?
+        .into();
+    let sanitized_commentary =
+        shared::services::content_guard::ContentGuard::sanitize_html(&payload.content);
     menu.bot_commentary = Set(Some(sanitized_commentary));
-    menu.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    menu.update(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(()))
 }
 
@@ -591,7 +677,9 @@ async fn update_menu_items(
         .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
 
     let menu = Menus::find_by_id(menu_id)
-        .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     if let Some(m) = menu {
         if m.status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved {
             shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id)
@@ -617,7 +705,7 @@ async fn get_menu_items(
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut dish_ids = Vec::new();
     for (_, alias_opt) in &menu_dishes {
         if let Some(alias) = alias_opt {
@@ -626,7 +714,7 @@ async fn get_menu_items(
             }
         }
     }
-    
+
     let dishes = if !dish_ids.is_empty() {
         shared::entities::dishes::Entity::find()
             .filter(shared::entities::dishes::Column::Id.is_in(dish_ids))
@@ -636,7 +724,7 @@ async fn get_menu_items(
     } else {
         vec![]
     };
-    
+
     let dishes_map: std::collections::HashMap<i32, shared::entities::dishes::Model> =
         dishes.into_iter().map(|d| (d.id, d)).collect();
 
@@ -657,7 +745,7 @@ async fn get_menu_items(
             }
         }
     }
-        
+
     Ok(Json(result))
 }
 
@@ -675,14 +763,21 @@ async fn get_all_votes(
     State(db): State<sea_orm::DatabaseConnection>,
     user: AuthenticatedUser,
     Query(query): Query<crate::dto::pagination::PaginationQuery>,
-) -> Result<Json<crate::dto::pagination::PaginatedResponse<crate::dto::moderation::VoteModerationResponseDto>>, AppError> {
+) -> Result<
+    Json<
+        crate::dto::pagination::PaginatedResponse<
+            crate::dto::moderation::VoteModerationResponseDto,
+        >,
+    >,
+    AppError,
+> {
     require_admin(&user)?;
-    
+
     let limit = query.limit_num();
     let offset = query.offset();
-    
+
     let total = Comments::find().count(&db).await.unwrap_or(0);
-    
+
     let comments_list = Comments::find()
         .order_by_desc(comments::Column::CreatedAt)
         .limit(limit)
@@ -690,11 +785,14 @@ async fn get_all_votes(
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut result = Vec::new();
     for c in comments_list {
         let user_dto = if let Some(uid) = c.user_id {
-            let u = Users::find_by_id(uid).one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+            let u = Users::find_by_id(uid)
+                .one(&db)
+                .await
+                .map_err(|e| AppError::Internal(e.to_string()))?;
             u.map(|user| crate::dto::moderation::VoteModerationUserDto {
                 username: user.username,
             })
@@ -702,22 +800,32 @@ async fn get_all_votes(
             None
         };
 
-        use shared::entities::vote_reactions;
         use shared::entities::sea_orm_active_enums::ReactionTypeEnum;
+        use shared::entities::vote_reactions;
         let reactions = vote_reactions::Entity::find()
             .filter(vote_reactions::Column::CommentId.eq(c.id))
             .all(&db)
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?;
-            
-        let up = reactions.iter().filter(|r| r.reaction_type == ReactionTypeEnum::Upvote).count() as i32;
-        let down = reactions.iter().filter(|r| r.reaction_type == ReactionTypeEnum::Downvote).count() as i32;
+
+        let up = reactions
+            .iter()
+            .filter(|r| r.reaction_type == ReactionTypeEnum::Upvote)
+            .count() as i32;
+        let down = reactions
+            .iter()
+            .filter(|r| r.reaction_type == ReactionTypeEnum::Downvote)
+            .count() as i32;
 
         let created_at_str = c.created_at.map(|dt| dt.to_rfc3339());
-        
+
         let sentiment_str = match c.sentiment {
-            shared::entities::sea_orm_active_enums::SentimentEnum::Positive => "positive".to_string(),
-            shared::entities::sea_orm_active_enums::SentimentEnum::Negative => "negative".to_string(),
+            shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                "positive".to_string()
+            }
+            shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                "negative".to_string()
+            }
             shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => "neutral".to_string(),
         };
 
@@ -749,29 +857,32 @@ async fn get_complaints(
     user: AuthenticatedUser,
 ) -> Result<Json<Vec<crate::dto::moderation::ReportModerationResponseDto>>, AppError> {
     require_admin(&user)?;
-    
-    use sea_orm::{QueryFilter, ColumnTrait, EntityTrait};
+
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
     use shared::entities::reports;
-    
+
     let pending_reports = Reports::find()
-        .filter(reports::Column::Status.eq(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending))
+        .filter(
+            reports::Column::Status
+                .eq(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending),
+        )
         .filter(reports::Column::ReportedCommentId.is_not_null())
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut result = Vec::new();
     for r in pending_reports {
         let comment_id = r.reported_comment_id.unwrap();
-        
+
         let comment_opt = Comments::find_by_id(comment_id)
             .one(&db)
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?;
-            
+
         let comment_content = comment_opt.as_ref().and_then(|c| c.content.clone());
         let comment_author_id = comment_opt.as_ref().and_then(|c| c.user_id);
-        
+
         let author_username = if let Some(author_uid) = comment_author_id {
             Users::find_by_id(author_uid)
                 .one(&db)
@@ -781,7 +892,7 @@ async fn get_complaints(
         } else {
             None
         };
-        
+
         let reporter_username = if let Some(rid) = r.reporter_id {
             Users::find_by_id(rid)
                 .one(&db)
@@ -791,9 +902,9 @@ async fn get_complaints(
         } else {
             None
         };
-            
+
         let created_at_str = r.created_at.map(|dt| dt.to_rfc3339());
-        
+
         result.push(crate::dto::moderation::ReportModerationResponseDto {
             id: comment_id,
             reason: r.reason.clone(),
@@ -807,7 +918,7 @@ async fn get_complaints(
             report_count: Some(1),
         });
     }
-    
+
     Ok(Json(result))
 }
 
@@ -817,38 +928,44 @@ async fn approve_vote(
     Path(vote_id): Path<Uuid>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    
-    use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, EntityTrait};
+
+    use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
     use shared::entities::reports;
-    
+
     let comment = Comments::find_by_id(vote_id)
         .one(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
-        
+
     let mut active_comment: comments::ActiveModel = comment.into();
     active_comment.is_deleted = Set(false);
-    active_comment.update(&db)
+    active_comment
+        .update(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let comment_reports = Reports::find()
         .filter(reports::Column::ReportedCommentId.eq(vote_id))
-        .filter(reports::Column::Status.eq(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending))
+        .filter(
+            reports::Column::Status
+                .eq(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending),
+        )
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     for r in comment_reports {
         let mut active_report: reports::ActiveModel = r.into();
-        active_report.status = Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Dismissed);
+        active_report.status =
+            Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Dismissed);
         active_report.resolved_at = Set(Some(chrono::Utc::now().into()));
-        active_report.update(&db)
+        active_report
+            .update(&db)
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?;
     }
-        
+
     Ok(Json(()))
 }
 
@@ -858,30 +975,35 @@ async fn reject_vote(
     Path(vote_id): Path<Uuid>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    
-    use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, EntityTrait};
+
+    use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
     use shared::entities::reports;
-    
+
     crate::services::reaction::ReactionService::delete_comment(&db, user.id, &user.role, vote_id)
         .await
         .map_err(|e| AppError::Internal(format!("{:?}", e)))?;
-        
+
     let comment_reports = Reports::find()
         .filter(reports::Column::ReportedCommentId.eq(vote_id))
-        .filter(reports::Column::Status.eq(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending))
+        .filter(
+            reports::Column::Status
+                .eq(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending),
+        )
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     for r in comment_reports {
         let mut active_report: reports::ActiveModel = r.into();
-        active_report.status = Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Resolved);
+        active_report.status =
+            Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Resolved);
         active_report.resolved_at = Set(Some(chrono::Utc::now().into()));
-        active_report.update(&db)
+        active_report
+            .update(&db)
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?;
     }
-    
+
     Ok(Json(()))
 }
 
@@ -891,36 +1013,39 @@ async fn reset_vote(
     Path(vote_id): Path<Uuid>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    
-    use sea_orm::{ActiveModelTrait, ColumnTrait, QueryFilter, EntityTrait};
+
+    use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter};
     use shared::entities::reports;
-    
+
     let comment = Comments::find_by_id(vote_id)
         .one(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Comment not found".to_string()))?;
-        
+
     let mut active_comment: comments::ActiveModel = comment.into();
     active_comment.is_deleted = Set(false);
-    active_comment.update(&db)
+    active_comment
+        .update(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let comment_reports = Reports::find()
         .filter(reports::Column::ReportedCommentId.eq(vote_id))
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     for r in comment_reports {
         let mut active_report: reports::ActiveModel = r.into();
-        active_report.status = Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending);
-        active_report.update(&db)
+        active_report.status =
+            Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Pending);
+        active_report
+            .update(&db)
             .await
             .map_err(|e| AppError::Internal(e.to_string()))?;
     }
-    
+
     Ok(Json(()))
 }
 
@@ -930,27 +1055,27 @@ async fn purge_vote(
     Path(vote_id): Path<Uuid>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    
-    use sea_orm::{EntityTrait, QueryFilter, ColumnTrait};
-    use shared::entities::{vote_reactions, reports};
-    
+
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+    use shared::entities::{reports, vote_reactions};
+
     vote_reactions::Entity::delete_many()
         .filter(vote_reactions::Column::CommentId.eq(vote_id))
         .exec(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     reports::Entity::delete_many()
         .filter(reports::Column::ReportedCommentId.eq(vote_id))
         .exec(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     Comments::delete_by_id(vote_id)
         .exec(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     Ok(Json(()))
 }
 
@@ -965,12 +1090,16 @@ async fn get_users(
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut result = Vec::new();
     for u in users_list {
         let is_admin = u.role == shared::entities::sea_orm_active_enums::UserRoleEnum::Admin;
-        let is_banned = u.account_status == shared::entities::sea_orm_active_enums::AccountStatusEnum::Banned;
-        let created_at_time = u.created_at.unwrap_or_else(|| chrono::Utc::now().into()).into();
+        let is_banned =
+            u.account_status == shared::entities::sea_orm_active_enums::AccountStatusEnum::Banned;
+        let created_at_time = u
+            .created_at
+            .unwrap_or_else(|| chrono::Utc::now().into())
+            .into();
         result.push(crate::dto::moderation::UserModerationResponseDto {
             id: u.id,
             username: u.username,
@@ -981,9 +1110,15 @@ async fn get_users(
                 _ => "unknown".to_string(),
             },
             status: match u.account_status {
-                shared::entities::sea_orm_active_enums::AccountStatusEnum::Active => "active".to_string(),
-                shared::entities::sea_orm_active_enums::AccountStatusEnum::Suspended => "suspended".to_string(),
-                shared::entities::sea_orm_active_enums::AccountStatusEnum::Banned => "banned".to_string(),
+                shared::entities::sea_orm_active_enums::AccountStatusEnum::Active => {
+                    "active".to_string()
+                }
+                shared::entities::sea_orm_active_enums::AccountStatusEnum::Suspended => {
+                    "suspended".to_string()
+                }
+                shared::entities::sea_orm_active_enums::AccountStatusEnum::Banned => {
+                    "banned".to_string()
+                }
             },
             is_admin,
             is_verified: u.is_verified,
@@ -1004,7 +1139,7 @@ async fn get_tags(
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut result = Vec::new();
     for t in tags_list {
         result.push(crate::dto::moderation::TagResponseDto {
@@ -1028,7 +1163,9 @@ async fn create_tag(
         sort_order: Set(payload.sort_order),
         ..Default::default()
     };
-    tag.insert(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    tag.insert(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(()))
 }
 
@@ -1040,12 +1177,17 @@ async fn update_tag(
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
     let mut tag: tags::ActiveModel = Tags::find_by_id(tag_id)
-        .one(&db).await.map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("Tag not found".into()))?.into();
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or(AppError::NotFound("Tag not found".into()))?
+        .into();
     tag.name = Set(payload.name);
     tag.category = Set(payload.category);
     tag.sort_order = Set(payload.sort_order);
-    tag.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    tag.update(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(()))
 }
 
@@ -1055,7 +1197,10 @@ async fn delete_tag(
     Path(tag_id): Path<i32>,
 ) -> Result<Json<()>, AppError> {
     require_admin(&user)?;
-    Tags::delete_by_id(tag_id).exec(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    Tags::delete_by_id(tag_id)
+        .exec(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(()))
 }
 
@@ -1069,18 +1214,21 @@ async fn get_incidents(
         .all(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
-    let result = incidents.into_iter().map(|i| crate::dto::moderation::IncidentAdminDto {
-        id: i.id,
-        component: i.component,
-        title: i.title,
-        message: i.message,
-        status: i.status,
-        impact: i.impact,
-        created_at: i.created_at.map(|d| d.to_rfc3339()),
-        resolved_at: i.resolved_at.map(|d| d.to_rfc3339()),
-    }).collect();
-    
+
+    let result = incidents
+        .into_iter()
+        .map(|i| crate::dto::moderation::IncidentAdminDto {
+            id: i.id,
+            component: i.component,
+            title: i.title,
+            message: i.message,
+            status: i.status,
+            impact: i.impact,
+            created_at: i.created_at.map(|d| d.to_rfc3339()),
+            resolved_at: i.resolved_at.map(|d| d.to_rfc3339()),
+        })
+        .collect();
+
     Ok(Json(result))
 }
 
@@ -1169,8 +1317,12 @@ async fn get_kitchen_coverage(
     require_admin(&user)?;
 
     let now = chrono::Utc::now();
-    let year = query.year.unwrap_or_else(|| now.format("%Y").to_string().parse().unwrap_or(2026));
-    let month = query.month.unwrap_or_else(|| now.format("%m").to_string().parse().unwrap_or(9));
+    let year = query
+        .year
+        .unwrap_or_else(|| now.format("%Y").to_string().parse().unwrap_or(2026));
+    let month = query
+        .month
+        .unwrap_or_else(|| now.format("%m").to_string().parse().unwrap_or(9));
 
     let days_in_month = match month {
         1 | 3 | 5 | 7 | 8 | 10 | 12 => 31,
@@ -1212,7 +1364,10 @@ async fn get_kitchen_coverage(
         vec![year.into(), month.into()],
     );
 
-    let rows = db.query_all(stmt).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    let rows = db
+        .query_all(stmt)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     use std::collections::BTreeMap;
     struct CityItem {

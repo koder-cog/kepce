@@ -19,8 +19,10 @@ impl KykMenumDayMenu {
 fn extract_jsonld_blocks(html: &str) -> Vec<String> {
     static RE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
     let re = RE.get_or_init(|| {
-        regex::Regex::new(r#"(?s)<script[^>]*type=["']application/ld\+json["'][^>]*>(.*?)</script>"#)
-            .unwrap()
+        regex::Regex::new(
+            r#"(?s)<script[^>]*type=["']application/ld\+json["'][^>]*>(.*?)</script>"#,
+        )
+        .unwrap()
     });
     re.captures_iter(html)
         .filter_map(|c| c.get(1))

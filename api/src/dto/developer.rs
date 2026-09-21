@@ -1,11 +1,15 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use chrono::{DateTime, Utc};
 use validator::Validate;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateProjectDto {
-    #[validate(length(min = 4, max = 30, message = "Proje ismi 4-30 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 4,
+        max = 30,
+        message = "Proje ismi 4-30 karakter arasında olmalıdır"
+    ))]
     pub name: String,
 }
 
@@ -20,7 +24,11 @@ pub struct ProjectResponseDto {
 #[derive(Debug, Deserialize, Validate)]
 pub struct CreateApiKeyDto {
     pub project_id: Uuid,
-    #[validate(length(min = 1, max = 30, message = "Anahtar ismi 1-30 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 1,
+        max = 30,
+        message = "Anahtar ismi 1-30 karakter arasında olmalıdır"
+    ))]
     pub name: String,
 }
 

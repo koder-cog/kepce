@@ -1,4 +1,4 @@
-use chrono::{DateTime, Utc, FixedOffset};
+use chrono::{DateTime, FixedOffset, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 use validator::Validate;
@@ -32,9 +32,12 @@ pub enum UserRole {
 #[derive(Debug, Deserialize, Validate)]
 pub struct LoginRequestDto {
     // E-posta veya Kullanıcı Adı girilebilir. Bu yüzden tipini identifier koyduk ve email validasyonunu kaldırdık.
-    #[validate(length(min = 3, message = "Kullanıcı adı veya e-posta en az 3 karakter olmalıdır"))]
+    #[validate(length(
+        min = 3,
+        message = "Kullanıcı adı veya e-posta en az 3 karakter olmalıdır"
+    ))]
     pub identifier: String,
-    
+
     #[validate(length(min = 1, max = 128, message = "Lütfen şifrenizi giriniz"))]
     pub password: String,
 
@@ -53,7 +56,6 @@ pub struct PasswordlessRequestDto {
 pub struct PasswordlessLoginDto {
     pub token: String,
 }
-
 
 /// Boş string ("" veya "   ") geldiğinde None olarak ayrıştıran özel deserializer
 pub fn empty_string_as_none<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
@@ -76,12 +78,16 @@ where
 pub struct RegisterRequestDto {
     // Kullanıcı adı artık opsiyonel. Girilmezse AuthService e-postadan türetecek.
     #[serde(default, deserialize_with = "empty_string_as_none")]
-    #[validate(length(min = 3, max = 30, message = "Kullanıcı adı 3-30 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 3,
+        max = 30,
+        message = "Kullanıcı adı 3-30 karakter arasında olmalıdır"
+    ))]
     pub username: Option<String>,
 
     #[validate(email(message = "Geçerli bir e-posta adresi giriniz"))]
     pub email: String,
-    
+
     #[validate(length(min = 8, max = 72, message = "Şifre 8-72 karakter arasında olmalıdır"))]
     pub password: String,
 
@@ -103,16 +109,16 @@ pub struct LevelProgressDto {
 #[derive(Debug, Serialize)]
 pub struct UserProfileDto {
     pub id: Uuid,
-    
+
     pub username: String,
-    
+
     // SA-13: Rol yalnızca kullanıcının KENDİ profilinde (include_private) döner.
     // Public profillerde admin hesaplarının enumeration'ını önlemek için gizlenir.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<UserRole>,
-    
+
     pub karma_score: i32,
-    
+
     pub is_verified: bool,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -129,7 +135,7 @@ pub struct UserProfileDto {
     pub is_admin: Option<bool>,
     pub badge_count: i32,
     pub total_badges: i32,
-    
+
     // Kullanıcının kazandığı rozetlerin listesi
     pub badges: Vec<UserBadgeDto>,
     pub pinned_badges: Vec<String>,
@@ -215,15 +221,23 @@ pub struct UserDashboardStatsDto {
 #[derive(Debug, Deserialize, validator::Validate)]
 pub struct UpdateProfileDto {
     #[serde(default, deserialize_with = "empty_string_as_none")]
-    #[validate(length(min = 3, max = 30, message = "Kullanıcı adı 3-30 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 3,
+        max = 30,
+        message = "Kullanıcı adı 3-30 karakter arasında olmalıdır"
+    ))]
     pub username: Option<String>,
-    
+
     #[validate(email(message = "Geçerli bir e-posta adresi giriniz"))]
     pub email: Option<String>,
-    
+
     pub current_password: Option<String>,
-    
-    #[validate(length(min = 8, max = 72, message = "Yeni şifre 8-72 karakter arasında olmalıdır"))]
+
+    #[validate(length(
+        min = 8,
+        max = 72,
+        message = "Yeni şifre 8-72 karakter arasında olmalıdır"
+    ))]
     pub password: Option<String>,
 
     pub bio: Option<String>,
@@ -275,7 +289,8 @@ mod tests {
         assert_eq!(dto.username, None);
         assert!(dto.validate().is_ok());
 
-        let json_whitespace = r#"{"email":"test@example.com","password":"password123","username":"   "}"#;
+        let json_whitespace =
+            r#"{"email":"test@example.com","password":"password123","username":"   "}"#;
         let dto: RegisterRequestDto = serde_json::from_str(json_whitespace).unwrap();
         assert_eq!(dto.username, None);
         assert!(dto.validate().is_ok());

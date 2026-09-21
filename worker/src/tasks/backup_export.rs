@@ -1,8 +1,13 @@
 use anyhow::{Context, Result};
 use chrono::{Datelike, NaiveDate};
-use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, QueryOrder, PaginatorTrait};
-use shared::entities::{cities, menu_dishes, menus, dish_aliases, sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum}};
+use sea_orm::{
+    ColumnTrait, DatabaseConnection, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder,
+};
 use serde::Serialize;
+use shared::entities::{
+    cities, dish_aliases, menu_dishes, menus,
+    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
+};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
@@ -38,7 +43,8 @@ pub async fn export_backup_menus(db: &DatabaseConnection, output_dir: &str) -> R
     let city_map: HashMap<i32, String> = all_cities.into_iter().map(|c| (c.id, c.slug)).collect();
 
     // city_slug -> meal_type -> year_month -> Vec<ExportMenuRecord>
-    let mut export_data: HashMap<String, HashMap<String, HashMap<String, Vec<ExportMenuRecord>>>> = HashMap::new();
+    let mut export_data: HashMap<String, HashMap<String, HashMap<String, Vec<ExportMenuRecord>>>> =
+        HashMap::new();
 
     for (menu, dishes_for_menu) in all_menus.into_iter().zip(all_menu_dishes) {
         let city_slug = match city_map.get(&menu.city_id) {
@@ -77,15 +83,21 @@ pub async fn export_backup_menus(db: &DatabaseConnection, output_dir: &str) -> R
             "650-850 kalori".to_string()
         };
 
-        use shared::entities::{menu_votes, comments};
         use shared::entities::sea_orm_active_enums::SentimentEnum;
+        use shared::entities::{comments, menu_votes};
 
         let votes = menu_votes::Entity::find()
             .filter(menu_votes::Column::MenuId.eq(menu.id))
             .all(db)
             .await?;
-        let likes_count = votes.iter().filter(|v| v.sentiment == SentimentEnum::Positive).count();
-        let dislikes_count = votes.iter().filter(|v| v.sentiment == SentimentEnum::Negative).count();
+        let likes_count = votes
+            .iter()
+            .filter(|v| v.sentiment == SentimentEnum::Positive)
+            .count();
+        let dislikes_count = votes
+            .iter()
+            .filter(|v| v.sentiment == SentimentEnum::Negative)
+            .count();
 
         let c_count = comments::Entity::find()
             .filter(comments::Column::MenuId.eq(menu.id))
@@ -137,7 +149,7 @@ pub async fn export_backup_menus(db: &DatabaseConnection, output_dir: &str) -> R
 fn format_turkish_date(date: NaiveDate) -> String {
     let day = date.day();
     let year = date.year();
-    
+
     let month_str = match date.month() {
         1 => "Ocak",
         2 => "Şubat",

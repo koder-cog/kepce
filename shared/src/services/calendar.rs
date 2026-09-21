@@ -4,10 +4,10 @@
 //! ve KYK burs/kredi ödeme döngülerini yönetir. Bot prompt export ve
 //! arayüz bilgilendirmesi için merkezi veri kaynağıdır.
 
-use std::collections::HashMap;
-use std::sync::OnceLock;
 use chrono::{Datelike, NaiveDate};
 use serde::Deserialize;
+use std::collections::HashMap;
+use std::sync::OnceLock;
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -102,10 +102,7 @@ mod tests {
         assert_eq!(name.as_deref(), Some("İstanbul'un Kurtuluşu"));
 
         let header = format_bot_day_header(date, "istanbul");
-        assert_eq!(
-            header,
-            "[2026-10-06 (İstanbul'un Kurtuluşu)]"
-        );
+        assert_eq!(header, "[2026-10-06 (İstanbul'un Kurtuluşu)]");
     }
 
     #[test]

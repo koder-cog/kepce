@@ -33,7 +33,11 @@ pub fn parse_kcal_range(meta: Option<&str>) -> (Option<i32>, Option<i32>) {
     }
 }
 
-pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str) -> Vec<KykyemekParseResult> {
+pub fn parse_kykyemek_html(
+    html_content: &str,
+    city_slug: &str,
+    meal_type: &str,
+) -> Vec<KykyemekParseResult> {
     let document = Html::parse_document(html_content);
     let card_selector = Selector::parse(".cardStyle").unwrap();
     let date_selector = Selector::parse("p.date, p.cardDate, .cardDate, p[id^='date_']").unwrap();
@@ -41,25 +45,29 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
     let body_selector = Selector::parse(".card-body").unwrap();
     let p_selector = Selector::parse("p").unwrap();
     let cal_selector = Selector::parse(".card-body p, p.text-end, p").unwrap();
-    
+
     let mut results = Vec::new();
-    
+
     for card in document.select(&card_selector) {
-        let date_str = match card.select(&date_selector).next().or_else(|| card.select(&fallback_date_selector).next()) {
+        let date_str = match card
+            .select(&date_selector)
+            .next()
+            .or_else(|| card.select(&fallback_date_selector).next())
+        {
             Some(el) => el.text().collect::<String>().trim().to_string(),
             None => continue,
         };
-        
+
         let date_val = match parse_turkish_date(&date_str) {
             Some(d) => d,
             None => continue,
         };
-        
+
         let body = match card.select(&body_selector).next() {
             Some(b) => b,
             None => continue,
         };
-        
+
         let mut min_calories = None;
         let mut max_calories = None;
         for p in card.select(&cal_selector) {
@@ -80,49 +88,68 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
             let text_nodes: Vec<&str> = p.text().collect();
             let text = text_nodes.join(" / ").trim().to_string();
             let text_lower = text.to_lowercase();
-            
+
             if ContentGuard::is_junk_dish_text(&text) {
                 continue;
             }
-            
-            if p.value().attr("data-fastmenus").is_some() || p.value().attr("onclick").map(|o| o.contains("showFastMenu")).unwrap_or(false) {
+
+            if p.value().attr("data-fastmenus").is_some()
+                || p.value()
+                    .attr("onclick")
+                    .map(|o| o.contains("showFastMenu"))
+                    .unwrap_or(false)
+            {
                 continue;
             }
-            
-            if text_lower.contains("al götür") || text_lower.contains("al-götür") || text_lower.contains("algötür") || text_lower.contains("al gotur") {
-                if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(&text, city_slug, meal_type) {
+
+            if text_lower.contains("al götür")
+                || text_lower.contains("al-götür")
+                || text_lower.contains("algötür")
+                || text_lower.contains("al gotur")
+            {
+                if let Some(mut pkgs) =
+                    crate::parser::takeaway::parse_takeaway_menu(&text, city_slug, meal_type)
+                {
                     takeaways.append(&mut pkgs);
                 }
                 continue;
             }
-            
+
             // Düzeltmeler (Shorthand expansions) ve Çöp Filtresi
             let dish_group = clean_and_split_dish(text);
-            
+
             if !dish_group.is_empty() {
                 raw_dishes.push(dish_group);
             }
         }
 
         // Fastmenu / Al Götür buton ve özniteliklerini de tara (data-fastmenus veya onclick)
-        let btn_selector = Selector::parse("[data-fastmenus], [onclick*='showFastMenu'], button, a, p").unwrap();
+        let btn_selector =
+            Selector::parse("[data-fastmenus], [onclick*='showFastMenu'], button, a, p").unwrap();
         for btn in card.select(&btn_selector) {
             if let Some(fast_json) = btn.value().attr("data-fastmenus") {
                 if let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json) {
                     for item in items {
                         let id_val = item.get("id").and_then(|v| v.as_str());
-                        let name_val = item.get("name").or_else(|| item.get("title")).and_then(|t| t.as_str()).unwrap_or("Al Götür");
+                        let name_val = item
+                            .get("name")
+                            .or_else(|| item.get("title"))
+                            .and_then(|t| t.as_str())
+                            .unwrap_or("Al Götür");
 
                         let mut resolved = false;
                         if let Some(uuid) = id_val {
-                            if let Some(slots) = crate::parser::takeaway::get_cached_fastmenu(uuid) {
+                            if let Some(slots) = crate::parser::takeaway::get_cached_fastmenu(uuid)
+                            {
                                 takeaways.push((name_val.to_string(), slots));
                                 resolved = true;
                             }
                         }
 
                         if !resolved {
-                            if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(name_val, city_slug, meal_type) {
+                            if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(
+                                name_val, city_slug, meal_type,
+                            ) {
                                 takeaways.append(&mut pkgs);
                             }
                         }
@@ -131,7 +158,9 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
             }
             if let Some(onclick) = btn.value().attr("onclick") {
                 if onclick.contains("showFastMenu") {
-                    if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(onclick, city_slug, meal_type) {
+                    if let Some(mut pkgs) =
+                        crate::parser::takeaway::parse_takeaway_menu(onclick, city_slug, meal_type)
+                    {
                         takeaways.append(&mut pkgs);
                     }
                 }
@@ -139,11 +168,19 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
         }
         let mut seen_takeaways = std::collections::HashSet::new();
         takeaways.retain(|(pkg_name, _)| seen_takeaways.insert(pkg_name.clone()));
-        
+
         let card_html = card.html();
-        let detected_meal = if card_html.contains("'Dinner'") || card_html.contains("\"Dinner\"") || card_html.contains("Akşam Yemeği") || card_html.contains("Aksam Yemegi") {
+        let detected_meal = if card_html.contains("'Dinner'")
+            || card_html.contains("\"Dinner\"")
+            || card_html.contains("Akşam Yemeği")
+            || card_html.contains("Aksam Yemegi")
+        {
             Some(MealTypeEnum::Dinner)
-        } else if card_html.contains("'Breakfast'") || card_html.contains("\"Breakfast\"") || card_html.contains("Kahvaltı") || card_html.contains("Kahvalti") {
+        } else if card_html.contains("'Breakfast'")
+            || card_html.contains("\"Breakfast\"")
+            || card_html.contains("Kahvaltı")
+            || card_html.contains("Kahvalti")
+        {
             Some(MealTypeEnum::Breakfast)
         } else {
             None
@@ -160,7 +197,7 @@ pub fn parse_kykyemek_html(html_content: &str, city_slug: &str, meal_type: &str)
             });
         }
     }
-    
+
     results
 }
 
@@ -184,7 +221,8 @@ pub fn extract_fastmenu_items(html_content: &str) -> Vec<(String, String)> {
                     if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
                         let id_str = id.trim().to_string();
                         if !id_str.is_empty() {
-                            let name = item.get("name")
+                            let name = item
+                                .get("name")
                                 .or_else(|| item.get("title"))
                                 .and_then(|t| t.as_str())
                                 .unwrap_or("Al Götür")
@@ -206,19 +244,38 @@ pub fn clean_and_split_dish(mut text: String) -> Vec<crate::parser::models::Menu
         return Vec::new();
     }
 
-    text = text.replace("Siyah/Yeşil Zeytin", "Siyah Zeytin / Yeşil Zeytin")
-               .replace("Siyah / Yeşil Zeytin", "Siyah Zeytin / Yeşil Zeytin")
-               .replace("Yeşil/Siyah Zeytin", "Yeşil Zeytin / Siyah Zeytin")
-               .replace("Yeşil / Siyah Zeytin", "Yeşil Zeytin / Siyah Zeytin")
-               .replace("Zeytinli/Peynirli Açma", "Zeytinli Açma / Peynirli Açma")
-               .replace("Peynirli/Zeytinli Açma", "Peynirli Açma / Zeytinli Açma")
-               .replace("Zeytinli/Peynirli Poğaça", "Zeytinli Poğaça / Peynirli Poğaça")
-               .replace("Peynirli/Zeytinli Poğaça", "Peynirli Poğaça / Zeytinli Poğaça")
-               .replace("Kakaolu/Sade Tahin Helvası", "Kakaolu Tahin Helvası / Sade Tahin Helvası")
-               .replace("Sade/Kakaolu Tahin Helvası", "Sade Tahin Helvası / Kakaolu Tahin Helvası")
-               .replace("Kakaolu / Sade Tahin Helvası", "Kakaolu Tahin Helvası / Sade Tahin Helvası")
-               .replace("Sade / Kakaolu Tahin Helvası", "Sade Tahin Helvası / Kakaolu Tahin Helvası");
-    
+    text = text
+        .replace("Siyah/Yeşil Zeytin", "Siyah Zeytin / Yeşil Zeytin")
+        .replace("Siyah / Yeşil Zeytin", "Siyah Zeytin / Yeşil Zeytin")
+        .replace("Yeşil/Siyah Zeytin", "Yeşil Zeytin / Siyah Zeytin")
+        .replace("Yeşil / Siyah Zeytin", "Yeşil Zeytin / Siyah Zeytin")
+        .replace("Zeytinli/Peynirli Açma", "Zeytinli Açma / Peynirli Açma")
+        .replace("Peynirli/Zeytinli Açma", "Peynirli Açma / Zeytinli Açma")
+        .replace(
+            "Zeytinli/Peynirli Poğaça",
+            "Zeytinli Poğaça / Peynirli Poğaça",
+        )
+        .replace(
+            "Peynirli/Zeytinli Poğaça",
+            "Peynirli Poğaça / Zeytinli Poğaça",
+        )
+        .replace(
+            "Kakaolu/Sade Tahin Helvası",
+            "Kakaolu Tahin Helvası / Sade Tahin Helvası",
+        )
+        .replace(
+            "Sade/Kakaolu Tahin Helvası",
+            "Sade Tahin Helvası / Kakaolu Tahin Helvası",
+        )
+        .replace(
+            "Kakaolu / Sade Tahin Helvası",
+            "Kakaolu Tahin Helvası / Sade Tahin Helvası",
+        )
+        .replace(
+            "Sade / Kakaolu Tahin Helvası",
+            "Sade Tahin Helvası / Kakaolu Tahin Helvası",
+        );
+
     let parts: Vec<&str> = text.split('/').collect();
     let mut dish_group = Vec::new();
     for part in parts {
@@ -241,11 +298,20 @@ pub(crate) fn parse_turkish_date(date_str: &str) -> Option<NaiveDate> {
         let day: u32 = parts[0].parse().ok()?;
         let month_name = parts[1];
         let year: i32 = parts[2].parse().ok()?;
-        
+
         let month = match month_name.to_lowercase().as_str() {
-            "ocak" => 1, "şubat" => 2, "mart" => 3, "nisan" => 4,
-            "mayıs" => 5, "haziran" => 6, "temmuz" => 7, "ağustos" => 8,
-            "eylül" => 9, "ekim" => 10, "kasım" => 11, "aralık" => 12,
+            "ocak" => 1,
+            "şubat" => 2,
+            "mart" => 3,
+            "nisan" => 4,
+            "mayıs" => 5,
+            "haziran" => 6,
+            "temmuz" => 7,
+            "ağustos" => 8,
+            "eylül" => 9,
+            "ekim" => 10,
+            "kasım" => 11,
+            "aralık" => 12,
             _ => return None,
         };
         NaiveDate::from_ymd_opt(year, month, day)
@@ -271,20 +337,26 @@ mod tests {
                 </div>
             </div>
         "#;
-        
+
         let results = parse_kyk_html(html, "test-city", "dinner");
         assert_eq!(results.len(), 1);
         let dishes = &results[0].dishes;
-        
+
         // p1: <p>Tavuk Izgara<br>Mevsim Türlü</p> -> split into 2 because of <br> joining with " / "
         assert_eq!(dishes[0], vec!["Tavuk Izgara", "Mevsim Türlü"]);
-        
+
         // p2: <p>Etsiz Karışık Dolma Veya Sarma+Yoğurt</p> -> NOT split by " Veya "
         assert_eq!(dishes[1], vec!["Etsiz Karışık Dolma Veya Sarma+Yoğurt"]);
-        
+
         // p3: <p>Mevsim Türlü / Tavuk Hamburger Köfte+Turşu+Marul+Domates+Patates Cips</p>
-        assert_eq!(dishes[2], vec!["Mevsim Türlü", "Tavuk Hamburger Köfte+Turşu+Marul+Domates+Patates Cips"]);
-        
+        assert_eq!(
+            dishes[2],
+            vec![
+                "Mevsim Türlü",
+                "Tavuk Hamburger Köfte+Turşu+Marul+Domates+Patates Cips"
+            ]
+        );
+
         // p4: <p>Siyah/Yeşil Zeytin</p> -> replaced and split
         assert_eq!(dishes[3], vec!["Siyah Zeytin", "Yeşil Zeytin"]);
     }

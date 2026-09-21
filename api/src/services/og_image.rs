@@ -1,31 +1,35 @@
 //! Dinamik Open Graph (OG) görsel üretim motoru (resvg + tiny-skia).
 
-use std::sync::{Arc, OnceLock};
-use resvg::usvg::{self, fontdb, Tree};
 use resvg::tiny_skia::{Pixmap, Transform};
+use resvg::usvg::{self, fontdb, Tree};
+use std::sync::{Arc, OnceLock};
 
 static FONT_DB: OnceLock<Arc<fontdb::Database>> = OnceLock::new();
 
 fn get_font_db() -> Arc<fontdb::Database> {
-    FONT_DB.get_or_init(|| {
-        let mut db = fontdb::Database::new();
-        db.load_system_fonts();
-        // Gömülü yazı tiplerini yükle
-        db.load_font_data(include_bytes!("../../assets/fonts/PaytoneOne-Regular.ttf").to_vec());
-        db.load_font_data(include_bytes!("../../assets/fonts/PublicSans-Regular.ttf").to_vec());
-        db.load_font_data(include_bytes!("../../assets/fonts/PublicSans-SemiBold.ttf").to_vec());
-        db.set_sans_serif_family("Public Sans");
-        Arc::new(db)
-    }).clone()
+    FONT_DB
+        .get_or_init(|| {
+            let mut db = fontdb::Database::new();
+            db.load_system_fonts();
+            // Gömülü yazı tiplerini yükle
+            db.load_font_data(include_bytes!("../../assets/fonts/PaytoneOne-Regular.ttf").to_vec());
+            db.load_font_data(include_bytes!("../../assets/fonts/PublicSans-Regular.ttf").to_vec());
+            db.load_font_data(
+                include_bytes!("../../assets/fonts/PublicSans-SemiBold.ttf").to_vec(),
+            );
+            db.set_sans_serif_family("Public Sans");
+            Arc::new(db)
+        })
+        .clone()
 }
 
 // XML Kaçış Yardımcısı
 fn escape_xml(s: &str) -> String {
     s.replace('&', "&amp;")
-     .replace('<', "&lt;")
-     .replace('>', "&gt;")
-     .replace('"', "&quot;")
-     .replace('\'', "&apos;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('"', "&quot;")
+        .replace('\'', "&apos;")
 }
 
 /// Rozetlerin OG kartlarında gösterilip gösterilmeyeceğini kontrol eden bayrak.
@@ -101,7 +105,7 @@ pub fn render_og_card(
         if let Some(t_text) = safe_title {
             let words: Vec<&str> = sub1.split_whitespace().collect();
             let is_long = sub1.chars().count() > 40;
-            
+
             if is_long && words.len() > 3 {
                 let mid = words.len() / 2;
                 let line1 = escape_xml(&words[..mid].join(" "));
@@ -249,17 +253,18 @@ fn rasterize_svg(svg: &str, font_db: Arc<fontdb::Database>) -> Result<Vec<u8>, a
         ..Default::default()
     };
 
-    let tree = Tree::from_str(svg, &opt)
-        .map_err(|e| anyhow::anyhow!("SVG parse hatası: {:?}", e))?;
+    let tree =
+        Tree::from_str(svg, &opt).map_err(|e| anyhow::anyhow!("SVG parse hatası: {:?}", e))?;
 
     let width = 1200;
     let height = 630;
-    let mut pixmap = Pixmap::new(width, height)
-        .ok_or_else(|| anyhow::anyhow!("Pixmap oluşturulamadı"))?;
+    let mut pixmap =
+        Pixmap::new(width, height).ok_or_else(|| anyhow::anyhow!("Pixmap oluşturulamadı"))?;
 
     resvg::render(&tree, Transform::default(), &mut pixmap.as_mut());
 
-    let png_data = pixmap.encode_png()
+    let png_data = pixmap
+        .encode_png()
         .map_err(|e| anyhow::anyhow!("PNG encode hatası: {:?}", e))?;
 
     Ok(png_data)
@@ -276,9 +281,13 @@ mod tests {
             "3 Eylül 2026 · Akşam Yemeği",
             Some("4 Çeşit Yemek · 1100-1500 kkal"),
             Some("Öğün"),
-        ).expect("Render failed");
+        )
+        .expect("Render failed");
 
-        assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"), "Output must be valid PNG");
+        assert!(
+            png.starts_with(b"\x89PNG\r\n\x1a\n"),
+            "Output must be valid PNG"
+        );
         assert!(png.len() > 10000, "PNG should have substantial size");
     }
 
@@ -289,8 +298,12 @@ mod tests {
             "1.420 Karma · Ağustos 2026",
             None,
             "Kullanıcı Profili",
-        ).expect("Profile render failed");
+        )
+        .expect("Profile render failed");
 
-        assert!(png.starts_with(b"\x89PNG\r\n\x1a\n"), "Output must be valid PNG");
+        assert!(
+            png.starts_with(b"\x89PNG\r\n\x1a\n"),
+            "Output must be valid PNG"
+        );
     }
 }

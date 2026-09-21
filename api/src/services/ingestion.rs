@@ -1,9 +1,7 @@
-use sea_orm::*;
-use uuid::Uuid;
-use shared::entities::{
-    prelude::*, menu_submissions, cities
-};
 use crate::dto::developer::MenuSubmissionResponseDto;
+use sea_orm::*;
+use shared::entities::{cities, menu_submissions, prelude::*};
+use uuid::Uuid;
 
 use chrono::{Datelike, Utc};
 
@@ -82,18 +80,25 @@ impl IngestionService {
         let max_year = max_date.year();
         let max_month = max_date.month() as i32;
 
-        if input.year < 2026 || input.year > max_year || (input.year == max_year && input.month > max_month) {
+        if input.year < 2026
+            || input.year > max_year
+            || (input.year == max_year && input.month > max_month)
+        {
             return Err(IngestionError::InvalidInput(format!(
                 "Menü tarihi 2026-01 ile {}-{:02} arasında olmalıdır",
                 max_year, max_month
             )));
         }
         if input.month < 1 || input.month > 12 {
-            return Err(IngestionError::InvalidInput("Geçersiz ay (1-12 arasında olmalıdır)".to_string()));
+            return Err(IngestionError::InvalidInput(
+                "Geçersiz ay (1-12 arasında olmalıdır)".to_string(),
+            ));
         }
         if let Some(ref n) = input.notes {
             if n.len() > 1000 {
-                return Err(IngestionError::InvalidInput("Notlar en fazla 1000 karakter olabilir".to_string()));
+                return Err(IngestionError::InvalidInput(
+                    "Notlar en fazla 1000 karakter olabilir".to_string(),
+                ));
             }
         }
 
@@ -102,9 +107,11 @@ impl IngestionService {
             return Err(IngestionError::TooManyFiles);
         }
         if input.files.is_empty() {
-            return Err(IngestionError::InvalidInput("En az bir dosya gönderilmelidir".to_string()));
+            return Err(IngestionError::InvalidInput(
+                "En az bir dosya gönderilmelidir".to_string(),
+            ));
         }
-        
+
         let mut validated_files = Vec::new();
 
         for file in &input.files {
@@ -115,19 +122,28 @@ impl IngestionService {
             if !ALLOWED_EXTENSIONS.contains(&ext.as_str()) {
                 return Err(IngestionError::InvalidFileType(file.name.clone()));
             }
-            
+
             // MIME Type Check
             if let Some(ref ct) = file.content_type {
                 if !ALLOWED_MIME_TYPES.contains(&ct.as_str()) {
-                    return Err(IngestionError::InvalidFileType(format!("{}: Geçersiz MIME tipi ({})", file.name, ct)));
+                    return Err(IngestionError::InvalidFileType(format!(
+                        "{}: Geçersiz MIME tipi ({})",
+                        file.name, ct
+                    )));
                 }
             } else {
-                return Err(IngestionError::InvalidFileType(format!("{}: MIME tipi eksik", file.name)));
+                return Err(IngestionError::InvalidFileType(format!(
+                    "{}: MIME tipi eksik",
+                    file.name
+                )));
             }
 
             // Magic Bytes verification
             if !verify_file_signature(&file.data, &ext) {
-                return Err(IngestionError::InvalidFileType(format!("{}: Dosya içeriği doğrulaması başarısız (Magic Bytes uyuşmazlığı)", file.name)));
+                return Err(IngestionError::InvalidFileType(format!(
+                    "{}: Dosya içeriği doğrulaması başarısız (Magic Bytes uyuşmazlığı)",
+                    file.name
+                )));
             }
 
             // Sanitize: reject path traversal
@@ -140,8 +156,15 @@ impl IngestionService {
             }
 
             // Filename sanitization (ASCII alphanumeric, dots, hyphens, underscores only)
-            let sanitized_name: String = basename.chars()
-                .map(|c| if c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_' { c } else { '_' })
+            let sanitized_name: String = basename
+                .chars()
+                .map(|c| {
+                    if c.is_ascii_alphanumeric() || c == '.' || c == '-' || c == '_' {
+                        c
+                    } else {
+                        '_'
+                    }
+                })
                 .collect();
 
             validated_files.push((sanitized_name, &file.data));
@@ -186,13 +209,17 @@ impl IngestionService {
         }
 
         // 6. Create database entry
-        let sanitized_notes = shared::services::content_guard::ContentGuard::sanitize_html(&final_notes);
+        let sanitized_notes =
+            shared::services::content_guard::ContentGuard::sanitize_html(&final_notes);
         let new_sub = menu_submissions::ActiveModel {
             user_id: Set(user_id),
             city_slug: Set(input.city_slug),
             year: Set(input.year),
             month: Set(input.month),
             notes: Set(Some(sanitized_notes)),
+            // Karantina dizin adını kalıcı hale getir: onay sonrası dosya taşıma
+            // bu referans üzerinden yapılır (bkz. ModerationService::update_submission_status).
+            storage_ref: Set(Some(submission_id.to_string())),
             status: Set("pending".to_string()),
             ..Default::default()
         };

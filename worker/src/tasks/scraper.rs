@@ -63,7 +63,8 @@ pub fn reset_ban_status() {
 
 /// Chrome 144 (LTS) User-Agent. Tek noktadan yönetilir.
 pub const BROWSER_UA: &str = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36";
-pub const SEC_CH_UA: &str = "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"";
+pub const SEC_CH_UA: &str =
+    "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"";
 
 /// Chrome 144 (LTS) XHR/fetch isteklerinde gönderdiği Client Hints +
 /// Fetch Metadata başlık seti. Sadece User-Agent taklidi yetmez; bu
@@ -101,9 +102,15 @@ pub fn take_inserted_menus() -> Vec<(i32, NaiveDate)> {
         Err(_) => Vec::new(),
     }
 }
-use sea_orm::{ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter, Set, TransactionTrait};
-use shared::entities::{cities, menus, menu_dishes, sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum}};
 use crate::parser::kykyemek::parse_kykyemek_html;
+use sea_orm::{
+    ActiveModelTrait, ColumnTrait, ConnectionTrait, DatabaseConnection, EntityTrait, QueryFilter,
+    Set, TransactionTrait,
+};
+use shared::entities::{
+    cities, menu_dishes, menus,
+    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum},
+};
 
 async fn sleep_cancelable(ms: u64, shutdown_rx: &mut tokio::sync::watch::Receiver<bool>) -> bool {
     if *shutdown_rx.borrow() {
@@ -117,9 +124,22 @@ async fn sleep_cancelable(ms: u64, shutdown_rx: &mut tokio::sync::watch::Receive
 
 pub fn extract_cities_from_kykyemek_html(html: &str) -> Vec<String> {
     static FALLBACK_CITIES: &[&str] = &[
-        "ankara", "antalya", "canakkale", "erzurum", "eskisehir", "gaziantep",
-        "isparta", "istanbul", "izmir", "kahramanmaras", "karabuk", "kirklareli",
-        "konya", "sakarya", "sivas", "trabzon",
+        "ankara",
+        "antalya",
+        "canakkale",
+        "erzurum",
+        "eskisehir",
+        "gaziantep",
+        "isparta",
+        "istanbul",
+        "izmir",
+        "kahramanmaras",
+        "karabuk",
+        "kirklareli",
+        "konya",
+        "sakarya",
+        "sivas",
+        "trabzon",
     ];
 
     if html.is_empty() {
@@ -162,7 +182,8 @@ pub fn extract_cities_from_kykyemek_html(html: &str) -> Vec<String> {
 pub fn extract_token_from_html(html: &str) -> Result<String> {
     static TOKEN_REGEX: OnceLock<regex::Regex> = OnceLock::new();
     let re = TOKEN_REGEX.get_or_init(|| {
-        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*value=["']([^"']+)["']"#).unwrap()
+        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*value=["']([^"']+)["']"#)
+            .unwrap()
     });
 
     if let Some(caps) = re.captures(html) {
@@ -173,7 +194,8 @@ pub fn extract_token_from_html(html: &str) -> Result<String> {
 
     static TOKEN_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
     let re_fb = TOKEN_FALLBACK.get_or_init(|| {
-        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#).unwrap()
+        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#)
+            .unwrap()
     });
     if let Some(caps) = re_fb.captures(html) {
         if let Some(token) = caps.get(1) {
@@ -199,7 +221,10 @@ pub async fn fetch_kykyemek_session(client: &Client) -> Result<(String, Vec<Stri
         .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
         .send()
         .await?;
-    if matches!(res.status(), reqwest::StatusCode::FORBIDDEN | reqwest::StatusCode::TOO_MANY_REQUESTS) {
+    if matches!(
+        res.status(),
+        reqwest::StatusCode::FORBIDDEN | reqwest::StatusCode::TOO_MANY_REQUESTS
+    ) {
         trip_ban(&format!("token alımı HTTP {}", res.status())).await;
         anyhow::bail!("kykyemek erişimi engellendi (HTTP {})", res.status());
     }
@@ -234,7 +259,10 @@ pub async fn scrape_today_menus(
     let (mut token_opt, mut active_slugs) = match fetch_kykyemek_session(client).await {
         Ok((tok, slugs)) => (Some(tok), slugs),
         Err(e) => {
-            tracing::warn!("[KYKYEMEK-SESSION] Oturum başlatılamadı: {:?}. Düz istek deneniyor.", e);
+            tracing::warn!(
+                "[KYKYEMEK-SESSION] Oturum başlatılamadı: {:?}. Düz istek deneniyor.",
+                e
+            );
             (None, extract_cities_from_kykyemek_html(""))
         }
     };
@@ -261,7 +289,10 @@ pub async fn scrape_today_menus(
             None => continue,
         };
 
-        tracing::info!("[KYKYEMEK-BULLETIN] Şehir için aylık bülten çekiliyor: {}...", city.name);
+        tracing::info!(
+            "[KYKYEMEK-BULLETIN] Şehir için aylık bülten çekiliyor: {}...",
+            city.name
+        );
 
         // Ayın ilk 10 gününde bir önceki ayın menülerini de çekerek ay geçişlerindeki boşlukları doldur
         let shifts: Vec<&str> = if chrono::Utc::now().date_naive().day() <= 10 {
@@ -272,10 +303,23 @@ pub async fn scrape_today_menus(
 
         for shift in &shifts {
             // 1. Kahvaltı Bülteni
-            match fetch_and_save(db, client, &city, "breakfast", MealTypeEnum::Breakfast, shift, &mut token_opt, &mut shutdown_rx).await {
+            match fetch_and_save(
+                db,
+                client,
+                &city,
+                "breakfast",
+                MealTypeEnum::Breakfast,
+                shift,
+                &mut token_opt,
+                &mut shutdown_rx,
+            )
+            .await
+            {
                 Ok(Some(count)) => total_saved += count,
                 Ok(None) => return Ok(total_saved),
-                Err(e) => tracing::warn!(city = %city.slug, meal = "breakfast", shift = %shift, "Kahvaltı bülteni alınamadı: {:?}", e),
+                Err(e) => {
+                    tracing::warn!(city = %city.slug, meal = "breakfast", shift = %shift, "Kahvaltı bülteni alınamadı: {:?}", e)
+                }
             }
 
             // Kibar gecikme (3.5 - 6.5s)
@@ -285,10 +329,23 @@ pub async fn scrape_today_menus(
             }
 
             // 2. Akşam Yemeği Bülteni
-            match fetch_and_save(db, client, &city, "dinner", MealTypeEnum::Dinner, shift, &mut token_opt, &mut shutdown_rx).await {
+            match fetch_and_save(
+                db,
+                client,
+                &city,
+                "dinner",
+                MealTypeEnum::Dinner,
+                shift,
+                &mut token_opt,
+                &mut shutdown_rx,
+            )
+            .await
+            {
                 Ok(Some(count)) => total_saved += count,
                 Ok(None) => return Ok(total_saved),
-                Err(e) => tracing::warn!(city = %city.slug, meal = "dinner", shift = %shift, "Akşam yemeği bülteni alınamadı: {:?}", e),
+                Err(e) => {
+                    tracing::warn!(city = %city.slug, meal = "dinner", shift = %shift, "Akşam yemeği bülteni alınamadı: {:?}", e)
+                }
             }
 
             // Kibar gecikme (3.5 - 6.5s)
@@ -299,7 +356,10 @@ pub async fn scrape_today_menus(
         }
     }
 
-    tracing::info!("[KYKYEMEK-BULLETIN] Kykyemek aylık bülten taraması tamamlandı: {} menü güncellendi.", total_saved);
+    tracing::info!(
+        "[KYKYEMEK-BULLETIN] Kykyemek aylık bülten taraması tamamlandı: {} menü güncellendi.",
+        total_saved
+    );
     Ok(total_saved)
 }
 
@@ -322,7 +382,10 @@ pub async fn run_kykyemek_scraper(
     match super::fallback_scraper::run_fallback_scrape(db, client, shutdown_rx.clone()).await {
         Ok(fallback_count) => {
             if fallback_count > 0 {
-                tracing::info!("Fallback kaynaklardan {} eksik menü dolduruldu.", fallback_count);
+                tracing::info!(
+                    "Fallback kaynaklardan {} eksik menü dolduruldu.",
+                    fallback_count
+                );
             }
             total_fetched += fallback_count;
         }
@@ -337,7 +400,14 @@ pub async fn run_kykyemek_scraper(
         .and_then(|v| v.parse().ok())
         .unwrap_or(3);
     if hist_months > 0 {
-        match super::fallback_scraper::run_historical_gap_fill(db, client, shutdown_rx.clone(), hist_months).await {
+        match super::fallback_scraper::run_historical_gap_fill(
+            db,
+            client,
+            shutdown_rx.clone(),
+            hist_months,
+        )
+        .await
+        {
             Ok(hist_count) => {
                 if hist_count > 0 {
                     tracing::info!("Gecmis ay bosluklarindan {} menü dolduruldu.", hist_count);
@@ -356,7 +426,10 @@ pub async fn run_kykyemek_scraper(
         super::indexnow::ping_new_day_urls(db, client, &config).await;
     }
 
-    tracing::info!("Kykyemek tarama döngüsü tamamlandı. Toplam {} menü işlendi.", total_fetched);
+    tracing::info!(
+        "Kykyemek tarama döngüsü tamamlandı. Toplam {} menü işlendi.",
+        total_fetched
+    );
     Ok(())
 }
 
@@ -371,9 +444,13 @@ async fn fetch_and_save(
     token_opt: &mut Option<String>,
     shutdown_rx: &mut tokio::sync::watch::Receiver<bool>,
 ) -> Result<Option<usize>> {
-    let is_dinner = if kyk_meal_type == "dinner" { "true" } else { "false" };
+    let is_dinner = if kyk_meal_type == "dinner" {
+        "true"
+    } else {
+        "false"
+    };
     let url = format!("https://kykyemek.com/Menu/GetDailyMenu/{}", city.slug);
-    
+
     let mut attempt = 0;
     let max_retries = 3;
     let mut response = None;
@@ -383,17 +460,16 @@ async fn fetch_and_save(
             return Ok(None);
         }
 
-        let mut req = with_xhr_headers(client.get(&url)
-            .query(&[
-                ("city", city.slug.as_str()),
-                ("mealType", is_dinner),
-                ("monthShift", month_shift),
-                ("hidePast", "false"),
-            ]))
-            .header("X-Requested-With", "XMLHttpRequest")
-            .header("Accept", "application/json, text/javascript, */*; q=0.01")
-            .header("Referer", "https://kykyemek.com/")
-            .timeout(std::time::Duration::from_secs(30));
+        let mut req = with_xhr_headers(client.get(&url).query(&[
+            ("city", city.slug.as_str()),
+            ("mealType", is_dinner),
+            ("monthShift", month_shift),
+            ("hidePast", "false"),
+        ]))
+        .header("X-Requested-With", "XMLHttpRequest")
+        .header("Accept", "application/json, text/javascript, */*; q=0.01")
+        .header("Referer", "https://kykyemek.com/")
+        .timeout(std::time::Duration::from_secs(30));
 
         if let Some(ref token) = *token_opt {
             req = req
@@ -415,22 +491,38 @@ async fn fetch_and_save(
                     let wait_secs = 30u64.saturating_mul(u64::from(streak)).min(180);
                     tracing::warn!(
                         "HTTP 429 (hiz siniri) {} - {} icin {}sn bekleniyor (deneme {}/{})",
-                        streak, city.name, wait_secs, attempt + 1, max_retries
+                        streak,
+                        city.name,
+                        wait_secs,
+                        attempt + 1,
+                        max_retries
                     );
                     if sleep_cancelable(wait_secs * 1000, shutdown_rx).await {
                         return Ok(None);
                     }
                 } else if status == reqwest::StatusCode::FORBIDDEN {
                     // 403: büyük olasılıkla IP ban. Retry ile ısrar etme, devreyi kes.
-                    trip_ban(&format!("HTTP 403 - {} ({}) [ana tarama]", city.name, kyk_meal_type)).await;
-                    anyhow::bail!("kykyemek IP ban şüphesi (HTTP 403): {} ({})", city.name, kyk_meal_type);
+                    trip_ban(&format!(
+                        "HTTP 403 - {} ({}) [ana tarama]",
+                        city.name, kyk_meal_type
+                    ))
+                    .await;
+                    anyhow::bail!(
+                        "kykyemek IP ban şüphesi (HTTP 403): {} ({})",
+                        city.name,
+                        kyk_meal_type
+                    );
                 } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
                     if let Ok((new_token, _)) = fetch_kykyemek_session(client).await {
                         *token_opt = Some(new_token);
                     }
                 } else {
-                    tracing::warn!("HTTP durum kodu hatası: {}, Deneme: {}", status, attempt + 1);
+                    tracing::warn!(
+                        "HTTP durum kodu hatası: {}, Deneme: {}",
+                        status,
+                        attempt + 1
+                    );
                 }
             }
             Err(e) => {
@@ -451,15 +543,23 @@ async fn fetch_and_save(
     let res = match response {
         Some(r) => r,
         None => {
-            let alert_msg = format!("Kykyemek sunucu hatası: {} (öğün: {}) için maksimum deneme sayısına ulaşıldı.", city.name, kyk_meal_type);
-            let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
+            let alert_msg = format!(
+                "Kykyemek sunucu hatası: {} (öğün: {}) için maksimum deneme sayısına ulaşıldı.",
+                city.name, kyk_meal_type
+            );
+            let _ =
+                shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
             anyhow::bail!(alert_msg);
         }
     };
     let body_text = res.text().await?;
-    
+
     let html_content = if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body_text) {
-        json_val.get("html").and_then(|h| h.as_str()).unwrap_or(&body_text).to_string()
+        json_val
+            .get("html")
+            .and_then(|h| h.as_str())
+            .unwrap_or(&body_text)
+            .to_string()
     } else {
         body_text
     };
@@ -483,7 +583,7 @@ async fn fetch_and_save(
         tracing::warn!("{}", alert_msg);
         let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
     }
-    
+
     // Dinamik Al Götür (Takeaway) Ön-Yükleme ve Önbellekleme:
     // Kartlardaki tüm data-fastmenus UUID'lerini topla; henüz önbellekte olmayanları
     // /Menu/GetFastMenuFoods üzerinden tek seferlik çekip parse_fast_menu_foods_html ile önbelleğe yaz.
@@ -501,7 +601,8 @@ async fn fetch_and_save(
             match req.send().await {
                 Ok(res) if res.status().is_success() => {
                     if let Ok(foods_html) = res.text().await {
-                        let slots = crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
+                        let slots =
+                            crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
                         if !slots.is_empty() {
                             tracing::info!(
                                 "[TAKEAWAY] Dinamik Al Götür menüsü başarıyla çekildi: {} (id: {}, {} slot)",
@@ -562,7 +663,7 @@ async fn fetch_and_save(
     } else {
         ("kykyemek".to_string(), None)
     };
-    
+
     for menu in parsed_menus {
         // Öğün Doğrulama Kalkanı: Eğer kart açıkça başka bir öğün olduğunu beyan ediyorsa,
         // yanlış öğün türüyle kaydedilmesini kesinlikle engelle.
@@ -577,22 +678,23 @@ async fn fetch_and_save(
         }
 
         upsert_menu(
-            db, 
-            city.id, 
-            menu.date, 
-            meal_type_enum.clone(), 
-            batch_source_type.clone(), 
-            None, 
+            db,
+            city.id,
+            menu.date,
+            meal_type_enum.clone(),
+            batch_source_type.clone(),
+            None,
             menu.dishes,
             vec![], // celiac_dishes
             menu.takeaways,
             batch_status_override.clone(),
             menu.min_calories,
             menu.max_calories,
-        ).await?;
+        )
+        .await?;
         count += 1;
     }
-    
+
     Ok(Some(count))
 }
 
@@ -610,19 +712,30 @@ pub(crate) fn get_source_priority(source: &str) -> i32 {
 }
 
 pub(crate) fn check_dish_consensus(
-    existing_dishes: &[(menu_dishes::Model, Option<shared::entities::dish_aliases::Model>)],
+    existing_dishes: &[(
+        menu_dishes::Model,
+        Option<shared::entities::dish_aliases::Model>,
+    )],
     incoming_dishes: &[Vec<crate::parser::models::MenuComponent>],
 ) -> bool {
     let existing_names: std::collections::HashSet<String> = existing_dishes
         .iter()
         .filter(|(md, _)| !md.is_alternative)
-        .filter_map(|(_, alias)| alias.as_ref().map(|a| crate::parser::normalizer::normalize_food_name(&a.name)))
+        .filter_map(|(_, alias)| {
+            alias
+                .as_ref()
+                .map(|a| crate::parser::normalizer::normalize_food_name(&a.name))
+        })
         .filter(|n| !n.is_empty())
         .collect();
 
     let incoming_names: std::collections::HashSet<String> = incoming_dishes
         .iter()
-        .filter_map(|group| group.first().map(|c| crate::parser::normalizer::normalize_food_name(&c.name)))
+        .filter_map(|group| {
+            group
+                .first()
+                .map(|c| crate::parser::normalizer::normalize_food_name(&c.name))
+        })
         .filter(|n| !n.is_empty())
         .collect();
 
@@ -631,7 +744,10 @@ pub(crate) fn check_dish_consensus(
     }
 
     let common_count = existing_names.intersection(&incoming_names).count();
-    common_count >= 2 || (common_count >= 1 && (common_count * 2 >= existing_names.len() || common_count * 2 >= incoming_names.len()))
+    common_count >= 2
+        || (common_count >= 1
+            && (common_count * 2 >= existing_names.len()
+                || common_count * 2 >= incoming_names.len()))
 }
 
 fn parse_dish_calories(raw: &Option<String>) -> Option<i32> {
@@ -685,7 +801,10 @@ pub async fn upsert_menu(
                 .into_iter()
                 .filter(|c| {
                     let trimmed = c.name.trim();
-                    !trimmed.is_empty() && !shared::services::content_guard::ContentGuard::is_junk_dish_text(trimmed)
+                    !trimmed.is_empty()
+                        && !shared::services::content_guard::ContentGuard::is_junk_dish_text(
+                            trimmed,
+                        )
                 })
                 .collect::<Vec<_>>()
         })
@@ -699,7 +818,10 @@ pub async fn upsert_menu(
                 .into_iter()
                 .filter(|c| {
                     let trimmed = c.name.trim();
-                    !trimmed.is_empty() && !shared::services::content_guard::ContentGuard::is_junk_dish_text(trimmed)
+                    !trimmed.is_empty()
+                        && !shared::services::content_guard::ContentGuard::is_junk_dish_text(
+                            trimmed,
+                        )
                 })
                 .collect::<Vec<_>>()
         })
@@ -755,7 +877,7 @@ pub async fn upsert_menu(
     let incoming_priority = get_source_priority(&source_type);
 
     let txn = db.begin().await?;
-    
+
     // Check if menu exists
     let existing_menu = menus::Entity::find()
         .filter(menus::Column::CityId.eq(city_id))
@@ -763,7 +885,7 @@ pub async fn upsert_menu(
         .filter(menus::Column::MealType.eq(meal_type.clone()))
         .one(&txn)
         .await?;
-        
+
     let mut existing_map = HashMap::new();
     let mut existing_dishes_list = Vec::new();
 
@@ -801,22 +923,23 @@ pub async fn upsert_menu(
         let existing_is_quarantined = is_quarantined_source(existing_source);
 
         // Dinamik Kalite Skoru (CQS) Hesaplaması
-        let existing_dish_inputs: Vec<shared::services::quality_score::DishInput> = existing_dishes_list
-            .iter()
-            .map(|(d, alias)| {
-                let name = alias.as_ref().map(|a| a.name.clone()).unwrap_or_default();
-                let weight = d.amount.as_ref().and_then(|a| {
-                    let num: String = a.chars().filter(|c| c.is_ascii_digit()).collect();
-                    num.parse::<i32>().ok()
-                });
-                shared::services::quality_score::DishInput {
-                    name,
-                    weight_g: weight,
-                    calories: d.calories,
-                    is_alternative: d.is_alternative,
-                }
-            })
-            .collect();
+        let existing_dish_inputs: Vec<shared::services::quality_score::DishInput> =
+            existing_dishes_list
+                .iter()
+                .map(|(d, alias)| {
+                    let name = alias.as_ref().map(|a| a.name.clone()).unwrap_or_default();
+                    let weight = d.amount.as_ref().and_then(|a| {
+                        let num: String = a.chars().filter(|c| c.is_ascii_digit()).collect();
+                        num.parse::<i32>().ok()
+                    });
+                    shared::services::quality_score::DishInput {
+                        name,
+                        weight_g: weight,
+                        calories: d.calories,
+                        is_alternative: d.is_alternative,
+                    }
+                })
+                .collect();
 
         let existing_meal_str = match m.meal_type {
             MealTypeEnum::Breakfast => "breakfast",
@@ -827,14 +950,22 @@ pub async fn upsert_menu(
         let existing_quality_input = shared::services::quality_score::MenuQualityInput {
             meal_type: existing_meal_str.to_string(),
             primary_dishes: existing_dish_inputs,
-            has_celiac: existing_dishes_list.iter().any(|(d, _)| d.package_name == "celiac" || d.package_name == "glutensiz"),
-            has_takeaways: existing_dishes_list.iter().any(|(d, _)| d.package_name != "standard" && d.package_name != "celiac" && d.package_name != "glutensiz"),
+            has_celiac: existing_dishes_list
+                .iter()
+                .any(|(d, _)| d.package_name == "celiac" || d.package_name == "glutensiz"),
+            has_takeaways: existing_dishes_list.iter().any(|(d, _)| {
+                d.package_name != "standard"
+                    && d.package_name != "celiac"
+                    && d.package_name != "glutensiz"
+            }),
             calorie_min: m.calorie_range_min,
             calorie_max: m.calorie_range_max,
             anomaly_score: None,
             dictionary_match_ratio: None,
         };
-        let existing_quality = shared::services::quality_score::QualityScoreService::calculate(&existing_quality_input);
+        let existing_quality = shared::services::quality_score::QualityScoreService::calculate(
+            &existing_quality_input,
+        );
 
         let incoming_meal_str = match meal_type {
             MealTypeEnum::Breakfast => "breakfast",
@@ -879,10 +1010,14 @@ pub async fn upsert_menu(
             anomaly_score: None,
             dictionary_match_ratio: Some(dict_ratio),
         };
-        let incoming_quality = shared::services::quality_score::QualityScoreService::calculate(&incoming_quality_input);
+        let incoming_quality = shared::services::quality_score::QualityScoreService::calculate(
+            &incoming_quality_input,
+        );
 
-        let existing_meta = shared::services::source_registry::SourceRegistry::resolve(existing_source);
-        let incoming_meta = shared::services::source_registry::SourceRegistry::resolve(&source_type);
+        let existing_meta =
+            shared::services::source_registry::SourceRegistry::resolve(existing_source);
+        let incoming_meta =
+            shared::services::source_registry::SourceRegistry::resolve(&source_type);
 
         let quality_delta = incoming_quality.total - existing_quality.total;
         let priority_delta = incoming_priority - current_priority;
@@ -890,8 +1025,8 @@ pub async fn upsert_menu(
         let should_archive_incoming = if incoming_is_quarantined && !existing_is_quarantined {
             // 1. Karantina Koruması: Karantinadaki kaynak güvenilir kaynağı asla ezemez
             true
-        } else if existing_meta.tier == shared::services::source_registry::TrustTier::GroundTruth 
-            && incoming_meta.tier < shared::services::source_registry::TrustTier::GroundTruth 
+        } else if existing_meta.tier == shared::services::source_registry::TrustTier::GroundTruth
+            && incoming_meta.tier < shared::services::source_registry::TrustTier::GroundTruth
         {
             // 2. Saha Gerçeği Koruması: Mevcut menü saha teyitliyse (admin veya teyitli kullanıcı/pano),
             // merkezi web kazıyıcıları bu menüyü ezemez.
@@ -923,7 +1058,10 @@ pub async fn upsert_menu(
                     source_type, incoming_quality.total, existing_source, existing_quality.total, quality_delta
                 );
                 false
-            } else if existing_quality.total < 45 && incoming_quality.total >= 50 && !incoming_is_quarantined {
+            } else if existing_quality.total < 45
+                && incoming_quality.total >= 50
+                && !incoming_is_quarantined
+            {
                 // Düşük kaliteli kayıt kurtarma
                 tracing::info!(
                     "Düşük kaliteli kayıt kurtarma: mevcut ({}) skoru {} < 45 iken gelen ({}) skoru {}.",
@@ -989,7 +1127,10 @@ pub async fn upsert_menu(
             // kalori bilgisi getiriyorsa, çapraz aile konsensüsü ve yemek eşleşmesi sağlandığı takdirde kalori aralığı güncellenir.
             if m.status == MenuStatusEnum::Approved
                 && (calorie_range_min.is_some() || calorie_range_max.is_some())
-                && shared::services::source_registry::SourceRegistry::is_cross_family_consensus(existing_source, &source_type)
+                && shared::services::source_registry::SourceRegistry::is_cross_family_consensus(
+                    existing_source,
+                    &source_type,
+                )
                 && check_dish_consensus(&existing_dishes_list, &dishes)
             {
                 let mut update_m: menus::ActiveModel = m.clone().into();
@@ -1011,16 +1152,24 @@ pub async fn upsert_menu(
             return Ok(!already_in_hist);
         }
     }
-    
+
     // Build target_map
-    let mut target_map: HashMap<DishSlotKey, (i32, Option<String>, Option<i32>)> = HashMap::new();
-    let mut seen_package_dishes: std::collections::HashSet<(String, i32, i32)> = std::collections::HashSet::new();
+    // Değer: (alias_id, dish_id, amount, calories)
+    let mut target_map: HashMap<DishSlotKey, (i32, i32, Option<String>, Option<i32>)> =
+        HashMap::new();
+    let mut seen_package_dishes: std::collections::HashSet<(String, i32, i32)> =
+        std::collections::HashSet::new();
+    // Global (package_name, dish_alias_id) tekilliği: aynı yemek farklı slotlarda
+    // tekrar ederse unique constraint (menu_id, dish_alias_id, package_name) patlar.
+    let mut seen_package_aliases: std::collections::HashSet<(String, i32)> =
+        std::collections::HashSet::new();
 
     for (i, dish_group) in dishes.into_iter().enumerate() {
         let order_index = i as i32;
         for (j, comp) in dish_group.into_iter().enumerate() {
             let is_alternative = j > 0;
-            let (alias_id, dish_id) = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
+            let (alias_id, dish_id) =
+                get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
             let package_name = "NORMAL".to_string();
             let cals = parse_dish_calories(&comp.calories);
 
@@ -1030,25 +1179,29 @@ pub async fn upsert_menu(
             }
 
             let key = if is_alternative {
-                DishSlotKey::Alternative(package_name, order_index, alias_id)
+                DishSlotKey::Alternative(package_name.clone(), order_index, alias_id)
             } else {
-                DishSlotKey::Primary(package_name, order_index)
+                DishSlotKey::Primary(package_name.clone(), order_index)
             };
 
-            if let Some((_, existing_amt, existing_cals)) = target_map.get_mut(&key) {
-                *existing_amt = comp.amount.filter(|s| !s.trim().is_empty()).or(existing_amt.take());
+            if let Some((_, _, existing_amt, existing_cals)) = target_map.get_mut(&key) {
+                *existing_amt = comp
+                    .amount
+                    .filter(|s| !s.trim().is_empty())
+                    .or(existing_amt.take());
                 *existing_cals = cals.or(*existing_cals);
-            } else {
-                target_map.insert(key, (alias_id, comp.amount, cals));
+            } else if seen_package_aliases.insert((package_name, alias_id)) {
+                target_map.insert(key, (alias_id, dish_id, comp.amount, cals));
             }
         }
     }
-    
+
     for (i, dish_group) in celiac_dishes.into_iter().enumerate() {
         let order_index = i as i32;
         for (j, comp) in dish_group.into_iter().enumerate() {
             let is_alternative = j > 0;
-            let (alias_id, dish_id) = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
+            let (alias_id, dish_id) =
+                get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
             let package_name = "ÇÖLYAK MENÜSÜ".to_string();
             let cals = parse_dish_calories(&comp.calories);
 
@@ -1057,27 +1210,31 @@ pub async fn upsert_menu(
             }
 
             let key = if is_alternative {
-                DishSlotKey::Alternative(package_name, order_index, alias_id)
+                DishSlotKey::Alternative(package_name.clone(), order_index, alias_id)
             } else {
-                DishSlotKey::Primary(package_name, order_index)
+                DishSlotKey::Primary(package_name.clone(), order_index)
             };
 
-            if let Some((_, existing_amt, existing_cals)) = target_map.get_mut(&key) {
-                *existing_amt = comp.amount.filter(|s| !s.trim().is_empty()).or(existing_amt.take());
+            if let Some((_, _, existing_amt, existing_cals)) = target_map.get_mut(&key) {
+                *existing_amt = comp
+                    .amount
+                    .filter(|s| !s.trim().is_empty())
+                    .or(existing_amt.take());
                 *existing_cals = cals.or(*existing_cals);
-            } else {
-                target_map.insert(key, (alias_id, comp.amount, cals));
+            } else if seen_package_aliases.insert((package_name, alias_id)) {
+                target_map.insert(key, (alias_id, dish_id, comp.amount, cals));
             }
         }
     }
-    
+
     for (package, package_dishes) in takeaways.into_iter() {
         let sanitized_package = sanitize_dish_name(&package);
         for (i, dish_group) in package_dishes.into_iter().enumerate() {
             let order_index = i as i32;
             for (j, comp) in dish_group.into_iter().enumerate() {
                 let is_alternative = j > 0;
-                let (alias_id, dish_id) = get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
+                let (alias_id, dish_id) =
+                    get_or_create_dish_alias(&txn, &comp.name, comp.category.clone()).await?;
                 let cals = parse_dish_calories(&comp.calories);
 
                 if !seen_package_dishes.insert((sanitized_package.clone(), order_index, dish_id)) {
@@ -1090,28 +1247,35 @@ pub async fn upsert_menu(
                     DishSlotKey::Primary(sanitized_package.clone(), order_index)
                 };
 
-                if let Some((_, existing_amt, existing_cals)) = target_map.get_mut(&key) {
-                    *existing_amt = comp.amount.filter(|s| !s.trim().is_empty()).or(existing_amt.take());
+                if let Some((_, _, existing_amt, existing_cals)) = target_map.get_mut(&key) {
+                    *existing_amt = comp
+                        .amount
+                        .filter(|s| !s.trim().is_empty())
+                        .or(existing_amt.take());
                     *existing_cals = cals.or(*existing_cals);
-                } else {
-                    target_map.insert(key, (alias_id, comp.amount, cals));
+                } else if seen_package_aliases.insert((sanitized_package.clone(), alias_id)) {
+                    target_map.insert(key, (alias_id, dish_id, comp.amount, cals));
                 }
             }
         }
     }
-    
+
     let menu_id = if let Some(ref m) = existing_menu {
         let same_len = existing_map.len() == target_map.len();
-        let same_dishes = same_len && target_map.iter().all(|(key, (alias_id, amt, cals))| {
-            if let Some(existing) = existing_map.get(key) {
-                existing.dish_alias_id == *alias_id
-                    && (amt.is_none() || amt.as_deref() == existing.amount.as_deref())
-                    && (cals.is_none() || *cals == existing.calories)
-            } else {
-                false
-            }
-        });
-        let same_calories = m.calorie_range_min == calorie_range_min && m.calorie_range_max == calorie_range_max;
+        let same_dishes = same_len
+            && target_map
+                .iter()
+                .all(|(key, (alias_id, _dish_id, amt, cals))| {
+                    if let Some(existing) = existing_map.get(key) {
+                        existing.dish_alias_id == *alias_id
+                            && (amt.is_none() || amt.as_deref() == existing.amount.as_deref())
+                            && (cals.is_none() || *cals == existing.calories)
+                    } else {
+                        false
+                    }
+                });
+        let same_calories =
+            m.calorie_range_min == calorie_range_min && m.calorie_range_max == calorie_range_max;
         let same_source = m.source_type.as_deref() == Some(&source_type);
 
         if same_dishes && same_calories && same_source {
@@ -1125,14 +1289,17 @@ pub async fn upsert_menu(
 
         // Eğer mevcut menüden farklı bir içerik geldiyse (revize edildiyse veya yeni kaynak geldiyse),
         // mevcut halini menu_history tablosuna arşivle
-        let payload = serde_json::json!(existing_dishes_list.iter().map(|(md, alias)| {
-            serde_json::json!({
-                "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
-                "package_name": md.package_name.clone(),
-                "order_index": md.order_index,
-                "is_alternative": md.is_alternative
+        let payload = serde_json::json!(existing_dishes_list
+            .iter()
+            .map(|(md, alias)| {
+                serde_json::json!({
+                    "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
+                    "package_name": md.package_name.clone(),
+                    "order_index": md.order_index,
+                    "is_alternative": md.is_alternative
+                })
             })
-        }).collect::<Vec<_>>());
+            .collect::<Vec<_>>());
 
         let hist = shared::entities::menu_history::ActiveModel {
             city_id: Set(m.city_id),
@@ -1142,7 +1309,10 @@ pub async fn upsert_menu(
                 MealTypeEnum::Lunch => "lunch".to_string(),
                 MealTypeEnum::Dinner => "dinner".to_string(),
             }),
-            source_type: Set(m.source_type.clone().unwrap_or_else(|| "unknown".to_string())),
+            source_type: Set(m
+                .source_type
+                .clone()
+                .unwrap_or_else(|| "unknown".to_string())),
             submitted_by: Set(m.submitted_by),
             dishes_payload: Set(payload),
             ..Default::default()
@@ -1181,7 +1351,23 @@ pub async fn upsert_menu(
     // Akıllı Slot Uzlaşması (In-Place Diff & Preservation):
     let mut matched_existing_ids = std::collections::HashSet::new();
 
-    for (key, (alias_id, amount, calories)) in target_map.into_iter() {
+    // Mevcut satırların (package_name, dish_alias_id) ve (package_name, order_index, dish_id)
+    // sahipliği: güncelleme/insert sırasında unique constraint ve slot trigger'ını
+    // önceden denetlemek için kullanılır.
+    let mut existing_alias_owner: std::collections::HashMap<(String, i32), i32> =
+        std::collections::HashMap::new();
+    let mut existing_dish_in_slot: std::collections::HashMap<(String, i32, i32), i32> =
+        std::collections::HashMap::new();
+    for (d, alias) in &existing_dishes_list {
+        existing_alias_owner.insert((d.package_name.clone(), d.dish_alias_id), d.id);
+        if let Some(a) = alias {
+            if let Some(did) = a.dish_id {
+                existing_dish_in_slot.insert((d.package_name.clone(), d.order_index, did), d.id);
+            }
+        }
+    }
+
+    for (key, (alias_id, dish_id, amount, calories)) in target_map.into_iter() {
         let (package_name, order_index, is_alternative) = match &key {
             DishSlotKey::Primary(pkg, idx) => (pkg.clone(), *idx, false),
             DishSlotKey::Alternative(pkg, idx, _) => (pkg.clone(), *idx, true),
@@ -1192,7 +1378,35 @@ pub async fn upsert_menu(
             // yerinde güncelle ki Postgres unique constraint patlamasın.
             matched_existing_ids.insert(existing.id);
 
-            let final_amount = amount.filter(|s| !s.trim().is_empty()).or(existing.amount.clone());
+            // Güncelleme hedefi (package, alias) başka bir satır tarafından
+            // sahiplenilmişse unique constraint'i önlemek için güncellemeyi atla.
+            if let Some(owner_id) = existing_alias_owner.get(&(package_name.clone(), alias_id)) {
+                if *owner_id != existing.id {
+                    tracing::debug!(
+                        "upsert_menu: alias {} paket '{}' içinde başka satırda mevcut, güncelleme atlandı (menu_id: {})",
+                        alias_id, package_name, menu_id
+                    );
+                    continue;
+                }
+            }
+
+            // Slot trigger koruması: hedef dish_id aynı yuvada başka bir satırda
+            // zaten varsa güncelleme trigger'ı patlatır, atla.
+            if let Some(owner_id) =
+                existing_dish_in_slot.get(&(package_name.clone(), order_index, dish_id))
+            {
+                if *owner_id != existing.id {
+                    tracing::debug!(
+                        "upsert_menu: dish_id {} slot {} içinde başka satırda mevcut, güncelleme atlandı (menu_id: {})",
+                        dish_id, order_index, menu_id
+                    );
+                    continue;
+                }
+            }
+
+            let final_amount = amount
+                .filter(|s| !s.trim().is_empty())
+                .or(existing.amount.clone());
             let final_calories = calories.or(existing.calories);
 
             let mut active: menu_dishes::ActiveModel = existing.clone().into();
@@ -1203,18 +1417,42 @@ pub async fn upsert_menu(
             continue;
         }
 
-        // Veritabanında daha önce hiç olmayan yepyeni bir slot ise insert et:
-        let link = menu_dishes::ActiveModel {
-            menu_id: Set(menu_id),
-            dish_alias_id: Set(alias_id),
-            order_index: Set(order_index),
-            is_alternative: Set(is_alternative),
-            package_name: Set(package_name),
-            amount: Set(amount),
-            calories: Set(calories),
-            ..Default::default()
-        };
-        link.insert(&txn).await?;
+        // Slot trigger koruması: aynı yuvada aynı dish_id zaten varsa insert atla.
+        if let Some(owner_id) =
+            existing_dish_in_slot.get(&(package_name.clone(), order_index, dish_id))
+        {
+            tracing::debug!(
+                "upsert_menu: dish_id {} slot {} içinde zaten mevcut, insert atlandı (menu_id: {}, sahip: {})",
+                dish_id, order_index, menu_id, owner_id
+            );
+            continue;
+        }
+
+        // Veritabanında daha önce hiç olmayan yepyeni bir slot ise insert et.
+        // ON CONFLICT: yarış durumunda veya kaçırılan bir tekrarda unique
+        // constraint patlamasını önlemek için upsert davranışı uygula.
+        let stmt = sea_orm::Statement::from_sql_and_values(
+            sea_orm::DbBackend::Postgres,
+            r#"
+            INSERT INTO menu_dishes (menu_id, dish_alias_id, order_index, is_alternative, package_name, amount, calories)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            ON CONFLICT (menu_id, dish_alias_id, package_name)
+            DO UPDATE SET order_index = EXCLUDED.order_index,
+                          is_alternative = EXCLUDED.is_alternative,
+                          amount = COALESCE(EXCLUDED.amount, menu_dishes.amount),
+                          calories = COALESCE(EXCLUDED.calories, menu_dishes.calories)
+            "#,
+            vec![
+                menu_id.into(),
+                alias_id.into(),
+                order_index.into(),
+                is_alternative.into(),
+                package_name.into(),
+                amount.into(),
+                calories.into(),
+            ],
+        );
+        txn.execute(stmt).await?;
     }
 
     // Yeni menüde artık yer almayan eski slotları temizle
@@ -1230,26 +1468,28 @@ pub async fn upsert_menu(
             .exec(&txn)
             .await?;
     }
-    
+
     txn.commit().await?;
 
-    let menu = menus::Entity::find_by_id(menu_id)
-        .one(db)
-        .await?;
+    let menu = menus::Entity::find_by_id(menu_id).one(db).await?;
     if let Some(m) = menu {
         if m.status == MenuStatusEnum::Approved {
-            shared::services::immutable_store::ImmutableStore::write_menu_hash(db, menu_id)
-                .await?;
+            shared::services::immutable_store::ImmutableStore::write_menu_hash(db, menu_id).await?;
         }
     }
 
     Ok(true)
 }
 
-pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_name: &str, category: Option<String>) -> Result<(i32, i32)> {
+pub async fn get_or_create_dish_alias(
+    txn: &sea_orm::DatabaseTransaction,
+    raw_name: &str,
+    category: Option<String>,
+) -> Result<(i32, i32)> {
     let sanitized = sanitize_dish_name(raw_name);
     let canonical_name = crate::parser::normalizer::normalize_food_name(&sanitized);
-    let final_category = category.or_else(|| shared::services::categorizer::categorize_dish(&canonical_name));
+    let final_category =
+        category.or_else(|| shared::services::categorizer::categorize_dish(&canonical_name));
 
     let stmt = sea_orm::Statement::from_sql_and_values(
         sea_orm::DbBackend::Postgres,
@@ -1264,11 +1504,15 @@ pub async fn get_or_create_dish_alias(txn: &sea_orm::DatabaseTransaction, raw_na
         ON CONFLICT (name) DO UPDATE SET dish_id = COALESCE(dish_aliases.dish_id, EXCLUDED.dish_id)
         RETURNING id, dish_id
         "#,
-        vec![canonical_name.into(), final_category.into(), sanitized.into()],
+        vec![
+            canonical_name.into(),
+            final_category.into(),
+            sanitized.into(),
+        ],
     );
 
     let query_res = txn.query_one(stmt).await?;
-    
+
     if let Some(row) = query_res {
         let alias_id: i32 = row.try_get("", "id")?;
         let dish_id: i32 = row.try_get("", "dish_id")?;
@@ -1282,7 +1526,7 @@ pub fn sanitize_dish_name(name: &str) -> String {
     static RE_TAG: OnceLock<regex::Regex> = OnceLock::new();
     let re = RE_TAG.get_or_init(|| regex::Regex::new(r"</?[a-zA-Z0-9]+(?:\s+[^>]*)?>").unwrap());
     let result = re.replace_all(name, "").into_owned();
-    
+
     let decoded = result
         .replace("&amp;", "&")
         .replace("&lt;", "<")
@@ -1305,13 +1549,22 @@ mod tests {
     #[test]
     fn test_sanitize_dish_name() {
         assert_eq!(sanitize_dish_name("<b>Kuru Fasulye</b>"), "Kuru Fasulye");
-        assert_eq!(sanitize_dish_name("<script>alert(1)</script>Pilav"), "alert(1)Pilav");
+        assert_eq!(
+            sanitize_dish_name("<script>alert(1)</script>Pilav"),
+            "alert(1)Pilav"
+        );
         assert_eq!(sanitize_dish_name("Tavuk &amp; Pilav"), "Tavuk & Pilav");
         assert_eq!(sanitize_dish_name("Köfte &lt;Leziz&gt;"), "Köfte <Leziz>");
         assert_eq!(sanitize_dish_name("Köfte < 100g"), "Köfte < 100g");
-        assert_eq!(sanitize_dish_name("  Çorba   ve   Ekmek  "), "Çorba ve Ekmek");
+        assert_eq!(
+            sanitize_dish_name("  Çorba   ve   Ekmek  "),
+            "Çorba ve Ekmek"
+        );
         assert_eq!(sanitize_dish_name("Bal+tereyağ"), "Bal + tereyağ");
-        assert_eq!(sanitize_dish_name("Tavuk Sote +Pilav"), "Tavuk Sote + Pilav");
+        assert_eq!(
+            sanitize_dish_name("Tavuk Sote +Pilav"),
+            "Tavuk Sote + Pilav"
+        );
     }
 
     #[tokio::test]
@@ -1350,8 +1603,18 @@ mod tests {
         // 2. Upsert Day 1 Menu (will be the genesis for this test run)
         let date1 = NaiveDate::from_ymd_opt(2026, 7, 14).unwrap();
         let dishes1 = vec![
-            vec![crate::parser::models::MenuComponent { name: "Mercimek Çorbası".to_string(), amount: None, calories: None, category: None }],
-            vec![crate::parser::models::MenuComponent { name: "Tavuk Izgara".to_string(), amount: None, calories: None, category: None }]
+            vec![crate::parser::models::MenuComponent {
+                name: "Mercimek Çorbası".to_string(),
+                amount: None,
+                calories: None,
+                category: None,
+            }],
+            vec![crate::parser::models::MenuComponent {
+                name: "Tavuk Izgara".to_string(),
+                amount: None,
+                calories: None,
+                category: None,
+            }],
         ];
         upsert_menu(
             &db,
@@ -1366,7 +1629,9 @@ mod tests {
             Some(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
             None,
             None,
-        ).await.expect("Day 1 menu upsert failed");
+        )
+        .await
+        .expect("Day 1 menu upsert failed");
 
         // Fetch Day 1 Menu and verify hash exists
         let menu1 = menus::Entity::find()
@@ -1377,13 +1642,25 @@ mod tests {
             .unwrap()
             .expect("Day 1 menu should exist");
 
-        let hash1 = menu1.merkle_root.expect("Day 1 menu should have a hash calculated");
+        let hash1 = menu1
+            .merkle_root
+            .expect("Day 1 menu should have a hash calculated");
 
         // 3. Upsert Day 2 Menu (references Day 1 in the hash chain)
         let date2 = NaiveDate::from_ymd_opt(2026, 7, 15).unwrap();
         let dishes2 = vec![
-            vec![crate::parser::models::MenuComponent { name: "Ezogelin Çorbası".to_string(), amount: None, calories: None, category: None }],
-            vec![crate::parser::models::MenuComponent { name: "Et Döner".to_string(), amount: None, calories: None, category: None }]
+            vec![crate::parser::models::MenuComponent {
+                name: "Ezogelin Çorbası".to_string(),
+                amount: None,
+                calories: None,
+                category: None,
+            }],
+            vec![crate::parser::models::MenuComponent {
+                name: "Et Döner".to_string(),
+                amount: None,
+                calories: None,
+                category: None,
+            }],
         ];
         upsert_menu(
             &db,
@@ -1398,7 +1675,9 @@ mod tests {
             Some(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
             None,
             None,
-        ).await.expect("Day 2 menu upsert failed");
+        )
+        .await
+        .expect("Day 2 menu upsert failed");
 
         // Fetch Day 2 Menu
         let menu2 = menus::Entity::find()
@@ -1410,7 +1689,9 @@ mod tests {
             .expect("Day 2 menu should exist");
 
         // Verify hash link references Day 1's hash correctly!
-        let hash2 = menu2.merkle_root.expect("Day 2 menu should have a hash calculated");
+        let hash2 = menu2
+            .merkle_root
+            .expect("Day 2 menu should have a hash calculated");
         assert_eq!(menu2.previous_hash, Some(hash1.clone()));
         assert_ne!(hash1, hash2);
 
@@ -1420,15 +1701,16 @@ mod tests {
             .exec(&db)
             .await;
 
-        let _ = cities::Entity::delete_by_id(city_id)
-            .exec(&db)
-            .await;
+        let _ = cities::Entity::delete_by_id(city_id).exec(&db).await;
     }
 
     #[tokio::test]
     #[ignore = "Live external network test"]
     async fn test_live_kyk_token() {
-        let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
+        let client = reqwest::Client::builder()
+            .cookie_store(true)
+            .build()
+            .unwrap();
         let token = super::fetch_antiforgery_token(&client).await;
         println!("Extracted token: {:?}", token);
         assert!(token.is_ok());
@@ -1437,10 +1719,19 @@ mod tests {
     #[tokio::test]
     #[ignore = "Live external network test"]
     async fn test_live_get_menu() {
-        let client = reqwest::Client::builder().cookie_store(true).build().unwrap();
+        let client = reqwest::Client::builder()
+            .cookie_store(true)
+            .build()
+            .unwrap();
         let token = super::fetch_antiforgery_token(&client).await.unwrap();
-        let res = client.get("https://kykyemek.com/Menu/GetDailyMenu/istanbul")
-            .query(&[("city", "istanbul"), ("mealType", "true"), ("monthShift", "0"), ("hidePast", "false")])
+        let res = client
+            .get("https://kykyemek.com/Menu/GetDailyMenu/istanbul")
+            .query(&[
+                ("city", "istanbul"),
+                ("mealType", "true"),
+                ("monthShift", "0"),
+                ("hidePast", "false"),
+            ])
             .header("User-Agent", super::BROWSER_UA)
             .header("sec-ch-ua", super::SEC_CH_UA)
             .header("sec-ch-ua-mobile", "?0")
@@ -1448,7 +1739,9 @@ mod tests {
             .header("X-Requested-With", "XMLHttpRequest")
             .header("RequestVerificationToken", token.as_str())
             .header("Referer", "https://kykyemek.com/")
-            .send().await.unwrap();
+            .send()
+            .await
+            .unwrap();
         println!("Status: {}", res.status());
         let body = res.text().await.unwrap();
         println!("Body length: {}", body.len());
@@ -1477,9 +1770,18 @@ mod tests {
 
     #[test]
     fn test_parse_dish_calories() {
-        assert_eq!(super::parse_dish_calories(&Some("350 kcal".to_string())), Some(350));
-        assert_eq!(super::parse_dish_calories(&Some("200 - 300 kkal".to_string())), Some(250));
-        assert_eq!(super::parse_dish_calories(&Some("geçersiz".to_string())), None);
+        assert_eq!(
+            super::parse_dish_calories(&Some("350 kcal".to_string())),
+            Some(350)
+        );
+        assert_eq!(
+            super::parse_dish_calories(&Some("200 - 300 kkal".to_string())),
+            Some(250)
+        );
+        assert_eq!(
+            super::parse_dish_calories(&Some("geçersiz".to_string())),
+            None
+        );
         assert_eq!(super::parse_dish_calories(&None), None);
     }
 
@@ -1514,7 +1816,9 @@ mod tests {
 
         // 1. En az 2 yemek eşleşiyorsa konsensüs vardır
         let incoming_match = vec![
-            vec![crate::parser::models::MenuComponent::from("Mercimek Çorbası")],
+            vec![crate::parser::models::MenuComponent::from(
+                "Mercimek Çorbası",
+            )],
             vec![crate::parser::models::MenuComponent::from("Orman Kebabı")],
             vec![crate::parser::models::MenuComponent::from("Bulgur Pilavı")],
         ];
@@ -1522,7 +1826,9 @@ mod tests {
 
         // 2. Tamamen alakasız menüde konsensüs yoktur
         let incoming_conflict = vec![
-            vec![crate::parser::models::MenuComponent::from("Tarhana Çorbası")],
+            vec![crate::parser::models::MenuComponent::from(
+                "Tarhana Çorbası",
+            )],
             vec![crate::parser::models::MenuComponent::from("Tavuk Sote")],
             vec![crate::parser::models::MenuComponent::from("Makarna")],
         ];
@@ -1550,5 +1856,93 @@ mod tests {
         assert_eq!(yurtmenu_meta.tier, TrustTier::Quarantined);
         assert_ne!(kykyemek_meta.tier, TrustTier::Quarantined);
     }
-}
 
+    #[tokio::test]
+    #[ignore = "requires live postgres database"]
+    async fn test_upsert_menu_deduplicates_dish_across_slots() {
+        dotenvy::dotenv().ok();
+        let database_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+        let db = sea_orm::Database::connect(&database_url).await.unwrap();
+
+        // Test şehri hazırla
+        let test_city_slug = "dedup_test_city";
+        let city_id = match cities::Entity::find()
+            .filter(cities::Column::Slug.eq(test_city_slug))
+            .one(&db)
+            .await
+            .unwrap()
+        {
+            Some(c) => c.id,
+            None => {
+                cities::ActiveModel {
+                    name: Set("Dedup Test City".to_string()),
+                    slug: Set(test_city_slug.to_string()),
+                    ..Default::default()
+                }
+                .insert(&db)
+                .await
+                .unwrap()
+                .id
+            }
+        };
+
+        let date = NaiveDate::from_ymd_opt(2099, 1, 1).unwrap();
+        let _ = menus::Entity::delete_many()
+            .filter(menus::Column::CityId.eq(city_id))
+            .filter(menus::Column::ServeDate.eq(date))
+            .exec(&db)
+            .await;
+
+        // Aynı yemek iki farklı slotta: unique constraint
+        // (menu_id, dish_alias_id, package_name) ihlal edilmemeli.
+        let dishes = vec![
+            vec![crate::parser::models::MenuComponent::from(
+                "Mercimek Çorbası",
+            )],
+            vec![crate::parser::models::MenuComponent::from(
+                "Mercimek Çorbası",
+            )],
+            vec![crate::parser::models::MenuComponent::from("Pirinç Pilavı")],
+        ];
+
+        let res = super::upsert_menu(
+            &db,
+            city_id,
+            date,
+            MealTypeEnum::Dinner,
+            "kepce-admin".to_string(),
+            None,
+            dishes,
+            vec![],
+            vec![],
+            None,
+            None,
+            None,
+        )
+        .await;
+
+        assert!(res.is_ok(), "upsert_menu hata verdi: {:?}", res.err());
+
+        // Aynı yemek yalnızca bir kez kaydedilmiş olmalı
+        let menu = menus::Entity::find()
+            .filter(menus::Column::CityId.eq(city_id))
+            .filter(menus::Column::ServeDate.eq(date))
+            .one(&db)
+            .await
+            .unwrap()
+            .expect("menü oluşturulmalıydı");
+        let count = menu_dishes::Entity::find()
+            .filter(menu_dishes::Column::MenuId.eq(menu.id))
+            .all(&db)
+            .await
+            .unwrap()
+            .len();
+        assert_eq!(count, 2, "aynı yemek iki slotta tekrar etmemeli");
+
+        // Temizlik
+        let _ = menus::Entity::delete_many()
+            .filter(menus::Column::CityId.eq(city_id))
+            .exec(&db)
+            .await;
+    }
+}

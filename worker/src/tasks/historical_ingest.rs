@@ -40,7 +40,10 @@ pub async fn ingest_historical_menus(db: &DatabaseConnection, file_path: &str) -
     tracing::info!("Tarihsel menü arşivi okunuyor: {}", file_path);
     let content = tokio::fs::read_to_string(&path).await?;
     let records: Vec<HistoricalMenuRecord> = serde_json::from_str(&content)?;
-    tracing::info!("Toplam {} adet menü kaydı Worker motoruna alınıyor...", records.len());
+    tracing::info!(
+        "Toplam {} adet menü kaydı Worker motoruna alınıyor...",
+        records.len()
+    );
 
     let all_cities = cities::Entity::find().all(db).await?;
     let mut city_by_plate = std::collections::HashMap::new();
@@ -57,7 +60,8 @@ pub async fn ingest_historical_menus(db: &DatabaseConnection, file_path: &str) -
         let city_id = if let Some(plate) = rec.city_plate {
             city_by_plate.get(&plate).map(|(id, _)| *id)
         } else if let Some(ref name) = rec.city_name {
-            let slug = name.to_lowercase()
+            let slug = name
+                .to_lowercase()
                 .replace('ı', "i")
                 .replace('ğ', "g")
                 .replace('ü', "u")
@@ -175,7 +179,10 @@ pub async fn ingest_historical_menus(db: &DatabaseConnection, file_path: &str) -
         }
     }
 
-    tracing::info!("Tarihsel menü ingest tamamlandı. Toplam {} menü güncellendi.", total);
+    tracing::info!(
+        "Tarihsel menü ingest tamamlandı. Toplam {} menü güncellendi.",
+        total
+    );
 
     // Tüm yemeklerin kategorilerini güncel kural motoruyla senkronize et
     let _ = recategorize_all_dishes(db).await;
@@ -200,6 +207,9 @@ pub async fn recategorize_all_dishes(db: &DatabaseConnection) -> Result<usize> {
         }
     }
 
-    tracing::info!("Kategori güncellemesi tamamlandı: {} yemek güncellendi.", updated);
+    tracing::info!(
+        "Kategori güncellemesi tamamlandı: {} yemek güncellendi.",
+        updated
+    );
     Ok(updated)
 }

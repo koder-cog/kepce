@@ -1,27 +1,32 @@
 //! Kullanıcı profili, istatistikleri ve hesap yönetim endpoint'leri.
+use crate::dto::comment::CommentResponseDto;
+use crate::dto::user::UserProfileDto;
+use crate::error::AppError;
+use crate::services::comment::CommentService;
+use crate::services::moderation::{ModerationError, ModerationService};
+use crate::services::user::UserService;
 use axum::{
+    extract::{Path, Query, State},
     routing::{get, post},
-    Router,
-    extract::{State, Path, Query},
-    Json,
+    Json, Router,
 };
 use uuid::Uuid;
-use crate::services::user::UserService;
-use crate::services::comment::CommentService;
-use crate::services::moderation::{ModerationService, ModerationError};
-use crate::dto::user::UserProfileDto;
-use crate::dto::comment::CommentResponseDto;
-use crate::error::AppError;
 
 use crate::extractors::auth::{AuthenticatedUser, OptionalUser};
 
 pub fn router() -> Router<crate::config::AppState> {
     Router::new()
         .route("/me", get(get_my_profile))
-        .route("/me/pinned-badges", post(update_my_pinned_badges).put(update_my_pinned_badges))
+        .route(
+            "/me/pinned-badges",
+            post(update_my_pinned_badges).put(update_my_pinned_badges),
+        )
         .route("/:username", get(get_profile))
         .route("/:username/comments", get(get_profile_comments))
-        .route("/:username/stats/dashboard", get(get_profile_dashboard_stats))
+        .route(
+            "/:username/stats/dashboard",
+            get(get_profile_dashboard_stats),
+        )
         .route("/block/:blocked_id", post(block_user).delete(unblock_user))
 }
 
@@ -30,11 +35,19 @@ impl From<ModerationError> for AppError {
         match err {
             ModerationError::UserNotFound => AppError::NotFound("User not found".to_string()),
             ModerationError::CommentNotFound => AppError::NotFound("Comment not found".to_string()),
-            ModerationError::SelfBlockNotAllowed => AppError::BadRequest("Cannot block yourself".to_string()),
-            ModerationError::SelfReportNotAllowed => AppError::BadRequest("Cannot report yourself".to_string()),
-            ModerationError::AlreadyReported => AppError::BadRequest("Already reported".to_string()),
+            ModerationError::SelfBlockNotAllowed => {
+                AppError::BadRequest("Cannot block yourself".to_string())
+            }
+            ModerationError::SelfReportNotAllowed => {
+                AppError::BadRequest("Cannot report yourself".to_string())
+            }
+            ModerationError::AlreadyReported => {
+                AppError::BadRequest("Already reported".to_string())
+            }
             ModerationError::AlreadyBlocked => AppError::BadRequest("Already blocked".to_string()),
-            ModerationError::CommentAlreadyDeleted => AppError::BadRequest("Comment already deleted".to_string()),
+            ModerationError::CommentAlreadyDeleted => {
+                AppError::BadRequest("Comment already deleted".to_string())
+            }
             ModerationError::DatabaseError(e) => {
                 tracing::error!("Database error in ModerationService: {}", e);
                 AppError::Internal("Database error".to_string())
@@ -55,6 +68,10 @@ impl From<ModerationError> for AppError {
             ModerationError::SubmissionNotFound => {
                 AppError::NotFound("Menü gönderimi bulunamadı.".to_string())
             }
+            ModerationError::FileReleaseError(msg) => {
+                tracing::error!("Menü gönderimi dosya serbest bırakma hatası: {}", msg);
+                AppError::Internal(format!("Menü dosyaları serbest bırakılamadı: {}", msg))
+            }
         }
     }
 }
@@ -73,7 +90,9 @@ async fn update_my_pinned_badges(
     Json(payload): Json<crate::dto::user::UpdatePinnedBadgesDto>,
 ) -> Result<Json<Vec<String>>, AppError> {
     use validator::Validate;
-    payload.validate().map_err(|e| AppError::BadRequest(e.to_string()))?;
+    payload
+        .validate()
+        .map_err(|e| AppError::BadRequest(e.to_string()))?;
     let updated = UserService::update_pinned_badges(&db, user.id, payload.pinned_badges).await?;
     Ok(Json(updated))
 }
@@ -83,8 +102,8 @@ async fn get_profile(
     user: OptionalUser,
     Path(username): Path<String>,
 ) -> Result<Json<UserProfileDto>, AppError> {
-    use shared::entities::user_blocks;
     use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+    use shared::entities::user_blocks;
 
     let mut profile = UserService::get_user_profile_by_username(&db, &username).await?;
     if let Some(auth_user) = user.0 {
@@ -120,13 +139,14 @@ async fn get_profile_comments(
 ) -> Result<Json<crate::dto::pagination::PaginatedResponse<CommentResponseDto>>, AppError> {
     let limit = query.limit_num();
     let offset = query.offset();
-    
+
     // First get the user id
     let profile = UserService::get_user_profile_by_username(&db, &username).await?;
-    
+
     let current_user_id = user.0.map(|u| u.id);
-    
-    let comments = CommentService::get_user_comments(&db, profile.id, current_user_id, limit, offset).await?;
+
+    let comments =
+        CommentService::get_user_comments(&db, profile.id, current_user_id, limit, offset).await?;
     Ok(Json(comments))
 }
 
@@ -137,10 +157,18 @@ async fn block_user(
     user: AuthenticatedUser,
     Path(blocked_id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    match ModerationService::block_user(&db, user.id, BlockUserDto { blocked_user_id: blocked_id }).await {
-        Ok(_) | Err(ModerationError::AlreadyBlocked) => {
-            Ok(Json(serde_json::json!({ "status": "success", "is_blocked": true })))
-        }
+    match ModerationService::block_user(
+        &db,
+        user.id,
+        BlockUserDto {
+            blocked_user_id: blocked_id,
+        },
+    )
+    .await
+    {
+        Ok(_) | Err(ModerationError::AlreadyBlocked) => Ok(Json(
+            serde_json::json!({ "status": "success", "is_blocked": true }),
+        )),
         Err(e) => Err(e.into()),
     }
 }
@@ -151,7 +179,9 @@ async fn unblock_user(
     Path(blocked_id): Path<Uuid>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     ModerationService::unblock_user(&db, user.id, blocked_id).await?;
-    Ok(Json(serde_json::json!({ "status": "success", "is_blocked": false })))
+    Ok(Json(
+        serde_json::json!({ "status": "success", "is_blocked": false }),
+    ))
 }
 
 async fn get_profile_dashboard_stats(
@@ -160,7 +190,7 @@ async fn get_profile_dashboard_stats(
 ) -> Result<Json<crate::dto::user::UserDashboardStatsDto>, AppError> {
     // Profilin varlığını kontrol et ve user_id al
     let profile = UserService::get_user_profile_by_username(&db, &username).await?;
-    
+
     let stats = UserService::get_dashboard_stats(&db, profile.id).await?;
     Ok(Json(stats))
 }

@@ -3,18 +3,15 @@
 //! Kullanıcıların şehir ve öğün abonelik tercihlerine göre günün menüsünü
 //! VAPID imzalı Web Push bildirimleri olarak gönderir.
 
-
 use anyhow::Result;
 use base64::Engine;
 use chrono::{Local, NaiveDate};
 use rand::Rng;
-use sea_orm::{
-    ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, ModelTrait,
-};
+use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, ModelTrait, QueryFilter};
 use serde::{Deserialize, Serialize};
 use shared::entities::{
-    menus, menu_dishes, dish_aliases, push_subscriptions,
-    sea_orm_active_enums::MealTypeEnum, prelude::*,
+    dish_aliases, menu_dishes, menus, prelude::*, push_subscriptions,
+    sea_orm_active_enums::MealTypeEnum,
 };
 use std::collections::HashMap;
 use std::env;
@@ -82,8 +79,8 @@ pub async fn send_to_subscription(
     let key_pair = get_key_pair();
     let subject = get_vapid_subject();
 
-    let builder = WebPushBuilder::new(endpoint_uri, ua_public, ua_auth)
-        .with_vapid(key_pair, &subject);
+    let builder =
+        WebPushBuilder::new(endpoint_uri, ua_public, ua_auth).with_vapid(key_pair, &subject);
 
     let payload_bytes = serde_json::to_vec(payload)?;
     let request: http::Request<Vec<u8>> = builder.build(payload_bytes)?;
@@ -105,21 +102,35 @@ pub async fn send_to_subscription(
             Ok(true)
         }
         Ok(res) if res.status().as_u16() == 410 || res.status().as_u16() == 404 => {
-            tracing::info!("Abonelik geçersiz (HTTP {}), siliniyor: {}", res.status(), sub.endpoint);
+            tracing::info!(
+                "Abonelik geçersiz (HTTP {}), siliniyor: {}",
+                res.status(),
+                sub.endpoint
+            );
             let _ = sub.clone().delete(db).await;
             Ok(false)
         }
         Ok(res) if res.status().as_u16() == 401 || res.status().as_u16() == 400 => {
             let status = res.status();
             let body = res.text().await.unwrap_or_default();
-            tracing::warn!("Push gateway yetkisiz istek veya anahtar uyuşmazlığı (HTTP {}): {} - {}", status, sub.endpoint, body);
+            tracing::warn!(
+                "Push gateway yetkisiz istek veya anahtar uyuşmazlığı (HTTP {}): {} - {}",
+                status,
+                sub.endpoint,
+                body
+            );
             let _ = sub.clone().delete(db).await;
             Ok(false)
         }
         Ok(res) => {
             let status = res.status();
             let body = res.text().await.unwrap_or_default();
-            tracing::warn!("Push gateway beklenmeyen durum döndürdü (HTTP {}): {} - {}", status, sub.endpoint, body);
+            tracing::warn!(
+                "Push gateway beklenmeyen durum döndürdü (HTTP {}): {} - {}",
+                status,
+                sub.endpoint,
+                body
+            );
             Ok(false)
         }
         Err(e) => {
@@ -129,11 +140,7 @@ pub async fn send_to_subscription(
     }
 }
 
-pub fn build_meal_notification(
-    city_name: &str,
-    meal_type: &str,
-    dishes: &[String],
-) -> PushPayload {
+pub fn build_meal_notification(city_name: &str, meal_type: &str, dishes: &[String]) -> PushPayload {
     let mut rng = rand::thread_rng();
     let dishes_str = dishes.join(", ");
     let dishes_lower: Vec<String> = dishes.iter().map(|d| d.to_lowercase()).collect();
@@ -142,93 +149,282 @@ pub fn build_meal_notification(
     let badge = Some("/icons/badge-72.png".to_string());
     let today_str = Local::now().format("%Y-%m-%d").to_string();
     let tag = Some(format!("meal-{}-{}", meal_type, today_str));
-    let url = Some(format!("/{}", city_name.to_lowercase()
-        .replace('ı', "i")
-        .replace('ğ', "g")
-        .replace('ü', "u")
-        .replace('ş', "s")
-        .replace('ö', "o")
-        .replace('ç', "c")));
+    let url = Some(format!(
+        "/{}",
+        city_name
+            .to_lowercase()
+            .replace('ı', "i")
+            .replace('ğ', "g")
+            .replace('ü', "u")
+            .replace('ş', "s")
+            .replace('ö', "o")
+            .replace('ç', "c")
+    ));
 
     if meal_type == "breakfast" {
-        let has_sicak = dishes_lower.iter().any(|d| d.contains("pişi") || d.contains("börek") || d.contains("kızartma") || d.contains("menemen") || d.contains("omlet") || d.contains("pizza"));
-        let has_yumurta = dishes_lower.iter().any(|d| d.contains("haşlanmış yumurta") || d.contains("haslanmis yumurta") || d.contains("yumurta"));
-        let has_hamuris = dishes_lower.iter().any(|d| d.contains("simit") || d.contains("poğaça") || d.contains("pogaca") || d.contains("açma"));
+        let has_sicak = dishes_lower.iter().any(|d| {
+            d.contains("pişi")
+                || d.contains("börek")
+                || d.contains("kızartma")
+                || d.contains("menemen")
+                || d.contains("omlet")
+                || d.contains("pizza")
+        });
+        let has_yumurta = dishes_lower.iter().any(|d| {
+            d.contains("haşlanmış yumurta")
+                || d.contains("haslanmis yumurta")
+                || d.contains("yumurta")
+        });
+        let has_hamuris = dishes_lower.iter().any(|d| {
+            d.contains("simit")
+                || d.contains("poğaça")
+                || d.contains("pogaca")
+                || d.contains("açma")
+        });
 
         let main_dish = dishes.first().map(|s| s.as_str()).unwrap_or("Kahvaltı");
 
         if has_sicak {
             let variants = [
-                (format!("{} - Bugünün kahvaltısı", city_name), format!("Kahvaltıda {} var. Soğumadan koşun gelin.", main_dish)),
-                (format!("{} - Sıcak kahvaltı menüsü", city_name), format!("Aşağıda {} kokusu var. Olay yerinde olmak için menüye bak.", main_dish)),
+                (
+                    format!("{} - Bugünün kahvaltısı", city_name),
+                    format!("Kahvaltıda {} var. Soğumadan koşun gelin.", main_dish),
+                ),
+                (
+                    format!("{} - Sıcak kahvaltı menüsü", city_name),
+                    format!(
+                        "Aşağıda {} kokusu var. Olay yerinde olmak için menüye bak.",
+                        main_dish
+                    ),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         } else if has_yumurta {
             let variants = [
-                (format!("{} - Bugünün kahvaltısı", city_name), "Yine haşlanmış yumurta nöbeti. Ekmek arası yapmaya aşağı in.".to_string()),
-                (format!("{} - Sabah kahvaltı listesi", city_name), "Yumurta ve peynir ikilisi hazır. Aşağı inmeden önce listeye göz at.".to_string()),
+                (
+                    format!("{} - Bugünün kahvaltısı", city_name),
+                    "Yine haşlanmış yumurta nöbeti. Ekmek arası yapmaya aşağı in.".to_string(),
+                ),
+                (
+                    format!("{} - Sabah kahvaltı listesi", city_name),
+                    "Yumurta ve peynir ikilisi hazır. Aşağı inmeden önce listeye göz at."
+                        .to_string(),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         } else if has_hamuris {
             let variants = [
-                (format!("{} - Bugünün kahvaltısı", city_name), format!("Kahvaltıda {} var. Çayın yanına kapmak için menüye göz at.", main_dish)),
-                (format!("{} - Hamurişi kahvaltı günü", city_name), format!("Tepside {} bekliyor. Menü detaylarına dokun.", main_dish)),
+                (
+                    format!("{} - Bugünün kahvaltısı", city_name),
+                    format!(
+                        "Kahvaltıda {} var. Çayın yanına kapmak için menüye göz at.",
+                        main_dish
+                    ),
+                ),
+                (
+                    format!("{} - Hamurişi kahvaltı günü", city_name),
+                    format!("Tepside {} bekliyor. Menü detaylarına dokun.", main_dish),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         } else {
             let variants = [
-                (format!("{} - Bugünün kahvaltısı", city_name), "Yataktan çıkmaya değer mi? Menüye bakıp öyle karar ver.".to_string()),
-                (format!("{} - Sabah yoklaması", city_name), "Yemekhane sırası başlamadan önce bugünün kahvaltısına göz at.".to_string()),
-                (format!("{} - Günün ilk öğünü", city_name), format!("Kahvaltı tabldotu: {}. Detaylar için dokun.", dishes_str)),
+                (
+                    format!("{} - Bugünün kahvaltısı", city_name),
+                    "Yataktan çıkmaya değer mi? Menüye bakıp öyle karar ver.".to_string(),
+                ),
+                (
+                    format!("{} - Sabah yoklaması", city_name),
+                    "Yemekhane sırası başlamadan önce bugünün kahvaltısına göz at.".to_string(),
+                ),
+                (
+                    format!("{} - Günün ilk öğünü", city_name),
+                    format!("Kahvaltı tabldotu: {}. Detaylar için dokun.", dishes_str),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         }
     } else {
-        let has_tavuk_et = dishes_lower.iter().any(|d| d.contains("tavuk") || d.contains("köfte") || d.contains("kofte") || d.contains("fajita") || d.contains("şinitzel") || d.contains("kavurma") || d.contains("tas kebabı"));
-        let has_sebze = dishes_lower.iter().any(|d| d.contains("türlü") || d.contains("turlu") || d.contains("bezelye") || d.contains("ıspanak") || d.contains("ispanak") || d.contains("kabak") || d.contains("karnabahar") || d.contains("pırasa") || d.contains("pirasa"));
-        let has_bakliyat = dishes_lower.iter().any(|d| d.contains("nohut") || d.contains("kuru fasulye") || d.contains("barbunya") || d.contains("mercimek"));
+        let has_tavuk_et = dishes_lower.iter().any(|d| {
+            d.contains("tavuk")
+                || d.contains("köfte")
+                || d.contains("kofte")
+                || d.contains("fajita")
+                || d.contains("şinitzel")
+                || d.contains("kavurma")
+                || d.contains("tas kebabı")
+        });
+        let has_sebze = dishes_lower.iter().any(|d| {
+            d.contains("türlü")
+                || d.contains("turlu")
+                || d.contains("bezelye")
+                || d.contains("ıspanak")
+                || d.contains("ispanak")
+                || d.contains("kabak")
+                || d.contains("karnabahar")
+                || d.contains("pırasa")
+                || d.contains("pirasa")
+        });
+        let has_bakliyat = dishes_lower.iter().any(|d| {
+            d.contains("nohut")
+                || d.contains("kuru fasulye")
+                || d.contains("barbunya")
+                || d.contains("mercimek")
+        });
 
-        let main_dish = dishes.iter()
+        let main_dish = dishes
+            .iter()
             .find(|d| {
                 let l = d.to_lowercase();
-                !l.contains("çorba") && !l.contains("corba") && !l.contains("su") && !l.contains("ekmek") && !l.contains("salata") && !l.contains("cacık") && !l.contains("ayran")
+                !l.contains("çorba")
+                    && !l.contains("corba")
+                    && !l.contains("su")
+                    && !l.contains("ekmek")
+                    && !l.contains("salata")
+                    && !l.contains("cacık")
+                    && !l.contains("ayran")
             })
             .map(|s| s.as_str())
             .unwrap_or_else(|| dishes.first().map(|s| s.as_str()).unwrap_or("Akşam Menüsü"));
 
         if has_tavuk_et {
             let variants = [
-                (format!("{} - Bugünün akşam yemeği", city_name), format!("Ana yemekte {} var, tam bir protein bombası. Olay yerinde ol.", main_dish)),
-                (format!("{} - Akşam menüsü açıklandı", city_name), format!("Tabldotta {} var. Sıra blokların arasına taşmadan yerini al.", main_dish)),
+                (
+                    format!("{} - Bugünün akşam yemeği", city_name),
+                    format!(
+                        "Ana yemekte {} var, tam bir protein bombası. Olay yerinde ol.",
+                        main_dish
+                    ),
+                ),
+                (
+                    format!("{} - Akşam menüsü açıklandı", city_name),
+                    format!(
+                        "Tabldotta {} var. Sıra blokların arasına taşmadan yerini al.",
+                        main_dish
+                    ),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         } else if has_sebze {
             let variants = [
-                (format!("{} - Bugünün akşam yemeği", city_name), format!("Ana yemekte {} var. Uzak durup dışarıdan mı söylesek?", main_dish)),
-                (format!("{} - Akşam menüsü yayında", city_name), format!("Bugün sebze günü: {} çıkmış. Beklentini ayarlamak için listeye bak.", main_dish)),
+                (
+                    format!("{} - Bugünün akşam yemeği", city_name),
+                    format!(
+                        "Ana yemekte {} var. Uzak durup dışarıdan mı söylesek?",
+                        main_dish
+                    ),
+                ),
+                (
+                    format!("{} - Akşam menüsü yayında", city_name),
+                    format!(
+                        "Bugün sebze günü: {} çıkmış. Beklentini ayarlamak için listeye bak.",
+                        main_dish
+                    ),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         } else if has_bakliyat {
             let variants = [
-                (format!("{} - Bugünün akşam yemeği", city_name), format!("Klasik menü devrede: {} ve pilav. Akşam menüsüne göz at.", main_dish)),
-                (format!("{} - Günün akşam tabldotu", city_name), format!("Pilavın yanına {} eşlik ediyor. Menü detaylarına dokun.", main_dish)),
+                (
+                    format!("{} - Bugünün akşam yemeği", city_name),
+                    format!(
+                        "Klasik menü devrede: {} ve pilav. Akşam menüsüne göz at.",
+                        main_dish
+                    ),
+                ),
+                (
+                    format!("{} - Günün akşam tabldotu", city_name),
+                    format!(
+                        "Pilavın yanına {} eşlik ediyor. Menü detaylarına dokun.",
+                        main_dish
+                    ),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         } else {
             let variants = [
-                (format!("{} - Bugünün akşam yemeği", city_name), "Dünkü yemeğin bugünkü evrimi ne oldu? Yemeğe inmeden önce menüye dokun.".to_string()),
-                (format!("{} - Akşam yemekhanesi hazır", city_name), format!("Akşam tabldotu: {}. Sıraya girmeden menüyü gör.", dishes_str)),
-                (format!("{} - Mutfaktan son durum", city_name), "Akşam tabldotunda ne olduğunu öğrenmek için dokun.".to_string()),
+                (
+                    format!("{} - Bugünün akşam yemeği", city_name),
+                    "Dünkü yemeğin bugünkü evrimi ne oldu? Yemeğe inmeden önce menüye dokun."
+                        .to_string(),
+                ),
+                (
+                    format!("{} - Akşam yemekhanesi hazır", city_name),
+                    format!(
+                        "Akşam tabldotu: {}. Sıraya girmeden menüyü gör.",
+                        dishes_str
+                    ),
+                ),
+                (
+                    format!("{} - Mutfaktan son durum", city_name),
+                    "Akşam tabldotunda ne olduğunu öğrenmek için dokun.".to_string(),
+                ),
             ];
             let chosen = &variants[rng.gen_range(0..variants.len())];
-            PushPayload { title: chosen.0.clone(), body: chosen.1.clone(), icon, badge, tag, url }
+            PushPayload {
+                title: chosen.0.clone(),
+                body: chosen.1.clone(),
+                icon,
+                badge,
+                tag,
+                url,
+            }
         }
     }
 }
@@ -239,7 +435,10 @@ pub async fn check_and_dispatch_meal_notifications(db: &DatabaseConnection) -> R
     let current_time_str = now.format("%H:%M").to_string();
     let today_date = now.date_naive();
 
-    tracing::debug!("[MEAL-NOTIFIER] Saat kontrolü yapılıyor: {}", current_time_str);
+    tracing::debug!(
+        "[MEAL-NOTIFIER] Saat kontrolü yapılıyor: {}",
+        current_time_str
+    );
 
     // 1. Kahvaltı zamanı gelen abonelikler
     let breakfast_subs = PushSubscriptions::find()
@@ -271,16 +470,23 @@ pub async fn check_and_dispatch_meal_notifications(db: &DatabaseConnection) -> R
             Some(id) => id,
             None => continue,
         };
-        let city_name = city_map.get(&city_id).cloned().unwrap_or_else(|| "KYK Yurdu".to_string());
+        let city_name = city_map
+            .get(&city_id)
+            .cloned()
+            .unwrap_or_else(|| "KYK Yurdu".to_string());
 
-        let dishes = get_menu_dishes_for_date(db, city_id, today_date, MealTypeEnum::Breakfast).await?;
+        let dishes =
+            get_menu_dishes_for_date(db, city_id, today_date, MealTypeEnum::Breakfast).await?;
         if dishes.is_empty() {
             // Boş menü koruması: Menü yoksa sessiz kal
             continue;
         }
 
         let payload = build_meal_notification(&city_name, "breakfast", &dishes);
-        if send_to_subscription(db, &sub, &payload).await.unwrap_or(false) {
+        if send_to_subscription(db, &sub, &payload)
+            .await
+            .unwrap_or(false)
+        {
             total_sent += 1;
         }
     }
@@ -291,22 +497,33 @@ pub async fn check_and_dispatch_meal_notifications(db: &DatabaseConnection) -> R
             Some(id) => id,
             None => continue,
         };
-        let city_name = city_map.get(&city_id).cloned().unwrap_or_else(|| "KYK Yurdu".to_string());
+        let city_name = city_map
+            .get(&city_id)
+            .cloned()
+            .unwrap_or_else(|| "KYK Yurdu".to_string());
 
-        let dishes = get_menu_dishes_for_date(db, city_id, today_date, MealTypeEnum::Dinner).await?;
+        let dishes =
+            get_menu_dishes_for_date(db, city_id, today_date, MealTypeEnum::Dinner).await?;
         if dishes.is_empty() {
             // Boş menü koruması: Menü yoksa sessiz kal
             continue;
         }
 
         let payload = build_meal_notification(&city_name, "dinner", &dishes);
-        if send_to_subscription(db, &sub, &payload).await.unwrap_or(false) {
+        if send_to_subscription(db, &sub, &payload)
+            .await
+            .unwrap_or(false)
+        {
             total_sent += 1;
         }
     }
 
     if total_sent > 0 {
-        tracing::info!("[MEAL-NOTIFIER] Saat {} için {} adet öğün push bildirimi başarıyla iletildi.", current_time_str, total_sent);
+        tracing::info!(
+            "[MEAL-NOTIFIER] Saat {} için {} adet öğün push bildirimi başarıyla iletildi.",
+            current_time_str,
+            total_sent
+        );
     }
 
     Ok(total_sent)

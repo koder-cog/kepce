@@ -1,16 +1,16 @@
-use sea_orm::*;
-use shared::entities::{prelude::*, users};
-use chrono::Utc;
-use uuid::Uuid;
-use rand::{distributions::Alphanumeric, Rng};
-use bcrypt::{hash, verify, DEFAULT_COST};
-use jsonwebtoken::{encode, EncodingKey, Header};
+use crate::dto::user::{LoginRequestDto, RegisterRequestDto, UserProfileDto, UserRole};
 use crate::extractors::auth::Claims;
-use crate::dto::user::{LoginRequestDto, RegisterRequestDto, UserRole, UserProfileDto};
-use sha2::{Sha256, Digest};
-use std::sync::{Mutex, OnceLock};
+use bcrypt::{hash, verify, DEFAULT_COST};
+use chrono::Utc;
+use jsonwebtoken::{encode, EncodingKey, Header};
+use rand::{distributions::Alphanumeric, Rng};
+use sea_orm::*;
+use sha2::{Digest, Sha256};
+use shared::entities::{prelude::*, users};
 use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock};
 use std::time::Instant;
+use uuid::Uuid;
 
 fn hash_token(token: &str) -> String {
     let mut hasher = Sha256::new();
@@ -66,20 +66,34 @@ impl AuthService {
         let trimmed = name.trim();
         let char_count = trimmed.chars().count();
         if !(3..=25).contains(&char_count) {
-            return Err(AuthError::InvalidUsername("Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.".to_string()));
+            return Err(AuthError::InvalidUsername(
+                "Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.".to_string(),
+            ));
         }
         if Self::is_reserved_username(trimmed) {
-            return Err(AuthError::InvalidUsername("Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.".to_string()));
+            return Err(AuthError::InvalidUsername(
+                "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz."
+                    .to_string(),
+            ));
         }
-        let is_valid_char = trimmed.chars().all(|c| c.is_alphanumeric() || c == '_' || c == '-');
+        let is_valid_char = trimmed
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '_' || c == '-');
         if !is_valid_char {
-            return Err(AuthError::InvalidUsername("Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.".to_string()));
+            return Err(AuthError::InvalidUsername(
+                "Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.".to_string(),
+            ));
         }
         Ok(())
     }
 
     /// JWT Token Üretici
-    pub fn generate_token(user_id: Uuid, username: &str, role: &UserRole, jwt_secret: &str) -> Result<String, AuthError> {
+    pub fn generate_token(
+        user_id: Uuid,
+        username: &str,
+        role: &UserRole,
+        jwt_secret: &str,
+    ) -> Result<String, AuthError> {
         let claims = Claims {
             sub: user_id,
             username: username.to_string(),
@@ -93,7 +107,8 @@ impl AuthService {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        ).map_err(|e| AuthError::TokenError(e.to_string()))
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
     pub async fn generate_refresh_token(
@@ -120,7 +135,8 @@ impl AuthService {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        ).map_err(|e| AuthError::TokenError(e.to_string()))?;
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))?;
 
         let session = shared::entities::user_sessions::ActiveModel {
             id: Set(jti),
@@ -151,7 +167,12 @@ impl AuthService {
                 Self::validate_username(&trimmed)?;
                 let lower = trimmed.to_lowercase();
                 let exists = Users::find()
-                    .filter(sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(sea_orm::sea_query::Expr::col(users::Column::Username))).eq(&lower))
+                    .filter(
+                        sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                            sea_orm::sea_query::Expr::col(users::Column::Username),
+                        ))
+                        .eq(&lower),
+                    )
                     .one(db)
                     .await
                     .map_err(AuthError::DatabaseError)?;
@@ -163,39 +184,44 @@ impl AuthService {
             None => {
                 // Elle girmediyse e-postadan üret
                 let base_name = dto.email.split('@').next().unwrap_or("user").to_lowercase();
-                
+
                 // Profesyonel yaklaşım: 'Ya tutarsa' yerine benzersizlik sağlanana kadar döngü kur.
                 let mut final_username = base_name.clone();
-                
+
                 // Race condition koruması: Maksimum 5 deneme
                 let max_retries = 5;
                 let mut attempt = 0;
-                
+
                 loop {
                     let lower = final_username.to_lowercase();
                     let exists = Users::find()
-                        .filter(sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(sea_orm::sea_query::Expr::col(users::Column::Username))).eq(&lower))
+                        .filter(
+                            sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                                sea_orm::sea_query::Expr::col(users::Column::Username),
+                            ))
+                            .eq(&lower),
+                        )
                         .one(db)
                         .await
                         .map_err(AuthError::DatabaseError)?;
-                    
+
                     if exists.is_none() && !Self::is_reserved_username(&final_username) {
                         // Veritabanında yok ve rezerve değil, güvenle kullanabiliriz.
                         break final_username;
                     }
-                    
+
                     attempt += 1;
                     if attempt >= max_retries {
                         return Err(AuthError::UserAlreadyExists);
                     }
-                    
+
                     // İsim alınmışsa sonuna 5 haneli rastgele küçük harf/rakam ekleyip tekrar dene.
                     let random_suffix: String = rand::thread_rng()
                         .sample_iter(&Alphanumeric)
                         .take(5)
                         .map(char::from)
                         .collect();
-                    
+
                     final_username = format!("{}_{}", base_name, random_suffix.to_lowercase());
                 }
             }
@@ -205,12 +231,13 @@ impl AuthService {
         // DİKKAT: bcrypt hash işlemi CPU-bound'dur ve tokio iş parçacıklarını kilitler (thread starvation).
         // Bu yüzden spawn_blocking ile arka plan havuzuna paslıyoruz.
         let password_clone = dto.password.clone();
-        let hashed_password = tokio::task::spawn_blocking(move || {
-            hash(&password_clone, DEFAULT_COST)
-        })
-        .await
-        .map_err(|e| AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e))))?
-        .map_err(AuthError::HashError)?;
+        let hashed_password =
+            tokio::task::spawn_blocking(move || hash(&password_clone, DEFAULT_COST))
+                .await
+                .map_err(|e| {
+                    AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
+                })?
+                .map_err(AuthError::HashError)?;
 
         // 3. Veritabanı Modeline (ActiveModel) dönüştür
         let new_user = users::ActiveModel {
@@ -248,13 +275,24 @@ impl AuthService {
 
         // 5. Dışarıya güvenli DTO dön (Şifre vb. gizli)
         let role = UserRole::User;
-        let access_token = Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
-        let refresh_token = Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, ip_address, user_agent).await?;
-        
+        let access_token =
+            Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
+        let refresh_token = Self::generate_refresh_token(
+            db,
+            inserted_user.id,
+            jwt_secret,
+            false,
+            ip_address,
+            user_agent,
+        )
+        .await?;
+
         let user = crate::services::user::UserService::build_profile(db, inserted_user, true)
             .await
             .map_err(|e| match e {
-                crate::services::user::UserError::DatabaseError(db_err) => AuthError::DatabaseError(db_err),
+                crate::services::user::UserError::DatabaseError(db_err) => {
+                    AuthError::DatabaseError(db_err)
+                }
                 crate::services::user::UserError::NotFound => AuthError::InvalidCredentials,
             })?;
         Ok((access_token, refresh_token, user))
@@ -285,7 +323,8 @@ impl AuthService {
             .ok_or(AuthError::InvalidCredentials)?;
 
         // 2b. Hesap durumu kontrolü (ban/suspend enforce - SA-3)
-        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
+        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
+        {
             return Err(AuthError::AccountDisabled);
         }
 
@@ -293,12 +332,12 @@ impl AuthService {
         // DİKKAT: bcrypt verify işlemi CPU-bound'dur, tokio pool'u bloklamaması için arka plana atıyoruz.
         let password_clone = dto.password.clone();
         let hash_clone = user.password_hash.clone();
-        let is_valid = tokio::task::spawn_blocking(move || {
-            verify(&password_clone, &hash_clone)
-        })
-        .await
-        .map_err(|e| AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e))))?
-        .map_err(AuthError::HashError)?;
+        let is_valid = tokio::task::spawn_blocking(move || verify(&password_clone, &hash_clone))
+            .await
+            .map_err(|e| {
+                AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
+            })?
+            .map_err(AuthError::HashError)?;
 
         if !is_valid {
             return Err(AuthError::InvalidCredentials);
@@ -314,13 +353,24 @@ impl AuthService {
 
         // 5. JWT Token üret
         let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
-        let refresh_token = Self::generate_refresh_token(db, user_id, jwt_secret, dto.remember.unwrap_or(false), ip_address, user_agent).await?;
+        let refresh_token = Self::generate_refresh_token(
+            db,
+            user_id,
+            jwt_secret,
+            dto.remember.unwrap_or(false),
+            ip_address,
+            user_agent,
+        )
+        .await?;
 
         Ok((access_token, refresh_token, profile))
     }
 
     /// E-posta doğrulama token'ı (aud: kepce-verify - SA-5 token-type ayrımı)
-    pub fn generate_verification_token(user_id: Uuid, jwt_secret: &str) -> Result<String, AuthError> {
+    pub fn generate_verification_token(
+        user_id: Uuid,
+        jwt_secret: &str,
+    ) -> Result<String, AuthError> {
         let claims = VerificationClaims {
             sub: user_id,
             exp: (Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
@@ -332,7 +382,8 @@ impl AuthService {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        ).map_err(|e| AuthError::TokenError(e.to_string()))
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
     /// Şifre sıfırlama token'ı (aud: kepce-reset - doğrulama token'ından farklı tür)
@@ -348,11 +399,15 @@ impl AuthService {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        ).map_err(|e| AuthError::TokenError(e.to_string()))
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
     /// Şifresiz giriş token'ı (aud: kepce-passwordless - 15 dakika geçerli)
-    pub fn generate_passwordless_token(user_id: Uuid, jwt_secret: &str) -> Result<String, AuthError> {
+    pub fn generate_passwordless_token(
+        user_id: Uuid,
+        jwt_secret: &str,
+    ) -> Result<String, AuthError> {
         let claims = VerificationClaims {
             sub: user_id,
             exp: (Utc::now() + chrono::Duration::minutes(15)).timestamp() as usize,
@@ -364,7 +419,8 @@ impl AuthService {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        ).map_err(|e| AuthError::TokenError(e.to_string()))
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
     /// Token'ın daha önce kullanılıp kullanılmadığını veritabanından sorgular
@@ -432,11 +488,18 @@ impl AuthService {
             token,
             &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
             &validation,
-        ).map_err(|e| AuthError::TokenError(e.to_string()))?;
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))?;
 
         // Token blacklist kontrolü (Kalıcı DB kontrolü)
-        if Self::is_token_used(db, token).await.map_err(AuthError::DatabaseError)? {
-            return Err(AuthError::TokenError("Bu giriş bağlantısı zaten kullanılmış. Lütfen yeni bir bağlantı isteyin.".to_string()));
+        if Self::is_token_used(db, token)
+            .await
+            .map_err(AuthError::DatabaseError)?
+        {
+            return Err(AuthError::TokenError(
+                "Bu giriş bağlantısı zaten kullanılmış. Lütfen yeni bir bağlantı isteyin."
+                    .to_string(),
+            ));
         }
 
         let user = Users::find_by_id(token_data.claims.sub)
@@ -445,7 +508,8 @@ impl AuthService {
             .map_err(AuthError::DatabaseError)?
             .ok_or(AuthError::InvalidCredentials)?;
 
-        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
+        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
+        {
             return Err(AuthError::AccountDisabled);
         }
 
@@ -456,7 +520,9 @@ impl AuthService {
             "passwordless",
             user.id,
             Utc::now() + chrono::Duration::minutes(15),
-        ).await.map_err(AuthError::DatabaseError)?;
+        )
+        .await
+        .map_err(AuthError::DatabaseError)?;
 
         let role = crate::services::user::UserService::map_role(&user.role);
         let user_id = user.id;
@@ -467,7 +533,9 @@ impl AuthService {
 
         let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
         // Magic link ile giriş yapan kullanıcıların oturumu kalıcı (remember: true) olarak açılır.
-        let refresh_token = Self::generate_refresh_token(db, user_id, jwt_secret, true, ip_address, user_agent).await?;
+        let refresh_token =
+            Self::generate_refresh_token(db, user_id, jwt_secret, true, ip_address, user_agent)
+                .await?;
 
         Ok((access_token, refresh_token, profile))
     }
@@ -486,7 +554,8 @@ impl AuthService {
             token,
             &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
             &validation,
-        ).map_err(|e| AuthError::TokenError(e.to_string()))?;
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))?;
 
         let user = Users::find_by_id(token_data.claims.sub)
             .one(db)
@@ -500,8 +569,13 @@ impl AuthService {
         }
 
         // Token blacklist kontrolü (Kalıcı DB kontrolü - 24 saat)
-        if Self::is_token_used(db, token).await.map_err(AuthError::DatabaseError)? {
-            return Err(AuthError::TokenError("Bu doğrulama bağlantısı geçersiz veya daha önce kullanılmış.".to_string()));
+        if Self::is_token_used(db, token)
+            .await
+            .map_err(AuthError::DatabaseError)?
+        {
+            return Err(AuthError::TokenError(
+                "Bu doğrulama bağlantısı geçersiz veya daha önce kullanılmış.".to_string(),
+            ));
         }
 
         // Token'ı kullanılmış olarak kaydet (24 saat geçerlilik)
@@ -511,7 +585,9 @@ impl AuthService {
             "verify",
             user.id,
             Utc::now() + chrono::Duration::hours(24),
-        ).await.map_err(AuthError::DatabaseError)?;
+        )
+        .await
+        .map_err(AuthError::DatabaseError)?;
 
         let mut active: users::ActiveModel = user.into();
         active.is_verified = Set(true);
@@ -530,16 +606,22 @@ impl AuthService {
         let mut validation = jsonwebtoken::Validation::default();
         validation.set_issuer(&["kepce"]);
         validation.set_audience(&["kepce-reset"]);
-        
+
         let token_data = jsonwebtoken::decode::<VerificationClaims>(
             token,
             &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
             &validation,
-        ).map_err(|e| AuthError::TokenError(e.to_string()))?;
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))?;
 
         // Token blacklist kontrolü (Kalıcı DB kontrolü - 1 saat)
-        if Self::is_token_used(db, token).await.map_err(AuthError::DatabaseError)? {
-            return Err(AuthError::TokenError("Bu şifre sıfırlama bağlantısı zaten kullanılmış veya geçersiz.".to_string()));
+        if Self::is_token_used(db, token)
+            .await
+            .map_err(AuthError::DatabaseError)?
+        {
+            return Err(AuthError::TokenError(
+                "Bu şifre sıfırlama bağlantısı zaten kullanılmış veya geçersiz.".to_string(),
+            ));
         }
 
         let user = Users::find_by_id(token_data.claims.sub)
@@ -553,7 +635,9 @@ impl AuthService {
             bcrypt::hash(&password_clone, bcrypt::DEFAULT_COST)
         })
         .await
-        .map_err(|e| AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e))))?
+        .map_err(|e| {
+            AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
+        })?
         .map_err(AuthError::HashError)?;
 
         // Token'ı kullanılmış olarak kaydet (1 saat geçerlilik)
@@ -563,7 +647,9 @@ impl AuthService {
             "reset",
             user.id,
             Utc::now() + chrono::Duration::hours(1),
-        ).await.map_err(AuthError::DatabaseError)?;
+        )
+        .await
+        .map_err(AuthError::DatabaseError)?;
 
         let mut active: users::ActiveModel = user.into();
         active.password_hash = Set(hashed_password);
@@ -591,63 +677,78 @@ impl AuthService {
         user_agent: Option<String>,
     ) -> Result<(String, String, bool), AuthError> {
         let email_lower = email.to_lowercase();
-        
+
         // 1. E-posta adresiyle kullanıcı var mı bak
         let existing_user = Users::find()
             .filter(users::Column::Email.eq(&email_lower))
             .one(db)
             .await
             .map_err(AuthError::DatabaseError)?;
-            
+
         if let Some(user) = existing_user {
             // Kullanıcı hesabı aktif mi?
-            if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
+            if user.account_status
+                != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
+            {
                 return Err(AuthError::AccountDisabled);
             }
-            
+
             // Eğer avatar yoksa ve OAuth sağlayıcısı avatar verdiyse güncelle
             if user.avatar_url.is_none() && picture.is_some() {
                 let mut active_user: users::ActiveModel = user.clone().into();
                 active_user.avatar_url = Set(picture.map(|s| s.to_string()));
                 let _ = active_user.update(db).await;
             }
-            
+
             let role = match user.role {
                 shared::entities::sea_orm_active_enums::UserRoleEnum::Admin => UserRole::Admin,
-                shared::entities::sea_orm_active_enums::UserRoleEnum::SystemBot => UserRole::SystemBot,
+                shared::entities::sea_orm_active_enums::UserRoleEnum::SystemBot => {
+                    UserRole::SystemBot
+                }
                 shared::entities::sea_orm_active_enums::UserRoleEnum::User => UserRole::User,
             };
-            
+
             let access_token = Self::generate_token(user.id, &user.username, &role, jwt_secret)?;
-            let refresh_token = Self::generate_refresh_token(db, user.id, jwt_secret, false, ip_address, user_agent).await?;
-            
+            let refresh_token = Self::generate_refresh_token(
+                db, user.id, jwt_secret, false, ip_address, user_agent,
+            )
+            .await?;
+
             return Ok((access_token, refresh_token, false));
         }
-        
+
         // 2. Kullanıcı yoksa oluştur
-        let base_name = email_lower.split('@').next().unwrap_or("user").to_lowercase();
+        let base_name = email_lower
+            .split('@')
+            .next()
+            .unwrap_or("user")
+            .to_lowercase();
         let mut final_username = base_name.clone();
-        
+
         let max_retries = 5;
         let mut attempt = 0;
-        
+
         let final_username = loop {
             let exists = Users::find()
                 .filter(users::Column::Username.eq(&final_username))
                 .one(db)
                 .await
                 .map_err(AuthError::DatabaseError)?;
-                
+
             if exists.is_none() {
                 break final_username;
             }
-            
+
             attempt += 1;
             if attempt >= max_retries {
-                final_username = format!("{}_{}", base_name, Uuid::new_v4().to_string()[..5].to_lowercase());
+                final_username = format!(
+                    "{}_{}",
+                    base_name,
+                    Uuid::new_v4().to_string()[..5].to_lowercase()
+                );
                 break final_username;
             }
-            
+
             let random_suffix: String = rand::thread_rng()
                 .sample_iter(&Alphanumeric)
                 .take(5)
@@ -655,16 +756,16 @@ impl AuthService {
                 .collect();
             final_username = format!("{}_{}", base_name, random_suffix.to_lowercase());
         };
-        
+
         // Şifresiz girişler için rastgele geçici bir bcrypt parola hash'i üret
         let dummy_pass = Uuid::new_v4().to_string();
-        let hashed_password = tokio::task::spawn_blocking(move || {
-            hash(&dummy_pass, DEFAULT_COST)
-        })
-        .await
-        .map_err(|e| AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e))))?
-        .map_err(AuthError::HashError)?;
-        
+        let hashed_password = tokio::task::spawn_blocking(move || hash(&dummy_pass, DEFAULT_COST))
+            .await
+            .map_err(|e| {
+                AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
+            })?
+            .map_err(AuthError::HashError)?;
+
         let new_user = users::ActiveModel {
             id: Set(Uuid::new_v4()),
             username: Set(final_username),
@@ -686,7 +787,7 @@ impl AuthService {
             email_updates: Set(false),
             ..Default::default()
         };
-        
+
         let inserted_user = match new_user.insert(db).await {
             Ok(u) => u,
             Err(e) => {
@@ -696,11 +797,20 @@ impl AuthService {
                 return Err(AuthError::DatabaseError(e));
             }
         };
-        
+
         let role = UserRole::User;
-        let access_token = Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
-        let refresh_token = Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, ip_address, user_agent).await?;
-        
+        let access_token =
+            Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
+        let refresh_token = Self::generate_refresh_token(
+            db,
+            inserted_user.id,
+            jwt_secret,
+            false,
+            ip_address,
+            user_agent,
+        )
+        .await?;
+
         Ok((access_token, refresh_token, true))
     }
 }
@@ -712,5 +822,3 @@ pub struct VerificationClaims {
     pub iss: String,
     pub aud: String,
 }
-
-

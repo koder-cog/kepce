@@ -1,8 +1,10 @@
+use crate::dto::system::{
+    ComponentHistoryDto, StatusDayDto, SystemStatusDto, VerifyTreeResponseDto,
+};
+use chrono::{Duration, Utc};
 use sea_orm::*;
-use shared::entities::{menus, menu_dishes};
-use crate::dto::system::{VerifyTreeResponseDto, SystemStatusDto, ComponentHistoryDto, StatusDayDto};
-use sha2::{Sha256, Digest};
-use chrono::{Utc, Duration};
+use sha2::{Digest, Sha256};
+use shared::entities::{menu_dishes, menus};
 
 pub struct SystemService;
 
@@ -23,7 +25,10 @@ impl SystemService {
                 let menus_list = menus::Entity::find()
                     .filter(menus::Column::CityId.eq(city.id))
                     .filter(menus::Column::MealType.eq(meal_type.clone()))
-                    .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved))
+                    .filter(
+                        menus::Column::Status
+                            .eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
+                    )
                     .order_by_asc(menus::Column::ServeDate)
                     .all(db)
                     .await?;
@@ -39,21 +44,25 @@ impl SystemService {
                         .all(db)
                         .await?;
 
-                    let sorted_dish_ids: Vec<i32> = dishes.iter().map(|d| d.dish_alias_id).collect();
+                    let sorted_dish_ids: Vec<i32> =
+                        dishes.iter().map(|d| d.dish_alias_id).collect();
 
                     let meal_type_str = match &menu.meal_type {
-                        shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => "breakfast",
+                        shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
+                            "breakfast"
+                        }
                         shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch",
                         shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner",
                     };
 
-                    let calculated_hash = shared::services::immutable_store::ImmutableStore::compute_menu_hash(
-                        menu.serve_date,
-                        menu.city_id,
-                        meal_type_str,
-                        &sorted_dish_ids,
-                        expected_prev_hash.as_deref(),
-                    );
+                    let calculated_hash =
+                        shared::services::immutable_store::ImmutableStore::compute_menu_hash(
+                            menu.serve_date,
+                            menu.city_id,
+                            meal_type_str,
+                            &sorted_dish_ids,
+                            expected_prev_hash.as_deref(),
+                        );
 
                     let mut is_corrupted = false;
 
@@ -99,13 +108,19 @@ impl SystemService {
         })
     }
 
-    pub async fn get_system_health(db: &DatabaseConnection) -> Result<crate::dto::system::SystemHealthResponseDto, DbErr> {
+    pub async fn get_system_health(
+        db: &DatabaseConnection,
+    ) -> Result<crate::dto::system::SystemHealthResponseDto, DbErr> {
         let active_incidents_count = shared::entities::system_incidents::Entity::find()
             .filter(shared::entities::system_incidents::Column::Status.ne("resolved"))
             .count(db)
             .await?;
 
-        let status = if active_incidents_count > 0 { "unhealthy".to_string() } else { "healthy".to_string() };
+        let status = if active_incidents_count > 0 {
+            "unhealthy".to_string()
+        } else {
+            "healthy".to_string()
+        };
 
         let mut node_counts = std::collections::HashMap::new();
         let menu_count = menus::Entity::find().count(db).await? as i64;
@@ -135,7 +150,10 @@ impl SystemService {
                 let latest_menu = menus::Entity::find()
                     .filter(menus::Column::CityId.eq(city.id))
                     .filter(menus::Column::MealType.eq(meal_type.clone()))
-                    .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved))
+                    .filter(
+                        menus::Column::Status
+                            .eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
+                    )
                     .order_by_desc(menus::Column::ServeDate)
                     .one(db)
                     .await?;
@@ -143,9 +161,13 @@ impl SystemService {
                 if let Some(menu) = latest_menu {
                     if let Some(hash) = menu.merkle_root {
                         let meal_type_str = match &meal_type {
-                            shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => "breakfast",
+                            shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
+                                "breakfast"
+                            }
                             shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch",
-                            shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner",
+                            shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => {
+                                "dinner"
+                            }
                         };
                         let key = format!("menu:{}:{}", city.slug, meal_type_str);
                         heads.push(crate::dto::system::HeadDto {
@@ -165,7 +187,11 @@ impl SystemService {
             let combined = head_hashes.join(":");
             let mut hasher = Sha256::new();
             hasher.update(combined.as_bytes());
-            hasher.finalize().iter().map(|b| format!("{:02x}", b)).collect::<String>()
+            hasher
+                .finalize()
+                .iter()
+                .map(|b| format!("{:02x}", b))
+                .collect::<String>()
         };
 
         Ok(crate::dto::system::SystemHealthResponseDto {
@@ -194,26 +220,29 @@ impl SystemService {
             }
         }
 
-        let incidents_list: Vec<crate::dto::system::IncidentDto> = all_incidents.into_iter().map(|i| {
-            let resolved = i.resolved_at.map(|d| d.to_rfc3339());
-            crate::dto::system::IncidentDto {
-                id: Some(i.id),
-                component: i.component,
-                title: i.title,
-                message: i.message,
-                started_at: i.created_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
-                ended_at: resolved.clone(),
-                resolved_at: resolved,
-                status: i.impact,
-            }
-        }).collect();
+        let incidents_list: Vec<crate::dto::system::IncidentDto> = all_incidents
+            .into_iter()
+            .map(|i| {
+                let resolved = i.resolved_at.map(|d| d.to_rfc3339());
+                crate::dto::system::IncidentDto {
+                    id: Some(i.id),
+                    component: i.component,
+                    title: i.title,
+                    message: i.message,
+                    started_at: i.created_at.map(|d| d.to_rfc3339()).unwrap_or_default(),
+                    ended_at: resolved.clone(),
+                    resolved_at: resolved,
+                    status: i.impact,
+                }
+            })
+            .collect();
 
         // Fetch son_aktivite from menus
         let latest_menu = menus::Entity::find()
             .order_by_desc(menus::Column::CreatedAt)
             .one(db)
             .await?;
-        
+
         let last_activity = latest_menu.and_then(|m| m.created_at.map(|d| d.to_rfc3339()));
 
         Ok(SystemStatusDto {
@@ -223,12 +252,17 @@ impl SystemService {
         })
     }
 
-    pub async fn get_status_history(db: &DatabaseConnection) -> Result<Vec<ComponentHistoryDto>, DbErr> {
+    pub async fn get_status_history(
+        db: &DatabaseConnection,
+    ) -> Result<Vec<ComponentHistoryDto>, DbErr> {
         let today = Utc::now();
         let ninety_days_ago = today - Duration::days(90);
 
         let incidents = shared::entities::system_incidents::Entity::find()
-            .filter(shared::entities::system_incidents::Column::CreatedAt.gte(ninety_days_ago.with_timezone(&chrono::FixedOffset::east_opt(0).unwrap())))
+            .filter(
+                shared::entities::system_incidents::Column::CreatedAt
+                    .gte(ninety_days_ago.with_timezone(&chrono::FixedOffset::east_opt(0).unwrap())),
+            )
             .all(db)
             .await?;
 
@@ -237,19 +271,34 @@ impl SystemService {
             for i in (0..90).rev() {
                 let date = today - Duration::days(i);
                 let is_affected = incidents.iter().any(|inc| {
-                    if inc.component != component_name { return false; }
+                    if inc.component != component_name {
+                        return false;
+                    }
                     let start = inc.created_at.unwrap_or_default().with_timezone(&Utc);
-                    let end = inc.resolved_at.map(|d| d.with_timezone(&Utc)).unwrap_or(today);
+                    let end = inc
+                        .resolved_at
+                        .map(|d| d.with_timezone(&Utc))
+                        .unwrap_or(today);
                     date.date_naive() >= start.date_naive() && date.date_naive() <= end.date_naive()
                 });
 
                 let status = if is_affected {
-                    let impact = incidents.iter().find(|inc| {
-                        if inc.component != component_name { return false; }
-                        let start = inc.created_at.unwrap_or_default().with_timezone(&Utc);
-                        let end = inc.resolved_at.map(|d| d.with_timezone(&Utc)).unwrap_or(today);
-                        date.date_naive() >= start.date_naive() && date.date_naive() <= end.date_naive()
-                    }).map(|inc| inc.impact.clone()).unwrap_or("yavas".to_string());
+                    let impact = incidents
+                        .iter()
+                        .find(|inc| {
+                            if inc.component != component_name {
+                                return false;
+                            }
+                            let start = inc.created_at.unwrap_or_default().with_timezone(&Utc);
+                            let end = inc
+                                .resolved_at
+                                .map(|d| d.with_timezone(&Utc))
+                                .unwrap_or(today);
+                            date.date_naive() >= start.date_naive()
+                                && date.date_naive() <= end.date_naive()
+                        })
+                        .map(|inc| inc.impact.clone())
+                        .unwrap_or("yavas".to_string());
                     impact
                 } else {
                     "aktif".to_string()

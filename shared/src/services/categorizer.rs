@@ -102,29 +102,95 @@ mod tests {
 
     #[test]
     fn test_categorize_dishes() {
-        assert_eq!(categorize_dish("Ezogelin Çorbası"), Some("ÇORBA ÇEŞİTLERİ".to_string()));
-        assert_eq!(categorize_dish("Süzme Mercimek Çorba"), Some("ÇORBA ÇEŞİTLERİ".to_string()));
-        assert_eq!(categorize_dish("Şehriyeli Pirinç Pilavı"), Some("PİRİNÇ PİLAVI ÇEŞİTLERİ".to_string()));
-        assert_eq!(categorize_dish("Meyhane Bulgur Pilavı"), Some("BULGUR PİLAVI ÇEŞİTLERİ".to_string()));
-        assert_eq!(categorize_dish("Sebzeli Tavuk Kavurma"), Some("KEMİKSİZ TAVUK YEMEKLERİ".to_string()));
-        assert_eq!(categorize_dish("Fırın Tavuk Baget"), Some("KEMİKLİ TAVUK YEMEKLERİ".to_string()));
-        assert_eq!(categorize_dish("Tavuk Şiş Izgara"), Some("KEMİKSİZ IZGARA/KIZARTMA TAVUK YEMEKLERİ".to_string()));
-        assert_eq!(categorize_dish("Kıymalı Kuru Fasulye"), Some("ETLİ BAKLAGİLLER".to_string()));
-        assert_eq!(categorize_dish("Zeytinyağlı Kuru Fasulye"), Some("ETSİZ BAKLAGİLLER".to_string()));
-        assert_eq!(categorize_dish("Kuzu Gerdan Haşlama"), Some("KEMİKLİ ET YEMEKLERİ".to_string()));
-        assert_eq!(categorize_dish("İnegöl Köfte"), Some("IZGARA KÖFTELER".to_string()));
-        assert_eq!(categorize_dish("İzmir Köfte"), Some("SULU SALÇALI ETLİ YEMEKLER VE TERBİYELİ SEBZELİ KÖFTELER".to_string()));
-        assert_eq!(categorize_dish("Fırın Sütlaç"), Some("SÜTLÜ TATLILAR".to_string()));
-        assert_eq!(categorize_dish("Fıstıklı Baklava"), Some("BAKLAVA-KADAYIF (FISTIKLI)".to_string()));
-        assert_eq!(categorize_dish("Cevizli Ev Baklavası"), Some("BAKLAVA-KADAYIF (CEVİZLİ-FINDIKLI)".to_string()));
-        assert_eq!(categorize_dish("Şekerpare"), Some("HAMUR TATLILARI".to_string()));
-        assert_eq!(categorize_dish("Çoban Salata"), Some("SALATA-I".to_string()));
-        assert_eq!(categorize_dish("Mevsim Salata"), Some("SALATA-II".to_string()));
-        assert_eq!(categorize_dish("Roka Salata"), Some("SALATA-III".to_string()));
-        assert_eq!(categorize_dish("Kaşarlı Tost"), Some("KAŞARLI TOST".to_string()));
+        assert_eq!(
+            categorize_dish("Ezogelin Çorbası"),
+            Some("ÇORBA ÇEŞİTLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Süzme Mercimek Çorba"),
+            Some("ÇORBA ÇEŞİTLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Şehriyeli Pirinç Pilavı"),
+            Some("PİRİNÇ PİLAVI ÇEŞİTLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Meyhane Bulgur Pilavı"),
+            Some("BULGUR PİLAVI ÇEŞİTLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Sebzeli Tavuk Kavurma"),
+            Some("KEMİKSİZ TAVUK YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Fırın Tavuk Baget"),
+            Some("KEMİKLİ TAVUK YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Tavuk Şiş Izgara"),
+            Some("KEMİKSİZ IZGARA/KIZARTMA TAVUK YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kıymalı Kuru Fasulye"),
+            Some("ETLİ BAKLAGİLLER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Zeytinyağlı Kuru Fasulye"),
+            Some("ETSİZ BAKLAGİLLER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kuzu Gerdan Haşlama"),
+            Some("KEMİKLİ ET YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("İnegöl Köfte"),
+            Some("IZGARA KÖFTELER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("İzmir Köfte"),
+            Some("SULU SALÇALI ETLİ YEMEKLER VE TERBİYELİ SEBZELİ KÖFTELER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Fırın Sütlaç"),
+            Some("SÜTLÜ TATLILAR".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Fıstıklı Baklava"),
+            Some("BAKLAVA-KADAYIF (FISTIKLI)".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Cevizli Ev Baklavası"),
+            Some("BAKLAVA-KADAYIF (CEVİZLİ-FINDIKLI)".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Şekerpare"),
+            Some("HAMUR TATLILARI".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Çoban Salata"),
+            Some("SALATA-I".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Mevsim Salata"),
+            Some("SALATA-II".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Roka Salata"),
+            Some("SALATA-III".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kaşarlı Tost"),
+            Some("KAŞARLI TOST".to_string())
+        );
         assert_eq!(categorize_dish("Susamlı Simit"), Some("SİMİT".to_string()));
-        assert_eq!(categorize_dish("Kuşbaşılı Pide"), Some("KUŞBAŞILI VEYA SUCUKLU PİDE".to_string()));
-        assert_eq!(categorize_dish("Kıymalı Pide"), Some("KIYMALI PİDE".to_string()));
+        assert_eq!(
+            categorize_dish("Kuşbaşılı Pide"),
+            Some("KUŞBAŞILI VEYA SUCUKLU PİDE".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kıymalı Pide"),
+            Some("KIYMALI PİDE".to_string())
+        );
         assert_eq!(categorize_dish("Lahmacun"), Some("LAHMACUN".to_string()));
     }
 
@@ -133,29 +199,74 @@ mod tests {
     #[test]
     fn test_breakfast_spread_categories() {
         // Kaşar Peyniri artık fiyatsız kalmamalı
-        assert_eq!(categorize_dish("Kaşar Peynir"), Some("KAŞAR PEYNİRİ".to_string()));
-        assert_eq!(categorize_dish("Kaşar Peyniri"), Some("KAŞAR PEYNİRİ".to_string()));
-        assert_eq!(categorize_dish("Kasar Peyniri"), Some("KAŞAR PEYNİRİ".to_string()));
+        assert_eq!(
+            categorize_dish("Kaşar Peynir"),
+            Some("KAŞAR PEYNİRİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kaşar Peyniri"),
+            Some("KAŞAR PEYNİRİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kasar Peyniri"),
+            Some("KAŞAR PEYNİRİ".to_string())
+        );
 
         // Reçel kalemleri resmi PİKNİK REÇEL kategorisine düşmeli
-        assert_eq!(categorize_dish("Piknik Reçel"), Some("PİKNİK REÇEL".to_string()));
-        assert_eq!(categorize_dish("Reçel Çeşitleri"), Some("PİKNİK REÇEL".to_string()));
-        assert_eq!(categorize_dish("Çilek Reçeli"), Some("PİKNİK REÇEL".to_string()));
+        assert_eq!(
+            categorize_dish("Piknik Reçel"),
+            Some("PİKNİK REÇEL".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Reçel Çeşitleri"),
+            Some("PİKNİK REÇEL".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Çilek Reçeli"),
+            Some("PİKNİK REÇEL".to_string())
+        );
 
         // Diğer kahvaltılık yayılım kalemleri
-        assert_eq!(categorize_dish("Piknik Bal"), Some("PİKNİK BAL".to_string()));
-        assert_eq!(categorize_dish("Piknik Tereyağı"), Some("PİKNİK TEREYAĞI".to_string()));
-        assert_eq!(categorize_dish("Piknik Helva"), Some("PİKNİK HELVA".to_string()));
+        assert_eq!(
+            categorize_dish("Piknik Bal"),
+            Some("PİKNİK BAL".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Piknik Tereyağı"),
+            Some("PİKNİK TEREYAĞI".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Piknik Helva"),
+            Some("PİKNİK HELVA".to_string())
+        );
         assert_eq!(categorize_dish("Siyah Zeytin"), Some("ZEYTİN".to_string()));
 
         // Çakışma regresyonu: spesifik üst bloklar önceliğini korumalı
-        assert_eq!(categorize_dish("Kaşarlı Tost"), Some("KAŞARLI TOST".to_string()));
-        assert_eq!(categorize_dish("Kaşarlı Pide"), Some("KAŞARLI PİDE".to_string()));
+        assert_eq!(
+            categorize_dish("Kaşarlı Tost"),
+            Some("KAŞARLI TOST".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kaşarlı Pide"),
+            Some("KAŞARLI PİDE".to_string())
+        );
         assert_eq!(categorize_dish("Kaşarlı Omlet"), Some("OMLET".to_string()));
-        assert_eq!(categorize_dish("Kaşarlı Menemen"), Some("MENEMEN".to_string()));
-        assert_eq!(categorize_dish("Kaşarlı Çift Yumurta"), Some("KAŞARLI ÇİFT YUMURTA".to_string()));
-        assert_eq!(categorize_dish("Balaban Köfte"), Some("IZGARA KÖFTELER".to_string()));
-        assert_eq!(categorize_dish("Zeytinyağlı Pırasa"), Some("ETSİZ SEBZE YEMEKLERİ".to_string()));
+        assert_eq!(
+            categorize_dish("Kaşarlı Menemen"),
+            Some("MENEMEN".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kaşarlı Çift Yumurta"),
+            Some("KAŞARLI ÇİFT YUMURTA".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Balaban Köfte"),
+            Some("IZGARA KÖFTELER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Zeytinyağlı Pırasa"),
+            Some("ETSİZ SEBZE YEMEKLERİ".to_string())
+        );
 
         // "bal" substring'i balık/balaban'a sıçramamalı
         assert_ne!(categorize_dish("Balık"), Some("PİKNİK BAL".to_string()));
@@ -166,14 +277,35 @@ mod tests {
     #[test]
     fn test_remaining_pricing_categories() {
         // Pozitif eşleşmeler
-        assert_eq!(categorize_dish("Hindi Salam"), Some("SALAM (HİNDİ)".to_string()));
+        assert_eq!(
+            categorize_dish("Hindi Salam"),
+            Some("SALAM (HİNDİ)".to_string())
+        );
         assert_eq!(categorize_dish("Salam"), Some("SALAM (PİLİÇ)".to_string()));
-        assert_eq!(categorize_dish("Dana Salam"), Some("SALAM (PİLİÇ)".to_string()));
-        assert_eq!(categorize_dish("Salamlı Kahvaltı"), Some("SALAM (PİLİÇ)".to_string()));
-        assert_eq!(categorize_dish("Sürülebilir Çikolata"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
-        assert_eq!(categorize_dish("Çikolata Krem"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
-        assert_eq!(categorize_dish("Tahinli Pekmez"), Some("TAHİNLİ PEKMEZ".to_string()));
-        assert_eq!(categorize_dish("Pekmez"), Some("TAHİNLİ PEKMEZ".to_string()));
+        assert_eq!(
+            categorize_dish("Dana Salam"),
+            Some("SALAM (PİLİÇ)".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Salamlı Kahvaltı"),
+            Some("SALAM (PİLİÇ)".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Sürülebilir Çikolata"),
+            Some("SÜRÜLEBİLİR ÇİKOLATA".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Çikolata Krem"),
+            Some("SÜRÜLEBİLİR ÇİKOLATA".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Tahinli Pekmez"),
+            Some("TAHİNLİ PEKMEZ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Pekmez"),
+            Some("TAHİNLİ PEKMEZ".to_string())
+        );
 
         // Regresyon: çıplak "salam" keyword'ü önce gelen spesifik blokları gölgelememeli
         assert_eq!(
@@ -182,7 +314,13 @@ mod tests {
         );
 
         // Regresyon: çikolatalı tatlılar SÜRÜLEBİLİR ÇİKOLATA'ya düşmemeli
-        assert_ne!(categorize_dish("Çikolatalı Pasta"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
-        assert_ne!(categorize_dish("Çikolatalı Kurabiye"), Some("SÜRÜLEBİLİR ÇİKOLATA".to_string()));
+        assert_ne!(
+            categorize_dish("Çikolatalı Pasta"),
+            Some("SÜRÜLEBİLİR ÇİKOLATA".to_string())
+        );
+        assert_ne!(
+            categorize_dish("Çikolatalı Kurabiye"),
+            Some("SÜRÜLEBİLİR ÇİKOLATA".to_string())
+        );
     }
 }

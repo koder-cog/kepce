@@ -67,9 +67,18 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:iletisim@kepce.org}
+      # Onay sonrası karantina dosyalarının taşınacağı worker dizini (bind mount).
+      - MENU_INGEST_DIR=/app/data/menuler
+      # Karantina kök dizini (WORKDIR /app'e göreli).
+      - MENU_QUARANTINE_DIR=uploads/quarantine/menus
     volumes:
       - uploads:/app/uploads
       - avatars:/app/static/avatars
+      # NOT: api konteyneri nobody:nogroup (uid 65534) olarak çalışır. Host'taki
+      # ./data/menuler dizini bu kullanıcı tarafından yazılabilir olmalıdır
+      # (deploy sırasında chown/chmod gerekebilir), aksi halde onay sonrası
+      # dosya taşıma başarısız olur.
+      - ./data/menuler:/app/data/menuler
     networks:
       - frontend-net
       - backend-net

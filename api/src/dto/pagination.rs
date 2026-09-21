@@ -31,7 +31,7 @@ impl PaginationQuery {
         // En fazla 100, varsayılan 20
         self.limit.unwrap_or(20).clamp(1, 100)
     }
-    
+
     pub fn offset(&self) -> u64 {
         if let Some(off) = self.offset {
             return off;

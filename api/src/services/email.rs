@@ -91,20 +91,35 @@ impl EmailService {
             let status = res.status();
             let body = res.text().await.unwrap_or_default();
             tracing::warn!("Resend API Hatası: {} - {}", status, body);
-            return Err(EmailError::ApiError(format!("Resend API Hatası {}: {}", status, body)));
+            return Err(EmailError::ApiError(format!(
+                "Resend API Hatası {}: {}",
+                status, body
+            )));
         }
 
         Ok(())
     }
 
-    async fn send_via_smtp(&self, smtp: &SmtpConfig, to: &str, subject: &str, html: String) -> Result<(), EmailError> {
+    async fn send_via_smtp(
+        &self,
+        smtp: &SmtpConfig,
+        to: &str,
+        subject: &str,
+        html: String,
+    ) -> Result<(), EmailError> {
         use lettre::message::header::ContentType;
         use lettre::transport::smtp::authentication::Credentials;
         use lettre::{AsyncSmtpTransport, AsyncTransport, Message, Tokio1Executor};
 
         let email = Message::builder()
-            .from("Kepçe <noreply@kepce.org>".parse().map_err(|e| EmailError::ApiError(format!("Geçersiz From adresi: {}", e)))?)
-            .to(to.parse().map_err(|e| EmailError::ApiError(format!("Geçersiz To adresi: {}", e)))?)
+            .from(
+                "Kepçe <noreply@kepce.org>"
+                    .parse()
+                    .map_err(|e| EmailError::ApiError(format!("Geçersiz From adresi: {}", e)))?,
+            )
+            .to(to
+                .parse()
+                .map_err(|e| EmailError::ApiError(format!("Geçersiz To adresi: {}", e)))?)
             .subject(subject)
             .header(ContentType::TEXT_HTML)
             .body(html)
@@ -127,7 +142,12 @@ impl EmailService {
         Ok(())
     }
 
-    pub async fn send_email(&self, to: &str, subject: &str, html: String) -> Result<(), EmailError> {
+    pub async fn send_email(
+        &self,
+        to: &str,
+        subject: &str,
+        html: String,
+    ) -> Result<(), EmailError> {
         // Eğer API anahtarı boşsa veya mock_key ise ve SMTP yapılandırılmamışsa atla (test/yerel ortam)
         if (self.api_key.is_empty() || self.api_key == "mock_key") && self.smtp_config.is_none() {
             tracing::info!("Mock Email sent to {}: Subject: {}", to, subject);
@@ -159,9 +179,13 @@ impl EmailService {
         Ok(())
     }
 
-    pub async fn send_passwordless_login(&self, to_email: &str, token: &str) -> Result<(), EmailError> {
+    pub async fn send_passwordless_login(
+        &self,
+        to_email: &str,
+        token: &str,
+    ) -> Result<(), EmailError> {
         let magic_link = format!("{}/auth/sifresiz?token={}", self.base_url, token);
-        
+
         let html = format!(
             r#"
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -174,12 +198,17 @@ impl EmailService {
             magic_link
         );
 
-        self.send_email(to_email, "Kepçe Şifresiz Giriş Bağlantınız", html).await
+        self.send_email(to_email, "Kepçe Şifresiz Giriş Bağlantınız", html)
+            .await
     }
 
-    pub async fn send_verification_email(&self, to_email: &str, token: &str) -> Result<(), EmailError> {
+    pub async fn send_verification_email(
+        &self,
+        to_email: &str,
+        token: &str,
+    ) -> Result<(), EmailError> {
         let verify_link = format!("{}/auth/dogrula?token={}", self.base_url, token);
-        
+
         let html = format!(
             r#"
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -192,12 +221,17 @@ impl EmailService {
             verify_link
         );
 
-        self.send_email(to_email, "Kepçe Hesabınızı Doğrulayın", html).await
+        self.send_email(to_email, "Kepçe Hesabınızı Doğrulayın", html)
+            .await
     }
 
-    pub async fn send_reset_password_email(&self, to_email: &str, token: &str) -> Result<(), EmailError> {
+    pub async fn send_reset_password_email(
+        &self,
+        to_email: &str,
+        token: &str,
+    ) -> Result<(), EmailError> {
         let reset_link = format!("{}/auth/sifre-sifirla?token={}", self.base_url, token);
-        
+
         let html = format!(
             r#"
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
@@ -210,7 +244,8 @@ impl EmailService {
             reset_link
         );
 
-        self.send_email(to_email, "Şifre Sıfırlama Talebi", html).await
+        self.send_email(to_email, "Şifre Sıfırlama Talebi", html)
+            .await
     }
 
     pub async fn send_security_alert(
@@ -220,7 +255,9 @@ impl EmailService {
         event_title: &str,
         details: &str,
     ) -> Result<(), EmailError> {
-        let timestamp = chrono::Utc::now().format("%d.%m.%Y %H:%M (UTC)").to_string();
+        let timestamp = chrono::Utc::now()
+            .format("%d.%m.%Y %H:%M (UTC)")
+            .to_string();
         let html = format!(
             r#"
             <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 540px; margin: 0 auto; padding: 24px; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px;">
@@ -241,13 +278,14 @@ impl EmailService {
                 </div>
             </div>
             "#,
-            username,
-            event_title,
-            details,
-            timestamp,
-            self.base_url
+            username, event_title, details, timestamp, self.base_url
         );
 
-        self.send_email(to_email, &format!("Kepçe Güvenlik Uyarısı: {}", event_title), html).await
+        self.send_email(
+            to_email,
+            &format!("Kepçe Güvenlik Uyarısı: {}", event_title),
+            html,
+        )
+        .await
     }
 }

@@ -1,9 +1,7 @@
-use std::sync::OnceLock;
 use anyhow::Result;
 use regex::Regex;
-use sea_orm::{
-    ConnectionTrait, DatabaseBackend, DatabaseConnection, FromQueryResult, Statement,
-};
+use sea_orm::{ConnectionTrait, DatabaseBackend, DatabaseConnection, FromQueryResult, Statement};
+use std::sync::OnceLock;
 
 #[derive(Debug, Default, Clone, PartialEq, Eq)]
 pub struct ReconcileReport {
@@ -49,13 +47,15 @@ pub fn normalize_alias_name(raw: &str) -> String {
     let re_spaces = RE_SPACES.get_or_init(|| Regex::new(r"\s+").unwrap());
     s = re_spaces.replace_all(&s, " ").to_string();
 
-    s = s.trim_start_matches(|c: char| c == '+' || c.is_whitespace())
-         .trim_end_matches(|c: char| c == '+' || c.is_whitespace())
-         .to_string();
+    s = s
+        .trim_start_matches(|c: char| c == '+' || c.is_whitespace())
+        .trim_end_matches(|c: char| c == '+' || c.is_whitespace())
+        .to_string();
 
     // 3. Unit dots (500 ml. -> 500 ml)
     static RE_UNIT_DOTS: OnceLock<Regex> = OnceLock::new();
-    let re_unit_dots = RE_UNIT_DOTS.get_or_init(|| Regex::new(r"(?i)\b(\d+)\s*(ml|g|gr|kg|l|lt)\.").unwrap());
+    let re_unit_dots =
+        RE_UNIT_DOTS.get_or_init(|| Regex::new(r"(?i)\b(\d+)\s*(ml|g|gr|kg|l|lt)\.").unwrap());
     s = re_unit_dots.replace_all(&s, "$1 $2").to_string();
 
     // 4. TDK Compound Words
@@ -68,7 +68,8 @@ pub fn normalize_alias_name(raw: &str) -> String {
     s = re_semizotu.replace_all(&s, "semizot$1").to_string();
 
     static RE_COREKOTU: OnceLock<Regex> = OnceLock::new();
-    let re_corekotu = RE_COREKOTU.get_or_init(|| Regex::new(r"(?i)\bçöre[k]?\s+ot(u|lu)?\b").unwrap());
+    let re_corekotu =
+        RE_COREKOTU.get_or_init(|| Regex::new(r"(?i)\bçöre[k]?\s+ot(u|lu)?\b").unwrap());
     s = re_corekotu.replace_all(&s, "çöreot$1").to_string();
 
     static RE_KURUFASULYE: OnceLock<Regex> = OnceLock::new();
@@ -351,6 +352,9 @@ mod tests {
         assert_eq!(normalize_alias_name("Dere Otlu Poğaça"), "Dereotlu Poğaça");
         assert_eq!(normalize_alias_name("Kurufasulye"), "Kuru Fasulye");
         assert_eq!(normalize_alias_name("Semiz Otu"), "Semizotu");
-        assert_eq!(normalize_alias_name("+Tavuk Sote + Pilav+"), "Tavuk Sote + Pilav");
+        assert_eq!(
+            normalize_alias_name("+Tavuk Sote + Pilav+"),
+            "Tavuk Sote + Pilav"
+        );
     }
 }

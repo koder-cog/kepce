@@ -1,9 +1,9 @@
 use anyhow::Result;
 use chrono::NaiveDate;
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
+use serde::Deserialize;
 use shared::entities::{cities, sea_orm_active_enums::MealTypeEnum};
 use std::path::PathBuf;
-use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 struct BackupMenuRecord {
@@ -43,7 +43,10 @@ pub async fn ingest_backup_menus(db: &DatabaseConnection, base_dir: &str) -> Res
         let city_id = match city_opt {
             Some(c) => c.id,
             None => {
-                tracing::warn!("Backup şehir '{}' veritabanında bulunamadı, atlanıyor.", city_slug);
+                tracing::warn!(
+                    "Backup şehir '{}' veritabanında bulunamadı, atlanıyor.",
+                    city_slug
+                );
                 unmatched.push(city_slug);
                 continue;
             }
@@ -55,7 +58,11 @@ pub async fn ingest_backup_menus(db: &DatabaseConnection, base_dir: &str) -> Res
             if path.extension().and_then(|e| e.to_str()) != Some("json") {
                 continue;
             }
-            let filename = path.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string();
+            let filename = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .to_string();
 
             // Filename format: {City}_{meal}_{shift}_{date}.json  -> token[1] = meal
             let meal_type = match filename.split('_').nth(1) {
@@ -99,9 +106,9 @@ pub async fn ingest_backup_menus(db: &DatabaseConnection, base_dir: &str) -> Res
                     if lower.contains("al götür") || lower.contains("al-götür") {
                         continue; // package marker, no sub-items in this JSON format
                     }
-                    
+
                     let alts = crate::parser::kykyemek::clean_and_split_dish(item);
-                        
+
                     if !alts.is_empty() {
                         dishes.push(alts);
                     }

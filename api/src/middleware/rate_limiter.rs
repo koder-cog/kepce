@@ -43,9 +43,9 @@ impl RateLimitCategory {
             Self::ForgotPassword => (3, Duration::from_secs(3600)),
             Self::Passwordless => (3, Duration::from_secs(300)), // 5 dakikada en fazla 3 istek
             Self::Ingestion => (10, Duration::from_secs(3600)),
-            Self::Vote => (10, Duration::from_secs(60)),         // 1 dakikada maks 10 oy
-            Self::Comment => (5, Duration::from_secs(60)),        // 1 dakikada maks 5 yorum
-            Self::SpikeArrest => (10, Duration::from_secs(1)),   // DoS koruması: Saniyede maks 10 istek/IP
+            Self::Vote => (10, Duration::from_secs(60)), // 1 dakikada maks 10 oy
+            Self::Comment => (5, Duration::from_secs(60)), // 1 dakikada maks 5 yorum
+            Self::SpikeArrest => (10, Duration::from_secs(1)), // DoS koruması: Saniyede maks 10 istek/IP
             Self::General => (240, Duration::from_secs(60)),
         }
     }
@@ -93,12 +93,14 @@ impl RateLimiter {
         }
 
         let rate = max_requests as f64 / duration.as_secs_f64(); // saniyede yenilenen token miktarı
-        
+
         // Eğer ilk kez geliyorsa, kova doludur
-        let entry = map.entry((key, category)).or_insert_with(|| (max_requests as f64, now));
-        
+        let entry = map
+            .entry((key, category))
+            .or_insert_with(|| (max_requests as f64, now));
+
         let (tokens, last_update) = entry;
-        
+
         // Geçen süreye göre yeni tokenları ekle
         let elapsed = now.duration_since(*last_update).as_secs_f64();
         *tokens = (*tokens + elapsed * rate).min(max_requests as f64);
@@ -189,13 +191,17 @@ pub async fn rate_limit_middleware(
     // Limit kategorisini belirle
     let category = if path.contains("/vote") {
         RateLimitCategory::Vote
-    } else if path.starts_with("/api/v1/comments") && (method == axum::http::Method::POST || method == axum::http::Method::PUT) {
+    } else if path.starts_with("/api/v1/comments")
+        && (method == axum::http::Method::POST || method == axum::http::Method::PUT)
+    {
         RateLimitCategory::Comment
     } else if path.starts_with("/api/v1/auth/login") {
         RateLimitCategory::Login
     } else if path.starts_with("/api/v1/auth/register") {
         RateLimitCategory::Register
-    } else if path.starts_with("/api/v1/auth/forgot-password") || path.starts_with("/api/v1/auth/reset-password") {
+    } else if path.starts_with("/api/v1/auth/forgot-password")
+        || path.starts_with("/api/v1/auth/reset-password")
+    {
         RateLimitCategory::ForgotPassword
     } else if path.starts_with("/api/v1/auth/passwordless-login") {
         RateLimitCategory::Login
@@ -212,7 +218,7 @@ pub async fn rate_limit_middleware(
 
     let headers = req.headers();
 
-    // Ingestion endpointi X-API-Key ile kullanılıyorsa, 
+    // Ingestion endpointi X-API-Key ile kullanılıyorsa,
     // kendi özel veritabanı rate-limit mantığını kullandığı için burayı bypass et.
     if category == RateLimitCategory::Ingestion && headers.contains_key("x-api-key") {
         return Ok(next.run(req).await);
@@ -224,17 +230,20 @@ pub async fn rate_limit_middleware(
     let mut key = None;
 
     // Öncelik 1: Giriş Yapmış Kullanıcı (JWT User ID)
-    let mut token_opt = headers.get(axum::http::header::COOKIE)
+    let mut token_opt = headers
+        .get(axum::http::header::COOKIE)
         .and_then(|h| h.to_str().ok())
         .and_then(|cookie_str| {
-            cookie_str.split(';')
+            cookie_str
+                .split(';')
                 .map(|pair| pair.trim())
                 .find(|pair| pair.starts_with("kepce_token="))
                 .map(|pair| &pair["kepce_token=".len()..])
         });
 
     if token_opt.is_none() {
-        token_opt = headers.get(axum::http::header::AUTHORIZATION)
+        token_opt = headers
+            .get(axum::http::header::AUTHORIZATION)
             .and_then(|h| h.to_str().ok())
             .filter(|s| s.starts_with("Bearer "))
             .map(|s| &s[7..]);
@@ -253,13 +262,12 @@ pub async fn rate_limit_middleware(
         }
     }
 
-    let ip = get_client_ip(headers, extensions).unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
+    let ip =
+        get_client_ip(headers, extensions).unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
 
     // Öncelik 2: IP + Tarayıcı Cihaz Kimliği (X-Client-ID)
     if key.is_none() {
-        if let Some(client_id_header) = headers.get("x-client-id")
-            .and_then(|h| h.to_str().ok())
-        {
+        if let Some(client_id_header) = headers.get("x-client-id").and_then(|h| h.to_str().ok()) {
             // Uzunluk üst sınırı: sınırsız uzunluktaki client-id'ler HashMap key'i
             // olarak bellek şişirmesin diye 64 karakterde kesilir.
             let client_id: String = client_id_header.chars().take(64).collect();
@@ -275,12 +283,18 @@ pub async fn rate_limit_middleware(
         Response::builder()
             .status(StatusCode::TOO_MANY_REQUESTS)
             .header(axum::http::header::RETRY_AFTER, retry_after)
-            .body(Body::from(format!("Too Many Requests. Lütfen {} saniye sonra tekrar deneyin.", retry_after)))
+            .body(Body::from(format!(
+                "Too Many Requests. Lütfen {} saniye sonra tekrar deneyin.",
+                retry_after
+            )))
             .unwrap()
     };
 
     // 0. DoS Koruması: IP Bazlı SpikeArrest (Saniyede maks 10 istek/IP)
-    if let Err(wait_dur) = state.rate_limiter.check(RateLimitKey::Ip(ip), RateLimitCategory::SpikeArrest) {
+    if let Err(wait_dur) = state
+        .rate_limiter
+        .check(RateLimitKey::Ip(ip), RateLimitCategory::SpikeArrest)
+    {
         return Err(reject_req(wait_dur));
     }
 

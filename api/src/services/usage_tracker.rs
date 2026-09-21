@@ -1,13 +1,13 @@
+use chrono::{NaiveDate, Utc};
+use sea_orm::{
+    sea_query::{Expr, OnConflict},
+    ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
+};
+use shared::entities::{api_usage_logs, prelude::*};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use chrono::{NaiveDate, Utc};
 use uuid::Uuid;
-use sea_orm::{
-    DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter, Set,
-    sea_query::{OnConflict, Expr}
-};
-use shared::entities::{api_usage_logs, prelude::*};
 
 #[derive(Debug)]
 pub struct UsageTracker {
@@ -27,7 +27,7 @@ impl UsageTracker {
         let tracker = Self {
             inner: Arc::new(Mutex::new(UsageTrackerInner::default())),
         };
-        
+
         let tracker_clone = tracker.inner.clone();
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(tokio::time::Duration::from_secs(10));
@@ -129,22 +129,21 @@ impl UsageTracker {
                 ..Default::default()
             };
 
-            let query = ApiUsageLogs::insert(active_model)
-                .on_conflict(
-                    OnConflict::columns([
-                        api_usage_logs::Column::ApiKeyId,
-                        api_usage_logs::Column::Date,
-                    ])
-                    .value(
-                        api_usage_logs::Column::Requests,
-                        Expr::col(api_usage_logs::Column::Requests).add(reqs),
-                    )
-                    .value(
-                        api_usage_logs::Column::Errors,
-                        Expr::col(api_usage_logs::Column::Errors).add(errs),
-                    )
-                    .to_owned()
-                );
+            let query = ApiUsageLogs::insert(active_model).on_conflict(
+                OnConflict::columns([
+                    api_usage_logs::Column::ApiKeyId,
+                    api_usage_logs::Column::Date,
+                ])
+                .value(
+                    api_usage_logs::Column::Requests,
+                    Expr::col(api_usage_logs::Column::Requests).add(reqs),
+                )
+                .value(
+                    api_usage_logs::Column::Errors,
+                    Expr::col(api_usage_logs::Column::Errors).add(errs),
+                )
+                .to_owned(),
+            );
 
             query.exec(db).await?;
         }

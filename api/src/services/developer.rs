@@ -1,15 +1,11 @@
-use sea_orm::*;
-use uuid::Uuid;
-use chrono::{Utc, Duration};
-use std::collections::BTreeMap;
-use sha2::{Sha256, Digest};
+use crate::dto::developer::{ApiKeyResponseDto, ApiUsageDto, ProjectResponseDto};
+use chrono::{Duration, Utc};
 use rand::{thread_rng, Rng};
-use shared::entities::{
-    prelude::*, projects, api_keys, api_usage_logs
-};
-use crate::dto::developer::{
-    ProjectResponseDto, ApiKeyResponseDto, ApiUsageDto
-};
+use sea_orm::*;
+use sha2::{Digest, Sha256};
+use shared::entities::{api_keys, api_usage_logs, prelude::*, projects};
+use std::collections::BTreeMap;
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub enum DeveloperError {
@@ -38,12 +34,15 @@ impl DeveloperService {
             .all(db)
             .await?;
 
-        Ok(list.into_iter().map(|p| ProjectResponseDto {
-            id: p.id,
-            name: p.name,
-            created_at: p.created_at.map(|t| t.into()),
-            updated_at: p.updated_at.map(|t| t.into()),
-        }).collect())
+        Ok(list
+            .into_iter()
+            .map(|p| ProjectResponseDto {
+                id: p.id,
+                name: p.name,
+                created_at: p.created_at.map(|t| t.into()),
+                updated_at: p.updated_at.map(|t| t.into()),
+            })
+            .collect())
     }
 
     pub async fn create_project(
@@ -61,7 +60,9 @@ impl DeveloperService {
         }
 
         if name.trim().is_empty() {
-            return Err(DeveloperError::InvalidInput("Proje ismi boş olamaz".to_string()));
+            return Err(DeveloperError::InvalidInput(
+                "Proje ismi boş olamaz".to_string(),
+            ));
         }
 
         let new_proj = projects::ActiveModel {
@@ -88,7 +89,9 @@ impl DeveloperService {
         name: String,
     ) -> Result<ProjectResponseDto, DeveloperError> {
         if name.trim().is_empty() {
-            return Err(DeveloperError::InvalidInput("Proje ismi boş olamaz".to_string()));
+            return Err(DeveloperError::InvalidInput(
+                "Proje ismi boş olamaz".to_string(),
+            ));
         }
 
         let project = Projects::find_by_id(project_id)
@@ -141,16 +144,19 @@ impl DeveloperService {
             .all(db)
             .await?;
 
-        Ok(keys.into_iter().map(|k| ApiKeyResponseDto {
-            id: k.id,
-            project_id: k.project_id,
-            name: k.name,
-            key_prefix: k.key_prefix,
-            is_active: k.is_active,
-            created_at: k.created_at.map(|t| t.into()),
-            updated_at: k.updated_at.map(|t| t.into()),
-            key: None,
-        }).collect())
+        Ok(keys
+            .into_iter()
+            .map(|k| ApiKeyResponseDto {
+                id: k.id,
+                project_id: k.project_id,
+                name: k.name,
+                key_prefix: k.key_prefix,
+                is_active: k.is_active,
+                created_at: k.created_at.map(|t| t.into()),
+                updated_at: k.updated_at.map(|t| t.into()),
+                key: None,
+            })
+            .collect())
     }
 
     pub async fn create_api_key(

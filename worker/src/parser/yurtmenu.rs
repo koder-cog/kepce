@@ -18,7 +18,10 @@ impl YurtmenuDayMenu {
     }
 }
 
-fn extract_card(document: &Html, card_id: &str) -> (Option<Vec<Vec<MenuComponent>>>, Option<String>) {
+fn extract_card(
+    document: &Html,
+    card_id: &str,
+) -> (Option<Vec<Vec<MenuComponent>>>, Option<String>) {
     let anchor = Selector::parse(&format!("article#{}", card_id)).unwrap();
     let Some(card) = document.select(&anchor).next() else {
         return (None, None);
@@ -104,7 +107,8 @@ mod tests {
         assert_eq!(breakfast.len(), 2);
         assert!(breakfast
             .iter()
-            .any(|g| g.iter().any(|c| c.name == "Örgü Peynir") || g.iter().any(|c| c.name.contains("Peynir"))));
+            .any(|g| g.iter().any(|c| c.name == "Örgü Peynir")
+                || g.iter().any(|c| c.name.contains("Peynir"))));
         assert_eq!(menu.breakfast_kcal.as_deref(), Some("650-850 kcal"));
 
         let dinner = menu.dinner.expect("Akşam yemeği bulunmalı");

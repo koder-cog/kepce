@@ -1,9 +1,9 @@
-use serde::Deserialize;
-use std::collections::HashMap;
-use std::sync::RwLock;
 use lazy_static::lazy_static;
 use sea_orm::{DatabaseConnection, EntityTrait, ModelTrait};
+use serde::Deserialize;
 use shared::entities::prelude::*;
+use std::collections::HashMap;
+use std::sync::RwLock;
 
 #[derive(Debug, Deserialize, Clone)]
 pub struct PriceInfo {
@@ -82,10 +82,15 @@ pub async fn load_pricing_from_db(db: &DatabaseConnection) -> Result<(), anyhow:
 
         tracing::info!(
             "Fiyat dönemi yüklendi: {} ({} → {})",
-            period.city_slug, period_pricing.period_start, period_pricing.period_end
+            period.city_slug,
+            period_pricing.period_start,
+            period_pricing.period_end
         );
 
-        cache.entry(period.city_slug).or_default().push(period_pricing);
+        cache
+            .entry(period.city_slug)
+            .or_default()
+            .push(period_pricing);
     }
 
     // Dönemleri başlangıç tarihine göre sırala
@@ -199,7 +204,8 @@ pub fn get_pricing_info_for_city(
                     }
 
                     // 3. Fallback to dynamic rule-based categorizer
-                    if let Some(detected_cat) = shared::services::categorizer::categorize_dish(name) {
+                    if let Some(detected_cat) = shared::services::categorizer::categorize_dish(name)
+                    {
                         let upper_detected = detected_cat.to_uppercase();
                         if let Some(info) = mp.categories.get(&upper_detected) {
                             return Some(info.clone());
@@ -220,20 +226,40 @@ mod tests {
     #[test]
     fn test_is_off_season_date() {
         // Temmuz ve Ağustos her yıl off-season
-        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 7, 1).unwrap()));
-        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 7, 31).unwrap()));
-        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 8, 15).unwrap()));
-        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 8, 31).unwrap()));
+        assert!(is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 7, 1).unwrap()
+        ));
+        assert!(is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 7, 31).unwrap()
+        ));
+        assert!(is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 8, 15).unwrap()
+        ));
+        assert!(is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 8, 31).unwrap()
+        ));
 
         // 2026 Eylül: 14 Eylül Pazartesi açılış. Öncesi nöbetçi yurt (off-season), sonrası sezon içi
-        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 1).unwrap()));
-        assert!(is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 13).unwrap()));
-        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 14).unwrap()));
-        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 9, 20).unwrap()));
+        assert!(is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 9, 1).unwrap()
+        ));
+        assert!(is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 9, 13).unwrap()
+        ));
+        assert!(!is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 9, 14).unwrap()
+        ));
+        assert!(!is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 9, 20).unwrap()
+        ));
 
         // Normal sezon ayları
-        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 10, 1).unwrap()));
-        assert!(!is_off_season_date(NaiveDate::from_ymd_opt(2026, 5, 15).unwrap()));
+        assert!(!is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 10, 1).unwrap()
+        ));
+        assert!(!is_off_season_date(
+            NaiveDate::from_ymd_opt(2026, 5, 15).unwrap()
+        ));
     }
 
     #[test]
@@ -314,4 +340,3 @@ mod tests {
         assert!(ankara_price.is_none());
     }
 }
-

@@ -8,7 +8,6 @@
 //! - `TELEGRAM_ADMIN_CHAT_ID` / `TELEGRAM_CHAT_ID`: Bildirimin iletileceği hedef sohbet ID'si
 //! - `ALERT_WEBHOOK_URL` / `DISCORD_WEBHOOK_URL`: Discord veya Slack uyumlu webhook adresi
 
-
 use reqwest::Client;
 use serde_json::json;
 
@@ -29,15 +28,22 @@ impl AlertingService {
             _ => return Ok(()),
         };
 
-        let chat_id = match std::env::var("TELEGRAM_ADMIN_CHAT_ID").or_else(|_| std::env::var("TELEGRAM_CHAT_ID")) {
+        let chat_id = match std::env::var("TELEGRAM_ADMIN_CHAT_ID")
+            .or_else(|_| std::env::var("TELEGRAM_CHAT_ID"))
+        {
             Ok(id) if !id.trim().is_empty() => id,
             _ => {
-                tracing::warn!("Telegram alarmı gönderilemedi: TELEGRAM_ADMIN_CHAT_ID ayarlanmamış.");
+                tracing::warn!(
+                    "Telegram alarmı gönderilemedi: TELEGRAM_ADMIN_CHAT_ID ayarlanmamış."
+                );
                 return Ok(());
             }
         };
 
-        let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token.trim());
+        let url = format!(
+            "https://api.telegram.org/bot{}/sendMessage",
+            bot_token.trim()
+        );
         let client = Client::new();
         let payload = json!({
             "chat_id": chat_id.trim(),
@@ -47,7 +53,8 @@ impl AlertingService {
 
         tracing::info!("Telegram alarmı gönderiliyor: {}", message);
 
-        let res = client.post(&url)
+        let res = client
+            .post(&url)
             .header("Content-Type", "application/json")
             .json(&payload)
             .send()
@@ -71,7 +78,9 @@ impl AlertingService {
             let _ = Self::send_telegram_alert(message).await;
         }
 
-        let webhook_url = match std::env::var("ALERT_WEBHOOK_URL").or_else(|_| std::env::var("DISCORD_WEBHOOK_URL")) {
+        let webhook_url = match std::env::var("ALERT_WEBHOOK_URL")
+            .or_else(|_| std::env::var("DISCORD_WEBHOOK_URL"))
+        {
             Ok(url) if !url.trim().is_empty() => url,
             _ => {
                 return Ok(());
@@ -85,7 +94,8 @@ impl AlertingService {
 
         tracing::info!("Webhook uyarısı gönderiliyor: {}", message);
 
-        let res = client.post(&webhook_url)
+        let res = client
+            .post(&webhook_url)
             .header("Content-Type", "application/json")
             .json(&payload)
             .send()
@@ -94,7 +104,10 @@ impl AlertingService {
         if res.status().is_success() {
             tracing::info!("Webhook uyarısı başarıyla iletildi.");
         } else {
-            tracing::error!("Webhook isteği başarısız oldu. HTTP durum kodu: {}", res.status());
+            tracing::error!(
+                "Webhook isteği başarısız oldu. HTTP durum kodu: {}",
+                res.status()
+            );
         }
 
         Ok(())

@@ -3,6 +3,7 @@
 //! Axum'ın varsayılan `Json<T>` extractor'ına ek olarak DTO tiplerinde tanımlı
 //! `#[validate]` kurallarını çalıştırır; geçersiz girdilerde istemciye standart `AppError` döner.
 
+use crate::error::AppError;
 use axum::{
     async_trait,
     extract::{FromRequest, Request},
@@ -10,7 +11,6 @@ use axum::{
 };
 use serde::de::DeserializeOwned;
 use validator::Validate;
-use crate::error::AppError;
 
 #[derive(Debug)]
 pub struct ValidatedJson<T>(pub T);
@@ -27,7 +27,7 @@ where
         let Json(value) = Json::<T>::from_request(req, state)
             .await
             .map_err(|e| AppError::BadRequest(format!("Geçersiz JSON: {}", e)))?;
-        
+
         if let Err(e) = value.validate() {
             let mut message = String::new();
             if let Some((_, errors)) = e.field_errors().iter().next() {

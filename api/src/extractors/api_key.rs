@@ -3,17 +3,17 @@
 //! Geliştirici API anahtarının SHA-256 özetini veritabanından doğrular,
 //! hesap seviyesini (tier) çözer ve günlük kullanım limitlerini denetler.
 
-use axum::{
-    async_trait,
-    extract::{FromRequestParts, FromRef},
-    http::request::Parts,
-};
-use sha2::{Sha256, Digest};
-use shared::entities::{api_keys, prelude::*};
-use sea_orm::{EntityTrait, ColumnTrait, QueryFilter};
 use crate::config::AppState;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
+use axum::{
+    async_trait,
+    extract::{FromRef, FromRequestParts},
+    http::request::Parts,
+};
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sha2::{Digest, Sha256};
+use shared::entities::{api_keys, prelude::*};
 
 #[derive(Debug)]
 pub struct ValidApiKey {
@@ -31,9 +31,13 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app_state = AppState::from_ref(state);
 
-        let api_key_header = parts.headers.get("X-API-Key")
+        let api_key_header = parts
+            .headers
+            .get("X-API-Key")
             .and_then(|h| h.to_str().ok())
-            .ok_or_else(|| AppError::Unauthorized("API Key eksik (X-API-Key header'ı gerekli)".to_string()))?;
+            .ok_or_else(|| {
+                AppError::Unauthorized("API Key eksik (X-API-Key header'ı gerekli)".to_string())
+            })?;
 
         let mut hasher = Sha256::new();
         hasher.update(api_key_header.as_bytes());
@@ -51,12 +55,11 @@ where
             })?
             .ok_or_else(|| AppError::Unauthorized("Geçersiz veya pasif API Key".to_string()))?;
 
-        app_state.usage_tracker.record_request(
-            &app_state.db,
-            api_key_model.id,
-            &api_key_model.tier,
-            false
-        ).await.map_err(AppError::TooManyRequests)?;
+        app_state
+            .usage_tracker
+            .record_request(&app_state.db, api_key_model.id, &api_key_model.tier, false)
+            .await
+            .map_err(AppError::TooManyRequests)?;
 
         Ok(ValidApiKey {
             model: api_key_model,
@@ -78,7 +81,8 @@ where
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app_state = AppState::from_ref(state);
 
-        let Some(api_key_header) = parts.headers.get("X-API-Key").and_then(|h| h.to_str().ok()) else {
+        let Some(api_key_header) = parts.headers.get("X-API-Key").and_then(|h| h.to_str().ok())
+        else {
             return Ok(OptionalApiKey(None));
         };
 
@@ -98,12 +102,11 @@ where
             })?
             .ok_or_else(|| AppError::Unauthorized("Geçersiz veya pasif API Key".to_string()))?;
 
-        app_state.usage_tracker.record_request(
-            &app_state.db,
-            api_key_model.id,
-            &api_key_model.tier,
-            false
-        ).await.map_err(AppError::TooManyRequests)?;
+        app_state
+            .usage_tracker
+            .record_request(&app_state.db, api_key_model.id, &api_key_model.tier, false)
+            .await
+            .map_err(AppError::TooManyRequests)?;
 
         Ok(OptionalApiKey(Some(api_key_model)))
     }
@@ -125,7 +128,9 @@ where
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let has_cookie = parts.headers.contains_key(axum::http::header::COOKIE);
-        let has_bearer = parts.headers.contains_key(axum::http::header::AUTHORIZATION);
+        let has_bearer = parts
+            .headers
+            .contains_key(axum::http::header::AUTHORIZATION);
         let has_api_key = parts.headers.contains_key("X-API-Key");
 
         if has_cookie || has_bearer {

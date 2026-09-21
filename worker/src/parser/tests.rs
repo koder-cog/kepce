@@ -1,33 +1,45 @@
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests {
+    use crate::parser::core::{
+        infer_sheet_date_order, parse_date_with_order, parse_grid, DateTokenOrder, SheetGrid,
+    };
+    use crate::parser::kykyemek::{parse_kykyemek_html, parse_turkish_date};
+    use crate::parser::models::MenuComponent;
+    use crate::parser::models::MenuDatabase;
+    use crate::parser::takeaway::{parse_takeaway_menu, TAKEAWAY_CACHE};
     use chrono::NaiveDate;
     use std::collections::HashMap;
-    use crate::parser::kykyemek::{parse_kykyemek_html, parse_turkish_date};
-    use crate::parser::takeaway::{parse_takeaway_menu, TAKEAWAY_CACHE};
-    use crate::parser::models::MenuComponent;
-    use crate::parser::core::{parse_grid, SheetGrid, DateTokenOrder, infer_sheet_date_order, parse_date_with_order};
-    use crate::parser::models::MenuDatabase;
 
     #[test]
     fn test_infer_sheet_date_order_anchors() {
         // Tabloda 15.06.2026 hücresi var -> p1 > 12 -> kesinlikle DayMonth
         let grid_standard = SheetGrid {
             name: "Menu".to_string(),
-            rows: vec![
-                vec!["01.06.2026".into(), "04.06.2026".into(), "15.06.2026".into()],
-            ],
+            rows: vec![vec![
+                "01.06.2026".into(),
+                "04.06.2026".into(),
+                "15.06.2026".into(),
+            ]],
         };
-        assert_eq!(infer_sheet_date_order(&grid_standard, "dosya.xlsx"), DateTokenOrder::DayMonth);
+        assert_eq!(
+            infer_sheet_date_order(&grid_standard, "dosya.xlsx"),
+            DateTokenOrder::DayMonth
+        );
 
         // Tabloda 06.15.2026 hücresi var -> p2 > 12 -> kesinlikle MonthDay
         let grid_inverted = SheetGrid {
             name: "Menu".to_string(),
-            rows: vec![
-                vec!["06.01.2026".into(), "06.04.2026".into(), "06.15.2026".into()],
-            ],
+            rows: vec![vec![
+                "06.01.2026".into(),
+                "06.04.2026".into(),
+                "06.15.2026".into(),
+            ]],
         };
-        assert_eq!(infer_sheet_date_order(&grid_inverted, "dosya.xlsx"), DateTokenOrder::MonthDay);
+        assert_eq!(
+            infer_sheet_date_order(&grid_inverted, "dosya.xlsx"),
+            DateTokenOrder::MonthDay
+        );
     }
 
     #[test]
@@ -35,20 +47,32 @@ mod tests {
         // Tüm sayılar <= 12 (örn. ayın ilk 5 günü): p1 (1..=5) artıyor, p2 (6) sabit -> DayMonth
         let grid_small_dm = SheetGrid {
             name: "Menu".to_string(),
-            rows: vec![
-                vec!["01.06.2026".into(), "02.06.2026".into(), "03.06.2026".into(), "04.06.2026".into()],
-            ],
+            rows: vec![vec![
+                "01.06.2026".into(),
+                "02.06.2026".into(),
+                "03.06.2026".into(),
+                "04.06.2026".into(),
+            ]],
         };
-        assert_eq!(infer_sheet_date_order(&grid_small_dm, "bilinmeyen.xlsx"), DateTokenOrder::DayMonth);
+        assert_eq!(
+            infer_sheet_date_order(&grid_small_dm, "bilinmeyen.xlsx"),
+            DateTokenOrder::DayMonth
+        );
 
         // Ters format: p1 (6) sabit, p2 (1..=4) artıyor -> MonthDay
         let grid_small_md = SheetGrid {
             name: "Menu".to_string(),
-            rows: vec![
-                vec!["06.01.2026".into(), "06.02.2026".into(), "06.03.2026".into(), "06.04.2026".into()],
-            ],
+            rows: vec![vec![
+                "06.01.2026".into(),
+                "06.02.2026".into(),
+                "06.03.2026".into(),
+                "06.04.2026".into(),
+            ]],
         };
-        assert_eq!(infer_sheet_date_order(&grid_small_md, "bilinmeyen.xlsx"), DateTokenOrder::MonthDay);
+        assert_eq!(
+            infer_sheet_date_order(&grid_small_md, "bilinmeyen.xlsx"),
+            DateTokenOrder::MonthDay
+        );
     }
 
     #[test]
@@ -57,8 +81,16 @@ mod tests {
         let grid = SheetGrid {
             name: "AKSAM".to_string(),
             rows: vec![
-                vec!["01.06.2026".into(), "04.06.2026".into(), "20.06.2026".into()],
-                vec!["Mercimek Çorbası".into(), "Ezogelin Çorbası".into(), "Yayla Çorbası".into()],
+                vec![
+                    "01.06.2026".into(),
+                    "04.06.2026".into(),
+                    "20.06.2026".into(),
+                ],
+                vec![
+                    "Mercimek Çorbası".into(),
+                    "Ezogelin Çorbası".into(),
+                    "Yayla Çorbası".into(),
+                ],
             ],
         };
         let mut db = MenuDatabase::new();
@@ -71,10 +103,19 @@ mod tests {
         assert!(!db.contains_key("2026-08-01"));
 
         // parse_date_with_order doğrudan testleri
-        assert_eq!(parse_date_with_order("04.06.2026", DateTokenOrder::DayMonth), Some("2026-06-04".to_string()));
-        assert_eq!(parse_date_with_order("06.04.2026", DateTokenOrder::MonthDay), Some("2026-06-04".to_string()));
+        assert_eq!(
+            parse_date_with_order("04.06.2026", DateTokenOrder::DayMonth),
+            Some("2026-06-04".to_string())
+        );
+        assert_eq!(
+            parse_date_with_order("06.04.2026", DateTokenOrder::MonthDay),
+            Some("2026-06-04".to_string())
+        );
         // Geçersiz ay/gün self-healing
-        assert_eq!(parse_date_with_order("15.06.2026", DateTokenOrder::MonthDay), Some("2026-06-15".to_string()));
+        assert_eq!(
+            parse_date_with_order("15.06.2026", DateTokenOrder::MonthDay),
+            Some("2026-06-15".to_string())
+        );
     }
 
     #[test]
@@ -116,15 +157,24 @@ mod tests {
 
         let day = db.get("2026-04-01").expect("01.04 günü bulunamadı");
         assert_eq!(day.normal.breakfast.len(), 2, "01.04 iki yemek içermeli");
-        assert_eq!(day.normal.breakfast[0].alternatives[0].name, "Patates Kızartması");
-        assert_eq!(day.normal.breakfast[1].alternatives[0].name, "Haşlanmış Yumurta");
+        assert_eq!(
+            day.normal.breakfast[0].alternatives[0].name,
+            "Patates Kızartması"
+        );
+        assert_eq!(
+            day.normal.breakfast[1].alternatives[0].name,
+            "Haşlanmış Yumurta"
+        );
         // Betimsel gramaj ("1 adet L boy") sayısal olmadığı için amount
         // alınmaz - wide formatındaki validate_numeric_value davranışıyla tutarlı.
         assert_eq!(day.normal.breakfast[1].alternatives[0].amount, None);
 
         let day2 = db.get("2026-04-02").expect("02.04 günü bulunamadı");
         assert_eq!(day2.normal.breakfast.len(), 1);
-        assert_eq!(day2.normal.breakfast[0].alternatives[0].name, "Kaşarlı Omlet");
+        assert_eq!(
+            day2.normal.breakfast[0].alternatives[0].name,
+            "Kaşarlı Omlet"
+        );
     }
 
     #[test]
@@ -164,7 +214,7 @@ mod tests {
         assert_eq!(results.len(), 1);
         let menu = &results[0];
         assert_eq!(menu.date, NaiveDate::from_ymd_opt(2026, 7, 14).unwrap());
-        
+
         // Assert dishes structure (splits by / and trims)
         assert_eq!(menu.dishes.len(), 3);
         assert_eq!(menu.dishes[0], vec!["Mercimek Çorbası"]);
@@ -177,14 +227,26 @@ mod tests {
         // Pre-populate TAKEAWAY_CACHE to simulate loaded config
         let key = "eskisehir_dinner".to_string();
         let mut mock_slots = HashMap::new();
-        mock_slots.insert(1, crate::parser::takeaway::TakeawayParsedPackage {
-            name: "Al Götür 1".to_string(),
-            slots: vec![vec![MenuComponent::from("Ekmek Arası Köfte")], vec![MenuComponent::from("Ayran")]],
-        });
-        mock_slots.insert(2, crate::parser::takeaway::TakeawayParsedPackage {
-            name: "Al Götür 2".to_string(),
-            slots: vec![vec![MenuComponent::from("Ekmek Arası Tavuk")], vec![MenuComponent::from("Meyve Suyu")]],
-        });
+        mock_slots.insert(
+            1,
+            crate::parser::takeaway::TakeawayParsedPackage {
+                name: "Al Götür 1".to_string(),
+                slots: vec![
+                    vec![MenuComponent::from("Ekmek Arası Köfte")],
+                    vec![MenuComponent::from("Ayran")],
+                ],
+            },
+        );
+        mock_slots.insert(
+            2,
+            crate::parser::takeaway::TakeawayParsedPackage {
+                name: "Al Götür 2".to_string(),
+                slots: vec![
+                    vec![MenuComponent::from("Ekmek Arası Tavuk")],
+                    vec![MenuComponent::from("Meyve Suyu")],
+                ],
+            },
+        );
 
         {
             let mut cache = TAKEAWAY_CACHE.write().unwrap();
@@ -197,7 +259,13 @@ mod tests {
         let packages = result.unwrap();
         assert_eq!(packages.len(), 1);
         assert_eq!(packages[0].0, "Al Götür 1");
-        assert_eq!(packages[0].1, vec![vec![MenuComponent::from("Ekmek Arası Köfte")], vec![MenuComponent::from("Ayran")]]);
+        assert_eq!(
+            packages[0].1,
+            vec![
+                vec![MenuComponent::from("Ekmek Arası Köfte")],
+                vec![MenuComponent::from("Ayran")]
+            ]
+        );
 
         // Test matching both packages
         let result_both = parse_takeaway_menu("Al Götür 1 ve 2. Paketler", "eskisehir", "dinner");
@@ -237,7 +305,10 @@ mod tests {
         assert_eq!(slots.len(), 5);
         assert_eq!(slots[0].len(), 2);
         assert_eq!(slots[0][0].name, "1 Adet Kaşarlı Soğuk Sandviç");
-        assert_eq!(slots[0][0].amount.as_deref(), Some("Sandviç Ekmeği+70 G Kaşar"));
+        assert_eq!(
+            slots[0][0].amount.as_deref(),
+            Some("Sandviç Ekmeği+70 G Kaşar")
+        );
         assert_eq!(slots[1].len(), 3);
         assert_eq!(slots[1][0].name, "1 Paket Süt");
         assert_eq!(slots[1][0].amount.as_deref(), Some("200 Ml"));
@@ -262,12 +333,18 @@ mod tests {
             </div>
         "#;
 
-        let parsed = crate::parser::kykyemek::parse_kykyemek_html(card_html, "istanbul", "breakfast");
+        let parsed =
+            crate::parser::kykyemek::parse_kykyemek_html(card_html, "istanbul", "breakfast");
         assert_eq!(parsed.len(), 1);
         let menu = &parsed[0];
         assert_eq!(menu.takeaways.len(), 2);
-        assert!(menu.takeaways[0].0.contains("Gözleme") || menu.takeaways[0].0.contains("Al Götür 2"));
-        assert!(menu.takeaways[1].0.contains("Soğuk Sandviç") || menu.takeaways[1].0.contains("Al Götür 1"));
+        assert!(
+            menu.takeaways[0].0.contains("Gözleme") || menu.takeaways[0].0.contains("Al Götür 2")
+        );
+        assert!(
+            menu.takeaways[1].0.contains("Soğuk Sandviç")
+                || menu.takeaways[1].0.contains("Al Götür 1")
+        );
     }
 
     #[test]
@@ -325,7 +402,8 @@ mod tests {
             test_uuid
         );
 
-        let parsed = crate::parser::kykyemek::parse_kykyemek_html(&card_html, "trabzon", "breakfast");
+        let parsed =
+            crate::parser::kykyemek::parse_kykyemek_html(&card_html, "trabzon", "breakfast");
         assert_eq!(parsed.len(), 1);
         let menu = &parsed[0];
         assert_eq!(menu.takeaways.len(), 1);

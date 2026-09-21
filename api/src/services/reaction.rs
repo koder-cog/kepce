@@ -1,8 +1,8 @@
-use sea_orm::*;
-use shared::entities::{prelude::*, comments, vote_reactions};
-use uuid::Uuid;
 use crate::dto::comment::ReactionTypeDto;
 use crate::dto::reaction::ReactionSummaryDto;
+use sea_orm::*;
+use shared::entities::{comments, prelude::*, vote_reactions};
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub enum ReactionError {
@@ -34,7 +34,7 @@ impl ReactionService {
         if !user.is_verified {
             return Err(ReactionError::UnverifiedUser);
         }
-        
+
         // 1. Yorumun varlığını doğrula
         let comment = Comments::find_by_id(comment_id)
             .one(db)
@@ -44,13 +44,18 @@ impl ReactionService {
 
         // Engellenen kullanıcı (veya bizi engelleyen kullanıcı) yorumuna oy verilemez
         if let Some(author_id) = comment.user_id {
-            let blocked_user_ids = crate::services::moderation::ModerationService::get_blocked_user_ids(db, user_id)
-                .await
-                .map_err(|e| match e {
-                    crate::services::moderation::ModerationError::DatabaseError(db_err) => ReactionError::DatabaseError(db_err),
-                    _ => ReactionError::DatabaseError(DbErr::Custom("Moderation error".to_string())),
-                })?;
-            
+            let blocked_user_ids =
+                crate::services::moderation::ModerationService::get_blocked_user_ids(db, user_id)
+                    .await
+                    .map_err(|e| match e {
+                        crate::services::moderation::ModerationError::DatabaseError(db_err) => {
+                            ReactionError::DatabaseError(db_err)
+                        }
+                        _ => ReactionError::DatabaseError(DbErr::Custom(
+                            "Moderation error".to_string(),
+                        )),
+                    })?;
+
             if blocked_user_ids.contains(&author_id) {
                 return Err(ReactionError::InvalidOperation);
             }
@@ -66,7 +71,9 @@ impl ReactionService {
 
         let target_db_enum = match reaction_type {
             ReactionTypeDto::Up => shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote,
-            ReactionTypeDto::Down => shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote,
+            ReactionTypeDto::Down => {
+                shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote
+            }
         };
 
         let mut karma_delta = 0;
@@ -74,20 +81,32 @@ impl ReactionService {
         if let Some(reaction) = existing_reaction {
             if reaction.reaction_type == target_db_enum {
                 // Senaryo A: Aynı oya tekrar tıklandı -> Oyu kaldır (Toggle Off)
-                if reaction.reaction_type == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                if reaction.reaction_type
+                    == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote
+                {
                     karma_delta = -1;
                 }
-                reaction.delete(db).await.map_err(ReactionError::DatabaseError)?;
+                reaction
+                    .delete(db)
+                    .await
+                    .map_err(ReactionError::DatabaseError)?;
             } else {
                 // Senaryo B: Farklı oya tıklandı (Upvote <-> Downvote) -> Oyu güncelle
-                if target_db_enum == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                if target_db_enum
+                    == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote
+                {
                     karma_delta = 1;
-                } else if reaction.reaction_type == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote {
+                } else if reaction.reaction_type
+                    == shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote
+                {
                     karma_delta = -1;
                 }
                 let mut active_reaction: vote_reactions::ActiveModel = reaction.into();
                 active_reaction.reaction_type = Set(target_db_enum);
-                active_reaction.update(db).await.map_err(ReactionError::DatabaseError)?;
+                active_reaction
+                    .update(db)
+                    .await
+                    .map_err(ReactionError::DatabaseError)?;
             }
         } else {
             // Senaryo C: İlk defa oy veriliyor -> Yeni ekle
@@ -100,11 +119,14 @@ impl ReactionService {
                 reaction_type: Set(target_db_enum),
                 ..Default::default()
             };
-            
+
             // Eğer tam bu satırda race condition oluşur ve aynı anda 2 insert gelirse,
             // utils::db::is_unique_constraint_violation ile kontrol eklenebilir.
             // Fakat toggle işlemi genelde tek client'tan sıralı gelir.
-            new_reaction.insert(db).await.map_err(ReactionError::DatabaseError)?;
+            new_reaction
+                .insert(db)
+                .await
+                .map_err(ReactionError::DatabaseError)?;
         }
 
         // Yorum sahibinin karmasını güncelle (kendi kendine oy karma getirmez)
@@ -147,15 +169,22 @@ impl ReactionService {
         let mut active_comment: comments::ActiveModel = comment.into();
         active_comment.user_id = Set(None); // Soft delete (Ağaç yapısını korumak için)
         active_comment.is_deleted = Set(true);
-        active_comment.deletion_type = Set(Some(if is_admin { "admin".to_string() } else { "user".to_string() }));
-        
+        active_comment.deletion_type = Set(Some(if is_admin {
+            "admin".to_string()
+        } else {
+            "user".to_string()
+        }));
+
         // KVKK İhlalini Önlemek:
         // Sadece yazar kimliğini gizlemek yetmez, veritabanındaki asıl metni de
         // fiziksel olarak yok etmeliyiz ki içerisinde kalmış olabilecek
         // telefon numarası, hakaret veya kişisel veriler tamamen silinsin.
         active_comment.content = Set(Some("[Bu içerik silinmiş]".to_string()));
-        
-        active_comment.update(db).await.map_err(ReactionError::DatabaseError)?;
+
+        active_comment
+            .update(db)
+            .await
+            .map_err(ReactionError::DatabaseError)?;
 
         Ok(())
     }
@@ -166,19 +195,24 @@ impl ReactionService {
         comment_id: Uuid,
         current_user_id: Option<Uuid>,
     ) -> Result<ReactionSummaryDto, ReactionError> {
-        
         // 3 kere veritabanına gidip gelmek (round-trip) yerine
         // sadece kullanıcının oyunu ve genel aggregate datayı çekecek 2 turlu veya
         // Custom struct ile tek turlu query atabiliriz. SeaORM'in karmaşıklığından kaçınmak
         // ve 3 gidiş-dönüşü 1+1'e indirmek için GROUP BY kullanıyoruz.
-        
+
         let counts = VoteReactions::find()
             .filter(vote_reactions::Column::CommentId.eq(comment_id))
             .select_only()
             .column(vote_reactions::Column::ReactionType)
-            .column_as(sea_orm::sea_query::Expr::col(vote_reactions::Column::Id).count(), "count")
+            .column_as(
+                sea_orm::sea_query::Expr::col(vote_reactions::Column::Id).count(),
+                "count",
+            )
             .group_by(vote_reactions::Column::ReactionType)
-            .into_tuple::<(shared::entities::sea_orm_active_enums::ReactionTypeEnum, i64)>()
+            .into_tuple::<(
+                shared::entities::sea_orm_active_enums::ReactionTypeEnum,
+                i64,
+            )>()
             .all(db)
             .await
             .map_err(ReactionError::DatabaseError)?;
@@ -188,8 +222,12 @@ impl ReactionService {
 
         for (rtype, count) in counts {
             match rtype {
-                shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote => upvotes = count as i32,
-                shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote => downvotes = count as i32,
+                shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote => {
+                    upvotes = count as i32
+                }
+                shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote => {
+                    downvotes = count as i32
+                }
             }
         }
 
@@ -206,8 +244,12 @@ impl ReactionService {
 
             if let Some(r) = user_reaction {
                 my_vote = Some(match r.reaction_type {
-                    shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote => ReactionTypeDto::Up,
-                    shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote => ReactionTypeDto::Down,
+                    shared::entities::sea_orm_active_enums::ReactionTypeEnum::Upvote => {
+                        ReactionTypeDto::Up
+                    }
+                    shared::entities::sea_orm_active_enums::ReactionTypeEnum::Downvote => {
+                        ReactionTypeDto::Down
+                    }
                 });
             }
         }

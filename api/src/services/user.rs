@@ -1,13 +1,16 @@
 //! Kullanıcı profili, karma puanları, rozetler ve hesap yönetimi servisi.
 
-use sea_orm::*;
+use crate::dto::user::{UserBadgeDto, UserProfileDto, UserRole};
 use chrono::{DateTime, Utc};
-use uuid::Uuid;
+use sea_orm::*;
 use shared::entities::{
-    prelude::*, users, user_badges, badges, comments, vote_reactions, reports, menu_submissions,
-    sea_orm_active_enums::{UserRoleEnum, ReportStatusEnum, ReactionTypeEnum},
+    badges, comments, menu_submissions,
+    prelude::*,
+    reports,
+    sea_orm_active_enums::{ReactionTypeEnum, ReportStatusEnum, UserRoleEnum},
+    user_badges, users, vote_reactions,
 };
-use crate::dto::user::{UserProfileDto, UserBadgeDto, UserRole};
+use uuid::Uuid;
 
 #[derive(Debug)]
 pub enum UserError {
@@ -128,7 +131,7 @@ impl UserService {
             .await
             .map_err(UserError::DatabaseError)?
             .ok_or(UserError::NotFound)?;
-            
+
         Self::build_profile(db, user, true).await
     }
 
@@ -143,7 +146,7 @@ impl UserService {
             .await
             .map_err(UserError::DatabaseError)?
             .ok_or(UserError::NotFound)?;
-            
+
         Self::build_profile(db, user, false).await
     }
 
@@ -196,8 +199,10 @@ impl UserService {
                 .await
                 .unwrap_or_default();
 
-            let mut upvote_counts: std::collections::HashMap<Uuid, i64> = std::collections::HashMap::new();
-            let mut downvote_counts: std::collections::HashMap<Uuid, i64> = std::collections::HashMap::new();
+            let mut upvote_counts: std::collections::HashMap<Uuid, i64> =
+                std::collections::HashMap::new();
+            let mut downvote_counts: std::collections::HashMap<Uuid, i64> =
+                std::collections::HashMap::new();
 
             for r in reactions {
                 if r.reaction_type == ReactionTypeEnum::Upvote {
@@ -246,11 +251,14 @@ impl UserService {
             .await
             .unwrap_or(0);
 
-        let days_registered = user.created_at.map(|ca| {
-            let now = Utc::now();
-            let created: DateTime<Utc> = ca.into();
-            (now - created).num_days().max(0)
-        }).unwrap_or(0);
+        let days_registered = user
+            .created_at
+            .map(|ca| {
+                let now = Utc::now();
+                let created: DateTime<Utc> = ca.into();
+                (now - created).num_days().max(0)
+            })
+            .unwrap_or(0);
 
         let mut additional_karma = 0;
 
@@ -260,7 +268,9 @@ impl UserService {
 
             let qualifies = match slug {
                 "ilk_kepce" => comment_count >= 1,
-                "demir_mide" => days_registered >= 7 && (comment_count >= 1 || user_given_upvotes >= 1),
+                "demir_mide" => {
+                    days_registered >= 7 && (comment_count >= 1 || user_given_upvotes >= 1)
+                }
                 "kurumsal_caresizlik" => days_registered >= 30,
                 "stokholm_sendromu" => days_registered >= 100,
                 "demirbas" => days_registered >= 180,
@@ -343,17 +353,36 @@ impl UserService {
             let awarded_at = user_badge_opt.and_then(|ub| ub.awarded_at.map(|dt| dt.into()));
             let count = user_badge_opt.map(|ub| ub.count).unwrap_or(0);
 
-            let slug = badge.slug.clone().unwrap_or_else(|| format!("badge_{}", badge.id));
-            let is_hidden_badge = badge.is_hidden || matches!(slug.as_str(), "muzmin_muhalif" | "linc_kurbani");
+            let slug = badge
+                .slug
+                .clone()
+                .unwrap_or_else(|| format!("badge_{}", badge.id));
+            let is_hidden_badge =
+                badge.is_hidden || matches!(slug.as_str(), "muzmin_muhalif" | "linc_kurbani");
             let is_hidden_and_locked = is_hidden_badge && !unlocked;
 
             dto_badges.push(UserBadgeDto {
-                slug: if is_hidden_and_locked { format!("hidden_{}", badge.id) } else { slug },
-                name: if is_hidden_and_locked { "Gizli Rozet".to_string() } else { badge.name },
-                icon: if is_hidden_and_locked { Some("lock".to_string()) } else { Some(badge.icon) },
+                slug: if is_hidden_and_locked {
+                    format!("hidden_{}", badge.id)
+                } else {
+                    slug
+                },
+                name: if is_hidden_and_locked {
+                    "Gizli Rozet".to_string()
+                } else {
+                    badge.name
+                },
+                icon: if is_hidden_and_locked {
+                    Some("lock".to_string())
+                } else {
+                    Some(badge.icon)
+                },
                 icon_url: badge.icon_url,
                 description: if is_hidden_and_locked {
-                    Some(format!("@{} kepçeyi doğru daldırıp denk getirebilirse tabağına düşer.", user.username))
+                    Some(format!(
+                        "@{} kepçeyi doğru daldırıp denk getirebilirse tabağına düşer.",
+                        user.username
+                    ))
                 } else {
                     badge.description
                 },
@@ -408,10 +437,18 @@ impl UserService {
         Ok(UserProfileDto {
             id: user.id,
             username: user.username.clone(),
-            role: if include_private { Some(Self::map_role(&user.role)) } else { None },
+            role: if include_private {
+                Some(Self::map_role(&user.role))
+            } else {
+                None
+            },
             karma_score: user.karma_score,
             is_verified: user.is_verified,
-            email: if include_private { Some(user.email) } else { None },
+            email: if include_private {
+                Some(user.email)
+            } else {
+                None
+            },
             joined_at: created_at_time,
             created_at: created_at_time,
             avatar_url: user.avatar_url,
@@ -419,23 +456,71 @@ impl UserService {
             default_city_slug: user.default_city_slug,
             level,
             level_progress,
-            google_id: if include_private { user.google_id } else { None },
-            is_admin: if include_private { Some(is_admin) } else { None },
+            google_id: if include_private {
+                user.google_id
+            } else {
+                None
+            },
+            is_admin: if include_private {
+                Some(is_admin)
+            } else {
+                None
+            },
             badge_count,
             total_badges,
             badges: dto_badges,
             pinned_badges,
             opt_out_statistics: user.opt_out_statistics,
-            notif_replies: if include_private { Some(user.notif_replies) } else { None },
-            notif_interactions: if include_private { Some(user.notif_interactions) } else { None },
-            notif_system: if include_private { Some(user.notif_system) } else { None },
-            notif_breakfast_enabled: if include_private { Some(user.notif_breakfast_enabled) } else { None },
-            notif_breakfast_time: if include_private { Some(user.notif_breakfast_time) } else { None },
-            notif_dinner_enabled: if include_private { Some(user.notif_dinner_enabled) } else { None },
-            notif_dinner_time: if include_private { Some(user.notif_dinner_time) } else { None },
-            email_newsletter: if include_private { Some(user.email_newsletter) } else { None },
-            email_security: if include_private { Some(user.email_security) } else { None },
-            email_updates: if include_private { Some(user.email_updates) } else { None },
+            notif_replies: if include_private {
+                Some(user.notif_replies)
+            } else {
+                None
+            },
+            notif_interactions: if include_private {
+                Some(user.notif_interactions)
+            } else {
+                None
+            },
+            notif_system: if include_private {
+                Some(user.notif_system)
+            } else {
+                None
+            },
+            notif_breakfast_enabled: if include_private {
+                Some(user.notif_breakfast_enabled)
+            } else {
+                None
+            },
+            notif_breakfast_time: if include_private {
+                Some(user.notif_breakfast_time)
+            } else {
+                None
+            },
+            notif_dinner_enabled: if include_private {
+                Some(user.notif_dinner_enabled)
+            } else {
+                None
+            },
+            notif_dinner_time: if include_private {
+                Some(user.notif_dinner_time)
+            } else {
+                None
+            },
+            email_newsletter: if include_private {
+                Some(user.email_newsletter)
+            } else {
+                None
+            },
+            email_security: if include_private {
+                Some(user.email_security)
+            } else {
+                None
+            },
+            email_updates: if include_private {
+                Some(user.email_updates)
+            } else {
+                None
+            },
             is_blocked: None,
             is_blocked_by: None,
         })
@@ -473,7 +558,10 @@ impl UserService {
 
         let mut user_active: users::ActiveModel = user.into();
         user_active.pinned_badges = Set(Some(valid_pins.clone()));
-        user_active.update(db).await.map_err(UserError::DatabaseError)?;
+        user_active
+            .update(db)
+            .await
+            .map_err(UserError::DatabaseError)?;
 
         Ok(valid_pins)
     }
@@ -483,10 +571,14 @@ impl UserService {
         db: &DatabaseConnection,
         user_id: Uuid,
     ) -> Result<crate::dto::user::UserDashboardStatsDto, UserError> {
-        use shared::entities::{
-            user_pinned_dishes, user_favorites, vote_reactions, comments, users as users_table, sea_orm_active_enums::ReactionTypeEnum
+        use sea_orm::{
+            ColumnTrait, EntityTrait, FromQueryResult, QueryFilter, QueryOrder, QuerySelect,
+            Statement,
         };
-        use sea_orm::{QuerySelect, QueryFilter, ColumnTrait, EntityTrait, QueryOrder, Statement, FromQueryResult};
+        use shared::entities::{
+            comments, sea_orm_active_enums::ReactionTypeEnum, user_favorites, user_pinned_dishes,
+            users as users_table, vote_reactions,
+        };
 
         // Pinned meals
         let pinned = user_pinned_dishes::Entity::find()
@@ -494,7 +586,7 @@ impl UserService {
             .all(db)
             .await
             .map_err(UserError::DatabaseError)?;
-            
+
         let pinned_dish_ids: Vec<i32> = pinned.into_iter().map(|p| p.dish_id).collect();
 
         // Favorite meals
@@ -523,28 +615,30 @@ impl UserService {
                 .await
                 .map_err(UserError::DatabaseError)?;
 
-            let dish_map: std::collections::HashMap<i32, String> = dishes_list
-                .into_iter()
-                .map(|d| (d.id, d.name))
-                .collect();
+            let dish_map: std::collections::HashMap<i32, String> =
+                dishes_list.into_iter().map(|d| (d.id, d.name)).collect();
 
             pinned_meals = pinned_dish_ids
                 .into_iter()
                 .filter_map(|id| {
-                    dish_map.get(&id).map(|name| crate::dto::user::SimpleDishDto {
-                        dish_id: id,
-                        name: name.clone(),
-                    })
+                    dish_map
+                        .get(&id)
+                        .map(|name| crate::dto::user::SimpleDishDto {
+                            dish_id: id,
+                            name: name.clone(),
+                        })
                 })
                 .collect();
 
             favorite_meals = fav_dish_ids
                 .into_iter()
                 .filter_map(|id| {
-                    dish_map.get(&id).map(|name| crate::dto::user::SimpleDishDto {
-                        dish_id: id,
-                        name: name.clone(),
-                    })
+                    dish_map
+                        .get(&id)
+                        .map(|name| crate::dto::user::SimpleDishDto {
+                            dish_id: id,
+                            name: name.clone(),
+                        })
                 })
                 .collect();
         }
@@ -569,8 +663,18 @@ impl UserService {
                 .await
                 .map_err(UserError::DatabaseError)?;
 
-            let blocked_relations = crate::services::moderation::ModerationService::get_blocked_relations(db, user_id).await.unwrap_or_default();
-            if let Ok(enriched) = crate::services::comment::CommentService::enrich_comments(db, raw_comments, Some(user_id), &blocked_relations).await {
+            let blocked_relations =
+                crate::services::moderation::ModerationService::get_blocked_relations(db, user_id)
+                    .await
+                    .unwrap_or_default();
+            if let Ok(enriched) = crate::services::comment::CommentService::enrich_comments(
+                db,
+                raw_comments,
+                Some(user_id),
+                &blocked_relations,
+            )
+            .await
+            {
                 favorite_comments = enriched.into_iter().map(|(dto, _)| dto).collect();
             }
         }
@@ -584,7 +688,7 @@ impl UserService {
             karma_score: Option<i32>,
             favorite_count: i64,
         }
-        
+
         let authors_res = AuthorCount::find_by_statement(Statement::from_sql_and_values(
             db.get_database_backend(),
             r#"
@@ -597,16 +701,22 @@ impl UserService {
             ORDER BY favorite_count DESC
             LIMIT 5
             "#,
-            vec![user_id.into()]
-        )).all(db).await.map_err(UserError::DatabaseError)?;
+            vec![user_id.into()],
+        ))
+        .all(db)
+        .await
+        .map_err(UserError::DatabaseError)?;
 
-        let favorite_authors = authors_res.into_iter().map(|r| crate::dto::user::FavoriteAuthorDto {
-            username: r.username,
-            favorite_count: r.favorite_count as i32,
-            avatar_url: r.avatar_url,
-            level: r.level,
-            karma_score: r.karma_score,
-        }).collect();
+        let favorite_authors = authors_res
+            .into_iter()
+            .map(|r| crate::dto::user::FavoriteAuthorDto {
+                username: r.username,
+                favorite_count: r.favorite_count as i32,
+                avatar_url: r.avatar_url,
+                level: r.level,
+                karma_score: r.karma_score,
+            })
+            .collect();
 
         Ok(crate::dto::user::UserDashboardStatsDto {
             favorite_meals,
@@ -623,7 +733,7 @@ impl UserService {
         dto: crate::dto::user::UpdateProfileDto,
     ) -> Result<UserProfileDto, crate::services::auth::AuthError> {
         use crate::services::auth::AuthError;
-        
+
         let user = Users::find_by_id(user_id)
             .one(db)
             .await
@@ -633,15 +743,21 @@ impl UserService {
         let mut user_model: users::ActiveModel = user.clone().into();
 
         // Hassas profil değişiklikleri (kullanıcı adı, e-posta, şifre) mevcut şifre doğrulaması (step-up auth) gerektirir.
-        let needs_password_check = dto.username.is_some() || dto.email.is_some() || dto.password.is_some();
+        let needs_password_check =
+            dto.username.is_some() || dto.email.is_some() || dto.password.is_some();
         if needs_password_check {
-            let current_password = dto.current_password.clone().ok_or(AuthError::InvalidCredentials)?;
+            let current_password = dto
+                .current_password
+                .clone()
+                .ok_or(AuthError::InvalidCredentials)?;
             let hash_clone = user.password_hash.clone();
             let is_valid = tokio::task::spawn_blocking(move || {
                 bcrypt::verify(&current_password, &hash_clone).unwrap_or(false)
             })
             .await
-            .map_err(|e| AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e))))?;
+            .map_err(|e| {
+                AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
+            })?;
 
             if !is_valid {
                 return Err(AuthError::InvalidCredentials);
@@ -655,7 +771,12 @@ impl UserService {
             // Case-insensitive benzersizlik kontrolü
             let lower_username = trimmed.to_lowercase();
             let exists = Users::find()
-                .filter(sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(sea_orm::sea_query::Expr::col(users::Column::Username))).eq(&lower_username))
+                .filter(
+                    sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                        sea_orm::sea_query::Expr::col(users::Column::Username),
+                    ))
+                    .eq(&lower_username),
+                )
                 .filter(users::Column::Id.ne(user_id))
                 .one(db)
                 .await
@@ -681,12 +802,16 @@ impl UserService {
         }
 
         if let Some(password) = dto.password {
-            let hashed_password = tokio::task::spawn_blocking(move || {
-                bcrypt::hash(&password, bcrypt::DEFAULT_COST)
-            })
-            .await
-            .map_err(|e| AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e))))?
-            .map_err(AuthError::HashError)?;
+            let hashed_password =
+                tokio::task::spawn_blocking(move || bcrypt::hash(&password, bcrypt::DEFAULT_COST))
+                    .await
+                    .map_err(|e| {
+                        AuthError::DatabaseError(DbErr::Custom(format!(
+                            "Blocking task failed: {}",
+                            e
+                        )))
+                    })?
+                    .map_err(AuthError::HashError)?;
 
             user_model.password_hash = Set(hashed_password);
 
@@ -739,22 +864,24 @@ impl UserService {
         }
 
         user_model.updated_at = Set(Some(Utc::now().into()));
-        let updated_user = user_model.update(db).await.map_err(AuthError::DatabaseError)?;
+        let updated_user = user_model
+            .update(db)
+            .await
+            .map_err(AuthError::DatabaseError)?;
 
-        Self::build_profile(db, updated_user, true).await.map_err(|_| AuthError::InvalidCredentials)
+        Self::build_profile(db, updated_user, true)
+            .await
+            .map_err(|_| AuthError::InvalidCredentials)
     }
 
     /// Kullanıcıyı siler
-    pub async fn delete_user(
-        db: &DatabaseConnection,
-        user_id: Uuid,
-    ) -> Result<(), UserError> {
+    pub async fn delete_user(db: &DatabaseConnection, user_id: Uuid) -> Result<(), UserError> {
         let user = Users::find_by_id(user_id)
             .one(db)
             .await
             .map_err(UserError::DatabaseError)?
             .ok_or(UserError::NotFound)?;
-            
+
         user.delete(db).await.map_err(UserError::DatabaseError)?;
         Ok(())
     }
@@ -788,7 +915,7 @@ impl UserService {
             .await
             .map_err(UserError::DatabaseError)?
             .ok_or(UserError::NotFound)?;
-            
+
         let mut active: users::ActiveModel = user.into();
         active.avatar_url = Set(avatar_url);
         active.updated_at = Set(Some(Utc::now().into()));
@@ -826,7 +953,7 @@ impl UserService {
 
         if let Some(fav) = existing {
             fav.delete(db).await.map_err(UserError::DatabaseError)?;
-            
+
             // Profil sabitlenenlerini de senkron temizle
             let existing_pin = user_pinned_dishes::Entity::find()
                 .filter(user_pinned_dishes::Column::UserId.eq(user_id))
@@ -900,17 +1027,40 @@ mod tests {
 
     #[test]
     fn test_get_title_for_karma() {
-        assert_eq!(UserService::get_title_for_karma(15000), "aşçıbaşının yeğeni");
+        assert_eq!(
+            UserService::get_title_for_karma(15000),
+            "aşçıbaşının yeğeni"
+        );
         assert_eq!(UserService::get_title_for_karma(10000), "altın kepçe");
-        assert_eq!(UserService::get_title_for_karma(9500), "turnikeden ilk geçen");
-        assert_eq!(UserService::get_title_for_karma(666), "ızgara tavuk uğruna ruhunu satmış");
-        assert_eq!(UserService::get_title_for_karma(700), "mercimeğe yarım limon sıkan");
+        assert_eq!(
+            UserService::get_title_for_karma(9500),
+            "turnikeden ilk geçen"
+        );
+        assert_eq!(
+            UserService::get_title_for_karma(666),
+            "ızgara tavuk uğruna ruhunu satmış"
+        );
+        assert_eq!(
+            UserService::get_title_for_karma(700),
+            "mercimeğe yarım limon sıkan"
+        );
         assert_eq!(UserService::get_title_for_karma(0), "düz tabldotçu");
         assert_eq!(UserService::get_title_for_karma(-1), "düz tabldotçu");
-        assert_eq!(UserService::get_title_for_karma(-5), "salataya sirke dökmeyen");
-        assert_eq!(UserService::get_title_for_karma(-3500), "turnikede kartı okumayan");
-        assert_eq!(UserService::get_title_for_karma(-12400), "taşeron yemek firması ceo'su");
-        assert_eq!(UserService::get_title_for_karma(-13000), "lavabo açıcı kıvamında hoşaf");
+        assert_eq!(
+            UserService::get_title_for_karma(-5),
+            "salataya sirke dökmeyen"
+        );
+        assert_eq!(
+            UserService::get_title_for_karma(-3500),
+            "turnikede kartı okumayan"
+        );
+        assert_eq!(
+            UserService::get_title_for_karma(-12400),
+            "taşeron yemek firması ceo'su"
+        );
+        assert_eq!(
+            UserService::get_title_for_karma(-13000),
+            "lavabo açıcı kıvamında hoşaf"
+        );
     }
 }
-

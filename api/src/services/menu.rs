@@ -11,15 +11,18 @@
 //!   bağlı yemekler, takma adlar, ana yemekler, yorum ve oy sayıları toplu olarak çekilip
 //!   bellekte eşleştirilir.
 
-
-use sea_orm::*;
-use std::collections::{HashMap, HashSet};
+use crate::dto::menu::{
+    AlternativeMenuDto, ArchiveHighlightDto, DishMasterDataDto, MealType, MenuItemDto,
+    MenuResponseDto,
+};
 use chrono::NaiveDate;
 use sea_orm::sea_query::Expr;
+use sea_orm::*;
 use shared::entities::{
-    prelude::*, menus, menu_dishes, dish_aliases, dishes, cities, sea_orm_active_enums::MealTypeEnum, comments, menu_votes, dish_votes, menu_history,
+    cities, comments, dish_aliases, dish_votes, dishes, menu_dishes, menu_history, menu_votes,
+    menus, prelude::*, sea_orm_active_enums::MealTypeEnum,
 };
-use crate::dto::menu::{MenuResponseDto, MenuItemDto, DishMasterDataDto, MealType, ArchiveHighlightDto, AlternativeMenuDto};
+use std::collections::{HashMap, HashSet};
 
 #[derive(Debug)]
 pub enum MenuError {
@@ -65,9 +68,15 @@ impl MenuService {
 
     fn map_menu_status(status: &shared::entities::sea_orm_active_enums::MenuStatusEnum) -> String {
         match status {
-            shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending => "pending".to_string(),
-            shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved => "approved".to_string(),
-            shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected => "rejected".to_string(),
+            shared::entities::sea_orm_active_enums::MenuStatusEnum::Pending => {
+                "pending".to_string()
+            }
+            shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved => {
+                "approved".to_string()
+            }
+            shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected => {
+                "rejected".to_string()
+            }
         }
     }
 
@@ -86,13 +95,12 @@ impl MenuService {
             for (idx, val) in dish_list.iter().enumerate() {
                 let name = match val {
                     serde_json::Value::String(s) => s.trim().to_string(),
-                    serde_json::Value::Object(map) => {
-                        map.get("name")
-                            .and_then(|n| n.as_str())
-                            .unwrap_or("")
-                            .trim()
-                            .to_string()
-                    }
+                    serde_json::Value::Object(map) => map
+                        .get("name")
+                        .and_then(|n| n.as_str())
+                        .unwrap_or("")
+                        .trim()
+                        .to_string(),
                     _ => continue,
                 };
 
@@ -104,7 +112,10 @@ impl MenuService {
                     continue;
                 }
 
-                let is_alt = val.get("is_alternative").and_then(|b| b.as_bool()).unwrap_or(false);
+                let is_alt = val
+                    .get("is_alternative")
+                    .and_then(|b| b.as_bool())
+                    .unwrap_or(false);
 
                 items.push(MenuItemDto {
                     order_index: idx as i32,
@@ -164,7 +175,11 @@ impl MenuService {
                 }
             }
         }
-        if has_calories { Some(total) } else { None }
+        if has_calories {
+            Some(total)
+        } else {
+            None
+        }
     }
 
     async fn get_dish_vote_stats_map(
@@ -234,11 +249,11 @@ impl MenuService {
             .await
             .map_err(MenuError::DatabaseError)?
             .ok_or(MenuError::NotFound)?;
-            
+
         if menu.status != shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved {
             return Err(MenuError::NotFound);
         }
-            
+
         let city = city_opt.ok_or(MenuError::NotFound)?;
 
         let menu_dishes_with_aliases = menu_dishes::Entity::find()
@@ -248,12 +263,12 @@ impl MenuService {
             .all(db)
             .await
             .map_err(MenuError::DatabaseError)?;
-            
+
         let dish_ids: Vec<i32> = menu_dishes_with_aliases
             .iter()
             .filter_map(|(_, alias_opt)| alias_opt.as_ref().and_then(|a| a.dish_id))
             .collect();
-            
+
         let master_dishes = if !dish_ids.is_empty() {
             dishes::Entity::find()
                 .filter(dishes::Column::Id.is_in(dish_ids.clone()))
@@ -263,49 +278,54 @@ impl MenuService {
         } else {
             vec![]
         };
-        
+
         let mut master_map = HashMap::new();
         for dish in master_dishes {
             master_map.insert(dish.id, dish);
         }
         let dish_stats_map = Self::get_dish_vote_stats_map(db, &dish_ids).await;
-        
+
         let mut items = Vec::new();
         let mut takeaway_map: HashMap<String, Vec<MenuItemDto>> = HashMap::new();
         for (md, alias_opt) in menu_dishes_with_aliases {
-            let alias = alias_opt.ok_or_else(|| MenuError::DatabaseError(DbErr::Custom("Yabancı anahtar bozuk: Alias bulunamadı".into())))?;
+            let alias = alias_opt.ok_or_else(|| {
+                MenuError::DatabaseError(DbErr::Custom(
+                    "Yabancı anahtar bozuk: Alias bulunamadı".into(),
+                ))
+            })?;
             if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
                 continue;
             }
-            
-            let master_data = alias.dish_id.and_then(|did| master_map.get(&did)).map(|dish| {
-                let stats = dish_stats_map
-                    .get(&dish.id)
-                    .copied()
-                    .unwrap_or_default();
 
-                DishMasterDataDto {
-                    dish_id: dish.id,
-                    name: dish.name.clone(),
-                    is_celiac: dish.is_celiac,
-                    is_vegan: dish.is_vegan,
-                    is_vegetarian: dish.is_vegetarian,
-                    estimated_calories: dish.estimated_calories,
-                    total_votes: stats.total,
-                    positive_votes: stats.positive,
-                    negative_votes: stats.negative,
-                    dislike_ratio: stats.dislike_ratio,
-                    like_ratio: stats.like_ratio,
-                }
-            });
-            
+            let master_data = alias
+                .dish_id
+                .and_then(|did| master_map.get(&did))
+                .map(|dish| {
+                    let stats = dish_stats_map.get(&dish.id).copied().unwrap_or_default();
+
+                    DishMasterDataDto {
+                        dish_id: dish.id,
+                        name: dish.name.clone(),
+                        is_celiac: dish.is_celiac,
+                        is_vegan: dish.is_vegan,
+                        is_vegetarian: dish.is_vegetarian,
+                        estimated_calories: dish.estimated_calories,
+                        total_votes: stats.total,
+                        positive_votes: stats.positive,
+                        negative_votes: stats.negative,
+                        dislike_ratio: stats.dislike_ratio,
+                        like_ratio: stats.like_ratio,
+                    }
+                });
+
             let dish_is_celiac = master_data.as_ref().is_some_and(|m| m.is_celiac);
             let pkg_upper = md.package_name.to_uppercase();
             let is_celiac_pkg = pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
             let is_takeaway_pkg = md.package_name != "NORMAL" && !is_celiac_pkg;
             let is_celiac_mode = dietary_type.as_deref() == Some("celiac");
-            
-            let dish_category = alias.dish_id
+
+            let dish_category = alias
+                .dish_id
                 .and_then(|did| master_map.get(&did))
                 .and_then(|dish| dish.category.clone())
                 .filter(|c| c != "dish" && !c.is_empty());
@@ -315,20 +335,28 @@ impl MenuService {
                 MealTypeEnum::Dinner => "dinner",
             };
 
-            let dish_name_for_pricing = alias.dish_id.and_then(|did| master_map.get(&did)).map(|d| d.name.as_str()).unwrap_or(alias.name.as_str());
+            let dish_name_for_pricing = alias
+                .dish_id
+                .and_then(|did| master_map.get(&did))
+                .map(|d| d.name.as_str())
+                .unwrap_or(alias.name.as_str());
 
             let price_info = crate::services::pricing::get_pricing_info_for_city(
                 &city.slug,
                 Some(menu.serve_date),
                 meal_type_str,
                 dish_category.as_deref(),
-                dish_name_for_pricing
+                dish_name_for_pricing,
             );
 
-            let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
+            let amount = md
+                .amount
+                .clone()
+                .or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
             let price = price_info.map(|p| p.price as f64);
 
-            let display_name = master_data.as_ref()
+            let display_name = master_data
+                .as_ref()
                 .map(|m| m.name.clone())
                 .unwrap_or_else(|| alias.name.clone());
             let raw_name = if display_name != alias.name {
@@ -336,7 +364,8 @@ impl MenuService {
             } else {
                 None
             };
-            let effective_calories = md.calories
+            let effective_calories = md
+                .calories
                 .or_else(|| master_data.as_ref().and_then(|m| m.estimated_calories));
 
             let item_dto = MenuItemDto {
@@ -350,11 +379,14 @@ impl MenuService {
                 category: dish_category,
                 master_data,
             };
-            
+
             if is_celiac_mode {
                 if is_celiac_pkg || (md.package_name == "NORMAL" && dish_is_celiac) {
                     if is_takeaway_pkg {
-                        takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
+                        takeaway_map
+                            .entry(md.package_name.clone())
+                            .or_default()
+                            .push(item_dto);
                     } else {
                         items.push(item_dto);
                     }
@@ -362,26 +394,33 @@ impl MenuService {
             } else {
                 if !is_celiac_pkg {
                     if md.package_name != "NORMAL" {
-                        takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
+                        takeaway_map
+                            .entry(md.package_name.clone())
+                            .or_default()
+                            .push(item_dto);
                     } else {
                         items.push(item_dto);
                     }
                 }
             }
         }
-        
+
         let mut takeaways = Vec::new();
         for (name, mut t_items) in takeaway_map {
             t_items.sort_by_key(|i| (i.order_index, i.is_alternative));
-            takeaways.push(crate::dto::menu::TakeawayMenuDto { name, items: t_items });
+            takeaways.push(crate::dto::menu::TakeawayMenuDto {
+                name,
+                items: t_items,
+            });
         }
         takeaways.sort_by(|a, b| a.name.cmp(&b.name));
-        
+
         let comment_count = shared::entities::comments::Entity::find()
             .filter(shared::entities::comments::Column::MenuId.eq(menu.id))
             .filter(shared::entities::comments::Column::IsDeleted.eq(false))
             .count(db)
-            .await.unwrap_or(0) as i32;
+            .await
+            .unwrap_or(0) as i32;
 
         let vote_stats: Option<(i32, i64, i64)> = menu_votes::Entity::find()
             .select_only()
@@ -405,9 +444,15 @@ impl MenuService {
                 .await
                 .unwrap_or_default()
                 .map(|v| match v.sentiment {
-                    shared::entities::sea_orm_active_enums::SentimentEnum::Positive => "positive".to_string(),
-                    shared::entities::sea_orm_active_enums::SentimentEnum::Negative => "negative".to_string(),
-                    shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => "neutral".to_string(),
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                        "positive".to_string()
+                    }
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                        "negative".to_string()
+                    }
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => {
+                        "neutral".to_string()
+                    }
                 })
         } else {
             None
@@ -451,36 +496,48 @@ impl MenuService {
         let menus_with_cities = Menus::find()
             .filter(menus::Column::CityId.eq(city_id))
             .filter(menus::Column::ServeDate.eq(date))
-            .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved))
+            .filter(
+                menus::Column::Status
+                    .eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
+            )
             .order_by_asc(menus::Column::MealType)
             .find_also_related(cities::Entity)
             .all(db)
             .await
             .map_err(MenuError::DatabaseError)?;
-            
+
         if menus_with_cities.is_empty() {
             return Ok(vec![]);
         }
-        
+
         let city = menus_with_cities[0].1.clone().ok_or(MenuError::NotFound)?;
         let menus: Vec<menus::Model> = menus_with_cities.into_iter().map(|(m, _)| m).collect();
-        
+
         // N+1 sorgularını önlemek için menülere ait yemek, takma ad ve ana yemek kayıtları
         // hiyerarşik olarak tek seferde toplu yüklenir.
-        let menu_dishes_groups = menus.load_many(
-            menu_dishes::Entity::find().order_by_asc(menu_dishes::Column::OrderIndex),
-            db
-        ).await.map_err(MenuError::DatabaseError)?;
+        let menu_dishes_groups = menus
+            .load_many(
+                menu_dishes::Entity::find().order_by_asc(menu_dishes::Column::OrderIndex),
+                db,
+            )
+            .await
+            .map_err(MenuError::DatabaseError)?;
 
-        let flat_menu_dishes: Vec<menu_dishes::Model> = menu_dishes_groups.iter().flatten().cloned().collect();
+        let flat_menu_dishes: Vec<menu_dishes::Model> =
+            menu_dishes_groups.iter().flatten().cloned().collect();
 
-        let dish_aliases_opts = flat_menu_dishes.load_one(dish_aliases::Entity, db)
-            .await.map_err(MenuError::DatabaseError)?;
+        let dish_aliases_opts = flat_menu_dishes
+            .load_one(dish_aliases::Entity, db)
+            .await
+            .map_err(MenuError::DatabaseError)?;
 
-        let flat_dish_aliases: Vec<dish_aliases::Model> = dish_aliases_opts.iter().flatten().cloned().collect();
+        let flat_dish_aliases: Vec<dish_aliases::Model> =
+            dish_aliases_opts.iter().flatten().cloned().collect();
 
-        let dishes_opts = flat_dish_aliases.load_one(dishes::Entity, db)
-            .await.map_err(MenuError::DatabaseError)?;
+        let dishes_opts = flat_dish_aliases
+            .load_one(dishes::Entity, db)
+            .await
+            .map_err(MenuError::DatabaseError)?;
 
         let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
         let comment_counts_map: HashMap<i32, i32> = if !menu_ids.is_empty() {
@@ -530,14 +587,23 @@ impl MenuService {
                 .await
                 .unwrap_or_default();
 
-            user_votes.into_iter().map(|v| {
-                let sent_str = match v.sentiment {
-                    shared::entities::sea_orm_active_enums::SentimentEnum::Positive => "positive".to_string(),
-                    shared::entities::sea_orm_active_enums::SentimentEnum::Negative => "negative".to_string(),
-                    shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => "neutral".to_string(),
-                };
-                (v.menu_id, sent_str)
-            }).collect()
+            user_votes
+                .into_iter()
+                .map(|v| {
+                    let sent_str = match v.sentiment {
+                        shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                            "positive".to_string()
+                        }
+                        shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                            "negative".to_string()
+                        }
+                        shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => {
+                            "neutral".to_string()
+                        }
+                    };
+                    (v.menu_id, sent_str)
+                })
+                .collect()
         } else {
             HashMap::new()
         };
@@ -552,7 +618,10 @@ impl MenuService {
 
         let mut history_map: HashMap<String, Vec<menu_history::Model>> = HashMap::new();
         for hist in history_records {
-            history_map.entry(hist.meal_type.to_lowercase()).or_default().push(hist);
+            history_map
+                .entry(hist.meal_type.to_lowercase())
+                .or_default()
+                .push(hist);
         }
 
         let mut result = Vec::with_capacity(menus.len());
@@ -566,24 +635,22 @@ impl MenuService {
         for (i, menu) in menus.into_iter().enumerate() {
             let mut items = Vec::with_capacity(menu_dishes_groups[i].len());
             let mut takeaway_map: HashMap<String, Vec<MenuItemDto>> = HashMap::new();
-            
+
             for md in &menu_dishes_groups[i] {
                 let alias_opt = &dish_aliases_opts[alias_idx];
                 alias_idx += 1;
-                
+
                 if let Some(alias) = alias_opt {
                     let dish_opt = &dishes_opts[dish_idx];
                     dish_idx += 1;
 
-                    if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                    if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name)
+                    {
                         continue;
                     }
-                    
+
                     let master_data = dish_opt.as_ref().map(|dish| {
-                        let stats = dish_stats_map
-                            .get(&dish.id)
-                            .copied()
-                            .unwrap_or_default();
+                        let stats = dish_stats_map.get(&dish.id).copied().unwrap_or_default();
 
                         DishMasterDataDto {
                             dish_id: dish.id,
@@ -599,13 +666,15 @@ impl MenuService {
                             like_ratio: stats.like_ratio,
                         }
                     });
-                    
+
                     let dish_is_celiac = master_data.as_ref().is_some_and(|m| m.is_celiac);
                     let pkg_upper = md.package_name.to_uppercase();
-                    let is_celiac_pkg = pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
+                    let is_celiac_pkg =
+                        pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
                     let is_takeaway_pkg = md.package_name != "NORMAL" && !is_celiac_pkg;
-                    
-                    let dish_category = dish_opt.as_ref()
+
+                    let dish_category = dish_opt
+                        .as_ref()
                         .and_then(|dish| dish.category.clone())
                         .filter(|c| c != "dish" && !c.is_empty());
                     let meal_type_str = match menu.meal_type {
@@ -614,20 +683,27 @@ impl MenuService {
                         MealTypeEnum::Dinner => "dinner",
                     };
 
-                    let dish_name_for_pricing = dish_opt.as_ref().map(|d| d.name.as_str()).unwrap_or(alias.name.as_str());
+                    let dish_name_for_pricing = dish_opt
+                        .as_ref()
+                        .map(|d| d.name.as_str())
+                        .unwrap_or(alias.name.as_str());
 
                     let price_info = crate::services::pricing::get_pricing_info_for_city(
                         &city.slug,
                         Some(date),
                         meal_type_str,
                         dish_category.as_deref(),
-                        dish_name_for_pricing
+                        dish_name_for_pricing,
                     );
 
-                    let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
+                    let amount = md
+                        .amount
+                        .clone()
+                        .or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
                     let price = price_info.map(|p| p.price as f64);
-                    
-                    let display_name = master_data.as_ref()
+
+                    let display_name = master_data
+                        .as_ref()
                         .map(|m| m.name.clone())
                         .unwrap_or_else(|| alias.name.clone());
                     let raw_name = if display_name != alias.name {
@@ -635,7 +711,8 @@ impl MenuService {
                     } else {
                         None
                     };
-                    let effective_calories = md.calories
+                    let effective_calories = md
+                        .calories
                         .or_else(|| master_data.as_ref().and_then(|m| m.estimated_calories));
 
                     let item_dto = MenuItemDto {
@@ -649,11 +726,14 @@ impl MenuService {
                         category: dish_category,
                         master_data,
                     };
-                    
+
                     if is_celiac_mode {
                         if is_celiac_pkg || (md.package_name == "NORMAL" && dish_is_celiac) {
                             if is_takeaway_pkg {
-                                takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
+                                takeaway_map
+                                    .entry(md.package_name.clone())
+                                    .or_default()
+                                    .push(item_dto);
                             } else {
                                 items.push(item_dto);
                             }
@@ -661,24 +741,32 @@ impl MenuService {
                     } else {
                         if !is_celiac_pkg {
                             if md.package_name != "NORMAL" {
-                                takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
+                                takeaway_map
+                                    .entry(md.package_name.clone())
+                                    .or_default()
+                                    .push(item_dto);
                             } else {
                                 items.push(item_dto);
                             }
                         }
                     }
                 } else {
-                    return Err(MenuError::DatabaseError(DbErr::Custom("Yabancı anahtar bozuk: Alias bulunamadı".into())));
+                    return Err(MenuError::DatabaseError(DbErr::Custom(
+                        "Yabancı anahtar bozuk: Alias bulunamadı".into(),
+                    )));
                 }
             }
-            
+
             let mut takeaways = Vec::new();
             for (name, mut t_items) in takeaway_map {
                 t_items.sort_by_key(|i| (i.order_index, i.is_alternative));
-                takeaways.push(crate::dto::menu::TakeawayMenuDto { name, items: t_items });
+                takeaways.push(crate::dto::menu::TakeawayMenuDto {
+                    name,
+                    items: t_items,
+                });
             }
             takeaways.sort_by(|a, b| a.name.cmp(&b.name));
-            
+
             let calculated_calories = Self::calculate_total_calories(&items);
 
             let (vote_count, rating_sum) = vote_stats_map.get(&menu.id).copied().unwrap_or((0, 0));
@@ -705,12 +793,18 @@ impl MenuService {
                 let mut seen_sources = HashSet::new();
 
                 for hist in hist_list {
-                    let meta = shared::services::source_registry::SourceRegistry::resolve(&hist.source_type);
+                    let meta = shared::services::source_registry::SourceRegistry::resolve(
+                        &hist.source_type,
+                    );
                     if meta.tier == shared::services::source_registry::TrustTier::Quarantined {
                         continue;
                     }
-                    if hist.source_type != current_src && seen_sources.insert(hist.source_type.clone()) {
-                        if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
+                    if hist.source_type != current_src
+                        && seen_sources.insert(hist.source_type.clone())
+                    {
+                        if let Some(alt_dto) =
+                            Self::parse_alternative_from_history(hist, meal_type_enum.clone())
+                        {
                             let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
                             if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
                                 alternatives.push(alt_dto);
@@ -756,12 +850,16 @@ impl MenuService {
         month: Option<u32>,
         user_id: Option<uuid::Uuid>,
     ) -> Result<Vec<MenuResponseDto>, MenuError> {
-        let mut query = Menus::find()
-            .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved));
+        let mut query = Menus::find().filter(
+            menus::Column::Status
+                .eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
+        );
 
         if let Some(slug) = city_slug {
-            let city = Self::resolve_city(db, &slug).await.map_err(MenuError::DatabaseError)?;
-                
+            let city = Self::resolve_city(db, &slug)
+                .await
+                .map_err(MenuError::DatabaseError)?;
+
             if let Some(c) = city {
                 query = query.filter(menus::Column::CityId.eq(c.id));
             } else {
@@ -799,7 +897,8 @@ impl MenuService {
 
         let dates: Vec<NaiveDate> = menus.iter().map(|m| m.serve_date).collect();
         let city_ids: Vec<i32> = menus.iter().map(|m| m.city_id).collect();
-        let history_records: Vec<menu_history::Model> = if !dates.is_empty() && !city_ids.is_empty() {
+        let history_records: Vec<menu_history::Model> = if !dates.is_empty() && !city_ids.is_empty()
+        {
             MenuHistory::find()
                 .filter(menu_history::Column::CityId.is_in(city_ids))
                 .filter(menu_history::Column::ServeDate.is_in(dates))
@@ -811,7 +910,8 @@ impl MenuService {
             vec![]
         };
 
-        let mut history_map: HashMap<(i32, NaiveDate, String), Vec<menu_history::Model>> = HashMap::new();
+        let mut history_map: HashMap<(i32, NaiveDate, String), Vec<menu_history::Model>> =
+            HashMap::new();
         for hist in history_records {
             let key = (hist.city_id, hist.serve_date, hist.meal_type.to_lowercase());
             history_map.entry(key).or_default().push(hist);
@@ -819,20 +919,29 @@ impl MenuService {
 
         // N+1 sorgularını önlemek için menülerin yemekleri, takma adları, ana yemekleri
         // ve oy/yorum istatistikleri toplu olarak sorgulanır.
-        let menu_dishes_groups = menus.load_many(
-            menu_dishes::Entity::find().order_by_asc(menu_dishes::Column::OrderIndex),
-            db
-        ).await.map_err(MenuError::DatabaseError)?;
+        let menu_dishes_groups = menus
+            .load_many(
+                menu_dishes::Entity::find().order_by_asc(menu_dishes::Column::OrderIndex),
+                db,
+            )
+            .await
+            .map_err(MenuError::DatabaseError)?;
 
-        let flat_menu_dishes: Vec<menu_dishes::Model> = menu_dishes_groups.iter().flatten().cloned().collect();
+        let flat_menu_dishes: Vec<menu_dishes::Model> =
+            menu_dishes_groups.iter().flatten().cloned().collect();
 
-        let dish_aliases_opts = flat_menu_dishes.load_one(dish_aliases::Entity, db)
-            .await.map_err(MenuError::DatabaseError)?;
+        let dish_aliases_opts = flat_menu_dishes
+            .load_one(dish_aliases::Entity, db)
+            .await
+            .map_err(MenuError::DatabaseError)?;
 
-        let flat_dish_aliases: Vec<dish_aliases::Model> = dish_aliases_opts.iter().flatten().cloned().collect();
+        let flat_dish_aliases: Vec<dish_aliases::Model> =
+            dish_aliases_opts.iter().flatten().cloned().collect();
 
-        let dishes_opts = flat_dish_aliases.load_one(dishes::Entity, db)
-            .await.map_err(MenuError::DatabaseError)?;
+        let dishes_opts = flat_dish_aliases
+            .load_one(dishes::Entity, db)
+            .await
+            .map_err(MenuError::DatabaseError)?;
 
         let menu_ids: Vec<i32> = menus.iter().map(|m| m.id).collect();
         let comment_counts_map: HashMap<i32, i32> = if !menu_ids.is_empty() {
@@ -888,9 +997,15 @@ impl MenuService {
                     .unwrap_or_default();
                 for v in votes {
                     let sent_str = match v.sentiment {
-                        shared::entities::sea_orm_active_enums::SentimentEnum::Positive => "positive".to_string(),
-                        shared::entities::sea_orm_active_enums::SentimentEnum::Negative => "negative".to_string(),
-                        shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => "neutral".to_string(),
+                        shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                            "positive".to_string()
+                        }
+                        shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                            "negative".to_string()
+                        }
+                        shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => {
+                            "neutral".to_string()
+                        }
                     };
                     my_votes_map.insert(v.menu_id, sent_str);
                 }
@@ -910,24 +1025,23 @@ impl MenuService {
             if let Some(city) = city_opt {
                 let mut items = Vec::with_capacity(menu_dishes_groups[i].len());
                 let mut takeaway_map: HashMap<String, Vec<MenuItemDto>> = HashMap::new();
-                
+
                 for md in &menu_dishes_groups[i] {
                     let alias_opt = &dish_aliases_opts[alias_idx];
                     alias_idx += 1;
-                    
+
                     if let Some(alias) = alias_opt {
                         let dish_opt = &dishes_opts[dish_idx];
                         dish_idx += 1;
 
-                        if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                        if shared::services::content_guard::ContentGuard::is_junk_dish_text(
+                            &alias.name,
+                        ) {
                             continue;
                         }
-                        
+
                         let master_data = dish_opt.as_ref().map(|dish| {
-                            let stats = dish_stats_map
-                                .get(&dish.id)
-                                .copied()
-                                .unwrap_or_default();
+                            let stats = dish_stats_map.get(&dish.id).copied().unwrap_or_default();
 
                             DishMasterDataDto {
                                 dish_id: dish.id,
@@ -943,12 +1057,13 @@ impl MenuService {
                                 like_ratio: stats.like_ratio,
                             }
                         });
-                        
+
                         let dish_is_celiac = master_data.as_ref().is_some_and(|m| m.is_celiac);
                         let pkg_upper = md.package_name.to_uppercase();
-                        let is_celiac_pkg = pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
+                        let is_celiac_pkg =
+                            pkg_upper.contains("ÇÖLYAK") || pkg_upper.contains("COLYAK");
                         let is_takeaway_pkg = md.package_name != "NORMAL" && !is_celiac_pkg;
-                        
+
                         let dish_category = dish_opt
                             .as_ref()
                             .and_then(|dish| dish.category.clone())
@@ -959,17 +1074,23 @@ impl MenuService {
                             MealTypeEnum::Dinner => "dinner",
                         };
 
-                        let dish_name_for_pricing = dish_opt.as_ref().map(|d| d.name.as_str()).unwrap_or(alias.name.as_str());
+                        let dish_name_for_pricing = dish_opt
+                            .as_ref()
+                            .map(|d| d.name.as_str())
+                            .unwrap_or(alias.name.as_str());
 
                         let price_info = crate::services::pricing::get_pricing_info_for_city(
                             &city.slug,
                             Some(menu.serve_date),
                             meal_type_str,
                             dish_category.as_deref(),
-                            dish_name_for_pricing
+                            dish_name_for_pricing,
                         );
 
-                        let amount = md.amount.clone().or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
+                        let amount = md
+                            .amount
+                            .clone()
+                            .or_else(|| price_info.as_ref().map(|p| p.amount.clone()));
                         let price = price_info.map(|p| p.price as f64);
 
                         let display_name = master_data
@@ -981,9 +1102,9 @@ impl MenuService {
                         } else {
                             None
                         };
-                        let effective_calories = md.calories.or_else(|| {
-                            master_data.as_ref().and_then(|m| m.estimated_calories)
-                        });
+                        let effective_calories = md
+                            .calories
+                            .or_else(|| master_data.as_ref().and_then(|m| m.estimated_calories));
 
                         let item_dto = MenuItemDto {
                             order_index: md.order_index,
@@ -996,11 +1117,14 @@ impl MenuService {
                             category: dish_category,
                             master_data,
                         };
-                        
+
                         if is_celiac_mode {
                             if is_celiac_pkg || (md.package_name == "NORMAL" && dish_is_celiac) {
                                 if is_takeaway_pkg {
-                                    takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
+                                    takeaway_map
+                                        .entry(md.package_name.clone())
+                                        .or_default()
+                                        .push(item_dto);
                                 } else {
                                     items.push(item_dto);
                                 }
@@ -1008,24 +1132,32 @@ impl MenuService {
                         } else {
                             if !is_celiac_pkg {
                                 if md.package_name != "NORMAL" {
-                                    takeaway_map.entry(md.package_name.clone()).or_default().push(item_dto);
+                                    takeaway_map
+                                        .entry(md.package_name.clone())
+                                        .or_default()
+                                        .push(item_dto);
                                 } else {
                                     items.push(item_dto);
                                 }
                             }
                         }
                     } else {
-                        return Err(MenuError::DatabaseError(DbErr::Custom("Yabancı anahtar bozuk: Alias bulunamadı".into())));
+                        return Err(MenuError::DatabaseError(DbErr::Custom(
+                            "Yabancı anahtar bozuk: Alias bulunamadı".into(),
+                        )));
                     }
                 }
-                
+
                 let mut takeaways = Vec::new();
                 for (name, mut t_items) in takeaway_map {
                     t_items.sort_by_key(|i| (i.order_index, i.is_alternative));
-                    takeaways.push(crate::dto::menu::TakeawayMenuDto { name, items: t_items });
+                    takeaways.push(crate::dto::menu::TakeawayMenuDto {
+                        name,
+                        items: t_items,
+                    });
                 }
                 takeaways.sort_by(|a, b| a.name.cmp(&b.name));
-                
+
                 let calculated_calories = Self::calculate_total_calories(&items);
 
                 if items.is_empty() && takeaways.is_empty() {
@@ -1040,7 +1172,9 @@ impl MenuService {
                 };
 
                 let mut alternatives = Vec::new();
-                if let Some(hist_list) = history_map.get(&(menu.city_id, menu.serve_date, meal_type_str.to_string())) {
+                if let Some(hist_list) =
+                    history_map.get(&(menu.city_id, menu.serve_date, meal_type_str.to_string()))
+                {
                     let current_src = menu.source_type.as_deref().unwrap_or("unknown");
                     let main_sig = Self::compute_menu_dishes_signature(&items);
                     let mut seen_signatures = HashSet::new();
@@ -1050,12 +1184,18 @@ impl MenuService {
                     let mut seen_sources = HashSet::new();
 
                     for hist in hist_list {
-                        let meta = shared::services::source_registry::SourceRegistry::resolve(&hist.source_type);
+                        let meta = shared::services::source_registry::SourceRegistry::resolve(
+                            &hist.source_type,
+                        );
                         if meta.tier == shared::services::source_registry::TrustTier::Quarantined {
                             continue;
                         }
-                        if hist.source_type != current_src && seen_sources.insert(hist.source_type.clone()) {
-                            if let Some(alt_dto) = Self::parse_alternative_from_history(hist, meal_type_enum.clone()) {
+                        if hist.source_type != current_src
+                            && seen_sources.insert(hist.source_type.clone())
+                        {
+                            if let Some(alt_dto) =
+                                Self::parse_alternative_from_history(hist, meal_type_enum.clone())
+                            {
                                 let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
                                 if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
                                     alternatives.push(alt_dto);
@@ -1100,17 +1240,20 @@ impl MenuService {
         Ok(result)
     }
 
-
     pub async fn get_archive_years(
         db: &DatabaseConnection,
         city_slug: Option<String>,
     ) -> Result<Vec<i32>, MenuError> {
-        let mut query = Menus::find()
-            .filter(menus::Column::Status.eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved));
-        
+        let mut query = Menus::find().filter(
+            menus::Column::Status
+                .eq(shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved),
+        );
+
         if let Some(slug) = city_slug {
-            let city = Self::resolve_city(db, &slug).await.map_err(MenuError::DatabaseError)?;
-                
+            let city = Self::resolve_city(db, &slug)
+                .await
+                .map_err(MenuError::DatabaseError)?;
+
             if let Some(c) = city {
                 query = query.filter(menus::Column::CityId.eq(c.id));
             } else {
@@ -1118,7 +1261,7 @@ impl MenuService {
             }
         }
 
-        use sea_orm::{QuerySelect, QueryOrder, sea_query::Expr};
+        use sea_orm::{sea_query::Expr, QueryOrder, QuerySelect};
         let res: Vec<(i32,)> = query
             .select_only()
             .column_as(Expr::cust("EXTRACT(YEAR FROM serve_date)::int"), "year")
@@ -1140,7 +1283,8 @@ impl MenuService {
     ) -> Result<Vec<ArchiveHighlightDto>, MenuError> {
         let safe_limit = limit.clamp(1, 12) as i64;
         let sql = match db.get_database_backend() {
-            DatabaseBackend::Sqlite => r#"
+            DatabaseBackend::Sqlite => {
+                r#"
                 SELECT c.slug AS city_slug, c.name AS city_name,
                        CAST(strftime('%Y', m.max_date) AS INTEGER) AS year,
                        CAST(strftime('%m', m.max_date) AS INTEGER) AS month
@@ -1153,8 +1297,10 @@ impl MenuService {
                 JOIN cities c ON c.id = m.city_id
                 ORDER BY RANDOM()
                 LIMIT ?
-            "#,
-            _ => r#"
+            "#
+            }
+            _ => {
+                r#"
                 SELECT c.slug AS city_slug, c.name AS city_name,
                        EXTRACT(YEAR FROM m.max_date)::int AS year,
                        EXTRACT(MONTH FROM m.max_date)::int AS month
@@ -1167,14 +1313,12 @@ impl MenuService {
                 JOIN cities c ON c.id = m.city_id
                 ORDER BY RANDOM()
                 LIMIT $1
-            "#,
+            "#
+            }
         };
 
-        let query = Statement::from_sql_and_values(
-            db.get_database_backend(),
-            sql,
-            vec![safe_limit.into()],
-        );
+        let query =
+            Statement::from_sql_and_values(db.get_database_backend(), sql, vec![safe_limit.into()]);
 
         ArchiveHighlightDto::find_by_statement(query)
             .all(db)
@@ -1188,7 +1332,11 @@ mod tests {
     use super::*;
     use crate::dto::menu::{DishMasterDataDto, MenuItemDto};
 
-    fn make_test_item(order_index: i32, is_alternative: bool, calories: Option<i32>) -> MenuItemDto {
+    fn make_test_item(
+        order_index: i32,
+        is_alternative: bool,
+        calories: Option<i32>,
+    ) -> MenuItemDto {
         MenuItemDto {
             order_index,
             name: "Test Yemek".into(),
@@ -1354,4 +1502,3 @@ mod tests {
         );
     }
 }
-

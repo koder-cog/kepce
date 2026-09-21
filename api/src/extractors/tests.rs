@@ -3,9 +3,12 @@
 mod tests {
     use axum::{
         extract::{FromRequest, FromRequestParts},
-        http::{header::{AUTHORIZATION, COOKIE}, Request},
+        http::{
+            header::{AUTHORIZATION, COOKIE},
+            Request,
+        },
     };
-    use jsonwebtoken::{encode, Header, EncodingKey};
+    use jsonwebtoken::{encode, EncodingKey, Header};
     use serde::{Deserialize, Serialize};
     use std::sync::Arc;
     use uuid::Uuid;
@@ -13,9 +16,9 @@ mod tests {
 
     use crate::config::{AppState, Config};
     use crate::dto::user::UserRole;
+    use crate::extractors::api_key::ValidApiKey;
     use crate::extractors::auth::{AuthenticatedUser, Claims};
     use crate::extractors::validated::ValidatedJson;
-    use crate::extractors::api_key::ValidApiKey;
     use crate::middleware::rate_limiter::RateLimiter;
     use crate::services::usage_tracker::UsageTracker;
 
@@ -29,7 +32,9 @@ mod tests {
 
     async fn mock_app_state() -> AppState {
         let config = Config::from_env();
-        let db = sea_orm::Database::connect(&config.database_url).await.unwrap();
+        let db = sea_orm::Database::connect(&config.database_url)
+            .await
+            .unwrap();
         AppState {
             db: db.clone(),
             config: Arc::new(config),
@@ -114,7 +119,8 @@ mod tests {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(state.config.jwt_secret.as_bytes()),
-        ).unwrap();
+        )
+        .unwrap();
 
         let req = Request::builder()
             .header(AUTHORIZATION, format!("Bearer {}", token))
@@ -122,7 +128,9 @@ mod tests {
             .unwrap();
 
         let (mut parts, _) = req.into_parts();
-        let auth_user = AuthenticatedUser::from_request_parts(&mut parts, &state).await.unwrap();
+        let auth_user = AuthenticatedUser::from_request_parts(&mut parts, &state)
+            .await
+            .unwrap();
 
         assert_eq!(auth_user.id, user_id);
         assert_eq!(auth_user.username, "test_user");
@@ -147,7 +155,8 @@ mod tests {
             &Header::default(),
             &claims,
             &EncodingKey::from_secret(state.config.jwt_secret.as_bytes()),
-        ).unwrap();
+        )
+        .unwrap();
 
         let req = Request::builder()
             .header(COOKIE, format!("kepce_token={}; Path=/; HttpOnly", token))
@@ -155,7 +164,9 @@ mod tests {
             .unwrap();
 
         let (mut parts, _) = req.into_parts();
-        let auth_user = AuthenticatedUser::from_request_parts(&mut parts, &state).await.unwrap();
+        let auth_user = AuthenticatedUser::from_request_parts(&mut parts, &state)
+            .await
+            .unwrap();
 
         assert_eq!(auth_user.id, user_id);
         assert_eq!(auth_user.username, "cookie_monster");
@@ -166,25 +177,23 @@ mod tests {
     #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_missing() {
         let state = mock_app_state().await;
-        let req = Request::builder()
-            .body(axum::body::Body::empty())
-            .unwrap();
+        let req = Request::builder().body(axum::body::Body::empty()).unwrap();
 
         let (mut parts, _) = req.into_parts();
         let result = AuthenticatedUser::from_request_parts(&mut parts, &state).await;
 
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err.to_string().contains("Missing or invalid authorization header or cookie"));
+        assert!(err
+            .to_string()
+            .contains("Missing or invalid authorization header or cookie"));
     }
 
     #[tokio::test]
     #[ignore = "requires live postgres database"]
     async fn test_api_key_extractor_missing() {
         let state = mock_app_state().await;
-        let req = Request::builder()
-            .body(axum::body::Body::empty())
-            .unwrap();
+        let req = Request::builder().body(axum::body::Body::empty()).unwrap();
 
         let (mut parts, _) = req.into_parts();
         let result = ValidApiKey::from_request_parts(&mut parts, &state).await;

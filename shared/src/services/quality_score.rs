@@ -57,16 +57,25 @@ impl QualityScoreService {
             let name_lower = dish.name.to_lowercase();
 
             // Ekmek kontrolü
-            if name_lower.contains("ekmek") || name_lower.contains("roll") || name_lower.contains("simit") || name_lower.contains("poğaça") {
+            if name_lower.contains("ekmek")
+                || name_lower.contains("roll")
+                || name_lower.contains("simit")
+                || name_lower.contains("poğaça")
+            {
                 has_bread = true;
                 continue;
             }
 
             // Su veya içecek kontrolü
-            if name_lower.contains(" su") || name_lower == "su" || name_lower.contains("ayran")
-                || name_lower.contains("çay") || name_lower.contains("cay")
-                || name_lower.contains("içecek") || name_lower.contains("icecek")
-                || name_lower.contains("meyve suyu") || name_lower.contains("limonata")
+            if name_lower.contains(" su")
+                || name_lower == "su"
+                || name_lower.contains("ayran")
+                || name_lower.contains("çay")
+                || name_lower.contains("cay")
+                || name_lower.contains("içecek")
+                || name_lower.contains("icecek")
+                || name_lower.contains("meyve suyu")
+                || name_lower.contains("limonata")
             {
                 has_beverage = true;
                 continue;
@@ -105,10 +114,16 @@ impl QualityScoreService {
 
         // 2. Zenginlik & Ek Bilgi Bonusları (Maks 15 puan)
         let mut richness_score = 0;
-        let has_weights = input.primary_dishes.iter().any(|d| d.weight_g.unwrap_or(0) > 0);
+        let has_weights = input
+            .primary_dishes
+            .iter()
+            .any(|d| d.weight_g.unwrap_or(0) > 0);
         let has_calories = input.calorie_min.unwrap_or(0) > 0
             || input.calorie_max.unwrap_or(0) > 0
-            || input.primary_dishes.iter().any(|d| d.calories.unwrap_or(0) > 0);
+            || input
+                .primary_dishes
+                .iter()
+                .any(|d| d.calories.unwrap_or(0) > 0);
 
         if has_weights {
             richness_score += 5;
@@ -168,12 +183,42 @@ mod tests {
         let input = MenuQualityInput {
             meal_type: "dinner".to_string(),
             primary_dishes: vec![
-                DishInput { name: "Mercimek Çorbası".to_string(), weight_g: Some(250), calories: Some(180), is_alternative: false },
-                DishInput { name: "Tavuk Sote".to_string(), weight_g: Some(200), calories: Some(320), is_alternative: false },
-                DishInput { name: "Pirinç Pilavı".to_string(), weight_g: Some(180), calories: Some(260), is_alternative: false },
-                DishInput { name: "Ayran".to_string(), weight_g: None, calories: Some(80), is_alternative: false },
-                DishInput { name: "Çeyrek Ekmek".to_string(), weight_g: Some(50), calories: Some(120), is_alternative: false },
-                DishInput { name: "Mevsim Meyvesi".to_string(), weight_g: Some(150), calories: Some(90), is_alternative: false },
+                DishInput {
+                    name: "Mercimek Çorbası".to_string(),
+                    weight_g: Some(250),
+                    calories: Some(180),
+                    is_alternative: false,
+                },
+                DishInput {
+                    name: "Tavuk Sote".to_string(),
+                    weight_g: Some(200),
+                    calories: Some(320),
+                    is_alternative: false,
+                },
+                DishInput {
+                    name: "Pirinç Pilavı".to_string(),
+                    weight_g: Some(180),
+                    calories: Some(260),
+                    is_alternative: false,
+                },
+                DishInput {
+                    name: "Ayran".to_string(),
+                    weight_g: None,
+                    calories: Some(80),
+                    is_alternative: false,
+                },
+                DishInput {
+                    name: "Çeyrek Ekmek".to_string(),
+                    weight_g: Some(50),
+                    calories: Some(120),
+                    is_alternative: false,
+                },
+                DishInput {
+                    name: "Mevsim Meyvesi".to_string(),
+                    weight_g: Some(150),
+                    calories: Some(90),
+                    is_alternative: false,
+                },
             ],
             has_celiac: false,
             has_takeaways: true,
@@ -194,9 +239,12 @@ mod tests {
     fn test_truncated_menu_scores_low() {
         let input = MenuQualityInput {
             meal_type: "dinner".to_string(),
-            primary_dishes: vec![
-                DishInput { name: "Yemekhane Açık".to_string(), weight_g: None, calories: None, is_alternative: false },
-            ],
+            primary_dishes: vec![DishInput {
+                name: "Yemekhane Açık".to_string(),
+                weight_g: None,
+                calories: None,
+                is_alternative: false,
+            }],
             has_celiac: false,
             has_takeaways: false,
             calorie_min: None,
@@ -206,6 +254,10 @@ mod tests {
         };
 
         let result = QualityScoreService::calculate(&input);
-        assert!(result.total < 30, "Kusurlu/tek kap menü düşük puan almalı: {}", result.total);
+        assert!(
+            result.total < 30,
+            "Kusurlu/tek kap menü düşük puan almalı: {}",
+            result.total
+        );
     }
 }

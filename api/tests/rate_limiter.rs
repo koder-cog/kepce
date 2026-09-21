@@ -1,3 +1,7 @@
+use api::{
+    build_cors, build_router,
+    config::{AppState, Config},
+};
 use axum::{
     body::Body,
     http::{self, Request, StatusCode},
@@ -5,10 +9,6 @@ use axum::{
 use sea_orm::Database;
 use std::sync::Arc;
 use tower::util::ServiceExt;
-use api::{
-    config::{AppState, Config},
-    build_cors, build_router,
-};
 
 async fn setup_app() -> axum::Router {
     let config = Config::from_env();

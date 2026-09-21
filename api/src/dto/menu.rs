@@ -205,4 +205,3 @@ mod tests {
         assert!(json_diff.contains("\"raw_name\":\"EZOGELİN ÇORBA\""));
     }
 }
-

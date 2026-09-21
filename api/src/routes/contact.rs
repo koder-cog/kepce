@@ -1,22 +1,19 @@
+use crate::{
+    error::AppError, extractors::auth::OptionalUser, extractors::validated::ValidatedJson,
+};
 use axum::{
     extract::State,
     http::{header, HeaderMap},
     routing::post,
     Json, Router,
 };
-use crate::{
-    error::AppError,
-    extractors::auth::OptionalUser,
-    extractors::validated::ValidatedJson,
-};
-use shared::entities::{contact_messages, sea_orm_active_enums::ReportStatusEnum};
-use sea_orm::{Set, ActiveModelTrait};
+use sea_orm::{ActiveModelTrait, Set};
 use serde::Deserialize;
+use shared::entities::{contact_messages, sea_orm_active_enums::ReportStatusEnum};
 use validator::Validate;
 
 pub fn router() -> Router<crate::config::AppState> {
-    Router::new()
-        .route("/", post(submit_contact_form))
+    Router::new().route("/", post(submit_contact_form))
 }
 
 #[derive(Deserialize, Validate)]
@@ -24,9 +21,17 @@ pub struct SubmitContactDto {
     #[validate(email(message = "Geçerli bir e-posta giriniz."))]
     pub email: String,
     pub report_type: String,
-    #[validate(length(min = 3, max = 150, message = "Konu 3 ile 150 karakter arasında olmalıdır."))]
+    #[validate(length(
+        min = 3,
+        max = 150,
+        message = "Konu 3 ile 150 karakter arasında olmalıdır."
+    ))]
     pub subject: String,
-    #[validate(length(min = 10, max = 2000, message = "Mesaj en az 10, en fazla 2000 karakter olmalıdır."))]
+    #[validate(length(
+        min = 10,
+        max = 2000,
+        message = "Mesaj en az 10, en fazla 2000 karakter olmalıdır."
+    ))]
     pub description: String,
     pub source: Option<String>,
     pub page_url: Option<String>,
@@ -73,7 +78,12 @@ async fn submit_contact_form(
         ..Default::default()
     };
 
-    contact_model.insert(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    
-    Ok(Json(serde_json::json!({ "message": "Contact message submitted successfully" })))
+    contact_model
+        .insert(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(
+        serde_json::json!({ "message": "Contact message submitted successfully" }),
+    ))
 }

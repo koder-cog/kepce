@@ -24,7 +24,11 @@ pub struct CreateCommentDto {
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct UpdateCommentDto {
-    #[validate(length(min = 1, max = 500, message = "Yorum 1 ile 500 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 1,
+        max = 500,
+        message = "Yorum 1 ile 500 karakter arasında olmalıdır"
+    ))]
     pub comment: String,
 }
 
@@ -68,4 +72,3 @@ pub struct CommentResponseDto {
     pub is_blocked: bool,
     pub is_edited: bool,
 }
-

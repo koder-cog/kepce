@@ -9,17 +9,56 @@ pub enum MealType {
 
 /// Breakfast signal words - if these appear in item names, the sheet is likely breakfast
 const BREAKFAST_SIGNALS: &[&str] = &[
-    "çay", "peynir", "zeytin", "reçel", "yumurta", "bal", "tereyağı",
-    "süt", "simit", "poğaça", "börek", "kahvaltılık", "kaşar", "beyaz peynir",
-    "domates", "salatalık", "gevrek", "gözleme", "menemen", "sucuk",
+    "çay",
+    "peynir",
+    "zeytin",
+    "reçel",
+    "yumurta",
+    "bal",
+    "tereyağı",
+    "süt",
+    "simit",
+    "poğaça",
+    "börek",
+    "kahvaltılık",
+    "kaşar",
+    "beyaz peynir",
+    "domates",
+    "salatalık",
+    "gevrek",
+    "gözleme",
+    "menemen",
+    "sucuk",
 ];
 
 /// Dinner / Lunch signal words - if these appear in item names, the sheet is likely hot meal
 const DINNER_SIGNALS: &[&str] = &[
-    "çorba", "pilav", "makarna", "köfte", "salata", "komposto", "ayran",
-    "tatlı", "et ", "tavuk", "balık", "kızartma", "güveç", "sote", "dolma",
-    "sarma", "püresi", "corbası", "kebap", "izgara", "haşlama", "rosto",
-    "yahni", "türlü", "cacık", "hoşaf",
+    "çorba",
+    "pilav",
+    "makarna",
+    "köfte",
+    "salata",
+    "komposto",
+    "ayran",
+    "tatlı",
+    "et ",
+    "tavuk",
+    "balık",
+    "kızartma",
+    "güveç",
+    "sote",
+    "dolma",
+    "sarma",
+    "püresi",
+    "corbası",
+    "kebap",
+    "izgara",
+    "haşlama",
+    "rosto",
+    "yahni",
+    "türlü",
+    "cacık",
+    "hoşaf",
 ];
 
 /// Max allowed item name length
@@ -166,9 +205,11 @@ pub fn is_colyak_sheet(sheet_name: &str) -> bool {
 }
 
 /// Computes the overall trust score of a DayData by averaging the match ratio of its items.
-pub fn calculate_trust_score(day: &crate::parser::models::DayData) -> crate::parser::models::DayMetadata {
+pub fn calculate_trust_score(
+    day: &crate::parser::models::DayData,
+) -> crate::parser::models::DayMetadata {
     use crate::parser::dictionary::calculate_match_ratio;
-    
+
     let mut total_score = 0.0;
     let mut item_count = 0;
 
@@ -211,7 +252,7 @@ pub fn calculate_trust_score(day: &crate::parser::models::DayData) -> crate::par
 /// if it fails anomaly checks (distance > 0.5).
 pub fn finalize_day_metadata(day_data: &mut crate::parser::models::DayData) {
     let mut metadata = calculate_trust_score(day_data);
-    
+
     // Extract all text for anomaly detection
     let mut all_text: Vec<String> = Vec::new();
     let mut process_items = |items: &[crate::parser::models::MenuItem]| {
@@ -221,7 +262,7 @@ pub fn finalize_day_metadata(day_data: &mut crate::parser::models::DayData) {
             }
         }
     };
-    
+
     process_items(&day_data.normal.breakfast);
     process_items(&day_data.normal.dinner);
     process_items(&day_data.colyak.breakfast);
@@ -229,7 +270,7 @@ pub fn finalize_day_metadata(day_data: &mut crate::parser::models::DayData) {
 
     let combined_text = all_text.join(" ");
     metadata.anomaly_score = crate::parser::anomaly::calculate_menu_distance(&combined_text);
-    
+
     // Security layer: If the menu is highly anomalous compared to typical menus, flag for review
     if let Some(distance) = metadata.anomaly_score {
         if distance > 0.65 {
@@ -241,7 +282,7 @@ pub fn finalize_day_metadata(day_data: &mut crate::parser::models::DayData) {
     if let Some(existing_meta) = &day_data.metadata {
         metadata.source_file = existing_meta.source_file.clone();
     }
-    
+
     day_data.metadata = Some(metadata);
 }
 
@@ -286,10 +327,7 @@ mod tests {
 
     #[test]
     fn test_item_name_trimmed() {
-        assert_eq!(
-            validate_item_name("  Pilav  "),
-            Some("Pilav".to_string())
-        );
+        assert_eq!(validate_item_name("  Pilav  "), Some("Pilav".to_string()));
     }
 
     #[test]
@@ -312,7 +350,10 @@ mod tests {
 
     #[test]
     fn test_numeric_valid_range() {
-        assert_eq!(validate_numeric_value("100-200"), Some("100-200".to_string()));
+        assert_eq!(
+            validate_numeric_value("100-200"),
+            Some("100-200".to_string())
+        );
     }
 
     #[test]
@@ -358,10 +399,7 @@ mod tests {
     // --- Meal type detection tests ---
     #[test]
     fn test_meal_type_sheet_name_kahvalti() {
-        assert_eq!(
-            detect_meal_type("KAHVALTI", &[]),
-            Some(MealType::Breakfast)
-        );
+        assert_eq!(detect_meal_type("KAHVALTI", &[]), Some(MealType::Breakfast));
         assert_eq!(
             detect_meal_type("Mayıs Kahvaltı", &[]),
             Some(MealType::Breakfast)
@@ -403,19 +441,12 @@ mod tests {
             "Tavuk Sote".to_string(),
             "Ayran".to_string(),
         ];
-        assert_eq!(
-            detect_meal_type("Sayfa1", &items),
-            Some(MealType::Dinner)
-        );
+        assert_eq!(detect_meal_type("Sayfa1", &items), Some(MealType::Dinner));
     }
 
     #[test]
     fn test_meal_type_unknown() {
-        let items = vec![
-            "abc".to_string(),
-            "xyz".to_string(),
-            "123".to_string(),
-        ];
+        let items = vec!["abc".to_string(), "xyz".to_string(), "123".to_string()];
         assert_eq!(detect_meal_type("Sayfa1", &items), None);
     }
 

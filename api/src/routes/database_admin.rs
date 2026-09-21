@@ -13,10 +13,7 @@ use serde::{Deserialize, Serialize};
 use std::time::Instant;
 
 use crate::{
-    config::AppState,
-    dto::user::UserRole,
-    error::AppError,
-    extractors::auth::AuthenticatedUser,
+    config::AppState, dto::user::UserRole, error::AppError, extractors::auth::AuthenticatedUser,
 };
 
 pub fn router() -> Router<AppState> {
@@ -29,7 +26,9 @@ pub fn router() -> Router<AppState> {
 
 fn require_admin(user: &AuthenticatedUser) -> Result<(), AppError> {
     if user.role != UserRole::Admin {
-        return Err(AppError::Forbidden("Yalnızca yöneticiler veritabanı konsoluna erişebilir.".into()));
+        return Err(AppError::Forbidden(
+            "Yalnızca yöneticiler veritabanı konsoluna erişebilir.".into(),
+        ));
     }
     Ok(())
 }
@@ -37,10 +36,17 @@ fn require_admin(user: &AuthenticatedUser) -> Result<(), AppError> {
 fn sanitize_ident(name: &str) -> Result<String, AppError> {
     let trimmed = name.trim();
     if trimmed.is_empty() || trimmed.len() > 63 {
-        return Err(AppError::BadRequest("Geçersiz tablo veya sütun adı.".into()));
+        return Err(AppError::BadRequest(
+            "Geçersiz tablo veya sütun adı.".into(),
+        ));
     }
-    if !trimmed.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-        return Err(AppError::BadRequest("Tanımlayıcı yalnızca harf, rakam ve alt çizgi içerebilir.".into()));
+    if !trimmed
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return Err(AppError::BadRequest(
+            "Tanımlayıcı yalnızca harf, rakam ve alt çizgi içerebilir.".into(),
+        ));
     }
     Ok(trimmed.to_string())
 }
@@ -76,7 +82,11 @@ async fn get_tables(
     "#;
 
     let stmt = Statement::from_string(state.db.get_database_backend(), sql.to_string());
-    let rows = state.db.query_all(stmt).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    let rows = state
+        .db
+        .query_all(stmt)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let mut result = Vec::with_capacity(rows.len());
     for row in rows {
@@ -175,7 +185,11 @@ async fn get_table_data(
         col_sql,
         vec![clean_table.clone().into()],
     );
-    let col_rows = state.db.query_all(col_stmt).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    let col_rows = state
+        .db
+        .query_all(col_stmt)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let mut columns = Vec::with_capacity(col_rows.len());
     let mut primary_keys = Vec::new();
@@ -227,7 +241,11 @@ async fn get_table_data(
         "1".to_string()
     };
 
-    let dir = if query.sort_dir.as_deref() == Some("asc") { "ASC" } else { "DESC" };
+    let dir = if query.sort_dir.as_deref() == Some("asc") {
+        "ASC"
+    } else {
+        "DESC"
+    };
 
     let select_sql = format!(
         "SELECT to_jsonb(t) AS row_data FROM (SELECT * FROM \"{}\" ORDER BY \"{}\" {} LIMIT {} OFFSET {}) t;",
@@ -235,7 +253,11 @@ async fn get_table_data(
     );
 
     let select_stmt = Statement::from_string(state.db.get_database_backend(), select_sql);
-    let rows_data = state.db.query_all(select_stmt).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    let rows_data = state
+        .db
+        .query_all(select_stmt)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let mut rows = Vec::with_capacity(rows_data.len());
     for r in rows_data {
@@ -275,7 +297,11 @@ async fn delete_row(
     let val_str = match &payload.pk_value {
         serde_json::Value::Number(n) => n.to_string(),
         serde_json::Value::String(s) => s.clone(),
-        _ => return Err(AppError::BadRequest("Geçersiz birincil anahtar değeri.".into())),
+        _ => {
+            return Err(AppError::BadRequest(
+                "Geçersiz birincil anahtar değeri.".into(),
+            ))
+        }
     };
 
     let del_sql = format!(
@@ -289,7 +315,11 @@ async fn delete_row(
         vec![val_str.into()],
     );
 
-    let res = state.db.execute(stmt).await.map_err(|e| AppError::BadRequest(format!("Silme hatası: {}", e)))?;
+    let res = state
+        .db
+        .execute(stmt)
+        .await
+        .map_err(|e| AppError::BadRequest(format!("Silme hatası: {}", e)))?;
 
     Ok(Json(serde_json::json!({
         "message": "Satır silindi.",
@@ -320,7 +350,11 @@ async fn update_row(
     let pk_val_str = match &payload.pk_value {
         serde_json::Value::Number(n) => n.to_string(),
         serde_json::Value::String(s) => s.clone(),
-        _ => return Err(AppError::BadRequest("Geçersiz birincil anahtar değeri.".into())),
+        _ => {
+            return Err(AppError::BadRequest(
+                "Geçersiz birincil anahtar değeri.".into(),
+            ))
+        }
     };
 
     let (update_sql, values) = if payload.new_value.is_null() {
@@ -347,13 +381,13 @@ async fn update_row(
         )
     };
 
-    let stmt = Statement::from_sql_and_values(
-        state.db.get_database_backend(),
-        &update_sql,
-        values,
-    );
+    let stmt = Statement::from_sql_and_values(state.db.get_database_backend(), &update_sql, values);
 
-    let res = state.db.execute(stmt).await.map_err(|e| AppError::BadRequest(format!("Güncelleme hatası: {}", e)))?;
+    let res = state
+        .db
+        .execute(stmt)
+        .await
+        .map_err(|e| AppError::BadRequest(format!("Güncelleme hatası: {}", e)))?;
 
     Ok(Json(serde_json::json!({
         "message": "Satır güncellendi.",
@@ -393,10 +427,15 @@ async fn execute_query(
     // Salt okunur mod denetimi
     if !write_mode {
         let upper = trimmed.to_uppercase();
-        let forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "GRANT", "REVOKE"];
+        let forbidden = [
+            "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "GRANT", "REVOKE",
+        ];
         for kw in forbidden {
             let pattern = format!(r"\b{}\b", kw);
-            if regex::Regex::new(&pattern).map(|r| r.is_match(&upper)).unwrap_or(false) {
+            if regex::Regex::new(&pattern)
+                .map(|r| r.is_match(&upper))
+                .unwrap_or(false)
+            {
                 return Err(AppError::BadRequest(format!(
                     "Salt okunur mod devrede. '{}' içeren veri değiştiren sorguları çalıştırmak için 'Yazma İzni' anahtarını açınız.",
                     kw
@@ -407,10 +446,14 @@ async fn execute_query(
 
     let start = Instant::now();
     let upper = trimmed.to_uppercase();
-    let is_select = upper.starts_with("SELECT") || upper.starts_with("WITH") || upper.starts_with("EXPLAIN");
+    let is_select =
+        upper.starts_with("SELECT") || upper.starts_with("WITH") || upper.starts_with("EXPLAIN");
 
     // 5 saniye zaman aşımı kuralı
-    let timeout_stmt = Statement::from_string(state.db.get_database_backend(), "SET statement_timeout = 5000;".to_string());
+    let timeout_stmt = Statement::from_string(
+        state.db.get_database_backend(),
+        "SET statement_timeout = 5000;".to_string(),
+    );
     let _ = state.db.execute(timeout_stmt).await;
 
     if is_select {
@@ -421,9 +464,11 @@ async fn execute_query(
         );
 
         let stmt = Statement::from_string(state.db.get_database_backend(), wrapped_sql);
-        let rows_data = state.db.query_all(stmt).await.map_err(|e| {
-            AppError::BadRequest(format!("SQL Yürütme Hatası: {}", e))
-        })?;
+        let rows_data = state
+            .db
+            .query_all(stmt)
+            .await
+            .map_err(|e| AppError::BadRequest(format!("SQL Yürütme Hatası: {}", e)))?;
 
         let duration_ms = start.elapsed().as_millis();
 
@@ -452,9 +497,11 @@ async fn execute_query(
     } else {
         // Veri değiştiren DDL veya DML
         let stmt = Statement::from_string(state.db.get_database_backend(), trimmed.to_string());
-        let res = state.db.execute(stmt).await.map_err(|e| {
-            AppError::BadRequest(format!("SQL Yürütme Hatası: {}", e))
-        })?;
+        let res = state
+            .db
+            .execute(stmt)
+            .await
+            .map_err(|e| AppError::BadRequest(format!("SQL Yürütme Hatası: {}", e)))?;
 
         let duration_ms = start.elapsed().as_millis();
 
@@ -474,7 +521,10 @@ mod tests {
     #[test]
     fn test_sanitize_ident_valid() {
         assert_eq!(sanitize_ident("menus").unwrap(), "menus");
-        assert_eq!(sanitize_ident("contact_messages").unwrap(), "contact_messages");
+        assert_eq!(
+            sanitize_ident("contact_messages").unwrap(),
+            "contact_messages"
+        );
         assert_eq!(sanitize_ident("users_2026").unwrap(), "users_2026");
     }
 
@@ -489,10 +539,12 @@ mod tests {
 
     #[test]
     fn test_read_only_keyword_blocking() {
-        let forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "GRANT", "REVOKE"];
+        let forbidden = [
+            "INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "TRUNCATE", "CREATE", "GRANT", "REVOKE",
+        ];
         let test_query = "DELETE FROM users WHERE id = 1";
         let upper = test_query.to_uppercase();
-        
+
         let mut matched = false;
         for kw in forbidden {
             let pattern = format!(r"\b{}\b", kw);
@@ -516,4 +568,3 @@ mod tests {
         assert!(!safe_matched);
     }
 }
-

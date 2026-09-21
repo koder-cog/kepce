@@ -1,12 +1,12 @@
 //! HTTP yanıt ve önbellekleme yardımcıları (ETag, Cache-Control).
 
+use crate::error::AppError;
 use axum::{
     body::Body,
     http::{header, HeaderMap, StatusCode},
     response::{IntoResponse, Response},
 };
 use sha2::{Digest, Sha256};
-use crate::error::AppError;
 
 /// Serializes data to JSON and returns a response with Cache-Control, Vary, and ETag headers.
 /// If `is_private` is true (e.g. response contains user-specific data), Cache-Control is set to `private, no-cache, must-revalidate`.
@@ -38,7 +38,10 @@ pub fn cached_json_response_with_privacy<T: serde::Serialize>(
     };
 
     // Check If-None-Match conditional request
-    if let Some(if_none_match) = headers.get(header::IF_NONE_MATCH).and_then(|v| v.to_str().ok()) {
+    if let Some(if_none_match) = headers
+        .get(header::IF_NONE_MATCH)
+        .and_then(|v| v.to_str().ok())
+    {
         let clean_match = if_none_match
             .trim()
             .trim_start_matches("W/")

@@ -1,5 +1,5 @@
 use sea_orm::*;
-use shared::entities::{menu_votes, dish_votes, menu_dishes, sea_orm_active_enums::SentimentEnum};
+use shared::entities::{dish_votes, menu_dishes, menu_votes, sea_orm_active_enums::SentimentEnum};
 
 #[derive(Debug)]
 pub enum VoteError {
@@ -22,8 +22,10 @@ impl VoteService {
             .one(db)
             .await
             .map_err(VoteError::DatabaseError)?
-            .ok_or(VoteError::DatabaseError(DbErr::Custom("Kullanıcı bulunamadı".to_string())))?;
-        
+            .ok_or(VoteError::DatabaseError(DbErr::Custom(
+                "Kullanıcı bulunamadı".to_string(),
+            )))?;
+
         if !user.is_verified {
             return Err(VoteError::UnverifiedUser);
         }
@@ -40,7 +42,7 @@ impl VoteService {
                 .exec(&txn)
                 .await
                 .map_err(VoteError::DatabaseError)?;
-                
+
             // Delete broadcasted (non-explicit) dish votes
             dish_votes::Entity::delete_many()
                 .filter(dish_votes::Column::MenuId.eq(menu_id))
@@ -57,7 +59,7 @@ impl VoteService {
                 sentiment: Set(sentiment.clone()),
                 ..Default::default()
             };
-            
+
             // Check if exists
             let existing_menu_vote = menu_votes::Entity::find()
                 .filter(menu_votes::Column::MenuId.eq(menu_id))
@@ -65,15 +67,21 @@ impl VoteService {
                 .one(&txn)
                 .await
                 .map_err(VoteError::DatabaseError)?;
-                
+
             if let Some(existing) = existing_menu_vote {
                 let mut active: menu_votes::ActiveModel = existing.into();
                 active.sentiment = Set(sentiment.clone());
-                active.update(&txn).await.map_err(VoteError::DatabaseError)?;
+                active
+                    .update(&txn)
+                    .await
+                    .map_err(VoteError::DatabaseError)?;
             } else {
-                menu_votes::Entity::insert(menu_vote).exec(&txn).await.map_err(VoteError::DatabaseError)?;
+                menu_votes::Entity::insert(menu_vote)
+                    .exec(&txn)
+                    .await
+                    .map_err(VoteError::DatabaseError)?;
             }
-            
+
             // Broadcast to dishes!
             // Find all dishes for this menu
             let menu_dishes_list = menu_dishes::Entity::find()
@@ -82,7 +90,7 @@ impl VoteService {
                 .all(&txn)
                 .await
                 .map_err(VoteError::DatabaseError)?;
-                
+
             for (_, alias_opt) in menu_dishes_list {
                 if let Some(alias) = alias_opt {
                     if let Some(dish_id) = alias.dish_id {
@@ -94,13 +102,16 @@ impl VoteService {
                             .one(&txn)
                             .await
                             .map_err(VoteError::DatabaseError)?;
-                            
+
                         if let Some(existing) = existing_dish_vote {
                             // Only overwrite if it's NOT explicit
                             if !existing.is_explicit {
                                 let mut active: dish_votes::ActiveModel = existing.into();
                                 active.sentiment = Set(sentiment.clone());
-                                active.update(&txn).await.map_err(VoteError::DatabaseError)?;
+                                active
+                                    .update(&txn)
+                                    .await
+                                    .map_err(VoteError::DatabaseError)?;
                             }
                         } else {
                             // Insert inherited vote
@@ -111,13 +122,16 @@ impl VoteService {
                                 sentiment: Set(sentiment.clone()),
                                 is_explicit: Set(false),
                                 ..Default::default()
-                            }).exec(&txn).await.map_err(VoteError::DatabaseError)?;
+                            })
+                            .exec(&txn)
+                            .await
+                            .map_err(VoteError::DatabaseError)?;
                         }
                     }
                 }
             }
         }
-        
+
         txn.commit().await.map_err(VoteError::DatabaseError)?;
         Ok(())
     }

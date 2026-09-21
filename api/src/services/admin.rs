@@ -1,14 +1,29 @@
-use sea_orm::{DatabaseConnection, EntityTrait, ColumnTrait, QueryFilter, FromQueryResult, Statement, DatabaseBackend, ConnectionTrait, TransactionTrait};
-use shared::entities::{users, dishes, dish_aliases, sea_orm_active_enums::{UserRoleEnum, AccountStatusEnum}};
-use crate::dto::admin::{CreateDishDto, UpdateDishDto, MergeDishesDto, SplitDishDto, DetachDishDto, DishModerationStatsDto, DishAliasDto};
-use sea_orm::ActiveValue::Set;
-use sea_orm::ActiveModelTrait;
-use bcrypt::{hash, DEFAULT_COST};
 use crate::config::Config;
+use crate::dto::admin::{
+    CreateDishDto, DetachDishDto, DishAliasDto, DishModerationStatsDto, MergeDishesDto,
+    SplitDishDto, UpdateDishDto,
+};
+use bcrypt::{hash, DEFAULT_COST};
+use sea_orm::ActiveModelTrait;
+use sea_orm::ActiveValue::Set;
+use sea_orm::{
+    ColumnTrait, ConnectionTrait, DatabaseBackend, DatabaseConnection, EntityTrait,
+    FromQueryResult, QueryFilter, Statement, TransactionTrait,
+};
+use shared::entities::{
+    dish_aliases, dishes,
+    sea_orm_active_enums::{AccountStatusEnum, UserRoleEnum},
+    users,
+};
 use uuid::Uuid;
 
-pub async fn bootstrap_admin(db: &DatabaseConnection, config: &Config) -> Result<(), anyhow::Error> {
-    if let (Some(email), Some(password)) = (&config.initial_admin_email, &config.initial_admin_password) {
+pub async fn bootstrap_admin(
+    db: &DatabaseConnection,
+    config: &Config,
+) -> Result<(), anyhow::Error> {
+    if let (Some(email), Some(password)) =
+        (&config.initial_admin_email, &config.initial_admin_password)
+    {
         let email_lower = email.to_lowercase();
         let admin_exists = users::Entity::find()
             .filter(users::Column::Email.eq(&email_lower))
@@ -17,13 +32,17 @@ pub async fn bootstrap_admin(db: &DatabaseConnection, config: &Config) -> Result
             .is_some();
 
         if !admin_exists {
-            tracing::info!("Yönetici e-postası ({}) bulunamadı. Yapılandırma bilgileriyle oluşturuluyor...", email_lower);
+            tracing::info!(
+                "Yönetici e-postası ({}) bulunamadı. Yapılandırma bilgileriyle oluşturuluyor...",
+                email_lower
+            );
             // bcrypt CPU-bound'dur; async runtime'ı bloklamamak için blocking pool'a atılır.
             let password_clone = password.clone();
-            let password_hash = tokio::task::spawn_blocking(move || hash(&password_clone, DEFAULT_COST))
-                .await
-                .map_err(|e| anyhow::anyhow!("Blocking task failed: {}", e))??;
-            
+            let password_hash =
+                tokio::task::spawn_blocking(move || hash(&password_clone, DEFAULT_COST))
+                    .await
+                    .map_err(|e| anyhow::anyhow!("Blocking task failed: {}", e))??;
+
             let admin = users::ActiveModel {
                 id: Set(Uuid::new_v4()),
                 username: Set("admin".to_string()),
@@ -41,7 +60,10 @@ pub async fn bootstrap_admin(db: &DatabaseConnection, config: &Config) -> Result
             admin.insert(db).await?;
             tracing::info!("Admin hesabı ({}) başarıyla oluşturuldu.", email);
         } else {
-            tracing::info!("Admin hesabı ({}) veritabanında zaten mevcut, bootstrap işlemi atlandı.", email_lower);
+            tracing::info!(
+                "Admin hesabı ({}) veritabanında zaten mevcut, bootstrap işlemi atlandı.",
+                email_lower
+            );
         }
     } else {
         tracing::warn!("Admin kullanıcısı yok, ancak INITIAL_ADMIN_EMAIL veya INITIAL_ADMIN_PASSWORD eksik olduğu için kurulamadı.");
@@ -51,7 +73,9 @@ pub async fn bootstrap_admin(db: &DatabaseConnection, config: &Config) -> Result
 }
 
 pub async fn repair_null_dish_ids(db: &DatabaseConnection) -> Result<(), anyhow::Error> {
-    tracing::info!("Veritabanında dish_id değeri NULL olan yemek takma adları (alias) onarılıyor...");
+    tracing::info!(
+        "Veritabanında dish_id değeri NULL olan yemek takma adları (alias) onarılıyor..."
+    );
 
     // N+1 sorgu problemini önlemek ve çok daha hızlı çalışmak için tek bir SQL sorgusu (CTE) kullanılır.
     let stmt = Statement::from_string(
@@ -67,7 +91,8 @@ pub async fn repair_null_dish_ids(db: &DatabaseConnection) -> Result<(), anyhow:
         SET dish_id = d.id 
         FROM dishes d 
         WHERE a.name = d.name AND a.dish_id IS NULL;
-        "#.to_string()
+        "#
+        .to_string(),
     );
 
     db.execute(stmt).await?;
@@ -76,7 +101,10 @@ pub async fn repair_null_dish_ids(db: &DatabaseConnection) -> Result<(), anyhow:
     Ok(())
 }
 
-pub async fn create_dish(db: &DatabaseConnection, dto: CreateDishDto) -> Result<dishes::Model, anyhow::Error> {
+pub async fn create_dish(
+    db: &DatabaseConnection,
+    dto: CreateDishDto,
+) -> Result<dishes::Model, anyhow::Error> {
     let dish = dishes::ActiveModel {
         name: Set(dto.name),
         category: Set(dto.category),
@@ -89,19 +117,35 @@ pub async fn create_dish(db: &DatabaseConnection, dto: CreateDishDto) -> Result<
     Ok(dish.insert(db).await?)
 }
 
-pub async fn update_dish(db: &DatabaseConnection, id: i32, dto: UpdateDishDto) -> Result<dishes::Model, anyhow::Error> {
+pub async fn update_dish(
+    db: &DatabaseConnection,
+    id: i32,
+    dto: UpdateDishDto,
+) -> Result<dishes::Model, anyhow::Error> {
     let mut dish: dishes::ActiveModel = dishes::Entity::find_by_id(id)
         .one(db)
         .await?
         .ok_or_else(|| anyhow::anyhow!("Yemek bulunamadı"))?
         .into();
 
-    if let Some(name) = dto.name { dish.name = Set(name); }
-    if let Some(category) = dto.category { dish.category = Set(Some(category)); }
-    if let Some(is_celiac) = dto.is_celiac { dish.is_celiac = Set(is_celiac); }
-    if let Some(is_vegan) = dto.is_vegan { dish.is_vegan = Set(is_vegan); }
-    if let Some(is_vegetarian) = dto.is_vegetarian { dish.is_vegetarian = Set(is_vegetarian); }
-    if let Some(cal) = dto.estimated_calories { dish.estimated_calories = Set(Some(cal)); }
+    if let Some(name) = dto.name {
+        dish.name = Set(name);
+    }
+    if let Some(category) = dto.category {
+        dish.category = Set(Some(category));
+    }
+    if let Some(is_celiac) = dto.is_celiac {
+        dish.is_celiac = Set(is_celiac);
+    }
+    if let Some(is_vegan) = dto.is_vegan {
+        dish.is_vegan = Set(is_vegan);
+    }
+    if let Some(is_vegetarian) = dto.is_vegetarian {
+        dish.is_vegetarian = Set(is_vegetarian);
+    }
+    if let Some(cal) = dto.estimated_calories {
+        dish.estimated_calories = Set(Some(cal));
+    }
 
     Ok(dish.update(db).await?)
 }
@@ -111,20 +155,28 @@ pub async fn delete_dish(db: &DatabaseConnection, id: i32) -> Result<(), anyhow:
     Ok(())
 }
 
-pub async fn merge_dishes(db: &DatabaseConnection, dto: MergeDishesDto) -> Result<(), anyhow::Error> {
+pub async fn merge_dishes(
+    db: &DatabaseConnection,
+    dto: MergeDishesDto,
+) -> Result<(), anyhow::Error> {
     // Alias aktarımı + source silme tek transaction'da: yarım kalmış merge
     // (alias'lar gitmiş, source hâlâ duruyor) veri bütünlüğünü bozardı.
     let txn = db.begin().await?;
 
     // Tüm alias'ları target dish'e aktar
     dish_aliases::Entity::update_many()
-        .col_expr(dish_aliases::Column::DishId, sea_orm::sea_query::Expr::value(dto.target_dish_id))
+        .col_expr(
+            dish_aliases::Column::DishId,
+            sea_orm::sea_query::Expr::value(dto.target_dish_id),
+        )
         .filter(dish_aliases::Column::DishId.eq(dto.source_dish_id))
         .exec(&txn)
         .await?;
 
     // Source dish'i sil
-    dishes::Entity::delete_by_id(dto.source_dish_id).exec(&txn).await?;
+    dishes::Entity::delete_by_id(dto.source_dish_id)
+        .exec(&txn)
+        .await?;
 
     txn.commit().await?;
     Ok(())
@@ -136,13 +188,16 @@ pub async fn detach_dish(db: &DatabaseConnection, dto: DetachDishDto) -> Result<
         .await?
         .ok_or_else(|| anyhow::anyhow!("Alias bulunamadı"))?
         .into();
-    
+
     alias.dish_id = Set(None);
     alias.update(db).await?;
     Ok(())
 }
 
-pub async fn split_dish(db: &DatabaseConnection, dto: SplitDishDto) -> Result<dishes::Model, anyhow::Error> {
+pub async fn split_dish(
+    db: &DatabaseConnection,
+    dto: SplitDishDto,
+) -> Result<dishes::Model, anyhow::Error> {
     let txn = db.begin().await?;
 
     // 1. Orijinal yemeği bul
@@ -152,7 +207,8 @@ pub async fn split_dish(db: &DatabaseConnection, dto: SplitDishDto) -> Result<di
         .ok_or_else(|| anyhow::anyhow!("Yemek bulunamadı"))?;
 
     // 2. Delimiter'a göre böl
-    let parts: Vec<String> = original_dish.name
+    let parts: Vec<String> = original_dish
+        .name
         .split(&dto.delimiter)
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty())
@@ -224,7 +280,9 @@ pub async fn split_dish(db: &DatabaseConnection, dto: SplitDishDto) -> Result<di
 
     // 5. Bu alias'lara bağlı menü öğelerini bul ve çoğaltarak yeni alias'lara bağla
     let referenced_menus = shared::entities::menu_dishes::Entity::find()
-        .filter(shared::entities::menu_dishes::Column::DishAliasId.is_in(original_alias_ids.clone()))
+        .filter(
+            shared::entities::menu_dishes::Column::DishAliasId.is_in(original_alias_ids.clone()),
+        )
         .all(&txn)
         .await?;
 
@@ -279,7 +337,10 @@ struct DishStatsResult {
     usage_count: i64,
 }
 
-pub async fn get_dish_stats(db: &DatabaseConnection, search: Option<String>) -> Result<Vec<DishModerationStatsDto>, anyhow::Error> {
+pub async fn get_dish_stats(
+    db: &DatabaseConnection,
+    search: Option<String>,
+) -> Result<Vec<DishModerationStatsDto>, anyhow::Error> {
     let mut sql = r#"
         SELECT 
             d.id, d.name, d.category, d.is_celiac, d.is_vegan, d.is_vegetarian,
@@ -287,7 +348,8 @@ pub async fn get_dish_stats(db: &DatabaseConnection, search: Option<String>) -> 
         FROM dishes d
         LEFT JOIN dish_aliases da ON d.id = da.dish_id
         LEFT JOIN menu_dishes md ON da.id = md.dish_alias_id
-    "#.to_string();
+    "#
+    .to_string();
 
     let mut values = vec![];
     if let Some(s) = search {
@@ -306,11 +368,18 @@ pub async fn get_dish_stats(db: &DatabaseConnection, search: Option<String>) -> 
     let mut dtos = Vec::new();
     for row in results {
         let mut constraints = Vec::new();
-        if row.is_vegan { constraints.push("Vegan".to_string()); }
-        if row.is_vegetarian { constraints.push("Vejetaryen".to_string()); }
-        if row.is_celiac { constraints.push("Glutensiz".to_string()); }
+        if row.is_vegan {
+            constraints.push("Vegan".to_string());
+        }
+        if row.is_vegetarian {
+            constraints.push("Vejetaryen".to_string());
+        }
+        if row.is_celiac {
+            constraints.push("Glutensiz".to_string());
+        }
 
-        let my_aliases: Vec<DishAliasDto> = aliases.iter()
+        let my_aliases: Vec<DishAliasDto> = aliases
+            .iter()
             .filter(|a| a.dish_id == Some(row.id))
             .map(|a| DishAliasDto {
                 id: a.id,

@@ -28,9 +28,22 @@ struct DayGaps {
 
 /// Fallback taramasinin kapsadigi aktif iller.
 const ACTIVE_CITIES: [&str; 16] = [
-    "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum",
-    "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk",
-    "kirklareli", "konya", "sakarya", "sivas", "trabzon",
+    "istanbul",
+    "ankara",
+    "izmir",
+    "antalya",
+    "canakkale",
+    "erzurum",
+    "eskisehir",
+    "gaziantep",
+    "isparta",
+    "kahramanmaras",
+    "karabuk",
+    "kirklareli",
+    "konya",
+    "sakarya",
+    "sivas",
+    "trabzon",
 ];
 
 pub async fn run_fallback_scrape(
@@ -87,7 +100,9 @@ pub async fn run_fallback_scrape(
                 continue; // Tam dolu -> hiç istek atma
             }
 
-            let saved = fill_day_from_fallbacks(db, client, &city.slug, city.id, date, &gaps, &shutdown_rx).await?;
+            let saved =
+                fill_day_from_fallbacks(db, client, &city.slug, city.id, date, &gaps, &shutdown_rx)
+                    .await?;
             total_saved += saved;
 
             // Kaynak sunucularına nazik ol
@@ -95,7 +110,10 @@ pub async fn run_fallback_scrape(
         }
     }
 
-    tracing::info!("[FALLBACK] Alternatif kaynak taraması tamamlandı: {} menü kaydedildi.", total_saved);
+    tracing::info!(
+        "[FALLBACK] Alternatif kaynak taraması tamamlandı: {} menü kaydedildi.",
+        total_saved
+    );
     Ok(total_saved)
 }
 
@@ -229,7 +247,9 @@ pub async fn run_historical_gap_fill(
 
     // Onceki aylar: bu ay haric (o zaten run_fallback_scrape'in isi), geriye dogru
     for back in (1..=months_back).rev() {
-        let Some(target) = shift_month(today, -(back as i32)) else { continue };
+        let Some(target) = shift_month(today, -(back as i32)) else {
+            continue;
+        };
         tracing::info!(
             "[HISTORY] {}-{:02} bosluk taramasi basliyor...",
             target.year(),
@@ -259,8 +279,20 @@ pub async fn run_historical_gap_fill(
                 if has_breakfast && has_dinner {
                     continue;
                 }
-                let gaps = DayGaps { breakfast: !has_breakfast, dinner: !has_dinner };
-                let saved = fill_day_from_history(db, client, &city.slug, city.id, date, &gaps, &shutdown_rx).await?;
+                let gaps = DayGaps {
+                    breakfast: !has_breakfast,
+                    dinner: !has_dinner,
+                };
+                let saved = fill_day_from_history(
+                    db,
+                    client,
+                    &city.slug,
+                    city.id,
+                    date,
+                    &gaps,
+                    &shutdown_rx,
+                )
+                .await?;
                 total_saved += saved;
 
                 // Kaynak sunuculara nazik ol
@@ -269,7 +301,10 @@ pub async fn run_historical_gap_fill(
         }
     }
 
-    tracing::info!("[HISTORY] Gecmis ay bosluk doldurma tamamlandi: {} menü kaydedildi.", total_saved);
+    tracing::info!(
+        "[HISTORY] Gecmis ay bosluk doldurma tamamlandi: {} menü kaydedildi.",
+        total_saved
+    );
     Ok(total_saved)
 }
 
@@ -308,7 +343,22 @@ async fn fill_day_from_history(
                 if need_breakfast {
                     if let Some(dishes) = menu.breakfast {
                         let (min, max) = parse_kcal_range(menu.breakfast_kcal.as_deref());
-                        if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                        if upsert_menu(
+                            db,
+                            city_id,
+                            date,
+                            MealTypeEnum::Breakfast,
+                            "yurtmenu.net".to_string(),
+                            None,
+                            dishes,
+                            vec![],
+                            vec![],
+                            None,
+                            min,
+                            max,
+                        )
+                        .await?
+                        {
                             saved += 1;
                         }
                     }
@@ -316,7 +366,22 @@ async fn fill_day_from_history(
                 if need_dinner {
                     if let Some(dishes) = menu.dinner {
                         let (min, max) = parse_kcal_range(menu.dinner_kcal.as_deref());
-                        if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                        if upsert_menu(
+                            db,
+                            city_id,
+                            date,
+                            MealTypeEnum::Dinner,
+                            "yurtmenu.net".to_string(),
+                            None,
+                            dishes,
+                            vec![],
+                            vec![],
+                            None,
+                            min,
+                            max,
+                        )
+                        .await?
+                        {
                             saved += 1;
                         }
                     }
@@ -343,14 +408,44 @@ async fn fill_day_from_history(
                 if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
                     if need_breakfast {
                         if let Some(dishes) = menu.breakfast {
-                            if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                            if upsert_menu(
+                                db,
+                                city_id,
+                                date,
+                                MealTypeEnum::Breakfast,
+                                "kykmenum.com".to_string(),
+                                None,
+                                dishes,
+                                vec![],
+                                vec![],
+                                None,
+                                None,
+                                None,
+                            )
+                            .await?
+                            {
                                 saved += 1;
                             }
                         }
                     }
                     if need_dinner {
                         if let Some(dishes) = menu.dinner {
-                            if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                            if upsert_menu(
+                                db,
+                                city_id,
+                                date,
+                                MealTypeEnum::Dinner,
+                                "kykmenum.com".to_string(),
+                                None,
+                                dishes,
+                                vec![],
+                                vec![],
+                                None,
+                                None,
+                                None,
+                            )
+                            .await?
+                            {
                                 saved += 1;
                             }
                         }
@@ -376,7 +471,11 @@ fn shift_month(base: NaiveDate, months: i32) -> Option<NaiveDate> {
 /// (ay baslangici, sonraki ayin baslangici)
 fn month_bounds(year: i32, month: u32) -> Option<(NaiveDate, NaiveDate)> {
     let start = NaiveDate::from_ymd_opt(year, month, 1)?;
-    let (next_year, next_month) = if month == 12 { (year + 1, 1) } else { (year, month + 1) };
+    let (next_year, next_month) = if month == 12 {
+        (year + 1, 1)
+    } else {
+        (year, month + 1)
+    };
     let end = NaiveDate::from_ymd_opt(next_year, next_month, 1)?;
     Some((start, end))
 }
@@ -421,8 +520,11 @@ async fn menus_missing_check(
         });
 
         if has_valid_dish {
-            let priority = crate::tasks::scraper::get_source_priority(m.source_type.as_deref().unwrap_or(""));
-            let is_quarantined = crate::tasks::scraper::is_quarantined_source(m.source_type.as_deref().unwrap_or(""));
+            let priority =
+                crate::tasks::scraper::get_source_priority(m.source_type.as_deref().unwrap_or(""));
+            let is_quarantined = crate::tasks::scraper::is_quarantined_source(
+                m.source_type.as_deref().unwrap_or(""),
+            );
             // Eğer mevcut kaynak güvenilir bülten (kykyemek: 6) veya daha yüksek
             // (kepce-kullanici: 8, kepce-admin: 10) ise ve karantinada değilse gün tam dolu kabul edilir.
             // Karantinadaki kaynaklar (yurtmenu vb.) veya daha düşük açık kaynaklar,
@@ -460,7 +562,11 @@ async fn fill_day_from_fallbacks(
         if *shutdown_rx.borrow() {
             return Ok(saved);
         }
-        let url = format!("https://yurtmenu.net/{}?date={}", slug, date.format("%Y-%m-%d"));
+        let url = format!(
+            "https://yurtmenu.net/{}?date={}",
+            slug,
+            date.format("%Y-%m-%d")
+        );
         if let Ok(res) = client
             .get(&url)
             .header("User-Agent", UA)
@@ -474,7 +580,22 @@ async fn fill_day_from_fallbacks(
                 if need_breakfast {
                     if let Some(dishes) = menu.breakfast {
                         let (min, max) = parse_kcal_range(menu.breakfast_kcal.as_deref());
-                        if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                        if upsert_menu(
+                            db,
+                            city_id,
+                            date,
+                            MealTypeEnum::Breakfast,
+                            "yurtmenu.net".to_string(),
+                            None,
+                            dishes,
+                            vec![],
+                            vec![],
+                            None,
+                            min,
+                            max,
+                        )
+                        .await?
+                        {
                             saved += 1;
                         }
                         need_breakfast = false;
@@ -483,7 +604,22 @@ async fn fill_day_from_fallbacks(
                 if need_dinner {
                     if let Some(dishes) = menu.dinner {
                         let (min, max) = parse_kcal_range(menu.dinner_kcal.as_deref());
-                        if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "yurtmenu.net".to_string(), None, dishes, vec![], vec![], None, min, max).await? {
+                        if upsert_menu(
+                            db,
+                            city_id,
+                            date,
+                            MealTypeEnum::Dinner,
+                            "yurtmenu.net".to_string(),
+                            None,
+                            dishes,
+                            vec![],
+                            vec![],
+                            None,
+                            min,
+                            max,
+                        )
+                        .await?
+                        {
                             saved += 1;
                         }
                         need_dinner = false;
@@ -511,7 +647,22 @@ async fn fill_day_from_fallbacks(
                 if let Some(menu) = crate::parser::kykmenum::parse_kykmenum_html(&html) {
                     if need_breakfast {
                         if let Some(dishes) = menu.breakfast {
-                            if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                            if upsert_menu(
+                                db,
+                                city_id,
+                                date,
+                                MealTypeEnum::Breakfast,
+                                "kykmenum.com".to_string(),
+                                None,
+                                dishes,
+                                vec![],
+                                vec![],
+                                None,
+                                None,
+                                None,
+                            )
+                            .await?
+                            {
                                 saved += 1;
                             }
                             need_breakfast = false;
@@ -519,7 +670,22 @@ async fn fill_day_from_fallbacks(
                     }
                     if need_dinner {
                         if let Some(dishes) = menu.dinner {
-                            if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenum.com".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                            if upsert_menu(
+                                db,
+                                city_id,
+                                date,
+                                MealTypeEnum::Dinner,
+                                "kykmenum.com".to_string(),
+                                None,
+                                dishes,
+                                vec![],
+                                vec![],
+                                None,
+                                None,
+                                None,
+                            )
+                            .await?
+                            {
                                 saved += 1;
                             }
                             need_dinner = false;
@@ -553,14 +719,44 @@ async fn fill_day_from_fallbacks(
                 if let Some((breakfast, dinner)) = parse_kykmenu_api(&body) {
                     if need_breakfast {
                         if let Some(dishes) = breakfast {
-                            if upsert_menu(db, city_id, date, MealTypeEnum::Breakfast, "kykmenu.com.tr".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                            if upsert_menu(
+                                db,
+                                city_id,
+                                date,
+                                MealTypeEnum::Breakfast,
+                                "kykmenu.com.tr".to_string(),
+                                None,
+                                dishes,
+                                vec![],
+                                vec![],
+                                None,
+                                None,
+                                None,
+                            )
+                            .await?
+                            {
                                 saved += 1;
                             }
                         }
                     }
                     if need_dinner {
                         if let Some(dishes) = dinner {
-                            if upsert_menu(db, city_id, date, MealTypeEnum::Dinner, "kykmenu.com.tr".to_string(), None, dishes, vec![], vec![], None, None, None).await? {
+                            if upsert_menu(
+                                db,
+                                city_id,
+                                date,
+                                MealTypeEnum::Dinner,
+                                "kykmenu.com.tr".to_string(),
+                                None,
+                                dishes,
+                                vec![],
+                                vec![],
+                                None,
+                                None,
+                                None,
+                            )
+                            .await?
+                            {
                                 saved += 1;
                             }
                         }
@@ -633,7 +829,9 @@ fn is_kykmenu_junk(text: &str) -> bool {
     let re = JUNK_RE.get_or_init(|| {
         regex::Regex::new(r"(?i)(yemek listesi|KYK Men|kahvalt.{0,3}ak.{0,3}am|^[-←→•*])").unwrap()
     });
-    text.len() < 3 || shared::services::content_guard::ContentGuard::is_junk_dish_text(text) || re.is_match(text)
+    text.len() < 3
+        || shared::services::content_guard::ContentGuard::is_junk_dish_text(text)
+        || re.is_match(text)
 }
 
 /// "650-850 kcal" -> (Some(650), Some(850))
@@ -663,7 +861,10 @@ mod tests {
 
     #[test]
     fn test_parse_kcal_range() {
-        assert_eq!(parse_kcal_range(Some("650-850 kcal")), (Some(650), Some(850)));
+        assert_eq!(
+            parse_kcal_range(Some("650-850 kcal")),
+            (Some(650), Some(850))
+        );
         assert_eq!(parse_kcal_range(Some("500 kcal")), (Some(500), Some(500)));
         assert_eq!(parse_kcal_range(None), (None, None));
         assert_eq!(parse_kcal_range(Some("bilinmiyor")), (None, None));
@@ -716,8 +917,14 @@ mod tests {
 
         // Şubat 2025'in son 10 günü (19-28) + Mart 2025'in tamamı (31 gün) = 41 gün
         assert_eq!(dates.len(), 41);
-        assert_eq!(dates.first().unwrap(), &NaiveDate::from_ymd_opt(2025, 2, 19).unwrap());
-        assert_eq!(dates.last().unwrap(), &NaiveDate::from_ymd_opt(2025, 3, 31).unwrap());
+        assert_eq!(
+            dates.first().unwrap(),
+            &NaiveDate::from_ymd_opt(2025, 2, 19).unwrap()
+        );
+        assert_eq!(
+            dates.last().unwrap(),
+            &NaiveDate::from_ymd_opt(2025, 3, 31).unwrap()
+        );
 
         // Ayın 15'indeysek yalnızca mevcut ay taranmalı
         let mid_month = NaiveDate::from_ymd_opt(2025, 3, 15).unwrap();

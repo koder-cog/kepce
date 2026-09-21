@@ -91,7 +91,10 @@ pub async fn sanitize_and_repair_database(db: &DatabaseConnection) -> Result<San
             active.status = Set(MenuStatusEnum::Rejected);
             let new_notice = match cur_notice {
                 Some(existing) if !existing.is_empty() => {
-                    format!("{} | Otomatik sistem temizliği: Geçersiz içerik tespit edildi", existing)
+                    format!(
+                        "{} | Otomatik sistem temizliği: Geçersiz içerik tespit edildi",
+                        existing
+                    )
                 }
                 _ => "Otomatik sistem temizliği: Geçersiz içerik tespit edildi".to_string(),
             };

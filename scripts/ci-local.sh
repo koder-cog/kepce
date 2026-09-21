@@ -32,7 +32,17 @@ report() {
 section() { echo -e "\n${BLUE}${BOLD}=== $1 ===${NC}"; }
 
 # ------------------------------------------------------------------------------
-section "1/4 Rust: clippy"
+section "1/5 Rust: fmt"
+# ------------------------------------------------------------------------------
+FMT_OUT=$(cargo fmt --all -- --check 2>&1)
+if [ -n "$FMT_OUT" ]; then
+    report "cargo fmt" false "$(echo "$FMT_OUT" | head -3 | tr '\n' ' ')"
+else
+    report "cargo fmt" true "biçimlendirme temiz"
+fi
+
+# ------------------------------------------------------------------------------
+section "2/5 Rust: clippy"
 # ------------------------------------------------------------------------------
 CLIPPY_OUT=$(cargo clippy --workspace 2>&1)
 CLIPPY_WARN=$(echo "$CLIPPY_OUT" | grep -c "^warning" || true)
@@ -43,7 +53,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "2/4 Rust: test"
+section "3/5 Rust: test"
 # ------------------------------------------------------------------------------
 TEST_OUT=$(cargo test --workspace 2>&1)
 if echo "$TEST_OUT" | grep -qE "test result: .*FAILED|^error"; then
@@ -54,7 +64,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "3/4 Webapp: check + test + build"
+section "4/5 Webapp: check + test + build"
 # ------------------------------------------------------------------------------
 cd webapp || exit 1
 
@@ -85,7 +95,7 @@ fi
 cd ..
 
 # ------------------------------------------------------------------------------
-section "4/4 SSR smoke testi"
+section "5/5 SSR smoke testi"
 # ------------------------------------------------------------------------------
 SMOKE_PORT=3987
 API_INTERNAL=http://127.0.0.1:59999 nohup env PORT=$SMOKE_PORT HOST=127.0.0.1 node webapp/build/index.js > /tmp/kepce-ci-smoke.log 2>&1 &

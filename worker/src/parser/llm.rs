@@ -1,12 +1,16 @@
-use anyhow::{Context, Result};
 use crate::parser::models::MenuDatabase;
+use anyhow::{Context, Result};
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
 use reqwest::Client;
 use serde_json::json;
 use std::path::Path;
-use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 
 fn detect_mime_type(path: &Path, bytes: &[u8]) -> &'static str {
-    let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+    let ext = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
     match ext.as_str() {
         "pdf" => "application/pdf",
         "png" => "image/png",
@@ -142,7 +146,11 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
                 }
             }
             if let Some(parts) = step.get("parts").and_then(|p| p.as_array()) {
-                if let Some(t) = parts.first().and_then(|p| p.get("text")).and_then(|t| t.as_str()) {
+                if let Some(t) = parts
+                    .first()
+                    .and_then(|p| p.get("text"))
+                    .and_then(|t| t.as_str())
+                {
                     if !t.trim().is_empty() {
                         return Some(t.to_string());
                     }
@@ -163,7 +171,8 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
         }
     }
     if let Some(candidates) = json_res.get("candidates").and_then(|c| c.as_array()) {
-        if let Some(t) = candidates.first()
+        if let Some(t) = candidates
+            .first()
             .and_then(|c| c.get("content"))
             .and_then(|c| c.get("parts"))
             .and_then(|p| p.as_array())
@@ -194,18 +203,27 @@ fn clean_json_markdown(raw: &str) -> &str {
     trimmed
 }
 
-pub async fn parse_document_with_llm(client: &Client, api_key: &str, file_path: &Path) -> Result<MenuDatabase> {
-    tracing::info!("Belge Gemini Interactions API ile ayrıştırılıyor: {:?}", file_path);
+pub async fn parse_document_with_llm(
+    client: &Client,
+    api_key: &str,
+    file_path: &Path,
+) -> Result<MenuDatabase> {
+    tracing::info!(
+        "Belge Gemini Interactions API ile ayrıştırılıyor: {:?}",
+        file_path
+    );
 
-    let metadata = tokio::fs::metadata(file_path).await
+    let metadata = tokio::fs::metadata(file_path)
+        .await
         .context(format!("Dosya metadata'sı okunamadı: {:?}", file_path))?;
     if metadata.len() > 50 * 1024 * 1024 {
         anyhow::bail!("Dosya boyutu limitini aşıyor (max 50MB): {:?}", file_path);
     }
 
-    let file_bytes = tokio::fs::read(file_path).await
+    let file_bytes = tokio::fs::read(file_path)
+        .await
         .context(format!("Dosya okunamadı: {:?}", file_path))?;
-        
+
     let base64_data = BASE64.encode(&file_bytes);
     let mime_type = detect_mime_type(file_path, &file_bytes);
 
@@ -219,9 +237,13 @@ Output strictly conforming to the requested JSON schema.";
         .ok()
         .filter(|s| !s.trim().is_empty())
         .unwrap_or_else(|| "gemini-2.5-flash".to_string());
-    
+
     let payload = json!({
         "model": model_name,
+        // KVKK veri minimizasyonu: Interactions API varsayılan olarak istekleri
+        // sunucu tarafında saklar (store=true). Kullanıcı menü belgelerinin
+        // Google tarafında tutulmaması için stateless mod zorunlu kılınır.
+        "store": false,
         "input": [
             {"text": prompt},
             {"inlineData": {"mimeType": mime_type, "data": base64_data}}
@@ -239,9 +261,15 @@ Output strictly conforming to the requested JSON schema.";
     let mut last_error = String::new();
 
     for attempt in 1..=max_retries {
-        tracing::info!("  Interactions API Denemesi {}/{} (Model: {})...", attempt, max_retries, model_name);
+        tracing::info!(
+            "  Interactions API Denemesi {}/{} (Model: {})...",
+            attempt,
+            max_retries,
+            model_name
+        );
 
-        match client.post(url)
+        match client
+            .post(url)
             .header("x-goog-api-key", api_key)
             .json(&payload)
             .send()
@@ -250,7 +278,7 @@ Output strictly conforming to the requested JSON schema.";
             Ok(res) => {
                 let status = res.status();
                 let text_res = res.text().await.unwrap_or_default();
-                
+
                 if !status.is_success() {
                     let err_msg = format!("API Error ({}): {}", status, text_res);
                     tracing::warn!("  Hata: {}", err_msg);
@@ -259,12 +287,14 @@ Output strictly conforming to the requested JSON schema.";
                 }
 
                 if let Ok(json_res) = serde_json::from_str::<serde_json::Value>(&text_res) {
-                    let extracted = extract_response_text(&json_res).unwrap_or_else(|| text_res.clone());
+                    let extracted =
+                        extract_response_text(&json_res).unwrap_or_else(|| text_res.clone());
                     let cleaned = clean_json_markdown(&extracted);
 
                     tracing::debug!("LLM Raw Response: {}", cleaned);
 
-                    let file_name_hint = file_path.file_name()
+                    let file_name_hint = file_path
+                        .file_name()
                         .and_then(|n| n.to_str())
                         .unwrap_or("document_llm");
 
@@ -278,7 +308,11 @@ Output strictly conforming to the requested JSON schema.";
                             return Ok(db);
                         }
                         Err(e) => {
-                            tracing::warn!("  JSON Ingest ayrıştırma hatası (deneme {}): {}", attempt, e);
+                            tracing::warn!(
+                                "  JSON Ingest ayrıştırma hatası (deneme {}): {}",
+                                attempt,
+                                e
+                            );
                             last_error = format!("IngestMenuJson error: {}", e);
                             continue;
                         }
@@ -294,7 +328,10 @@ Output strictly conforming to the requested JSON schema.";
         }
     }
 
-    Err(anyhow::anyhow!("Tüm LLM denemeleri başarısız oldu. Son hata: {}", last_error))
+    Err(anyhow::anyhow!(
+        "Tüm LLM denemeleri başarısız oldu. Son hata: {}",
+        last_error
+    ))
 }
 
 pub use parse_document_with_llm as parse_pdf_with_llm;

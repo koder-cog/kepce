@@ -3,17 +3,17 @@
 //! İstek başlıklarındaki `kepce_token` çerezini veya `Authorization: Bearer`
 //! başlığını çözümleyerek doğrulanmış kullanıcı oturumunu (`AuthenticatedUser`) sağlar.
 
+use crate::config::AppState;
+use crate::dto::user::UserRole;
+use crate::error::AppError;
 use axum::{
     async_trait,
-    extract::{FromRequestParts, FromRef},
+    extract::{FromRef, FromRequestParts},
     http::request::Parts,
 };
 use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
-use crate::config::AppState;
-use crate::dto::user::UserRole;
-use crate::error::AppError;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
@@ -53,24 +53,31 @@ where
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
         let app_state = AppState::from_ref(state);
-        
-        let mut token_opt = parts.headers.get(axum::http::header::COOKIE)
+
+        let mut token_opt = parts
+            .headers
+            .get(axum::http::header::COOKIE)
             .and_then(|h| h.to_str().ok())
             .and_then(|cookie_str| {
-                cookie_str.split(';')
+                cookie_str
+                    .split(';')
                     .map(|pair| pair.trim())
                     .find(|pair| pair.starts_with("kepce_token="))
                     .map(|pair| &pair["kepce_token=".len()..])
             });
 
         if token_opt.is_none() {
-            token_opt = parts.headers.get(axum::http::header::AUTHORIZATION)
+            token_opt = parts
+                .headers
+                .get(axum::http::header::AUTHORIZATION)
                 .and_then(|h| h.to_str().ok())
                 .filter(|s| s.starts_with("Bearer "))
                 .map(|s| &s[7..]);
         }
 
-        let token = token_opt.ok_or_else(|| AppError::Unauthorized("Missing or invalid authorization header or cookie".to_string()))?;
+        let token = token_opt.ok_or_else(|| {
+            AppError::Unauthorized("Missing or invalid authorization header or cookie".to_string())
+        })?;
 
         let mut validation = Validation::default();
         validation.set_issuer(&["kepce"]);
@@ -80,9 +87,8 @@ where
             token,
             &DecodingKey::from_secret(app_state.config.jwt_secret.as_bytes()),
             &validation,
-        ).map_err(|_| AppError::Unauthorized("Invalid or expired token".to_string()))?;
-
-
+        )
+        .map_err(|_| AppError::Unauthorized("Invalid or expired token".to_string()))?;
 
         Ok(AuthenticatedUser {
             id: token_data.claims.sub,
@@ -103,7 +109,9 @@ where
     type Rejection = std::convert::Infallible;
 
     async fn from_request_parts(parts: &mut Parts, state: &S) -> Result<Self, Self::Rejection> {
-        let user = AuthenticatedUser::from_request_parts(parts, state).await.ok();
+        let user = AuthenticatedUser::from_request_parts(parts, state)
+            .await
+            .ok();
         Ok(OptionalUser(user))
     }
 }

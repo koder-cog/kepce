@@ -86,7 +86,8 @@ async fn build_batch_prompt(
 
     for menu in menus_in_batch {
         if current_date != Some(menu.serve_date) {
-            let header = shared::services::calendar::format_bot_day_header(menu.serve_date, &city.slug);
+            let header =
+                shared::services::calendar::format_bot_day_header(menu.serve_date, &city.slug);
             text.push_str(&format!("\n{}\n", header));
             current_date = Some(menu.serve_date);
         }
@@ -106,7 +107,10 @@ async fn build_batch_prompt(
 
         let mut dish_names = Vec::new();
         for d in dishes {
-            if let Some(alias) = dish_aliases::Entity::find_by_id(d.dish_alias_id).one(db).await? {
+            if let Some(alias) = dish_aliases::Entity::find_by_id(d.dish_alias_id)
+                .one(db)
+                .await?
+            {
                 if !shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
                     dish_names.push(alias.name);
                 }
@@ -157,7 +161,9 @@ pub fn parse_generated_comments(raw_response: &str) -> Result<Vec<GeneratedComme
         }
 
         if let Some(arr) = wrapped.as_array() {
-            if let Ok(entries) = serde_json::from_value::<Vec<GeneratedCommentEntry>>(serde_json::Value::Array(arr.clone())) {
+            if let Ok(entries) = serde_json::from_value::<Vec<GeneratedCommentEntry>>(
+                serde_json::Value::Array(arr.clone()),
+            ) {
                 return Ok(entries);
             }
         }
@@ -196,7 +202,6 @@ YASAKLAR (Türkçe İmla):
 - Noktalı virgül (;) kullanma."#
     );
 
-
     let raw_response = match provider {
         LlmProvider::OpenRouter {
             api_key,
@@ -229,7 +234,11 @@ YASAKLAR (Türkçe İmla):
             if !res.status().is_success() {
                 let status = res.status();
                 let err_text = res.text().await.unwrap_or_default();
-                return Err(anyhow::anyhow!("OpenRouter API hatası ({}): {}", status, err_text));
+                return Err(anyhow::anyhow!(
+                    "OpenRouter API hatası ({}): {}",
+                    status,
+                    err_text
+                ));
             }
 
             let json_res: serde_json::Value = res.json().await?;
@@ -288,7 +297,11 @@ YASAKLAR (Türkçe İmla):
             if !res.status().is_success() {
                 let status = res.status();
                 let err_text = res.text().await.unwrap_or_default();
-                return Err(anyhow::anyhow!("Gemini API hatası ({}): {}", status, err_text));
+                return Err(anyhow::anyhow!(
+                    "Gemini API hatası ({}): {}",
+                    status,
+                    err_text
+                ));
             }
 
             let json_res: serde_json::Value = res.json().await?;
@@ -387,7 +400,15 @@ pub async fn run_comment_generation(db: &DatabaseConnection) -> Result<usize> {
 
     let today = Local::now().naive_local().date();
 
-    let pilot_cities = ["istanbul", "ankara", "izmir", "konya", "eskisehir", "bursa", "antalya"];
+    let pilot_cities = [
+        "istanbul",
+        "ankara",
+        "izmir",
+        "konya",
+        "eskisehir",
+        "bursa",
+        "antalya",
+    ];
 
     // Yorumsuz onaylı menüleri çek
     let missing_menus = Menus::find()
@@ -437,13 +458,24 @@ pub async fn run_comment_generation(db: &DatabaseConnection) -> Result<usize> {
         // haftalar arası espri tekrarı önlenir ve hikaye çeşitliliği korunur.
         let mut monthly_map: BTreeMap<(i32, u32), Vec<NaiveDate>> = BTreeMap::new();
         for d in dates {
-            monthly_map.entry((d.year(), d.month())).or_default().push(d);
+            monthly_map
+                .entry((d.year(), d.month()))
+                .or_default()
+                .push(d);
         }
 
         let mut months: Vec<((i32, u32), Vec<NaiveDate>)> = monthly_map.into_iter().collect();
         months.sort_by(|((y1, m1), _), ((y2, m2), _)| {
-            let p1 = if *y1 == today.year() && *m1 == today.month() { 1 } else { 2 };
-            let p2 = if *y2 == today.year() && *m2 == today.month() { 1 } else { 2 };
+            let p1 = if *y1 == today.year() && *m1 == today.month() {
+                1
+            } else {
+                2
+            };
+            let p2 = if *y2 == today.year() && *m2 == today.month() {
+                1
+            } else {
+                2
+            };
             p1.cmp(&p2).then_with(|| (y1, m1).cmp(&(y2, m2)))
         });
 
@@ -473,19 +505,19 @@ pub async fn run_comment_generation(db: &DatabaseConnection) -> Result<usize> {
                     }
 
                     match call_llm_with_retry(&client, &provider, &prompt, 3).await {
-                        Ok(entries) => {
-                            match save_generated_comments(db, city.id, &entries).await {
-                                Ok(count) => {
-                                    tracing::info!(
-                                        "[COMMENT-GEN] {} ili için {} menüye bot yorumu kaydedildi.",
-                                        city.name,
-                                        count
-                                    );
-                                    total_generated += count;
-                                }
-                                Err(e) => tracing::error!("[COMMENT-GEN] Yorum kaydetme hatası: {:?}", e),
+                        Ok(entries) => match save_generated_comments(db, city.id, &entries).await {
+                            Ok(count) => {
+                                tracing::info!(
+                                    "[COMMENT-GEN] {} ili için {} menüye bot yorumu kaydedildi.",
+                                    city.name,
+                                    count
+                                );
+                                total_generated += count;
                             }
-                        }
+                            Err(e) => {
+                                tracing::error!("[COMMENT-GEN] Yorum kaydetme hatası: {:?}", e)
+                            }
+                        },
                         Err(e) => tracing::error!(
                             "[COMMENT-GEN] LLM çağrısı tüm denemelerde başarısız oldu ({}): {:?}",
                             city.name,
@@ -523,7 +555,8 @@ mod tests {
 
     #[test]
     fn test_parse_generated_comments_object_wrapper() {
-        let raw = r#"{"comments": [{"date": "2026-09-20", "commentary": "Börek günü yüzler gülüyor."}]}"#;
+        let raw =
+            r#"{"comments": [{"date": "2026-09-20", "commentary": "Börek günü yüzler gülüyor."}]}"#;
         let res = parse_generated_comments(raw).unwrap();
         assert_eq!(res.len(), 1);
         assert_eq!(res[0].date, "2026-09-20");
@@ -557,8 +590,16 @@ mod tests {
         ];
 
         dates.sort_by(|&d1, &d2| {
-            let p1 = if d1.year() == today.year() && d1.month() == today.month() { 1 } else { 2 };
-            let p2 = if d2.year() == today.year() && d2.month() == today.month() { 1 } else { 2 };
+            let p1 = if d1.year() == today.year() && d1.month() == today.month() {
+                1
+            } else {
+                2
+            };
+            let p2 = if d2.year() == today.year() && d2.month() == today.month() {
+                1
+            } else {
+                2
+            };
             p1.cmp(&p2).then(d1.cmp(&d2))
         });
 

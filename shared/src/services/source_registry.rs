@@ -65,7 +65,12 @@ impl SourceRegistry {
                 is_auto_approvable: true,
             };
         }
-        if s.starts_with("kepce-kullanici") || s.contains("pano") || s.contains("saha") || s.contains("field") || s.contains("submission") {
+        if s.starts_with("kepce-kullanici")
+            || s.contains("pano")
+            || s.contains("saha")
+            || s.contains("field")
+            || s.contains("submission")
+        {
             return SourceMetadata {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Field,
@@ -77,7 +82,12 @@ impl SourceRegistry {
 
         // 2. Yurtmenu Ailesi (Karantina / Klon Ekosistemi - Tier 1)
         // yurtmenu.net ve kykyemekliste.com aynı altyapıyı paylaşır.
-        if s.contains("yurtmenu") || s.contains("kykyemekliste") || s.contains("alidnmz05") || s.contains("stale") || s.contains("quarantine") {
+        if s.contains("yurtmenu")
+            || s.contains("kykyemekliste")
+            || s.contains("alidnmz05")
+            || s.contains("stale")
+            || s.contains("quarantine")
+        {
             return SourceMetadata {
                 source_type: source_type.to_string(),
                 family: SourceFamily::Yurtmenu,

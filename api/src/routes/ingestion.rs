@@ -1,27 +1,35 @@
-use axum::{
-    routing::post,
-    Router,
-    extract::{State, Multipart},
-    Json,
-};
+use crate::dto::developer::MenuSubmissionResponseDto;
 use crate::error::AppError;
 use crate::extractors::api_key::IngestionAuth;
-use crate::dto::developer::MenuSubmissionResponseDto;
-use crate::services::ingestion::{IngestionService, IngestionError, MenuSubmissionInput, IngestedFile};
+use crate::services::ingestion::{
+    IngestedFile, IngestionError, IngestionService, MenuSubmissionInput,
+};
+use axum::{
+    extract::{Multipart, State},
+    routing::post,
+    Json, Router,
+};
 
 pub fn router() -> Router<crate::config::AppState> {
-    Router::new()
-        .route("/submit", post(submit_menu))
+    Router::new().route("/submit", post(submit_menu))
 }
 
 impl From<IngestionError> for AppError {
     fn from(err: IngestionError) -> Self {
         match err {
-            IngestionError::CityNotFound => AppError::BadRequest("Geçersiz şehir seçimi".to_string()),
+            IngestionError::CityNotFound => {
+                AppError::BadRequest("Geçersiz şehir seçimi".to_string())
+            }
             IngestionError::InvalidInput(msg) => AppError::BadRequest(msg),
-            IngestionError::FileTooLarge => AppError::BadRequest("Dosya boyutu çok büyük (Maks 20MB)".to_string()),
-            IngestionError::TooManyFiles => AppError::BadRequest("En fazla 5 dosya gönderilebilir".to_string()),
-            IngestionError::InvalidFileType(name) => AppError::BadRequest(format!("{}: Geçersiz dosya formatı veya içeriği", name)),
+            IngestionError::FileTooLarge => {
+                AppError::BadRequest("Dosya boyutu çok büyük (Maks 20MB)".to_string())
+            }
+            IngestionError::TooManyFiles => {
+                AppError::BadRequest("En fazla 5 dosya gönderilebilir".to_string())
+            }
+            IngestionError::InvalidFileType(name) => {
+                AppError::BadRequest(format!("{}: Geçersiz dosya formatı veya içeriği", name))
+            }
             IngestionError::IoError(e) => {
                 tracing::error!("IO error in IngestionService: {}", e);
                 AppError::Internal("Dosya kaydedilemedi".to_string())
@@ -45,32 +53,64 @@ async fn submit_menu(
     let mut notes: Option<String> = None;
     let mut files: Vec<IngestedFile> = Vec::new();
 
-    while let Some(mut field) = multipart.next_field().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
+    while let Some(mut field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::BadRequest(e.to_string()))?
+    {
         let name = field.name().unwrap_or_default().to_string();
 
         match name.as_str() {
             "city_slug" => {
-                city_slug = Some(field.text().await.map_err(|e| AppError::BadRequest(e.to_string()))?);
+                city_slug = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| AppError::BadRequest(e.to_string()))?,
+                );
             }
             "year" => {
-                let val = field.text().await.map_err(|e| AppError::BadRequest(e.to_string()))?;
-                year = Some(val.parse::<i32>().map_err(|_| AppError::BadRequest("Geçersiz yıl değeri".to_string()))?);
+                let val = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+                year = Some(
+                    val.parse::<i32>()
+                        .map_err(|_| AppError::BadRequest("Geçersiz yıl değeri".to_string()))?,
+                );
             }
             "month" => {
-                let val = field.text().await.map_err(|e| AppError::BadRequest(e.to_string()))?;
-                month = Some(val.parse::<i32>().map_err(|_| AppError::BadRequest("Geçersiz ay değeri".to_string()))?);
+                let val = field
+                    .text()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?;
+                month = Some(
+                    val.parse::<i32>()
+                        .map_err(|_| AppError::BadRequest("Geçersiz ay değeri".to_string()))?,
+                );
             }
             "notes" => {
-                notes = Some(field.text().await.map_err(|e| AppError::BadRequest(e.to_string()))?);
+                notes = Some(
+                    field
+                        .text()
+                        .await
+                        .map_err(|e| AppError::BadRequest(e.to_string()))?,
+                );
             }
             "files" => {
                 let file_name = field.file_name().unwrap_or("unnamed").to_string();
                 let content_type = field.content_type().map(|ct| ct.to_string());
                 let mut data = Vec::new();
-                while let Some(chunk) = field.chunk().await.map_err(|e| AppError::BadRequest(e.to_string()))? {
+                while let Some(chunk) = field
+                    .chunk()
+                    .await
+                    .map_err(|e| AppError::BadRequest(e.to_string()))?
+                {
                     data.extend_from_slice(&chunk);
                     if data.len() > 20 * 1024 * 1024 {
-                        return Err(AppError::BadRequest("Her bir dosya boyutu 20MB'tan büyük olamaz.".to_string()));
+                        return Err(AppError::BadRequest(
+                            "Her bir dosya boyutu 20MB'tan büyük olamaz.".to_string(),
+                        ));
                     }
                 }
                 files.push(IngestedFile {
@@ -83,7 +123,8 @@ async fn submit_menu(
         }
     }
 
-    let city_slug = city_slug.ok_or_else(|| AppError::BadRequest("Şehir seçimi zorunludur".to_string()))?;
+    let city_slug =
+        city_slug.ok_or_else(|| AppError::BadRequest("Şehir seçimi zorunludur".to_string()))?;
     let year = year.ok_or_else(|| AppError::BadRequest("Yıl seçimi zorunludur".to_string()))?;
     let month = month.ok_or_else(|| AppError::BadRequest("Ay seçimi zorunludur".to_string()))?;
 

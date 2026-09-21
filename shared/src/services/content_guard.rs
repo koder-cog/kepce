@@ -1,5 +1,5 @@
-use std::sync::OnceLock;
 use ammonia;
+use std::sync::OnceLock;
 
 const EMBEDDED_SHORTENERS_JSON: &str = include_str!("../../../config/security/url_shorteners.json");
 static BLOCKED_URLS: OnceLock<BlockedUrlConfig> = OnceLock::new();
@@ -102,7 +102,8 @@ fn extract_links(text: &str) -> Vec<String> {
             .unwrap_or(remainder.len());
         last_end = start + link_end;
         let raw_link = &remainder[..link_end];
-        let trimmed = raw_link.trim_end_matches(['.', ',', ';', '!', '?', ')', ']', '>', '"', '\'']);
+        let trimmed =
+            raw_link.trim_end_matches(['.', ',', ';', '!', '?', ')', ']', '>', '"', '\'']);
         links.push(trimmed.to_string());
     }
 
@@ -333,47 +334,73 @@ mod tests {
 
     #[test]
     fn test_is_spam() {
-        assert!(!ContentGuard::is_spam("Bu yemek çok güzeldi, elinize sağlık."));
+        assert!(!ContentGuard::is_spam(
+            "Bu yemek çok güzeldi, elinize sağlık."
+        ));
         assert!(ContentGuard::is_spam("sitemize gidin: www.example.com"));
         assert!(!ContentGuard::is_spam("Merhaba arkadaşlar, bugün kyk menüsünü inceledim ve şu adreste paylaştım: http://example.com/menu"));
-        assert!(ContentGuard::is_spam("Linkler: www.site1.com ve www.site2.com adresleri."));
-        assert!(ContentGuard::is_spam("Çooook lezzetliiiiiiiiiii bir yemekti."));
+        assert!(ContentGuard::is_spam(
+            "Linkler: www.site1.com ve www.site2.com adresleri."
+        ));
+        assert!(ContentGuard::is_spam(
+            "Çooook lezzetliiiiiiiiiii bir yemekti."
+        ));
         assert!(!ContentGuard::is_spam("Çooook lezzetliiiii bir yemekti."));
 
         // İç linkler (kepce.org) spam sayılmaz, birden fazla olsa dahi izin verilir
         assert!(!ContentGuard::is_spam("Dünkü menü https://kepce.org/istanbul/2026-09-14 ile bugünkü https://www.kepce.org/istanbul/2026-09-15 menüsü çok farklıydı."));
-        assert!(!ContentGuard::is_spam("Menü linki: https://kepce.org/istanbul"));
+        assert!(!ContentGuard::is_spam(
+            "Menü linki: https://kepce.org/istanbul"
+        ));
 
         // URL kısaltıcılar tek başına dahi olsa anında engellenir
-        assert!(ContentGuard::is_spam("Burs çekilişi için şu bağlantıya tıklayın: bit.ly/kyk-burs"));
+        assert!(ContentGuard::is_spam(
+            "Burs çekilişi için şu bağlantıya tıklayın: bit.ly/kyk-burs"
+        ));
         assert!(ContentGuard::is_spam("Öğrenci indirimleri için tinyurl.com/ogrenci adresini ziyaret edebilirsiniz arkadaslar"));
-        
+
         // Telegram ve WhatsApp sohbet davetleri engellenir
-        assert!(ContentGuard::is_spam("Kyk yemekhane grubumuz açıldı katılın: t.me/kykyemekhane"));
-        assert!(ContentGuard::is_spam("Sorular için wa.me/905551234567 numarasından yazabilirsiniz"));
+        assert!(ContentGuard::is_spam(
+            "Kyk yemekhane grubumuz açıldı katılın: t.me/kykyemekhane"
+        ));
+        assert!(ContentGuard::is_spam(
+            "Sorular için wa.me/905551234567 numarasından yazabilirsiniz"
+        ));
 
         // Şüpheli TLD'ler (.xyz, .top vb.) engellenir
-        assert!(ContentGuard::is_spam("Yeni bir platform açılmış arkadaşlar: https://kykmenu.xyz/giris"));
-        assert!(ContentGuard::is_spam("Yemek listesi burada mevcut: menuler.top"));
+        assert!(ContentGuard::is_spam(
+            "Yeni bir platform açılmış arkadaşlar: https://kykmenu.xyz/giris"
+        ));
+        assert!(ContentGuard::is_spam(
+            "Yemek listesi burada mevcut: menuler.top"
+        ));
     }
 
     #[test]
     fn test_is_junk_dish_text() {
         // Bureaucrat names and announcements
-        assert!(ContentGuard::is_junk_dish_text("Afyon Gençlik ve Spor İl Müdürü Muhittin BALKANLIOĞLU"));
+        assert!(ContentGuard::is_junk_dish_text(
+            "Afyon Gençlik ve Spor İl Müdürü Muhittin BALKANLIOĞLU"
+        ));
         assert!(ContentGuard::is_junk_dish_text("İL MÜDÜRÜ"));
         assert!(ContentGuard::is_junk_dish_text("ŞUBE MÜDÜRÜ"));
         assert!(ContentGuard::is_junk_dish_text("DAİRE BAŞKANI"));
-        assert!(ContentGuard::is_junk_dish_text("NOT: Ramazan ayı boyunca yemek saatleri 20:00'dir"));
+        assert!(ContentGuard::is_junk_dish_text(
+            "NOT: Ramazan ayı boyunca yemek saatleri 20:00'dir"
+        ));
         assert!(ContentGuard::is_junk_dish_text("Afiyet Olsun!"));
-        assert!(ContentGuard::is_junk_dish_text("Top Toplam Kalori: 850 kcal"));
+        assert!(ContentGuard::is_junk_dish_text(
+            "Top Toplam Kalori: 850 kcal"
+        ));
         assert!(ContentGuard::is_junk_dish_text("450 kcal"));
         assert!(ContentGuard::is_junk_dish_text("12345"));
         assert!(ContentGuard::is_junk_dish_text(""));
         assert!(ContentGuard::is_junk_dish_text(
             "Veri yok. Menüye sahipseniz destek@kepce.org adresine mail atabilirsiniz, teşekkür ederiz."
         ));
-        assert!(ContentGuard::is_junk_dish_text("Menüye sahipseniz bize bildirin"));
+        assert!(ContentGuard::is_junk_dish_text(
+            "Menüye sahipseniz bize bildirin"
+        ));
 
         // Site navigasyon/başlık kalıntıları (kykmenu.com.tr scrape kazıntısı)
         assert!(ContentGuard::is_junk_dish_text("←İstanbul KYK Menüsü"));
@@ -381,7 +408,9 @@ mod tests {
         assert!(ContentGuard::is_junk_dish_text("Kahvaltıakşam"));
         assert!(ContentGuard::is_junk_dish_text("→ Kayseri KYK Menüsü"));
         assert!(ContentGuard::is_junk_dish_text("- Kahvaltı Yemek Listesi"));
-        assert!(ContentGuard::is_junk_dish_text("- Akşam Yemeği Yemek Listesi"));
+        assert!(ContentGuard::is_junk_dish_text(
+            "- Akşam Yemeği Yemek Listesi"
+        ));
         assert!(ContentGuard::is_junk_dish_text("Gün Menüsü"));
         assert!(ContentGuard::is_junk_dish_text(
             "14 Eylül itibarıyla yeni dönem listeleri girilmeye başlanacak. Herkese yeni dönemde başarılar dileriz."
@@ -391,7 +420,9 @@ mod tests {
         ));
 
         // Valid dishes
-        assert!(!ContentGuard::is_junk_dish_text("Pideli Soslu Izgara Köfte"));
+        assert!(!ContentGuard::is_junk_dish_text(
+            "Pideli Soslu Izgara Köfte"
+        ));
         assert!(!ContentGuard::is_junk_dish_text("Mercimek Çorbası"));
         assert!(!ContentGuard::is_junk_dish_text("Siyah Zeytin"));
         assert!(!ContentGuard::is_junk_dish_text("Tavuk Döner"));

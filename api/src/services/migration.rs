@@ -1,4 +1,4 @@
-use sea_orm::{DatabaseConnection, ConnectionTrait, Statement};
+use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -11,13 +11,19 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
         "CREATE TABLE IF NOT EXISTS schema_migrations (
             version VARCHAR(255) PRIMARY KEY,
             applied_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-        );".to_string()
+        );"
+        .to_string(),
     );
     db.execute(create_migrations_table_stmt).await?;
 
     // 2. Locate migrations directory
-    let migrations_dir = find_directory(&["db/migrations", "./db/migrations", "../db/migrations", "/app/db/migrations"])
-        .ok_or_else(|| anyhow::anyhow!("Migrasyon dizini (db/migrations) bulunamadı!"))?;
+    let migrations_dir = find_directory(&[
+        "db/migrations",
+        "./db/migrations",
+        "../db/migrations",
+        "/app/db/migrations",
+    ])
+    .ok_or_else(|| anyhow::anyhow!("Migrasyon dizini (db/migrations) bulunamadı!"))?;
 
     tracing::info!("Migrasyonlar dizinden yükleniyor: {:?}", migrations_dir);
 
@@ -39,7 +45,10 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
         // Check if migration has already been applied
         let check_stmt = Statement::from_string(
             db.get_database_backend(),
-            format!("SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = '{}');", file_name)
+            format!(
+                "SELECT EXISTS (SELECT 1 FROM schema_migrations WHERE version = '{}');",
+                file_name
+            ),
         );
 
         let is_applied = match db.query_one(check_stmt).await {
@@ -53,7 +62,10 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
 
             let record_stmt = Statement::from_string(
                 db.get_database_backend(),
-                format!("INSERT INTO schema_migrations (version) VALUES ('{}');", file_name)
+                format!(
+                    "INSERT INTO schema_migrations (version) VALUES ('{}');",
+                    file_name
+                ),
             );
             db.execute(record_stmt).await?;
             tracing::info!("Migrasyon başarıyla uygulandı ve kaydedildi: {}", file_name);
@@ -65,7 +77,7 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
     // 3. Check & Apply Prod Seeds if cities table is empty
     let check_cities_stmt = Statement::from_string(
         db.get_database_backend(),
-        "SELECT COUNT(*) FROM cities;".to_string()
+        "SELECT COUNT(*) FROM cities;".to_string(),
     );
 
     let cities_seeded = match db.query_one(check_cities_stmt).await {
@@ -74,12 +86,22 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
     };
 
     if !cities_seeded {
-        if let Some(seeds_dir) = find_directory(&["db/seeds/prod", "./db/seeds/prod", "../db/seeds/prod", "/app/db/seeds/prod"]) {
-            tracing::info!("Veritabanı tohum verileri eksik. Prod seed'ler yükleniyor: {:?}", seeds_dir);
+        if let Some(seeds_dir) = find_directory(&[
+            "db/seeds/prod",
+            "./db/seeds/prod",
+            "../db/seeds/prod",
+            "/app/db/seeds/prod",
+        ]) {
+            tracing::info!(
+                "Veritabanı tohum verileri eksik. Prod seed'ler yükleniyor: {:?}",
+                seeds_dir
+            );
             let mut seed_files: Vec<PathBuf> = fs::read_dir(&seeds_dir)?
                 .filter_map(|entry| entry.ok())
                 .map(|entry| entry.path())
-                .filter(|path| path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("sql"))
+                .filter(|path| {
+                    path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("sql")
+                })
                 .collect();
 
             seed_files.sort();
@@ -112,7 +134,7 @@ fn find_directory(candidates: &[&str]) -> Option<PathBuf> {
 
 async fn execute_sql_file(db: &DatabaseConnection, path: &Path) -> Result<(), anyhow::Error> {
     let sql_content = fs::read_to_string(path)?;
-    
+
     let mut current_stmt = String::new();
     let mut in_dollar_block = false;
 
@@ -131,10 +153,10 @@ async fn execute_sql_file(db: &DatabaseConnection, path: &Path) -> Result<(), an
         if dollar_matches % 2 != 0 {
             in_dollar_block = !in_dollar_block;
         }
-        
+
         current_stmt.push_str(line);
         current_stmt.push('\n');
-        
+
         // Cümle ; ile bitiyorsa ve $$ bloğu içinde değilsek çalıştır
         if !in_dollar_block && trimmed.ends_with(';') {
             let stmt_str = current_stmt.trim();
@@ -145,13 +167,13 @@ async fn execute_sql_file(db: &DatabaseConnection, path: &Path) -> Result<(), an
             current_stmt.clear();
         }
     }
-    
+
     // Execute any remaining statement
     let stmt_str = current_stmt.trim();
     if !stmt_str.is_empty() {
         let stmt = Statement::from_string(db.get_database_backend(), stmt_str.to_string());
         db.execute(stmt).await?;
     }
-    
+
     Ok(())
 }

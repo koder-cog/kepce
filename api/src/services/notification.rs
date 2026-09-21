@@ -1,9 +1,9 @@
 //! Uygulama içi bildirim yönetimi ve kullanıcı tercihlerine göre olay dağıtım servisi.
 
-use sea_orm::{DatabaseConnection, EntityTrait, ActiveModelTrait, Set};
-use uuid::Uuid;
 use chrono::Utc;
-use shared::entities::{prelude::*, notifications};
+use sea_orm::{ActiveModelTrait, DatabaseConnection, EntityTrait, Set};
+use shared::entities::{notifications, prelude::*};
+use uuid::Uuid;
 
 pub struct NotificationService;
 
@@ -19,9 +19,7 @@ impl NotificationService {
         action_label: Option<&str>,
         action_href: Option<&str>,
     ) -> Result<bool, anyhow::Error> {
-        let user = Users::find_by_id(user_id)
-            .one(db)
-            .await?;
+        let user = Users::find_by_id(user_id).one(db).await?;
 
         let user = match user {
             Some(u) => u,
@@ -37,7 +35,11 @@ impl NotificationService {
         };
 
         if !should_send {
-            tracing::debug!("Kullanıcı ({}) bildirim tercihini kapattığı için '{}' bildirimi atlandı.", user.username, notif_type);
+            tracing::debug!(
+                "Kullanıcı ({}) bildirim tercihini kapattığı için '{}' bildirimi atlandı.",
+                user.username,
+                notif_type
+            );
             return Ok(false);
         }
 
@@ -54,7 +56,12 @@ impl NotificationService {
         };
 
         notif.insert(db).await?;
-        tracing::info!("Kullanıcıya ({}) yeni bildirim gönderildi: [{}] {}", user.username, notif_type, title);
+        tracing::info!(
+            "Kullanıcıya ({}) yeni bildirim gönderildi: [{}] {}",
+            user.username,
+            notif_type,
+            title
+        );
 
         // Kullanıcının kayıtlı cihazlarına Web Push bildirimi fırlat
         let push_payload = crate::services::push::PushPayload {

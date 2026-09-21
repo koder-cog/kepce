@@ -57,7 +57,8 @@ enum TargetMeal {
 fn resolve_meal_type(explicit: Option<&str>, file_name: &str) -> TargetMeal {
     if let Some(m) = explicit {
         let lower = m.to_lowercase();
-        if lower.contains("kahvaltı") || lower.contains("kahvalti") || lower.contains("breakfast") {
+        if lower.contains("kahvaltı") || lower.contains("kahvalti") || lower.contains("breakfast")
+        {
             return TargetMeal::Breakfast;
         }
         if lower.contains("öğle") || lower.contains("ogle") || lower.contains("lunch") {
@@ -69,9 +70,15 @@ fn resolve_meal_type(explicit: Option<&str>, file_name: &str) -> TargetMeal {
     }
 
     let file_lower = file_name.to_lowercase();
-    if file_lower.contains("kahvaltı") || file_lower.contains("kahvalti") || file_lower.contains("breakfast") {
+    if file_lower.contains("kahvaltı")
+        || file_lower.contains("kahvalti")
+        || file_lower.contains("breakfast")
+    {
         TargetMeal::Breakfast
-    } else if file_lower.contains("öğle") || file_lower.contains("ogle") || file_lower.contains("lunch") {
+    } else if file_lower.contains("öğle")
+        || file_lower.contains("ogle")
+        || file_lower.contains("lunch")
+    {
         TargetMeal::Lunch
     } else {
         TargetMeal::Dinner
@@ -89,12 +96,15 @@ fn normalize_date_str(raw: &str) -> Result<String> {
     if let Ok(d) = NaiveDate::parse_from_str(trimmed, "%d-%m-%Y") {
         return Ok(d.format("%Y-%m-%d").to_string());
     }
-    anyhow::bail!("Geçersiz tarih formatı (beklenen YYYY-MM-DD veya DD.MM.YYYY): '{}'", raw)
+    anyhow::bail!(
+        "Geçersiz tarih formatı (beklenen YYYY-MM-DD veya DD.MM.YYYY): '{}'",
+        raw
+    )
 }
 
 pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabase> {
-    let parsed: IngestMenuJson = serde_json::from_str(content)
-        .context("JSON formatı IngestMenuJson şemasına uymuyor")?;
+    let parsed: IngestMenuJson =
+        serde_json::from_str(content).context("JSON formatı IngestMenuJson şemasına uymuyor")?;
 
     let mut db: MenuDatabase = HashMap::new();
     let default_meal = resolve_meal_type(parsed.meal_type.as_deref(), file_name_hint);
@@ -114,7 +124,10 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
             None => default_meal,
         };
 
-        let effective_calories = day.calories.clone().or_else(|| parsed.default_calories.clone());
+        let effective_calories = day
+            .calories
+            .clone()
+            .or_else(|| parsed.default_calories.clone());
 
         let mut menu_items: Vec<MenuItem> = Vec::new();
 
@@ -130,8 +143,14 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
 
         for item in day.items {
             let mut alternatives = Vec::new();
-            let amount = item.amount.map(|a| a.trim().to_string()).filter(|a| !a.is_empty());
-            let calories = item.calories.map(|c| c.trim().to_string()).filter(|c| !c.is_empty());
+            let amount = item
+                .amount
+                .map(|a| a.trim().to_string())
+                .filter(|a| !a.is_empty());
+            let calories = item
+                .calories
+                .map(|c| c.trim().to_string())
+                .filter(|c| !c.is_empty());
 
             if let Some(alts) = item.alternatives {
                 for alt_name in alts {
@@ -223,8 +242,8 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
 
 pub fn parse_json_file(file_path: &str, _city_slug: &str) -> Result<MenuDatabase> {
     let path = Path::new(file_path);
-    let content = std::fs::read_to_string(path)
-        .context(format!("JSON dosyası okunamadı: {}", file_path))?;
+    let content =
+        std::fs::read_to_string(path).context(format!("JSON dosyası okunamadı: {}", file_path))?;
     let file_name = path
         .file_name()
         .and_then(|n| n.to_str())
@@ -275,7 +294,9 @@ mod tests {
         let zeytin = &day1.normal.breakfast[3];
         assert_eq!(zeytin.alternatives.len(), 2); // Siyah Zeytin / Yeşil Zeytin
 
-        let day2 = db.get("2026-04-02").expect("02.04.2026 -> 2026-04-02 normalize edilmeli");
+        let day2 = db
+            .get("2026-04-02")
+            .expect("02.04.2026 -> 2026-04-02 normalize edilmeli");
         assert_eq!(day2.normal.breakfast_kcal.as_deref(), Some("850 kcal"));
         assert_eq!(day2.normal.breakfast.len(), 1);
     }
@@ -287,13 +308,20 @@ mod tests {
             return;
         }
 
-        let db = parse_json_file(path, "istanbul").expect("Gerçek Nisan 2026 Kahvaltı JSON ayrıştırılmalı");
+        let db = parse_json_file(path, "istanbul")
+            .expect("Gerçek Nisan 2026 Kahvaltı JSON ayrıştırılmalı");
         assert_eq!(db.len(), 30, "Nisan ayı 30 gün olmalı");
 
         for d in 1..=30 {
             let key = format!("2026-04-{:02}", d);
-            let day_data = db.get(&key).unwrap_or_else(|| panic!("{} günü bulunamadı", key));
-            assert!(!day_data.normal.breakfast.is_empty(), "{} kahvaltı listesi boş olamaz", key);
+            let day_data = db
+                .get(&key)
+                .unwrap_or_else(|| panic!("{} günü bulunamadı", key));
+            assert!(
+                !day_data.normal.breakfast.is_empty(),
+                "{} kahvaltı listesi boş olamaz",
+                key
+            );
         }
     }
 }

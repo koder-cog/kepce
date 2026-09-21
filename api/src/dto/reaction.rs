@@ -1,6 +1,6 @@
+use crate::dto::comment::ReactionTypeDto;
 use serde::{Deserialize, Serialize};
 use validator::Validate;
-use crate::dto::comment::ReactionTypeDto;
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct ReactionRequestDto {

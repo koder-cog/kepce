@@ -1,19 +1,17 @@
 //! Web push bildirim aboneliği ve VAPID anahtar dağıtım endpoint'leri.
 
+use crate::error::AppError;
+use crate::services::push::{PushPayload, PushService};
 use axum::{
-    extract::{State, Json},
+    extract::{Json, State},
     routing::{get, post},
     Router,
 };
 use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::Deserialize;
 use serde_json::{json, Value};
-use shared::entities::{push_subscriptions, prelude::*};
-use crate::error::AppError;
-use crate::services::push::{PushService, PushPayload};
+use shared::entities::{prelude::*, push_subscriptions};
 
 #[derive(Debug, Deserialize)]
 pub struct PushSubscriptionKeys {
@@ -64,8 +62,13 @@ async fn subscribe(
     opt_user: Option<crate::extractors::auth::AuthenticatedUser>,
     Json(req): Json<SubscribeRequest>,
 ) -> Result<Json<Value>, AppError> {
-    if req.endpoint.trim().is_empty() || req.keys.p256dh.trim().is_empty() || req.keys.auth.trim().is_empty() {
-        return Err(AppError::BadRequest("Geçersiz push abonelik bilgileri.".to_string()));
+    if req.endpoint.trim().is_empty()
+        || req.keys.p256dh.trim().is_empty()
+        || req.keys.auth.trim().is_empty()
+    {
+        return Err(AppError::BadRequest(
+            "Geçersiz push abonelik bilgileri.".to_string(),
+        ));
     }
 
     let user_id = opt_user.map(|u| u.id);
@@ -104,7 +107,10 @@ async fn subscribe(
             active.user_agent = Set(Some(ua));
         }
         active.updated_at = Set(now);
-        active.update(&db).await.map_err(|e| AppError::Internal(format!("Abonelik güncellenemedi: {:?}", e)))?;
+        active
+            .update(&db)
+            .await
+            .map_err(|e| AppError::Internal(format!("Abonelik güncellenemedi: {:?}", e)))?;
     } else {
         let new_sub = push_subscriptions::ActiveModel {
             user_id: Set(user_id),
@@ -113,7 +119,9 @@ async fn subscribe(
             p256dh: Set(req.keys.p256dh),
             auth: Set(req.keys.auth),
             notif_breakfast_enabled: Set(req.notif_breakfast_enabled.unwrap_or(true)),
-            notif_breakfast_time: Set(req.notif_breakfast_time.unwrap_or_else(|| "07:30".to_string())),
+            notif_breakfast_time: Set(req
+                .notif_breakfast_time
+                .unwrap_or_else(|| "07:30".to_string())),
             notif_dinner_enabled: Set(req.notif_dinner_enabled.unwrap_or(true)),
             notif_dinner_time: Set(req.notif_dinner_time.unwrap_or_else(|| "17:00".to_string())),
             user_agent: Set(req.user_agent),
@@ -121,7 +129,10 @@ async fn subscribe(
             updated_at: Set(now),
             ..Default::default()
         };
-        new_sub.insert(&db).await.map_err(|e| AppError::Internal(format!("Abonelik kaydedilemedi: {:?}", e)))?;
+        new_sub
+            .insert(&db)
+            .await
+            .map_err(|e| AppError::Internal(format!("Abonelik kaydedilemedi: {:?}", e)))?;
     }
 
     Ok(Json(json!({
@@ -160,7 +171,11 @@ async fn send_test_push(
 
     let sub = match sub {
         Some(s) => s,
-        None => return Err(AppError::NotFound("Bu cihaza ait bildirim aboneliği bulunamadı.".to_string())),
+        None => {
+            return Err(AppError::NotFound(
+                "Bu cihaza ait bildirim aboneliği bulunamadı.".to_string(),
+            ))
+        }
     };
 
     let payload = PushPayload {

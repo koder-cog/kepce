@@ -161,9 +161,12 @@ fn get_candidate_periods() -> Vec<String> {
     ]
 }
 
-pub fn get_takeaway_config(city_slug: &str, mapped_meal_type: &str) -> Option<HashMap<u32, TakeawayParsedPackage>> {
+pub fn get_takeaway_config(
+    city_slug: &str,
+    mapped_meal_type: &str,
+) -> Option<HashMap<u32, TakeawayParsedPackage>> {
     let key = format!("{}_{}", city_slug, mapped_meal_type);
-    
+
     if let Ok(cache) = TAKEAWAY_CACHE.read() {
         if let Some(cached) = cache.get(&key) {
             return Some(cached.clone());
@@ -180,8 +183,14 @@ pub fn get_takeaway_config(city_slug: &str, mapped_meal_type: &str) -> Option<Ha
     let mut candidates = Vec::new();
 
     for period in &periods {
-        candidates.push(format!("config/takeaway/{}/{}/{}.json", city_slug, period, mapped_meal_type));
-        candidates.push(format!("config/takeaway/{}/{}/{}.json", city_slug, period, turkish_meal_type));
+        candidates.push(format!(
+            "config/takeaway/{}/{}/{}.json",
+            city_slug, period, mapped_meal_type
+        ));
+        candidates.push(format!(
+            "config/takeaway/{}/{}/{}.json",
+            city_slug, period, turkish_meal_type
+        ));
     }
 
     for path in candidates {
@@ -202,7 +211,11 @@ pub fn parse_takeaway_menu(
     meal_type: &str,
 ) -> Option<Vec<(String, Vec<Vec<crate::parser::models::MenuComponent>>)>> {
     let text_upper = text.to_uppercase();
-    if !text_upper.contains("AL GÖTÜR") && !text_upper.contains("AL-GÖTÜR") && !text_upper.contains("ALGÖTÜR") && !text_upper.contains("FAST") {
+    if !text_upper.contains("AL GÖTÜR")
+        && !text_upper.contains("AL-GÖTÜR")
+        && !text_upper.contains("ALGÖTÜR")
+        && !text_upper.contains("FAST")
+    {
         return None;
     }
 
@@ -261,7 +274,9 @@ pub fn parse_takeaway_menu(
     }
 }
 
-pub fn parse_fast_menu_foods_html(html_str: &str) -> Vec<Vec<crate::parser::models::MenuComponent>> {
+pub fn parse_fast_menu_foods_html(
+    html_str: &str,
+) -> Vec<Vec<crate::parser::models::MenuComponent>> {
     use scraper::{Html, Selector};
     let fragment = Html::parse_fragment(html_str);
     let div_selector = Selector::parse("div").unwrap();
@@ -316,23 +331,22 @@ pub fn parse_fast_menu_foods_html(html_str: &str) -> Vec<Vec<crate::parser::mode
 
 fn decode_html_entities(s: &str) -> String {
     s.replace("&amp;", "&")
-     .replace("&lt;", "<")
-     .replace("&gt;", ">")
-     .replace("&quot;", "\"")
-     .replace("&#x15F;", "ş")
-     .replace("&#x15E;", "Ş")
-     .replace("&#x131;", "ı")
-     .replace("&#x130;", "İ")
-     .replace("&#x11F;", "ğ")
-     .replace("&#x11E;", "Ğ")
-     .replace("&#xE7;", "ç")
-     .replace("&#xC7;", "Ç")
-     .replace("&#xFC;", "ü")
-     .replace("&#xDC;", "Ü")
-     .replace("&#xF6;", "ö")
-     .replace("&#xD6;", "Ö")
-     .replace("&#x2B;", "+")
-     .replace("&#39;", "'")
-     .replace("&apos;", "'")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#x15F;", "ş")
+        .replace("&#x15E;", "Ş")
+        .replace("&#x131;", "ı")
+        .replace("&#x130;", "İ")
+        .replace("&#x11F;", "ğ")
+        .replace("&#x11E;", "Ğ")
+        .replace("&#xE7;", "ç")
+        .replace("&#xC7;", "Ç")
+        .replace("&#xFC;", "ü")
+        .replace("&#xDC;", "Ü")
+        .replace("&#xF6;", "ö")
+        .replace("&#xD6;", "Ö")
+        .replace("&#x2B;", "+")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
 }
-

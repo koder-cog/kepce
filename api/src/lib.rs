@@ -12,30 +12,46 @@ pub mod routes;
 pub mod services;
 pub mod utils;
 
-use std::sync::Arc;
 use axum::Router;
-use sea_orm::Database;
-use tower_http::cors::CorsLayer;
 use http::Method;
+use sea_orm::Database;
+use std::sync::Arc;
+use tower_http::cors::CorsLayer;
 
 use config::{AppState, Config};
 
 pub fn build_cors(cors_origin: &str) -> anyhow::Result<CorsLayer> {
     let mut cors = CorsLayer::new()
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE, Method::PATCH])
-        .allow_headers([http::header::CONTENT_TYPE, http::header::AUTHORIZATION, http::header::ACCEPT]);
+        .allow_methods([
+            Method::GET,
+            Method::POST,
+            Method::PUT,
+            Method::DELETE,
+            Method::PATCH,
+        ])
+        .allow_headers([
+            http::header::CONTENT_TYPE,
+            http::header::AUTHORIZATION,
+            http::header::ACCEPT,
+        ]);
 
     let cors_origin_trimmed = cors_origin.trim();
     if cors_origin_trimmed == "*" {
-        cors = cors.allow_origin(tower_http::cors::AllowOrigin::any()).allow_credentials(false);
+        cors = cors
+            .allow_origin(tower_http::cors::AllowOrigin::any())
+            .allow_credentials(false);
     } else if cors_origin_trimmed.contains(',') {
         let origins: Result<Vec<http::HeaderValue>, _> = cors_origin_trimmed
             .split(',')
             .map(|s| s.trim().parse::<http::HeaderValue>())
             .collect();
-        cors = cors.allow_origin(tower_http::cors::AllowOrigin::list(origins?)).allow_credentials(true);
+        cors = cors
+            .allow_origin(tower_http::cors::AllowOrigin::list(origins?))
+            .allow_credentials(true);
     } else {
-        cors = cors.allow_origin(cors_origin_trimmed.parse::<http::HeaderValue>()?).allow_credentials(true);
+        cors = cors
+            .allow_origin(cors_origin_trimmed.parse::<http::HeaderValue>()?)
+            .allow_credentials(true);
     }
     Ok(cors)
 }
@@ -46,8 +62,18 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
         .nest("/api/v1/auth", routes::auth::router())
         .nest("/api/v1/menus", routes::menus::router())
         // Kanonik şehir endpoint'i /api/v1/public/cities; eski yollar 308 ile yönlendirilir.
-        .route("/api/v1/cities", axum::routing::get(|| async { axum::response::Redirect::permanent("/api/v1/public/cities") }))
-        .route("/api/v1/cities/detect", axum::routing::get(|| async { axum::response::Redirect::permanent("/api/v1/public/cities/detect") }))
+        .route(
+            "/api/v1/cities",
+            axum::routing::get(|| async {
+                axum::response::Redirect::permanent("/api/v1/public/cities")
+            }),
+        )
+        .route(
+            "/api/v1/cities/detect",
+            axum::routing::get(|| async {
+                axum::response::Redirect::permanent("/api/v1/public/cities/detect")
+            }),
+        )
         .nest("/api/v1/comments", routes::comments::router())
         .nest("/api/v1/profile", routes::profile::router())
         .nest("/api/v1/moderation", routes::moderation::router())
@@ -57,9 +83,11 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
         .nest("/api/v1/ingestion", routes::ingestion::router())
         .nest("/api/v1/admin", routes::admin::router())
         .nest("/api/v1/reports", routes::reports::router())
-
         .nest_service("/static", tower_http::services::ServeDir::new("static"))
-        .layer(axum::middleware::from_fn_with_state(state.clone(), middleware::rate_limiter::rate_limit_middleware))
+        .layer(axum::middleware::from_fn_with_state(
+            state.clone(),
+            middleware::rate_limiter::rate_limit_middleware,
+        ))
         .layer(TraceLayer::new_for_http())
         .layer(cors)
         .with_state(state)
@@ -68,7 +96,7 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
 pub async fn run() -> anyhow::Result<()> {
     // .env dosyasından ortam değişkenlerini yükle
     let config = Config::from_env();
-    
+
     // Structured logging
     tracing_subscriber::fmt()
         .with_env_filter(tracing_subscriber::EnvFilter::from_default_env())
@@ -135,9 +163,13 @@ pub async fn run() -> anyhow::Result<()> {
     // Sunucuyu başlat
     let addr = "0.0.0.0:8000";
     tracing::info!("Sunucu dinleniyor: {}", addr);
-    
+
     let listener = tokio::net::TcpListener::bind(addr).await?;
-    axum::serve(listener, app.into_make_service_with_connect_info::<std::net::SocketAddr>()).await?;
+    axum::serve(
+        listener,
+        app.into_make_service_with_connect_info::<std::net::SocketAddr>(),
+    )
+    .await?;
 
     Ok(())
 }

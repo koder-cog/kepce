@@ -1,17 +1,16 @@
 //! Şehir ve gün bazlı KYK menü sorgulama endpoint'leri.
-use axum::{
-    routing::get,
-    Router,
-    extract::{State, Path, Query},
-    Json,
-};
-use serde::Deserialize;
-use chrono::NaiveDate;
-use crate::services::menu::{MenuService, MenuError};
-use crate::services::vote::{VoteService, VoteError};
 use crate::error::AppError;
-use crate::extractors::auth::{OptionalUser, AuthenticatedUser};
 use crate::extractors::api_key::OptionalApiKey;
+use crate::extractors::auth::{AuthenticatedUser, OptionalUser};
+use crate::services::menu::{MenuError, MenuService};
+use crate::services::vote::{VoteError, VoteService};
+use axum::{
+    extract::{Path, Query, State},
+    routing::get,
+    Json, Router,
+};
+use chrono::NaiveDate;
+use serde::Deserialize;
 use shared::entities::sea_orm_active_enums::SentimentEnum;
 
 pub fn router() -> Router<crate::config::AppState> {
@@ -44,7 +43,9 @@ impl From<VoteError> for AppError {
     fn from(err: VoteError) -> Self {
         match err {
             VoteError::MenuNotFound => AppError::NotFound("Menu not found".to_string()),
-            VoteError::UnverifiedUser => AppError::Forbidden("Oy vermek için e-postanızı onaylamalısınız.".to_string()),
+            VoteError::UnverifiedUser => {
+                AppError::Forbidden("Oy vermek için e-postanızı onaylamalısınız.".to_string())
+            }
             VoteError::DatabaseError(e) => {
                 tracing::error!("Database error in VoteService: {}", e);
                 AppError::Internal("Database error".to_string())
@@ -61,8 +62,11 @@ async fn get_today(
 ) -> Result<axum::response::Response, AppError> {
     let today = match filter.date.as_deref() {
         Some("today") | None => crate::utils::time::istanbul_today(),
-        Some(s) => NaiveDate::parse_from_str(s, "%Y-%m-%d")
-            .map_err(|_| AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string()))?,
+        Some(s) => NaiveDate::parse_from_str(s, "%Y-%m-%d").map_err(|_| {
+            AppError::BadRequest(
+                "Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string(),
+            )
+        })?,
     };
     let user_id = user.as_ref().map(|u| u.id);
     let menus = MenuService::get_menus_by_filter(
@@ -73,7 +77,8 @@ async fn get_today(
         None,
         None,
         user_id,
-    ).await?;
+    )
+    .await?;
     let is_private = user.is_some();
     crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
 }
@@ -99,7 +104,11 @@ async fn get_menus(
         Some("today") => Some(crate::utils::time::istanbul_today()),
         Some(s) => match NaiveDate::parse_from_str(s, "%Y-%m-%d") {
             Ok(d) => Some(d),
-            Err(_) => return Err(AppError::BadRequest("Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string())),
+            Err(_) => {
+                return Err(AppError::BadRequest(
+                    "Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string(),
+                ))
+            }
         },
         None => None,
     };
@@ -112,7 +121,8 @@ async fn get_menus(
         query.year,
         query.month,
         user_id,
-    ).await?;
+    )
+    .await?;
     let is_private = user.is_some();
     crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
 }
@@ -127,7 +137,16 @@ async fn get_today_city(
 ) -> Result<axum::response::Response, AppError> {
     let today = crate::utils::time::istanbul_today();
     let user_id = user.as_ref().map(|u| u.id);
-    let menus = MenuService::get_menus_by_filter(&db, Some(city), Some(today), query.dietary_type, None, None, user_id).await?;
+    let menus = MenuService::get_menus_by_filter(
+        &db,
+        Some(city),
+        Some(today),
+        query.dietary_type,
+        None,
+        None,
+        user_id,
+    )
+    .await?;
     let is_private = user.is_some();
     crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
 }
@@ -191,12 +210,16 @@ async fn vote_menu(
     Path(menu_id): Path<i32>,
     Json(payload): Json<VoteMenuDto>,
 ) -> Result<Json<()>, AppError> {
-    let sentiment = match payload.sentiment.to_lowercase().as_str() {
-        "positive" => SentimentEnum::Positive,
-        "negative" => SentimentEnum::Negative,
-        "neutral" | "" => SentimentEnum::Neutral,
-        _ => return Err(AppError::BadRequest("Geçersiz oy türü. Yalnızca 'positive', 'negative' veya 'neutral' kabul edilir.".to_string())),
-    };
+    let sentiment =
+        match payload.sentiment.to_lowercase().as_str() {
+            "positive" => SentimentEnum::Positive,
+            "negative" => SentimentEnum::Negative,
+            "neutral" | "" => SentimentEnum::Neutral,
+            _ => return Err(AppError::BadRequest(
+                "Geçersiz oy türü. Yalnızca 'positive', 'negative' veya 'neutral' kabul edilir."
+                    .to_string(),
+            )),
+        };
 
     VoteService::vote_menu(&db, menu_id, user.id, sentiment).await?;
     Ok(Json(()))

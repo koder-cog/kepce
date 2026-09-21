@@ -1,21 +1,17 @@
-use sea_orm::*;
-use uuid::Uuid;
+use crate::dto::moderation::{
+    BlockUserDto, CreateMenuDto, InjectBotCommentEntryDto, SubmissionItemDto,
+};
 use chrono::NaiveDate;
+use sea_orm::*;
 use serde_json::json;
 use shared::entities::{
+    cities, dish_aliases, dishes, menu_dishes, menu_submissions, menus,
     prelude::*,
     reports,
-    user_blocks,
-    users,
-    cities,
-    menus,
-    menu_dishes,
-    dish_aliases,
-    dishes,
-    menu_submissions,
-    sea_orm_active_enums::{MealTypeEnum, MenuStatusEnum, AccountStatusEnum},
+    sea_orm_active_enums::{AccountStatusEnum, MealTypeEnum, MenuStatusEnum},
+    user_blocks, users,
 };
-use crate::dto::moderation::{BlockUserDto, InjectBotCommentEntryDto, CreateMenuDto, SubmissionItemDto};
+use uuid::Uuid;
 
 #[derive(Debug, Clone, Default)]
 pub struct BlockedRelations {
@@ -39,6 +35,7 @@ pub enum ModerationError {
     NoMenusForMonth,
     InvalidMonth(String),
     DateParseError(String),
+    FileReleaseError(String),
 }
 
 pub struct ModerationService;
@@ -51,7 +48,6 @@ impl ModerationService {
         reported_comment_id: Uuid,
         reason: String,
     ) -> Result<(), ModerationError> {
-        
         let comment = Comments::find_by_id(reported_comment_id)
             .one(db)
             .await
@@ -86,7 +82,10 @@ impl ModerationService {
             ..Default::default()
         };
 
-        new_report.insert(db).await.map_err(ModerationError::DatabaseError)?;
+        new_report
+            .insert(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
 
         Ok(())
     }
@@ -97,7 +96,6 @@ impl ModerationService {
         blocker_id: Uuid,
         dto: BlockUserDto,
     ) -> Result<(), ModerationError> {
-        
         if blocker_id == dto.blocked_user_id {
             return Err(ModerationError::SelfBlockNotAllowed);
         }
@@ -138,7 +136,6 @@ impl ModerationService {
         blocker_id: Uuid,
         blocked_user_id: Uuid,
     ) -> Result<(), ModerationError> {
-        
         let block = UserBlocks::find()
             .filter(user_blocks::Column::BlockerId.eq(blocker_id))
             .filter(user_blocks::Column::BlockedId.eq(blocked_user_id))
@@ -149,7 +146,7 @@ impl ModerationService {
         if let Some(b) = block {
             b.delete(db).await.map_err(ModerationError::DatabaseError)?;
         }
-        
+
         Ok(())
     }
 
@@ -162,20 +159,23 @@ impl ModerationService {
             .filter(
                 sea_orm::Condition::any()
                     .add(user_blocks::Column::BlockerId.eq(user_id))
-                    .add(user_blocks::Column::BlockedId.eq(user_id))
+                    .add(user_blocks::Column::BlockedId.eq(user_id)),
             )
             .all(db)
             .await
             .map_err(ModerationError::DatabaseError)?;
 
         // Kullanıcının id'si blocker ise blocked'ı ekle, blocked ise blocker'ı ekle
-        let mut ids: Vec<Uuid> = blocks.into_iter().map(|b| {
-            if b.blocker_id == user_id {
-                b.blocked_id
-            } else {
-                b.blocker_id
-            }
-        }).collect();
+        let mut ids: Vec<Uuid> = blocks
+            .into_iter()
+            .map(|b| {
+                if b.blocker_id == user_id {
+                    b.blocked_id
+                } else {
+                    b.blocker_id
+                }
+            })
+            .collect();
 
         // Aynı kişiyi karşılıklı engellemiş olabilirler (nadir de olsa), deduplicate yapalım.
         ids.sort();
@@ -193,7 +193,7 @@ impl ModerationService {
             .filter(
                 sea_orm::Condition::any()
                     .add(user_blocks::Column::BlockerId.eq(user_id))
-                    .add(user_blocks::Column::BlockedId.eq(user_id))
+                    .add(user_blocks::Column::BlockedId.eq(user_id)),
             )
             .all(db)
             .await
@@ -228,7 +228,11 @@ impl ModerationService {
             "active" => AccountStatusEnum::Active,
             "suspended" => AccountStatusEnum::Suspended,
             "banned" => AccountStatusEnum::Banned,
-            _ => return Err(ModerationError::DatabaseError(DbErr::Custom("Geçersiz statü değeri".into()))),
+            _ => {
+                return Err(ModerationError::DatabaseError(DbErr::Custom(
+                    "Geçersiz statü değeri".into(),
+                )))
+            }
         };
 
         let mut user: users::ActiveModel = Users::find_by_id(user_id)
@@ -248,7 +252,9 @@ impl ModerationService {
             user.token_version = Set(current_version + 1);
         }
 
-        user.update(db).await.map_err(ModerationError::DatabaseError)?;
+        user.update(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         Ok(())
     }
 
@@ -260,7 +266,7 @@ impl ModerationService {
         is_admin: Option<bool>,
         is_banned: Option<bool>,
     ) -> Result<(), ModerationError> {
-        use shared::entities::sea_orm_active_enums::{UserRoleEnum, AccountStatusEnum};
+        use shared::entities::sea_orm_active_enums::{AccountStatusEnum, UserRoleEnum};
 
         let mut user: users::ActiveModel = Users::find_by_id(user_id)
             .one(db)
@@ -296,7 +302,9 @@ impl ModerationService {
             }
         }
 
-        user.update(db).await.map_err(ModerationError::DatabaseError)?;
+        user.update(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         Ok(())
     }
 
@@ -316,7 +324,10 @@ impl ModerationService {
         report.status = Set(shared::entities::sea_orm_active_enums::ReportStatusEnum::Resolved);
         report.resolved_at = Set(Some(chrono::Utc::now().into()));
 
-        report.update(db).await.map_err(ModerationError::DatabaseError)?;
+        report
+            .update(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         Ok(())
     }
 
@@ -335,7 +346,10 @@ impl ModerationService {
             ..Default::default()
         };
 
-        let result = new_incident.insert(db).await.map_err(ModerationError::DatabaseError)?;
+        let result = new_incident
+            .insert(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         Ok(result.id)
     }
 
@@ -345,19 +359,23 @@ impl ModerationService {
         incident_id: i32,
         dto: crate::dto::moderation::UpdateIncidentDto,
     ) -> Result<(), ModerationError> {
-        let mut incident: shared::entities::system_incidents::ActiveModel = shared::entities::system_incidents::Entity::find_by_id(incident_id)
-            .one(db)
-            .await
-            .map_err(ModerationError::DatabaseError)?
-            .ok_or(ModerationError::CommentNotFound)? // Re-using error enum for simplicity
-            .into();
+        let mut incident: shared::entities::system_incidents::ActiveModel =
+            shared::entities::system_incidents::Entity::find_by_id(incident_id)
+                .one(db)
+                .await
+                .map_err(ModerationError::DatabaseError)?
+                .ok_or(ModerationError::CommentNotFound)? // Re-using error enum for simplicity
+                .into();
 
         incident.status = Set(dto.status.clone());
         if dto.status == "resolved" {
             incident.resolved_at = Set(Some(chrono::Utc::now().into()));
         }
 
-        incident.update(db).await.map_err(ModerationError::DatabaseError)?;
+        incident
+            .update(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         Ok(())
     }
 
@@ -372,7 +390,10 @@ impl ModerationService {
             .map_err(ModerationError::DatabaseError)?
             .ok_or(ModerationError::CommentNotFound)?;
 
-        incident.delete(db).await.map_err(ModerationError::DatabaseError)?;
+        incident
+            .delete(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         Ok(())
     }
 
@@ -394,31 +415,44 @@ impl ModerationService {
                 let mut active: menus::ActiveModel = menu.into();
                 if let Some(notice) = payload.notice {
                     let trimmed = notice.trim();
-                    active.notice = Set(if trimmed.is_empty() { None } else { Some(trimmed.to_string()) });
+                    active.notice = Set(if trimmed.is_empty() {
+                        None
+                    } else {
+                        Some(trimmed.to_string())
+                    });
                 }
                 if let Some(source_type) = payload.source_type {
                     let trimmed = source_type.trim();
-                    active.source_type = Set(if trimmed.is_empty() { None } else { Some(trimmed.to_string()) });
+                    active.source_type = Set(if trimmed.is_empty() {
+                        None
+                    } else {
+                        Some(trimmed.to_string())
+                    });
                 }
-                active.update(&txn).await.map_err(ModerationError::DatabaseError)?;
+                active
+                    .update(&txn)
+                    .await
+                    .map_err(ModerationError::DatabaseError)?;
             }
         }
 
         // Determine items to insert
-        let items_to_process: Vec<crate::dto::moderation::MenuDishItemInputDto> = if let Some(items) = payload.items {
-            items
-        } else {
-            payload.dish_ids
-                .into_iter()
-                .enumerate()
-                .map(|(index, id)| crate::dto::moderation::MenuDishItemInputDto {
-                    dish_id: id,
-                    order_index: index as i32,
-                    is_alternative: false,
-                    package_name: "NORMAL".to_string(),
-                })
-                .collect()
-        };
+        let items_to_process: Vec<crate::dto::moderation::MenuDishItemInputDto> =
+            if let Some(items) = payload.items {
+                items
+            } else {
+                payload
+                    .dish_ids
+                    .into_iter()
+                    .enumerate()
+                    .map(|(index, id)| crate::dto::moderation::MenuDishItemInputDto {
+                        dish_id: id,
+                        order_index: index as i32,
+                        is_alternative: false,
+                        package_name: "NORMAL".to_string(),
+                    })
+                    .collect()
+            };
 
         // Delete existing menu_dishes for this menu
         shared::entities::menu_dishes::Entity::delete_many()
@@ -491,7 +525,10 @@ impl ModerationService {
                 dish_id: Set(Some(dish.id)),
                 ..Default::default()
             };
-            let inserted = new_alias.insert(txn).await.map_err(ModerationError::DatabaseError)?;
+            let inserted = new_alias
+                .insert(txn)
+                .await
+                .map_err(ModerationError::DatabaseError)?;
             return Ok(inserted.id);
         }
 
@@ -533,13 +570,15 @@ impl ModerationService {
             return Some(d);
         }
         const TR_MONTHS: [&str; 12] = [
-            "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos",
-            "Eylül", "Ekim", "Kasım", "Aralık",
+            "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül",
+            "Ekim", "Kasım", "Aralık",
         ];
         let parts: Vec<&str> = s.split_whitespace().collect();
         if parts.len() == 3 {
             let day: u32 = parts[0].parse().ok()?;
-            let month_idx = TR_MONTHS.iter().position(|m| m.eq_ignore_ascii_case(parts[1]))?;
+            let month_idx = TR_MONTHS
+                .iter()
+                .position(|m| m.eq_ignore_ascii_case(parts[1]))?;
             let year: i32 = parts[2].parse().ok()?;
             return NaiveDate::from_ymd_opt(year, (month_idx + 1) as u32, day);
         }
@@ -616,7 +655,8 @@ impl ModerationService {
                 }
 
                 if let Some(alias) = alias_opt {
-                    if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
+                    if shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name)
+                    {
                         continue;
                     }
                     slot_dishes
@@ -703,8 +743,8 @@ impl ModerationService {
         db: &DatabaseConnection,
         status_filter: Option<&str>,
     ) -> Result<Vec<SubmissionItemDto>, ModerationError> {
-        let mut query = menu_submissions::Entity::find()
-            .order_by_desc(menu_submissions::Column::CreatedAt);
+        let mut query =
+            menu_submissions::Entity::find().order_by_desc(menu_submissions::Column::CreatedAt);
 
         if let Some(s) = status_filter {
             if !s.trim().is_empty() {
@@ -712,7 +752,10 @@ impl ModerationService {
             }
         }
 
-        let submissions = query.all(db).await.map_err(ModerationError::DatabaseError)?;
+        let submissions = query
+            .all(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
         let mut result = Vec::with_capacity(submissions.len());
 
         for sub in submissions {
@@ -726,7 +769,9 @@ impl ModerationService {
                 id: sub.id,
                 user_id: sub.user_id,
                 username: user_info.as_ref().map(|u| u.username.clone()),
-                user_is_banned: user_info.as_ref().map(|u| u.account_status == AccountStatusEnum::Banned),
+                user_is_banned: user_info
+                    .as_ref()
+                    .map(|u| u.account_status == AccountStatusEnum::Banned),
                 city_slug: sub.city_slug,
                 year: sub.year,
                 month: sub.month,
@@ -751,15 +796,29 @@ impl ModerationService {
             .ok_or(ModerationError::SubmissionNotFound)?;
 
         let was_not_approved = sub.status != "approved";
+
+        // Onay geçişinde ÖNCE dosyaları serbest bırak (bkz. plan Bölüm 7.3).
+        // Taşıma başarısız olursa DB durumu güncellenmez; yönetici tekrar deneyebilir.
+        // Böylece "onaylandı ama dosya serbest bırakılmadı" tutarsızlığı önlenir.
+        if new_status == "approved" && was_not_approved {
+            Self::release_submission_files(&sub).await?;
+        }
+
         let mut active: menu_submissions::ActiveModel = sub.clone().into();
         active.status = Set(new_status.to_string());
         active.updated_at = Set(Some(chrono::Utc::now().into()));
 
-        let updated = active.update(db).await.map_err(ModerationError::DatabaseError)?;
+        let updated = active
+            .update(db)
+            .await
+            .map_err(ModerationError::DatabaseError)?;
 
         if new_status == "approved" && was_not_approved {
             if let Some(user_id) = sub.user_id {
-                if let Ok(Some(user)) = shared::entities::users::Entity::find_by_id(user_id).one(db).await {
+                if let Ok(Some(user)) = shared::entities::users::Entity::find_by_id(user_id)
+                    .one(db)
+                    .await
+                {
                     let mut user_active: shared::entities::users::ActiveModel = user.clone().into();
                     user_active.karma_score = Set(user.karma_score + 25);
                     let _ = user_active.update(db).await;
@@ -768,6 +827,100 @@ impl ModerationService {
         }
 
         Ok(updated)
+    }
+
+    /// Onaylanan bir menü gönderiminin karantina dosyalarını worker'ın işlediği
+    /// `data/menuler/{anonim|kullanici}/bekleyen/{sehir}/` dizinine taşır.
+    /// Dosya taşıma başarısız olursa hata döner ve DB durumu güncellenmez.
+    async fn release_submission_files(
+        sub: &menu_submissions::Model,
+    ) -> Result<(), ModerationError> {
+        let storage_ref = match sub.storage_ref.as_deref() {
+            Some(s) if !s.trim().is_empty() => s,
+            _ => {
+                tracing::warn!(
+                    "Gönderim #{} için storage_ref yok; karantina dosyaları taşınamadı (eski kayıt olabilir).",
+                    sub.id
+                );
+                return Ok(());
+            }
+        };
+
+        let quarantine_base = std::env::var("MENU_QUARANTINE_DIR")
+            .unwrap_or_else(|_| "uploads/quarantine/menus".to_string());
+        let source_dir = std::path::PathBuf::from(&quarantine_base)
+            .join(&sub.city_slug)
+            .join(sub.year.to_string())
+            .join(storage_ref);
+
+        if !source_dir.exists() {
+            tracing::warn!(
+                "Gönderim #{} karantina dizini bulunamadı: {:?} (zaten taşınmış olabilir).",
+                sub.id,
+                source_dir
+            );
+            return Ok(());
+        }
+
+        let ingest_base =
+            std::env::var("MENU_INGEST_DIR").unwrap_or_else(|_| "/app/data/menuler".to_string());
+        let folder = if sub.user_id.is_some() {
+            "kullanici"
+        } else {
+            "anonim"
+        };
+        let target_dir = std::path::PathBuf::from(&ingest_base)
+            .join(folder)
+            .join("bekleyen")
+            .join(&sub.city_slug);
+
+        tokio::fs::create_dir_all(&target_dir).await.map_err(|e| {
+            ModerationError::FileReleaseError(format!(
+                "Hedef dizin oluşturulamadı ({:?}): {}",
+                target_dir, e
+            ))
+        })?;
+
+        let mut entries = tokio::fs::read_dir(&source_dir).await.map_err(|e| {
+            ModerationError::FileReleaseError(format!(
+                "Karantina dizini okunamadı ({:?}): {}",
+                source_dir, e
+            ))
+        })?;
+
+        let mut moved = 0usize;
+        while let Some(entry) = entries.next_entry().await.map_err(|e| {
+            ModerationError::FileReleaseError(format!("Dizin girdisi okunamadı: {}", e))
+        })? {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let file_name = match path.file_name() {
+                Some(n) => n.to_os_string(),
+                None => continue,
+            };
+            let dest = target_dir.join(&file_name);
+            if let Err(e) = tokio::fs::rename(&path, &dest).await {
+                tracing::warn!("Dosya taşınamadı ({:?}), kopyalama deneniyor: {}", path, e);
+                tokio::fs::copy(&path, &dest).await.map_err(|ce| {
+                    ModerationError::FileReleaseError(format!(
+                        "Dosya taşınamadı ({:?}): {}",
+                        path, ce
+                    ))
+                })?;
+                let _ = tokio::fs::remove_file(&path).await;
+            }
+            moved += 1;
+        }
+
+        tracing::info!(
+            "Gönderim #{} onaylandı: {} dosya {:?} dizinine taşındı.",
+            sub.id,
+            moved,
+            target_dir
+        );
+        Ok(())
     }
 }
 
@@ -784,9 +937,9 @@ pub async fn create_menu(
         "dinner" | "aksam" | "akşam" => MealTypeEnum::Dinner,
         other => {
             tracing::warn!(meal_type = other, "Bilinmeyen öğün türü");
-            return Err(ModerationError::DatabaseError(
-                sea_orm::DbErr::Custom(format!("Geçersiz öğün türü: {other}")),
-            ));
+            return Err(ModerationError::DatabaseError(sea_orm::DbErr::Custom(
+                format!("Geçersiz öğün türü: {other}"),
+            )));
         }
     };
 
@@ -813,5 +966,8 @@ pub async fn create_menu(
         ..Default::default()
     };
 
-    new_menu.insert(db).await.map_err(ModerationError::DatabaseError)
+    new_menu
+        .insert(db)
+        .await
+        .map_err(ModerationError::DatabaseError)
 }

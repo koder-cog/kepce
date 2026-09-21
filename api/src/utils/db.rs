@@ -13,9 +13,9 @@ pub fn is_unique_constraint_violation(err: &DbErr) -> bool {
                 if let Some(code) = db_err.code() {
                     return match code.as_ref() {
                         "23505" => true, // PostgreSQL unique_violation
-                        "2067"  => true, // SQLite SQLITE_CONSTRAINT_UNIQUE
-                        "1555"  => true, // SQLite SQLITE_CONSTRAINT_PRIMARYKEY
-                        "1062"  => true, // MySQL ER_DUP_ENTRY
+                        "2067" => true,  // SQLite SQLITE_CONSTRAINT_UNIQUE
+                        "1555" => true,  // SQLite SQLITE_CONSTRAINT_PRIMARYKEY
+                        "1062" => true,  // MySQL ER_DUP_ENTRY
                         _ => false,
                     };
                 }

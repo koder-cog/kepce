@@ -34,7 +34,8 @@ impl Config {
             cors_origin: env::var("KEPCE_CORS_ORIGIN")
                 .unwrap_or_else(|_| "http://localhost:5173".to_string()),
             gemini_api_key: env::var("GEMINI_API_KEY").ok(),
-            gemini_model: env::var("GEMINI_MODEL").unwrap_or_else(|_| "gemini-flash-latest".to_string()),
+            gemini_model: env::var("GEMINI_MODEL")
+                .unwrap_or_else(|_| "gemini-flash-latest".to_string()),
             bot_directive: load_bot_directive(),
             initial_admin_email: env::var("INITIAL_ADMIN_EMAIL").ok(),
             initial_admin_password: env::var("INITIAL_ADMIN_PASSWORD").ok(),
@@ -42,17 +43,20 @@ impl Config {
                 .map(|v| v.to_lowercase() == "true")
                 .unwrap_or(true),
             resend_api_key: env::var("RESEND_API_KEY").unwrap_or_else(|_| "mock_key".to_string()),
-            base_url: env::var("KEPCE_BASE_URL").unwrap_or_else(|_| "http://localhost:5173".to_string()),
+            base_url: env::var("KEPCE_BASE_URL")
+                .unwrap_or_else(|_| "http://localhost:5173".to_string()),
             google_client_id: env::var("GOOGLE_CLIENT_ID").ok(),
             google_client_secret: env::var("GOOGLE_CLIENT_SECRET").ok(),
             google_redirect_uri: env::var("GOOGLE_REDIRECT_URI").ok(),
             searxng_url: env::var("SEARXNG_URL").ok(),
             smtp_host: env::var("SMTP_HOST").ok(),
-            smtp_port: env::var("SMTP_PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(587),
+            smtp_port: env::var("SMTP_PORT")
+                .ok()
+                .and_then(|p| p.parse().ok())
+                .unwrap_or(587),
             smtp_username: env::var("SMTP_USERNAME").ok(),
             smtp_password: env::var("SMTP_PASSWORD").ok(),
         }
-
     }
 }
 

@@ -27,7 +27,11 @@ pub struct CreateMenuDto {
 
 #[derive(Debug, Deserialize, Validate)]
 pub struct ReportCommentRequestDto {
-    #[validate(length(min = 1, max = 500, message = "Şikayet nedeni 1 ile 500 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 1,
+        max = 500,
+        message = "Şikayet nedeni 1 ile 500 karakter arasında olmalıdır"
+    ))]
     pub reason: String,
 }
 
@@ -39,7 +43,11 @@ pub struct BlockUserDto {
 /// Moderasyon panelinden tetiklenen AI yorum üretme isteği
 #[derive(Debug, Deserialize, Validate)]
 pub struct BotGenerateRequestDto {
-    #[validate(length(min = 1, max = 200, message = "Yemek adı 1 ile 200 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 1,
+        max = 200,
+        message = "Yemek adı 1 ile 200 karakter arasında olmalıdır"
+    ))]
     pub dish_name: String,
     #[validate(length(min = 1, max = 20, message = "Sentiment geçersiz"))]
     pub sentiment: String,
@@ -225,7 +233,11 @@ pub struct IncidentAdminDto {
 }
 #[derive(Debug, Deserialize, Validate)]
 pub struct WarnUserDto {
-    #[validate(length(min = 1, max = 1000, message = "Uyarı mesajı 1 ile 1000 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 1,
+        max = 1000,
+        message = "Uyarı mesajı 1 ile 1000 karakter arasında olmalıdır"
+    ))]
     pub message: String,
 }
 
@@ -299,4 +311,3 @@ pub struct UpdateSubmissionStatusDto {
     #[validate(length(min = 1, max = 50))]
     pub status: String,
 }
-

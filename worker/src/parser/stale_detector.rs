@@ -91,7 +91,11 @@ impl StaleSequenceDetector {
             let start_date = longest_streak.first().map(|(d, _)| *d).unwrap();
             let end_date = longest_streak.last().map(|(d, _)| *d).unwrap();
             let matching_days_count = longest_streak.len();
-            let sample_signatures = longest_streak.iter().map(|(_, s)| s.clone()).take(3).collect();
+            let sample_signatures = longest_streak
+                .iter()
+                .map(|(_, s)| s.clone())
+                .take(3)
+                .collect();
 
             Some(StaleSequenceMatch {
                 start_date,
@@ -189,22 +193,49 @@ mod tests {
     #[test]
     fn test_detects_stale_consecutive_days() {
         let prev_days = vec![
-            (NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(), vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 8, 2).unwrap(), vec!["Ezogelin Çorbası".to_string(), "Kuru Fasulye".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 8, 3).unwrap(), vec!["Yayla Çorbası".to_string(), "Köfte".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 8, 4).unwrap(), vec!["Tarhana Çorbası".to_string(), "Balık".to_string()]),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+                vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 2).unwrap(),
+                vec!["Ezogelin Çorbası".to_string(), "Kuru Fasulye".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 3).unwrap(),
+                vec!["Yayla Çorbası".to_string(), "Köfte".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 4).unwrap(),
+                vec!["Tarhana Çorbası".to_string(), "Balık".to_string()],
+            ),
         ];
 
         // Eylül ayında aynı 3 günü gönderen bayat kaynak
         let incoming_days = vec![
-            (NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(), vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 9, 2).unwrap(), vec!["Ezogelin Çorbası".to_string(), "Kuru Fasulye".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 9, 3).unwrap(), vec!["Yayla Çorbası".to_string(), "Köfte".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 9, 4).unwrap(), vec!["Domates Çorbası".to_string(), "Farklı Yemek".to_string()]),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+                vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 2).unwrap(),
+                vec!["Ezogelin Çorbası".to_string(), "Kuru Fasulye".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 3).unwrap(),
+                vec!["Yayla Çorbası".to_string(), "Köfte".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 4).unwrap(),
+                vec!["Domates Çorbası".to_string(), "Farklı Yemek".to_string()],
+            ),
         ];
 
         let result = StaleSequenceDetector::detect_stale_sequence(&incoming_days, &prev_days);
-        assert!(result.is_some(), "3 ardışık eşleşen gün bayat olarak tespit edilmeli");
+        assert!(
+            result.is_some(),
+            "3 ardışık eşleşen gün bayat olarak tespit edilmeli"
+        );
         let m = result.unwrap();
         assert_eq!(m.matching_days_count, 3);
         assert_eq!(m.start_date, NaiveDate::from_ymd_opt(2026, 9, 1).unwrap());
@@ -214,19 +245,40 @@ mod tests {
     #[test]
     fn test_ignores_non_consecutive_single_day_coincidence() {
         let prev_days = vec![
-            (NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(), vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 8, 2).unwrap(), vec!["Ezogelin Çorbası".to_string(), "Kuru Fasulye".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 8, 3).unwrap(), vec!["Yayla Çorbası".to_string(), "Köfte".to_string()]),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 1).unwrap(),
+                vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 2).unwrap(),
+                vec!["Ezogelin Çorbası".to_string(), "Kuru Fasulye".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 8, 3).unwrap(),
+                vec!["Yayla Çorbası".to_string(), "Köfte".to_string()],
+            ),
         ];
 
         // Sadece 1. gün aynı (tesadüf), 2. ve 3. günler farklı
         let incoming_days = vec![
-            (NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(), vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 9, 2).unwrap(), vec!["Tarhana Çorbası".to_string(), "Sebze Yemeği".to_string()]),
-            (NaiveDate::from_ymd_opt(2026, 9, 3).unwrap(), vec!["Domates Çorbası".to_string(), "Kıymalı Makarna".to_string()]),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 1).unwrap(),
+                vec!["Mercimek Çorbası".to_string(), "Tavuk Sote".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 2).unwrap(),
+                vec!["Tarhana Çorbası".to_string(), "Sebze Yemeği".to_string()],
+            ),
+            (
+                NaiveDate::from_ymd_opt(2026, 9, 3).unwrap(),
+                vec!["Domates Çorbası".to_string(), "Kıymalı Makarna".to_string()],
+            ),
         ];
 
         let result = StaleSequenceDetector::detect_stale_sequence(&incoming_days, &prev_days);
-        assert!(result.is_none(), "Tekil gün benzerliği bayat olarak işaretlenmemeli");
+        assert!(
+            result.is_none(),
+            "Tekil gün benzerliği bayat olarak işaretlenmemeli"
+        );
     }
 }

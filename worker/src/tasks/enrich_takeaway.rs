@@ -59,10 +59,11 @@ pub async fn enrich_all_takeaways(db: &DatabaseConnection) -> Result<usize> {
         };
 
         // Şablon konfigürasyonunu al
-        let config_map = match crate::parser::takeaway::get_takeaway_config(city_slug, meal_type_str) {
-            Some(c) => c,
-            None => continue,
-        };
+        let config_map =
+            match crate::parser::takeaway::get_takeaway_config(city_slug, meal_type_str) {
+                Some(c) => c,
+                None => continue,
+            };
 
         for pkg_name in pkg_names {
             // Paket numarasını çıkar (örn: "Al Götür 7", "Al-Götür Menü 1" -> 7, 1)
@@ -97,7 +98,9 @@ pub async fn enrich_all_takeaways(db: &DatabaseConnection) -> Result<usize> {
             // Şablondaki slot ve alternatifleri ekle
             for (slot_idx, slot) in parsed_pkg.slots.iter().enumerate() {
                 for (alt_idx, alt) in slot.iter().enumerate() {
-                    let (alias_id, _) = crate::tasks::scraper::get_or_create_dish_alias(&txn, &alt.name, None).await?;
+                    let (alias_id, _) =
+                        crate::tasks::scraper::get_or_create_dish_alias(&txn, &alt.name, None)
+                            .await?;
                     let cals = alt.calories.as_ref().and_then(|c| {
                         c.chars()
                             .filter(|ch| ch.is_ascii_digit())
@@ -122,13 +125,18 @@ pub async fn enrich_all_takeaways(db: &DatabaseConnection) -> Result<usize> {
             txn.commit().await?;
 
             if menu.status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved {
-                let _ = shared::services::immutable_store::ImmutableStore::write_menu_hash(db, menu_id).await;
+                let _ =
+                    shared::services::immutable_store::ImmutableStore::write_menu_hash(db, menu_id)
+                        .await;
             }
 
             total_enriched += 1;
         }
     }
 
-    tracing::info!("Al-Götür zenginleştirmesi tamamlandı: Toplam {} menü paketi güncellendi.", total_enriched);
+    tracing::info!(
+        "Al-Götür zenginleştirmesi tamamlandı: Toplam {} menü paketi güncellendi.",
+        total_enriched
+    );
     Ok(total_enriched)
 }

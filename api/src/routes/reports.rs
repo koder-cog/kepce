@@ -1,6 +1,7 @@
 use axum::{
+    extract::{Path, State},
     routing::{get, post},
-    Router, Json, extract::{State, Path},
+    Json, Router,
 };
 use uuid::Uuid;
 
@@ -9,9 +10,9 @@ use crate::{
     extractors::auth::{AuthenticatedUser, OptionalUser},
     extractors::validated::ValidatedJson,
 };
-use shared::entities::{prelude::*, reports, sea_orm_active_enums::ReportStatusEnum};
-use sea_orm::{EntityTrait, Set, ActiveModelTrait, QueryFilter, QueryOrder, ColumnTrait};
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, QueryOrder, Set};
 use serde::Deserialize;
+use shared::entities::{prelude::*, reports, sea_orm_active_enums::ReportStatusEnum};
 use validator::Validate;
 
 pub fn router() -> Router<crate::config::AppState> {
@@ -19,10 +20,16 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/", post(submit_report))
         .route("/", get(get_reports))
         .route("/contact", get(get_contact_messages))
-        .route("/contact/:id", axum::routing::patch(update_contact_status).delete(delete_contact))
+        .route(
+            "/contact/:id",
+            axum::routing::patch(update_contact_status).delete(delete_contact),
+        )
         .route("/contact/:id/reply", post(reply_contact_message))
         .route("/contact/:id/replies", get(get_contact_replies))
-        .route("/:id", axum::routing::patch(update_report_status).delete(delete_report))
+        .route(
+            "/:id",
+            axum::routing::patch(update_report_status).delete(delete_report),
+        )
 }
 
 #[derive(Deserialize, Validate)]
@@ -44,9 +51,15 @@ async fn submit_report(
     ValidatedJson(payload): ValidatedJson<SubmitReportDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     if (payload.reason == "other" || payload.reason == "bot_other" || payload.reason == "Diğer")
-        && payload.description.as_ref().is_none_or(|d| d.trim().is_empty()) {
-            return Err(AppError::BadRequest("Lütfen detaylı açıklama giriniz.".to_string()));
-        }
+        && payload
+            .description
+            .as_ref()
+            .is_none_or(|d| d.trim().is_empty())
+    {
+        return Err(AppError::BadRequest(
+            "Lütfen detaylı açıklama giriniz.".to_string(),
+        ));
+    }
 
     let reporter_id = user.0.as_ref().map(|u| u.id);
 
@@ -60,42 +73,65 @@ async fn submit_report(
 
     match payload.target_type.as_str() {
         "comment" => {
-            let comment_id = Uuid::parse_str(&payload.target_id).map_err(|_| AppError::BadRequest("Geçersiz yorum ID".into()))?;
-            let comment_exists = Comments::find_by_id(comment_id).one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?.is_some();
-            if !comment_exists { return Err(AppError::NotFound("Yorum bulunamadı.".into())); }
-            
+            let comment_id = Uuid::parse_str(&payload.target_id)
+                .map_err(|_| AppError::BadRequest("Geçersiz yorum ID".into()))?;
+            let comment_exists = Comments::find_by_id(comment_id)
+                .one(&state.db)
+                .await
+                .map_err(|e| AppError::Internal(e.to_string()))?
+                .is_some();
+            if !comment_exists {
+                return Err(AppError::NotFound("Yorum bulunamadı.".into()));
+            }
+
             if let Some(uid) = reporter_id {
                 let existing_report = Reports::find()
                     .filter(reports::Column::ReporterId.eq(uid))
                     .filter(reports::Column::ReportedCommentId.eq(comment_id))
                     .filter(reports::Column::Status.eq(ReportStatusEnum::Pending))
-                    .one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
-                if existing_report.is_some() { return Err(AppError::BadRequest("Zaten şikayetiniz var.".into())); }
+                    .one(&state.db)
+                    .await
+                    .map_err(|e| AppError::Internal(e.to_string()))?;
+                if existing_report.is_some() {
+                    return Err(AppError::BadRequest("Zaten şikayetiniz var.".into()));
+                }
             }
-            
+
             report.reported_comment_id = Set(Some(comment_id));
             report.r#type = Set(Some("comment".into()));
-        },
+        }
         "menu" => {
-            let m_id: i32 = payload.target_id.parse().map_err(|_| AppError::BadRequest("Geçersiz menü ID".into()))?;
+            let m_id: i32 = payload
+                .target_id
+                .parse()
+                .map_err(|_| AppError::BadRequest("Geçersiz menü ID".into()))?;
             report.menu_id = Set(Some(m_id));
             report.r#type = Set(Some("menu".into()));
-        },
+        }
         "bot" => {
-            let m_id: i32 = payload.target_id.parse().map_err(|_| AppError::BadRequest("Geçersiz menü ID".into()))?;
+            let m_id: i32 = payload
+                .target_id
+                .parse()
+                .map_err(|_| AppError::BadRequest("Geçersiz menü ID".into()))?;
             report.menu_id = Set(Some(m_id));
             report.r#type = Set(Some("bot".into()));
-        },
+        }
         "user" => {
-            let reported_user_id = Uuid::parse_str(&payload.target_id).map_err(|_| AppError::BadRequest("Geçersiz kullanıcı ID".into()))?;
+            let reported_user_id = Uuid::parse_str(&payload.target_id)
+                .map_err(|_| AppError::BadRequest("Geçersiz kullanıcı ID".into()))?;
             report.reported_user_id = Set(Some(reported_user_id));
             report.r#type = Set(Some("user".into()));
-        },
+        }
         _ => return Err(AppError::BadRequest("Bilinmeyen hedef türü.".into())),
     }
 
-    report.insert(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(serde_json::json!({ "message": "Report submitted successfully" })))
+    report
+        .insert(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+    Ok(Json(
+        serde_json::json!({ "message": "Report submitted successfully" }),
+    ))
 }
 
 async fn get_reports(
@@ -109,7 +145,7 @@ async fn get_reports(
         .all(&state.db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut result = Vec::new();
     for r in reports_list {
         result.push(serde_json::json!({
@@ -143,9 +179,12 @@ async fn update_report_status(
         return Err(AppError::Forbidden("Admins only".to_string()));
     }
     let mut report: reports::ActiveModel = Reports::find_by_id(report_id)
-        .one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("Report not found".into()))?.into();
-        
+        .one(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or(AppError::NotFound("Report not found".into()))?
+        .into();
+
     let new_status = match payload.status.as_str() {
         "pending" => ReportStatusEnum::Pending,
         "resolved" => ReportStatusEnum::Resolved,
@@ -153,14 +192,23 @@ async fn update_report_status(
         _ => return Err(AppError::BadRequest("Invalid status".to_string())),
     };
     report.status = Set(new_status);
-    report.update(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    
-    Ok(Json(serde_json::json!({ "message": "Report status updated" })))
+    report
+        .update(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(
+        serde_json::json!({ "message": "Report status updated" }),
+    ))
 }
 
 #[derive(Deserialize, Validate)]
 pub struct ReplyContactDto {
-    #[validate(length(min = 2, max = 5000, message = "Yanıt 2 ile 5000 karakter arasında olmalıdır."))]
+    #[validate(length(
+        min = 2,
+        max = 5000,
+        message = "Yanıt 2 ile 5000 karakter arasında olmalıdır."
+    ))]
     pub reply_body: String,
 }
 
@@ -171,13 +219,13 @@ async fn get_contact_messages(
     if user.role != crate::dto::user::UserRole::Admin {
         return Err(AppError::Forbidden("Admins only".to_string()));
     }
-    
+
     let messages = shared::entities::contact_messages::Entity::find()
         .order_by_desc(shared::entities::contact_messages::Column::CreatedAt)
         .all(&state.db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-        
+
     let mut result = Vec::new();
     for m in messages {
         result.push(serde_json::json!({
@@ -212,12 +260,13 @@ async fn reply_contact_message(
         return Err(AppError::Forbidden("Admins only".to_string()));
     }
 
-    let mut msg: shared::entities::contact_messages::ActiveModel = shared::entities::contact_messages::Entity::find_by_id(id)
-        .one(&state.db)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("İletişim mesajı bulunamadı".into()))?
-        .into();
+    let mut msg: shared::entities::contact_messages::ActiveModel =
+        shared::entities::contact_messages::Entity::find_by_id(id)
+            .one(&state.db)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .ok_or(AppError::NotFound("İletişim mesajı bulunamadı".into()))?
+            .into();
 
     let target_email = msg.email.as_ref().clone();
     let original_subject = msg.subject.as_ref().clone();
@@ -229,16 +278,22 @@ async fn reply_contact_message(
         created_at: Set(Some(chrono::Utc::now().into())),
         ..Default::default()
     };
-    reply_model.insert(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    reply_model
+        .insert(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     msg.status = Set(ReportStatusEnum::Resolved);
     msg.resolved_at = Set(Some(chrono::Utc::now().into()));
-    msg.update(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    msg.update(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     // Send email using EmailService
     let email_service = crate::services::email::EmailService::from_config(&state.config);
     let email_subject = format!("Re: {} - Kepçe Destek", original_subject);
-    let safe_body = payload.reply_body
+    let safe_body = payload
+        .reply_body
         .replace('&', "&amp;")
         .replace('<', "&lt;")
         .replace('>', "&gt;")
@@ -256,11 +311,20 @@ async fn reply_contact_message(
         safe_body
     );
 
-    if let Err(e) = email_service.send_email(&target_email, &email_subject, email_html).await {
-        tracing::error!("İletişim yanıt e-postası gönderilemedi ({}): {:?}", target_email, e);
+    if let Err(e) = email_service
+        .send_email(&target_email, &email_subject, email_html)
+        .await
+    {
+        tracing::error!(
+            "İletişim yanıt e-postası gönderilemedi ({}): {:?}",
+            target_email,
+            e
+        );
     }
 
-    Ok(Json(serde_json::json!({ "message": "Yanıt gönderildi ve kaydedildi." })))
+    Ok(Json(
+        serde_json::json!({ "message": "Yanıt gönderildi ve kaydedildi." }),
+    ))
 }
 
 async fn get_contact_replies(
@@ -313,7 +377,10 @@ async fn delete_report(
     if user.role != crate::dto::user::UserRole::Admin {
         return Err(AppError::Forbidden("Admins only".to_string()));
     }
-    Reports::delete_by_id(report_id).exec(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    Reports::delete_by_id(report_id)
+        .exec(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
     Ok(Json(serde_json::json!({ "message": "Report deleted" })))
 }
 
@@ -326,10 +393,14 @@ async fn update_contact_status(
     if user.role != crate::dto::user::UserRole::Admin {
         return Err(AppError::Forbidden("Admins only".to_string()));
     }
-    let mut msg: shared::entities::contact_messages::ActiveModel = shared::entities::contact_messages::Entity::find_by_id(id)
-        .one(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or(AppError::NotFound("Contact message not found".into()))?.into();
-        
+    let mut msg: shared::entities::contact_messages::ActiveModel =
+        shared::entities::contact_messages::Entity::find_by_id(id)
+            .one(&state.db)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?
+            .ok_or(AppError::NotFound("Contact message not found".into()))?
+            .into();
+
     let new_status = match payload.status.as_str() {
         "pending" => ReportStatusEnum::Pending,
         "resolved" => ReportStatusEnum::Resolved,
@@ -343,9 +414,13 @@ async fn update_contact_status(
     } else {
         msg.resolved_at = Set(None);
     }
-    msg.update(&state.db).await.map_err(|e| AppError::Internal(e.to_string()))?;
-    
-    Ok(Json(serde_json::json!({ "message": "Contact message status updated" })))
+    msg.update(&state.db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(
+        serde_json::json!({ "message": "Contact message status updated" }),
+    ))
 }
 
 async fn delete_contact(
@@ -360,5 +435,7 @@ async fn delete_contact(
         .exec(&state.db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    Ok(Json(serde_json::json!({ "message": "Contact message deleted" })))
+    Ok(Json(
+        serde_json::json!({ "message": "Contact message deleted" }),
+    ))
 }
