@@ -415,6 +415,14 @@ async fn call_openrouter(
         .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string());
     let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
 
+    // Muhakeme token'ları bu bütçeden düşer (doküman uyarısı). effort=medium/high
+    // ile çok günlü menülerde 16000 YETMEZ ve yanıt finish_reason='length' ile
+    // KESİLİR; bu yüzden cömert bir varsayılan ve env ile ayarlanabilirlik.
+    let max_tokens: u64 = std::env::var("OPENROUTER_MAX_TOKENS")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(32000);
+
     let mut payload = json!({
         "model": model,
         "messages": [{
@@ -437,7 +445,7 @@ async fn call_openrouter(
         // (menu_bursa.pdf -> 1 gün / 0 kayıt). Bayrak kaldırıldığında aynı dosya
         // 28-31 gün olarak eksiksiz ayrıştırılıyor.
         // Muhakeme token'ları bu bütçeden düşer; cömert tutulur.
-        "max_tokens": 16000
+        "max_tokens": max_tokens
     });
 
     if !effort.is_empty() {

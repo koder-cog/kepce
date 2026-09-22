@@ -120,7 +120,11 @@ services:
       # Varsayılan: ~google/gemini-flash-latest (Gemini Flash ailesinin en günceli).
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-~google/gemini-flash-latest}
       # Muhakeme seviyesi: max|xhigh|high|medium|low|minimal|none
+      # NOT: low, çok bölümlü PDF'lerde ikinci tabloyu (ör. Kahvaltı) atlayabilir;
+      # medium tam sonuç verir (canlıda doğrulandı: 14 -> 31 gün).
       - OPENROUTER_REASONING_EFFORT=${OPENROUTER_REASONING_EFFORT:-low}
+      # Muhakeme token'ları bu bütçeden düşer; medium/high için 16000 YETMEZ.
+      - OPENROUTER_MAX_TOKENS=${OPENROUTER_MAX_TOKENS:-32000}
       - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
       - RUST_LOG=${RUST_LOG:-info}
       - INDEXNOW_KEY=${INDEXNOW_KEY:-}
