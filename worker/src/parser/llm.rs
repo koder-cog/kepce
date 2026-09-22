@@ -241,34 +241,61 @@ fn clean_json_markdown(raw: &str) -> &str {
 /// Birincil Gemini modeli (tek kaynak / single source of truth).
 pub const DEFAULT_GEMINI_MODEL: &str = "gemini-flash-latest";
 
-/// Birincil modelin kotası dolduğunda devreye giren yedek model.
+/// Yasaklı model adı kalıpları.
 ///
-/// Canlıda doğrulandı: iki alias ayrı kotaya sahiptir; `gemini-flash-latest`
-/// Free Tier 20 istek/gün limitine takıldığında `gemini-flash-lite-latest`
-/// çalışmaya devam eder.
-pub const DEFAULT_GEMINI_FALLBACK_MODEL: &str = "gemini-flash-lite-latest";
+/// `gemini-flash-lite-latest` ve türevleri menü verisini **uydurma/hatalı**
+/// üretiyor (canlı gözlem). Bu modeller fallback olarak bile kullanılmamalıdır;
+/// hatalı veri üretmektense dosyayı kuyrukta bekletmek yeğdir.
+const FORBIDDEN_GEMINI_MODEL_MARKERS: [&str; 2] = ["flash-lite", "flash_lite"];
+
+/// Model adı yasaklı mı? (lite ve türevleri)
+fn is_forbidden_gemini_model(model: &str) -> bool {
+    let lower = model.to_lowercase();
+    FORBIDDEN_GEMINI_MODEL_MARKERS
+        .iter()
+        .any(|marker| lower.contains(marker))
+}
+
+/// Model listesini temizler: yasaklı (lite türevi) modelleri `WARN` ile eler.
+///
+/// Saf fonksiyon (env okumaz) — birim testi kolay olsun diye ayrıldı.
+fn sanitize_gemini_models(models: Vec<String>) -> Vec<String> {
+    models
+        .into_iter()
+        .filter(|m| {
+            if is_forbidden_gemini_model(m) {
+                tracing::warn!(
+                    "Gemini modeli '{}' yasaklı (lite türevi: uydurma/hatalı menü üretiyor), zincirden çıkarıldı.",
+                    m
+                );
+                false
+            } else {
+                true
+            }
+        })
+        .collect()
+}
 
 /// `GEMINI_MODEL` ortam değişkenini sıralı bir model zincirine çözer.
 ///
-/// Virgülle ayrılmış liste desteklenir (örn. `birincil,yedek`). Tek model
-/// verilirse varsayılan yedek model zincirin sonuna otomatik eklenir; böylece
-/// birincil modelin kotası dolduğunda istek sessizce ölmek yerine yedek
-/// modele düşer.
+/// Virgülle ayrılmış liste desteklenir (örn. `birincil,yedek`). **Otomatik yedek
+/// EKLENMEZ**: tek model verilirse zincir yalnızca o modeldir. Birincil model
+/// kotaya takılırsa dosya `bekleyen`'de kalır ve sonraki döngüde yeniden denenir
+/// — hatalı veri üreten bir modele sessizce düşmek yerine.
 pub fn resolve_gemini_models() -> Vec<String> {
     let raw = std::env::var("GEMINI_MODEL").unwrap_or_default();
-    let mut models: Vec<String> = raw
+    let models: Vec<String> = raw
         .split(',')
         .map(|s| s.trim().trim_start_matches("models/").to_string())
         .filter(|s| !s.is_empty())
         .collect();
 
+    let models = sanitize_gemini_models(models);
     if models.is_empty() {
-        models.push(DEFAULT_GEMINI_MODEL.to_string());
+        vec![DEFAULT_GEMINI_MODEL.to_string()]
+    } else {
+        models
     }
-    if models.len() == 1 && models[0] != DEFAULT_GEMINI_FALLBACK_MODEL {
-        models.push(DEFAULT_GEMINI_FALLBACK_MODEL.to_string());
-    }
-    models
 }
 
 /// Birincil modeli döndürür (başlangıç erişilebilirlik kontrolü için).
@@ -815,5 +842,30 @@ mod tests {
         assert!(!is_model_switchable_error(
             "Ayrıştırma 0 gün döndürdü (boş menü)"
         ));
+    }
+
+    /// Lite ve türevleri zincirden elenmeli; diğer modeller korunmalı.
+    #[test]
+    fn test_sanitize_gemini_models_drops_lite() {
+        let input = vec![
+            "gemini-flash-latest".to_string(),
+            "gemini-flash-lite-latest".to_string(),
+            "gemini-3.5-flash-lite".to_string(),
+            "gemini-2.5-flash".to_string(),
+        ];
+        let out = sanitize_gemini_models(input);
+        assert_eq!(
+            out,
+            vec![
+                "gemini-flash-latest".to_string(),
+                "gemini-2.5-flash".to_string()
+            ]
+        );
+
+        assert!(is_forbidden_gemini_model("gemini-flash-lite-latest"));
+        assert!(is_forbidden_gemini_model("GEMINI-FLASH-LITE-LATEST"));
+        assert!(is_forbidden_gemini_model("gemini-3.5-flash-lite"));
+        assert!(!is_forbidden_gemini_model("gemini-flash-latest"));
+        assert!(!is_forbidden_gemini_model("gemini-2.5-flash"));
     }
 }
