@@ -122,12 +122,12 @@
             class: "positive",
         },
         "kepce-anonim": {
-            label: "Kaynak: Kepçe (Anonim)",
+            label: "Kaynak: Kepçe",
             icon: "info",
             class: "disclaimer",
         },
         anonim: {
-            label: "Kaynak: Kepçe (Anonim)",
+            label: "Kaynak: Kepçe",
             icon: "info",
             class: "disclaimer",
         },
