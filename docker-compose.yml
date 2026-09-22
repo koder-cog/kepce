@@ -106,7 +106,12 @@ services:
       - WORKER_INTERVAL_SECS=${WORKER_INTERVAL_SECS:-3600}
       - WORKER_MENU_DIR=/app/data/menuler
       - GEMINI_API_KEY=${GEMINI_API_KEY}
-      - GEMINI_MODEL=${GEMINI_MODEL:-}
+      # Birincil model. Kod, tek model verildiğinde gemini-flash-lite-latest'i
+      # yedek olarak OTOMATİK zincire ekler (kota dolduğunda yedeğe düşer).
+      # İstenirse virgülle ayrılmış açık liste de verilebilir: "birincil,yedek".
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-flash-latest}
+      # Muhakeme seviyesi: generation_config.thinking_level ("low" | "high").
+      - GEMINI_THINKING_LEVEL=${GEMINI_THINKING_LEVEL:-high}
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
       - OPENROUTER_REASONING_EFFORT=${OPENROUTER_REASONING_EFFORT:-}

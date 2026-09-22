@@ -236,34 +236,45 @@ async fn main() -> anyhow::Result<()> {
     // Gemini model erişilebilirlik kontrolü (startup)
     // gemini model kontrolü (0 rpd / 0 token harcayan saf metadata get sorgusu)
     if let Some(ref api_key) = gemini_api_key {
-        // Model adı tek kaynaktan çözülür (bkz. parser::llm::resolve_gemini_model):
-        // startup doğrulaması ile gerçek ayrıştırma çağrısı aynı varsayılana düşer.
-        let clean_model = crate::parser::llm::resolve_gemini_model();
-        let check_url = format!(
-            "https://generativelanguage.googleapis.com/v1beta/models/{}",
-            clean_model
+        // Model zinciri tek kaynaktan çözülür (bkz. parser::llm::resolve_gemini_models):
+        // startup doğrulaması ile gerçek ayrıştırma çağrısı aynı listeyi kullanır;
+        // birincil modelin kotası dolarsa yedek model devreye girer.
+        let models = crate::parser::llm::resolve_gemini_models();
+        tracing::info!(
+            "Gemini model zinciri: {} | thinking_level={}",
+            models.join(" -> "),
+            crate::parser::llm::resolve_thinking_level()
         );
 
-        match reqwest_client
-            .get(&check_url)
-            .header("x-goog-api-key", api_key)
-            .send()
-            .await
-        {
-            Ok(res) if res.status().is_success() => {
-                tracing::info!("Gemini API ('{}') metadata doğrulandı [OK]", clean_model);
-            }
-            Ok(res) => {
-                tracing::warn!(
-                    "Gemini API ('{}') erişilebilirlik kontrolü başarısız (HTTP {}). PDF parsing çalışmayabilir.",
-                    clean_model, res.status()
-                );
-            }
-            Err(e) => {
-                tracing::warn!(
-                    "Gemini API ('{}') erişilebilirlik kontrolü başarısız: {:?}. PDF parsing çalışmayabilir.",
-                    clean_model, e
-                );
+        for clean_model in &models {
+            let check_url = format!(
+                "https://generativelanguage.googleapis.com/v1beta/models/{}",
+                clean_model
+            );
+
+            match reqwest_client
+                .get(&check_url)
+                .header("x-goog-api-key", api_key)
+                .send()
+                .await
+            {
+                Ok(res) if res.status().is_success() => {
+                    tracing::info!("Gemini API ('{}') metadata doğrulandı [OK]", clean_model);
+                }
+                Ok(res) => {
+                    tracing::warn!(
+                        "Gemini API ('{}') erişilebilirlik kontrolü başarısız (HTTP {}). PDF parsing çalışmayabilir.",
+                        clean_model,
+                        res.status()
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "Gemini API ('{}') erişilebilirlik kontrolü başarısız: {:?}. PDF parsing çalışmayabilir.",
+                        clean_model,
+                        e
+                    );
+                }
             }
         }
     }

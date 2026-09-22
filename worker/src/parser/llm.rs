@@ -238,25 +238,77 @@ fn clean_json_markdown(raw: &str) -> &str {
     trimmed
 }
 
-/// Geçerli Gemini model adı için tek kaynak (single source of truth).
-/// `GEMINI_MODEL` boş/ayarsızsa bu varsayılana düşülür.
+/// Birincil Gemini modeli (tek kaynak / single source of truth).
 pub const DEFAULT_GEMINI_MODEL: &str = "gemini-flash-latest";
 
-/// `GEMINI_MODEL` ortam değişkenini çözer ve temizler.
+/// Birincil modelin kotası dolduğunda devreye giren yedek model.
 ///
-/// Başlangıç (startup) erişilebilirlik kontrolü ile gerçek ayrıştırma çağrısı
-/// aynı fonksiyonu kullanır; böylece ikisinin farklı varsayılanlara düşüp
-/// "metadata doğrulandı [OK] ama ayrıştırma 404" gibi sessiz uyumsuzluk
-/// üretmesi yapısal olarak imkânsız hale gelir.
-pub fn resolve_gemini_model() -> String {
+/// Canlıda doğrulandı: iki alias ayrı kotaya sahiptir; `gemini-flash-latest`
+/// Free Tier 20 istek/gün limitine takıldığında `gemini-flash-lite-latest`
+/// çalışmaya devam eder.
+pub const DEFAULT_GEMINI_FALLBACK_MODEL: &str = "gemini-flash-lite-latest";
+
+/// `GEMINI_MODEL` ortam değişkenini sıralı bir model zincirine çözer.
+///
+/// Virgülle ayrılmış liste desteklenir (örn. `birincil,yedek`). Tek model
+/// verilirse varsayılan yedek model zincirin sonuna otomatik eklenir; böylece
+/// birincil modelin kotası dolduğunda istek sessizce ölmek yerine yedek
+/// modele düşer.
+pub fn resolve_gemini_models() -> Vec<String> {
     let raw = std::env::var("GEMINI_MODEL").unwrap_or_default();
-    let trimmed = raw.trim();
-    let clean = trimmed.strip_prefix("models/").unwrap_or(trimmed);
-    if clean.is_empty() {
-        DEFAULT_GEMINI_MODEL.to_string()
-    } else {
-        clean.to_string()
+    let mut models: Vec<String> = raw
+        .split(',')
+        .map(|s| s.trim().trim_start_matches("models/").to_string())
+        .filter(|s| !s.is_empty())
+        .collect();
+
+    if models.is_empty() {
+        models.push(DEFAULT_GEMINI_MODEL.to_string());
     }
+    if models.len() == 1 && models[0] != DEFAULT_GEMINI_FALLBACK_MODEL {
+        models.push(DEFAULT_GEMINI_FALLBACK_MODEL.to_string());
+    }
+    models
+}
+
+/// Birincil modeli döndürür (başlangıç erişilebilirlik kontrolü için).
+pub fn resolve_gemini_model() -> String {
+    resolve_gemini_models()
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| DEFAULT_GEMINI_MODEL.to_string())
+}
+
+/// Muhakeme (reasoning/thinking) seviyesi.
+///
+/// Canlıda doğrulanan resmî alan: `generation_config.thinking_level`
+/// (`high` -> HTTP 200 ve thought token üretimi; üst seviye `thinking_level`
+/// ve `reasoning_effort` ise "Unknown parameter" ile 400 döner).
+pub fn resolve_thinking_level() -> String {
+    std::env::var("GEMINI_THINKING_LEVEL")
+        .ok()
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "high".to_string())
+}
+
+/// Kota/yoğunluk kaynaklı hatalarda modeli değiştirmek gerekir.
+///
+/// Aynı modeli tekrar denemek 20 istek/gün gibi kotalarda boşa harcamadır;
+/// bu hatalarda zincirdeki sonraki modele geçilir.
+fn is_model_switchable_error(err_msg: &str) -> bool {
+    let msg = err_msg.to_lowercase();
+    const MARKERS: [&str; 8] = [
+        "429",
+        "too_many_requests",
+        "rate limit",
+        "resource_exhausted",
+        "503",
+        "service_unavailable",
+        "high demand",
+        "overloaded",
+    ];
+    MARKERS.iter().any(|marker| msg.contains(marker))
 }
 
 pub async fn parse_document_with_llm(
@@ -289,7 +341,8 @@ Ensure every day present in the document is extracted into the 'days' array with
 If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
 Output strictly conforming to the requested JSON schema.";
 
-    let model_name = resolve_gemini_model();
+    let models = resolve_gemini_models();
+    let thinking_level = resolve_thinking_level();
 
     let input_type = if mime_type == "application/pdf" {
         "document"
@@ -297,117 +350,155 @@ Output strictly conforming to the requested JSON schema.";
         "image"
     };
 
-    let payload = json!({
-        "model": model_name,
-        "store": false,
-        "input": [
-            {
-                "type": "text",
-                "text": prompt
-            },
-            {
-                "type": input_type,
-                "mime_type": mime_type,
-                "data": base64_data
-            }
-        ],
-        "response_format": {
-            "type": "text",
-            "mime_type": "application/json",
-            "schema": menu_response_schema()
-        }
-    });
+    let file_name_hint = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("document_llm");
 
     let url = "https://generativelanguage.googleapis.com/v1beta/interactions";
-
-    let max_retries = 2;
+    // Model başına deneme sayısı. Kota/doluluk hatasında aynı modeli zorlamak
+    // kotayı boşa harcar; bu durumda hemen zincirdeki sonraki modele geçilir.
+    const MAX_ATTEMPTS_PER_MODEL: usize = 2;
     let mut last_error = String::new();
 
-    for attempt in 1..=max_retries {
-        tracing::info!(
-            "  Interactions API Denemesi {}/{} (Model: {})...",
-            attempt,
-            max_retries,
-            model_name
-        );
-
-        match client
-            .post(url)
-            .header("x-goog-api-key", api_key)
-            .json(&payload)
-            .send()
-            .await
-        {
-            Ok(res) => {
-                let status = res.status();
-                let text_res = res.text().await.unwrap_or_default();
-
-                if !status.is_success() {
-                    let err_msg = format!("API Error ({}): {}", status, text_res);
-                    tracing::warn!("  Hata: {}", err_msg);
-                    last_error = err_msg;
-                    continue;
+    for (model_idx, model_name) in models.iter().enumerate() {
+        let mut payload = json!({
+            "model": model_name,
+            "store": false,
+            "input": [
+                {
+                    "type": "text",
+                    "text": prompt
+                },
+                {
+                    "type": input_type,
+                    "mime_type": mime_type,
+                    "data": base64_data
                 }
+            ],
+            "response_format": {
+                "type": "text",
+                "mime_type": "application/json",
+                "schema": menu_response_schema()
+            }
+        });
 
-                if let Ok(json_res) = serde_json::from_str::<serde_json::Value>(&text_res) {
-                    let extracted = extract_response_text(&json_res)
-                        .or_else(|| find_menu_json_deep(&json_res))
-                        .unwrap_or_else(|| text_res.clone());
-                    let cleaned = clean_json_markdown(&extracted);
+        // Yüksek muhakeme. Alan adı canlıda doğrulandı:
+        // generation_config.thinking_level = "high" -> HTTP 200 + thought token.
+        if !thinking_level.is_empty() {
+            if let Some(obj) = payload.as_object_mut() {
+                obj.insert(
+                    "generation_config".to_string(),
+                    json!({ "thinking_level": thinking_level }),
+                );
+            }
+        }
 
-                    tracing::debug!("LLM Raw Response: {}", cleaned);
+        let is_last_model = model_idx + 1 == models.len();
 
-                    let file_name_hint = file_path
-                        .file_name()
-                        .and_then(|n| n.to_str())
-                        .unwrap_or("document_llm");
+        for attempt in 1..=MAX_ATTEMPTS_PER_MODEL {
+            tracing::info!(
+                "  Interactions API Denemesi {}/{} (Model: {}{})...",
+                attempt,
+                MAX_ATTEMPTS_PER_MODEL,
+                model_name,
+                if thinking_level.is_empty() {
+                    String::new()
+                } else {
+                    format!(", thinking={}", thinking_level)
+                }
+            );
 
-                    match crate::parser::json::parse_json_str(cleaned, file_name_hint) {
-                        Ok(mut db) => {
-                            if db.is_empty() {
-                                // Boş sonuç = sessiz ayrıştırma başarısızlığı. Yanıt zarfı
-                                // çözülemediğinde ham gövde ayrıştırıcıya verilir; `days`
-                                // alanı `#[serde(default)]` olduğu için boş menü "başarılı"
-                                // sayılır. Sahte başarı dosyayı vault'a taşıyıp veriyi sessizce
-                                // kaybettirir; bunun yerine hata döndürerek görünür kıl.
-                                tracing::warn!(
-                                    "  Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
-                                    cleaned.chars().take(500).collect::<String>()
+            match client
+                .post(url)
+                .header("x-goog-api-key", api_key)
+                .json(&payload)
+                .send()
+                .await
+            {
+                Ok(res) => {
+                    let status = res.status();
+                    let text_res = res.text().await.unwrap_or_default();
+
+                    if !status.is_success() {
+                        let err_msg = format!("API Error ({}): {}", status, text_res);
+                        tracing::warn!("  Hata: {}", err_msg);
+                        last_error = err_msg.clone();
+                        if is_model_switchable_error(&err_msg) {
+                            // Kota/yoğunluk: bu modeli zorlamayı bırak, yedeğe geç.
+                            break;
+                        }
+                        continue;
+                    }
+
+                    if let Ok(json_res) = serde_json::from_str::<serde_json::Value>(&text_res) {
+                        let extracted = extract_response_text(&json_res)
+                            .or_else(|| find_menu_json_deep(&json_res))
+                            .unwrap_or_else(|| text_res.clone());
+                        let cleaned = clean_json_markdown(&extracted);
+
+                        tracing::debug!("LLM Raw Response: {}", cleaned);
+
+                        match crate::parser::json::parse_json_str(cleaned, file_name_hint) {
+                            Ok(mut db) => {
+                                if db.is_empty() {
+                                    // Boş sonuç = sessiz ayrıştırma başarısızlığı. Yanıt zarfı
+                                    // çözülemediğinde ham gövde ayrıştırıcıya verilir; `days`
+                                    // alanı `#[serde(default)]` olduğu için boş menü "başarılı"
+                                    // sayılır. Sahte başarı dosyayı vault'a taşıyıp veriyi
+                                    // sessizce kaybettirir; hata döndürerek görünür kıl.
+                                    tracing::warn!(
+                                        "  Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
+                                        cleaned.chars().take(500).collect::<String>()
+                                    );
+                                    last_error = "Ayrıştırma 0 gün döndürdü (boş menü; LLM yanıt zarfı çözülememiş olabilir)".to_string();
+                                    continue;
+                                }
+
+                                for day_data in db.values_mut() {
+                                    crate::parser::validation::finalize_day_metadata(day_data);
+                                }
+
+                                tracing::info!(
+                                    "  Başarıyla ayrıştırıldı: {} gün bulundu (model: {}).",
+                                    db.len(),
+                                    model_name
                                 );
-                                last_error = "Ayrıştırma 0 gün döndürdü (boş menü; LLM yanıt zarfı çözülememiş olabilir)".to_string();
+                                return Ok(db);
+                            }
+                            Err(e) => {
+                                tracing::warn!(
+                                    "  JSON Ingest ayrıştırma hatası (deneme {}): {}",
+                                    attempt,
+                                    e
+                                );
+                                last_error = format!("IngestMenuJson error: {}", e);
                                 continue;
                             }
-
-                            for day_data in db.values_mut() {
-                                crate::parser::validation::finalize_day_metadata(day_data);
-                            }
-
-                            tracing::info!("  Başarıyla ayrıştırıldı: {} gün bulundu.", db.len());
-                            return Ok(db);
                         }
-                        Err(e) => {
-                            tracing::warn!(
-                                "  JSON Ingest ayrıştırma hatası (deneme {}): {}",
-                                attempt,
-                                e
-                            );
-                            last_error = format!("IngestMenuJson error: {}", e);
-                            continue;
-                        }
+                    } else {
+                        last_error = format!("Failed to parse response as JSON: {}", text_res);
                     }
-                } else {
-                    last_error = format!("Failed to parse response as JSON: {}", text_res);
+                }
+                Err(e) => {
+                    tracing::warn!("  İstek atılamadı: {}", e);
+                    last_error = format!("Request failed: {}", e);
                 }
             }
-            Err(e) => {
-                tracing::warn!("  İstek atılamadı: {}", e);
-                last_error = format!("Request failed: {}", e);
-            }
+        }
+
+        if !is_last_model {
+            tracing::warn!(
+                "  '{}' modeli başarısız oldu, zincirdeki sonraki modele geçiliyor: '{}'",
+                model_name,
+                models[model_idx + 1]
+            );
         }
     }
 
     Err(anyhow::anyhow!(
-        "Tüm LLM denemeleri başarısız oldu. Son hata: {}",
+        "Tüm LLM denemeleri başarısız oldu (denenen modeller: {}). Son hata: {}",
+        models.join(", "),
         last_error
     ))
 }
@@ -458,5 +549,24 @@ mod tests {
         let found = find_menu_json_deep(&odd).expect("days nesnesi bulunmalı");
         assert!(found.contains("\"days\""));
         assert!(crate::parser::json::parse_json_str(&found, "test.pdf").is_ok());
+    }
+
+    /// Kota/yoğunluk hatalarında model değiştirilmeli; içerik/söz dizimi
+    /// hatalarında ise aynı model denenmeye devam edilmeli.
+    #[test]
+    fn test_model_switchable_error_detection() {
+        assert!(is_model_switchable_error(
+            "API Error (429 Too Many Requests): {\"code\":\"too_many_requests\"}"
+        ));
+        assert!(is_model_switchable_error(
+            "API Error (503 Service Unavailable): high demand"
+        ));
+        assert!(is_model_switchable_error("resource_exhausted"));
+        assert!(!is_model_switchable_error(
+            "API Error (400 Bad Request): Unknown parameter 'thinking_budget'"
+        ));
+        assert!(!is_model_switchable_error(
+            "Ayrıştırma 0 gün döndürdü (boş menü)"
+        ));
     }
 }
