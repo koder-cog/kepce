@@ -35,3 +35,16 @@ tracing-subscriber = { workspace = true }
 rand = { workspace = true }
 http = "1.4.2"
 web-push-native = "0.4"
+
+# Görsel işleme & sayfa bazlı yön (orientation) düzeltme
+# image: EXIF okuma, gri tonlama, döndürme, yeniden kodlama
+image = { version = "0.25", default-features = false, features = [
+    "jpeg",
+    "png",
+    "webp",
+] }
+# lopdf: PDF sayfalarının /Rotate değerini ayarlamak için (rasterizasyon gerekmez)
+lopdf = "0.45"
+# pdfium-render: PDF sayfalarını rasterize edip yön algılamak için.
+# libpdfium.so çalışma zamanında dinamik yüklenir (worker/Dockerfile'a eklenir).
+pdfium-render = "0.9"
