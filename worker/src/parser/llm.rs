@@ -311,15 +311,246 @@ fn is_model_switchable_error(err_msg: &str) -> bool {
     MARKERS.iter().any(|marker| msg.contains(marker))
 }
 
-pub async fn parse_document_with_llm(
+/// LLM sağlayıcı sırası. Varsayılan: OpenRouter (birincil) -> Gemini (yedek).
+///
+/// Gemini Free Tier üretim kotası model başına 20 istek/gün olduğundan
+/// OpenRouter birincil sağlayıcıdır; Gemini kotası/kullanılabilirliği
+/// yetersiz kaldığında devreye girer.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LlmProvider {
+    OpenRouter,
+    Gemini,
+}
+
+/// OpenRouter varsayılan modeli. `~` öneki "Gemini Flash ailesinin en güncel
+/// modeline yönlendir" anlamına gelir (canlıda `google/gemini-3.8-flash`'a çözülür).
+pub const DEFAULT_OPENROUTER_MODEL: &str = "~google/gemini-flash-latest";
+
+/// `LLM_PROVIDER_ORDER` ortam değişkenini sağlayıcı sırasına çözer.
+pub fn resolve_provider_order() -> Vec<LlmProvider> {
+    let raw = std::env::var("LLM_PROVIDER_ORDER").unwrap_or_default();
+    let mut out: Vec<LlmProvider> = raw
+        .split(',')
+        .filter_map(|s| match s.trim().to_lowercase().as_str() {
+            "openrouter" | "or" => Some(LlmProvider::OpenRouter),
+            "gemini" | "google" => Some(LlmProvider::Gemini),
+            _ => None,
+        })
+        .collect();
+    if out.is_empty() {
+        out = vec![LlmProvider::OpenRouter, LlmProvider::Gemini];
+    }
+    out
+}
+
+fn openrouter_api_key() -> Option<String> {
+    std::env::var("OPENROUTER_API_KEY")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+}
+
+fn openrouter_model() -> String {
+    std::env::var("OPENROUTER_MODEL")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| DEFAULT_OPENROUTER_MODEL.to_string())
+}
+
+fn openrouter_reasoning_effort() -> String {
+    std::env::var("OPENROUTER_REASONING_EFFORT")
+        .ok()
+        .map(|s| s.trim().to_lowercase())
+        .filter(|s| !s.is_empty())
+        .unwrap_or_else(|| "low".to_string())
+}
+
+/// LLM ayrıştırma için en az bir sağlayıcı yapılandırılmış mı?
+pub fn llm_available(gemini_api_key: Option<&str>) -> bool {
+    gemini_api_key.is_some() || openrouter_api_key().is_some()
+}
+
+/// LLM metnini menü veritabanına çevirir; boş sonuç hata sayılır.
+///
+/// Boş menü "başarı" sayılırsa dosya vault'a taşınır ve veri sessizce
+/// kaybolur; bu yüzden 0 gün dönen sonuç hata olarak ele alınır.
+fn parse_and_finalize(text: &str, file_name_hint: &str) -> Result<MenuDatabase> {
+    let cleaned = clean_json_markdown(text);
+    let mut db = crate::parser::json::parse_json_str(cleaned, file_name_hint)?;
+    if db.is_empty() {
+        anyhow::bail!(
+            "Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
+            cleaned.chars().take(500).collect::<String>()
+        );
+    }
+    for day_data in db.values_mut() {
+        crate::parser::validation::finalize_day_metadata(day_data);
+    }
+    Ok(db)
+}
+
+/// Sağlayıcıdan bağımsız istek verisi (istem metni + belge).
+struct LlmRequest<'a> {
+    prompt: &'a str,
+    mime_type: &'a str,
+    base64_data: &'a str,
+    /// Gemini Interactions API için `document` | `image`.
+    input_type: &'a str,
+}
+
+/// OpenRouter `/chat/completions` çağrısı (OpenAI uyumlu şema).
+///
+/// Canlıda doğrulandı: base64 `data:` URI ile PDF ve JPEG kabul edilir,
+/// `response_format.json_schema` (strict) ve `reasoning.effort` desteklenir.
+async fn call_openrouter(
     client: &Client,
     api_key: &str,
+    model: &str,
+    effort: &str,
+    req: &LlmRequest<'_>,
+) -> Result<String> {
+    let base_url = std::env::var("OPENROUTER_BASE_URL")
+        .ok()
+        .filter(|s| !s.trim().is_empty())
+        .unwrap_or_else(|| "https://openrouter.ai/api/v1".to_string());
+    let url = format!("{}/chat/completions", base_url.trim_end_matches('/'));
+
+    let mut payload = json!({
+        "model": model,
+        "messages": [{
+            "role": "user",
+            "content": [
+                { "type": "text", "text": req.prompt },
+                {
+                    "type": "image_url",
+                    "image_url": { "url": format!("data:{};base64,{}", req.mime_type, req.base64_data) }
+                }
+            ]
+        }],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": { "name": "menu", "strict": true, "schema": menu_response_schema() }
+        },
+        // Yalnızca istenen parametreleri destekleyen uç noktalara yönlendir.
+        "provider": { "require_parameters": true },
+        // Muhakeme token'ları bu bütçeden düşer; cömert tutulur.
+        "max_tokens": 16000
+    });
+
+    if !effort.is_empty() {
+        if let Some(obj) = payload.as_object_mut() {
+            obj.insert("reasoning".to_string(), json!({ "effort": effort }));
+        }
+    }
+
+    let res = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", api_key))
+        .header("Content-Type", "application/json")
+        .json(&payload)
+        .send()
+        .await
+        .context("OpenRouter isteği atılamadı")?;
+
+    let status = res.status();
+    let text_res = res.text().await.unwrap_or_default();
+    if !status.is_success() {
+        anyhow::bail!("OpenRouter API Error ({}): {}", status, text_res);
+    }
+
+    let json_res: serde_json::Value =
+        serde_json::from_str(&text_res).context("OpenRouter yanıtı JSON değil")?;
+
+    let choice = json_res
+        .get("choices")
+        .and_then(|c| c.as_array())
+        .and_then(|a| a.first());
+
+    let finish = choice
+        .and_then(|c| c.get("finish_reason"))
+        .and_then(|f| f.as_str())
+        .unwrap_or("");
+    let content = choice
+        .and_then(|c| c.get("message"))
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_str())
+        .unwrap_or("");
+
+    if content.trim().is_empty() {
+        // Doküman uyarısı: muhakeme token'ları max_tokens'ı tüketirse içerik boş
+        // döner (finish_reason="length") ve yine faturalanır.
+        anyhow::bail!(
+            "OpenRouter boş içerik döndürdü (finish_reason='{}'). Muhakeme bütçesi tükenmiş olabilir.",
+            finish
+        );
+    }
+
+    Ok(content.to_string())
+}
+
+/// Gemini Interactions API çağrısı; yanıt zarfından menü metnini çıkarır.
+async fn call_gemini(
+    client: &Client,
+    api_key: &str,
+    model: &str,
+    thinking_level: &str,
+    req: &LlmRequest<'_>,
+) -> Result<String> {
+    let url = "https://generativelanguage.googleapis.com/v1beta/interactions";
+
+    let mut payload = json!({
+        "model": model,
+        "store": false,
+        "input": [
+            { "type": "text", "text": req.prompt },
+            { "type": req.input_type, "mime_type": req.mime_type, "data": req.base64_data }
+        ],
+        "response_format": {
+            "type": "text",
+            "mime_type": "application/json",
+            "schema": menu_response_schema()
+        }
+    });
+
+    // Yüksek muhakeme. Alan adı canlıda doğrulandı:
+    // generation_config.thinking_level = "high" -> HTTP 200 + thought token.
+    if !thinking_level.is_empty() {
+        if let Some(obj) = payload.as_object_mut() {
+            obj.insert(
+                "generation_config".to_string(),
+                json!({ "thinking_level": thinking_level }),
+            );
+        }
+    }
+
+    let res = client
+        .post(url)
+        .header("x-goog-api-key", api_key)
+        .json(&payload)
+        .send()
+        .await
+        .context("Gemini isteği atılamadı")?;
+
+    let status = res.status();
+    let text_res = res.text().await.unwrap_or_default();
+    if !status.is_success() {
+        anyhow::bail!("Gemini API Error ({}): {}", status, text_res);
+    }
+
+    let json_res: serde_json::Value =
+        serde_json::from_str(&text_res).context("Gemini yanıtı JSON değil")?;
+
+    extract_response_text(&json_res)
+        .or_else(|| find_menu_json_deep(&json_res))
+        .ok_or_else(|| anyhow::anyhow!("Gemini yanıtından metin çıkarılamadı"))
+}
+
+pub async fn parse_document_with_llm(
+    client: &Client,
+    gemini_api_key: Option<&str>,
     file_path: &Path,
 ) -> Result<MenuDatabase> {
-    tracing::info!(
-        "Belge Gemini Interactions API ile ayrıştırılıyor: {:?}",
-        file_path
-    );
+    tracing::info!("Belge LLM ile ayrıştırılıyor: {:?}", file_path);
 
     let metadata = tokio::fs::metadata(file_path)
         .await
@@ -341,9 +572,6 @@ Ensure every day present in the document is extracted into the 'days' array with
 If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
 Output strictly conforming to the requested JSON schema.";
 
-    let models = resolve_gemini_models();
-    let thinking_level = resolve_thinking_level();
-
     let input_type = if mime_type == "application/pdf" {
         "document"
     } else {
@@ -355,150 +583,148 @@ Output strictly conforming to the requested JSON schema.";
         .and_then(|n| n.to_str())
         .unwrap_or("document_llm");
 
-    let url = "https://generativelanguage.googleapis.com/v1beta/interactions";
+    let llm_req = LlmRequest {
+        prompt,
+        mime_type,
+        base64_data: &base64_data,
+        input_type,
+    };
+
+    let providers = resolve_provider_order();
+    let openrouter_key = openrouter_api_key();
+    let openrouter_model = openrouter_model();
+    let openrouter_effort = openrouter_reasoning_effort();
+    let gemini_models = resolve_gemini_models();
+    let thinking_level = resolve_thinking_level();
+
     // Model başına deneme sayısı. Kota/doluluk hatasında aynı modeli zorlamak
-    // kotayı boşa harcar; bu durumda hemen zincirdeki sonraki modele geçilir.
+    // kotayı boşa harcar; bu durumda hemen sonraki modele/sağlayıcıya geçilir.
     const MAX_ATTEMPTS_PER_MODEL: usize = 2;
     let mut last_error = String::new();
+    let mut attempted_any = false;
 
-    for (model_idx, model_name) in models.iter().enumerate() {
-        let mut payload = json!({
-            "model": model_name,
-            "store": false,
-            "input": [
-                {
-                    "type": "text",
-                    "text": prompt
-                },
-                {
-                    "type": input_type,
-                    "mime_type": mime_type,
-                    "data": base64_data
-                }
-            ],
-            "response_format": {
-                "type": "text",
-                "mime_type": "application/json",
-                "schema": menu_response_schema()
-            }
-        });
+    for provider in providers {
+        match provider {
+            LlmProvider::OpenRouter => {
+                let Some(key) = openrouter_key.as_deref() else {
+                    tracing::warn!("OpenRouter atlanıyor: OPENROUTER_API_KEY ayarlanmamış.");
+                    continue;
+                };
+                attempted_any = true;
 
-        // Yüksek muhakeme. Alan adı canlıda doğrulandı:
-        // generation_config.thinking_level = "high" -> HTTP 200 + thought token.
-        if !thinking_level.is_empty() {
-            if let Some(obj) = payload.as_object_mut() {
-                obj.insert(
-                    "generation_config".to_string(),
-                    json!({ "thinking_level": thinking_level }),
-                );
-            }
-        }
+                for attempt in 1..=MAX_ATTEMPTS_PER_MODEL {
+                    tracing::info!(
+                        "  OpenRouter Denemesi {}/{} (Model: {}, effort: {})...",
+                        attempt,
+                        MAX_ATTEMPTS_PER_MODEL,
+                        openrouter_model,
+                        openrouter_effort
+                    );
 
-        let is_last_model = model_idx + 1 == models.len();
-
-        for attempt in 1..=MAX_ATTEMPTS_PER_MODEL {
-            tracing::info!(
-                "  Interactions API Denemesi {}/{} (Model: {}{})...",
-                attempt,
-                MAX_ATTEMPTS_PER_MODEL,
-                model_name,
-                if thinking_level.is_empty() {
-                    String::new()
-                } else {
-                    format!(", thinking={}", thinking_level)
-                }
-            );
-
-            match client
-                .post(url)
-                .header("x-goog-api-key", api_key)
-                .json(&payload)
-                .send()
-                .await
-            {
-                Ok(res) => {
-                    let status = res.status();
-                    let text_res = res.text().await.unwrap_or_default();
-
-                    if !status.is_success() {
-                        let err_msg = format!("API Error ({}): {}", status, text_res);
-                        tracing::warn!("  Hata: {}", err_msg);
-                        last_error = err_msg.clone();
-                        if is_model_switchable_error(&err_msg) {
-                            // Kota/yoğunluk: bu modeli zorlamayı bırak, yedeğe geç.
-                            break;
-                        }
-                        continue;
-                    }
-
-                    if let Ok(json_res) = serde_json::from_str::<serde_json::Value>(&text_res) {
-                        let extracted = extract_response_text(&json_res)
-                            .or_else(|| find_menu_json_deep(&json_res))
-                            .unwrap_or_else(|| text_res.clone());
-                        let cleaned = clean_json_markdown(&extracted);
-
-                        tracing::debug!("LLM Raw Response: {}", cleaned);
-
-                        match crate::parser::json::parse_json_str(cleaned, file_name_hint) {
-                            Ok(mut db) => {
-                                if db.is_empty() {
-                                    // Boş sonuç = sessiz ayrıştırma başarısızlığı. Yanıt zarfı
-                                    // çözülemediğinde ham gövde ayrıştırıcıya verilir; `days`
-                                    // alanı `#[serde(default)]` olduğu için boş menü "başarılı"
-                                    // sayılır. Sahte başarı dosyayı vault'a taşıyıp veriyi
-                                    // sessizce kaybettirir; hata döndürerek görünür kıl.
-                                    tracing::warn!(
-                                        "  Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
-                                        cleaned.chars().take(500).collect::<String>()
-                                    );
-                                    last_error = "Ayrıştırma 0 gün döndürdü (boş menü; LLM yanıt zarfı çözülememiş olabilir)".to_string();
-                                    continue;
-                                }
-
-                                for day_data in db.values_mut() {
-                                    crate::parser::validation::finalize_day_metadata(day_data);
-                                }
-
+                    match call_openrouter(
+                        client,
+                        key,
+                        &openrouter_model,
+                        &openrouter_effort,
+                        &llm_req,
+                    )
+                    .await
+                    {
+                        Ok(text) => match parse_and_finalize(&text, file_name_hint) {
+                            Ok(db) => {
                                 tracing::info!(
-                                    "  Başarıyla ayrıştırıldı: {} gün bulundu (model: {}).",
+                                    "  Başarıyla ayrıştırıldı: {} gün bulundu (sağlayıcı: openrouter, model: {}).",
                                     db.len(),
-                                    model_name
+                                    openrouter_model
                                 );
                                 return Ok(db);
                             }
                             Err(e) => {
-                                tracing::warn!(
-                                    "  JSON Ingest ayrıştırma hatası (deneme {}): {}",
-                                    attempt,
-                                    e
-                                );
-                                last_error = format!("IngestMenuJson error: {}", e);
-                                continue;
+                                tracing::warn!("  Ayrıştırma hatası (deneme {}): {}", attempt, e);
+                                last_error = format!("{}", e);
+                            }
+                        },
+                        Err(e) => {
+                            let msg = format!("{:?}", e);
+                            tracing::warn!("  Hata: {}", msg);
+                            last_error = msg.clone();
+                            if is_model_switchable_error(&msg) {
+                                break;
                             }
                         }
-                    } else {
-                        last_error = format!("Failed to parse response as JSON: {}", text_res);
                     }
                 }
-                Err(e) => {
-                    tracing::warn!("  İstek atılamadı: {}", e);
-                    last_error = format!("Request failed: {}", e);
+            }
+            LlmProvider::Gemini => {
+                let Some(key) = gemini_api_key else {
+                    tracing::warn!("Gemini atlanıyor: GEMINI_API_KEY ayarlanmamış.");
+                    continue;
+                };
+                attempted_any = true;
+
+                for (model_idx, model_name) in gemini_models.iter().enumerate() {
+                    let is_last_model = model_idx + 1 == gemini_models.len();
+
+                    for attempt in 1..=MAX_ATTEMPTS_PER_MODEL {
+                        tracing::info!(
+                            "  Gemini Denemesi {}/{} (Model: {}, thinking: {})...",
+                            attempt,
+                            MAX_ATTEMPTS_PER_MODEL,
+                            model_name,
+                            thinking_level
+                        );
+
+                        match call_gemini(client, key, model_name, &thinking_level, &llm_req).await
+                        {
+                            Ok(text) => match parse_and_finalize(&text, file_name_hint) {
+                                Ok(db) => {
+                                    tracing::info!(
+                                        "  Başarıyla ayrıştırıldı: {} gün bulundu (sağlayıcı: gemini, model: {}).",
+                                        db.len(),
+                                        model_name
+                                    );
+                                    return Ok(db);
+                                }
+                                Err(e) => {
+                                    tracing::warn!(
+                                        "  Ayrıştırma hatası (deneme {}): {}",
+                                        attempt,
+                                        e
+                                    );
+                                    last_error = format!("{}", e);
+                                }
+                            },
+                            Err(e) => {
+                                let msg = format!("{:?}", e);
+                                tracing::warn!("  Hata: {}", msg);
+                                last_error = msg.clone();
+                                if is_model_switchable_error(&msg) {
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if !is_last_model {
+                        tracing::warn!(
+                            "  '{}' modeli başarısız oldu, zincirdeki sonraki modele geçiliyor: '{}'",
+                            model_name,
+                            gemini_models[model_idx + 1]
+                        );
+                    }
                 }
             }
         }
+    }
 
-        if !is_last_model {
-            tracing::warn!(
-                "  '{}' modeli başarısız oldu, zincirdeki sonraki modele geçiliyor: '{}'",
-                model_name,
-                models[model_idx + 1]
-            );
-        }
+    if !attempted_any {
+        anyhow::bail!(
+            "Hiçbir LLM sağlayıcısı yapılandırılmamış (OPENROUTER_API_KEY / GEMINI_API_KEY)."
+        );
     }
 
     Err(anyhow::anyhow!(
-        "Tüm LLM denemeleri başarısız oldu (denenen modeller: {}). Son hata: {}",
-        models.join(", "),
+        "Tüm LLM denemeleri başarısız oldu. Son hata: {}",
         last_error
     ))
 }

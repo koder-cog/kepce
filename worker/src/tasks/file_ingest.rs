@@ -132,10 +132,10 @@ pub async fn process_local_files(
                     ext.to_lowercase().as_str(),
                     "pdf" | "png" | "jpg" | "jpeg" | "webp" | "heic" | "heif"
                 ) {
-                    if let Some(key) = gemini_api_key {
+                    if crate::parser::llm::llm_available(gemini_api_key) {
                         match crate::parser::llm::parse_document_with_llm(
                             reqwest_client,
-                            key,
+                            gemini_api_key,
                             std::path::Path::new(&path_str),
                         )
                         .await
@@ -154,7 +154,7 @@ pub async fn process_local_files(
                         }
                     } else {
                         tracing::warn!(
-                            "{}: LLM parsing devre dışı - GEMINI_API_KEY ayarlanmamış, atlanıyor.",
+                            "{}: LLM parsing devre dışı - hiçbir sağlayıcı anahtarı (OPENROUTER_API_KEY/GEMINI_API_KEY) ayarlanmamış, atlanıyor.",
                             filename
                         );
                         continue;

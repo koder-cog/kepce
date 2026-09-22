@@ -279,6 +279,48 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    // Sağlayıcı sırası: varsayılan OpenRouter (birincil) -> Gemini (yedek).
+    let provider_order = crate::parser::llm::resolve_provider_order();
+    tracing::info!(
+        "LLM sağlayıcı sırası: {}",
+        provider_order
+            .iter()
+            .map(|p| match p {
+                crate::parser::llm::LlmProvider::OpenRouter => "openrouter",
+                crate::parser::llm::LlmProvider::Gemini => "gemini",
+            })
+            .collect::<Vec<_>>()
+            .join(" -> ")
+    );
+
+    // OpenRouter erişilebilirlik kontrolü (birincil sağlayıcı).
+    if let Ok(or_key) = env::var("OPENROUTER_API_KEY") {
+        if !or_key.trim().is_empty() {
+            let base = env::var("OPENROUTER_BASE_URL")
+                .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+            let url = format!("{}/key", base.trim_end_matches('/'));
+            match reqwest_client
+                .get(&url)
+                .header("Authorization", format!("Bearer {}", or_key))
+                .send()
+                .await
+            {
+                Ok(res) if res.status().is_success() => {
+                    tracing::info!("OpenRouter API anahtarı doğrulandı [OK]");
+                }
+                Ok(res) => {
+                    tracing::warn!(
+                        "OpenRouter erişilebilirlik kontrolü başarısız (HTTP {}).",
+                        res.status()
+                    );
+                }
+                Err(e) => {
+                    tracing::warn!("OpenRouter erişilebilirlik kontrolü başarısız: {:?}", e);
+                }
+            }
+        }
+    }
+
     let local_interval_secs: u64 = env::var("WORKER_LOCAL_INTERVAL_SECS")
         .ok()
         .and_then(|v| v.parse().ok())
