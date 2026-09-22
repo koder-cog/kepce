@@ -431,8 +431,11 @@ async fn call_openrouter(
             "type": "json_schema",
             "json_schema": { "name": "menu", "strict": true, "schema": menu_response_schema() }
         },
-        // Yalnızca istenen parametreleri destekleyen uç noktalara yönlendir.
-        "provider": { "require_parameters": true },
+        // NOT: `provider.require_parameters: true` BİLİNÇLİ OLARAK KULLANILMAZ.
+        // Canlıda doğrulandı: bu bayrak, akışı 502 "provider_unavailable" ile
+        // bozan bir uç noktaya yönlendiriyor ve KESİK JSON döndürüyor
+        // (menu_bursa.pdf -> 1 gün / 0 kayıt). Bayrak kaldırıldığında aynı dosya
+        // 28-31 gün olarak eksiksiz ayrıştırılıyor.
         // Muhakeme token'ları bu bütçeden düşer; cömert tutulur.
         "max_tokens": 16000
     });
@@ -475,6 +478,16 @@ async fn call_openrouter(
         .and_then(|m| m.get("content"))
         .and_then(|c| c.as_str())
         .unwrap_or("");
+
+    // Sağlayıcı akışı bozulursa (502 provider_unavailable) içerik KESİK JSON
+    // olarak döner. finish_reason "error"/"length" ise içerik güvenilmezdir;
+    // yarım menü kaydedilmemesi için hata döndürülür (sonraki deneme/model).
+    if finish == "error" || finish == "length" {
+        anyhow::bail!(
+            "OpenRouter yanıtı tamamlanmadı (finish_reason='{}'); içerik kesik olabilir.",
+            finish
+        );
+    }
 
     if content.trim().is_empty() {
         // Doküman uyarısı: muhakeme token'ları max_tokens'ı tüketirse içerik boş
