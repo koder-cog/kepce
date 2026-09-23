@@ -897,4 +897,107 @@ mod tests {
             "prompt her tablonun meal_type ile etiketlenmesini istemeli"
         );
     }
+
+    /// `.env`'i (repo kökü) yükler; başarısızlık sessizce yok sayılır.
+    ///
+    /// cargo test cwd'yi paket köküne (`worker/`) ayarladığı için repo kökü
+    /// `../.env` olur; her ihtimale karşı bir üst dizin de denenir.
+    fn load_probe_env() {
+        let _ = dotenvy::dotenv();
+        let _ = dotenvy::from_filename("../.env");
+        let _ = dotenvy::from_filename("../../.env");
+    }
+
+    /// Probe için örnek belge yolunu çözer: `KEPCE_PROBE_PDF` veya bilinen adaylar.
+    fn probe_pdf_path() -> Option<std::path::PathBuf> {
+        if let Ok(p) = std::env::var("KEPCE_PROBE_PDF") {
+            let pb = std::path::PathBuf::from(&p);
+            if pb.exists() {
+                return Some(pb);
+            }
+            eprintln!(
+                "UYARI: KEPCE_PROBE_PDF bulunamadı, adaylara düşülüyor: {}",
+                p
+            );
+        }
+        const CANDIDATES: [&str; 4] = [
+            "../data/menuler/admin/bekleyen/Nisan_2026_Kahvaltı.pdf",
+            "data/menuler/admin/bekleyen/Nisan_2026_Kahvaltı.pdf",
+            "../data/menuler/admin/bekleyen/Nisan_2026_Akşam_Yemeği.pdf",
+            "data/menuler/admin/bekleyen/Nisan_2026_Akşam_Yemeği.pdf",
+        ];
+        CANDIDATES
+            .iter()
+            .map(std::path::PathBuf::from)
+            .find(|p| p.exists())
+    }
+
+    /// Canlı LLM probe'u: gerçek bir API çağrısıyla prompt'un çıkarım kalitesini ölçer.
+    ///
+    /// `#[ignore]` — CI'da ÇALIŞMAZ (ağ + API anahtarı gerektirir). Yerelde:
+    /// ```text
+    /// KEPCE_PROBE_PDF="data/menuler/admin/bekleyen/Nisan_2026_Kahvaltı.pdf" \
+    ///   cargo test -p worker probe_llm_extraction -- --ignored --nocapture
+    /// ```
+    /// Anahtar `.env`'den (repo kökü) okunur. `KEPCE_PROBE_MIN_DAYS` ile en az gün
+    /// sayısı doğrulanır. Çıktı, gün sayısı + öğün kırılımıdır (sessiz kayıp kontrolü).
+    #[tokio::test]
+    #[ignore = "Canlı LLM probe: ağ + OPENROUTER_API_KEY/GEMINI_API_KEY gerektirir"]
+    async fn probe_llm_extraction() {
+        load_probe_env();
+
+        let Some(path) = probe_pdf_path() else {
+            eprintln!("PROBE atlandı: örnek belge bulunamadı (KEPCE_PROBE_PDF ile yol verin).");
+            return;
+        };
+
+        let gemini_key = std::env::var("GEMINI_API_KEY")
+            .ok()
+            .filter(|s| !s.trim().is_empty());
+        if !llm_available(gemini_key.as_deref()) {
+            eprintln!("PROBE atlandı: OPENROUTER_API_KEY/GEMINI_API_KEY ayarlı değil.");
+            return;
+        }
+
+        // Zaman aşımları yapılandırılabilir: büyük taranmış PDF'lerde (ör. ~4.5 MB)
+        // model işlemesi dakikalar sürebilir; `KEPCE_PROBE_TIMEOUT_SECS` ile ayarlanır.
+        let timeout_secs = std::env::var("KEPCE_PROBE_TIMEOUT_SECS")
+            .ok()
+            .and_then(|v| v.trim().parse::<u64>().ok())
+            .unwrap_or(300);
+        let client = reqwest::Client::builder()
+            .connect_timeout(std::time::Duration::from_secs(15))
+            .timeout(std::time::Duration::from_secs(timeout_secs))
+            .build()
+            .expect("reqwest client kurulamadı");
+        eprintln!("PROBE: belge={:?} | timeout={}s", path, timeout_secs);
+
+        let db = parse_document_with_llm(&client, gemini_key.as_deref(), &path)
+            .await
+            .expect("LLM ayrıştırma başarılı olmalı");
+
+        let days = db.len();
+        let count = |meal: fn(&crate::parser::models::DailyMenu) -> bool| {
+            db.values()
+                .filter(|d| meal(&d.normal) || meal(&d.colyak))
+                .count()
+        };
+        let breakfast = count(|m| !m.breakfast.is_empty());
+        let lunch = count(|m| !m.lunch.is_empty());
+        let dinner = count(|m| !m.dinner.is_empty());
+
+        eprintln!(
+            "PROBE SONUCU: dosya={:?} | {} gün | kahvaltı {} | öğle {} | akşam {}",
+            path, days, breakfast, lunch, dinner
+        );
+
+        assert!(days > 0, "en az bir gün çıkarılmalı");
+
+        if let Some(min) = std::env::var("KEPCE_PROBE_MIN_DAYS")
+            .ok()
+            .and_then(|v| v.trim().parse::<usize>().ok())
+        {
+            assert!(days >= min, "beklenen en az {} gün, {} bulundu", min, days);
+        }
+    }
 }
