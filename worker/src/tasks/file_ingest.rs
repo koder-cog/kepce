@@ -1,9 +1,11 @@
 use anyhow::Result;
-use chrono::Local;
+use chrono::{Local, NaiveDate};
 use sea_orm::{ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter};
 use shared::entities::cities;
 use std::env;
 use std::path::PathBuf;
+
+use crate::parser::models::MenuDatabase;
 
 /// Ağ/servis kaynaklı **geçici** hataları ayırt eder.
 ///
@@ -30,6 +32,96 @@ fn is_transient_error(err_msg: &str) -> bool {
     TRANSIENT_MARKERS
         .iter()
         .any(|marker| err_msg.contains(marker))
+}
+
+/// Bir menü veritabanının özeti: gün sayısı, öğün kırılımı ve tarih aralığı.
+///
+/// Gözlemlenebilirlik için kullanılır: sessiz veri kaybını (ör. çok bölümlü bir
+/// PDF'te kahvaltı tablosunun atlanması) görünür kılar.
+#[derive(Debug, Default, Clone)]
+struct MenuSummary {
+    days: usize,
+    breakfast: usize,
+    lunch: usize,
+    dinner: usize,
+    first_date: Option<NaiveDate>,
+    last_date: Option<NaiveDate>,
+}
+
+/// `MenuDatabase` içinden gün sayısı, öğün kırılımı ve tarih aralığını çıkarır.
+///
+/// Saf fonksiyon (env okumaz) — birim testi kolay olsun diye ayrıldı.
+fn summarize_menu_db(db: &MenuDatabase) -> MenuSummary {
+    let mut s = MenuSummary::default();
+    for (date_str, day) in db {
+        s.days += 1;
+        let has_breakfast = !day.normal.breakfast.is_empty() || !day.colyak.breakfast.is_empty();
+        let has_lunch = !day.normal.lunch.is_empty() || !day.colyak.lunch.is_empty();
+        let has_dinner = !day.normal.dinner.is_empty() || !day.colyak.dinner.is_empty();
+        if has_breakfast {
+            s.breakfast += 1;
+        }
+        if has_lunch {
+            s.lunch += 1;
+        }
+        if has_dinner {
+            s.dinner += 1;
+        }
+        if let Ok(d) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
+            s.first_date = Some(s.first_date.map_or(d, |f| f.min(d)));
+            s.last_date = Some(s.last_date.map_or(d, |l| l.max(d)));
+        }
+    }
+    s
+}
+
+/// "Beklenenden az gün" eşiği (0 < r <= 1). Varsayılan 0.6.
+///
+/// `WORKER_MIN_DAYS_RATIO` ile ayarlanır; geçersiz/aralık dışı değerde varsayılana döner.
+fn min_days_ratio() -> f64 {
+    std::env::var("WORKER_MIN_DAYS_RATIO")
+        .ok()
+        .and_then(|v| v.trim().parse::<f64>().ok())
+        .filter(|r| *r > 0.0 && *r <= 1.0)
+        .unwrap_or(0.6)
+}
+
+/// Tek öğün tipi uyarısı için minimum gün sayısı.
+const MEAL_MIX_MIN_DAYS: usize = 10;
+
+/// Beklenenden az gün / eksik öğün tablosu uyarısı üretir (WARN amaçlı; asla bloklamaz).
+///
+/// İki sezgisel:
+/// 1. **Belge içi boşluk:** çıkarılan gün sayısı, belgenin kapsadığı tarih
+///    aralığına (`first..last`) göre beklenen minimumun altındaysa.
+/// 2. **Öğün karışımı:** çok günlük belgede yalnızca tek öğün tipi varsa
+///    (çoklu-tablo atlanmış olabilir).
+fn low_days_warning(summary: &MenuSummary) -> Option<String> {
+    if let (Some(first), Some(last)) = (summary.first_date, summary.last_date) {
+        let span = (last - first).num_days().max(0) as usize + 1;
+        if span > 1 {
+            let expected_min = ((span as f64) * min_days_ratio()).ceil() as usize;
+            if summary.days < expected_min {
+                return Some(format!(
+                    "Beklenenden az gün: {} gün çıkarıldı, belge {} günlük aralığı kapsıyor (beklenen en az {}). Olası sessiz veri kaybı.",
+                    summary.days, span, expected_min
+                ));
+            }
+        }
+    }
+    if summary.days >= MEAL_MIX_MIN_DAYS {
+        let meal_types_present = [summary.breakfast, summary.lunch, summary.dinner]
+            .iter()
+            .filter(|&&c| c > 0)
+            .count();
+        if meal_types_present == 1 {
+            return Some(format!(
+                "{} günlük belgede yalnızca tek öğün tipi bulundu (kahvaltı {}, öğle {}, akşam {}). Çoklu-tablo atlanmış olabilir.",
+                summary.days, summary.breakfast, summary.lunch, summary.dinner
+            ));
+        }
+    }
+    None
 }
 
 pub async fn process_local_files(
@@ -93,6 +185,10 @@ pub async fn process_local_files(
 
                 let source_type = format!("kepce-{}", folder);
 
+                // Gözlemlenebilirlik: bu dosyadan çıkarılan gün/öğün özeti.
+                // `file_db` kaydetmeye tüketilmeden ÖNCE hesaplanır; her dosyada sıfırlanır.
+                let mut menu_summary: Option<MenuSummary> = None;
+
                 let result = if ext.to_lowercase() == "xlsx" {
                     let mut file_db = crate::parser::models::MenuDatabase::new();
                     match crate::parser::excel::parse_excel(&path_str, &mut file_db) {
@@ -100,6 +196,7 @@ pub async fn process_local_files(
                             for day_data in file_db.values_mut() {
                                 crate::parser::validation::finalize_day_metadata(day_data);
                             }
+                            menu_summary = Some(summarize_menu_db(&file_db));
                             crate::parser::save_menu_database(
                                 db,
                                 city_id,
@@ -117,6 +214,7 @@ pub async fn process_local_files(
                             for day_data in file_db.values_mut() {
                                 crate::parser::validation::finalize_day_metadata(day_data);
                             }
+                            menu_summary = Some(summarize_menu_db(&file_db));
                             crate::parser::save_menu_database(
                                 db,
                                 city_id,
@@ -141,6 +239,7 @@ pub async fn process_local_files(
                         .await
                         {
                             Ok(file_db) => {
+                                menu_summary = Some(summarize_menu_db(&file_db));
                                 crate::parser::save_menu_database(
                                     db,
                                     city_id,
@@ -165,7 +264,25 @@ pub async fn process_local_files(
 
                 let success = match result {
                     Ok(_) => {
-                        tracing::info!("{}: Başarıyla veritabanına işlendi.", filename);
+                        match menu_summary.as_ref() {
+                            Some(s) => {
+                                tracing::info!(
+                                    "{}: {} gün ({} kahvaltı + {} öğle + {} akşam) işlendi — kaynak: {}",
+                                    filename,
+                                    s.days,
+                                    s.breakfast,
+                                    s.lunch,
+                                    s.dinner,
+                                    source_type
+                                );
+                                if let Some(warning) = low_days_warning(s) {
+                                    tracing::warn!("{}: {}", filename, warning);
+                                }
+                            }
+                            None => {
+                                tracing::info!("{}: Başarıyla veritabanına işlendi.", filename);
+                            }
+                        }
                         processed += 1;
                         true
                     }
@@ -266,4 +383,82 @@ pub async fn process_local_files(
         processed
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::parser::models::{DayData, MenuComponent, MenuItem};
+
+    fn item(name: &str) -> MenuItem {
+        MenuItem {
+            takeaway_id: None,
+            alternatives: vec![MenuComponent::from(name)],
+        }
+    }
+
+    fn day(breakfast: usize, lunch: usize, dinner: usize) -> DayData {
+        let mut d = DayData::default();
+        d.normal.breakfast = (0..breakfast).map(|i| item(&format!("b{}", i))).collect();
+        d.normal.lunch = (0..lunch).map(|i| item(&format!("l{}", i))).collect();
+        d.normal.dinner = (0..dinner).map(|i| item(&format!("d{}", i))).collect();
+        d
+    }
+
+    fn db_with_dates(
+        dates: &[&str],
+        breakfast: usize,
+        lunch: usize,
+        dinner: usize,
+    ) -> MenuDatabase {
+        let mut db = MenuDatabase::new();
+        for dt in dates {
+            db.insert((*dt).to_string(), day(breakfast, lunch, dinner));
+        }
+        db
+    }
+
+    #[test]
+    fn test_summarize_menu_db_counts_days_and_meals() {
+        let db = db_with_dates(&["2026-09-01", "2026-09-02"], 2, 0, 3);
+        let s = summarize_menu_db(&db);
+        assert_eq!(s.days, 2);
+        assert_eq!(s.breakfast, 2);
+        assert_eq!(s.lunch, 0);
+        assert_eq!(s.dinner, 2);
+        assert_eq!(s.first_date, NaiveDate::from_ymd_opt(2026, 9, 1));
+        assert_eq!(s.last_date, NaiveDate::from_ymd_opt(2026, 9, 2));
+    }
+
+    /// 30 günlük aralık kapsanırken belirgin şekilde az gün çıkarılırsa uyarı verilmeli.
+    #[test]
+    fn test_low_days_warning_detects_gap() {
+        let mut db = db_with_dates(&["2026-09-01", "2026-09-30"], 0, 0, 3);
+        for d in 2..=15 {
+            db.insert(format!("2026-09-{:02}", d), day(0, 0, 3));
+        }
+        let s = summarize_menu_db(&db);
+        assert!(low_days_warning(&s).is_some(), "boşluk uyarısı bekleniyor");
+    }
+
+    /// Tam ay (kahvaltı + akşam) çıkarıldığında uyarı OLMAMALI.
+    #[test]
+    fn test_low_days_warning_absent_for_full_month() {
+        let dates: Vec<String> = (1..=30).map(|d| format!("2026-09-{:02}", d)).collect();
+        let refs: Vec<&str> = dates.iter().map(|s| s.as_str()).collect();
+        let db = db_with_dates(&refs, 1, 0, 2);
+        let s = summarize_menu_db(&db);
+        assert!(low_days_warning(&s).is_none(), "tam ayda uyarı beklenmiyor");
+    }
+
+    /// Çok günlük belgede yalnız tek öğün tipi varsa öğün-karışımı uyarısı verilmeli.
+    #[test]
+    fn test_low_days_warning_single_meal_mix() {
+        let dates: Vec<String> = (1..=20).map(|d| format!("2026-09-{:02}", d)).collect();
+        let refs: Vec<&str> = dates.iter().map(|s| s.as_str()).collect();
+        let db = db_with_dates(&refs, 0, 0, 3);
+        let s = summarize_menu_db(&db);
+        let warning = low_days_warning(&s).expect("öğün-karışımı uyarısı bekleniyor");
+        assert!(warning.contains("tek öğün"));
+    }
 }

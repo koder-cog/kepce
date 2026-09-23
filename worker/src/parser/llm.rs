@@ -593,6 +593,19 @@ async fn call_gemini(
         .ok_or_else(|| anyhow::anyhow!("Gemini yanıtından metin çıkarılamadı"))
 }
 
+/// Belge/görsel menü çıkarım prompt'u (tek kaynak / single source of truth).
+///
+/// Çok bölümlü belgelerde (ör. ayrı Kahvaltı ve Akşam Yemeği tabloları) modelin
+/// ikinci tabloyu atlaması **sessiz veri kaybına** yol açar (canlıda gözlendi:
+/// aynı PDF bazen 31 gün, bazen yalnızca akşam 14 gün olarak çıkarıldı). Bu yüzden
+/// "her tabloyu ayrı ayrı çıkar, ilk tablodan sonra durma" talimatı açıkça verilir.
+pub const MENU_EXTRACTION_PROMPT: &str = "You are a precise data extraction engine for Turkish university and dormitory dining hall menus (KYK menüleri).
+Extract all daily menus, dates, meal types (Kahvaltı -> breakfast, Akşam Yemeği -> dinner, Öğle -> lunch), food items, portions/weights, calories, and alternatives from the provided document or image.
+The document may contain MULTIPLE separate tables for different meal types (e.g. a Kahvaltı/breakfast table and an Akşam Yemeği/dinner table). Extract EVERY table as separate entries in 'days', each tagged with its own meal_type. Do not stop after the first table.
+Ensure every day present in the document is extracted into the 'days' array with accurate dates (YYYY-MM-DD or DD.MM.YYYY).
+If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
+Output strictly conforming to the requested JSON schema.";
+
 pub async fn parse_document_with_llm(
     client: &Client,
     gemini_api_key: Option<&str>,
@@ -614,11 +627,7 @@ pub async fn parse_document_with_llm(
     let base64_data = BASE64.encode(&file_bytes);
     let mime_type = detect_mime_type(file_path, &file_bytes);
 
-    let prompt = "You are a precise data extraction engine for Turkish university and dormitory dining hall menus (KYK menüleri).
-Extract all daily menus, dates, meal types (Kahvaltı -> breakfast, Akşam Yemeği -> dinner, Öğle -> lunch), food items, portions/weights, calories, and alternatives from the provided document or image.
-Ensure every day present in the document is extracted into the 'days' array with accurate dates (YYYY-MM-DD or DD.MM.YYYY).
-If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
-Output strictly conforming to the requested JSON schema.";
+    let prompt = MENU_EXTRACTION_PROMPT;
 
     let input_type = if mime_type == "application/pdf" {
         "document"
@@ -867,5 +876,25 @@ mod tests {
         assert!(is_forbidden_gemini_model("gemini-3.5-flash-lite"));
         assert!(!is_forbidden_gemini_model("gemini-flash-latest"));
         assert!(!is_forbidden_gemini_model("gemini-2.5-flash"));
+    }
+
+    /// Çoklu-tablo talimatı prompt'ta bulunmalı (sessiz veri kaybı regresyon kalkanı).
+    ///
+    /// Canlıda aynı PDF bazen 31 (kahvaltı + akşam), bazen yalnız akşam 14 gün
+    /// olarak çıkarıldı; ikinci tablonun atlanmaması için bu talimat zorunludur.
+    #[test]
+    fn test_menu_extraction_prompt_requests_multiple_tables() {
+        assert!(
+            MENU_EXTRACTION_PROMPT.contains("MULTIPLE separate tables"),
+            "prompt çoklu-tablo ifadesini içermeli"
+        );
+        assert!(
+            MENU_EXTRACTION_PROMPT.contains("Do not stop after the first table"),
+            "prompt 'ilk tablodan sonra durma' talimatını içermeli"
+        );
+        assert!(
+            MENU_EXTRACTION_PROMPT.contains("each tagged with its own meal_type"),
+            "prompt her tablonun meal_type ile etiketlenmesini istemeli"
+        );
     }
 }
