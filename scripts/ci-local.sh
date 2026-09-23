@@ -2,11 +2,13 @@
 # ==============================================================================
 # KEPÇE - Yerel CI Simülasyonu
 # ==============================================================================
-# Push öncesi tüm doğrulama hattını tek komutta çalıştırır:
-#   1) Rust: clippy + test
-#   2) Webapp: svelte-check + vitest + production build
-#   3) Build çıktı doğrulaması
-#   4) SSR smoke testi (gerçek node sunucusu üzerinde)
+# Push öncesi tüm doğrulama hattını tek komutta çalıştırır (gerçek CI ile parite):
+#   1) Rust: fmt
+#   2) Rust: clippy (--all-targets -- -D warnings)
+#   3) Rust: test
+#   4) Rust: stray binary guard
+#   5) Webapp: svelte-check + vitest + production build
+#   6) SSR smoke testi (gerçek node sunucusu üzerinde)
 #
 # Kullanım: ./scripts/ci-local.sh
 # Çıkış kodu: 0 = hepsi geçti, 1 = en az bir adım başarısız
@@ -32,7 +34,7 @@ report() {
 section() { echo -e "\n${BLUE}${BOLD}=== $1 ===${NC}"; }
 
 # ------------------------------------------------------------------------------
-section "1/5 Rust: fmt"
+section "1/6 Rust: fmt"
 # ------------------------------------------------------------------------------
 FMT_OUT=$(cargo fmt --all -- --check 2>&1)
 if [ -n "$FMT_OUT" ]; then
@@ -42,18 +44,21 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "2/5 Rust: clippy"
+section "2/6 Rust: clippy"
 # ------------------------------------------------------------------------------
-CLIPPY_OUT=$(cargo clippy --workspace 2>&1)
-CLIPPY_WARN=$(echo "$CLIPPY_OUT" | grep -c "^warning" || true)
-if echo "$CLIPPY_OUT" | grep -q "^error"; then
-    report "cargo clippy" false "$(echo "$CLIPPY_OUT" | grep '^error' | head -3 | tr '\n' ' ')"
+# Gerçek CI ile parite (ci.yml: "Run Clippy Lints"): --all-targets (test kodunu da
+# lintler) + -D warnings (uyarı = hata). Böylece yerelde yeşil alıp CI'da clippy
+# uyarısı yüzünden kırmızı yeme riski ortadan kalkar.
+CLIPPY_OUT=$(cargo clippy --workspace --all-targets -- -D warnings 2>&1)
+CLIPPY_RC=$?
+if [ "$CLIPPY_RC" -ne 0 ]; then
+    report "cargo clippy" false "$(echo "$CLIPPY_OUT" | grep -E '^error' | head -3 | tr '\n' ' ')"
 else
-    report "cargo clippy" true "$CLIPPY_WARN uyarı"
+    report "cargo clippy" true "0 uyarı"
 fi
 
 # ------------------------------------------------------------------------------
-section "3/5 Rust: test"
+section "3/6 Rust: test"
 # ------------------------------------------------------------------------------
 TEST_OUT=$(cargo test --workspace 2>&1)
 if echo "$TEST_OUT" | grep -qE "test result: .*FAILED|^error"; then
@@ -64,7 +69,29 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "4/5 Webapp: check + test + build"
+section "4/6 Rust: stray binary guard"
+# ------------------------------------------------------------------------------
+# CI'daki (ci.yml: "Stray Binary Guard") ile aynı kontrol: fixtures dışında
+# *.pdf/*.xlsx/*.xls/*.exe bulunmamalı — yanlışlıkla commit'lenen ikili dosyaları
+# yakalar. NOT: yerelde data/ ve .scratch/ (gitignored çalışma dizinleri) PDF
+# içerir; CI checkout'unda bulunmadıkları için burada hariç tutulur, aksi halde
+# yanlış pozitif verir.
+STRAY_FILES=$(find . -type f \( -name "*.pdf" -o -name "*.xlsx" -o -name "*.xls" -o -name "*.exe" \) \
+    -not -path "*/worker/tests/fixtures/*" \
+    -not -path "*/node_modules/*" \
+    -not -path "*/target/*" \
+    -not -path "*/.git/*" \
+    -not -path "*/.svelte-kit/*" \
+    -not -path "*/data/*" \
+    -not -path "*/.scratch/*")
+if [ -n "$STRAY_FILES" ]; then
+    report "stray binary guard" false "$(echo "$STRAY_FILES" | head -3 | tr '\n' ' ')"
+else
+    report "stray binary guard" true "temiz"
+fi
+
+# ------------------------------------------------------------------------------
+section "5/6 Webapp: check + test + build"
 # ------------------------------------------------------------------------------
 cd webapp || exit 1
 
@@ -95,7 +122,7 @@ fi
 cd ..
 
 # ------------------------------------------------------------------------------
-section "5/5 SSR smoke testi"
+section "6/6 SSR smoke testi"
 # ------------------------------------------------------------------------------
 SMOKE_PORT=3987
 API_INTERNAL=http://127.0.0.1:59999 nohup env PORT=$SMOKE_PORT HOST=127.0.0.1 node webapp/build/index.js > /tmp/kepce-ci-smoke.log 2>&1 &
