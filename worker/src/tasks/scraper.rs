@@ -26,6 +26,7 @@ fn ban_cooldown_secs() -> u64 {
 async fn trip_ban(reason: &str) {
     let until = chrono::Utc::now().timestamp().max(0) as u64 + ban_cooldown_secs();
     KYK_BANNED_UNTIL.store(until, Ordering::Relaxed);
+    persist_ban_state(until);
     tracing::error!(
         "[KYK-BREAKER] Devre kesildi ({}). {} sn boyunca kykyemek.com'a istek atilmayacak; fallback kaynaklar calismaya devam eder.",
         reason,
@@ -39,13 +40,54 @@ async fn trip_ban(reason: &str) {
     let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
 }
 
+/// Kalıcı ban durumu dosyası.
+///
+/// Devre kesici durumu yalnızca süreç belleğinde tutulduğunda her yeniden başlatmada
+/// sıfırlanır ve worker banlı olduğu hâlde yeniden istek atar. Bu da ban süresini
+/// uzatır. Durum bu dosyada saklanır ve yeniden başlatmalara dayanır.
+fn ban_state_path() -> String {
+    std::env::var("KYK_BAN_STATE_FILE").unwrap_or_else(|_| "/app/cache/kyk_ban_until".to_string())
+}
+
+/// Kalıcı ban durumunu süreç başına bir kez yükler.
+fn ensure_ban_state_loaded() {
+    static LOADED: OnceLock<()> = OnceLock::new();
+    LOADED.get_or_init(|| {
+        let Ok(raw) = std::fs::read_to_string(ban_state_path()) else {
+            return;
+        };
+        let Ok(until) = raw.trim().parse::<u64>() else {
+            return;
+        };
+        let now = chrono::Utc::now().timestamp().max(0) as u64;
+        if until > now {
+            KYK_BANNED_UNTIL.store(until, Ordering::Relaxed);
+            tracing::warn!(
+                "[KYK-BREAKER] Kalıcı durumdan ban yüklendi. Kalan bekleme: {} sn.",
+                until - now
+            );
+        }
+    });
+}
+
+/// Ban bitiş zamanını diske yazar (en iyi çaba).
+fn persist_ban_state(until: u64) {
+    let path = ban_state_path();
+    if let Some(parent) = std::path::Path::new(&path).parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    let _ = std::fs::write(&path, until.to_string());
+}
+
 pub fn is_banned() -> bool {
+    ensure_ban_state_loaded();
     let until = KYK_BANNED_UNTIL.load(Ordering::Relaxed);
     until > 0 && (chrono::Utc::now().timestamp().max(0) as u64) < until
 }
 
 /// Devre kesici durumunu döner. Banlıysa kalan saniyeyi, değilse None döner.
 pub fn get_ban_status() -> Option<u64> {
+    ensure_ban_state_loaded();
     let until = KYK_BANNED_UNTIL.load(Ordering::Relaxed);
     let now = chrono::Utc::now().timestamp().max(0) as u64;
     if until > now {
@@ -59,6 +101,7 @@ pub fn get_ban_status() -> Option<u64> {
 pub fn reset_ban_status() {
     KYK_BANNED_UNTIL.store(0, Ordering::Relaxed);
     KYK_429_STREAK.store(0, Ordering::Relaxed);
+    persist_ban_state(0);
 }
 
 /// Chrome 144 (LTS) User-Agent. Tek noktadan yönetilir.
