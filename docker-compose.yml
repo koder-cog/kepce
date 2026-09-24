@@ -147,6 +147,8 @@ services:
       - KYK_BAN_STATE_FILE=/app/cache/kyk_ban_until
       # kykyemek istekleri için asgari aralık (ms). Tüm uç noktaları kapsar.
       - KYK_MIN_REQUEST_INTERVAL_MS=${KYK_MIN_REQUEST_INTERVAL_MS:-1000}
+      # Tur başına en fazla dinamik Al Götür isteği. Toplu istek (burst) engeli.
+      - KYK_FASTMENU_MAX_PER_CYCLE=${KYK_FASTMENU_MAX_PER_CYCLE:-20}
     volumes:
       - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads
