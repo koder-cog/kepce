@@ -145,6 +145,8 @@ services:
       # kykyemek IP banı devre kesici ayarları. Durum dosyası yeniden başlatmalara dayanır.
       - KYK_BAN_COOLDOWN_SECS=${KYK_BAN_COOLDOWN_SECS:-21600}
       - KYK_BAN_STATE_FILE=/app/cache/kyk_ban_until
+      # kykyemek istekleri için asgari aralık (ms). Tüm uç noktaları kapsar.
+      - KYK_MIN_REQUEST_INTERVAL_MS=${KYK_MIN_REQUEST_INTERVAL_MS:-1000}
     volumes:
       - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads

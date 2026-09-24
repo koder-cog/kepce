@@ -123,6 +123,34 @@ pub fn with_xhr_headers(req: reqwest::RequestBuilder) -> reqwest::RequestBuilder
         .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
 }
 
+/// kykyemek.com için asgari istek aralığı (ms). Varsayılan 1000 ms.
+fn min_request_interval_ms() -> u64 {
+    std::env::var("KYK_MIN_REQUEST_INTERVAL_MS")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(1000)
+}
+
+/// Tüm kykyemek isteklerini tek noktadan kibar aralığa oturtan hız sınırlayıcı.
+///
+/// Ana döngü ve fastmenu döngüsü ayrı ayrı kibar olsa da tek bir merkezî sınırlayıcı
+/// tüm uç noktaları (ana sayfa, GetDailyMenu, GetFastMenuFoods) kapsar. Kilit yalnızca
+/// bekleme boyunca tutulduğundan istekler sıraya girer ve aralarındaki süre garanti edilir.
+static KYK_THROTTLE: OnceLock<tokio::sync::Mutex<Option<tokio::time::Instant>>> = OnceLock::new();
+
+pub async fn throttle_kykyemek() {
+    let interval = std::time::Duration::from_millis(min_request_interval_ms());
+    let gate = KYK_THROTTLE.get_or_init(|| tokio::sync::Mutex::new(None));
+    let mut guard = gate.lock().await;
+    if let Some(last) = *guard {
+        let elapsed = last.elapsed();
+        if elapsed < interval {
+            tokio::time::sleep(interval - elapsed).await;
+        }
+    }
+    *guard = Some(tokio::time::Instant::now());
+}
+
 /// Bu tarama turunda yapılan dinamik Al Götür (fastmenu) istek sayısı.
 /// Tur başına üst sınırla toplu istek (burst) engellenir.
 static FASTMENU_FETCHED_THIS_CYCLE: AtomicUsize = AtomicUsize::new(0);
@@ -263,6 +291,7 @@ pub fn extract_token_from_html(html: &str) -> Result<String> {
 }
 
 pub async fn fetch_kykyemek_session(client: &Client) -> Result<(String, Vec<String>)> {
+    throttle_kykyemek().await;
     let res = client.get("https://kykyemek.com/")
         .header("User-Agent", BROWSER_UA)
         .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7")
@@ -536,6 +565,7 @@ async fn fetch_and_save(
                 .header("__RequestVerificationToken", token.as_str());
         }
 
+        throttle_kykyemek().await;
         match req.send().await {
             Ok(res) => {
                 let status = res.status();
@@ -675,6 +705,7 @@ async fn fetch_and_save(
             .header("Referer", "https://kykyemek.com/")
             .timeout(std::time::Duration::from_secs(10));
 
+        throttle_kykyemek().await;
         match req.send().await {
             Ok(res) if res.status().is_success() => {
                 if let Ok(foods_html) = res.text().await {
