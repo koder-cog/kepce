@@ -137,10 +137,14 @@ services:
       - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:iletisim@kepce.org}
+      # fastembed embedding modeli önbelleği: root sahipli /app'da `nobody`
+      # yazamıyordu; Dockerfile'da oluşturulan yazılabilir dizin + kalıcı volume.
+      - FASTEMBED_CACHE_DIR=/app/.fastembed_cache
     volumes:
       - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads
       - ./config:/app/config:ro
+      - fastembed_cache:/app/.fastembed_cache
     networks:
       - backend-net
       - frontend-net
@@ -179,6 +183,7 @@ volumes:
   uploads:
   avatars:
   pgbackrest_data:
+  fastembed_cache:
 
 networks:
   frontend-net:
