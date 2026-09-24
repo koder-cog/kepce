@@ -48,3 +48,9 @@ lopdf = "0.45"
 # pdfium-render: PDF sayfalarını rasterize edip yön algılamak için.
 # libpdfium.so çalışma zamanında dinamik yüklenir (worker/Dockerfile'a eklenir).
 pdfium-render = "0.9"
+# ort: 4-sınıf (0/90/180/270) sayfa yönü ONNX sınıflandırıcısı. fastembed ile aynı
+# sürüme sabitlendi; varsayılan özellikler (std + ndarray + download-binaries +
+# tls-native) ONNX Runtime ikilisini imaja indirir — ek .so yönetimi gerekmez.
+ort = "=2.0.0-rc.13"
+# ndarray: ONNX girdi tensörünü (NCHW [1,3,512,512]) oluşturmak için (ort ile aynı sürüm).
+ndarray = "0.17"

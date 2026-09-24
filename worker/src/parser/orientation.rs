@@ -16,7 +16,9 @@
 
 use anyhow::{Context, Result};
 use image::{DynamicImage, GrayImage, ImageFormat};
+use ort::session::Session;
 use std::io::Cursor;
+use std::sync::{Mutex, OnceLock};
 
 /// Algılama için görüntünün en uzun kenarı bu değere küçültülür (hız/doğruluk dengesi).
 const DETECT_MAX_DIM: u32 = 1000;
@@ -118,6 +120,250 @@ pub fn correct_document(bytes: &[u8], mime_type: &str) -> CorrectedDocument {
 }
 
 // ---------------------------------------------------------------------------
+// ONNX sayfa yönü sınıflandırıcı (4-sınıf: 0/90/180/270)
+// ---------------------------------------------------------------------------
+
+/// Model yolu ortam değişkeni; verilmezse imajdaki varsayılan yol kullanılır.
+const MODEL_PATH_ENV: &str = "ORIENTATION_MODEL_PATH";
+const DEFAULT_MODEL_PATH: &str = "/app/models/doc_orientation.onnx";
+
+/// `PP-LCNet_x1_0_doc_ori` ön işleme sabitleri (resmî `inference.yml`):
+/// kısa kenarı 256'ya ölçekle → 224 ortadan kırp → ImageNet normalize → CHW.
+const MODEL_RESIZE_SHORT: u32 = 256;
+const MODEL_INPUT_SIZE: u32 = 224;
+const MODEL_MEAN: [f32; 3] = [0.485, 0.456, 0.406];
+const MODEL_STD: [f32; 3] = [0.229, 0.224, 0.225];
+
+/// Model sınıf sırası → uygulanacak saat yönü düzeltmesi.
+///
+/// `PP-LCNet_x1_0_doc_ori` sınıfları `['0','90','180','270']`'dir (sayfanın
+/// **mevcut** dönüşü); düzeltme ters yöndedir. `calibrate_model_classes` testiyle
+/// gerçek sayfalarda doğrulanır.
+const CLASS_ROTATIONS: [Rotation; 4] = [
+    Rotation::None,
+    Rotation::Cw270,
+    Rotation::Cw180,
+    Rotation::Cw90,
+];
+
+/// Sınıflandırıcı kararının uygulanması için en düşük top-1 olasılığı ve
+/// top-1 ile top-2 arasındaki en düşük fark (marj).
+///
+/// `PP-LCNet_x1_0_doc_ori` olasılıkları yayvandır (doğru sınıf ~0.40, diğerleri
+/// ~0.20); bu yüzden mutlak eşik yerine **marj** esaslı karar daha güvenilirdir.
+const CLASSIFIER_MIN_PROB: f32 = 0.35;
+const CLASSIFIER_MIN_MARGIN: f32 = 0.15;
+
+static ORIENTATION_SESSION: OnceLock<Option<Mutex<Session>>> = OnceLock::new();
+
+/// ONNX oturumunu (süreç başına bir kez) yükler; model yoksa `None` döner ve
+/// çağıran taraf projeksiyon profiline düşer (en iyi çaba).
+fn orientation_session() -> Option<&'static Mutex<Session>> {
+    ORIENTATION_SESSION
+        .get_or_init(|| {
+            let path = std::env::var(MODEL_PATH_ENV)
+                .unwrap_or_else(|_| DEFAULT_MODEL_PATH.to_string());
+            match load_orientation_session(&path) {
+                Ok(session) => {
+                    tracing::info!("Sayfa yönü ONNX modeli yüklendi: {path}");
+                    Some(Mutex::new(session))
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "Sayfa yönü ONNX modeli yüklenemedi ({path}): {e:#}. Projeksiyon yöntemine düşülüyor."
+                    );
+                    None
+                }
+            }
+        })
+        .as_ref()
+}
+
+fn load_orientation_session(path: &str) -> Result<Session> {
+    use ort::session::builder::GraphOptimizationLevel;
+    // NOT: `ort::Error` `std::error::Error` implement etmediği için `anyhow::Context`
+    // uygulanamaz; hata mesajları elle çevrilir.
+    let mut builder = Session::builder()
+        .map_err(|e| anyhow::anyhow!("ONNX Runtime oturum oluşturucu açılamadı: {e}"))?
+        .with_optimization_level(GraphOptimizationLevel::Level3)
+        .map_err(|e| anyhow::anyhow!("ONNX optimizasyon seviyesi ayarlanamadı: {e}"))?;
+    builder
+        .commit_from_file(path)
+        .map_err(|e| anyhow::anyhow!("ONNX modeli açılamadı ({path}): {e}"))
+}
+
+/// Sayfanın ekseni: projeksiyon profiliyle güvenilir biçimde belirlenir.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum PageAxis {
+    Horizontal,
+    Vertical,
+    Unknown,
+}
+
+/// Sınıflandırıcı sonucu: döndürme + top-1 olasılığı + top1-top2 marjı.
+#[derive(Debug, Clone, Copy)]
+struct Classification {
+    rotation: Rotation,
+    prob: f32,
+    margin: f32,
+}
+
+/// Nihai yön kararı: ONNX sınıflandırıcı (olasılık + marj + eksen çapraz
+/// doğrulamasıyla) → projeksiyon profili (yalnızca yeterince güvenliyse).
+///
+/// **Güvenlik ilkesi:** yanlış döndürme doğru veriyi bozar. Bu yüzden karar
+/// yalnızca güvenilir olduğunda bir döndürme döner; aksi halde `Rotation::None`.
+fn decide_orientation(img: &DynamicImage) -> PageOrientation {
+    let gray = img.to_luma8();
+
+    if let Some(c) = classify(img) {
+        let trusted = c.prob >= CLASSIFIER_MIN_PROB && c.margin >= CLASSIFIER_MIN_MARGIN;
+        if trusted && axis_agrees(&gray, c.rotation) {
+            return PageOrientation {
+                rotation: c.rotation,
+                confidence: c.prob,
+            };
+        }
+        tracing::debug!(
+            "ONNX yön kararı güvenilmez (olasılık={:.2}, marj={:.2}), projeksiyona düşülüyor",
+            c.prob,
+            c.margin
+        );
+    }
+
+    // Projeksiyon yalnızca yeterli güvende uygulanır (yön sinyali genelde yoktur).
+    let projection = detect_orientation(&gray);
+    if projection.confidence >= MIN_CONFIDENCE {
+        projection
+    } else {
+        PageOrientation {
+            rotation: Rotation::None,
+            confidence: 0.0,
+        }
+    }
+}
+
+/// Sınıflandırıcının ekseni projeksiyon ekseniyle uyuşuyor mu? (eksen belirsizse evet)
+fn axis_agrees(gray: &GrayImage, rotation: Rotation) -> bool {
+    let classifier_horizontal = matches!(rotation, Rotation::None | Rotation::Cw180);
+    match detect_axis(gray) {
+        PageAxis::Horizontal => classifier_horizontal,
+        PageAxis::Vertical => !classifier_horizontal,
+        PageAxis::Unknown => true,
+    }
+}
+
+/// Projeksiyon profiliyle sayfa ekseni (satır/sütun varyans oranı).
+fn detect_axis(img: &GrayImage) -> PageAxis {
+    let small = downscale(img);
+    let (w, h) = (small.width() as usize, small.height() as usize);
+    if w < 8 || h < 8 {
+        return PageAxis::Unknown;
+    }
+    let ink = otsu_ink_mask(&small);
+    let row_profile: Vec<f32> = (0..h)
+        .map(|y| (0..w).filter(|&x| ink[y * w + x]).count() as f32)
+        .collect();
+    let col_profile: Vec<f32> = (0..w)
+        .map(|x| (0..h).filter(|&y| ink[y * w + x]).count() as f32)
+        .collect();
+    let ratio = variance(&row_profile) / variance(&col_profile).max(f32::EPSILON);
+    if ratio >= UPRIGHT_RATIO {
+        PageAxis::Horizontal
+    } else if ratio <= ROTATED_RATIO {
+        PageAxis::Vertical
+    } else {
+        PageAxis::Unknown
+    }
+}
+
+/// ONNX sınıflandırıcı sonucu (top-1 + marj); model yok/başarısızsa `None`.
+fn classify(img: &DynamicImage) -> Option<Classification> {
+    let probs = classify_probs(img)?;
+    let (idx, &prob) = probs
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.partial_cmp(b.1).unwrap_or(std::cmp::Ordering::Equal))?;
+    let second = probs
+        .iter()
+        .enumerate()
+        .filter(|(i, _)| *i != idx)
+        .map(|(_, &p)| p)
+        .fold(f32::NEG_INFINITY, f32::max);
+    Some(Classification {
+        rotation: CLASS_ROTATIONS[idx],
+        prob,
+        margin: prob - second,
+    })
+}
+
+/// (Yalnızca kalibrasyon testi için) sınıflandırıcı sonucu `PageOrientation` olarak.
+#[cfg(test)]
+fn classify_orientation(img: &DynamicImage) -> Option<PageOrientation> {
+    classify(img).map(|c| PageOrientation {
+        rotation: c.rotation,
+        confidence: c.prob,
+    })
+}
+
+/// 4 sınıfın softmax olasılıklarını döndürür (kalibrasyon testi de kullanır).
+fn classify_probs(img: &DynamicImage) -> Option<Vec<f32>> {
+    let session = orientation_session()?;
+    let input = ort::value::Value::from_array(model_input_array(img)).ok()?;
+
+    let mut guard = session.lock().ok()?;
+    let input_name = guard.inputs().first()?.name().to_string();
+    let outputs = guard.run(ort::inputs![input_name.as_str() => input]).ok()?;
+    let (_, logits) = outputs[0].try_extract_tensor::<f32>().ok()?;
+    if logits.len() < CLASS_ROTATIONS.len() {
+        return None;
+    }
+    Some(softmax(&logits[..CLASS_ROTATIONS.len()]))
+}
+
+/// `PP-LCNet_x1_0_doc_ori` girdisi: kısa kenarı 256'ya ölçekle → ortadan 224
+/// kırp → ImageNet normalize → CHW `[1,3,224,224]`.
+fn model_input_array(img: &DynamicImage) -> ndarray::Array4<f32> {
+    let rgb = img.to_rgb8();
+    let (w, h) = (rgb.width().max(1), rgb.height().max(1));
+
+    // 1) resize_short=256 (en-boy oranı korunur; kısa kenar 256 olur).
+    let scale = MODEL_RESIZE_SHORT as f32 / w.min(h) as f32;
+    let nw = ((w as f32 * scale).round() as u32).max(1);
+    let nh = ((h as f32 * scale).round() as u32).max(1);
+    let resized = image::imageops::resize(&rgb, nw, nh, image::imageops::FilterType::Triangle);
+
+    // 2) center crop 224 (kısa kenar 256 olduğundan crop her zaman 224'tür).
+    let side_u32 = MODEL_INPUT_SIZE.min(nw).min(nh);
+    let left = (nw - side_u32) / 2;
+    let top = (nh - side_u32) / 2;
+    let cropped = image::imageops::crop_imm(&resized, left, top, side_u32, side_u32).to_image();
+
+    // 3) ImageNet normalize + 4) CHW.
+    let side = side_u32 as usize;
+    let plane = side * side;
+    let mut data = vec![0f32; 3 * plane];
+    for (x, y, px) in cropped.enumerate_pixels() {
+        let idx = y as usize * side + x as usize;
+        for c in 0..3 {
+            let v = px.0[c] as f32 / 255.0;
+            data[c * plane + idx] = (v - MODEL_MEAN[c]) / MODEL_STD[c];
+        }
+    }
+
+    // Şekil ve veri uzunluğu inşaat gereği tutarlıdır.
+    ndarray::Array4::from_shape_vec((1, 3, side, side), data)
+        .expect("ONNX girdi tensörü şekli veriyle tutarlı olmalı")
+}
+
+fn softmax(logits: &[f32]) -> Vec<f32> {
+    let max = logits.iter().cloned().fold(f32::NEG_INFINITY, f32::max);
+    let exps: Vec<f32> = logits.iter().map(|v| (v - max).exp()).collect();
+    let sum: f32 = exps.iter().sum();
+    exps.into_iter().map(|e| e / sum).collect()
+}
+
+// ---------------------------------------------------------------------------
 // Görseller
 // ---------------------------------------------------------------------------
 
@@ -134,23 +380,20 @@ fn correct_image(bytes: &[u8], mime_type: &str) -> Result<CorrectedDocument> {
     let exif_orientation = decoder
         .orientation()
         .unwrap_or(image::metadata::Orientation::NoTransforms);
+    let exif_needed = exif_orientation != image::metadata::Orientation::NoTransforms;
     let mut img = DynamicImage::from_decoder(decoder).context("Görsel çözülemedi")?;
     img.apply_orientation(exif_orientation);
 
-    // 2./3. Katman: projeksiyon profili ile yön algılama.
-    let gray = img.to_luma8();
-    let decision = detect_orientation(&gray);
-    let applied = if decision.confidence >= MIN_CONFIDENCE {
-        decision.rotation
-    } else {
-        tracing::debug!(
-            "sayfa 1/1: yön belirsiz (güven={:.2}), dokunulmadı",
-            decision.confidence
-        );
-        Rotation::None
-    };
-
+    // 2./3. Katman: yön algılama (ONNX sınıflandırıcı → projeksiyon profili).
+    // `decide_orientation` kararı zaten güvenli biçimde verir (belirsizse None).
+    let decision = decide_orientation(&img);
+    let applied = decision.rotation;
     if applied == Rotation::None {
+        tracing::debug!("sayfa 1/1: yön belirsiz, dokunulmadı");
+    }
+
+    // Ne yön düzeltmesi ne EXIF normalizasyonu gerekiyorsa orijinal baytlar döner.
+    if applied == Rotation::None && !exif_needed {
         return Ok(CorrectedDocument {
             bytes: bytes.to_vec(),
             mime_type: mime_type.to_string(),
@@ -166,13 +409,18 @@ fn correct_image(bytes: &[u8], mime_type: &str) -> Result<CorrectedDocument> {
         Rotation::None => img,
     };
 
-    let out_mime = encode_image(&rotated, mime_type)?;
-    tracing::info!(
-        "sayfa 1/1: algılanan yön={}°, düzeltildi (güven={:.2})",
-        applied.degrees(),
-        decision.confidence
-    );
+    if applied != Rotation::None {
+        tracing::info!(
+            "sayfa 1/1: algılanan yön={}°, düzeltildi (güven={:.2})",
+            applied.degrees(),
+            decision.confidence
+        );
+    } else {
+        // Yalnızca EXIF normalizasyonu uygulandı (pikseller yeniden kodlanır).
+        tracing::debug!("sayfa 1/1: EXIF yönü normalize edildi (ek döndürme yok)");
+    }
 
+    let out_mime = encode_image(&rotated, mime_type)?;
     Ok(CorrectedDocument {
         bytes: out_mime.0,
         mime_type: out_mime.1.to_string(),
@@ -200,6 +448,14 @@ fn encode_image(img: &DynamicImage, original_mime: &str) -> Result<(Vec<u8>, &'s
 // ---------------------------------------------------------------------------
 // PDF
 // ---------------------------------------------------------------------------
+
+/// PDF yön düzeltmesi için en fazla sayfa sayısı (CPU/maliyet sınırı).
+fn max_pdf_pages() -> usize {
+    std::env::var("ORIENTATION_MAX_PAGES")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .unwrap_or(50)
+}
 
 fn correct_pdf(bytes: &[u8]) -> Result<CorrectedDocument> {
     let rotations = detect_pdf_page_rotations(bytes)?;
@@ -241,6 +497,17 @@ fn detect_pdf_page_rotations(bytes: &[u8]) -> Result<Vec<PageOrientation>> {
         .load_pdf_from_byte_slice(bytes, None)
         .context("PDF pdfium ile açılamadı")?;
 
+    // Kaynak sınırı: çok sayfalı PDF'lerde rasterizasyon maliyetini sınırla.
+    let page_count = doc.pages().len() as usize;
+    let max_pages = max_pdf_pages();
+    if page_count > max_pages {
+        anyhow::bail!(
+            "PDF sayfa sayısı üst sınırı aşıldı ({} > {}); yön düzeltmesi atlanıyor",
+            page_count,
+            max_pages
+        );
+    }
+
     let mut out = Vec::new();
     for (idx, page) in doc.pages().iter().enumerate() {
         // pdfium, mevcut /Rotate değerini render'a uygular; yani render edilen
@@ -256,8 +523,7 @@ fn detect_pdf_page_rotations(bytes: &[u8]) -> Result<Vec<PageOrientation>> {
         let img = bitmap
             .as_image()
             .with_context(|| format!("PDF sayfası görüntüye çevrilemedi: {}", idx + 1))?;
-        let gray = img.to_luma8();
-        out.push(detect_orientation(&gray));
+        out.push(decide_orientation(&img));
     }
     Ok(out)
 }
@@ -575,7 +841,7 @@ mod tests {
     /// iki yönde de 0.500). ONNX 4-sınıf sınıflandırıcı eklenene kadar yön kararı
     /// uygulanmaz; yanlış döndürme doğru veriyi bozar.
     #[test]
-    #[ignore = "yön ayrımı ONNX sınıflandırıcı gerektirir (plan Bölüm 2.4 / Katman 3a)"]
+    #[ignore = "projeksiyon yöntemi yön ayrımı yapamaz; sınıflandırıcı için calibrate_model_classes"]
     fn test_detects_180_page() {
         let page = image::imageops::rotate180(&synthetic_page(400, 600));
         let o = detect_orientation(&page);
@@ -583,7 +849,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "yön ayrımı ONNX sınıflandırıcı gerektirir (plan Bölüm 2.4 / Katman 3a)"]
+    #[ignore = "projeksiyon yöntemi yön ayrımı yapamaz; sınıflandırıcı için calibrate_model_classes"]
     fn test_detects_sideways_pages() {
         let page = synthetic_page(400, 600);
         let cw90 = image::imageops::rotate90(&page);
@@ -611,5 +877,81 @@ mod tests {
         let ink = mask.iter().filter(|m| **m).count();
         assert!(ink > 0, "mürekkep bulunmalı");
         assert!(ink < mask.len() / 2, "mürekkep sayfanın azınlığı olmalı");
+    }
+
+    /// ONNX sınıflandırıcıyı gerçek modelle kalibre eder (model yolu env'de olmalı).
+    ///
+    /// `#[ignore]`: model dosyası + ONNX Runtime gerektirir. Çalıştırma:
+    /// ```text
+    /// ORIENTATION_MODEL_PATH=/tmp/page_orientation.onnx \
+    ///   cargo test -p worker calibrate_model_classes -- --ignored --nocapture
+    /// ```
+    /// Dik bir sayfayı 0/90/180/270 döndürüp her biri için olasılıkları basar;
+    /// `CLASS_ROTATIONS` eşlemesi bu çıktıya göre doğrulanır.
+    #[test]
+    #[ignore = "ONNX modeli gerektirir (ORIENTATION_MODEL_PATH)"]
+    fn calibrate_model_classes() {
+        // Gerçek bir belge sayfası (`ORIENTATION_CALIB_IMAGE`) verilirse onu,
+        // yoksa sentetik sayfayı kullan (sentetik sayfa model için dejenere olabilir).
+        let base = std::env::var("ORIENTATION_CALIB_IMAGE")
+            .ok()
+            .and_then(|p| image::open(&p).ok())
+            .map(|i| i.to_luma8())
+            .unwrap_or_else(|| synthetic_page(400, 600));
+
+        for (name, angle) in [
+            ("upright", 0u16),
+            ("cw90", 90),
+            ("cw180", 180),
+            ("cw270", 270),
+        ] {
+            let img = match angle {
+                90 => DynamicImage::ImageLuma8(image::imageops::rotate90(&base)),
+                180 => DynamicImage::ImageLuma8(image::imageops::rotate180(&base)),
+                270 => DynamicImage::ImageLuma8(image::imageops::rotate270(&base)),
+                _ => DynamicImage::ImageLuma8(base.clone()),
+            };
+            match classify_probs(&img) {
+                Some(probs) => {
+                    let mapped = classify_orientation(&img);
+                    let decided = decide_orientation(&img);
+                    println!(
+                        "{name} ({angle}°): probs={:?} -> map={:?} | karar={:?}",
+                        probs
+                            .iter()
+                            .map(|p| (p * 1000.0).round() / 1000.0)
+                            .collect::<Vec<_>>(),
+                        mapped.map(|m| (m.rotation, m.confidence)),
+                        (decided.rotation, decided.confidence)
+                    );
+                }
+                None => println!("{name} ({angle}°): model yok/başarısız"),
+            }
+        }
+    }
+
+    /// PDF yön düzeltme boru hattını (pdfium + ONNX) gerçek bir PDF üzerinde çalıştırır.
+    ///
+    /// `#[ignore]`: libpdfium.so gerektirir. Yerelde:
+    /// ```text
+    /// LD_LIBRARY_PATH=/tmp/pdfium-x64/lib ORIENTATION_CALIB_PDF=data/.../menu.pdf \
+    ///   cargo test -p worker probe_correct_pdf -- --ignored --nocapture
+    /// ```
+    #[test]
+    #[ignore = "libpdfium.so + PDF gerektirir (ORIENTATION_CALIB_PDF)"]
+    fn probe_correct_pdf() {
+        let Ok(path) = std::env::var("ORIENTATION_CALIB_PDF") else {
+            eprintln!("PROBE atlandı: ORIENTATION_CALIB_PDF ayarlı değil.");
+            return;
+        };
+        let bytes = std::fs::read(&path).expect("PDF okunamadı");
+        let result = correct_document(&bytes, "application/pdf");
+        eprintln!(
+            "PDF PROBE: dosya={path} | {} sayfa | {} düzeltildi | çıktı {} bayt",
+            result.pages,
+            result.corrected_pages,
+            result.bytes.len()
+        );
+        assert!(result.pages > 0, "en az bir sayfa bulunmalı");
     }
 }

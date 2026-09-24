@@ -6919,6 +6919,8 @@ dependencies = [
  "image",
  "lazy_static",
  "lopdf",
+ "ndarray",
+ "ort",
  "pdfium-render",
  "rand 0.8.7",
  "regex",

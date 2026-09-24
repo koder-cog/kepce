@@ -623,9 +623,22 @@ pub async fn parse_document_with_llm(
     let file_bytes = tokio::fs::read(file_path)
         .await
         .context(format!("Dosya okunamadı: {:?}", file_path))?;
+    let original_mime = detect_mime_type(file_path, &file_bytes);
 
-    let base64_data = BASE64.encode(&file_bytes);
-    let mime_type = detect_mime_type(file_path, &file_bytes);
+    // Modele gönderim öncesi sayfa bazlı yön düzeltmesi (en iyi çaba; başarısızsa
+    // orijinal baytlar kullanılır). `ORIENTATION_CORRECTION=0` ile kapatılabilir.
+    let corrected = crate::parser::orientation::correct_document(&file_bytes, original_mime);
+    if corrected.corrected_pages > 0 {
+        tracing::info!(
+            "Yön düzeltmesi uygulandı: {} sayfa, {} düzeltildi ({:?}).",
+            corrected.pages,
+            corrected.corrected_pages,
+            file_path
+        );
+    }
+
+    let base64_data = BASE64.encode(&corrected.bytes);
+    let mime_type = corrected.mime_type.as_str();
 
     let prompt = MENU_EXTRACTION_PROMPT;
 
