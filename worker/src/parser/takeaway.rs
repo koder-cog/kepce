@@ -17,9 +17,22 @@ lazy_static::lazy_static! {
     pub(crate) static ref FASTMENU_DYNAMIC_CACHE: RwLock<DynamicFastMenuMap> = RwLock::new(HashMap::new());
 }
 
+/// Kalıcı Al Götür önbellek dosyası.
+///
+/// Önbellek yalnızca süreç belleğinde tutulduğunda her yeniden başlatmada boşalır ve
+/// ilk tarama turu tüm paketleri toplu olarak ister (burst). Bu dosya ile önbellek
+/// diskte kalır, dolayısıyla yeniden başlatma sonrası istek yükü düşük kalır.
+const CACHE_FILE_ENV: &str = "TAKEAWAY_CACHE_FILE";
+const DEFAULT_CACHE_FILE: &str = "/app/cache/takeaway.json";
+
+fn cache_file_path() -> String {
+    std::env::var(CACHE_FILE_ENV).unwrap_or_else(|_| DEFAULT_CACHE_FILE.to_string())
+}
+
 /// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür yemek slotlarını önbellekten okur.
 /// Kilit (RwLock) mikrosaniyelik RAM okumasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
 pub fn get_cached_fastmenu(id: &str) -> Option<Vec<Vec<crate::parser::models::MenuComponent>>> {
+    ensure_fastmenu_cache_loaded();
     FASTMENU_DYNAMIC_CACHE.read().ok()?.get(id).cloned()
 }
 
@@ -28,6 +41,53 @@ pub fn get_cached_fastmenu(id: &str) -> Option<Vec<Vec<crate::parser::models::Me
 pub fn insert_cached_fastmenu(id: String, slots: Vec<Vec<crate::parser::models::MenuComponent>>) {
     if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
         cache.insert(id, slots);
+    }
+    // Yazma kilidi burada bırakılmıştır, kalıcı yazma kendi okuma kilidini alır.
+    persist_fastmenu_cache();
+}
+
+/// Diskten yüklemeyi süreç başına yalnızca bir kez yapar (en iyi çaba).
+fn ensure_fastmenu_cache_loaded() {
+    static LOADED: OnceLock<()> = OnceLock::new();
+    LOADED.get_or_init(|| {
+        let path = cache_file_path();
+        let Ok(content) = fs::read_to_string(&path) else {
+            return;
+        };
+        match serde_json::from_str::<DynamicFastMenuMap>(&content) {
+            Ok(map) => {
+                let count = map.len();
+                if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
+                    *cache = map;
+                    tracing::info!("Al Götür önbelleği diskten yüklendi: {} kayıt", count);
+                }
+            }
+            Err(e) => tracing::warn!("Al Götür önbelleği okunamadı, sıfırdan başlanıyor: {}", e),
+        }
+    });
+}
+
+/// Önbelleği diske atomik olarak yazar (önce `.tmp`, sonra `rename`). En iyi çaba.
+fn persist_fastmenu_cache() {
+    let path = cache_file_path();
+    let Some(parent) = std::path::Path::new(&path).parent() else {
+        return;
+    };
+    if fs::create_dir_all(parent).is_err() {
+        return;
+    }
+    let Ok(cache) = FASTMENU_DYNAMIC_CACHE.read() else {
+        return;
+    };
+    let Ok(json) = serde_json::to_string(&*cache) else {
+        return;
+    };
+    let tmp = format!("{path}.tmp");
+    if fs::write(&tmp, json).is_err() {
+        return;
+    }
+    if fs::rename(&tmp, &path).is_err() {
+        let _ = fs::remove_file(&tmp);
     }
 }
 

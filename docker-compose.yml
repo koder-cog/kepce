@@ -140,11 +140,14 @@ services:
       # fastembed embedding modeli önbelleği: root sahipli /app'da `nobody`
       # yazamıyordu; Dockerfile'da oluşturulan yazılabilir dizin + kalıcı volume.
       - FASTEMBED_CACHE_DIR=/app/.fastembed_cache
+      # Dinamik Al Götür önbelleği: yeniden başlatmada toplu istek olmaması için kalıcı.
+      - TAKEAWAY_CACHE_FILE=/app/cache/takeaway.json
     volumes:
       - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads
       - ./config:/app/config:ro
       - fastembed_cache:/app/.fastembed_cache
+      - worker_cache:/app/cache
     networks:
       - backend-net
       - frontend-net
@@ -184,6 +187,7 @@ volumes:
   avatars:
   pgbackrest_data:
   fastembed_cache:
+  worker_cache:
 
 networks:
   frontend-net:

@@ -3,7 +3,7 @@ use chrono::{Datelike, NaiveDate};
 use rand::Rng;
 use reqwest::Client;
 use std::collections::{HashMap, HashSet};
-use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 
 /// Ard arda gelen 429 sayaci: kaynak sunucu bizi hizlandiriyorsa
@@ -78,6 +78,19 @@ pub fn with_xhr_headers(req: reqwest::RequestBuilder) -> reqwest::RequestBuilder
         .header("sec-fetch-mode", "cors")
         .header("sec-fetch-site", "same-origin")
         .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
+}
+
+/// Bu tarama turunda yapılan dinamik Al Götür (fastmenu) istek sayısı.
+/// Tur başına üst sınırla toplu istek (burst) engellenir.
+static FASTMENU_FETCHED_THIS_CYCLE: AtomicUsize = AtomicUsize::new(0);
+
+/// Tur başına en fazla dinamik Al Götür isteği. `KYK_FASTMENU_MAX_PER_CYCLE` ile ayarlanır.
+fn fastmenu_max_per_cycle() -> usize {
+    std::env::var("KYK_FASTMENU_MAX_PER_CYCLE")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .filter(|v| *v > 0)
+        .unwrap_or(20)
 }
 
 /// Bu turda yeni INSERT edilen menülerin (city_id, serve_date) kaydı.
@@ -271,6 +284,9 @@ pub async fn scrape_today_menus(
         use rand::seq::SliceRandom;
         active_slugs.shuffle(&mut rand::thread_rng());
     }
+
+    // Bu turda yapılan dinamik Al Götür isteklerini sıfırla (tur başına üst sınır).
+    FASTMENU_FETCHED_THIS_CYCLE.store(0, Ordering::Relaxed);
 
     let mut total_saved = 0;
 
@@ -589,42 +605,64 @@ async fn fetch_and_save(
     // /Menu/GetFastMenuFoods üzerinden tek seferlik çekip parse_fast_menu_foods_html ile önbelleğe yaz.
     // std::sync::RwLock kilitleri get_cached_fastmenu / insert_cached_fastmenu içinde nanosaniyelik açılıp
     // kapandığından, await çağrısı sırasında elde hiçbir kilit tutulmaz (Send trait & thread starvation koruması).
+    // Kibar tarama: her dinamik Al Götür isteği arasında gecikme uygulanır ve tur başına
+    // istek sayısı sınırlanır. Aksi halde ilk turda (önbellek soğukken) yüzlerce istek
+    // saniyeler içinde gidip karşı tarafta toplu istek (DDoS) korumasını tetikleyebilir.
     let fastmenu_items = crate::parser::kykyemek::extract_fastmenu_items(&html_content);
+    let max_per_cycle = fastmenu_max_per_cycle();
     for (fast_id, fast_name) in fastmenu_items {
-        if crate::parser::takeaway::get_cached_fastmenu(&fast_id).is_none() {
-            let fast_url = "https://kykyemek.com/Menu/GetFastMenuFoods";
-            let req = with_xhr_headers(client.get(fast_url).query(&[("id", fast_id.as_str())]))
-                .header("X-Requested-With", "XMLHttpRequest")
-                .header("Referer", "https://kykyemek.com/")
-                .timeout(std::time::Duration::from_secs(10));
+        if *shutdown_rx.borrow() || is_banned() {
+            break;
+        }
+        if crate::parser::takeaway::get_cached_fastmenu(&fast_id).is_some() {
+            continue;
+        }
+        if FASTMENU_FETCHED_THIS_CYCLE.load(Ordering::Relaxed) >= max_per_cycle {
+            tracing::info!(
+                "[TAKEAWAY] Tur başına Al Götür istek sınırına ulaşıldı ({}); kalan paketler sonraki turlara bırakıldı.",
+                max_per_cycle
+            );
+            break;
+        }
+        FASTMENU_FETCHED_THIS_CYCLE.fetch_add(1, Ordering::Relaxed);
 
-            match req.send().await {
-                Ok(res) if res.status().is_success() => {
-                    if let Ok(foods_html) = res.text().await {
-                        let slots =
-                            crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
-                        if !slots.is_empty() {
-                            tracing::info!(
-                                "[TAKEAWAY] Dinamik Al Götür menüsü başarıyla çekildi: {} (id: {}, {} slot)",
-                                fast_name, fast_id, slots.len()
-                            );
-                            crate::parser::takeaway::insert_cached_fastmenu(fast_id, slots);
-                        }
+        let fast_url = "https://kykyemek.com/Menu/GetFastMenuFoods";
+        let req = with_xhr_headers(client.get(fast_url).query(&[("id", fast_id.as_str())]))
+            .header("X-Requested-With", "XMLHttpRequest")
+            .header("Referer", "https://kykyemek.com/")
+            .timeout(std::time::Duration::from_secs(10));
+
+        match req.send().await {
+            Ok(res) if res.status().is_success() => {
+                if let Ok(foods_html) = res.text().await {
+                    let slots = crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
+                    if !slots.is_empty() {
+                        tracing::info!(
+                            "[TAKEAWAY] Dinamik Al Götür menüsü başarıyla çekildi: {} (id: {}, {} slot)",
+                            fast_name, fast_id, slots.len()
+                        );
+                        crate::parser::takeaway::insert_cached_fastmenu(fast_id, slots);
                     }
                 }
-                Ok(res) => {
-                    tracing::warn!(
-                        "[TAKEAWAY] Dinamik Al Götür çekilemedi (HTTP {}): {} (id: {}). Statik fallback kullanılacak.",
-                        res.status(), fast_name, fast_id
-                    );
-                }
-                Err(err) => {
-                    tracing::warn!(
-                        "[TAKEAWAY] Dinamik Al Götür isteği başarısız oldu: {} (id: {}): {}. Statik fallback kullanılacak.",
-                        fast_name, fast_id, err
-                    );
-                }
             }
+            Ok(res) => {
+                tracing::warn!(
+                    "[TAKEAWAY] Dinamik Al Götür çekilemedi (HTTP {}): {} (id: {}). Statik fallback kullanılacak.",
+                    res.status(), fast_name, fast_id
+                );
+            }
+            Err(err) => {
+                tracing::warn!(
+                    "[TAKEAWAY] Dinamik Al Götür isteği başarısız oldu: {} (id: {}): {}. Statik fallback kullanılacak.",
+                    fast_name, fast_id, err
+                );
+            }
+        }
+
+        // Kibar gecikme (1.2 - 2.6 sn).
+        let delay_ms = rand::thread_rng().gen_range(1200..=2600);
+        if sleep_cancelable(delay_ms, shutdown_rx).await {
+            break;
         }
     }
 

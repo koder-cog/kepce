@@ -42,11 +42,12 @@ RUN ldconfig
 COPY target/aarch64-unknown-linux-gnu/release/worker /app/kepce-worker
 COPY config /app/config
 
-# fastembed embedding önbelleği: /app root sahipli olduğundan `nobody` varsayılan
-# `.fastembed_cache` dizinine yazamıyordu ("Permission denied" -> anomali offline
-# fallback). Yazılabilir bir dizin oluşturup sahipliğini nobody'ye veriyoruz;
-# compose tarafında volume ile kalıcı tutulur (model bir kez indirilir).
-RUN mkdir -p /app/.fastembed_cache && chown nobody:nogroup /app/.fastembed_cache
+# Yazılabilir dizinler: /app root sahipli olduğundan `nobody` buraya yazamıyordu.
+# - .fastembed_cache: fastembed embedding modeli önbelleği (anomali tespiti).
+# - cache: dinamik Al Götür önbelleği (yeniden başlatmada toplu istek olmaması için kalıcı).
+# İkisi de compose tarafında volume ile kalıcı tutulur.
+RUN mkdir -p /app/.fastembed_cache /app/cache \
+    && chown nobody:nogroup /app/.fastembed_cache /app/cache
 
 USER nobody:nogroup
 CMD ["/app/kepce-worker"]
