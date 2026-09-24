@@ -50,7 +50,7 @@ struct MenuSummary {
 
 /// `MenuDatabase` içinden gün sayısı, öğün kırılımı ve tarih aralığını çıkarır.
 ///
-/// Saf fonksiyon (env okumaz) — birim testi kolay olsun diye ayrıldı.
+/// Saf fonksiyon (env okumaz), birim testi kolay olsun diye ayrıldı.
 fn summarize_menu_db(db: &MenuDatabase) -> MenuSummary {
     let mut s = MenuSummary::default();
     for (date_str, day) in db {
@@ -267,7 +267,7 @@ pub async fn process_local_files(
                         match menu_summary.as_ref() {
                             Some(s) => {
                                 tracing::info!(
-                                    "{}: {} gün ({} kahvaltı + {} öğle + {} akşam) işlendi — kaynak: {}",
+                                    "{}: {} gün ({} kahvaltı + {} öğle + {} akşam) işlendi (kaynak: {})",
                                     filename,
                                     s.days,
                                     s.breakfast,

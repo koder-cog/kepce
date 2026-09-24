@@ -258,7 +258,7 @@ fn is_forbidden_gemini_model(model: &str) -> bool {
 
 /// Model listesini temizler: yasaklı (lite türevi) modelleri `WARN` ile eler.
 ///
-/// Saf fonksiyon (env okumaz) — birim testi kolay olsun diye ayrıldı.
+/// Saf fonksiyon (env okumaz), birim testi kolay olsun diye ayrıldı.
 fn sanitize_gemini_models(models: Vec<String>) -> Vec<String> {
     models
         .into_iter()
@@ -280,8 +280,8 @@ fn sanitize_gemini_models(models: Vec<String>) -> Vec<String> {
 ///
 /// Virgülle ayrılmış liste desteklenir (örn. `birincil,yedek`). **Otomatik yedek
 /// EKLENMEZ**: tek model verilirse zincir yalnızca o modeldir. Birincil model
-/// kotaya takılırsa dosya `bekleyen`'de kalır ve sonraki döngüde yeniden denenir
-/// — hatalı veri üreten bir modele sessizce düşmek yerine.
+/// kotaya takılırsa dosya `bekleyen`'de kalır ve sonraki döngüde yeniden denenir.
+/// Böylece hatalı veri üreten bir modele sessizce düşülmez.
 pub fn resolve_gemini_models() -> Vec<String> {
     let raw = std::env::var("GEMINI_MODEL").unwrap_or_default();
     let models: Vec<String> = raw
@@ -947,7 +947,7 @@ mod tests {
 
     /// Canlı LLM probe'u: gerçek bir API çağrısıyla prompt'un çıkarım kalitesini ölçer.
     ///
-    /// `#[ignore]` — CI'da ÇALIŞMAZ (ağ + API anahtarı gerektirir). Yerelde:
+    /// `#[ignore]` olduğu için CI'da ÇALIŞMAZ (ağ + API anahtarı gerektirir). Yerelde:
     /// ```text
     /// KEPCE_PROBE_PDF="data/menuler/admin/bekleyen/Nisan_2026_Kahvaltı.pdf" \
     ///   cargo test -p worker probe_llm_extraction -- --ignored --nocapture

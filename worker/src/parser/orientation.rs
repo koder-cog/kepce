@@ -796,7 +796,7 @@ mod tests {
     }
 
     /// Eksen algılama (0/180 vs 90/270) **güvenilirdir**: canlı ölçümde oran
-    /// 4.00 (yatay) vs 0.25 (dikey) çıkar — 16 kat ayrım.
+    /// Yatay 4.00, dikey 0.25 çıkar ve 16 kat ayrım oluşur.
     ///
     /// NOT: Bu test aynı zamanda yön (0↔180, 90↔270) sinyalinin **yokluğunu**
     /// belgeler: bant içi ağırlık merkezi her yönde ~0.500 çıkar.
