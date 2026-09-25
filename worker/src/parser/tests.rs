@@ -383,7 +383,11 @@ mod tests {
             }],
         ];
 
-        crate::parser::takeaway::insert_cached_fastmenu(test_uuid.to_string(), mock_slots);
+        crate::parser::takeaway::insert_cached_fastmenu(
+            test_uuid.to_string(),
+            Some("Dinamik Paket 1".to_string()),
+            mock_slots,
+        );
 
         let card_html = format!(
             r#"
@@ -433,5 +437,34 @@ mod tests {
         let parsed = crate::parser::kykyemek::parse_kykyemek_html(card_html, "yozgat", "breakfast");
         assert_eq!(parsed.len(), 1);
         assert_eq!(parsed[0].takeaways.len(), 0);
+    }
+
+    #[test]
+    fn test_takeaway_persistent_json_cache_roundtrip() {
+        let test_uuid = "unit-test-persist-uuid-42";
+        let mock_slots = vec![vec![crate::parser::models::MenuComponent {
+            name: "Özel Sandviç".to_string(),
+            amount: Some("1 Adet".to_string()),
+            calories: None,
+            category: None,
+        }]];
+
+        crate::parser::takeaway::insert_cached_fastmenu(
+            test_uuid.to_string(),
+            Some("Persist Test Paketi".to_string()),
+            mock_slots,
+        );
+
+        // 1. Slot okuması
+        let cached_slots = crate::parser::takeaway::get_cached_fastmenu(test_uuid);
+        assert!(cached_slots.is_some());
+        assert_eq!(cached_slots.unwrap()[0][0].name, "Özel Sandviç");
+
+        // 2. Detaylı öğe okuması (isim + zaman)
+        let cached_item = crate::parser::takeaway::get_cached_fastmenu_item(test_uuid);
+        assert!(cached_item.is_some());
+        let item = cached_item.unwrap();
+        assert_eq!(item.name, Some("Persist Test Paketi".to_string()));
+        assert!(item.updated_at.is_some());
     }
 }

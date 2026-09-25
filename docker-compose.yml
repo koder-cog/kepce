@@ -149,7 +149,7 @@ services:
       # kykyemek.com istekleri için asgari aralık (ms). Tüm uç noktaları kapsar.
       - KYKYEMEK_COM_MIN_REQUEST_INTERVAL_MS=${KYKYEMEK_COM_MIN_REQUEST_INTERVAL_MS:-${KYK_MIN_REQUEST_INTERVAL_MS:-1000}}
       # Tur başına en fazla dinamik Al Götür isteği. Toplu istek (burst) engeli.
-      - KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE=${KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE:-${KYK_FASTMENU_MAX_PER_CYCLE:-20}}
+      - KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE=${KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE:-${KYK_FASTMENU_MAX_PER_CYCLE:-3}}
     volumes:
       - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads

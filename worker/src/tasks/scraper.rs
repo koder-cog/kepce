@@ -155,6 +155,7 @@ pub struct ActiveKykSession {
     pub client: Client,
     pub endpoint_label: String,
     pub proxy_idx: Option<usize>,
+    pub token: Option<String>,
 }
 
 impl KykYemekClientPool {
@@ -242,6 +243,7 @@ impl KykYemekClientPool {
                     client: client.clone(),
                     endpoint_label: "direct".to_string(),
                     proxy_idx: None,
+                    token: None,
                 })
             }
             Self::Proxied { entries, next_idx } => {
@@ -260,6 +262,7 @@ impl KykYemekClientPool {
                             client: entries[idx].client.clone(),
                             endpoint_label: entries[idx].endpoint_label.clone(),
                             proxy_idx: Some(idx),
+                            token: None,
                         });
                     }
                 }
@@ -374,7 +377,7 @@ fn fastmenu_max_per_cycle() -> usize {
         .ok()
         .and_then(|v| v.trim().parse().ok())
         .filter(|v| *v > 0)
-        .unwrap_or(20)
+        .unwrap_or(3)
 }
 
 /// Bu turda yeni INSERT edilen menülerin (city_id, serve_date) kaydı.
@@ -549,7 +552,7 @@ pub async fn scrape_today_menus(
     mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<usize> {
     let pool = get_kykyemek_pool(client);
-    let session = match pool.acquire_session() {
+    let mut session = match pool.acquire_session() {
         Some(s) => s,
         None => {
             tracing::warn!("[KYKYEMEK.COM-BREAKER] Cooldown aktif veya kullanılabilir proxy yok - bülten taraması bu tur atlanıyor.");
@@ -557,8 +560,11 @@ pub async fn scrape_today_menus(
         }
     };
 
-    let (mut token_opt, mut active_slugs) = match fetch_kykyemek_session(&session.client).await {
-        Ok((tok, slugs)) => (Some(tok), slugs),
+    let mut active_slugs = match fetch_kykyemek_session(&session.client).await {
+        Ok((tok, slugs)) => {
+            session.token = Some(tok);
+            slugs
+        }
         Err(e) => {
             let err_str = e.to_string();
             if err_str.contains("HTTP 403") || err_str.contains("HTTP 429") {
@@ -571,7 +577,7 @@ pub async fn scrape_today_menus(
                 session.endpoint_label,
                 e
             );
-            (None, extract_cities_from_kykyemek_html(""))
+            extract_cities_from_kykyemek_html("")
         }
     };
 
@@ -618,12 +624,11 @@ pub async fn scrape_today_menus(
             match fetch_and_save(
                 db,
                 pool,
-                &session,
+                &mut session,
                 &city,
                 "breakfast",
                 MealTypeEnum::Breakfast,
                 shift,
-                &mut token_opt,
                 &mut shutdown_rx,
             )
             .await
@@ -631,7 +636,24 @@ pub async fn scrape_today_menus(
                 Ok(Some(count)) => total_saved += count,
                 Ok(None) => return Ok(total_saved),
                 Err(e) => {
-                    tracing::warn!(city = %city.slug, meal = "breakfast", shift = %shift, "Kahvaltı bülteni alınamadı: {:?}", e)
+                    tracing::warn!(city = %city.slug, meal = "breakfast", shift = %shift, "Kahvaltı bülteni alınamadı: {:?}", e);
+                    let err_str = e.to_string();
+                    if err_str.contains("HTTP 403") || err_str.contains("ban") {
+                        if let Some(mut new_s) = pool.acquire_session() {
+                            tracing::info!(
+                                "[KYKYEMEK.COM-FAILOVER] Oturum devredildi: {} -> {}",
+                                session.endpoint_label,
+                                new_s.endpoint_label
+                            );
+                            if let Ok((tok, _)) = fetch_kykyemek_session(&new_s.client).await {
+                                new_s.token = Some(tok);
+                            }
+                            session = new_s;
+                        } else {
+                            tracing::warn!("[KYKYEMEK.COM-BREAKER] Havuzdaki tüm oturumlar tükendi. Bülten taraması durduruluyor.");
+                            return Ok(total_saved);
+                        }
+                    }
                 }
             }
 
@@ -645,12 +667,11 @@ pub async fn scrape_today_menus(
             match fetch_and_save(
                 db,
                 pool,
-                &session,
+                &mut session,
                 &city,
                 "dinner",
                 MealTypeEnum::Dinner,
                 shift,
-                &mut token_opt,
                 &mut shutdown_rx,
             )
             .await
@@ -658,7 +679,24 @@ pub async fn scrape_today_menus(
                 Ok(Some(count)) => total_saved += count,
                 Ok(None) => return Ok(total_saved),
                 Err(e) => {
-                    tracing::warn!(city = %city.slug, meal = "dinner", shift = %shift, "Akşam yemeği bülteni alınamadı: {:?}", e)
+                    tracing::warn!(city = %city.slug, meal = "dinner", shift = %shift, "Akşam yemeği bülteni alınamadı: {:?}", e);
+                    let err_str = e.to_string();
+                    if err_str.contains("HTTP 403") || err_str.contains("ban") {
+                        if let Some(mut new_s) = pool.acquire_session() {
+                            tracing::info!(
+                                "[KYKYEMEK.COM-FAILOVER] Oturum devredildi: {} -> {}",
+                                session.endpoint_label,
+                                new_s.endpoint_label
+                            );
+                            if let Ok((tok, _)) = fetch_kykyemek_session(&new_s.client).await {
+                                new_s.token = Some(tok);
+                            }
+                            session = new_s;
+                        } else {
+                            tracing::warn!("[KYKYEMEK.COM-BREAKER] Havuzdaki tüm oturumlar tükendi. Bülten taraması durduruluyor.");
+                            return Ok(total_saved);
+                        }
+                    }
                 }
             }
 
@@ -751,12 +789,11 @@ pub async fn run_kykyemek_scraper(
 async fn fetch_and_save(
     db: &DatabaseConnection,
     pool: &KykYemekClientPool,
-    session: &ActiveKykSession,
+    session: &mut ActiveKykSession,
     city: &cities::Model,
     kyk_meal_type: &str,
     meal_type_enum: MealTypeEnum,
     month_shift: &str,
-    token_opt: &mut Option<String>,
     shutdown_rx: &mut tokio::sync::watch::Receiver<bool>,
 ) -> Result<Option<usize>> {
     let is_dinner = if kyk_meal_type == "dinner" {
@@ -786,7 +823,7 @@ async fn fetch_and_save(
         .header("Referer", "https://kykyemek.com/")
         .timeout(std::time::Duration::from_secs(30));
 
-        if let Some(ref token) = *token_opt {
+        if let Some(ref token) = session.token {
             req = req
                 .header("RequestVerificationToken", token.as_str())
                 .header("__RequestVerificationToken", token.as_str());
@@ -841,7 +878,7 @@ async fn fetch_and_save(
                 } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
                     if let Ok((new_token, _)) = fetch_kykyemek_session(&session.client).await {
-                        *token_opt = Some(new_token);
+                        session.token = Some(new_token);
                     }
                 } else {
                     tracing::warn!(
@@ -911,19 +948,17 @@ async fn fetch_and_save(
     }
 
     // Dinamik Al Götür (Takeaway) Ön-Yükleme ve Önbellekleme:
-    // Kartlardaki tüm data-fastmenus UUID'lerini topla; henüz önbellekte olmayanları
+    // Kartlardaki tüm data-fastmenus UUID'lerini topla; henüz önbellekte (RAM veya disk) olmayanları
     // /Menu/GetFastMenuFoods üzerinden tek seferlik çekip parse_fast_menu_foods_html ile önbelleğe yaz.
     // std::sync::RwLock kilitleri get_cached_fastmenu / insert_cached_fastmenu içinde nanosaniyelik açılıp
     // kapandığından, await çağrısı sırasında elde hiçbir kilit tutulmaz (Send trait & thread starvation koruması).
-    // Kibar tarama: her dinamik Al Götür isteği arasında gecikme uygulanır ve tur başına
-    // istek sayısı sınırlanır. Aksi halde ilk turda (önbellek soğukken) yüzlerce istek
-    // saniyeler içinde gidip karşı tarafta toplu istek (DDoS) korumasını tetikleyebilir.
     let fastmenu_items = crate::parser::kykyemek::extract_fastmenu_items(&html_content);
     let max_per_cycle = fastmenu_max_per_cycle();
     for (fast_id, fast_name) in fastmenu_items {
         if *shutdown_rx.borrow() || is_banned() {
             break;
         }
+        // Önbellekte varsa (RAM veya diskteki takeaway_cache.json dosyasında) KESİNLİKLE İSTEK ATMA!
         if crate::parser::takeaway::get_cached_fastmenu(&fast_id).is_some() {
             continue;
         }
@@ -937,7 +972,7 @@ async fn fetch_and_save(
         FASTMENU_FETCHED_THIS_CYCLE.fetch_add(1, Ordering::Relaxed);
 
         let fast_url = "https://kykyemek.com/Menu/GetFastMenuFoods";
-        let req = with_xhr_headers(
+        let mut req = with_xhr_headers(
             session
                 .client
                 .get(fast_url)
@@ -945,38 +980,86 @@ async fn fetch_and_save(
         )
         .header("X-Requested-With", "XMLHttpRequest")
         .header("Referer", "https://kykyemek.com/")
-        .timeout(std::time::Duration::from_secs(10));
+        .header("Origin", "https://kykyemek.com")
+        .header("Accept", "text/html, */*; q=0.01")
+        .timeout(std::time::Duration::from_secs(15));
+
+        if let Some(ref token) = session.token {
+            req = req
+                .header("RequestVerificationToken", token.as_str())
+                .header("__RequestVerificationToken", token.as_str());
+        }
 
         throttle_kykyemek().await;
         match req.send().await {
-            Ok(res) if res.status().is_success() => {
-                if let Ok(foods_html) = res.text().await {
-                    let slots = crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
-                    if !slots.is_empty() {
-                        tracing::info!(
-                            "[TAKEAWAY] Dinamik Al Götür menüsü başarıyla çekildi: {} (id: {}, {} slot)",
-                            fast_name, fast_id, slots.len()
-                        );
-                        crate::parser::takeaway::insert_cached_fastmenu(fast_id, slots);
-                    }
-                }
-            }
             Ok(res) => {
-                tracing::warn!(
-                    "[TAKEAWAY] Dinamik Al Götür çekilemedi (HTTP {}): {} (id: {}). Statik fallback kullanılacak.",
-                    res.status(), fast_name, fast_id
-                );
+                let status = res.status();
+                if status.is_success() {
+                    if let Ok(foods_html) = res.text().await {
+                        let slots =
+                            crate::parser::takeaway::parse_fast_menu_foods_html(&foods_html);
+                        if !slots.is_empty() {
+                            tracing::info!(
+                                "[TAKEAWAY] Dinamik Al Götür menüsü başarıyla çekildi ve JSON'a işlendi: {} (id: {}, {} slot)",
+                                fast_name,
+                                fast_id,
+                                slots.len()
+                            );
+                            crate::parser::takeaway::insert_cached_fastmenu(
+                                fast_id,
+                                Some(fast_name.clone()),
+                                slots,
+                            );
+                        }
+                    }
+                } else if status == reqwest::StatusCode::FORBIDDEN {
+                    // FAIL-FAST: 403 alındığında inat etme! Kalan paketleri denemeyi derhal kes ve oturumu banla.
+                    tracing::warn!(
+                        "[TAKEAWAY] Al Götür isteğinde HTTP 403 alındı: {} (id: {}). Oturum karantinaya alınıyor ve Al Götür döngüsü durduruluyor.",
+                        fast_name,
+                        fast_id
+                    );
+                    pool.trip_session_ban(
+                        session,
+                        &format!("Takeaway HTTP 403 - {} (id: {})", fast_name, fast_id),
+                    )
+                    .await;
+                    break;
+                } else if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
+                    let streak = KYKYEMEK_COM_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
+                    tracing::warn!(
+                        "[TAKEAWAY] Al Götür HTTP 429 hız sınırı (streak: {}). Döngü durduruluyor.",
+                        streak
+                    );
+                    if streak >= 3 {
+                        pool.trip_session_ban(
+                            session,
+                            &format!("Takeaway ısrarcı HTTP 429 - {}", fast_name),
+                        )
+                        .await;
+                    }
+                    break;
+                } else {
+                    tracing::warn!(
+                        "[TAKEAWAY] Dinamik Al Götür çekilemedi (HTTP {}): {} (id: {}). Statik fallback kullanılacak.",
+                        status,
+                        fast_name,
+                        fast_id
+                    );
+                }
             }
             Err(err) => {
                 tracing::warn!(
                     "[TAKEAWAY] Dinamik Al Götür isteği başarısız oldu: {} (id: {}): {}. Statik fallback kullanılacak.",
-                    fast_name, fast_id, err
+                    fast_name,
+                    fast_id,
+                    err
                 );
             }
         }
 
-        // Kibar gecikme (1.2 - 2.6 sn).
-        let delay_ms = rand::thread_rng().gen_range(1200..=2600);
+        // Sıkı sönümleme: insani bekleme süresi (6.0 - 12.0 sn).
+        let delay_ms = rand::thread_rng().gen_range(6000..=12000);
         if sleep_cancelable(delay_ms, shutdown_rx).await {
             break;
         }

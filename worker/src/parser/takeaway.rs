@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::sync::{OnceLock, RwLock};
@@ -9,8 +9,24 @@ pub struct TakeawayParsedPackage {
     pub slots: Vec<Vec<crate::parser::models::MenuComponent>>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FastMenuCachedItem {
+    #[serde(default)]
+    pub name: Option<String>,
+    pub slots: Vec<Vec<crate::parser::models::MenuComponent>>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+enum RawFastMenuEntry {
+    Detailed(FastMenuCachedItem),
+    SimpleSlots(Vec<Vec<crate::parser::models::MenuComponent>>),
+}
+
 type TakeawayCacheMap = HashMap<String, HashMap<u32, TakeawayParsedPackage>>;
-type DynamicFastMenuMap = HashMap<String, Vec<Vec<crate::parser::models::MenuComponent>>>;
+type DynamicFastMenuMap = HashMap<String, FastMenuCachedItem>;
 
 lazy_static::lazy_static! {
     pub(crate) static ref TAKEAWAY_CACHE: RwLock<TakeawayCacheMap> = RwLock::new(HashMap::new());
@@ -26,21 +42,48 @@ const CACHE_FILE_ENV: &str = "TAKEAWAY_CACHE_FILE";
 const DEFAULT_CACHE_FILE: &str = "/app/cache/takeaway.json";
 
 fn cache_file_path() -> String {
-    std::env::var(CACHE_FILE_ENV).unwrap_or_else(|_| DEFAULT_CACHE_FILE.to_string())
+    if let Ok(p) = std::env::var(CACHE_FILE_ENV) {
+        return p;
+    }
+    if std::path::Path::new("data").exists() {
+        "data/takeaway_cache.json".to_string()
+    } else {
+        DEFAULT_CACHE_FILE.to_string()
+    }
 }
 
 /// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür yemek slotlarını önbellekten okur.
 /// Kilit (RwLock) mikrosaniyelik RAM okumasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
 pub fn get_cached_fastmenu(id: &str) -> Option<Vec<Vec<crate::parser::models::MenuComponent>>> {
     ensure_fastmenu_cache_loaded();
+    FASTMENU_DYNAMIC_CACHE
+        .read()
+        .ok()?
+        .get(id)
+        .map(|item| item.slots.clone())
+}
+
+/// Dinamik olarak önbelleğe alınmış Al Götür paketini detaylı kaydıyla (isim ve zaman dahil) okur.
+pub fn get_cached_fastmenu_item(id: &str) -> Option<FastMenuCachedItem> {
+    ensure_fastmenu_cache_loaded();
     FASTMENU_DYNAMIC_CACHE.read().ok()?.get(id).cloned()
 }
 
 /// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür paketini önbelleğe yazar.
 /// Kilit (RwLock) mikrosaniyelik RAM yazmasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
-pub fn insert_cached_fastmenu(id: String, slots: Vec<Vec<crate::parser::models::MenuComponent>>) {
+pub fn insert_cached_fastmenu(
+    id: String,
+    name: Option<String>,
+    slots: Vec<Vec<crate::parser::models::MenuComponent>>,
+) {
+    let now = chrono::Utc::now().to_rfc3339();
+    let item = FastMenuCachedItem {
+        name,
+        slots,
+        updated_at: Some(now),
+    };
     if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
-        cache.insert(id, slots);
+        cache.insert(id, item);
     }
     // Yazma kilidi burada bırakılmıştır, kalıcı yazma kendi okuma kilidini alır.
     persist_fastmenu_cache();
@@ -54,9 +97,27 @@ fn ensure_fastmenu_cache_loaded() {
         let Ok(content) = fs::read_to_string(&path) else {
             return;
         };
-        match serde_json::from_str::<DynamicFastMenuMap>(&content) {
-            Ok(map) => {
-                let count = map.len();
+        match serde_json::from_str::<HashMap<String, RawFastMenuEntry>>(&content) {
+            Ok(raw_map) => {
+                let count = raw_map.len();
+                let mut map = HashMap::new();
+                for (k, v) in raw_map {
+                    match v {
+                        RawFastMenuEntry::Detailed(item) => {
+                            map.insert(k, item);
+                        }
+                        RawFastMenuEntry::SimpleSlots(slots) => {
+                            map.insert(
+                                k,
+                                FastMenuCachedItem {
+                                    name: None,
+                                    slots,
+                                    updated_at: None,
+                                },
+                            );
+                        }
+                    }
+                }
                 if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
                     *cache = map;
                     tracing::info!("Al Götür önbelleği diskten yüklendi: {} kayıt", count);
@@ -79,7 +140,7 @@ fn persist_fastmenu_cache() {
     let Ok(cache) = FASTMENU_DYNAMIC_CACHE.read() else {
         return;
     };
-    let Ok(json) = serde_json::to_string(&*cache) else {
+    let Ok(json) = serde_json::to_string_pretty(&*cache) else {
         return;
     };
     let tmp = format!("{path}.tmp");
