@@ -6,34 +6,35 @@ use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 
-/// Ard arda gelen 429 sayaci: kaynak sunucu bizi hizlandiriyorsa
-/// geri cekilmek icin kullanilir (kibar tarama politikasi).
-static KYK_429_STREAK: AtomicU32 = AtomicU32::new(0);
+/// Ard arda gelen 429 sayacı: kaynak sunucu bizi hızlandırıyorsa
+/// geri çekilmek için kullanılır (kibar tarama politikası).
+static KYKYEMEK_COM_429_STREAK: AtomicU32 = AtomicU32::new(0);
 
-/// IP-ban devre kesici (circuit breaker): kykyemek.com bizi banladiginda
-/// (HTTP 403 / israrci 429 serisi) KYK_BAN_COOLDOWN_SECS boyunca o domaine
-/// HIC bir istek atilmaz. Banliyken israr etmek ban suresini uzatir.
-/// Deger: cooldown bitis aninin Unix timestamp'i (0 = temiz).
-static KYK_BANNED_UNTIL: AtomicU64 = AtomicU64::new(0);
+/// IP-ban devre kesici (circuit breaker): kykyemek.com bizi banladığında
+/// (HTTP 403 / ısrarcı 429 serisi) KYKYEMEK_COM_BAN_COOLDOWN_SECS boyunca o domaine
+/// HİÇ bir istek atılmaz. Banlıyken ısrar etmek ban süresini uzatır.
+/// Değer: cooldown bitiş anının Unix timestamp'i (0 = temiz).
+static KYKYEMEK_COM_BANNED_UNTIL: AtomicU64 = AtomicU64::new(0);
 
 fn ban_cooldown_secs() -> u64 {
-    std::env::var("KYK_BAN_COOLDOWN_SECS")
+    std::env::var("KYKYEMEK_COM_BAN_COOLDOWN_SECS")
+        .or_else(|_| std::env::var("KYK_BAN_COOLDOWN_SECS"))
         .ok()
         .and_then(|v| v.parse().ok())
-        .unwrap_or(6 * 60 * 60) // varsayilan: 6 saat
+        .unwrap_or(6 * 60 * 60) // varsayılan: 6 saat
 }
 
 async fn trip_ban(reason: &str) {
     let until = chrono::Utc::now().timestamp().max(0) as u64 + ban_cooldown_secs();
-    KYK_BANNED_UNTIL.store(until, Ordering::Relaxed);
+    KYKYEMEK_COM_BANNED_UNTIL.store(until, Ordering::Relaxed);
     persist_ban_state(until);
     tracing::error!(
-        "[KYK-BREAKER] Devre kesildi ({}). {} sn boyunca kykyemek.com'a istek atilmayacak; fallback kaynaklar calismaya devam eder.",
+        "[KYKYEMEK.COM-BREAKER] Devre kesildi ({}). {} sn boyunca kykyemek.com'a istek atılmayacak; fallback kaynaklar çalışmaya devam eder.",
         reason,
         ban_cooldown_secs()
     );
     let alert_msg = format!(
-        "[KYK-BREAKER] kykyemek.com erisimi engellendi ({}). Worker {} sn bekleyecek.",
+        "[KYKYEMEK.COM-BREAKER] kykyemek.com erişimi engellendi ({}). Worker {} sn bekleyecek.",
         reason,
         ban_cooldown_secs()
     );
@@ -46,24 +47,35 @@ async fn trip_ban(reason: &str) {
 /// sıfırlanır ve worker banlı olduğu hâlde yeniden istek atar. Bu da ban süresini
 /// uzatır. Durum bu dosyada saklanır ve yeniden başlatmalara dayanır.
 fn ban_state_path() -> String {
-    std::env::var("KYK_BAN_STATE_FILE").unwrap_or_else(|_| "/app/cache/kyk_ban_until".to_string())
+    std::env::var("KYKYEMEK_COM_BAN_STATE_FILE")
+        .or_else(|_| std::env::var("KYK_BAN_STATE_FILE"))
+        .unwrap_or_else(|_| "/app/cache/kykyemek_ban_until".to_string())
 }
 
 /// Kalıcı ban durumunu süreç başına bir kez yükler.
 fn ensure_ban_state_loaded() {
     static LOADED: OnceLock<()> = OnceLock::new();
     LOADED.get_or_init(|| {
-        let Ok(raw) = std::fs::read_to_string(ban_state_path()) else {
-            return;
+        let path = ban_state_path();
+        let raw = match std::fs::read_to_string(&path) {
+            Ok(s) => s,
+            Err(_) => {
+                // Geriye dönük uyumluluk: eski dosya adı varsa oradan yükle
+                let fallback = "/app/cache/kyk_ban_until";
+                match std::fs::read_to_string(fallback) {
+                    Ok(s) => s,
+                    Err(_) => return,
+                }
+            }
         };
         let Ok(until) = raw.trim().parse::<u64>() else {
             return;
         };
         let now = chrono::Utc::now().timestamp().max(0) as u64;
         if until > now {
-            KYK_BANNED_UNTIL.store(until, Ordering::Relaxed);
+            KYKYEMEK_COM_BANNED_UNTIL.store(until, Ordering::Relaxed);
             tracing::warn!(
-                "[KYK-BREAKER] Kalıcı durumdan ban yüklendi. Kalan bekleme: {} sn.",
+                "[KYKYEMEK.COM-BREAKER] Kalıcı durumdan ban yüklendi. Kalan bekleme: {} sn.",
                 until - now
             );
         }
@@ -81,14 +93,14 @@ fn persist_ban_state(until: u64) {
 
 pub fn is_banned() -> bool {
     ensure_ban_state_loaded();
-    let until = KYK_BANNED_UNTIL.load(Ordering::Relaxed);
+    let until = KYKYEMEK_COM_BANNED_UNTIL.load(Ordering::Relaxed);
     until > 0 && (chrono::Utc::now().timestamp().max(0) as u64) < until
 }
 
 /// Devre kesici durumunu döner. Banlıysa kalan saniyeyi, değilse None döner.
 pub fn get_ban_status() -> Option<u64> {
     ensure_ban_state_loaded();
-    let until = KYK_BANNED_UNTIL.load(Ordering::Relaxed);
+    let until = KYKYEMEK_COM_BANNED_UNTIL.load(Ordering::Relaxed);
     let now = chrono::Utc::now().timestamp().max(0) as u64;
     if until > now {
         Some(until - now)
@@ -99,9 +111,211 @@ pub fn get_ban_status() -> Option<u64> {
 
 /// Devre kesiciyi manuel olarak sıfırlar.
 pub fn reset_ban_status() {
-    KYK_BANNED_UNTIL.store(0, Ordering::Relaxed);
-    KYK_429_STREAK.store(0, Ordering::Relaxed);
+    KYKYEMEK_COM_BANNED_UNTIL.store(0, Ordering::Relaxed);
+    KYKYEMEK_COM_429_STREAK.store(0, Ordering::Relaxed);
     persist_ban_state(0);
+    if let Some(pool) = KYKYEMEK_POOL.get() {
+        pool.reset_bans();
+    }
+}
+
+/// Proxy URL'indeki kullanıcı ve şifre bilgilerini log güvenliği için maskeler.
+pub fn mask_proxy_url(raw: &str) -> String {
+    if let Some((scheme, rest)) = raw.split_once("://") {
+        if let Some((_creds, host_port)) = rest.split_once('@') {
+            return format!("{scheme}://***@{host_port}");
+        }
+    }
+    raw.to_string()
+}
+
+/// Havuzdaki her bir proxy çıkışının izole durum kaydı.
+#[derive(Debug, Clone)]
+pub struct ProxyEntry {
+    pub client: Client,
+    pub endpoint_label: String,
+    pub banned_until: std::sync::Arc<AtomicU64>,
+}
+
+/// Kykyemek.com için istemci havuzu (Doğrudan veya Proxy Havuzu).
+#[derive(Debug, Clone)]
+pub enum KykYemekClientPool {
+    /// KYKYEMEK_PROXY_TOOL boşsa: Mevcut doğrudan bağlantı (sıfır ek yük)
+    Direct(Client),
+    /// KYKYEMEK_PROXY_TOOL tanımlıysa: İzole çerez hazneli bağımsız proxy istemcileri
+    Proxied {
+        entries: Vec<ProxyEntry>,
+        next_idx: std::sync::Arc<AtomicUsize>,
+    },
+}
+
+/// Tarama turunda oturum açılan ve menü isteklerini yürüten aktif istemci.
+#[derive(Debug, Clone)]
+pub struct ActiveKykSession {
+    pub client: Client,
+    pub endpoint_label: String,
+    pub proxy_idx: Option<usize>,
+}
+
+impl KykYemekClientPool {
+    pub fn new(proxy_config: Option<&str>, default_client: Client) -> Self {
+        let raw_proxies = proxy_config.unwrap_or_default();
+        let proxy_list: Vec<&str> = raw_proxies
+            .split(',')
+            .map(|s| s.trim())
+            .filter(|s| !s.is_empty())
+            .collect();
+
+        if proxy_list.is_empty() {
+            tracing::info!("[KYKYEMEK.COM-POOL] Proxy yapılandırması (KYKYEMEK_PROXY_TOOL) bulunamadı. Doğrudan bağlantı modu aktif.");
+            return Self::Direct(default_client);
+        }
+
+        let mut entries = Vec::new();
+        for raw in proxy_list {
+            let masked = mask_proxy_url(raw);
+            match reqwest::Proxy::all(raw) {
+                Ok(proxy) => {
+                    match Client::builder()
+                        .proxy(proxy)
+                        .cookie_store(true)
+                        .timeout(std::time::Duration::from_secs(30))
+                        .build()
+                    {
+                        Ok(c) => {
+                            tracing::info!("[KYKYEMEK.COM-POOL] Proxy yüklendi: {}", masked);
+                            entries.push(ProxyEntry {
+                                client: c,
+                                endpoint_label: masked,
+                                banned_until: std::sync::Arc::new(AtomicU64::new(0)),
+                            });
+                        }
+                        Err(e) => {
+                            tracing::error!(
+                                "[KYKYEMEK.COM-POOL] Proxy istemcisi oluşturulamadı ({}): {:?}",
+                                masked,
+                                e
+                            );
+                        }
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(
+                        "[KYKYEMEK.COM-POOL] Geçersiz proxy URL'i ({}): {:?}",
+                        masked,
+                        e
+                    );
+                }
+            }
+        }
+
+        if entries.is_empty() {
+            tracing::warn!("[KYKYEMEK.COM-POOL] Hiçbir geçerli proxy oluşturulamadı, doğrudan bağlantıya dönülüyor.");
+            Self::Direct(default_client)
+        } else {
+            tracing::info!(
+                "[KYKYEMEK.COM-POOL] Proxy havuzu hazır: {} adet aktif proxy.",
+                entries.len()
+            );
+            Self::Proxied {
+                entries,
+                next_idx: std::sync::Arc::new(AtomicUsize::new(0)),
+            }
+        }
+    }
+
+    pub fn from_env(default_client: Client) -> Self {
+        let raw_proxies = std::env::var("KYKYEMEK_PROXY_TOOL")
+            .or_else(|_| std::env::var("KYKYEMEK_COM_PROXY_POOL"))
+            .or_else(|_| std::env::var("KYK_PROXY_POOL"))
+            .ok();
+        Self::new(raw_proxies.as_deref(), default_client)
+    }
+
+    pub fn acquire_session(&self) -> Option<ActiveKykSession> {
+        match self {
+            Self::Direct(client) => {
+                if is_banned() {
+                    return None;
+                }
+                Some(ActiveKykSession {
+                    client: client.clone(),
+                    endpoint_label: "direct".to_string(),
+                    proxy_idx: None,
+                })
+            }
+            Self::Proxied { entries, next_idx } => {
+                let now = chrono::Utc::now().timestamp().max(0) as u64;
+                let total = entries.len();
+                if total == 0 {
+                    return None;
+                }
+                let start = next_idx.fetch_add(1, Ordering::Relaxed) % total;
+
+                for offset in 0..total {
+                    let idx = (start + offset) % total;
+                    let banned_until = entries[idx].banned_until.load(Ordering::Relaxed);
+                    if now >= banned_until {
+                        return Some(ActiveKykSession {
+                            client: entries[idx].client.clone(),
+                            endpoint_label: entries[idx].endpoint_label.clone(),
+                            proxy_idx: Some(idx),
+                        });
+                    }
+                }
+
+                None
+            }
+        }
+    }
+
+    pub async fn trip_session_ban(&self, session: &ActiveKykSession, reason: &str) {
+        match self {
+            Self::Direct(_) => {
+                trip_ban(reason).await;
+            }
+            Self::Proxied { entries, .. } => {
+                if let Some(idx) = session.proxy_idx {
+                    if idx < entries.len() {
+                        let until =
+                            chrono::Utc::now().timestamp().max(0) as u64 + ban_cooldown_secs();
+                        entries[idx].banned_until.store(until, Ordering::Relaxed);
+                        tracing::warn!(
+                            "[KYKYEMEK.COM-BREAKER] Proxy {} engellendi ({}). {} sn karantinaya alındı.",
+                            session.endpoint_label,
+                            reason,
+                            ban_cooldown_secs()
+                        );
+
+                        let now = chrono::Utc::now().timestamp().max(0) as u64;
+                        let all_banned = entries
+                            .iter()
+                            .all(|e| e.banned_until.load(Ordering::Relaxed) > now);
+                        if all_banned {
+                            trip_ban(&format!("Havuzdaki tüm proxy'ler tükendi ({})", reason))
+                                .await;
+                        }
+                    }
+                } else {
+                    trip_ban(reason).await;
+                }
+            }
+        }
+    }
+
+    pub fn reset_bans(&self) {
+        if let Self::Proxied { entries, .. } = self {
+            for entry in entries {
+                entry.banned_until.store(0, Ordering::Relaxed);
+            }
+        }
+    }
+}
+
+static KYKYEMEK_POOL: OnceLock<KykYemekClientPool> = OnceLock::new();
+
+pub fn get_kykyemek_pool(default_client: &Client) -> &'static KykYemekClientPool {
+    KYKYEMEK_POOL.get_or_init(|| KykYemekClientPool::from_env(default_client.clone()))
 }
 
 /// Chrome 144 (LTS) User-Agent. Tek noktadan yönetilir.
@@ -125,22 +339,20 @@ pub fn with_xhr_headers(req: reqwest::RequestBuilder) -> reqwest::RequestBuilder
 
 /// kykyemek.com için asgari istek aralığı (ms). Varsayılan 1000 ms.
 fn min_request_interval_ms() -> u64 {
-    std::env::var("KYK_MIN_REQUEST_INTERVAL_MS")
+    std::env::var("KYKYEMEK_COM_MIN_REQUEST_INTERVAL_MS")
+        .or_else(|_| std::env::var("KYK_MIN_REQUEST_INTERVAL_MS"))
         .ok()
         .and_then(|v| v.trim().parse().ok())
         .unwrap_or(1000)
 }
 
 /// Tüm kykyemek isteklerini tek noktadan kibar aralığa oturtan hız sınırlayıcı.
-///
-/// Ana döngü ve fastmenu döngüsü ayrı ayrı kibar olsa da tek bir merkezî sınırlayıcı
-/// tüm uç noktaları (ana sayfa, GetDailyMenu, GetFastMenuFoods) kapsar. Kilit yalnızca
-/// bekleme boyunca tutulduğundan istekler sıraya girer ve aralarındaki süre garanti edilir.
-static KYK_THROTTLE: OnceLock<tokio::sync::Mutex<Option<tokio::time::Instant>>> = OnceLock::new();
+static KYKYEMEK_COM_THROTTLE: OnceLock<tokio::sync::Mutex<Option<tokio::time::Instant>>> =
+    OnceLock::new();
 
 pub async fn throttle_kykyemek() {
     let interval = std::time::Duration::from_millis(min_request_interval_ms());
-    let gate = KYK_THROTTLE.get_or_init(|| tokio::sync::Mutex::new(None));
+    let gate = KYKYEMEK_COM_THROTTLE.get_or_init(|| tokio::sync::Mutex::new(None));
     let mut guard = gate.lock().await;
     if let Some(last) = *guard {
         let elapsed = last.elapsed();
@@ -155,9 +367,10 @@ pub async fn throttle_kykyemek() {
 /// Tur başına üst sınırla toplu istek (burst) engellenir.
 static FASTMENU_FETCHED_THIS_CYCLE: AtomicUsize = AtomicUsize::new(0);
 
-/// Tur başına en fazla dinamik Al Götür isteği. `KYK_FASTMENU_MAX_PER_CYCLE` ile ayarlanır.
+/// Tur başına en fazla dinamik Al Götür isteği. `KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE` ile ayarlanır.
 fn fastmenu_max_per_cycle() -> usize {
-    std::env::var("KYK_FASTMENU_MAX_PER_CYCLE")
+    std::env::var("KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE")
+        .or_else(|_| std::env::var("KYK_FASTMENU_MAX_PER_CYCLE"))
         .ok()
         .and_then(|v| v.trim().parse().ok())
         .filter(|v| *v > 0)
@@ -310,15 +523,14 @@ pub async fn fetch_kykyemek_session(client: &Client) -> Result<(String, Vec<Stri
         res.status(),
         reqwest::StatusCode::FORBIDDEN | reqwest::StatusCode::TOO_MANY_REQUESTS
     ) {
-        trip_ban(&format!("token alımı HTTP {}", res.status())).await;
-        anyhow::bail!("kykyemek erişimi engellendi (HTTP {})", res.status());
+        anyhow::bail!("kykyemek.com erişimi engellendi (HTTP {})", res.status());
     }
     let html = res.text().await?;
 
     let token = extract_token_from_html(&html)?;
     let cities = extract_cities_from_kykyemek_html(&html);
     tracing::info!(
-        "[KYKYEMEK-DISCOVERY] Oturum açıldı. Kykyemek üzerinde dinamik olarak {} aktif şehir tespit edildi.",
+        "[KYKYEMEK.COM-DISCOVERY] Oturum açıldı. Kykyemek üzerinde dinamik olarak {} aktif şehir tespit edildi.",
         cities.len()
     );
 
@@ -336,16 +548,27 @@ pub async fn scrape_today_menus(
     client: &Client,
     mut shutdown_rx: tokio::sync::watch::Receiver<bool>,
 ) -> Result<usize> {
-    if is_banned() {
-        tracing::warn!("[KYKYEMEK-BREAKER] Cooldown aktif - bülten taraması bu tur atlanıyor.");
-        return Ok(0);
-    }
+    let pool = get_kykyemek_pool(client);
+    let session = match pool.acquire_session() {
+        Some(s) => s,
+        None => {
+            tracing::warn!("[KYKYEMEK.COM-BREAKER] Cooldown aktif veya kullanılabilir proxy yok - bülten taraması bu tur atlanıyor.");
+            return Ok(0);
+        }
+    };
 
-    let (mut token_opt, mut active_slugs) = match fetch_kykyemek_session(client).await {
+    let (mut token_opt, mut active_slugs) = match fetch_kykyemek_session(&session.client).await {
         Ok((tok, slugs)) => (Some(tok), slugs),
         Err(e) => {
+            let err_str = e.to_string();
+            if err_str.contains("HTTP 403") || err_str.contains("HTTP 429") {
+                pool.trip_session_ban(&session, &format!("token alımı: {}", err_str))
+                    .await;
+                return Ok(0);
+            }
             tracing::warn!(
-                "[KYKYEMEK-SESSION] Oturum başlatılamadı: {:?}. Düz istek deneniyor.",
+                "[KYKYEMEK.COM-SESSION] Oturum başlatılamadı ({}): {:?}. Düz istek deneniyor.",
+                session.endpoint_label,
                 e
             );
             (None, extract_cities_from_kykyemek_html(""))
@@ -378,8 +601,9 @@ pub async fn scrape_today_menus(
         };
 
         tracing::info!(
-            "[KYKYEMEK-BULLETIN] Şehir için aylık bülten çekiliyor: {}...",
-            city.name
+            "[KYKYEMEK.COM-BULLETIN] Şehir için aylık bülten çekiliyor: {} (çıkış: {})...",
+            city.name,
+            session.endpoint_label
         );
 
         // Ayın ilk 10 gününde bir önceki ayın menülerini de çekerek ay geçişlerindeki boşlukları doldur
@@ -393,7 +617,8 @@ pub async fn scrape_today_menus(
             // 1. Kahvaltı Bülteni
             match fetch_and_save(
                 db,
-                client,
+                pool,
+                &session,
                 &city,
                 "breakfast",
                 MealTypeEnum::Breakfast,
@@ -419,7 +644,8 @@ pub async fn scrape_today_menus(
             // 2. Akşam Yemeği Bülteni
             match fetch_and_save(
                 db,
-                client,
+                pool,
+                &session,
                 &city,
                 "dinner",
                 MealTypeEnum::Dinner,
@@ -445,7 +671,7 @@ pub async fn scrape_today_menus(
     }
 
     tracing::info!(
-        "[KYKYEMEK-BULLETIN] Kykyemek aylık bülten taraması tamamlandı: {} menü güncellendi.",
+        "[KYKYEMEK.COM-BULLETIN] Kykyemek aylık bülten taraması tamamlandı: {} menü güncellendi.",
         total_saved
     );
     Ok(total_saved)
@@ -524,7 +750,8 @@ pub async fn run_kykyemek_scraper(
 #[allow(clippy::too_many_arguments)]
 async fn fetch_and_save(
     db: &DatabaseConnection,
-    client: &Client,
+    pool: &KykYemekClientPool,
+    session: &ActiveKykSession,
     city: &cities::Model,
     kyk_meal_type: &str,
     meal_type_enum: MealTypeEnum,
@@ -548,7 +775,7 @@ async fn fetch_and_save(
             return Ok(None);
         }
 
-        let mut req = with_xhr_headers(client.get(&url).query(&[
+        let mut req = with_xhr_headers(session.client.get(&url).query(&[
             ("city", city.slug.as_str()),
             ("mealType", is_dinner),
             ("monthShift", month_shift),
@@ -570,40 +797,50 @@ async fn fetch_and_save(
             Ok(res) => {
                 let status = res.status();
                 if status.is_success() {
-                    KYK_429_STREAK.store(0, Ordering::Relaxed);
+                    KYKYEMEK_COM_429_STREAK.store(0, Ordering::Relaxed);
                     response = Some(res);
                     break;
                 } else if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
-                    // 429: kaynak bizi hizlandiriyor. Kibarca geri cekil,
-                    // ust uste binen 429'larda bekleme suresini katla.
-                    let streak = KYK_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
+                    // 429: kaynak bizi hızlandırıyor. Kibarca geri çekil,
+                    // üst üste binen 429'larda bekleme süresini katla.
+                    let streak = KYKYEMEK_COM_429_STREAK.fetch_add(1, Ordering::Relaxed) + 1;
                     let wait_secs = 30u64.saturating_mul(u64::from(streak)).min(180);
                     tracing::warn!(
-                        "HTTP 429 (hiz siniri) {} - {} icin {}sn bekleniyor (deneme {}/{})",
+                        "HTTP 429 (hız sınırı) {} - {} için {}sn bekleniyor (deneme {}/{}) [{}]",
                         streak,
                         city.name,
                         wait_secs,
                         attempt + 1,
-                        max_retries
+                        max_retries,
+                        session.endpoint_label
                     );
+                    if streak >= 3 {
+                        pool.trip_session_ban(
+                            session,
+                            &format!("Israrcı HTTP 429 - {} ({})", city.name, kyk_meal_type),
+                        )
+                        .await;
+                        return Ok(None);
+                    }
                     if sleep_cancelable(wait_secs * 1000, shutdown_rx).await {
                         return Ok(None);
                     }
                 } else if status == reqwest::StatusCode::FORBIDDEN {
                     // 403: büyük olasılıkla IP ban. Retry ile ısrar etme, devreyi kes.
-                    trip_ban(&format!(
-                        "HTTP 403 - {} ({}) [ana tarama]",
-                        city.name, kyk_meal_type
-                    ))
+                    pool.trip_session_ban(
+                        session,
+                        &format!("HTTP 403 - {} ({}) [ana tarama]", city.name, kyk_meal_type),
+                    )
                     .await;
                     anyhow::bail!(
-                        "kykyemek IP ban şüphesi (HTTP 403): {} ({})",
+                        "kykyemek.com IP ban şüphesi (HTTP 403): {} ({}) [{}]",
                         city.name,
-                        kyk_meal_type
+                        kyk_meal_type,
+                        session.endpoint_label
                     );
                 } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
-                    if let Ok((new_token, _)) = fetch_kykyemek_session(client).await {
+                    if let Ok((new_token, _)) = fetch_kykyemek_session(&session.client).await {
                         *token_opt = Some(new_token);
                     }
                 } else {
@@ -700,10 +937,15 @@ async fn fetch_and_save(
         FASTMENU_FETCHED_THIS_CYCLE.fetch_add(1, Ordering::Relaxed);
 
         let fast_url = "https://kykyemek.com/Menu/GetFastMenuFoods";
-        let req = with_xhr_headers(client.get(fast_url).query(&[("id", fast_id.as_str())]))
-            .header("X-Requested-With", "XMLHttpRequest")
-            .header("Referer", "https://kykyemek.com/")
-            .timeout(std::time::Duration::from_secs(10));
+        let req = with_xhr_headers(
+            session
+                .client
+                .get(fast_url)
+                .query(&[("id", fast_id.as_str())]),
+        )
+        .header("X-Requested-With", "XMLHttpRequest")
+        .header("Referer", "https://kykyemek.com/")
+        .timeout(std::time::Duration::from_secs(10));
 
         throttle_kykyemek().await;
         match req.send().await {
@@ -2056,5 +2298,72 @@ mod tests {
             .filter(menus::Column::CityId.eq(city_id))
             .exec(&db)
             .await;
+    }
+
+    #[test]
+    fn test_mask_proxy_url() {
+        assert_eq!(
+            super::mask_proxy_url("http://user:secret123@1.2.3.4:8080"),
+            "http://***@1.2.3.4:8080"
+        );
+        assert_eq!(
+            super::mask_proxy_url("http://1.2.3.4:8080"),
+            "http://1.2.3.4:8080"
+        );
+        assert_eq!(
+            super::mask_proxy_url("socks5://admin:pass@proxy.example.com:1080"),
+            "socks5://***@proxy.example.com:1080"
+        );
+    }
+
+    #[test]
+    fn test_kykyemek_pool_direct_mode() {
+        let default_client = reqwest::Client::new();
+        let pool = super::KykYemekClientPool::new(None, default_client);
+        assert!(matches!(pool, super::KykYemekClientPool::Direct(_)));
+
+        let session = pool.acquire_session();
+        assert!(session.is_some());
+        let s = session.unwrap();
+        assert_eq!(s.endpoint_label, "direct");
+        assert!(s.proxy_idx.is_none());
+    }
+
+    #[test]
+    fn test_kykyemek_pool_proxy_parsing_and_rotation() {
+        let default_client = reqwest::Client::new();
+        let pool = super::KykYemekClientPool::new(
+            Some("http://user:pass1@127.0.0.1:8081, http://127.0.0.1:8082"),
+            default_client,
+        );
+
+        if let super::KykYemekClientPool::Proxied { entries, .. } = &pool {
+            assert_eq!(entries.len(), 2);
+            assert_eq!(entries[0].endpoint_label, "http://***@127.0.0.1:8081");
+            assert_eq!(entries[1].endpoint_label, "http://127.0.0.1:8082");
+
+            let s1 = pool.acquire_session().unwrap();
+            let s2 = pool.acquire_session().unwrap();
+            assert_ne!(s1.endpoint_label, s2.endpoint_label);
+
+            // Proxy 0'ı banla
+            entries[0]
+                .banned_until
+                .store(u64::MAX, std::sync::atomic::Ordering::Relaxed);
+            let s3 = pool.acquire_session().unwrap();
+            assert_eq!(s3.endpoint_label, "http://127.0.0.1:8082");
+
+            // İkisini de banla
+            entries[1]
+                .banned_until
+                .store(u64::MAX, std::sync::atomic::Ordering::Relaxed);
+            assert!(pool.acquire_session().is_none());
+
+            // Sıfırla
+            pool.reset_bans();
+            assert!(pool.acquire_session().is_some());
+        } else {
+            panic!("Havuz Proxied modda oluşturulmalıydı");
+        }
     }
 }

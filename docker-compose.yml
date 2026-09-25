@@ -142,13 +142,14 @@ services:
       - FASTEMBED_CACHE_DIR=/app/.fastembed_cache
       # Dinamik Al Götür önbelleği: yeniden başlatmada toplu istek olmaması için kalıcı.
       - TAKEAWAY_CACHE_FILE=/app/cache/takeaway.json
-      # kykyemek IP banı devre kesici ayarları. Durum dosyası yeniden başlatmalara dayanır.
-      - KYK_BAN_COOLDOWN_SECS=${KYK_BAN_COOLDOWN_SECS:-21600}
-      - KYK_BAN_STATE_FILE=/app/cache/kyk_ban_until
-      # kykyemek istekleri için asgari aralık (ms). Tüm uç noktaları kapsar.
-      - KYK_MIN_REQUEST_INTERVAL_MS=${KYK_MIN_REQUEST_INTERVAL_MS:-1000}
+      # kykyemek.com proxy havuzu ve devre kesici ayarları.
+      - KYKYEMEK_PROXY_TOOL=${KYKYEMEK_PROXY_TOOL:-}
+      - KYKYEMEK_COM_BAN_COOLDOWN_SECS=${KYKYEMEK_COM_BAN_COOLDOWN_SECS:-${KYK_BAN_COOLDOWN_SECS:-172800}}
+      - KYKYEMEK_COM_BAN_STATE_FILE=/app/cache/kykyemek_ban_until
+      # kykyemek.com istekleri için asgari aralık (ms). Tüm uç noktaları kapsar.
+      - KYKYEMEK_COM_MIN_REQUEST_INTERVAL_MS=${KYKYEMEK_COM_MIN_REQUEST_INTERVAL_MS:-${KYK_MIN_REQUEST_INTERVAL_MS:-1000}}
       # Tur başına en fazla dinamik Al Götür isteği. Toplu istek (burst) engeli.
-      - KYK_FASTMENU_MAX_PER_CYCLE=${KYK_FASTMENU_MAX_PER_CYCLE:-20}
+      - KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE=${KYKYEMEK_COM_FASTMENU_MAX_PER_CYCLE:-${KYK_FASTMENU_MAX_PER_CYCLE:-20}}
     volumes:
       - ./data/menuler:/app/data/menuler
       - uploads:/app/uploads
