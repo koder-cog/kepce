@@ -440,7 +440,10 @@ mod tests {
         let slot = &day.normal.dinner[0];
         assert_eq!(slot.alternatives.len(), 2);
         assert_eq!(slot.alternatives[0].name, "Izgara Köfte");
-        assert_eq!(slot.alternatives[0].amount.as_deref(), Some("200 g (90 g et)"));
+        assert_eq!(
+            slot.alternatives[0].amount.as_deref(),
+            Some("200 g (90 g et)")
+        );
         assert_eq!(slot.alternatives[0].calories.as_deref(), Some("340 kcal"));
         assert_eq!(slot.alternatives[1].name, "Etsiz Patlıcan");
         assert_eq!(slot.alternatives[1].amount.as_deref(), Some("200 g"));
