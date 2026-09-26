@@ -444,15 +444,35 @@
         }
 
         const startHeight = menuEl.offsetHeight;
-        const maxHeight = Math.round(window.innerHeight - 16);
-        const defaultHeight = Math.round(window.innerHeight * 0.65);
-        const targetHeight = target === "expanded" ? maxHeight : defaultHeight;
 
+        // Hedef sınıfın CSS altındaki gerçek piksel yüksekliğini ölç:
+        // Geçici inline stilleri kaldırıp hedef sınıfı anlık uygula
+        menuEl.style.transition = "none";
+        menuEl.style.removeProperty("height");
         sheetSnap = target;
-        menuEl.style.height = `${startHeight}px`;
-        void menuEl.offsetHeight; // force reflow
+        menuEl.classList.toggle("c-menu--expanded", target === "expanded");
+        const naturalTargetHeight = menuEl.offsetHeight;
 
-        menuEl.style.transition = `height ${getDuration(duration)}ms cubic-bezier(0.25, 1, 0.35, 1)`;
+        // Eğer ölçülen yükseklik 0 veya geçersizse (test/headless ortamı), viewport hesabı ile fallback sağla
+        const fallbackTargetHeight = target === "expanded"
+            ? Math.round(window.innerHeight - 16)
+            : Math.round(window.innerHeight * 0.65);
+        const targetHeight = naturalTargetHeight > 0 ? naturalTargetHeight : fallbackTargetHeight;
+
+        // Zaten hedef yükseklikteyse animasyonsuz bitir
+        if (Math.abs(targetHeight - startHeight) < 2) {
+            menuEl.style.removeProperty("height");
+            menuEl.style.removeProperty("transition");
+            return;
+        }
+
+        // Başlangıç yüksekliğini kilitle ve reflow zorla
+        menuEl.style.height = `${startHeight}px`;
+        void menuEl.offsetHeight;
+
+        // Başlangıçtan hedefe tek, kesintisiz, pürüzsüz geçiş
+        const animDuration = getDuration(duration);
+        menuEl.style.transition = `height ${animDuration}ms cubic-bezier(0.25, 1, 0.35, 1)`;
         menuEl.style.height = `${targetHeight}px`;
 
         let finished = false;
@@ -463,7 +483,7 @@
             menuEl.style.removeProperty("transition");
         };
         menuEl.addEventListener("transitionend", finish, { once: true });
-        setTimeout(finish, duration + 50);
+        setTimeout(finish, animDuration + 50);
     }
 
     function handleHandleClick(e) {

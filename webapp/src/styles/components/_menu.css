@@ -354,7 +354,6 @@
       border-bottom: none;
       box-shadow: var(--shadow-xl);
       will-change: transform;
-      transition: height var(--dur-fast) var(--ease-effects-default);
       overflow: hidden;
       contain: content;
     }
