@@ -288,7 +288,6 @@
             // Bu, sıçrama (bounce) yapmadan dinamik hissettiren tek native-benzeri eğridir.
 
             if (useModal) {
-                menuEl.classList.remove("c-menu--expanded", "c-menu--snapping");
                 menuEl.style.removeProperty("transform");
                 menuEl.style.removeProperty("height");
                 menuEl.style.removeProperty("transition");
@@ -338,8 +337,11 @@
         });
     }
 
+    let isClosing = false;
+
     function close(fromPopState = false) {
-        if (!isOpen) return;
+        if (!isOpen || isClosing) return;
+        isClosing = true;
         if (activeDropdownClose === close) activeDropdownClose = null;
         if (animation) animation.cancel();
 
@@ -353,6 +355,12 @@
 
         // KAPANIŞ ANİMASYONLARI (Kullanıcıyı bekletmemek için daha hızlı)
         if (useModal && menuEl) {
+            // Tam ekran veya varsayılan fark etmeksizin, kapanış sırasında
+            // sınıf ya da history kaynaklı flicker yaşanmaması için fiziksel yüksekliği sabitle.
+            const currentHeight = menuEl.offsetHeight;
+            menuEl.style.height = `${currentHeight}px`;
+            menuEl.style.maxHeight = "none";
+
             const startY = currentDragY;
             currentDragY = 0;
 
@@ -368,6 +376,10 @@
 
             setTimeout(() => {
                 isOpen = false;
+                isClosing = false;
+                sheetSnap = "default";
+                menuEl?.style.removeProperty("height");
+                menuEl?.style.removeProperty("maxHeight");
             }, getDuration(250));
         } else if (menuEl) {
             const isUp = menuEl.dataset.openingDirection === "up";
@@ -389,12 +401,15 @@
             if (animation) {
                 animation.onfinish = () => {
                     isOpen = false;
+                    isClosing = false;
                 };
             } else {
                 isOpen = false;
+                isClosing = false;
             }
         } else {
             isOpen = false;
+            isClosing = false;
         }
     }
 
@@ -402,23 +417,6 @@
     const DEFAULT_HEIGHT = "65dvh";
 
     // ── Animation Helpers ──────────────────────────────────────
-    function animateHeight(targetH, duration = 220, onDone) {
-        if (!menuEl) return;
-        menuEl.style.transition = `height ${getDuration(duration)}ms cubic-bezier(0.25, 1, 0.35, 1)`;
-        menuEl.style.height = targetH;
-
-        let finished = false;
-        const finish = () => {
-            if (finished) return;
-            finished = true;
-            menuEl?.style.removeProperty("height");
-            menuEl?.style.removeProperty("transition");
-            if (onDone) onDone();
-        };
-        menuEl.addEventListener("transitionend", finish, { once: true });
-        setTimeout(finish, duration + 40);
-    }
-
     function animateTransform(fromY, toY, duration = 200, onDone) {
         if (!menuEl) return;
         menuEl.style.transform = `translateY(${fromY}px)`;
@@ -437,7 +435,7 @@
     }
 
     // ── Sheet Snap Helpers ─────────────────────────────────────
-    function snapTo(target) {
+    function snapTo(target, duration = 240) {
         if (!menuEl) return;
 
         if (target === "closed") {
@@ -445,17 +443,27 @@
             return;
         }
 
-        if (target === "expanded") {
-            sheetSnap = "expanded";
-            if (menuEl.style.height) {
-                animateHeight(EXPANDED_HEIGHT, 220);
-            }
-        } else {
-            sheetSnap = "default";
-            if (menuEl.style.height) {
-                animateHeight(DEFAULT_HEIGHT, 220);
-            }
-        }
+        const startHeight = menuEl.offsetHeight;
+        const maxHeight = Math.round(window.innerHeight - 16);
+        const defaultHeight = Math.round(window.innerHeight * 0.65);
+        const targetHeight = target === "expanded" ? maxHeight : defaultHeight;
+
+        sheetSnap = target;
+        menuEl.style.height = `${startHeight}px`;
+        void menuEl.offsetHeight; // force reflow
+
+        menuEl.style.transition = `height ${getDuration(duration)}ms cubic-bezier(0.25, 1, 0.35, 1)`;
+        menuEl.style.height = `${targetHeight}px`;
+
+        let finished = false;
+        const finish = () => {
+            if (finished || !menuEl) return;
+            finished = true;
+            menuEl.style.removeProperty("height");
+            menuEl.style.removeProperty("transition");
+        };
+        menuEl.addEventListener("transitionend", finish, { once: true });
+        setTimeout(finish, duration + 50);
     }
 
     function handleHandleClick(e) {
@@ -592,27 +600,24 @@
             if (sheetSnap === "default") {
                 // Dragged UP towards expanded
                 if (-deltaY > 40 || (-deltaY > 15 && isFastSwipe)) {
-                    sheetSnap = "expanded";
-                    animateHeight(EXPANDED_HEIGHT, 220);
+                    snapTo("expanded", 220);
                 } else {
-                    sheetSnap = "default";
-                    animateHeight(DEFAULT_HEIGHT, 200);
+                    snapTo("default", 200);
                 }
             } else if (sheetSnap === "expanded") {
                 // Dragged DOWN towards default
                 if (deltaY > 50 || (deltaY > 20 && isFastSwipe)) {
-                    sheetSnap = "default";
-                    animateHeight(DEFAULT_HEIGHT, 220);
+                    snapTo("default", 220);
                 } else {
-                    sheetSnap = "expanded";
-                    animateHeight(EXPANDED_HEIGHT, 200);
+                    snapTo("expanded", 200);
                 }
             }
         }
     }
 
     function handlePopState(e) {
-        if (isOpen && useModal && pushedState) {
+        if (isClosing || !isOpen) return;
+        if (useModal && pushedState) {
             if (Date.now() - openTime < 300) return;
             if (sheetSnap === "expanded") {
                 snapTo("default");

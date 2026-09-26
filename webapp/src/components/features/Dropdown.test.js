@@ -299,4 +299,77 @@ describe('Dropdown Race Condition and Synthetic Click Simulation', () => {
         await fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
         expect(onChange).toHaveBeenCalled();
     });
+
+    it('animates smoothly between default and expanded when handle is clicked', async () => {
+        const { container } = render(Dropdown, {
+            options: sampleOptions,
+            value: 'istanbul',
+            placeholder: 'Şehir'
+        });
+
+        const triggerBtn = container.querySelector('.dropdown__trigger');
+        await fireEvent.click(triggerBtn);
+        expect(container.querySelector('.dropdown--open')).toBeTruthy();
+
+        const menuEl = document.querySelector('.c-menu');
+        const handle = document.querySelector('.c-menu__handle');
+        expect(handle).toBeTruthy();
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);
+
+        // 1. Click handle to expand
+        await fireEvent.click(handle);
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
+        // Verify inline transition is set for smooth height animation
+        expect(menuEl.style.transition).toContain('height');
+
+        // Advance timers past transition (240ms + 50ms buffer)
+        vi.advanceTimersByTime(300);
+        // Once done, inline transition and height are cleaned up so CSS takes over
+        expect(menuEl.style.transition).toBe('');
+        expect(menuEl.style.height).toBe('');
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
+
+        // 2. Click handle to toggle back to default
+        await fireEvent.click(handle);
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);
+        expect(menuEl.style.transition).toContain('height');
+
+        vi.advanceTimersByTime(300);
+        expect(menuEl.style.transition).toBe('');
+        expect(menuEl.style.height).toBe('');
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);
+    });
+
+    it('maintains expanded state and height during escape or overlay close without jumping to default', async () => {
+        const { container } = render(Dropdown, {
+            options: sampleOptions,
+            value: 'istanbul',
+            placeholder: 'Şehir'
+        });
+
+        const triggerBtn = container.querySelector('.dropdown__trigger');
+        await fireEvent.click(triggerBtn);
+
+        const menuEl = document.querySelector('.c-menu');
+        const handle = document.querySelector('.c-menu__handle');
+
+        // Click handle to expand
+        await fireEvent.click(handle);
+        vi.advanceTimersByTime(300);
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
+
+        // Press Escape while expanded
+        const searchInput = document.querySelector('.c-menu__search input');
+        await fireEvent.keyDown(searchInput, { key: 'Escape', code: 'Escape' });
+
+        // During close animation, menu must NOT drop back to default class
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
+        expect(menuEl.style.transform).toBe('translateY(100%)');
+        expect(menuEl.style.maxHeight).toBe('none');
+
+        // After close animation finishes, it fully closes
+        await vi.advanceTimersByTimeAsync(300);
+        expect(container.querySelector('.dropdown--open')).toBeNull();
+    });
 });
+
