@@ -408,6 +408,37 @@ describe('Dropdown Race Condition and Synthetic Click Simulation', () => {
         // Verify it snapped to expanded
         expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
     });
+
+    it('toggles sheet expansion when handle receives pointer click cycle', async () => {
+        const { container } = render(Dropdown, {
+            options: sampleOptions,
+            value: 'istanbul',
+            placeholder: 'Şehir'
+        });
+
+        const triggerBtn = container.querySelector('.dropdown__trigger');
+        await fireEvent.click(triggerBtn);
+
+        const menuEl = document.querySelector('.c-menu');
+        const handle = document.querySelector('.c-menu__handle');
+        expect(handle).toBeTruthy();
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);
+
+        // Simulate complete pointer click on handle (pointerdown -> pointerup -> click)
+        await fireEvent.pointerDown(handle, { pointerId: 1, pointerType: 'mouse', button: 0, clientY: 500 });
+        await fireEvent.pointerUp(handle, { pointerId: 1, pointerType: 'mouse', clientY: 500 });
+        await fireEvent.click(handle);
+
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
+
+        // Click again to toggle back
+        await fireEvent.pointerDown(handle, { pointerId: 1, pointerType: 'mouse', button: 0, clientY: 500 });
+        await fireEvent.pointerUp(handle, { pointerId: 1, pointerType: 'mouse', clientY: 500 });
+        await fireEvent.click(handle);
+
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);
+    });
 });
+
 
 

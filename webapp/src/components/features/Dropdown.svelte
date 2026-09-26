@@ -533,12 +533,6 @@
         isDragging = false;
         dragMode = "none";
         menuEl.style.transition = "none";
-
-        if (typeof menuEl.setPointerCapture === "function") {
-            try {
-                menuEl.setPointerCapture(e.pointerId);
-            } catch {}
-        }
     }
 
     function onSheetPointerMove(e) {
@@ -556,7 +550,16 @@
         }
 
         if (Math.abs(deltaY) > 5) {
-            isDragging = true;
+            if (!isDragging) {
+                isDragging = true;
+                // Sadece gerçek bir sürükleme başladığında pointer capture al.
+                // Erken capture alınırsa alt butonların (handle) click döngüsü bozulur.
+                if (typeof menuEl.setPointerCapture === "function") {
+                    try {
+                        menuEl.setPointerCapture(e.pointerId);
+                    } catch {}
+                }
+            }
         }
 
         if (!isDragging) return;
@@ -617,10 +620,15 @@
         dragStartY = 0;
         const wasDragging = isDragging;
 
-        // isDragging bayrağını peşinden gelen click olayını yutana kadar koru
-        setTimeout(() => {
+        // Sürükleme yapıldıysa takip eden click olayını yutmak için gecikmeli sıfırla,
+        // sürükleme yapılmadıysa hemen false tut ki normal tıklama çalışsın.
+        if (wasDragging) {
+            setTimeout(() => {
+                isDragging = false;
+            }, 60);
+        } else {
             isDragging = false;
-        }, 50);
+        }
 
         if (!wasDragging) {
             currentDragY = 0;
