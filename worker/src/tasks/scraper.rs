@@ -1,5 +1,6 @@
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
+use rand::seq::SliceRandom;
 use rand::Rng;
 use reqwest::Client;
 use std::collections::{HashMap, HashSet};
@@ -137,6 +138,71 @@ pub struct ProxyEntry {
     pub banned_until: std::sync::Arc<AtomicU64>,
 }
 
+/// Fisher-Yates karıştırmalı torba (Shuffle Bag / Random Bag).
+///
+/// Proxy indekslerini içeren bir deste oluşturur ve karıştırır. İstek geldikçe
+/// torbadan teker teker çeker. Torbadaki tüm proxy'ler birer kez kullanıldığında
+/// torbayı yeniden doldurur, Fisher-Yates algoritmasıyla karıştırır ve döngüyü sürdürür.
+/// Bu sayede ardışık isteklerde aynı proxy tekrar seçilmez ve deterministik bir sıra (0, 1, 2...)
+/// yerine kestirilemez, adil bir permütasyon örüntüsü elde edilir.
+#[derive(Debug)]
+pub struct ShuffleBag {
+    deck: Vec<usize>,
+    cursor: usize,
+}
+
+impl ShuffleBag {
+    pub fn new(size: usize) -> Self {
+        let mut bag = Self {
+            deck: (0..size).collect(),
+            cursor: size,
+        };
+        bag.shuffle_deck();
+        bag
+    }
+
+    pub fn shuffle_deck(&mut self) {
+        let mut rng = rand::thread_rng();
+        self.deck.shuffle(&mut rng);
+        self.cursor = 0;
+    }
+
+    /// Torbadan sıradaki banlanmamış proxy indeksini çeker.
+    /// Torba tükendiğinde havuzu yeniden doldurup karıştırır.
+    pub fn draw_next(&mut self, entries: &[ProxyEntry], now: u64) -> Option<usize> {
+        let total = entries.len();
+        if total == 0 {
+            return None;
+        }
+
+        let any_alive = entries
+            .iter()
+            .any(|e| now >= e.banned_until.load(Ordering::Relaxed));
+        if !any_alive {
+            return None;
+        }
+
+        for _ in 0..2 {
+            while self.cursor < self.deck.len() {
+                let idx = self.deck[self.cursor];
+                self.cursor += 1;
+
+                if idx < total {
+                    let banned_until = entries[idx].banned_until.load(Ordering::Relaxed);
+                    if now >= banned_until {
+                        return Some(idx);
+                    }
+                }
+            }
+
+            self.deck = (0..total).collect();
+            self.shuffle_deck();
+        }
+
+        None
+    }
+}
+
 /// Kykyemek.com için istemci havuzu (Doğrudan veya Proxy Havuzu).
 #[derive(Debug, Clone)]
 pub enum KykYemekClientPool {
@@ -145,7 +211,7 @@ pub enum KykYemekClientPool {
     /// KYKYEMEK_PROXY_TOOL tanımlıysa: İzole çerez hazneli bağımsız proxy istemcileri
     Proxied {
         entries: Vec<ProxyEntry>,
-        next_idx: std::sync::Arc<AtomicUsize>,
+        bag: std::sync::Arc<Mutex<ShuffleBag>>,
     },
 }
 
@@ -218,9 +284,10 @@ impl KykYemekClientPool {
                 "[KYKYEMEK.COM-POOL] Proxy havuzu hazır: {} adet aktif proxy.",
                 entries.len()
             );
+            let bag = ShuffleBag::new(entries.len());
             Self::Proxied {
                 entries,
-                next_idx: std::sync::Arc::new(AtomicUsize::new(0)),
+                bag: std::sync::Arc::new(Mutex::new(bag)),
             }
         }
     }
@@ -246,28 +313,15 @@ impl KykYemekClientPool {
                     token: None,
                 })
             }
-            Self::Proxied { entries, next_idx } => {
+            Self::Proxied { entries, bag } => {
                 let now = chrono::Utc::now().timestamp().max(0) as u64;
-                let total = entries.len();
-                if total == 0 {
-                    return None;
-                }
-                let start = next_idx.fetch_add(1, Ordering::Relaxed) % total;
-
-                for offset in 0..total {
-                    let idx = (start + offset) % total;
-                    let banned_until = entries[idx].banned_until.load(Ordering::Relaxed);
-                    if now >= banned_until {
-                        return Some(ActiveKykSession {
-                            client: entries[idx].client.clone(),
-                            endpoint_label: entries[idx].endpoint_label.clone(),
-                            proxy_idx: Some(idx),
-                            token: None,
-                        });
-                    }
-                }
-
-                None
+                let mut guard = bag.lock().unwrap();
+                guard.draw_next(entries, now).map(|idx| ActiveKykSession {
+                    client: entries[idx].client.clone(),
+                    endpoint_label: entries[idx].endpoint_label.clone(),
+                    proxy_idx: Some(idx),
+                    token: None,
+                })
             }
         }
     }
@@ -307,9 +361,12 @@ impl KykYemekClientPool {
     }
 
     pub fn reset_bans(&self) {
-        if let Self::Proxied { entries, .. } = self {
+        if let Self::Proxied { entries, bag } = self {
             for entry in entries {
                 entry.banned_until.store(0, Ordering::Relaxed);
+            }
+            if let Ok(mut guard) = bag.lock() {
+                guard.shuffle_deck();
             }
         }
     }
@@ -2463,5 +2520,24 @@ mod tests {
         } else {
             panic!("Havuz Proxied modda oluşturulmalıydı");
         }
+    }
+
+    #[test]
+    fn test_kykyemek_pool_shuffle_bag_distribution() {
+        let raw = (0..10)
+            .map(|i| format!("http://127.0.0.1:800{}", i))
+            .collect::<Vec<_>>()
+            .join(",");
+        let pool = super::KykYemekClientPool::new(Some(&raw), reqwest::Client::new());
+        let mut seen = std::collections::HashSet::new();
+        for _ in 0..10 {
+            let session = pool.acquire_session().unwrap();
+            seen.insert(session.endpoint_label);
+        }
+        assert_eq!(
+            seen.len(),
+            10,
+            "Shuffle bag her 10 çekişlik döngüde 10 proxy'nin her birini tam olarak 1 kez seçmelidir"
+        );
     }
 }
