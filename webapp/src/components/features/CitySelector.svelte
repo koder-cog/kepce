@@ -128,9 +128,34 @@
                                 },
                             },
                         );
+                    } else if (result?.error === "permission_denied") {
+                        showToast(
+                            "Konum izni reddedildi. Tarayıcı ayarlarından izin verebilirsiniz.",
+                            { type: "error" },
+                        );
+                    } else if (result?.error === "position_unavailable") {
+                        showToast(
+                            "Cihazınızdan konum bilgisi alınamadı. Konum servislerini kontrol edin.",
+                            { type: "error" },
+                        );
+                    } else if (result?.error === "timeout") {
+                        showToast(
+                            "Konum tespiti zaman aşımına uğradı. Lütfen tekrar deneyin.",
+                            { type: "error" },
+                        );
+                    } else if (result?.error === "out_of_bounds") {
+                        showToast(
+                            "Türkiye sınırları içinde bir konum tespit edilemedi.",
+                            { type: "error" },
+                        );
+                    } else if (result?.error === "not_supported") {
+                        showToast(
+                            "Tarayıcınız konum özelliğini desteklemiyor.",
+                            { type: "error" },
+                        );
                     } else {
                         showToast(
-                            "Konum izni verilmedi veya konum tespit edilemedi.",
+                            "Konum tespit edilemedi. Lütfen tekrar deneyin.",
                             { type: "error" },
                         );
                     }

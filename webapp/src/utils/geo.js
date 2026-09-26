@@ -150,7 +150,7 @@ export async function detectCityIP() {
 export function detectCityPrecise(availableSlugs) {
   return new Promise((resolve) => {
     if (typeof navigator === 'undefined' || !navigator.geolocation) {
-      resolve(null);
+      resolve({ success: false, error: 'not_supported' });
       return;
     }
 
@@ -171,7 +171,7 @@ export function detectCityPrecise(availableSlugs) {
 
         // Türkiye sınırları dışındaysa (en yakın il 150 km'den uzaksa) veya bulunamadıysa
         if (!nearestSlug || minDist > 150) {
-          resolve(null);
+          resolve({ success: false, error: 'out_of_bounds' });
           return;
         }
 
@@ -181,10 +181,28 @@ export function detectCityPrecise(availableSlugs) {
         if (isSupported) {
           resolve({ success: true, slug: nearestSlug });
         } else {
-          resolve({ success: false, unsupported: true, slug: nearestSlug });
+          resolve({ success: false, unsupported: true, error: 'unsupported', slug: nearestSlug });
         }
       },
-      () => resolve(null),
+      (err) => {
+        let error = 'unknown';
+        if (err && typeof err.code === 'number') {
+          switch (err.code) {
+            case 1:
+              error = 'permission_denied';
+              break;
+            case 2:
+              error = 'position_unavailable';
+              break;
+            case 3:
+              error = 'timeout';
+              break;
+            default:
+              error = 'unknown';
+          }
+        }
+        resolve({ success: false, error });
+      },
       { timeout: 8000, enableHighAccuracy: false }
     );
   });
