@@ -37,6 +37,7 @@
     let highlightedIndex = $state(-1);
     let searchQuery = $state("");
     let isMobile = $state(false);
+    let sheetSnap = $state("default"); // "default" | "expanded"
 
     let searchBuffer = "";
     let searchTimeout = null;
@@ -45,6 +46,14 @@
     let animation = null;
     let overlayAnimation = null;
     let pushedState = false;
+
+    let dragStartY = 0;
+    let dragStartTime = 0;
+    let dragStartHeight = 0;
+    let isDragging = false;
+    let dragFromHandle = false;
+    let dragMode = "none";
+    let currentDragY = 0;
 
     // ── Derived ────────────────────────────────────────────────
     let allOptions = $derived(
@@ -224,6 +233,7 @@
         openTime = Date.now();
 
         if (useModal) {
+            sheetSnap = "default";
             history.pushState({ kepceDropdown: true }, "");
             pushedState = true;
             nativeBridge.sendOverlayToggle(true);
@@ -255,6 +265,12 @@
             // Bu, sıçrama (bounce) yapmadan dinamik hissettiren tek native-benzeri eğridir.
 
             if (useModal) {
+                menuEl.classList.remove("c-menu--expanded", "c-menu--snapping");
+                menuEl.style.removeProperty("transform");
+                menuEl.style.removeProperty("height");
+                menuEl.style.removeProperty("transition");
+                currentDragY = 0;
+
                 animation = animate(
                     menuEl,
                     [
@@ -314,29 +330,22 @@
 
         // KAPANIŞ ANİMASYONLARI (Kullanıcıyı bekletmemek için daha hızlı)
         if (useModal && menuEl) {
-            animation = animate(
-                menuEl,
-                [
-                    { opacity: 1, transform: "translateY(0)" },
-                    { opacity: 0, transform: "translateY(100%)" },
-                ],
-                {
-                    duration: getDuration(250),
-                    easing: "cubic-bezier(0.3, 0, 0.8, 0.15)", // İvmeli hızlanan düşüş
-                },
-            );
+            const startY = currentDragY;
+            currentDragY = 0;
+
+            menuEl.style.transform = `translateY(${startY}px)`;
+            void menuEl.offsetHeight; // force reflow
+            menuEl.style.transition = `transform ${getDuration(250)}ms cubic-bezier(0.3, 0, 0.8, 0.15)`;
+            menuEl.style.transform = "translateY(100%)";
 
             if (overlayEl) {
-                if (overlayAnimation) overlayAnimation.cancel();
-                overlayAnimation = animate(
-                    overlayEl,
-                    [{ opacity: 1 }, { opacity: 0 }],
-                    {
-                        duration: getDuration(250), // Menü ile tam aynı sürede bitsin
-                        easing: "linear", // Flaş/titreme yapmadan, dümdüz eriyerek kaybolsun
-                    },
-                );
+                overlayEl.style.transition = `opacity ${getDuration(250)}ms linear`;
+                overlayEl.style.opacity = "0";
             }
+
+            setTimeout(() => {
+                isOpen = false;
+            }, getDuration(250));
         } else if (menuEl) {
             const isUp = menuEl.dataset.openingDirection === "up";
             animation = animate(
@@ -353,20 +362,233 @@
                     easing: "ease-in",
                 },
             );
-        }
 
-        if (animation) {
-            animation.onfinish = () => {
+            if (animation) {
+                animation.onfinish = () => {
+                    isOpen = false;
+                };
+            } else {
                 isOpen = false;
-            };
+            }
         } else {
             isOpen = false;
+        }
+    }
+
+    const EXPANDED_HEIGHT = "calc(100dvh - env(safe-area-inset-top, 16px))";
+    const DEFAULT_HEIGHT = "65dvh";
+
+    // ── Animation Helpers ──────────────────────────────────────
+    function animateHeight(targetH, duration = 220, onDone) {
+        if (!menuEl) return;
+        menuEl.style.transition = `height ${getDuration(duration)}ms cubic-bezier(0.25, 1, 0.35, 1)`;
+        menuEl.style.height = targetH;
+
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            menuEl?.style.removeProperty("height");
+            menuEl?.style.removeProperty("transition");
+            if (onDone) onDone();
+        };
+        menuEl.addEventListener("transitionend", finish, { once: true });
+        setTimeout(finish, duration + 40);
+    }
+
+    function animateTransform(fromY, toY, duration = 200, onDone) {
+        if (!menuEl) return;
+        menuEl.style.transform = `translateY(${fromY}px)`;
+        void menuEl.offsetHeight;
+        menuEl.style.transition = `transform ${getDuration(duration)}ms cubic-bezier(0.25, 1, 0.35, 1)`;
+        menuEl.style.transform = `translateY(${toY}px)`;
+
+        let finished = false;
+        const finish = () => {
+            if (finished) return;
+            finished = true;
+            if (onDone) onDone();
+        };
+        menuEl.addEventListener("transitionend", finish, { once: true });
+        setTimeout(finish, duration + 40);
+    }
+
+    // ── Sheet Snap Helpers ─────────────────────────────────────
+    function snapTo(target) {
+        if (!menuEl) return;
+
+        if (target === "closed") {
+            close();
+            return;
+        }
+
+        if (target === "expanded") {
+            sheetSnap = "expanded";
+            if (menuEl.style.height) {
+                animateHeight(EXPANDED_HEIGHT, 220);
+            }
+        } else {
+            sheetSnap = "default";
+            if (menuEl.style.height) {
+                animateHeight(DEFAULT_HEIGHT, 220);
+            }
+        }
+    }
+
+    function handleHandleClick(e) {
+        e.stopPropagation();
+        if (isDragging) return;
+        snapTo(sheetSnap === "expanded" ? "default" : "expanded");
+    }
+
+    // ── Touch Gestures ────────────────────────────────────────
+    function onSheetTouchStart(e) {
+        if (!useModal || !isOpen || !menuEl) return;
+
+        const touch = e.touches[0];
+        const target = e.target;
+
+        // Don't drag when user interacts with input
+        if (target.closest?.("input")) return;
+
+        const isHandle = target.closest?.(".c-menu__handle");
+        const isSearch = target.closest?.(".c-menu__search");
+        const isListArea = target.closest?.(".c-menu__scroll-area");
+
+        if (isHandle || isSearch) {
+            dragFromHandle = true;
+        } else if (isListArea && listEl && listEl.scrollTop <= 0) {
+            dragFromHandle = false;
+        } else {
+            return;
+        }
+
+        dragStartY = touch.clientY;
+        dragStartTime = Date.now();
+        dragStartHeight = menuEl.offsetHeight;
+        isDragging = false;
+        dragMode = "none";
+        menuEl.style.transition = "none";
+    }
+
+    function onSheetTouchMove(e) {
+        if (!useModal || !menuEl || dragStartY === 0) return;
+
+        const touch = e.touches[0];
+        const deltaY = touch.clientY - dragStartY;
+
+        if (!dragFromHandle && listEl && listEl.scrollTop > 0) {
+            return;
+        }
+
+        if (!dragFromHandle && deltaY < 0 && listEl) {
+            return;
+        }
+
+        if (Math.abs(deltaY) > 5) {
+            isDragging = true;
+        }
+
+        if (!isDragging) return;
+        if (e.cancelable) e.preventDefault();
+
+        const maxHeight = window.innerHeight - 16;
+        const defaultHeight = Math.round(window.innerHeight * 0.65);
+
+        if (sheetSnap === "default") {
+            if (deltaY < 0) {
+                // Dragging UP from default: expand height, bottom stays pinned at 0!
+                dragMode = "height";
+                const targetH = Math.min(dragStartHeight - deltaY, maxHeight);
+                menuEl.style.height = `${targetH}px`;
+                menuEl.style.transform = "translateY(0)";
+                currentDragY = 0;
+            } else {
+                // Dragging DOWN from default: slide down towards close
+                dragMode = "translate";
+                menuEl.style.removeProperty("height");
+                menuEl.style.transform = `translateY(${deltaY}px)`;
+                currentDragY = deltaY;
+            }
+        } else if (sheetSnap === "expanded") {
+            if (deltaY > 0) {
+                // Dragging DOWN from expanded: shrink height, bottom stays pinned at 0!
+                dragMode = "height";
+                const targetH = Math.max(dragStartHeight - deltaY, defaultHeight * 0.7);
+                menuEl.style.height = `${targetH}px`;
+                menuEl.style.transform = "translateY(0)";
+                currentDragY = 0;
+            } else {
+                // Dragging UP while already expanded: clamped
+                dragMode = "none";
+                menuEl.style.transform = "translateY(0)";
+                currentDragY = 0;
+            }
+        }
+    }
+
+    function onSheetTouchEnd(e) {
+        if (!useModal || !menuEl || dragStartY === 0) return;
+
+        const deltaY = (e.changedTouches?.[0]?.clientY ?? 0) - dragStartY;
+        const elapsed = Date.now() - dragStartTime;
+        const velocity = Math.abs(deltaY) / Math.max(elapsed, 1);
+
+        dragStartY = 0;
+        const wasDragging = isDragging;
+        isDragging = false;
+
+        if (!wasDragging) {
+            currentDragY = 0;
+            return;
+        }
+
+        const isFastSwipe = velocity > 0.35;
+
+        if (dragMode === "translate") {
+            // User dragged DOWN in default mode
+            if (deltaY > 80 || (deltaY > 30 && isFastSwipe)) {
+                // Smooth close from current dragged translateY!
+                close();
+            } else {
+                // Bounce back up from current translateY!
+                animateTransform(deltaY, 0, 200, () => {
+                    menuEl?.style.removeProperty("transform");
+                    menuEl?.style.removeProperty("transition");
+                    currentDragY = 0;
+                });
+            }
+        } else if (dragMode === "height") {
+            if (sheetSnap === "default") {
+                // Dragged UP towards expanded
+                if (-deltaY > 40 || (-deltaY > 15 && isFastSwipe)) {
+                    sheetSnap = "expanded";
+                    animateHeight(EXPANDED_HEIGHT, 220);
+                } else {
+                    sheetSnap = "default";
+                    animateHeight(DEFAULT_HEIGHT, 200);
+                }
+            } else if (sheetSnap === "expanded") {
+                // Dragged DOWN towards default
+                if (deltaY > 50 || (deltaY > 20 && isFastSwipe)) {
+                    sheetSnap = "default";
+                    animateHeight(DEFAULT_HEIGHT, 220);
+                } else {
+                    sheetSnap = "expanded";
+                    animateHeight(EXPANDED_HEIGHT, 200);
+                }
+            }
         }
     }
 
     function handlePopState(e) {
         if (isOpen && useModal) {
             if (Date.now() - openTime < 300) return;
+            if (sheetSnap === "expanded") {
+                snapTo("default");
+                history.pushState({ kepceDropdown: true }, "");
+                return;
+            }
             close(true);
         }
     }
@@ -592,14 +814,25 @@
             id={menuId}
             class="c-menu c-menu--open"
             class:c-menu--modal={useModal}
+            class:c-menu--expanded={sheetSnap === "expanded"}
             role="listbox"
+            tabindex="-1"
             use:portal
             use:popover={{ triggerEl, align: "left", disabled: useModal }}
-            style:overflow={useModal ? "visible" : undefined}
-            style:padding-bottom={useModal
-                ? "env(safe-area-inset-bottom, 24px)"
-                : undefined}
+            ontouchstart={onSheetTouchStart}
+            ontouchmove={onSheetTouchMove}
+            ontouchend={onSheetTouchEnd}
         >
+            {#if useModal}
+                <button
+                    type="button"
+                    class="c-menu__handle"
+                    aria-label="Menü boyutu kontrolü"
+                    onclick={handleHandleClick}
+                >
+                    <span class="c-menu__handle-bar"></span>
+                </button>
+            {/if}
             {#if isLongList}
                 <div class="c-menu__search">
                     <input
@@ -714,14 +947,6 @@
                 >
                     <span class="c-menu__item-label">{specialItem.label}</span>
                 </button>
-            {/if}
-
-            <!-- ── Kopmayı Önleyen %100 Çalışan Alt Etek (Skirt) ── -->
-            {#if useModal}
-                <div
-                    aria-hidden="true"
-                    class="c-menu__sheet-skirt"
-                ></div>
             {/if}
         </div>
     </div>

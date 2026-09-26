@@ -91,7 +91,6 @@
       background var(--motion-effects-fast),
       color var(--motion-effects-fast),
       transform var(--dur-default) var(--ease-spring-bounce);
-    will-change: transform;
   }
 
   .c-menu__item svg {
@@ -162,7 +161,7 @@
     text-align: center;
     margin: var(--space-xs) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1);
     width: calc(100% + var(--space-xs) * 2);
-    padding: var(--space-sm) var(--space-md);
+    padding: var(--space-md) var(--space-md);
     border: none;
     border-top: 1px solid var(--color-border-light);
     border-radius: 0 0 var(--radius-lg) var(--radius-lg);
@@ -180,7 +179,6 @@
     text-align: center;
     display: inline-block;
     transition: transform var(--dur-instant) var(--ease-tactile);
-    will-change: transform;
   }
 
   .c-menu__item.c-menu__item--special:active .c-menu__item-label {
@@ -337,9 +335,6 @@
       font-size: var(--text-base);
     }
 
-    /* ── Bottom Sheet (Uzun Listeler & Gruplu Menüler) ──
-       Ekranın altından kayarak açılır; mobil klavye açıldığında
-       dvh tabanlı max-height ile birlikte yeniden ölçeklenir. */
     .c-menu--modal {
       position: fixed !important;
       top: auto !important;
@@ -349,27 +344,61 @@
       transform: translateY(100%);
       width: 100vw !important;
       max-width: 100vw !important;
-      max-height: 80dvh !important;
+      height: 65dvh;
+      max-height: calc(100dvh - env(safe-area-inset-top, 16px));
       border-radius: var(--radius-xl) var(--radius-xl) 0 0;
       transform-origin: bottom center;
-      padding: var(--space-lg) var(--space-lg)
-        calc(var(--space-lg) + env(safe-area-inset-bottom)) !important;
+      padding: 0 0 max(env(safe-area-inset-bottom, 0px), 8px) 0 !important;
       background: var(--color-surface-elevated);
       border: 1px solid var(--color-border-light);
       border-bottom: none;
       box-shadow: var(--shadow-xl);
+      will-change: transform;
+      transition: height var(--dur-fast) var(--ease-effects-default);
+      overflow: hidden;
+      contain: content;
     }
 
     .c-menu--modal.c-menu--open {
       transform: translateY(0);
     }
 
-    .c-menu--modal .c-menu__item--special {
-      padding: var(--space-md);
-      margin-top: var(--space-sm);
-      border-top: 1px solid var(--color-border-light);
-      font-size: var(--text-sm);
-      min-height: 44px;
+    .c-menu--modal.c-menu--expanded {
+      height: calc(100dvh - env(safe-area-inset-top, 16px));
+      transform: translateY(0);
+    }
+
+    .c-menu__handle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      width: 100%;
+      background: none;
+      border: none;
+      min-height: 32px;
+      padding: var(--space-sm) 0;
+      cursor: grab;
+      touch-action: none;
+      user-select: none;
+    }
+
+    .c-menu__handle:active {
+      cursor: grabbing;
+    }
+
+    .c-menu__handle-bar {
+      display: block;
+      width: 36px;
+      height: 4px;
+      border-radius: var(--radius-full);
+      background: var(--color-border);
+    }
+
+    .c-menu--modal .c-menu__search {
+      flex-shrink: 0;
+      padding: var(--space-xs) var(--space-lg) var(--space-md) var(--space-lg);
+      border-bottom: 1px solid var(--color-border-light);
     }
 
     .c-menu--modal .c-menu__search input {
@@ -379,15 +408,32 @@
     }
 
     .c-menu--modal .c-menu__scroll-area {
-      padding: 0;
+      flex: 1 1 auto;
+      min-height: 0;
+      padding: 0 var(--space-lg) var(--space-md) var(--space-lg);
       gap: var(--space-sm);
+      contain: content;
     }
 
-    .c-menu--modal .c-menu__item {
+    .c-menu--modal .c-menu__scroll-area .c-menu__item {
       padding: 12px 16px;
       font-size: var(--text-base);
       min-height: 48px;
       border-radius: var(--radius-lg);
+      content-visibility: auto;
+      contain-intrinsic-size: auto 48px;
+    }
+
+    .c-menu--modal .c-menu__item--special {
+      margin: 0;
+      width: 100%;
+      flex-shrink: 0;
+      padding: var(--space-md);
+      border-top: 1px solid var(--color-border-light);
+      border-radius: 0;
+      font-size: var(--text-sm);
+      min-height: 44px;
+      background: var(--color-surface-elevated);
     }
 
     .c-menu--modal .c-menu__item--selected {
