@@ -46,6 +46,17 @@
     let animation = null;
     let overlayAnimation = null;
     let pushedState = false;
+    let hasKeyboardNavigated = $state(false);
+
+    function isIOSDevice() {
+        if (typeof navigator === "undefined") return false;
+        if (navigator.userAgentData?.platform === "iOS") return true;
+        return (
+            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.userAgent.includes("Macintosh") &&
+                navigator.maxTouchPoints > 1)
+        );
+    }
 
     let dragStartY = 0;
     let dragStartTime = 0;
@@ -119,6 +130,15 @@
         if (isOpen && useModal) {
             lockScroll();
             return () => unlockScroll();
+        }
+    });
+
+    $effect(() => {
+        if (!isOpen) return;
+        void searchQuery;
+        hasKeyboardNavigated = false;
+        if (searchQuery) {
+            highlightedIndex = filteredOptions.length > 0 ? 0 : -1;
         }
     });
 
@@ -234,11 +254,14 @@
 
         if (useModal) {
             sheetSnap = "default";
-            history.pushState({ kepceDropdown: true }, "");
-            pushedState = true;
+            if (!isIOSDevice()) {
+                history.pushState({ kepceDropdown: true }, "");
+                pushedState = true;
+            }
             nativeBridge.sendOverlayToggle(true);
         }
 
+        hasKeyboardNavigated = false;
         highlightedIndex = filteredOptions.findIndex(
             (o) =>
                 o.value === value ||
@@ -451,6 +474,13 @@
         // Don't drag when user interacts with input
         if (target.closest?.("input")) return;
 
+        // Klavye açıkken (arama kutusu odaktayken) dokunulduğunda
+        // sürükleme başlatmak yerine önce klavyeyi kapat.
+        if (searchInputEl && document.activeElement === searchInputEl) {
+            searchInputEl.blur();
+            return;
+        }
+
         const isHandle = target.closest?.(".c-menu__handle");
         const isSearch = target.closest?.(".c-menu__search");
         const isListArea = target.closest?.(".c-menu__scroll-area");
@@ -582,11 +612,13 @@
     }
 
     function handlePopState(e) {
-        if (isOpen && useModal) {
+        if (isOpen && useModal && pushedState) {
             if (Date.now() - openTime < 300) return;
             if (sheetSnap === "expanded") {
                 snapTo("default");
-                history.pushState({ kepceDropdown: true }, "");
+                if (!isIOSDevice()) {
+                    history.pushState({ kepceDropdown: true }, "");
+                }
                 return;
             }
             close(true);
@@ -668,6 +700,7 @@
 
         if (key === "ArrowDown") {
             e.preventDefault();
+            hasKeyboardNavigated = true;
             let next = highlightedIndex + 1;
             while (next <= maxIndex && filteredOptions[next].disabled) next++;
             if (next <= maxIndex) {
@@ -679,6 +712,7 @@
 
         if (key === "ArrowUp") {
             e.preventDefault();
+            hasKeyboardNavigated = true;
             let prev = highlightedIndex - 1;
             while (prev >= 0 && filteredOptions[prev].disabled) prev--;
             if (prev >= 0) {
@@ -690,6 +724,7 @@
 
         if (key === "Home") {
             e.preventDefault();
+            hasKeyboardNavigated = true;
             highlightedIndex = filteredOptions.findIndex((o) => !o.disabled);
             scrollToHighlighted();
             return;
@@ -697,6 +732,7 @@
 
         if (key === "End") {
             e.preventDefault();
+            hasKeyboardNavigated = true;
             for (let i = maxIndex; i >= 0; i--) {
                 if (!filteredOptions[i].disabled) {
                     highlightedIndex = i;
@@ -709,6 +745,13 @@
 
         if (key === "Enter") {
             e.preventDefault();
+            // Arama kutusundayken (özellikle mobil sanal klavyede "Ara / Git" tuşuna basıldığında),
+            // kullanıcı ok tuşlarıyla liste içinde gezinmediyse seçimi tetikleyip modalı kapatma;
+            // sadece klavyeyi kapat (blur).
+            if (document.activeElement === searchInputEl && !hasKeyboardNavigated) {
+                searchInputEl?.blur();
+                return;
+            }
             if (highlightedIndex >= 0 && highlightedIndex <= maxIndex) {
                 const opt = filteredOptions[highlightedIndex];
                 if (opt && !opt.disabled) selectOption(e, opt);
