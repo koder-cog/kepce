@@ -841,6 +841,10 @@
     padding-top: var(--space-xs);
   }
 
+  .project-card .project-card__footer .btn {
+    width: 100%;
+  }
+
   /* ── Responsive Overrides ── */
 
   @media (max-width: 600px) {
