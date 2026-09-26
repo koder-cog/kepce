@@ -492,14 +492,17 @@
         snapTo(sheetSnap === "expanded" ? "default" : "expanded");
     }
 
-    // ── Touch Gestures ────────────────────────────────────────
-    function onSheetTouchStart(e) {
-        if (!useModal || !isOpen || !menuEl) return;
+    // ── Pointer Gestures (Touch & Mouse) ──────────────────────
+    let activePointerId = null;
 
-        const touch = e.touches[0];
+    function onSheetPointerStart(e) {
+        if (!useModal || !isOpen || !menuEl) return;
+        // Farede sadece sol tık ile sürüklemeye izin ver
+        if (e.pointerType === "mouse" && e.button !== 0) return;
+
         const target = e.target;
 
-        // Don't drag when user interacts with input
+        // Input ile etkileşime girerken sürükleme başlatma
         if (target.closest?.("input")) return;
 
         // Klavye açıkken (arama kutusu odaktayken) dokunulduğunda
@@ -516,24 +519,33 @@
         if (isHandle || isSearch) {
             dragFromHandle = true;
         } else if (isListArea && listEl && listEl.scrollTop <= 0) {
+            // Fare ile liste içinde gezinirken sürükleme tetiklemeyelim (seçim veya tekerlek scroll bozulmasın)
+            if (e.pointerType === "mouse") return;
             dragFromHandle = false;
         } else {
             return;
         }
 
-        dragStartY = touch.clientY;
+        activePointerId = e.pointerId;
+        dragStartY = e.clientY;
         dragStartTime = Date.now();
         dragStartHeight = menuEl.offsetHeight;
         isDragging = false;
         dragMode = "none";
         menuEl.style.transition = "none";
+
+        if (typeof menuEl.setPointerCapture === "function") {
+            try {
+                menuEl.setPointerCapture(e.pointerId);
+            } catch {}
+        }
     }
 
-    function onSheetTouchMove(e) {
+    function onSheetPointerMove(e) {
         if (!useModal || !menuEl || dragStartY === 0) return;
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-        const touch = e.touches[0];
-        const deltaY = touch.clientY - dragStartY;
+        const deltaY = e.clientY - dragStartY;
 
         if (!dragFromHandle && listEl && listEl.scrollTop > 0) {
             return;
@@ -585,16 +597,30 @@
         }
     }
 
-    function onSheetTouchEnd(e) {
+    function onSheetPointerEnd(e) {
         if (!useModal || !menuEl || dragStartY === 0) return;
+        if (activePointerId !== null && e.pointerId !== activePointerId) return;
 
-        const deltaY = (e.changedTouches?.[0]?.clientY ?? 0) - dragStartY;
+        const deltaY = e.clientY - dragStartY;
         const elapsed = Date.now() - dragStartTime;
         const velocity = Math.abs(deltaY) / Math.max(elapsed, 1);
 
+        if (typeof menuEl.releasePointerCapture === "function") {
+            try {
+                if (menuEl.hasPointerCapture?.(e.pointerId)) {
+                    menuEl.releasePointerCapture(e.pointerId);
+                }
+            } catch {}
+        }
+
+        activePointerId = null;
         dragStartY = 0;
         const wasDragging = isDragging;
-        isDragging = false;
+
+        // isDragging bayrağını peşinden gelen click olayını yutana kadar koru
+        setTimeout(() => {
+            isDragging = false;
+        }, 50);
 
         if (!wasDragging) {
             currentDragY = 0;
@@ -887,9 +913,10 @@
             tabindex="-1"
             use:portal
             use:popover={{ triggerEl, align: "left", disabled: useModal }}
-            ontouchstart={onSheetTouchStart}
-            ontouchmove={onSheetTouchMove}
-            ontouchend={onSheetTouchEnd}
+            onpointerdown={onSheetPointerStart}
+            onpointermove={onSheetPointerMove}
+            onpointerup={onSheetPointerEnd}
+            onpointercancel={onSheetPointerEnd}
         >
             {#if useModal}
                 <button

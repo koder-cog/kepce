@@ -371,5 +371,43 @@ describe('Dropdown Race Condition and Synthetic Click Simulation', () => {
         await vi.advanceTimersByTimeAsync(300);
         expect(container.querySelector('.dropdown--open')).toBeNull();
     });
+
+    it('allows dragging handle with mouse pointer to expand the sheet', async () => {
+        const { container } = render(Dropdown, {
+            options: sampleOptions,
+            value: 'istanbul',
+            placeholder: 'Şehir'
+        });
+
+        const triggerBtn = container.querySelector('.dropdown__trigger');
+        await fireEvent.click(triggerBtn);
+
+        const menuEl = document.querySelector('.c-menu');
+        const handle = document.querySelector('.c-menu__handle');
+        expect(handle).toBeTruthy();
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);
+
+        // Simulate mouse pointer drag upwards on the handle
+        await fireEvent.pointerDown(handle, {
+            pointerId: 1,
+            pointerType: 'mouse',
+            button: 0,
+            clientY: 500
+        });
+
+        await fireEvent.pointerMove(menuEl, {
+            pointerId: 1,
+            clientY: 420
+        });
+
+        await fireEvent.pointerUp(menuEl, {
+            pointerId: 1,
+            clientY: 420
+        });
+
+        // Verify it snapped to expanded
+        expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
+    });
 });
+
 
