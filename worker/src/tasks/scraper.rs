@@ -1199,6 +1199,13 @@ fn parse_dish_calories(raw: &Option<String>) -> Option<i32> {
     if let Ok(v) = cleaned.parse::<i32>() {
         return Some(v);
     }
+    if cleaned.contains('/') {
+        for part in cleaned.split('/') {
+            if let Ok(v) = part.trim().parse::<i32>() {
+                return Some(v);
+            }
+        }
+    }
     let parts: Vec<&str> = cleaned.split(&['-', '–'][..]).map(|p| p.trim()).collect();
     if parts.len() == 2 {
         if let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
@@ -2220,6 +2227,14 @@ mod tests {
             None
         );
         assert_eq!(super::parse_dish_calories(&None), None);
+        assert_eq!(
+            super::parse_dish_calories(&Some("114 / 164".to_string())),
+            Some(114)
+        );
+        assert_eq!(
+            super::parse_dish_calories(&Some("340 / 164 kcal".to_string())),
+            Some(340)
+        );
     }
 
     #[test]

@@ -8,6 +8,50 @@ use super::models::{DailyMenu, DayData, DayMetadata, MenuComponent, MenuDatabase
 use super::normalizer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum IngestAlternative {
+    Simple(String),
+    Detailed {
+        name: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        amount: Option<String>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        calories: Option<String>,
+    },
+}
+
+impl IngestAlternative {
+    fn name(&self) -> &str {
+        match self {
+            IngestAlternative::Simple(s) => s,
+            IngestAlternative::Detailed { name, .. } => name,
+        }
+    }
+
+    fn amount(&self) -> Option<&str> {
+        match self {
+            IngestAlternative::Simple(_) => None,
+            IngestAlternative::Detailed { amount, .. } => amount.as_deref(),
+        }
+    }
+
+    fn calories(&self) -> Option<&str> {
+        match self {
+            IngestAlternative::Simple(_) => None,
+            IngestAlternative::Detailed { calories, .. } => calories.as_deref(),
+        }
+    }
+}
+
+/// Slash ile birleştirilmiş değerleri parçalar: "200 g / 150 g" -> ["200 g", "150 g"]
+fn split_slash_values(raw: &str) -> Vec<String> {
+    raw.split('/')
+        .map(|p| p.trim().to_string())
+        .filter(|p| !p.is_empty())
+        .collect()
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IngestItemJson {
     pub name: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -15,7 +59,7 @@ pub struct IngestItemJson {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub calories: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub alternatives: Option<Vec<String>>,
+    pub alternatives: Option<Vec<IngestAlternative>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -143,23 +187,73 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
 
         for item in day.items {
             let mut alternatives = Vec::new();
-            let amount = item
+            let parent_amount = item
                 .amount
                 .map(|a| a.trim().to_string())
                 .filter(|a| !a.is_empty());
-            let calories = item
+            let parent_calories = item
                 .calories
                 .map(|c| c.trim().to_string())
                 .filter(|c| !c.is_empty());
 
             if let Some(alts) = item.alternatives {
-                for alt_name in alts {
-                    let clean = normalizer::normalize_food_name(&alt_name);
+                let total_dishes = 1 + alts.len();
+
+                let amount_parts: Vec<String> = parent_amount
+                    .as_deref()
+                    .filter(|a| a.contains('/'))
+                    .map(split_slash_values)
+                    .unwrap_or_default();
+                let cal_parts: Vec<String> = parent_calories
+                    .as_deref()
+                    .filter(|c| c.contains('/'))
+                    .map(split_slash_values)
+                    .unwrap_or_default();
+
+                let pick_amount = |idx: usize, alt_own: Option<&str>| -> Option<String> {
+                    if let Some(own) = alt_own {
+                        let trimmed = own.trim();
+                        if !trimmed.is_empty() {
+                            return Some(trimmed.to_string());
+                        }
+                    }
+                    if amount_parts.len() == total_dishes {
+                        Some(amount_parts[idx].clone())
+                    } else {
+                        parent_amount.clone()
+                    }
+                };
+                let pick_cal = |idx: usize, alt_own: Option<&str>| -> Option<String> {
+                    if let Some(own) = alt_own {
+                        let trimmed = own.trim();
+                        if !trimmed.is_empty() {
+                            return Some(trimmed.to_string());
+                        }
+                    }
+                    if cal_parts.len() == total_dishes {
+                        Some(cal_parts[idx].clone())
+                    } else {
+                        parent_calories.clone()
+                    }
+                };
+
+                let primary_clean = normalizer::normalize_food_name(&item.name);
+                if !primary_clean.is_empty() {
+                    alternatives.push(MenuComponent {
+                        name: primary_clean,
+                        amount: pick_amount(0, None),
+                        calories: pick_cal(0, None),
+                        category: None,
+                    });
+                }
+
+                for (i, alt) in alts.iter().enumerate() {
+                    let clean = normalizer::normalize_food_name(alt.name());
                     if !clean.is_empty() {
                         alternatives.push(MenuComponent {
                             name: clean,
-                            amount: amount.clone(),
-                            calories: calories.clone(),
+                            amount: pick_amount(i + 1, alt.amount()),
+                            calories: pick_cal(i + 1, alt.calories()),
                             category: None,
                         });
                     }
@@ -171,8 +265,8 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
                     if !clean.is_empty() {
                         alternatives.push(MenuComponent {
                             name: clean,
-                            amount: amount.clone(),
-                            calories: calories.clone(),
+                            amount: parent_amount.clone(),
+                            calories: parent_calories.clone(),
                             category: None,
                         });
                     }
@@ -184,8 +278,8 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
                 if !clean.is_empty() {
                     alternatives.push(MenuComponent {
                         name: clean,
-                        amount,
-                        calories,
+                        amount: parent_amount,
+                        calories: parent_calories,
                         category: None,
                     });
                 }
@@ -323,5 +417,79 @@ mod tests {
                 key
             );
         }
+    }
+
+    #[test]
+    fn test_detailed_alternatives() {
+        let sample = r#"{
+            "meal_type": "dinner",
+            "days": [{
+                "date": "2026-09-16",
+                "items": [{
+                    "name": "Izgara Köfte",
+                    "amount": "200 g (90 g et)",
+                    "calories": "340 kcal",
+                    "alternatives": [
+                        { "name": "Etsiz Patlıcan", "amount": "200 g", "calories": "164 kcal" }
+                    ]
+                }]
+            }]
+        }"#;
+        let db = parse_json_str(sample, "test.json").unwrap();
+        let day = db.get("2026-09-16").unwrap();
+        let slot = &day.normal.dinner[0];
+        assert_eq!(slot.alternatives.len(), 2);
+        assert_eq!(slot.alternatives[0].name, "Izgara Köfte");
+        assert_eq!(slot.alternatives[0].amount.as_deref(), Some("200 g (90 g et)"));
+        assert_eq!(slot.alternatives[0].calories.as_deref(), Some("340 kcal"));
+        assert_eq!(slot.alternatives[1].name, "Etsiz Patlıcan");
+        assert_eq!(slot.alternatives[1].amount.as_deref(), Some("200 g"));
+        assert_eq!(slot.alternatives[1].calories.as_deref(), Some("164 kcal"));
+    }
+
+    #[test]
+    fn test_slash_fallback_distribution() {
+        let sample = r#"{
+            "meal_type": "dinner",
+            "days": [{
+                "date": "2026-09-16",
+                "items": [{
+                    "name": "Izgara Köfte",
+                    "amount": "200 g / 150 g",
+                    "calories": "340 / 164",
+                    "alternatives": ["Etsiz Patlıcan"]
+                }]
+            }]
+        }"#;
+        let db = parse_json_str(sample, "test.json").unwrap();
+        let day = db.get("2026-09-16").unwrap();
+        let slot = &day.normal.dinner[0];
+        assert_eq!(slot.alternatives.len(), 2);
+        assert_eq!(slot.alternatives[0].amount.as_deref(), Some("200 g"));
+        assert_eq!(slot.alternatives[0].calories.as_deref(), Some("340"));
+        assert_eq!(slot.alternatives[1].amount.as_deref(), Some("150 g"));
+        assert_eq!(slot.alternatives[1].calories.as_deref(), Some("164"));
+    }
+
+    #[test]
+    fn test_backward_compat_simple_alternatives() {
+        let sample = r#"{
+            "meal_type": "dinner",
+            "days": [{
+                "date": "2026-09-17",
+                "items": [{
+                    "name": "Pirinç Pilavı",
+                    "amount": "180 g",
+                    "alternatives": ["Bulgur Pilavı"]
+                }]
+            }]
+        }"#;
+        let db = parse_json_str(sample, "test.json").unwrap();
+        let day = db.get("2026-09-17").unwrap();
+        let slot = &day.normal.dinner[0];
+        assert_eq!(slot.alternatives.len(), 2);
+        assert_eq!(slot.alternatives[0].name, "Pirinç Pilavı");
+        assert_eq!(slot.alternatives[1].name, "Bulgur Pilavı");
+        assert_eq!(slot.alternatives[1].amount.as_deref(), Some("180 g"));
     }
 }

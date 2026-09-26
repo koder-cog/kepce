@@ -100,9 +100,24 @@ pub fn menu_response_schema() -> serde_json::Value {
                                     },
                                     "alternatives": {
                                         "type": "array",
-                                        "description": "Alternative choices if separated by '/' or 'veya' (e.g. ['Pirinç Pilavı', 'Bulgur Pilavı']).",
+                                        "description": "Alternative dish choices for the same slot (e.g. separated by '/' or 'veya'). Each alternative must have its own separate name, amount, and calories.",
                                         "items": {
-                                            "type": "string"
+                                            "type": "object",
+                                            "properties": {
+                                                "name": {
+                                                    "type": "string",
+                                                    "description": "Name of the alternative dish."
+                                                },
+                                                "amount": {
+                                                    "type": "string",
+                                                    "description": "Portion size or weight for this alternative dish alone (e.g. '200 g')."
+                                                },
+                                                "calories": {
+                                                    "type": "string",
+                                                    "description": "Calories for this alternative dish alone if listed (e.g. '164 kcal')."
+                                                }
+                                            },
+                                            "required": ["name"]
                                         }
                                     }
                                 },
@@ -603,7 +618,9 @@ pub const MENU_EXTRACTION_PROMPT: &str = "You are a precise data extraction engi
 Extract all daily menus, dates, meal types (Kahvaltı -> breakfast, Akşam Yemeği -> dinner, Öğle -> lunch), food items, portions/weights, calories, and alternatives from the provided document or image.
 The document may contain MULTIPLE separate tables for different meal types (e.g. a Kahvaltı/breakfast table and an Akşam Yemeği/dinner table). Extract EVERY table as separate entries in 'days', each tagged with its own meal_type. Do not stop after the first table.
 Ensure every day present in the document is extracted into the 'days' array with accurate dates (YYYY-MM-DD or DD.MM.YYYY).
-If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), include them in the 'alternatives' list.
+If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), put the first option into the item's own name/amount/calories fields and the rest into the 'alternatives' array. Each alternative is an object with its own name, amount and calories fields. Do not combine multiple values into one field with a '/' separator.
+Garnishes, sides, and sauces served alongside a main dish (e.g. garnitür havuç-kabak, patates püresi, sos) are part of the main dish, not separate alternatives.
+If bread (ekmek, çeyrek ekmek) appears multiple times in the same meal from both a table row and a footnote, include it only once.
 Output strictly conforming to the requested JSON schema.";
 
 pub async fn parse_document_with_llm(
