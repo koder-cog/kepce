@@ -409,7 +409,8 @@
     .c-menu--modal .c-menu__scroll-area {
       flex: 1 1 auto;
       min-height: 0;
-      padding: 0 var(--space-lg) var(--space-md) var(--space-lg);
+      padding: var(--space-md) var(--space-lg);
+      scroll-padding: var(--space-md) 0;
       gap: var(--space-sm);
       contain: content;
     }
