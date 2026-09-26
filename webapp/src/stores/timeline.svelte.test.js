@@ -9,6 +9,7 @@ vi.mock('@/api/index.js', () => ({
 vi.mock('@/stores/city.svelte.js', () => ({
   getCurrentCity: vi.fn(() => 'istanbul'),
   setCurrentCity: vi.fn(),
+  getCities: vi.fn(() => [{ id: 1, name: 'İstanbul', slug: 'istanbul', has_celiac: false }]),
   getCitiesData: vi.fn(async () => [{ id: 1, name: 'İstanbul', slug: 'istanbul', has_celiac: false }]),
 }));
 

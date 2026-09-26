@@ -1,10 +1,10 @@
 import { api } from "@/api/index.js";
-import { getCurrentCity, setCurrentCity, getCitiesData } from "@/stores/city.svelte.js";
+import { getCurrentCity, setCurrentCity, getCitiesData, getCities } from "@/stores/city.svelte.js";
 import { wait, getDuration, runNextTick, isMotionEnabled } from "@/lib/dom/motion.js";
 
 
 export function createTimelineStore() {
-    let cities = $state([]);
+    let cities = $state(getCities());
     let selectedDate = $state(new Date());
     let viewMonth = $state(new Date().getMonth());
     let viewYear = $state(new Date().getFullYear());

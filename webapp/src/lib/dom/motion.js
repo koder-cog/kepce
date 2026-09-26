@@ -99,6 +99,22 @@ export const animate = (element, keyframes, options) => {
     options = { duration: isEnabled ? DURATION.default : 0 };
   }
 
+  if (!element || typeof element.animate !== 'function') {
+    const dummyAnimation = {
+      cancel: () => {},
+      finish: () => {},
+      onfinish: null,
+      play: () => {},
+      pause: () => {},
+    };
+    setTimeout(() => {
+      if (typeof dummyAnimation.onfinish === 'function') {
+        dummyAnimation.onfinish();
+      }
+    }, 0);
+    return dummyAnimation;
+  }
+
   return element.animate(keyframes, options);
 };
 

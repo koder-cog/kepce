@@ -115,7 +115,7 @@
 
     // ── Lifecycle ──────────────────────────────────────────────
     function checkMobile() {
-        if (typeof window !== "undefined") {
+        if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
             isMobile = window.matchMedia("(max-width: 600px)").matches;
         }
     }
@@ -174,14 +174,22 @@
     // ── Close helpers ──────────────────────────────────────────
     function onOutsideClick(e) {
         if (!isOpen) return;
+        if (Date.now() - openTime < 300) return;
+        if (e.target && !document.contains(e.target)) return;
         if (triggerEl?.contains(e.target)) return;
         if (menuEl?.contains(e.target)) return;
         close();
     }
 
+    function onOverlayClick(e) {
+        e.stopPropagation();
+        if (Date.now() - openTime < 300) return;
+        close();
+    }
+
     function onScrollClose(e) {
-        if (isProgrammaticScroll || !isOpen) return;
-        if (Date.now() - openTime < 100) return;
+        if (isProgrammaticScroll || !isOpen || useModal) return;
+        if (Date.now() - openTime < 300) return;
         const path = e.composedPath?.() || [];
         if (
             path.some(
@@ -189,6 +197,15 @@
             )
         )
             return;
+        const target = e.target;
+        if (
+            target !== window &&
+            target !== document &&
+            target !== document.documentElement &&
+            target !== document.body
+        ) {
+            return;
+        }
         close();
     }
 
@@ -349,13 +366,19 @@
 
     function handlePopState(e) {
         if (isOpen && useModal) {
+            if (Date.now() - openTime < 300) return;
             close(true);
         }
     }
 
     function toggle(e) {
         if (e) e.stopPropagation();
-        isOpen ? close() : open();
+        if (isOpen) {
+            if (Date.now() - openTime < 300) return;
+            close();
+        } else {
+            open();
+        }
     }
 
     // ── Selection ──────────────────────────────────────────────
@@ -557,10 +580,7 @@
                 bind:this={overlayEl}
                 class="c-menu__overlay c-menu__overlay--open"
                 use:portal
-                onclick={(e) => {
-                    e.stopPropagation();
-                    close();
-                }}
+                onclick={onOverlayClick}
                 role="presentation"
             ></div>
         </div>
