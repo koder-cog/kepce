@@ -86,12 +86,16 @@ async fn get_or_create_dish_alias(
             ON CONFLICT ((LOWER(TRIM(name)))) DO UPDATE SET category = COALESCE(dishes.category, EXCLUDED.category)
             RETURNING id
         )
-        INSERT INTO dish_aliases (dish_id, name)
-        VALUES ((SELECT id FROM upsert_dish), $1)
-        ON CONFLICT ((LOWER(TRIM(name)))) DO UPDATE SET dish_id = EXCLUDED.dish_id
+        INSERT INTO dish_aliases (name, dish_id)
+        VALUES ($3, (SELECT id FROM upsert_dish))
+        ON CONFLICT (name) DO UPDATE SET dish_id = COALESCE(dish_aliases.dish_id, EXCLUDED.dish_id)
         RETURNING id, dish_id;
         "#,
-        vec![sanitized.into(), final_category.into()],
+        vec![
+            sanitized.clone().into(),
+            final_category.into(),
+            sanitized.into(),
+        ],
     );
 
     let query_res = txn.query_one(stmt).await?;
@@ -275,6 +279,25 @@ impl InternalIngestService {
                     city_id,
                     date,
                     meal_type
+                );
+                txn.rollback().await?;
+                return Ok(None);
+            }
+
+            let existing_source = m.source_type.as_deref().unwrap_or("");
+            let existing_meta =
+                shared::services::source_registry::SourceRegistry::resolve(existing_source);
+            let incoming_meta =
+                shared::services::source_registry::SourceRegistry::resolve(source_type);
+
+            // Saha Gerçeği Koruması: Mevcut menü saha teyitliyse (GroundTruth), harici kazıyıcı ezemez.
+            if existing_meta.tier == shared::services::source_registry::TrustTier::GroundTruth
+                && incoming_meta.tier < shared::services::source_registry::TrustTier::GroundTruth
+            {
+                tracing::debug!(
+                    "Saha gerçeği koruması: Mevcut menü ({}) GroundTruth, gelen ({}) ezemez. Güncelleme atlandı.",
+                    existing_source,
+                    source_type
                 );
                 txn.rollback().await?;
                 return Ok(None);

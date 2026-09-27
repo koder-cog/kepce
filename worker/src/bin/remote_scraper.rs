@@ -224,11 +224,6 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let payload = KykyemekIngestRequest {
-        menus: collected_menus,
-        source_type: Some("kykyemek".to_string()),
-    };
-
     tracing::info!("Veriler Ingest API'sine aktarılıyor: {}...", ingest_url);
 
     let ingest_client = reqwest::Client::builder()
@@ -236,39 +231,55 @@ async fn main() -> anyhow::Result<()> {
         .build()?;
 
     let secret_val = ingest_secret.unwrap_or_default();
-    let resp = ingest_client
-        .post(&ingest_url)
-        .header("X-Internal-Token", secret_val)
-        .header("Content-Type", "application/json")
-        .json(&payload)
-        .send()
-        .await?;
+    let mut total_received = 0;
+    let mut total_inserted = 0;
+    let mut total_updated = 0;
+    let mut total_skipped = 0;
+    let mut all_errors = Vec::new();
 
-    let status = resp.status();
-    let text = resp.text().await?;
+    // Büyük veri paketlerinde Axum / Nginx / Caddy gövde sınırına çarpmamak
+    // ve tek bir hata durumunda tüm taramayı kaybetmemek için 150'lik paketlerle aktar
+    for chunk in collected_menus.chunks(150) {
+        let payload = KykyemekIngestRequest {
+            menus: chunk.to_vec(),
+            source_type: Some("kykyemek".to_string()),
+        };
 
-    if !status.is_success() {
-        anyhow::bail!("Ingest API HTTP {} döndürdü: {}", status, text);
+        let resp = ingest_client
+            .post(&ingest_url)
+            .header("X-Internal-Token", &secret_val)
+            .header("Content-Type", "application/json")
+            .json(&payload)
+            .send()
+            .await?;
+
+        let status = resp.status();
+        let text = resp.text().await?;
+
+        if !status.is_success() {
+            anyhow::bail!("Ingest API HTTP {} döndürdü: {}", status, text);
+        }
+
+        if let Ok(dto) = serde_json::from_str::<IngestResponseDto>(&text) {
+            total_received += dto.total_received;
+            total_inserted += dto.total_inserted;
+            total_updated += dto.total_updated;
+            total_skipped += dto.total_skipped;
+            all_errors.extend(dto.errors);
+        }
     }
 
-    match serde_json::from_str::<IngestResponseDto>(&text) {
-        Ok(dto) => {
-            tracing::info!(
-                "Ingest Başarılı! Alınan: {}, Eklenen: {}, Güncellenen: {}, Atlanan: {}, Hatalar: {}",
-                dto.total_received,
-                dto.total_inserted,
-                dto.total_updated,
-                dto.total_skipped,
-                dto.errors.len()
-            );
-            if !dto.errors.is_empty() {
-                for err in dto.errors {
-                    tracing::warn!("API Uyarısı: {}", err);
-                }
-            }
-        }
-        Err(_) => {
-            tracing::info!("Ingest yanıtı: {}", text);
+    tracing::info!(
+        "Ingest Başarılı! Toplam Alınan: {}, Eklenen: {}, Güncellenen: {}, Atlanan: {}, Hatalar: {}",
+        total_received,
+        total_inserted,
+        total_updated,
+        total_skipped,
+        all_errors.len()
+    );
+    if !all_errors.is_empty() {
+        for err in all_errors {
+            tracing::warn!("API Uyarısı: {}", err);
         }
     }
 

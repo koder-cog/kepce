@@ -1,5 +1,5 @@
 use axum::{
-    extract::State,
+    extract::{DefaultBodyLimit, State},
     http::{HeaderMap, StatusCode},
     response::IntoResponse,
     routing::post,
@@ -13,7 +13,9 @@ use crate::{
 };
 
 pub fn router() -> Router<AppState> {
-    Router::new().route("/ingest/kykyemek", post(ingest_kykyemek))
+    Router::new()
+        .route("/ingest/kykyemek", post(ingest_kykyemek))
+        .layer(DefaultBodyLimit::max(10 * 1024 * 1024))
 }
 
 async fn ingest_kykyemek(
