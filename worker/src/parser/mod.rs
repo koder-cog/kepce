@@ -8,6 +8,7 @@ pub mod kykyemek;
 pub mod llm;
 pub mod models;
 pub mod normalizer;
+pub mod openrouter_monitor;
 pub mod orientation;
 pub mod stale_detector;
 pub mod takeaway;

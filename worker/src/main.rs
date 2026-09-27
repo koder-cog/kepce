@@ -25,6 +25,17 @@ async fn main() -> anyhow::Result<()> {
     let db: DbConn = Database::connect(db_opts).await?;
     tracing::info!("Veritabanı bağlantısı başarılı.");
 
+    // OpenRouter bakiye ve kota denetimi
+    if let Ok(key) = env::var("OPENROUTER_API_KEY") {
+        if !key.trim().is_empty() {
+            let client = reqwest::Client::builder()
+                .timeout(Duration::from_secs(10))
+                .build()
+                .unwrap_or_default();
+            let _ = parser::openrouter_monitor::check_openrouter_balance(&client, &key, None).await;
+        }
+    }
+
     // Otomatik Kendini Tamir Eden Temizleyici (Self-Healing Sanitizer)
     // Worker her açıldığında ve periyodik derin uzlaşma sırasında sisteme sızan
     // çöp verileri, navigasyon kalıntılarını ve geçersiz menüleri temizler.
