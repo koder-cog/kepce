@@ -1392,10 +1392,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_full_lifecycle_quarantine_to_rejected_to_approved() {
-        let base_temp = std::env::temp_dir().join(format!(
-            "kepce_test_lifecycle_{}",
-            uuid::Uuid::new_v4()
-        ));
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_lifecycle_{}", uuid::Uuid::new_v4()));
         let quarantine = base_temp.join("quarantine");
         let ingest = base_temp.join("ingest");
 
@@ -1448,7 +1446,11 @@ mod tests {
         );
 
         // Reddedilen arşivindeki klasör tamamen temizlenmiş olmalı
-        assert!(!ingest.join("reddedilen").join("istanbul").join(ref_id).exists());
+        assert!(!ingest
+            .join("reddedilen")
+            .join("istanbul")
+            .join(ref_id)
+            .exists());
 
         let _ = tokio::fs::remove_dir_all(&base_temp).await;
     }
@@ -1459,4 +1461,3 @@ mod tests {
         assert!(format!("{:?}", err).contains("corrupted_status"));
     }
 }
-

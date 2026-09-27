@@ -420,10 +420,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_cleanup_preserves_unexpired_files() {
-        let base_temp = std::env::temp_dir().join(format!(
-            "kepce_test_unexpired_{}",
-            uuid::Uuid::new_v4()
-        ));
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_unexpired_{}", uuid::Uuid::new_v4()));
         let quarantine = base_temp.join("quarantine");
         let rejected = base_temp.join("rejected");
 
@@ -457,10 +455,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_cleanup_handles_nonexistent_base_directories_gracefully() {
-        let base_temp = std::env::temp_dir().join(format!(
-            "kepce_test_nonexistent_{}",
-            uuid::Uuid::new_v4()
-        ));
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_nonexistent_{}", uuid::Uuid::new_v4()));
         let nonexistent_quarantine = base_temp.join("no_quarantine");
         let nonexistent_rejected = base_temp.join("no_rejected");
 
@@ -481,4 +477,3 @@ mod tests {
         assert_eq!(report.empty_dirs_removed, 0);
     }
 }
-
