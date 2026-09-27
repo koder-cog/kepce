@@ -23,6 +23,7 @@ pub struct Config {
     pub smtp_port: u16,
     pub smtp_username: Option<String>,
     pub smtp_password: Option<String>,
+    pub internal_ingest_secret: Option<String>,
 }
 
 impl Config {
@@ -56,6 +57,7 @@ impl Config {
                 .unwrap_or(587),
             smtp_username: env::var("SMTP_USERNAME").ok(),
             smtp_password: env::var("SMTP_PASSWORD").ok(),
+            internal_ingest_secret: env::var("INTERNAL_INGEST_SECRET").ok(),
         }
     }
 }

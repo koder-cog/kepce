@@ -209,6 +209,8 @@ pub async fn rate_limit_middleware(
         RateLimitCategory::Passwordless
     } else if path.starts_with("/api/v1/ingestion") {
         RateLimitCategory::Ingestion
+    } else if path.starts_with("/api/v1/internal") {
+        return Ok(next.run(req).await);
     } else if path.starts_with("/api/v1/") {
         RateLimitCategory::General
     } else {

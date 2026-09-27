@@ -2,8 +2,7 @@ use sea_orm::{Database, DbConn};
 use std::env;
 use std::time::Duration;
 
-pub mod parser;
-pub mod tasks;
+use worker::{parser, tasks};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

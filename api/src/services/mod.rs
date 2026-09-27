@@ -6,6 +6,7 @@ pub mod comment;
 pub mod developer;
 pub mod email;
 pub mod ingestion;
+pub mod internal_ingest;
 pub mod menu;
 pub mod migration;
 pub mod moderation;

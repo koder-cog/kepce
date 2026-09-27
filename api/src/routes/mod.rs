@@ -4,6 +4,7 @@ pub mod comments;
 pub mod contact;
 pub mod database_admin;
 pub mod ingestion;
+pub mod internal_ingest;
 pub mod menus;
 pub mod moderation;
 pub mod og;

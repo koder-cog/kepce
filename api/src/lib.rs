@@ -81,6 +81,7 @@ pub fn build_router(state: AppState, cors: CorsLayer) -> Router {
         .nest("/api/v1/public", routes::public_api::router())
         .nest("/api/v1/system", routes::system::router())
         .nest("/api/v1/ingestion", routes::ingestion::router())
+        .nest("/api/v1/internal", routes::internal_ingest::router())
         .nest("/api/v1/admin", routes::admin::router())
         .nest("/api/v1/reports", routes::reports::router())
         .nest_service("/static", tower_http::services::ServeDir::new("static"))
