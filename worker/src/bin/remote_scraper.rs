@@ -122,22 +122,22 @@ async fn main() -> anyhow::Result<()> {
     let mut session_cache: HashMap<Option<usize>, ActiveKykSession> = HashMap::new();
 
     // 1. Keşif: İlk geçerli oturumu al ve illeri öğren
-    let mut session = obtain_ready_session(&pool, &mut session_cache)
-        .await
-        .ok_or_else(|| anyhow::anyhow!("Kullanılabilir proxy oturumu bulunamadı"))?;
-
-    tracing::info!(
-        "İlk oturum hazır (çıkış: {}). Doğrulama token'ı ve aktif iller alınıyor...",
-        session.endpoint_label
-    );
-
-    let (_, discovered_cities) = fetch_kykyemek_session(&session.client).await?;
+    let (mut session, discovered_cities) =
+        obtain_ready_session_and_cities(&pool, &mut session_cache)
+            .await
+            .ok_or_else(|| anyhow::anyhow!("Kullanılabilir proxy oturumu bulunamadı"))?;
 
     let active_slugs = if let Some(ref slug) = target_city {
         vec![slug.clone()]
     } else {
         discovered_cities
     };
+
+    tracing::info!(
+        "İlk oturum hazır (çıkış: {}). Toplam {} il için tarama yapılacak.",
+        session.endpoint_label,
+        active_slugs.len()
+    );
 
     tracing::info!(
         "Toplam {} il için tarama yapılacak: {:?}",
@@ -163,7 +163,7 @@ async fn main() -> anyhow::Result<()> {
     let mut grand_total_skipped = 0;
     let mut all_errors = Vec::new();
 
-    for slug in active_slugs {
+    for slug in &active_slugs {
         // Her şehir başında torbadan sıradaki oturumu çek (yükü 10 proxy'ye homojen dağıt)
         if let Some(new_s) = obtain_ready_session(&pool, &mut session_cache).await {
             session = new_s;
@@ -183,7 +183,7 @@ async fn main() -> anyhow::Result<()> {
                 &pool,
                 &mut session,
                 &mut session_cache,
-                &slug,
+                slug,
                 "breakfast",
                 shift,
                 &mut city_menus,
@@ -198,7 +198,7 @@ async fn main() -> anyhow::Result<()> {
                 &pool,
                 &mut session,
                 &mut session_cache,
-                &slug,
+                slug,
                 "dinner",
                 shift,
                 &mut city_menus,
@@ -261,7 +261,12 @@ async fn main() -> anyhow::Result<()> {
                     }
                 } else {
                     let err_text = resp.text().await.unwrap_or_default();
-                    tracing::error!("[{}] Ingest API HTTP {} hatası verdi: {}", slug, status, err_text);
+                    tracing::error!(
+                        "[{}] Ingest API HTTP {} hatası verdi: {}",
+                        slug,
+                        status,
+                        err_text
+                    );
                 }
             }
             Err(e) => {
@@ -280,33 +285,43 @@ async fn main() -> anyhow::Result<()> {
             all_errors.len()
         );
         if !all_errors.is_empty() {
-            for err in all_errors {
+            for err in &all_errors {
                 tracing::warn!("API Uyarısı: {}", err);
             }
+        }
+
+        let total_processed = grand_total_inserted + grand_total_updated + grand_total_skipped;
+        if !active_slugs.is_empty() && total_processed == 0 {
+            anyhow::bail!(
+                "Tarama başarısız: {} il hedeflendi ancak hiçbir menü aktarılamadı (Alınan: {}, Hata sayısı: {}).",
+                active_slugs.len(),
+                grand_total_received,
+                all_errors.len()
+            );
         }
     }
 
     Ok(())
 }
 
-async fn obtain_ready_session(
+async fn obtain_ready_session_and_cities(
     pool: &KykYemekClientPool,
     session_cache: &mut HashMap<Option<usize>, ActiveKykSession>,
-) -> Option<ActiveKykSession> {
+) -> Option<(ActiveKykSession, Vec<String>)> {
     for _ in 0..15 {
         if let Some(s) = pool.acquire_session() {
             if let Some(cached) = session_cache.get(&s.proxy_idx) {
                 if cached.token.is_some() {
-                    return Some(cached.clone());
+                    return Some((cached.clone(), Vec::new()));
                 }
             }
 
             match fetch_kykyemek_session(&s.client).await {
-                Ok((tok, _)) => {
+                Ok((tok, cities)) => {
                     let mut ready = s.clone();
                     ready.token = Some(tok);
                     session_cache.insert(s.proxy_idx, ready.clone());
-                    return Some(ready);
+                    return Some((ready, cities));
                 }
                 Err(e) => {
                     tracing::warn!(
@@ -322,6 +337,15 @@ async fn obtain_ready_session(
         }
     }
     None
+}
+
+async fn obtain_ready_session(
+    pool: &KykYemekClientPool,
+    session_cache: &mut HashMap<Option<usize>, ActiveKykSession>,
+) -> Option<ActiveKykSession> {
+    obtain_ready_session_and_cities(pool, session_cache)
+        .await
+        .map(|(session, _)| session)
 }
 
 async fn scrape_and_collect(

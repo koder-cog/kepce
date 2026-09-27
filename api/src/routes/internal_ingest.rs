@@ -6,6 +6,7 @@ use axum::{
     Json, Router,
 };
 use sha2::{Digest, Sha256};
+use subtle::ConstantTimeEq;
 
 use crate::{
     config::AppState, dto::internal_ingest::InternalKykyemekIngestRequest,
@@ -45,11 +46,10 @@ async fn ingest_kykyemek(
         .map(|s| s.trim())
         .unwrap_or("");
 
-    // Zamanlama saldırılarını önlemek için SHA-256 hash'leri üzerinden karşılaştır
     let expected_hash = Sha256::digest(expected_secret.as_bytes());
     let provided_hash = Sha256::digest(provided_token.as_bytes());
 
-    if expected_hash != provided_hash {
+    if expected_hash.ct_eq(&provided_hash).unwrap_u8() != 1 {
         tracing::warn!("İç aktarım isteğinde geçersiz token sağlandı.");
         return (
             StatusCode::UNAUTHORIZED,

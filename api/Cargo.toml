@@ -33,6 +33,7 @@ rand.workspace = true
 anyhow.workspace = true
 dotenvy.workspace = true
 sha2.workspace = true
+subtle.workspace = true
 http = "1.4.2"
 lazy_static = "1.5.0"
 # Dynamic OG Image Rendering
