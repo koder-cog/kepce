@@ -8,7 +8,7 @@ Veritabanı yapısı iki farklı ihtiyaca göre iki ayrı dizinde tutulur:
 
 | Dizin | Amaç | Hedef | Yapı |
 | :--- | :--- | :--- | :--- |
-| `db/migrations/` | Sürüm takibi ve sırayla yürütme. | Veritabanı motoru (`schema_migrations`), testler ve dağıtım araçları. | `0001_...` ile `0026_...` arası sıralı yama dosyaları. |
+| `db/migrations/` | Sürüm takibi ve sırayla yürütme. | Veritabanı motoru (`schema_migrations`), testler ve dağıtım araçları. | `0001_...` ile `0030_...` arası sıralı yama dosyaları. |
 | `docs/database/` | Sistemin güncel halini inceleme. | Geliştiriciler ve mimari planlama. | Yamalardan arındırılmış, etki alanlarına bölünmüş SQL dosyaları. |
 
 ## Etki Alanları

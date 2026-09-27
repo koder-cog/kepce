@@ -130,14 +130,10 @@ async fn test_full_auth_flow() {
     let login_res: serde_json::Value = serde_json::from_slice(&body_bytes).unwrap();
     assert!(login_res.get("user").is_some());
 
-    // Actually, axum endpoints extract token from auth header or cookies. Let's make token from AuthService.
-    let jwt_token = AuthService::generate_token(
-        user_db.id,
-        &user_db.username,
-        &api::dto::user::UserRole::User,
-        &state.config.jwt_secret,
-    )
-    .unwrap();
+    let jwt_token = login_res
+        .get("token")
+        .and_then(|t| t.as_str())
+        .expect("login response must include token for non-browser clients");
 
     // 4. Access protected profile route
     let me_req = Request::builder()

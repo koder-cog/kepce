@@ -193,6 +193,8 @@ pub struct UpdatePinnedBadgesDto {
 #[derive(Debug, Serialize)]
 pub struct AuthResponseDto {
     pub user: UserProfileDto,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
 }
 
 #[derive(Debug, Serialize)]

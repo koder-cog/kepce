@@ -27,6 +27,7 @@ CREATE TABLE users (
     google_id VARCHAR(255) UNIQUE,
     token_version INTEGER NOT NULL DEFAULT 0,
     opt_out_statistics BOOLEAN NOT NULL DEFAULT false,
+    pinned_badges VARCHAR(50)[] DEFAULT '{}',
     breakfast_notification_enabled BOOLEAN NOT NULL DEFAULT true,
     lunch_notification_enabled BOOLEAN NOT NULL DEFAULT true,
     dinner_notification_enabled BOOLEAN NOT NULL DEFAULT true,
@@ -93,6 +94,8 @@ CREATE TABLE badges (
     description TEXT,
     icon_url VARCHAR(255),
     category VARCHAR(50) DEFAULT 'general',
+    tier VARCHAR(20) NOT NULL DEFAULT 'other',
+    is_hidden BOOLEAN NOT NULL DEFAULT false,
     sort_order INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );

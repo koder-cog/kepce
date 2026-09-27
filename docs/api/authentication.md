@@ -44,15 +44,57 @@ const res = await fetch("https://kepce.org/api/v1/menus/today/istanbul", {
 const data = await res.json();
 ```
 
-## 3. Kullanıcı İşlemleri (`Bearer JWT`)
+## 3. Kullanıcı İşlemleri ve Oturum Doğrulama
 
-Menüye oy verme ve yorum gönderme gibi kullanıcı bazlı işlemler için oturum jetonu gerekir:
+Menüye oy verme, yorum yapma veya profil yönetimi gibi kullanıcı bazlı işlemler için oturum doğrulama gerekir. Kepçe API hem modern tarayıcılar için çerez tabanlı akışı hem de harici istemciler için standart Bearer belirteç akışını destekler.
 
-```http
-POST /api/v1/menus/1420/vote
-Authorization: Bearer <JWT_TOKEN>
-Content-Type: application/json
+### 3.1. Tarayıcı Tabanlı İstemciler (Çerez Mimarisi)
+
+Tarayıcı istemcileri `/api/v1/auth/login` veya `/api/v1/auth/register` uç noktasına istek attığında, sunucu oturumu güvenli `Set-Cookie` başlıklarıyla başlatır:
+- `kepce_token`: 15 dakika geçerli JWT erişim belirteci (`HttpOnly`, `SameSite=Strict`, `Path=/`).
+- `kepce_refresh_token`: Uzun ömürlü oturum yenileme belirteci (`HttpOnly`, `SameSite=Strict`, `Path=/`).
+- `kepce_logged_in`: İstemci tarafı arayüz durum kontrolü için kullanılan bayrak çerez (`SameSite=Strict`).
+
+Tarayıcı üzerinden yapılan `fetch` veya `axios` çağrılarında bu çerezlerin sunucuya iletilmesi için `credentials: "include"` seçeneğinin kullanılması zorunludur:
+
+```javascript
+const res = await fetch("https://kepce.org/api/v1/menus/1420/vote", {
+  method: "POST",
+  credentials: "include",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ sentiment: "positive" })
+});
 ```
+
+Erişim belirtecinin süresi dolduğunda API `401 Unauthorized` yanıtı döner. İstemci bu durumda `/api/v1/auth/refresh` adresine POST isteği göndererek yeni erişim çerezini alır ve başarısız olan isteği yineler.
+
+### 3.2. Tarayıcı Dışı İstemciler (`Authorization: Bearer <JWT_TOKEN>`)
+
+Komut satırı araçları (cURL), mobil uygulamalar veya botlar giriş yaptığında, sunucu yanıt gövdesinde `token` alanını iletir:
+
+```json
+{
+  "user": {
+    "id": "e6a2b85d-8b01-447e-8c34-8cbf6a56e099",
+    "username": "ogrenci"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+Alınan belirteç sonraki isteklerin başlığına `Authorization: Bearer <token>` olarak eklenir:
+
+```bash
+curl -X POST "https://kepce.org/api/v1/menus/1420/vote" \
+  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Content-Type: application/json" \
+  -d '{"sentiment": "positive"}'
+```
+
+> [!NOTE]
+> Sunucu yetkilendirme katmanı öncelikle gelen istekteki `kepce_token` çerezine bakar. Çerez bulunamazsa `Authorization` başlığındaki `Bearer` belirtecini doğrular.
 
 Kullanıcı veya IP adresi başına dakikada en fazla 10 oy verilebilir ve en fazla 5 yorum gönderilebilir.
 

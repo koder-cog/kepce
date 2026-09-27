@@ -174,7 +174,13 @@ async fn register(
         .unwrap(),
     );
 
-    Ok((headers, Json(AuthResponseDto { user })))
+    Ok((
+        headers,
+        Json(AuthResponseDto {
+            user,
+            token: Some(access_token),
+        }),
+    ))
 }
 
 async fn login(
@@ -242,7 +248,13 @@ async fn login(
     headers.append(SET_COOKIE, refresh_cookie.parse().unwrap());
     headers.append(SET_COOKIE, logged_in_cookie.parse().unwrap());
 
-    Ok((headers, Json(AuthResponseDto { user })))
+    Ok((
+        headers,
+        Json(AuthResponseDto {
+            user,
+            token: Some(access_token),
+        }),
+    ))
 }
 
 async fn refresh(
@@ -1532,5 +1544,11 @@ async fn passwordless_login(
     headers.append(SET_COOKIE, refresh_cookie.parse().unwrap());
     headers.append(SET_COOKIE, logged_in_cookie.parse().unwrap());
 
-    Ok((headers, Json(AuthResponseDto { user })))
+    Ok((
+        headers,
+        Json(AuthResponseDto {
+            user,
+            token: Some(access_token),
+        }),
+    ))
 }

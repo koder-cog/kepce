@@ -31,9 +31,21 @@ CREATE TABLE contact_messages (
     category VARCHAR(50) NOT NULL,
     subject VARCHAR(150) NOT NULL,
     message TEXT NOT NULL,
+    source VARCHAR(50) NOT NULL DEFAULT 'kepce',
+    page_url TEXT,
+    user_agent TEXT,
     status report_status_enum NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     resolved_at TIMESTAMPTZ
+);
+
+-- 3.1. İletişim Mesajı Yanıt Geçmişi (Contact Message Replies)
+CREATE TABLE contact_message_replies (
+    id SERIAL PRIMARY KEY,
+    contact_message_id INTEGER NOT NULL REFERENCES contact_messages(id) ON DELETE CASCADE,
+    responder_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    reply_body TEXT NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- 4. Uygulama İçi Bildirimler (In-App Notifications)

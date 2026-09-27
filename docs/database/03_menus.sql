@@ -22,6 +22,7 @@ CREATE TABLE menus (
     submitted_by UUID REFERENCES users(id) ON DELETE SET NULL,
     status menu_status_enum NOT NULL DEFAULT 'pending',
     bot_commentary TEXT,
+    notice TEXT,
     min_calories INTEGER,
     max_calories INTEGER,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
@@ -59,6 +60,8 @@ CREATE TABLE menu_submissions (
     year INTEGER NOT NULL,
     month INTEGER NOT NULL,
     notes TEXT,
+    rejection_reason TEXT,
+    storage_ref TEXT,
     status VARCHAR(50) NOT NULL DEFAULT 'pending',
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP

@@ -86,6 +86,7 @@ CREATE INDEX IF NOT EXISTS idx_user_favorites_dish_id ON user_favorites (dish_id
 CREATE INDEX IF NOT EXISTS idx_user_pinned_dishes_dish_id ON user_pinned_dishes (dish_id);
 CREATE INDEX IF NOT EXISTS idx_badges_slug ON badges (slug);
 CREATE INDEX IF NOT EXISTS idx_badges_category ON badges (category);
+CREATE INDEX IF NOT EXISTS idx_badges_tier ON badges (tier);
 CREATE INDEX IF NOT EXISTS idx_user_badges_badge_id ON user_badges (badge_id);
 
 -- 3.4. Sosyal Etkileşim (Social Domain)
@@ -109,6 +110,7 @@ CREATE INDEX IF NOT EXISTS idx_reports_reported_comment_id ON reports (reported_
 CREATE INDEX IF NOT EXISTS idx_reports_menu_id ON reports (menu_id);
 CREATE INDEX IF NOT EXISTS idx_contact_messages_status ON contact_messages (status);
 CREATE INDEX IF NOT EXISTS idx_contact_messages_user_id ON contact_messages (user_id);
+CREATE INDEX IF NOT EXISTS idx_contact_message_replies_msg_id ON contact_message_replies (contact_message_id);
 CREATE INDEX IF NOT EXISTS idx_notifications_user_id_created ON notifications (user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_push_subs_user_id ON push_subscriptions (user_id);
 CREATE INDEX IF NOT EXISTS idx_push_subs_city_id ON push_subscriptions (city_id);
