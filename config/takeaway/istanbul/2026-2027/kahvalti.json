@@ -7,17 +7,17 @@
   "packages": [
     {
       "id": 1,
-      "title": "Soğuk Sandviç",
+      "title": "AL GÖTÜR MENÜ 1",
       "items": [
         {
           "alternatives": [
             {
               "name": "Kaşarlı Soğuk Sandviç",
-              "gramaj": "1 Adet"
+              "gramaj": "1 Adet (Sandviç Ekmeği+100 g Kaşar+ Söğüş/Yeşillik)"
             },
             {
               "name": "Kaşarlı Salamlı Soğuk Sandviç",
-              "gramaj": "1 Adet"
+              "gramaj": "1 Adet (Sandviç Ekmeği+50 g Kaşar+ 50 g Piliç Salam + Söğüş+Yeşillik)"
             }
           ]
         },
@@ -25,15 +25,15 @@
           "alternatives": [
             {
               "name": "Süt",
-              "gramaj": "200 ml"
+              "gramaj": "1 Paket (200 ml)"
             },
             {
               "name": "Meyve Suyu",
-              "gramaj": "200 ml"
+              "gramaj": "1 Paket (200 ml)"
             },
             {
               "name": "Ayran",
-              "gramaj": "270-330 ml"
+              "gramaj": "1 Paket (270-330 ml)"
             }
           ]
         },
@@ -41,11 +41,15 @@
           "alternatives": [
             {
               "name": "Meyve",
-              "gramaj": "150-200 g"
-            },
+              "gramaj": "1 Adet (150-200 g)"
+            }
+          ]
+        },
+        {
+          "alternatives": [
             {
               "name": "Kek",
-              "gramaj": "En az 35 g"
+              "gramaj": "1 Paket (En az 35 g)"
             }
           ]
         },
@@ -60,8 +64,8 @@
         {
           "alternatives": [
             {
-              "name": "Su",
-              "gramaj": "500 ml"
+              "name": "500 ml Su",
+              "gramaj": "1 adet"
             }
           ]
         }
@@ -69,13 +73,13 @@
     },
     {
       "id": 2,
-      "title": "Gözleme",
+      "title": "AL GÖTÜR MENÜ 2",
       "items": [
         {
           "alternatives": [
             {
               "name": "Gözleme Çeşidi",
-              "gramaj": "1 Adet"
+              "gramaj": "1 Adet (1 Adet Yufka 150 g+100 g Beyaz Peynir/Patates/Ispanak)"
             }
           ]
         },
@@ -83,15 +87,15 @@
           "alternatives": [
             {
               "name": "Süt",
-              "gramaj": "200 ml"
+              "gramaj": "1 Paket (200 ml)"
             },
             {
               "name": "Meyve Suyu",
-              "gramaj": "200 ml"
+              "gramaj": "1 Paket (200 ml)"
             },
             {
               "name": "Ayran",
-              "gramaj": "270-330 ml"
+              "gramaj": "1 Paket (270-330 ml)"
             }
           ]
         },
@@ -99,11 +103,15 @@
           "alternatives": [
             {
               "name": "Meyve",
-              "gramaj": "150-200 g"
-            },
+              "gramaj": "1 Adet (150-200 g)"
+            }
+          ]
+        },
+        {
+          "alternatives": [
             {
               "name": "Kek",
-              "gramaj": "En az 35 g"
+              "gramaj": "1 Paket (En az 35 g)"
             }
           ]
         },
@@ -118,8 +126,8 @@
         {
           "alternatives": [
             {
-              "name": "Su",
-              "gramaj": "500 ml"
+              "name": "500 ml Su",
+              "gramaj": "1 adet"
             }
           ]
         }
@@ -127,7 +135,7 @@
     },
     {
       "id": 3,
-      "title": "Simit / Poğaça / Açma",
+      "title": "AL GÖTÜR MENÜ 3",
       "items": [
         {
           "alternatives": [
@@ -141,15 +149,15 @@
           "alternatives": [
             {
               "name": "Süt",
-              "gramaj": "200 ml"
+              "gramaj": "1 Paket (200 ml)"
             },
             {
               "name": "Meyve Suyu",
-              "gramaj": "200 ml"
+              "gramaj": "1 Paket (200 ml)"
             },
             {
               "name": "Ayran",
-              "gramaj": "270-330 ml"
+              "gramaj": "1 Paket (270-330 ml)"
             }
           ]
         },
@@ -157,7 +165,7 @@
           "alternatives": [
             {
               "name": "Krem/Labne Peynir",
-              "gramaj": "20 g"
+              "gramaj": "2 Adet Paket (2*20 g)"
             }
           ]
         },
@@ -165,11 +173,15 @@
           "alternatives": [
             {
               "name": "Meyve",
-              "gramaj": "150-200 g"
-            },
+              "gramaj": "1 Adet (150-200 g)"
+            }
+          ]
+        },
+        {
+          "alternatives": [
             {
               "name": "Kek",
-              "gramaj": "En az 35 g"
+              "gramaj": "1 Paket (En az 35 g)"
             }
           ]
         },
@@ -184,8 +196,8 @@
         {
           "alternatives": [
             {
-              "name": "Su",
-              "gramaj": "500 ml"
+              "name": "500 ml Su",
+              "gramaj": "1 adet"
             }
           ]
         }
@@ -193,21 +205,33 @@
     },
     {
       "id": 4,
-      "title": "Çorba & Hamur İşi",
+      "title": "AL GÖTÜR MENÜ 4",
       "items": [
         {
           "alternatives": [
             {
-              "name": "Çorba",
-              "gramaj": "250 ml"
+              "name": "Kaşarlı Tost",
+              "gramaj": "(yarım ekmek veya sandviç ekmeği + 100 g kaşar + ketçap + mayonez)"
+            },
+            {
+              "name": "Karışık Tost",
+              "gramaj": "(yarım ekmek veya sandviç ekmeği+50 g kaşar+ 50 g sucuk+ketçap+mayonez)"
             }
           ]
         },
         {
           "alternatives": [
             {
-              "name": "Simit/Poğaça/Açma",
-              "gramaj": "1 Adet"
+              "name": "Süt",
+              "gramaj": "1 Paket (200 ml)"
+            },
+            {
+              "name": "Meyve Suyu",
+              "gramaj": "1 Paket (200 ml)"
+            },
+            {
+              "name": "Ayran",
+              "gramaj": "1 Paket (270-330 ml)"
             }
           ]
         },
@@ -215,7 +239,15 @@
           "alternatives": [
             {
               "name": "Meyve",
-              "gramaj": "150-200 g"
+              "gramaj": "1 Adet (150-200 g)"
+            }
+          ]
+        },
+        {
+          "alternatives": [
+            {
+              "name": "Kek",
+              "gramaj": "1 Paket (En az 35 g)"
             }
           ]
         },
@@ -230,8 +262,8 @@
         {
           "alternatives": [
             {
-              "name": "Su",
-              "gramaj": "500 ml"
+              "name": "500 ml Su",
+              "gramaj": "1 Adet"
             }
           ]
         }
