@@ -289,9 +289,6 @@ impl ContentGuard {
             "bize iletebilir",
             "odullerden yararlanabilirsiniz",
             "kykyemek",
-            // Standart tabldot ikramları (su/ekmek bağımsız yemek slotu olarak eklenmesin)
-            "bardak su",
-            "ceyrek ekmek",
         ];
 
         for kw in blocked_keywords {

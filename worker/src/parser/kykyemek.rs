@@ -98,6 +98,14 @@ pub fn parse_kykyemek_html(
                 continue;
             }
 
+            let text_raw_lower = p.text().collect::<String>().to_lowercase();
+            if text_raw_lower.contains("bardak su")
+                || text_raw_lower.contains("çeyrek ekmek")
+                || text_raw_lower.contains("ceyrek ekmek")
+            {
+                continue;
+            }
+
             if p.value().attr("data-fastmenus").is_some()
                 || p.value()
                     .attr("onclick")
