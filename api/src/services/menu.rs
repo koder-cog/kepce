@@ -840,11 +840,13 @@ impl MenuService {
         Ok(result)
     }
 
-    /// Filtrelenmiş menüleri çeker (city_slug, date, dietary_type, year, month)
+    /// Filtrelenmiş menüleri çeker (city_slug, date, date_range, dietary_type, year, month).
+    #[allow(clippy::too_many_arguments)]
     pub async fn get_menus_by_filter(
         db: &DatabaseConnection,
         city_slug: Option<String>,
         date: Option<NaiveDate>,
+        date_range: Option<(NaiveDate, NaiveDate)>,
         dietary_type: Option<String>,
         year: Option<i32>,
         month: Option<u32>,
@@ -869,6 +871,10 @@ impl MenuService {
 
         if let Some(d) = date {
             query = query.filter(menus::Column::ServeDate.eq(d));
+        } else if let Some((start_date, end_date)) = date_range {
+            query = query
+                .filter(menus::Column::ServeDate.gte(start_date))
+                .filter(menus::Column::ServeDate.lte(end_date));
         } else if let (Some(y), Some(m)) = (year, month) {
             if let Some(start_date) = NaiveDate::from_ymd_opt(y, m, 1) {
                 let next_m = if m == 12 { 1 } else { m + 1 };
@@ -1238,6 +1244,28 @@ impl MenuService {
         }
 
         Ok(result)
+    }
+
+    /// Belirtilen şehir için verilen tarih aralığındaki onaylı menüleri çeker.
+    pub async fn get_menus_by_range(
+        db: &DatabaseConnection,
+        city_slug: &str,
+        start_date: NaiveDate,
+        end_date: NaiveDate,
+        dietary_type: Option<String>,
+        user_id: Option<uuid::Uuid>,
+    ) -> Result<Vec<MenuResponseDto>, MenuError> {
+        Self::get_menus_by_filter(
+            db,
+            Some(city_slug.to_string()),
+            None,
+            Some((start_date, end_date)),
+            dietary_type,
+            None,
+            None,
+            user_id,
+        )
+        .await
     }
 
     pub async fn get_archive_years(

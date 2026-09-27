@@ -123,6 +123,31 @@ Bir şehirde onaylı menü kaydı bulunan yılları listeler.
 GET /api/v1/menus/archive/years?city=:city_slug
 ```
 
+### Tarih Aralığına Göre Menü Listesi
+Belirtilen şehir için belirli bir tarih aralığındaki onaylı menü kayıtlarını çeker. Geliştirici projeleri ve toplu veri tüketimi için tasarlanmıştır.
+
+```http
+GET /api/v1/menus/range
+```
+
+#### Sorgu Parametreleri
+- `city` (metin, **zorunlu**): Şehir kısa adı (`istanbul`, `ankara` gibi).
+- `start_date` (metin, **zorunlu**): Başlangıç tarihi (`YYYY-MM-DD`, örn. `2026-09-01`).
+- `end_date` (metin, **zorunlu**): Bitiş tarihi (`YYYY-MM-DD`, örn. `2026-09-30`).
+- `dietary_type` (metin, isteğe bağlı): Diyet türü filtresi (`normal`, `celiac`).
+
+#### Doğrulama Kuralları
+- `city` parametresi zorunludur.
+- `start_date` ve `end_date` geçerli `YYYY-MM-DD` biçiminde olmalıdır.
+- `start_date`, `end_date` tarihinden sonra olamaz.
+- İki tarih arasındaki fark en fazla **31 gün** (tam bir takvim ayı) olabilir. Kural ihlallerinde `400 Bad Request` yanıtı döner.
+
+#### Örnek İstek
+```bash
+curl -X GET "https://kepce.org/api/v1/menus/range?city=istanbul&start_date=2026-09-01&end_date=2026-09-30" \
+  -H "Accept: application/json"
+```
+
 
 ## 2. Kullanıcı Etkileşim Uç Noktaları
 

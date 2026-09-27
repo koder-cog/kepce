@@ -739,6 +739,27 @@ function matchesCityStem(token, stem) {
   return false;
 }
 
+const RESERVED_NON_CITY_WORDS = new Set([
+  "burs", "bursu", "burslar", "kredi", "kredisi", "yurt", "yurdu", "yurtlar",
+  "kart", "karti", "yemek", "menu", "menusu", "fiyat", "kalori", "tabldot",
+  "sabah", "aksam", "oglen", "tarih", "giris", "cikis", "nobet", "nobetci"
+]);
+
+function levenshtein(a, b) {
+  const m = a.length;
+  const n = b.length;
+  const d = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+  for (let i = 0; i <= m; i += 1) d[i][0] = i;
+  for (let j = 0; j <= n; j += 1) d[0][j] = j;
+  for (let i = 1; i <= m; i += 1) {
+    for (let j = 1; j <= n; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+    }
+  }
+  return d[m][n];
+}
+
 /**
  * Verilen arama sorgusundan Türkiye şehri eşleştirmesi yapar.
  * 81 ilin resmi adını, slug'ını, yaygın kısaltmalarını (Afyon, Antep, Urfa, İzmit, Adapazarı)
@@ -781,6 +802,37 @@ export function resolveCityFromQuery(query) {
     if (tokens.some((t) => matchesCityStem(t, slug) || matchesCityStem(t, normName))) {
       return { slug, name: cityName };
     }
+  }
+
+  // 4. Yazım hatası toleransı (Fuzzy matching)
+  // Kullanıcı "istnbul", "ankra", "eskisehr" gibi küçük yazım hataları yaptığında
+  // 81 il adı ve yaygın şehir kısaltmaları üzerinden en yakın şehri bulur.
+  let bestCandidate = null;
+  let bestDistance = Infinity;
+
+  for (const token of tokens) {
+    if (token.length < 4 || RESERVED_NON_CITY_WORDS.has(token)) continue;
+    const maxAllowedDist = token.length >= 7 ? 2 : 1;
+
+    for (const [slug, cityName] of Object.entries(CITY_MAP)) {
+      const normName = normalizeTurkishText(cityName);
+      const targetLen = normName.length;
+      if (Math.abs(token.length - targetLen) > maxAllowedDist) continue;
+
+      const dist = Math.min(
+        levenshtein(token, slug),
+        levenshtein(token, normName)
+      );
+
+      if (dist <= maxAllowedDist && dist < bestDistance) {
+        bestDistance = dist;
+        bestCandidate = { slug, name: cityName };
+      }
+    }
+  }
+
+  if (bestCandidate) {
+    return bestCandidate;
   }
 
   return null;

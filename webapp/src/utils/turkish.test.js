@@ -135,4 +135,19 @@ describe('resolveCityFromQuery', () => {
     expect(resolveCityFromQuery('')).toBeNull();
     expect(resolveCityFromQuery(null)).toBeNull();
   });
+
+  it('küçük yazım hatalarında fuzzy eşleştirme ile doğru şehri çözer', () => {
+    expect(resolveCityFromQuery('istnbul kyk yemek')?.slug).toBe('istanbul');
+    expect(resolveCityFromQuery('ankra kyk menüsü')?.slug).toBe('ankara');
+    expect(resolveCityFromQuery('eskisehr tabldot')?.slug).toBe('eskisehir');
+    expect(resolveCityFromQuery('antlya yemek')?.slug).toBe('antalya');
+    expect(resolveCityFromQuery('izmr kyk')?.slug).toBe('izmir');
+  });
+
+  it('öğrenci/yurt terimlerinin (burs, kart vb.) şehirlere yanlış benzemesini (false positive) engeller', () => {
+    expect(resolveCityFromQuery('burs başvurusu kyk')).toBeNull();
+    expect(resolveCityFromQuery('kyk yemek kartı')).toBeNull();
+    expect(resolveCityFromQuery('yurt izin talebi')).toBeNull();
+  });
 });
+

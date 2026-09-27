@@ -18,6 +18,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/", get(get_menus))
         .route("/today", get(get_today))
         .route("/today/:city", get(get_today_city))
+        .route("/range", get(get_menus_range))
         .route("/months", get(crate::routes::public_api::get_menu_months))
         .route("/days", get(crate::routes::public_api::get_menu_days))
         .route("/index", get(crate::routes::public_api::get_menu_index))
@@ -73,6 +74,7 @@ async fn get_today(
         &db,
         filter.city,
         Some(today),
+        None,
         filter.dietary_type,
         None,
         None,
@@ -117,6 +119,7 @@ async fn get_menus(
         &db,
         query.city,
         parsed_date,
+        None,
         query.dietary_type,
         query.year,
         query.month,
@@ -141,6 +144,7 @@ async fn get_today_city(
         &db,
         Some(city),
         Some(today),
+        None,
         query.dietary_type,
         None,
         None,
@@ -149,6 +153,97 @@ async fn get_today_city(
     .await?;
     let is_private = user.is_some();
     crate::utils::response::cached_json_response_with_privacy(&headers, &menus, 300, is_private)
+}
+
+#[derive(Deserialize)]
+pub struct RangeQueryDto {
+    pub city: Option<String>,
+    pub start_date: Option<String>,
+    pub end_date: Option<String>,
+    pub dietary_type: Option<String>,
+}
+
+pub fn validate_range_params(
+    query: &RangeQueryDto,
+) -> Result<(String, NaiveDate, NaiveDate), AppError> {
+    let city_slug = match query.city.as_deref().map(str::trim) {
+        Some(s) if !s.is_empty() => s.to_string(),
+        _ => {
+            return Err(AppError::BadRequest(
+                "city parametresi zorunludur.".to_string(),
+            ))
+        }
+    };
+
+    let start_date_str = match query.start_date.as_deref().map(str::trim) {
+        Some(s) if !s.is_empty() => s,
+        _ => {
+            return Err(AppError::BadRequest(
+                "start_date parametresi zorunludur.".to_string(),
+            ))
+        }
+    };
+
+    let end_date_str = match query.end_date.as_deref().map(str::trim) {
+        Some(s) if !s.is_empty() => s,
+        _ => {
+            return Err(AppError::BadRequest(
+                "end_date parametresi zorunludur.".to_string(),
+            ))
+        }
+    };
+
+    let start_date = NaiveDate::parse_from_str(start_date_str, "%Y-%m-%d").map_err(|_| {
+        AppError::BadRequest("Geçersiz start_date formatı. YYYY-MM-DD kullanılmalıdır.".to_string())
+    })?;
+
+    let end_date = NaiveDate::parse_from_str(end_date_str, "%Y-%m-%d").map_err(|_| {
+        AppError::BadRequest("Geçersiz end_date formatı. YYYY-MM-DD kullanılmalıdır.".to_string())
+    })?;
+
+    if start_date > end_date {
+        return Err(AppError::BadRequest(
+            "start_date, end_date tarihinden sonra olamaz.".to_string(),
+        ));
+    }
+
+    let diff_days = (end_date - start_date).num_days();
+    if diff_days > 31 {
+        return Err(AppError::BadRequest(
+            "Tarih aralığı en fazla 31 gün olabilir.".to_string(),
+        ));
+    }
+
+    Ok((city_slug, start_date, end_date))
+}
+
+async fn get_menus_range(
+    State(db): State<sea_orm::DatabaseConnection>,
+    _key: OptionalApiKey,
+    OptionalUser(user): OptionalUser,
+    headers: http::HeaderMap,
+    Query(query): Query<RangeQueryDto>,
+) -> Result<axum::response::Response, AppError> {
+    let (city_slug, start_date, end_date) = validate_range_params(&query)?;
+
+    let user_id = user.as_ref().map(|u| u.id);
+    let menus = MenuService::get_menus_by_range(
+        &db,
+        &city_slug,
+        start_date,
+        end_date,
+        query.dietary_type,
+        user_id,
+    )
+    .await?;
+
+    let is_private = user.is_some();
+    let today = crate::utils::time::istanbul_today();
+    let cache_ttl = if end_date < today { 3600 } else { 300 };
+
+    crate::utils::response::cached_json_response_with_privacy(
+        &headers, &menus, cache_ttl, is_private,
+    )
 }
 
 #[derive(Deserialize)]
@@ -223,4 +318,126 @@ async fn vote_menu(
 
     VoteService::vote_menu(&db, menu_id, user.id, sentiment).await?;
     Ok(Json(()))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_range_missing_city() {
+        let q = RangeQueryDto {
+            city: None,
+            start_date: Some("2026-09-01".to_string()),
+            end_date: Some("2026-09-15".to_string()),
+            dietary_type: None,
+        };
+        let err = validate_range_params(&q).unwrap_err();
+        match err {
+            AppError::BadRequest(msg) => assert_eq!(msg, "city parametresi zorunludur."),
+            _ => panic!("Expected BadRequest"),
+        }
+
+        let q_empty = RangeQueryDto {
+            city: Some("   ".to_string()),
+            start_date: Some("2026-09-01".to_string()),
+            end_date: Some("2026-09-15".to_string()),
+            dietary_type: None,
+        };
+        let err_empty = validate_range_params(&q_empty).unwrap_err();
+        match err_empty {
+            AppError::BadRequest(msg) => assert_eq!(msg, "city parametresi zorunludur."),
+            _ => panic!("Expected BadRequest"),
+        }
+    }
+
+    #[test]
+    fn test_validate_range_missing_dates() {
+        let q_no_start = RangeQueryDto {
+            city: Some("istanbul".to_string()),
+            start_date: None,
+            end_date: Some("2026-09-15".to_string()),
+            dietary_type: None,
+        };
+        assert!(matches!(
+            validate_range_params(&q_no_start).unwrap_err(),
+            AppError::BadRequest(_)
+        ));
+
+        let q_no_end = RangeQueryDto {
+            city: Some("istanbul".to_string()),
+            start_date: Some("2026-09-01".to_string()),
+            end_date: None,
+            dietary_type: None,
+        };
+        assert!(matches!(
+            validate_range_params(&q_no_end).unwrap_err(),
+            AppError::BadRequest(_)
+        ));
+    }
+
+    #[test]
+    fn test_validate_range_invalid_date_format() {
+        let q = RangeQueryDto {
+            city: Some("istanbul".to_string()),
+            start_date: Some("01-09-2026".to_string()),
+            end_date: Some("2026-09-15".to_string()),
+            dietary_type: None,
+        };
+        let err = validate_range_params(&q).unwrap_err();
+        match err {
+            AppError::BadRequest(msg) => {
+                assert!(msg.contains("Geçersiz start_date formatı"));
+            }
+            _ => panic!("Expected BadRequest"),
+        }
+    }
+
+    #[test]
+    fn test_validate_range_start_after_end() {
+        let q = RangeQueryDto {
+            city: Some("istanbul".to_string()),
+            start_date: Some("2026-09-20".to_string()),
+            end_date: Some("2026-09-10".to_string()),
+            dietary_type: None,
+        };
+        let err = validate_range_params(&q).unwrap_err();
+        match err {
+            AppError::BadRequest(msg) => {
+                assert_eq!(msg, "start_date, end_date tarihinden sonra olamaz.");
+            }
+            _ => panic!("Expected BadRequest"),
+        }
+    }
+
+    #[test]
+    fn test_validate_range_exceeds_31_days() {
+        let q = RangeQueryDto {
+            city: Some("istanbul".to_string()),
+            start_date: Some("2026-09-01".to_string()),
+            end_date: Some("2026-10-03".to_string()), // 32 days
+            dietary_type: None,
+        };
+        let err = validate_range_params(&q).unwrap_err();
+        match err {
+            AppError::BadRequest(msg) => {
+                assert_eq!(msg, "Tarih aralığı en fazla 31 gün olabilir.");
+            }
+            _ => panic!("Expected BadRequest"),
+        }
+    }
+
+    #[test]
+    fn test_validate_range_valid_31_days() {
+        let q = RangeQueryDto {
+            city: Some("istanbul".to_string()),
+            start_date: Some("2026-09-01".to_string()),
+            end_date: Some("2026-10-02".to_string()), // Exactly 31 days
+            dietary_type: Some("normal".to_string()),
+        };
+        let (city, start, end) = validate_range_params(&q).unwrap();
+        assert_eq!(city, "istanbul");
+        assert_eq!(start, NaiveDate::from_ymd_opt(2026, 9, 1).unwrap());
+        assert_eq!(end, NaiveDate::from_ymd_opt(2026, 10, 2).unwrap());
+    }
 }

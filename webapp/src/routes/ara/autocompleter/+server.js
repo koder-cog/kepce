@@ -1,12 +1,13 @@
 import { json } from "@sveltejs/kit";
 import { env } from "$env/dynamic/private";
 import { suggestUnitCorrection } from "$lib/search/instantSolvers.js";
+import { resolveCityFromQuery } from "@/utils/turkish.js";
 
 async function fetchUpstreamSuggestions(q, motor, customFetch = fetch) {
   try {
     if (motor === "google") {
       const gRes = await customFetch(
-        `https://suggestqueries.google.com/complete/search?client=firefox&q=${encodeURIComponent(q)}`,
+        `https://suggestqueries.google.com/complete/search?client=firefox&hl=tr&q=${encodeURIComponent(q)}`,
         { signal: AbortSignal.timeout(2500) }
       );
       if (gRes.ok) {
@@ -18,7 +19,7 @@ async function fetchUpstreamSuggestions(q, motor, customFetch = fetch) {
     } else {
       // Varsayılan / DuckDuckGo tamamlayıcı yedeği
       const ddgRes = await customFetch(
-        `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}&type=list`,
+        `https://duckduckgo.com/ac/?q=${encodeURIComponent(q)}&type=list&kl=tr-tr`,
         { signal: AbortSignal.timeout(2500) }
       );
       if (ddgRes.ok) {
@@ -71,7 +72,16 @@ export async function GET({ url, fetch }) {
     suggestions = await fetchUpstreamSuggestions(q, motor, fetch);
   }
 
-  // 3. Birim veya hesaplama düzeltme önerisi varsa en başa ekle (örn: "50 g kaç lg" -> "50 g kaç kg")
+  // 3. Şehir yazım hatası varsa düzeltilmiş şehir menüsü önerisini ekle (örn: "istnbul" -> "İstanbul KYK Yemek Menüsü")
+  const matchedCity = resolveCityFromQuery(q);
+  if (matchedCity && !q.toLowerCase().includes(matchedCity.name.toLowerCase())) {
+    const suggestedCityQuery = `${matchedCity.name} KYK Yemek Menüsü`;
+    if (!suggestions.includes(suggestedCityQuery)) {
+      suggestions = [suggestedCityQuery, ...suggestions];
+    }
+  }
+
+  // 4. Birim veya hesaplama düzeltme önerisi varsa en başa ekle (örn: "50 g kaç lg" -> "50 g kaç kg")
   const unitCorrection = suggestUnitCorrection(q);
   if (unitCorrection && !suggestions.includes(unitCorrection.correctedQuery)) {
     suggestions = [unitCorrection.correctedQuery, ...suggestions];
