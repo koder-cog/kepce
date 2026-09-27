@@ -1389,4 +1389,74 @@ mod tests {
 
         assert!(res2.is_err());
     }
+
+    #[tokio::test]
+    async fn test_full_lifecycle_quarantine_to_rejected_to_approved() {
+        let base_temp = std::env::temp_dir().join(format!(
+            "kepce_test_lifecycle_{}",
+            uuid::Uuid::new_v4()
+        ));
+        let quarantine = base_temp.join("quarantine");
+        let ingest = base_temp.join("ingest");
+
+        let ref_id = "lifecycle_uuid_101";
+        let sub = make_test_submission(Some(ref_id.to_string()));
+
+        // 1. Karantinaya dosya bırak
+        let source_folder = quarantine.join("istanbul").join("2026").join(ref_id);
+        tokio::fs::create_dir_all(&source_folder).await.unwrap();
+        let source_file = source_folder.join("march_menu.pdf");
+        tokio::fs::write(&source_file, b"ilk yukleme icerigi")
+            .await
+            .unwrap();
+
+        // 2. Reddet: Karantinadan reddedilen arşivine taşınmalı
+        let reject_res = ModerationService::reject_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+        assert!(reject_res.is_ok());
+
+        let rejected_target = ingest
+            .join("reddedilen")
+            .join("istanbul")
+            .join(ref_id)
+            .join("march_menu.pdf");
+        assert!(rejected_target.exists());
+        assert!(!source_folder.exists());
+
+        // 3. Karar değiştirip onayla: Reddedilen arşivinden bekleyen dizinine taşınmalı
+        let approve_res = ModerationService::release_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+        assert!(approve_res.is_ok());
+
+        let approved_target = ingest
+            .join("anonim")
+            .join("bekleyen")
+            .join("istanbul")
+            .join("march_menu.pdf");
+        assert!(approved_target.exists());
+        assert_eq!(
+            tokio::fs::read(&approved_target).await.unwrap(),
+            b"ilk yukleme icerigi"
+        );
+
+        // Reddedilen arşivindeki klasör tamamen temizlenmiş olmalı
+        assert!(!ingest.join("reddedilen").join("istanbul").join(ref_id).exists());
+
+        let _ = tokio::fs::remove_dir_all(&base_temp).await;
+    }
+
+    #[test]
+    fn test_invalid_submission_status_error_format() {
+        let err = ModerationError::InvalidSubmissionStatus("corrupted_status".to_string());
+        assert!(format!("{:?}", err).contains("corrupted_status"));
+    }
 }
+

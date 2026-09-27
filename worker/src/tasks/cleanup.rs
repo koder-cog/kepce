@@ -417,4 +417,68 @@ mod tests {
 
         let _ = tokio::fs::remove_dir_all(&base_temp).await;
     }
+
+    #[tokio::test]
+    async fn test_cleanup_preserves_unexpired_files() {
+        let base_temp = std::env::temp_dir().join(format!(
+            "kepce_test_unexpired_{}",
+            uuid::Uuid::new_v4()
+        ));
+        let quarantine = base_temp.join("quarantine");
+        let rejected = base_temp.join("rejected");
+
+        let active_dir = quarantine.join("antalya").join("2026").join("active_uuid");
+        tokio::fs::create_dir_all(&active_dir).await.unwrap();
+        let active_file = active_dir.join("today_menu.pdf");
+        tokio::fs::write(&active_file, b"guncel ve silinmemesi gereken dosya")
+            .await
+            .unwrap();
+
+        // 30 günlük TTL (dosya henüz yeni oluşturulduğu için süresi dolmamıştır)
+        let report = clean_expired_files_inner(
+            &quarantine,
+            &rejected,
+            Duration::from_secs(30 * 86400),
+            Duration::from_secs(90 * 86400),
+            Duration::from_secs(300),
+            false,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(report.quarantine_files_deleted, 0);
+        assert_eq!(report.quarantine_bytes_freed, 0);
+        assert_eq!(report.empty_dirs_removed, 0);
+        assert!(active_file.exists());
+        assert!(active_dir.exists());
+
+        let _ = tokio::fs::remove_dir_all(&base_temp).await;
+    }
+
+    #[tokio::test]
+    async fn test_cleanup_handles_nonexistent_base_directories_gracefully() {
+        let base_temp = std::env::temp_dir().join(format!(
+            "kepce_test_nonexistent_{}",
+            uuid::Uuid::new_v4()
+        ));
+        let nonexistent_quarantine = base_temp.join("no_quarantine");
+        let nonexistent_rejected = base_temp.join("no_rejected");
+
+        // Dizinler fiziksel olarak mevcut değilken hata patlamamalı, sıfır raporla dönmeli
+        let report = clean_expired_files_inner(
+            &nonexistent_quarantine,
+            &nonexistent_rejected,
+            Duration::from_secs(3600),
+            Duration::from_secs(3600),
+            Duration::ZERO,
+            false,
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(report.quarantine_files_deleted, 0);
+        assert_eq!(report.rejected_files_deleted, 0);
+        assert_eq!(report.empty_dirs_removed, 0);
+    }
 }
+
