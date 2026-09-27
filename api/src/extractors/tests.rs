@@ -30,21 +30,43 @@ mod tests {
         name: String,
     }
 
+    fn mock_test_config() -> Config {
+        Config {
+            database_url: "postgres://mock:mock@localhost/mock".to_string(),
+            jwt_secret: "test_jwt_secret_key_12345678901234567890".to_string(),
+            cors_origin: "http://localhost:5173".to_string(),
+            gemini_api_key: None,
+            gemini_model: "gemini-flash-latest".to_string(),
+            bot_directive: String::new(),
+            initial_admin_email: None,
+            initial_admin_password: None,
+            cookie_secure: false,
+            resend_api_key: "mock_key".to_string(),
+            base_url: "http://localhost:5173".to_string(),
+            google_client_id: None,
+            google_client_secret: None,
+            google_redirect_uri: None,
+            searxng_url: None,
+            smtp_host: None,
+            smtp_port: 587,
+            smtp_username: None,
+            smtp_password: None,
+            internal_ingest_secret: None,
+        }
+    }
+
     async fn mock_app_state() -> AppState {
-        let config = Config::from_env();
-        let db = sea_orm::Database::connect(&config.database_url)
-            .await
-            .unwrap();
+        let config = mock_test_config();
+        let db = sea_orm::DatabaseConnection::Disconnected;
         AppState {
             db: db.clone(),
             config: Arc::new(config),
             rate_limiter: Arc::new(RateLimiter::new()),
-            usage_tracker: Arc::new(UsageTracker::new(db.clone())),
+            usage_tracker: Arc::new(UsageTracker::new(db)),
         }
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_validated_json_valid() {
         let payload = serde_json::json!({
             "email": "test@kepce.org",
@@ -64,7 +86,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_validated_json_invalid_email() {
         let payload = serde_json::json!({
             "email": "not_an_email",
@@ -83,7 +104,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_validated_json_invalid_name() {
         let payload = serde_json::json!({
             "email": "test@kepce.org",
@@ -102,7 +122,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_header() {
         let state = mock_app_state().await;
         let user_id = Uuid::new_v4();
@@ -138,7 +157,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_cookie() {
         let state = mock_app_state().await;
         let user_id = Uuid::new_v4();
@@ -174,7 +192,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_auth_extractor_jwt_missing() {
         let state = mock_app_state().await;
         let req = Request::builder().body(axum::body::Body::empty()).unwrap();
@@ -190,7 +207,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "requires live postgres database"]
     async fn test_api_key_extractor_missing() {
         let state = mock_app_state().await;
         let req = Request::builder().body(axum::body::Body::empty()).unwrap();
