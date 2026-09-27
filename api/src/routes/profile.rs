@@ -72,6 +72,9 @@ impl From<ModerationError> for AppError {
                 tracing::error!("Menü gönderimi dosya serbest bırakma hatası: {}", msg);
                 AppError::Internal(format!("Menü dosyaları serbest bırakılamadı: {}", msg))
             }
+            ModerationError::InvalidSubmissionStatus(s) => {
+                AppError::BadRequest(format!("Geçersiz gönderim durumu: {}", s))
+            }
         }
     }
 }

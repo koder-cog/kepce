@@ -1,5 +1,6 @@
 pub mod backup_export;
 pub mod backup_ingest;
+pub mod cleanup;
 pub mod comment_generator;
 pub mod dish_reconciler;
 pub mod enrich_takeaway;

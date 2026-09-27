@@ -36,6 +36,7 @@ pub enum ModerationError {
     InvalidMonth(String),
     DateParseError(String),
     FileReleaseError(String),
+    InvalidSubmissionStatus(String),
 }
 
 pub struct ModerationService;
@@ -789,6 +790,13 @@ impl ModerationService {
         submission_id: i32,
         new_status: &str,
     ) -> Result<menu_submissions::Model, ModerationError> {
+        let valid_statuses = ["pending", "approved", "rejected"];
+        if !valid_statuses.contains(&new_status) {
+            return Err(ModerationError::InvalidSubmissionStatus(
+                new_status.to_string(),
+            ));
+        }
+
         let sub = menu_submissions::Entity::find_by_id(submission_id)
             .one(db)
             .await
@@ -796,12 +804,15 @@ impl ModerationService {
             .ok_or(ModerationError::SubmissionNotFound)?;
 
         let was_not_approved = sub.status != "approved";
+        let was_not_rejected = sub.status != "rejected";
 
-        // Onay geçişinde ÖNCE dosyaları serbest bırak (bkz. plan Bölüm 7.3).
+        // Onay veya red geçişinde ÖNCE dosyaları güvene al.
         // Taşıma başarısız olursa DB durumu güncellenmez; yönetici tekrar deneyebilir.
-        // Böylece "onaylandı ama dosya serbest bırakılmadı" tutarsızlığı önlenir.
+        // Böylece veritabanı ile dosya sistemi arasında tutarsızlık önlenir.
         if new_status == "approved" && was_not_approved {
             Self::release_submission_files(&sub).await?;
+        } else if new_status == "rejected" && was_not_rejected {
+            Self::reject_submission_files(&sub).await?;
         }
 
         let mut active: menu_submissions::ActiveModel = sub.clone().into();
@@ -831,9 +842,22 @@ impl ModerationService {
 
     /// Onaylanan bir menü gönderiminin karantina dosyalarını worker'ın işlediği
     /// `data/menuler/{anonim|kullanici}/bekleyen/{sehir}/` dizinine taşır.
+    /// Karantinada bulunamazsa soft archive (`reddedilen`) dizininden kurtarır.
     /// Dosya taşıma başarısız olursa hata döner ve DB durumu güncellenmez.
     async fn release_submission_files(
         sub: &menu_submissions::Model,
+    ) -> Result<(), ModerationError> {
+        let quarantine_base = std::env::var("MENU_QUARANTINE_DIR")
+            .unwrap_or_else(|_| "uploads/quarantine/menus".to_string());
+        let ingest_base =
+            std::env::var("MENU_INGEST_DIR").unwrap_or_else(|_| "/app/data/menuler".to_string());
+        Self::release_submission_files_inner(sub, &quarantine_base, &ingest_base).await
+    }
+
+    async fn release_submission_files_inner(
+        sub: &menu_submissions::Model,
+        quarantine_base: &str,
+        ingest_base: &str,
     ) -> Result<(), ModerationError> {
         let storage_ref = match sub.storage_ref.as_deref() {
             Some(s) if !s.trim().is_empty() => s,
@@ -846,30 +870,45 @@ impl ModerationService {
             }
         };
 
-        let quarantine_base = std::env::var("MENU_QUARANTINE_DIR")
-            .unwrap_or_else(|_| "uploads/quarantine/menus".to_string());
-        let source_dir = std::path::PathBuf::from(&quarantine_base)
+        if storage_ref.contains("..") || sub.city_slug.contains("..") {
+            return Err(ModerationError::FileReleaseError(
+                "Güvenlik ihlali: geçersiz dosya yolu tespit edildi.".to_string(),
+            ));
+        }
+
+        let quarantine_dir = std::path::PathBuf::from(quarantine_base)
             .join(&sub.city_slug)
             .join(sub.year.to_string())
             .join(storage_ref);
 
-        if !source_dir.exists() {
-            tracing::warn!(
-                "Gönderim #{} karantina dizini bulunamadı: {:?} (zaten taşınmış olabilir).",
+        let rejected_dir = std::path::PathBuf::from(ingest_base)
+            .join("reddedilen")
+            .join(&sub.city_slug)
+            .join(storage_ref);
+
+        let source_dir = if quarantine_dir.exists() {
+            quarantine_dir
+        } else if rejected_dir.exists() {
+            tracing::info!(
+                "Gönderim #{}: Karantina dizini bulunamadı, reddedilen arşivinden kurtarılıyor ({:?}).",
                 sub.id,
-                source_dir
+                rejected_dir
+            );
+            rejected_dir
+        } else {
+            tracing::warn!(
+                "Gönderim #{} için karantina veya reddedilen dizini bulunamadı (zaten taşınmış olabilir).",
+                sub.id
             );
             return Ok(());
-        }
+        };
 
-        let ingest_base =
-            std::env::var("MENU_INGEST_DIR").unwrap_or_else(|_| "/app/data/menuler".to_string());
         let folder = if sub.user_id.is_some() {
             "kullanici"
         } else {
             "anonim"
         };
-        let target_dir = std::path::PathBuf::from(&ingest_base)
+        let target_dir = std::path::PathBuf::from(ingest_base)
             .join(folder)
             .join("bekleyen")
             .join(&sub.city_slug);
@@ -877,6 +916,123 @@ impl ModerationService {
         tokio::fs::create_dir_all(&target_dir).await.map_err(|e| {
             ModerationError::FileReleaseError(format!(
                 "Hedef dizin oluşturulamadı ({:?}): {}",
+                target_dir, e
+            ))
+        })?;
+
+        let mut entries = tokio::fs::read_dir(&source_dir).await.map_err(|e| {
+            ModerationError::FileReleaseError(format!(
+                "Kaynak dizin okunamadı ({:?}): {}",
+                source_dir, e
+            ))
+        })?;
+
+        let mut moved = 0usize;
+        while let Some(entry) = entries.next_entry().await.map_err(|e| {
+            ModerationError::FileReleaseError(format!("Dizin girdisi okunamadı: {}", e))
+        })? {
+            let path = entry.path();
+            if !path.is_file() {
+                continue;
+            }
+            let file_name = match path.file_name() {
+                Some(n) => n.to_os_string(),
+                None => continue,
+            };
+
+            // Hedefte aynı isimli dosya varsa çakışmayı önlemek için UUID soneki ekle
+            let mut dest = target_dir.join(&file_name);
+            if dest.exists() {
+                let stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("menu");
+                let ext = path.extension().and_then(|e| e.to_str());
+                let short_ref = &storage_ref[..8.min(storage_ref.len())];
+                let unique_name = match ext {
+                    Some(e) => format!("{}_{}.{}", stem, short_ref, e),
+                    None => format!("{}_{}", stem, short_ref),
+                };
+                dest = target_dir.join(unique_name);
+            }
+
+            if let Err(e) = tokio::fs::rename(&path, &dest).await {
+                tracing::warn!("Dosya taşınamadı ({:?}), kopyalama deneniyor: {}", path, e);
+                tokio::fs::copy(&path, &dest).await.map_err(|ce| {
+                    ModerationError::FileReleaseError(format!(
+                        "Dosya taşınamadı ({:?}): {}",
+                        path, ce
+                    ))
+                })?;
+                let _ = tokio::fs::remove_file(&path).await;
+            }
+            moved += 1;
+        }
+
+        let _ = tokio::fs::remove_dir_all(&source_dir).await;
+
+        tracing::info!(
+            "Gönderim #{} onaylandı: {} dosya {:?} dizinine taşındı.",
+            sub.id,
+            moved,
+            target_dir
+        );
+        Ok(())
+    }
+
+    /// Reddedilen bir menü gönderiminin karantina dosyalarını
+    /// `data/menuler/reddedilen/{sehir}/{storage_ref}/` soft archive dizinine taşır,
+    /// 90 günlük saklama süresi için mtime günceller ve kaynak karantina klasörünü siler.
+    /// Dosya taşıma başarısız olursa hata döner ve DB durumu güncellenmez.
+    async fn reject_submission_files(sub: &menu_submissions::Model) -> Result<(), ModerationError> {
+        let quarantine_base = std::env::var("MENU_QUARANTINE_DIR")
+            .unwrap_or_else(|_| "uploads/quarantine/menus".to_string());
+        let ingest_base =
+            std::env::var("MENU_INGEST_DIR").unwrap_or_else(|_| "/app/data/menuler".to_string());
+        Self::reject_submission_files_inner(sub, &quarantine_base, &ingest_base).await
+    }
+
+    async fn reject_submission_files_inner(
+        sub: &menu_submissions::Model,
+        quarantine_base: &str,
+        ingest_base: &str,
+    ) -> Result<(), ModerationError> {
+        let storage_ref = match sub.storage_ref.as_deref() {
+            Some(s) if !s.trim().is_empty() => s,
+            _ => {
+                tracing::warn!(
+                    "Gönderim #{} için storage_ref yok; karantina dosyaları taşınamadı (eski kayıt olabilir).",
+                    sub.id
+                );
+                return Ok(());
+            }
+        };
+
+        if storage_ref.contains("..") || sub.city_slug.contains("..") {
+            return Err(ModerationError::FileReleaseError(
+                "Güvenlik ihlali: geçersiz dosya yolu tespit edildi.".to_string(),
+            ));
+        }
+
+        let source_dir = std::path::PathBuf::from(quarantine_base)
+            .join(&sub.city_slug)
+            .join(sub.year.to_string())
+            .join(storage_ref);
+
+        if !source_dir.exists() {
+            tracing::warn!(
+                "Gönderim #{} karantina dizini bulunamadı: {:?} (zaten taşınmış veya silinmiş olabilir).",
+                sub.id,
+                source_dir
+            );
+            return Ok(());
+        }
+
+        let target_dir = std::path::PathBuf::from(ingest_base)
+            .join("reddedilen")
+            .join(&sub.city_slug)
+            .join(storage_ref);
+
+        tokio::fs::create_dir_all(&target_dir).await.map_err(|e| {
+            ModerationError::FileReleaseError(format!(
+                "Reddedilen hedef dizini oluşturulamadı ({:?}): {}",
                 target_dir, e
             ))
         })?;
@@ -911,11 +1067,19 @@ impl ModerationService {
                 })?;
                 let _ = tokio::fs::remove_file(&path).await;
             }
+
+            // KVKK & Retention: 90 günlük saklama süresinin red anından başlaması için mtime güncelle
+            if let Ok(file) = std::fs::File::open(&dest) {
+                let _ = file.set_modified(std::time::SystemTime::now());
+            }
+
             moved += 1;
         }
 
+        let _ = tokio::fs::remove_dir_all(&source_dir).await;
+
         tracing::info!(
-            "Gönderim #{} onaylandı: {} dosya {:?} dizinine taşındı.",
+            "Gönderim #{} reddedildi: {} dosya {:?} dizinine taşındı.",
             sub.id,
             moved,
             target_dir
@@ -970,4 +1134,259 @@ pub async fn create_menu(
         .insert(db)
         .await
         .map_err(ModerationError::DatabaseError)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use shared::entities::menu_submissions;
+
+    fn make_test_submission(storage_ref: Option<String>) -> menu_submissions::Model {
+        menu_submissions::Model {
+            id: 42,
+            user_id: None,
+            city_slug: "istanbul".to_string(),
+            year: 2026,
+            month: 3,
+            status: "pending".to_string(),
+            notes: None,
+            storage_ref,
+            created_at: None,
+            updated_at: None,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_reject_submission_files_moves_to_reddedilen_and_cleans_source() {
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_reject_{}", uuid::Uuid::new_v4()));
+        let quarantine = base_temp.join("quarantine");
+        let ingest = base_temp.join("ingest");
+
+        let ref_id = "test_uuid_ref_123";
+        let sub = make_test_submission(Some(ref_id.to_string()));
+
+        let source_folder = quarantine.join("istanbul").join("2026").join(ref_id);
+        tokio::fs::create_dir_all(&source_folder).await.unwrap();
+        let dummy_file = source_folder.join("menu.pdf");
+        tokio::fs::write(&dummy_file, b"test PDF content")
+            .await
+            .unwrap();
+
+        let res = ModerationService::reject_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res.is_ok());
+
+        let target_file = ingest
+            .join("reddedilen")
+            .join("istanbul")
+            .join(ref_id)
+            .join("menu.pdf");
+        assert!(target_file.exists());
+        assert_eq!(
+            tokio::fs::read(&target_file).await.unwrap(),
+            b"test PDF content"
+        );
+
+        // Kaynak klasör temizlenmiş olmalı
+        assert!(!source_folder.exists());
+
+        // İkinci çağrı idempotent olmalı (Ok dönmeli)
+        let res2 = ModerationService::reject_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+        assert!(res2.is_ok());
+
+        let _ = tokio::fs::remove_dir_all(&base_temp).await;
+    }
+
+    #[tokio::test]
+    async fn test_release_submission_files_moves_to_bekleyen_and_cleans_source() {
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_release_{}", uuid::Uuid::new_v4()));
+        let quarantine = base_temp.join("quarantine");
+        let ingest = base_temp.join("ingest");
+
+        let ref_id = "test_uuid_ref_456";
+        let sub = make_test_submission(Some(ref_id.to_string()));
+
+        let source_folder = quarantine.join("istanbul").join("2026").join(ref_id);
+        tokio::fs::create_dir_all(&source_folder).await.unwrap();
+        let dummy_file = source_folder.join("menu.jpg");
+        tokio::fs::write(&dummy_file, b"test JPEG content")
+            .await
+            .unwrap();
+
+        let res = ModerationService::release_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res.is_ok());
+
+        let target_file = ingest
+            .join("anonim")
+            .join("bekleyen")
+            .join("istanbul")
+            .join("menu.jpg");
+        assert!(target_file.exists());
+        assert_eq!(
+            tokio::fs::read(&target_file).await.unwrap(),
+            b"test JPEG content"
+        );
+
+        // Kaynak klasör temizlenmiş olmalı
+        assert!(!source_folder.exists());
+
+        let _ = tokio::fs::remove_dir_all(&base_temp).await;
+    }
+
+    #[tokio::test]
+    async fn test_reject_submission_files_handles_missing_storage_ref() {
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_legacy_{}", uuid::Uuid::new_v4()));
+        let sub = make_test_submission(None);
+
+        let res = ModerationService::reject_submission_files_inner(
+            &sub,
+            base_temp.join("quarantine").to_str().unwrap(),
+            base_temp.join("ingest").to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_release_submission_files_recovers_from_reddedilen_archive() {
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_recovery_{}", uuid::Uuid::new_v4()));
+        let quarantine = base_temp.join("quarantine");
+        let ingest = base_temp.join("ingest");
+
+        let ref_id = "test_uuid_recover_789";
+        let sub = make_test_submission(Some(ref_id.to_string()));
+
+        // Dosya karantinada DEĞİL, önceden reddedilen arşivinde bulunuyor
+        let rejected_folder = ingest.join("reddedilen").join("istanbul").join(ref_id);
+        tokio::fs::create_dir_all(&rejected_folder).await.unwrap();
+        let file_path = rejected_folder.join("recovered_menu.pdf");
+        tokio::fs::write(&file_path, b"kurtarilan menu verisi")
+            .await
+            .unwrap();
+
+        let res = ModerationService::release_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res.is_ok());
+
+        let target_file = ingest
+            .join("anonim")
+            .join("bekleyen")
+            .join("istanbul")
+            .join("recovered_menu.pdf");
+        assert!(target_file.exists());
+        assert_eq!(
+            tokio::fs::read(&target_file).await.unwrap(),
+            b"kurtarilan menu verisi"
+        );
+
+        // Kaynak reddedilen klasörü temizlenmiş olmalı
+        assert!(!rejected_folder.exists());
+
+        let _ = tokio::fs::remove_dir_all(&base_temp).await;
+    }
+
+    #[tokio::test]
+    async fn test_release_submission_files_avoids_collision_overwrite() {
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_collision_{}", uuid::Uuid::new_v4()));
+        let quarantine = base_temp.join("quarantine");
+        let ingest = base_temp.join("ingest");
+
+        let ref_id = "uuid_collision_test_123456";
+        let sub = make_test_submission(Some(ref_id.to_string()));
+
+        // Hedefte aynı isimli bir dosya zaten var
+        let target_dir = ingest.join("anonim").join("bekleyen").join("istanbul");
+        tokio::fs::create_dir_all(&target_dir).await.unwrap();
+        let existing_dest = target_dir.join("menu.pdf");
+        tokio::fs::write(&existing_dest, b"ilk dosya - ezilmemeli")
+            .await
+            .unwrap();
+
+        // Karantinaya aynı dosya adıyla ikinci bir yükleme yapılmış
+        let source_folder = quarantine.join("istanbul").join("2026").join(ref_id);
+        tokio::fs::create_dir_all(&source_folder).await.unwrap();
+        let source_file = source_folder.join("menu.pdf");
+        tokio::fs::write(&source_file, b"ikinci dosya - farkli ad almali")
+            .await
+            .unwrap();
+
+        let res = ModerationService::release_submission_files_inner(
+            &sub,
+            quarantine.to_str().unwrap(),
+            ingest.to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res.is_ok());
+
+        // İlk dosya bozulmadan yerinde durmalı
+        assert_eq!(
+            tokio::fs::read(&existing_dest).await.unwrap(),
+            b"ilk dosya - ezilmemeli"
+        );
+
+        // İkinci dosya benzersizleştirilmiş adla kaydedilmiş olmalı
+        let renamed_dest = target_dir.join(format!("menu_{}.pdf", &ref_id[..8]));
+        assert!(renamed_dest.exists());
+        assert_eq!(
+            tokio::fs::read(&renamed_dest).await.unwrap(),
+            b"ikinci dosya - farkli ad almali"
+        );
+
+        let _ = tokio::fs::remove_dir_all(&base_temp).await;
+    }
+
+    #[tokio::test]
+    async fn test_path_traversal_is_blocked() {
+        let base_temp =
+            std::env::temp_dir().join(format!("kepce_test_traversal_{}", uuid::Uuid::new_v4()));
+
+        let mut sub = make_test_submission(Some("../../etc".to_string()));
+        let res = ModerationService::release_submission_files_inner(
+            &sub,
+            base_temp.join("quarantine").to_str().unwrap(),
+            base_temp.join("ingest").to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res.is_err());
+
+        sub.storage_ref = Some("valid_uuid".to_string());
+        sub.city_slug = "../evil".to_string();
+        let res2 = ModerationService::reject_submission_files_inner(
+            &sub,
+            base_temp.join("quarantine").to_str().unwrap(),
+            base_temp.join("ingest").to_str().unwrap(),
+        )
+        .await;
+
+        assert!(res2.is_err());
+    }
 }

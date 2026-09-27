@@ -36,6 +36,22 @@ async fn main() -> anyhow::Result<()> {
         return Ok(());
     }
 
+    // Otomatik Veri Saklama ve Dosya Temizliği (Retention Cleanup - OLM)
+    // Karantinada 30 günden uzun süre bekleyen yetim dosyaları ve reddedilen
+    // menü arşivinde 90 günü dolduran içerikleri temizler.
+    let retention_dry_run = std::env::var("WORKER_RETENTION_DRY_RUN").is_ok();
+    if let Err(e) = tasks::cleanup::clean_expired_files(retention_dry_run).await {
+        tracing::error!(
+            "[RETENTION] Başlangıç dosya saklama temizleme hatası: {:?}",
+            e
+        );
+    }
+    if std::env::var("WORKER_RETENTION_CLEANUP").is_ok() && std::env::var("WORKER_ONESHOT").is_ok()
+    {
+        tracing::info!("[RETENTION] Tek seferlik saklama temizliği tamamlandı. Çıkış yapılıyor.");
+        return Ok(());
+    }
+
     // One-shot lokal dosya ingest (admin/kullanıcı Excel-PDF drop-zone).
     // Triggered only when WORKER_LOCAL_INGEST is set; safe to re-run.
     // Başarılı dosyalar vault'a taşınır, hatalılar hatali/ klasörüne düşer.
@@ -500,6 +516,13 @@ async fn main() -> anyhow::Result<()> {
                 if let Err(e) = tasks::sanitizer::sanitize_and_repair_database(&db_reconcile).await
                 {
                     tracing::error!("[RECONCILE] Gece sistem temizleme hatası: {:?}", e);
+                }
+
+                tracing::info!(
+                    "--- [RECONCILE] GECE DOSYA SAKLAMA VE ARŞİV TEMİZLEME BAŞLIYOR ---"
+                );
+                if let Err(e) = tasks::cleanup::clean_expired_files(false).await {
+                    tracing::error!("[RECONCILE] Gece dosya saklama temizleme hatası: {:?}", e);
                 }
             }
 
