@@ -1,6 +1,7 @@
 use chrono::Datelike;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::time::Duration;
 
@@ -118,31 +119,19 @@ async fn main() -> anyhow::Result<()> {
         .build()?;
 
     let pool = KykYemekClientPool::from_env(default_client);
-    let mut session = pool
-        .acquire_session()
+    let mut session_cache: HashMap<Option<usize>, ActiveKykSession> = HashMap::new();
+
+    // 1. Keşif: İlk geçerli oturumu al ve illeri öğren
+    let mut session = obtain_ready_session(&pool, &mut session_cache)
+        .await
         .ok_or_else(|| anyhow::anyhow!("Kullanılabilir proxy oturumu bulunamadı"))?;
 
     tracing::info!(
-        "Oturum alındı (çıkış: {}). Doğrulama token'ı ve aktif iller alınıyor...",
+        "İlk oturum hazır (çıkış: {}). Doğrulama token'ı ve aktif iller alınıyor...",
         session.endpoint_label
     );
 
-    let (token, discovered_cities) = match fetch_kykyemek_session(&session.client).await {
-        Ok((tok, cities)) => (tok, cities),
-        Err(e) => {
-            tracing::warn!("İlk oturumda hata ({:?}), failover deneniyor...", e);
-            pool.trip_session_ban(&session, "Oturum başlangıcı hatası")
-                .await;
-            let new_s = pool
-                .acquire_session()
-                .ok_or_else(|| anyhow::anyhow!("Yedek proxy oturumu bulunamadı"))?;
-            let (tok, cities) = fetch_kykyemek_session(&new_s.client).await?;
-            session = new_s;
-            (tok, cities)
-        }
-    };
-
-    session.token = Some(token);
+    let (_, discovered_cities) = fetch_kykyemek_session(&session.client).await?;
 
     let active_slugs = if let Some(ref slug) = target_city {
         vec![slug.clone()]
@@ -175,6 +164,11 @@ async fn main() -> anyhow::Result<()> {
     let mut all_errors = Vec::new();
 
     for slug in active_slugs {
+        // Her şehir başında torbadan sıradaki oturumu çek (yükü 10 proxy'ye homojen dağıt)
+        if let Some(new_s) = obtain_ready_session(&pool, &mut session_cache).await {
+            session = new_s;
+        }
+
         tracing::info!(
             "Şehir taranıyor: {} (çıkış: {})...",
             slug,
@@ -188,6 +182,7 @@ async fn main() -> anyhow::Result<()> {
             scrape_and_collect(
                 &pool,
                 &mut session,
+                &mut session_cache,
                 &slug,
                 "breakfast",
                 shift,
@@ -202,6 +197,7 @@ async fn main() -> anyhow::Result<()> {
             scrape_and_collect(
                 &pool,
                 &mut session,
+                &mut session_cache,
                 &slug,
                 "dinner",
                 shift,
@@ -293,9 +289,45 @@ async fn main() -> anyhow::Result<()> {
     Ok(())
 }
 
+async fn obtain_ready_session(
+    pool: &KykYemekClientPool,
+    session_cache: &mut HashMap<Option<usize>, ActiveKykSession>,
+) -> Option<ActiveKykSession> {
+    for _ in 0..15 {
+        if let Some(s) = pool.acquire_session() {
+            if let Some(cached) = session_cache.get(&s.proxy_idx) {
+                if cached.token.is_some() {
+                    return Some(cached.clone());
+                }
+            }
+
+            match fetch_kykyemek_session(&s.client).await {
+                Ok((tok, _)) => {
+                    let mut ready = s.clone();
+                    ready.token = Some(tok);
+                    session_cache.insert(s.proxy_idx, ready.clone());
+                    return Some(ready);
+                }
+                Err(e) => {
+                    tracing::warn!(
+                        "Oturum hazırlama hatası ({:?}): {}. Proxy devre dışı bırakılıyor.",
+                        e,
+                        s.endpoint_label
+                    );
+                    pool.trip_session_ban(&s, "Oturum hazırlama hatası").await;
+                }
+            }
+        } else {
+            break;
+        }
+    }
+    None
+}
+
 async fn scrape_and_collect(
     pool: &KykYemekClientPool,
     session: &mut ActiveKykSession,
+    session_cache: &mut HashMap<Option<usize>, ActiveKykSession>,
     slug: &str,
     meal_type: &str,
     shift: &str,
@@ -455,24 +487,23 @@ async fn scrape_and_collect(
                     return;
                 } else if status == reqwest::StatusCode::FORBIDDEN
                     || status == reqwest::StatusCode::TOO_MANY_REQUESTS
+                    || status.is_server_error()
                 {
                     tracing::warn!(
-                        "Oturum engeli algılandı (HTTP {}): {} [{}]. Failover deneniyor...",
+                        "Sunucu veya engel hatası (HTTP {}): {} [{}]. Failover deneniyor...",
                         status,
                         slug,
                         session.endpoint_label
                     );
+                    session_cache.remove(&session.proxy_idx);
                     pool.trip_session_ban(session, &format!("HTTP {}", status))
                         .await;
-                    if let Some(mut new_s) = pool.acquire_session() {
+                    if let Some(new_s) = obtain_ready_session(pool, session_cache).await {
                         tracing::info!(
                             "Oturum devredildi: {} -> {}",
                             session.endpoint_label,
                             new_s.endpoint_label
                         );
-                        if let Ok((tok, _)) = fetch_kykyemek_session(&new_s.client).await {
-                            new_s.token = Some(tok);
-                        }
                         *session = new_s;
                     } else {
                         tracing::error!("Havuzdaki tüm proxy oturumları tükendi.");
@@ -489,7 +520,26 @@ async fn scrape_and_collect(
                 }
             }
             Err(e) => {
-                tracing::warn!("İstek hatası ({:?}), deneme {}", e, attempt + 1);
+                tracing::warn!(
+                    "Ağ/proxy bağlantı hatası ({:?}): {} [{}]. Failover deneniyor...",
+                    e,
+                    slug,
+                    session.endpoint_label
+                );
+                session_cache.remove(&session.proxy_idx);
+                pool.trip_session_ban(session, &format!("Bağlantı hatası: {:?}", e))
+                    .await;
+                if let Some(new_s) = obtain_ready_session(pool, session_cache).await {
+                    tracing::info!(
+                        "Oturum devredildi: {} -> {}",
+                        session.endpoint_label,
+                        new_s.endpoint_label
+                    );
+                    *session = new_s;
+                } else {
+                    tracing::error!("Havuzdaki tüm proxy oturumları tükendi.");
+                    return;
+                }
             }
         }
 
