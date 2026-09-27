@@ -163,7 +163,16 @@ async fn main() -> anyhow::Result<()> {
         vec!["0"]
     };
 
-    let mut collected_menus: Vec<MenuDto> = Vec::new();
+    let ingest_client = reqwest::Client::builder()
+        .timeout(Duration::from_secs(60))
+        .build()?;
+    let secret_val = ingest_secret.unwrap_or_default();
+
+    let mut grand_total_received = 0;
+    let mut grand_total_inserted = 0;
+    let mut grand_total_updated = 0;
+    let mut grand_total_skipped = 0;
+    let mut all_errors = Vec::new();
 
     for slug in active_slugs {
         tracing::info!(
@@ -171,6 +180,8 @@ async fn main() -> anyhow::Result<()> {
             slug,
             session.endpoint_label
         );
+
+        let mut city_menus: Vec<MenuDto> = Vec::new();
 
         for shift in &shifts {
             // 1. Kahvaltı
@@ -180,7 +191,7 @@ async fn main() -> anyhow::Result<()> {
                 &slug,
                 "breakfast",
                 shift,
-                &mut collected_menus,
+                &mut city_menus,
             )
             .await;
 
@@ -194,92 +205,88 @@ async fn main() -> anyhow::Result<()> {
                 &slug,
                 "dinner",
                 shift,
-                &mut collected_menus,
+                &mut city_menus,
             )
             .await;
 
             let delay = rand::thread_rng().gen_range(1500..=3000);
             tokio::time::sleep(Duration::from_millis(delay)).await;
         }
-    }
 
-    tracing::info!(
-        "Kazıma tamamlandı. Toplam {} gün/öğün menüsü toplandı.",
-        collected_menus.len()
-    );
-
-    if dry_run {
-        println!();
-        println!("=== DRY RUN RAPORU ===");
-        println!("Toplanan menü sayısı: {}", collected_menus.len());
-        if let Some(first) = collected_menus.first() {
-            println!("Örnek Menü:");
-            println!("{}", serde_json::to_string_pretty(first)?);
+        if city_menus.is_empty() {
+            tracing::warn!("{} için menü bulunamadı.", slug);
+            continue;
         }
-        return Ok(());
-    }
 
-    if collected_menus.is_empty() {
-        tracing::warn!("Toplanan menü bulunamadı, aktarım atlanıyor.");
-        return Ok(());
-    }
+        if dry_run {
+            println!(
+                "=== DRY RUN: {} === ({} gün/öğün menüsü)",
+                slug,
+                city_menus.len()
+            );
+            if let Some(first) = city_menus.first() {
+                println!("{}", serde_json::to_string_pretty(first)?);
+            }
+            continue;
+        }
 
-    tracing::info!("Veriler Ingest API'sine aktarılıyor: {}...", ingest_url);
-
-    let ingest_client = reqwest::Client::builder()
-        .timeout(Duration::from_secs(60))
-        .build()?;
-
-    let secret_val = ingest_secret.unwrap_or_default();
-    let mut total_received = 0;
-    let mut total_inserted = 0;
-    let mut total_updated = 0;
-    let mut total_skipped = 0;
-    let mut all_errors = Vec::new();
-
-    // Büyük veri paketlerinde Axum / Nginx / Caddy gövde sınırına çarpmamak
-    // ve tek bir hata durumunda tüm taramayı kaybetmemek için 150'lik paketlerle aktar
-    for chunk in collected_menus.chunks(150) {
+        // Şehir bülteni bittiği anda Ingest API'sine aktar (Pipelined Ingest)
         let payload = KykyemekIngestRequest {
-            menus: chunk.to_vec(),
+            menus: city_menus,
             source_type: Some("kykyemek".to_string()),
         };
 
-        let resp = ingest_client
+        match ingest_client
             .post(&ingest_url)
             .header("X-Internal-Token", &secret_val)
             .header("Content-Type", "application/json")
             .json(&payload)
             .send()
-            .await?;
-
-        let status = resp.status();
-        let text = resp.text().await?;
-
-        if !status.is_success() {
-            anyhow::bail!("Ingest API HTTP {} döndürdü: {}", status, text);
-        }
-
-        if let Ok(dto) = serde_json::from_str::<IngestResponseDto>(&text) {
-            total_received += dto.total_received;
-            total_inserted += dto.total_inserted;
-            total_updated += dto.total_updated;
-            total_skipped += dto.total_skipped;
-            all_errors.extend(dto.errors);
+            .await
+        {
+            Ok(resp) => {
+                let status = resp.status();
+                if status.is_success() {
+                    let text = resp.text().await.unwrap_or_default();
+                    if let Ok(dto) = serde_json::from_str::<IngestResponseDto>(&text) {
+                        tracing::info!(
+                            "[{}] Aktarıldı -> Alınan: {}, Eklenen: {}, Güncellenen: {}, Atlanan: {}",
+                            slug,
+                            dto.total_received,
+                            dto.total_inserted,
+                            dto.total_updated,
+                            dto.total_skipped
+                        );
+                        grand_total_received += dto.total_received;
+                        grand_total_inserted += dto.total_inserted;
+                        grand_total_updated += dto.total_updated;
+                        grand_total_skipped += dto.total_skipped;
+                        all_errors.extend(dto.errors);
+                    }
+                } else {
+                    let err_text = resp.text().await.unwrap_or_default();
+                    tracing::error!("[{}] Ingest API HTTP {} hatası verdi: {}", slug, status, err_text);
+                }
+            }
+            Err(e) => {
+                tracing::error!("[{}] Ingest API bağlantı hatası: {:?}", slug, e);
+            }
         }
     }
 
-    tracing::info!(
-        "Ingest Başarılı! Toplam Alınan: {}, Eklenen: {}, Güncellenen: {}, Atlanan: {}, Hatalar: {}",
-        total_received,
-        total_inserted,
-        total_updated,
-        total_skipped,
-        all_errors.len()
-    );
-    if !all_errors.is_empty() {
-        for err in all_errors {
-            tracing::warn!("API Uyarısı: {}", err);
+    if !dry_run {
+        tracing::info!(
+            "Tüm illerin aktarımı tamamlandı! Toplam Alınan: {}, Eklenen: {}, Güncellenen: {}, Atlanan: {}, Hatalar: {}",
+            grand_total_received,
+            grand_total_inserted,
+            grand_total_updated,
+            grand_total_skipped,
+            all_errors.len()
+        );
+        if !all_errors.is_empty() {
+            for err in all_errors {
+                tracing::warn!("API Uyarısı: {}", err);
+            }
         }
     }
 
