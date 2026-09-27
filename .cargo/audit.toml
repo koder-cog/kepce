@@ -1,0 +1,7 @@
+[advisories]
+ignore = [
+    # Marvin attack: upstream RSA crate has no fixed release yet. Kepce uses ES256 (ECDSA P-256) and HS256 for JWT/VAPID, not RSA PKCS#1 v1.5 decryption.
+    "RUSTSEC-2023-0071",
+    # rkyv is an uncompiled transitive optional metadata dependency of rust_decimal/sea-orm.
+    "RUSTSEC-2026-0235",
+]

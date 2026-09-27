@@ -9,6 +9,7 @@
 #   4) Rust: stray binary guard
 #   5) Webapp: svelte-check + vitest + production build
 #   6) SSR smoke testi (gerçek node sunucusu üzerinde)
+#   7) Güvenlik: cargo audit + npm audit
 #
 # Kullanım: ./scripts/ci-local.sh
 # Çıkış kodu: 0 = hepsi geçti, 1 = en az bir adım başarısız
@@ -34,7 +35,7 @@ report() {
 section() { echo -e "\n${BLUE}${BOLD}=== $1 ===${NC}"; }
 
 # ------------------------------------------------------------------------------
-section "1/6 Rust: fmt"
+section "1/7 Rust: fmt"
 # ------------------------------------------------------------------------------
 FMT_OUT=$(cargo fmt --all -- --check 2>&1)
 if [ -n "$FMT_OUT" ]; then
@@ -44,7 +45,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "2/6 Rust: clippy"
+section "2/7 Rust: clippy"
 # ------------------------------------------------------------------------------
 # Gerçek CI ile parite (ci.yml: "Run Clippy Lints"): --all-targets (test kodunu da
 # lintler) + -D warnings (uyarı = hata). Böylece yerelde yeşil alıp CI'da clippy
@@ -58,7 +59,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "3/6 Rust: test"
+section "3/7 Rust: test"
 # ------------------------------------------------------------------------------
 TEST_OUT=$(cargo test --workspace 2>&1)
 if echo "$TEST_OUT" | grep -qE "test result: .*FAILED|^error"; then
@@ -69,7 +70,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "4/6 Rust: stray binary guard"
+section "4/7 Rust: stray binary guard"
 # ------------------------------------------------------------------------------
 # CI'daki (ci.yml: "Stray Binary Guard") ile aynı kontrol: fixtures dışında
 # *.pdf/*.xlsx/*.xls/*.exe bulunmamalı — yanlışlıkla commit'lenen ikili dosyaları
@@ -91,7 +92,7 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "5/6 Webapp: check + test + build"
+section "5/7 Webapp: check + test + build"
 # ------------------------------------------------------------------------------
 cd webapp || exit 1
 
@@ -122,7 +123,7 @@ fi
 cd ..
 
 # ------------------------------------------------------------------------------
-section "6/6 SSR smoke testi"
+section "6/7 SSR smoke testi"
 # ------------------------------------------------------------------------------
 SMOKE_PORT=3987
 API_INTERNAL=http://127.0.0.1:59999 nohup env PORT=$SMOKE_PORT HOST=127.0.0.1 node webapp/build/index.js > /tmp/kepce-ci-smoke.log 2>&1 &
@@ -147,6 +148,29 @@ if smoke "/sitemap.xml" 200; then report "smoke: sitemap" true 200; else report 
 if smoke "/rss.xml" 200; then report "smoke: rss feed" true 200; else report "smoke: rss feed" false "-"; fi
 
 kill $SMOKE_PID 2>/dev/null
+
+# ------------------------------------------------------------------------------
+section "7/7 Güvenlik: cargo audit + npm audit"
+# ------------------------------------------------------------------------------
+if command -v cargo-audit >/dev/null 2>&1 || cargo audit --version >/dev/null 2>&1; then
+    AUDIT_OUT=$(cargo audit 2>&1)
+    AUDIT_RC=$?
+    if [ "$AUDIT_RC" -eq 0 ]; then
+        report "cargo audit" true "0 zafiyet"
+    else
+        report "cargo audit" false "$(echo "$AUDIT_OUT" | grep -E 'error:|Crate:' | head -3 | tr '\n' ' ')"
+    fi
+else
+    report "cargo audit" true "atlanıyor (cargo-audit kurulu değil)"
+fi
+
+NPM_AUDIT_OUT=$(cd webapp && npm audit --audit-level=high 2>&1)
+NPM_AUDIT_RC=$?
+if [ "$NPM_AUDIT_RC" -eq 0 ]; then
+    report "npm audit" true "0 yüksek/kritik zafiyet"
+else
+    report "npm audit" false "$(echo "$NPM_AUDIT_OUT" | grep -E 'Severity:' | head -3 | tr '\n' ' ')"
+fi
 
 # ------------------------------------------------------------------------------
 section "ÖZET"

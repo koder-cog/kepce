@@ -95,9 +95,15 @@ jobs:
 
       - name: Telegram Bildirimi (Hata Durumu)
         if: failure()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ADMIN_CHAT_ID: ${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_ACTOR: ${{ github.actor }}
         run: |
-          if [ -n "${{ secrets.TELEGRAM_BOT_TOKEN }}" ] && [ -n "${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}" ]; then
-            curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+          if [ -n "$TELEGRAM_BOT_TOKEN" ] && [ -n "$TELEGRAM_ADMIN_CHAT_ID" ]; then
+            curl -s -X POST "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
               -H "Content-Type: application/json" \
-              -d "{\"chat_id\": \"${{ secrets.TELEGRAM_ADMIN_CHAT_ID }}\", \"text\": \"[CI/CD ALARM] Kepçe Deploy Başarısız Oldu!\n\n• Branch: \`${{ github.ref_name }}\`\n• Commit: \`${{ github.sha }}\`\n• Yapan: ${{ github.actor }}\", \"parse_mode\": \"Markdown\"}"
+              -d "{\"chat_id\": \"${TELEGRAM_ADMIN_CHAT_ID}\", \"text\": \"[CI/CD ALARM] Kepçe Deploy Başarısız Oldu!\n\n• Branch: \`${GITHUB_REF_NAME}\`\n• Commit: \`${GITHUB_SHA}\`\n• Yapan: ${GITHUB_ACTOR}\", \"parse_mode\": \"Markdown\"}"
           fi

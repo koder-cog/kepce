@@ -99,11 +99,12 @@ export function highlightQuery(text, query) {
   const tokens = query
     .trim()
     .split(/\s+/)
-    .filter((t) => t.length > 1 && !t.startsWith("!"));
+    .filter((t) => t.length > 1 && !t.startsWith("!"))
+    .slice(0, 10);
   if (tokens.length === 0) return escapeHtml(text);
 
   const escapedTokens = tokens.map((t) =>
-    t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
+    t.slice(0, 50).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
   );
   const regex = new RegExp(`(${escapedTokens.join("|")})`, "gi");
 
