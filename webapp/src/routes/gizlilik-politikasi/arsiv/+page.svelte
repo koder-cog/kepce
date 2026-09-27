@@ -7,7 +7,7 @@
 </script>
 
 <Seo
-  title="Gizlilik Politikası Arşivi - Kepçe"
+  title="Gizlilik Politikası Arşivi | Kepçe"
   description="Kepçe gizlilik politikası ve KVKK metni geçmiş sürümleri ve değişiklik kayıtları."
   noindex={true}
 />

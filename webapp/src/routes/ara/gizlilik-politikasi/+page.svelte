@@ -22,7 +22,7 @@
   <article class="content-page">
     <header class="content-page__header">
       <h1 class="content-page__title">
-        Gizlilik Politikası (KVKK Aydınlatma Metni)
+        Gizlilik Politikası ve Aydınlatma Metni
       </h1>
       <div class="content-page__meta">
         <time class="content-page__date">Yürürlük Tarihi: 13 Eylül 2026</time>

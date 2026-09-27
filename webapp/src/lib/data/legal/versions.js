@@ -1,12 +1,12 @@
 /**
  * Yasal metin sürüm kaydı
  *
- * Koşullar/Gizlilik metinlerinde değişiklik 30 gün sonra yürürlüğe girdiği
- * için her değişiklik yeni bir girdi olarak eklenir:
+ * Koşullar ve Gizlilik metinlerinde değişiklikler aksi belirtilmedikçe
+ * yayımlandığı tarihte yürürlüğe girer:
  *   1. Mevcut girdiden `current: true` bayrağını kaldır.
  *   2. Yeni tarihli girdiyi `current: true` ile listenin SONUNA ekle.
  *   3. Eski sürümün tam metni lib/data/legal/ altında tarihli bir modülde
- *      saklanır (tam metin arşivi büyüdükçe buradan servis edilir).
+ *      saklanır (tam metin arşivi buradan servis edilir).
  */
 export const LEGAL_VERSIONS = {
   'gizlilik-politikasi': [
@@ -28,8 +28,13 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260920',
       version: '2026.09.20',
-      current: true,
       note: '7499 sayılı Kanun ile güncellenen KVKK m. 9 (standart sözleşme m. 9/4-c ve sözleşmenin ifası m. 9/6-b) dayanakları netleştirildi; Fransa/Marsilya bulut veri merkezi teyit edildi.',
+    },
+    {
+      slug: '20260927',
+      version: '2026.09.27',
+      current: true,
+      note: 'Doğal ve şeffaf dil revizyonu; özellik odaklı veri toplama açıklaması, kullanıcı menü yüklemeleri lisansı, 5651 silinen içerik saklama dengesi ve uyar-kaldır şikayet gizliliği eklendi.',
     },
   ],
   'kullanim-kosullari': [
@@ -51,8 +56,13 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260920',
       version: '2026.09.20',
-      current: true,
       note: 'FSEK Ek m. 8 veri tabanı yapımcısı hakkı ve TTK m. 55 haksız rekabet sınırları pekiştirildi; TBK m. 115 alerjen ve diyet sorumluluk dengesi ile Fransa/Marsilya sunucu konumu teyit edildi.',
+    },
+    {
+      slug: '20260927',
+      version: '2026.09.27',
+      current: true,
+      note: 'Doğal dil revizyonu; kullanıcı menü yüklemeleri lisansı, FSEK Ek m. 8 alıntılama ve scraping sınırları, turnike/fiş fiyat önceliği ve uyar-kaldır şikayet gizliliği eklendi.',
     },
   ],
 };

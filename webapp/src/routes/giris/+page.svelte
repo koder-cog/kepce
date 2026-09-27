@@ -110,7 +110,7 @@
 </script>
 
 <Seo
-  title="Giriş Yap - Kepçe"
+  title="Giriş Yap | Kepçe"
   description="Kepçe hesabınıza giriş yapın, favori yemeklerinizi kaydedin, menülere yorum yapın ve bildirimleri takip edin."
 />
 
@@ -121,10 +121,16 @@
       title={"403: Zaten Buradasın"}
       desc={`@${user.username} olarak zaten giriş yapmış durumdasın. Başka bir hesapla girmek istiyorsan önce çıkış yapmalısın.`}
     >
-      <button type="button" class="btn btn--secondary btn--squish" onclick={handleGoBack}>Önceki sayfaya dön</button>
+      <button
+        type="button"
+        class="btn btn--secondary btn--squish"
+        onclick={handleGoBack}>Önceki sayfaya dön</button
+      >
       <a href="/" data-link class="btn btn--secondary btn--squish">Ana sayfa</a>
-      <button type="button" class="btn btn--primary btn--squish" onclick={handleLogout}
-        >Çıkış yap</button
+      <button
+        type="button"
+        class="btn btn--primary btn--squish"
+        onclick={handleLogout}>Çıkış yap</button
       >
     </EmptyState>
   </div>

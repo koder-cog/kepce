@@ -36,6 +36,10 @@
   let emailSecurity = $state(false);
   let enablePushNotifications = $state(false);
 
+  let consentTerms = $state(false);
+  let consentPrivacy = $state(false);
+  let consentCrossBorder = $state(false);
+
   let errors = $state({});
   let errorMsg = $state("");
   let isLoading = $state(false);
@@ -170,6 +174,10 @@
       return;
     }
 
+    if (!consentTerms || !consentPrivacy || !consentCrossBorder) {
+      return;
+    }
+
     errors = newErrors;
     errorMsg = newErrorMsg;
     isLoading = true;
@@ -227,7 +235,7 @@
 </script>
 
 <Seo
-  title="Kayıt Ol - Kepçe"
+  title="Kayıt Ol | Kepçe"
   description="Ücretsiz Kepçe hesabı oluşturun, yurt yemeklerini değerlendirin, yorum yapın ve menü takibi yapın."
 />
 
@@ -443,8 +451,7 @@
           <Dropdown options={cityOptions} bind:value={selectedCity} />
         </div>
         <div class="form-help">
-          Eğer bulunulan şehir için menü yoksa varsayılan olarak İstanbul ya da
-          en son seçilen şehir gösterilir.
+          Seçilen şehir ana sayfada öncelikli olarak gösterilir.
         </div>
       </div>
 
@@ -498,11 +505,10 @@
 
           <label class="c-list-row c-list-row--clickable">
             <div class="c-list-row__content">
-              <span class="c-list-row__title">Öğün bildirimleri (Web Push)</span
-              >
+              <span class="c-list-row__title">Öğün bildirimleri</span>
               <span class="c-list-row__desc"
-                >Günün menüsü açıklandığında tarayıcınıza anlık bildirim gelsin</span
-              >
+                >Günün menüsü açıklandığında anlık bildirim al
+              </span>
             </div>
             <div class="c-list-row__control">
               <input
@@ -520,22 +526,65 @@
 
       <div class="register-submit-group">
         <div class="legal-consents">
-          <p class="u-text-sm u-color-secondary u-mb-md">
-            Hesap oluşturarak Kepçe'nin <a
-              href="/kullanim-kosullari"
-              target="_blank">Kullanım Koşulları</a
-            >nı ve
-            <a href="/gizlilik-politikasi" target="_blank"
-              >Gizlilik Politikası</a
-            >nı (KVKK Aydınlatma Metni) okuduğunuzu ve verilerinizin yurt dışındaki
-            sunucularda barındırılmasına açık rıza verdiğinizi kabul edersiniz.
-          </p>
+          <label class="form-switch-row">
+            <input
+              type="checkbox"
+              class="c-input-hidden"
+              bind:checked={consentTerms}
+            />
+            <div class="c-switch">
+              <div class="c-switch__handle"></div>
+            </div>
+            <span class="form-switch-row__text">
+              <a
+                href="/kullanim-kosullari"
+                target="_blank"
+                onclick={(e) => e.stopPropagation()}>Kullanım Koşulları</a
+              > metnini okudum ve kabul ediyorum
+            </span>
+          </label>
+
+          <label class="form-switch-row">
+            <input
+              type="checkbox"
+              class="c-input-hidden"
+              bind:checked={consentPrivacy}
+            />
+            <div class="c-switch">
+              <div class="c-switch__handle"></div>
+            </div>
+            <span class="form-switch-row__text">
+              <a
+                href="/gizlilik-politikasi"
+                target="_blank"
+                onclick={(e) => e.stopPropagation()}>Gizlilik Politikası</a
+              > ve aydınlatma bildirimini okudum
+            </span>
+          </label>
+
+          <label class="form-switch-row">
+            <input
+              type="checkbox"
+              class="c-input-hidden"
+              bind:checked={consentCrossBorder}
+            />
+            <div class="c-switch">
+              <div class="c-switch__handle"></div>
+            </div>
+            <span class="form-switch-row__text">
+              Kişisel verilerimin Fransa/Marsilya konumundaki sunucularda
+              barındırılmasına açık rıza veriyorum
+            </span>
+          </label>
         </div>
 
         <button
           type="submit"
           class="btn btn--primary btn--large auth-submit u-w-full"
-          disabled={isLoading}
+          disabled={isLoading ||
+            !consentTerms ||
+            !consentPrivacy ||
+            !consentCrossBorder}
         >
           {isLoading ? "Hesap oluşturuluyor..." : "Hesap oluştur"}
         </button>

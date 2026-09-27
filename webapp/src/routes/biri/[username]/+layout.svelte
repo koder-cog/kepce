@@ -275,9 +275,7 @@
         ...pinnedBadges.map((b, idx) =>
           renderBadgeCard(b, true, idx, pinnedBadges.length, isMax),
         ),
-        ...unpinnedBadges.map((b) =>
-          renderBadgeCard(b, false, -1, 0, isMax),
-        ),
+        ...unpinnedBadges.map((b) => renderBadgeCard(b, false, -1, 0, isMax)),
       ].join("");
 
       const descText =
@@ -732,7 +730,7 @@
 </script>
 
 <Seo
-  title={profile ? `@${safeNickname} - Kepçe` : "Kullanıcı Profili - Kepçe"}
+  title={profile ? `@${safeNickname} - Kepçe` : "Kullanıcı Profili | Kepçe"}
   description={safeBio ||
     `${safeNickname} adlı kullanıcının Kepçe öğrenci profili ve yemek yorumları.`}
   image={`https://kepce.org/api/v1/public/og/user/${username}`}
@@ -830,7 +828,8 @@
 
           {#if profile.level_progress?.title || profile.karma_score !== undefined}
             <div class="profile-intro__flair-rank">
-              {profile.level_progress?.title || "düz tabldotçu"} ({profile.karma_score ?? 0})
+              {profile.level_progress?.title || "düz tabldotçu"} ({profile.karma_score ??
+                0})
             </div>
           {/if}
 

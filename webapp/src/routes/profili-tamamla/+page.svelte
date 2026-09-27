@@ -132,8 +132,7 @@
             <Dropdown options={cityOptions} bind:value={selectedCity} />
           </div>
           <div class="form-help">
-            Eğer bulunulan şehir için menü yoksa varsayılan olarak seçtiğin
-            şehir gösterilir.
+            Seçilen şehir ana sayfada öncelikli olarak gösterilir.
           </div>
         </div>
 

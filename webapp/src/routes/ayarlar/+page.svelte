@@ -462,15 +462,24 @@
       return;
     }
     if (nickname.length < 3 || nickname.length > 25) {
-      showToast("Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.", "error");
+      showToast(
+        "Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.",
+        "error",
+      );
       return;
     }
     if (RESERVED_NAMES.includes(nickname.toLowerCase())) {
-      showToast("Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.", "error");
+      showToast(
+        "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.",
+        "error",
+      );
       return;
     }
     if (!USERNAME_RE.test(nickname)) {
-      showToast("Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.", "error");
+      showToast(
+        "Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.",
+        "error",
+      );
       return;
     }
     if (!nicknamePasswordInput) {
@@ -572,7 +581,7 @@
 </script>
 
 <Seo
-  title="Ayarlar - Kepçe"
+  title="Ayarlar | Kepçe"
   description="Kepçe hesap, bildirim ve görünüm ayarları."
   noindex={true}
 />
@@ -596,7 +605,8 @@
         <label class="form-label" for="new-nickname">Yeni kullanıcı adı</label>
       </div>
       <span class="form-help u-mb-md u-display-block">
-        En az 3, en fazla 25 karakter. Harf, rakam, alt çizgi ve tire kullanılabilir.
+        En az 3, en fazla 25 karakter. Harf, rakam, alt çizgi ve tire
+        kullanılabilir.
       </span>
       <div class="form-group form-group--floating">
         <input
@@ -965,7 +975,10 @@
 
       <!-- Animasyon efektleri -->
       <div class="c-list-row c-list-row--tall">
-        <label for="settings-animations-toggle" class="c-list-row__info u-cursor-pointer">
+        <label
+          for="settings-animations-toggle"
+          class="c-list-row__info u-cursor-pointer"
+        >
           <div class="c-list-row__title">Animasyon efektleri</div>
         </label>
         <div class="c-list-row__control u-flex u-align-center u-gap-sm">
@@ -981,7 +994,10 @@
           >
             {@html icon("info", 20)}
           </button>
-          <label for="settings-animations-toggle" class="u-flex u-align-center u-cursor-pointer">
+          <label
+            for="settings-animations-toggle"
+            class="u-flex u-align-center u-cursor-pointer"
+          >
             <input
               type="checkbox"
               id="settings-animations-toggle"

@@ -9,7 +9,7 @@
 </svelte:head>
 
 <ContentPage 
-  title="Gizlilik Politikası (KVKK Aydınlatma Metni)" 
+  title="Gizlilik Politikası ve Aydınlatma Metni" 
   dateLabel={`Arşivlenmiş sürüm tarihi: ${data.versionData.version}`}
   isArchived={true}
   archiveLink="/gizlilik-politikasi/arsiv"

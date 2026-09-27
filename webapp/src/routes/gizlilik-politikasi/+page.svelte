@@ -1,18 +1,18 @@
 <script>
   import ContentPage from "@/components/layout/ContentPage.svelte";
-  import CurrentContent from "$lib/data/legal/gizlilik-politikasi/20260920.svelte";
+  import CurrentContent from "$lib/data/legal/gizlilik-politikasi/20260927.svelte";
   import Seo from "@/components/ui/Seo.svelte";
 </script>
 
 <Seo
-  title="Gizlilik Politikası (KVKK) - Kepçe"
+  title="Gizlilik Politikası | Kepçe"
   description="Kepçe gizlilik politikası, KVKK aydınlatma metni, veri işleme ilkeleri ve çerez politikası."
   image="https://kepce.org/api/v1/public/og/page/gizlilik-politikasi"
 />
 
 <ContentPage
-  title="Gizlilik Politikası (KVKK Aydınlatma Metni)"
-  dateLabel="Son güncelleme: 2026.09.20"
+  title="Gizlilik Politikası ve Aydınlatma Metni"
+  dateLabel="Son güncelleme: 2026.09.27"
   archiveLink="/gizlilik-politikasi/arsiv"
 >
   <CurrentContent />
