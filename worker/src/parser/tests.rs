@@ -283,8 +283,17 @@ mod tests {
         assert!(result_ist.is_some());
         let pkgs = result_ist.unwrap();
         assert_eq!(pkgs.len(), 1);
-        assert!(pkgs[0].0.contains("Soğuk Sandviç") || pkgs[0].0.contains("Al Götür"));
+        assert_eq!(pkgs[0].0, "1. Soğuk Sandviç");
         assert!(!pkgs[0].1.is_empty());
+        // Su kaleminin yalın ad ve gramaj ayrımını doğrula
+        let has_clean_water = pkgs[0].1.iter().any(|slot| {
+            slot.iter()
+                .any(|c| c.name == "Su" && c.amount.as_deref() == Some("500 ml"))
+        });
+        assert!(
+            has_clean_water,
+            "Su kalemi yalın 'Su' ve '500 ml' gramajına sahip olmalı"
+        );
 
         // Konfigürasyonu olmayan bir il (örn: Bayburt) için uydurma veri üretilmez (None döner)
         let result_bayburt = parse_takeaway_menu("Al Götür 1", "bayburt", "breakfast");

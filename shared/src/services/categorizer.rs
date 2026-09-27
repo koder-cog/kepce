@@ -323,4 +323,121 @@ mod tests {
             Some("SÜRÜLEBİLİR ÇİKOLATA".to_string())
         );
     }
+
+    /// İstanbul 2026-2027 resmi pano tavan fiyat ve Al Götür listesi kurallarını doğrular.
+    #[test]
+    fn test_2026_2027_istanbul_board_categories() {
+        // Bazlama tostlar ve generic tost ayrımı
+        assert_eq!(
+            categorize_dish("Kaşarlı Bazlama Tost"),
+            Some("KAŞARLI BAZLAMA TOST".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kaşarlı Tost"),
+            Some("KAŞARLI TOST".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Dana Etli Sucuklu Bazlama Tost"),
+            Some("DANA ETLİ SUCUKLU BAZLAMA TOST".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Sucuklu Tost"),
+            Some("DANA ETLİ SUCUKLU TOST".to_string())
+        );
+
+        // Atom sandviç
+        assert_eq!(
+            categorize_dish("Atom Sandviç"),
+            Some("ATOM SANDVİÇ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kaşarlı Soğuk Sandviç"),
+            Some("KAŞARLI SOĞUK SANDVİÇ".to_string())
+        );
+
+        // Döner ve ciğer (Kemiksiz Et Yemekleri şemsiyesi)
+        assert_eq!(
+            categorize_dish("Arnavut Ciğeri"),
+            Some("KEMİKSİZ ET YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Yaprak Ciğer"),
+            Some("KEMİKSİZ ET YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Et Döner"),
+            Some("KEMİKSİZ ET YEMEKLERİ".to_string())
+        );
+
+        // Tavuk döner (Kemiksiz Izgara/Kızartma Tavuk Yemekleri şemsiyesi)
+        assert_eq!(
+            categorize_dish("Tavuk Döner"),
+            Some("KEMİKSİZ IZGARA/KIZARTMA TAVUK YEMEKLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Tavuk Şiş"),
+            Some("KEMİKSİZ IZGARA/KIZARTMA TAVUK YEMEKLERİ".to_string())
+        );
+
+        // Meze, kısır, çiğ köfte ve piyaz (Mezeler şemsiyesi)
+        assert_eq!(
+            categorize_dish("Mercimek Köftesi"),
+            Some("MEZELER".to_string())
+        );
+        assert_eq!(categorize_dish("Kısır"), Some("MEZELER".to_string()));
+        assert_eq!(categorize_dish("Çiğ Köfte"), Some("MEZELER".to_string()));
+        assert_eq!(categorize_dish("Piyaz"), Some("MEZELER".to_string()));
+        assert_eq!(
+            categorize_dish("Kuru Fasulye Piyazı"),
+            Some("MEZELER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kuru Fasulye"),
+            Some("ETSİZ BAKLAGİLLER".to_string())
+        );
+
+        // Boş mantı (Makarna Çeşitleri) vs Kıymalı Mantı
+        assert_eq!(
+            categorize_dish("Boş Mantı"),
+            Some("MAKARNA ÇEŞİTLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Kayseri Mantısı"),
+            Some("MANTI".to_string())
+        );
+
+        // Sahanda yumurta ve kızartma
+        assert_eq!(
+            categorize_dish("Sahanda Kıymalı Yumurta"),
+            Some("SAHANDA KIYMALI YUMURTA".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Karışık Kızartma"),
+            Some("KARIŞIK KIZARTMA".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Patates Kızartması"),
+            Some("PATATES KIZARTMASI-KAVURMASI-SALATASI-KÖFTESİ-YUMURTALI PATATES".to_string())
+        );
+
+        // Yöresel peynirler parantez içi zenginleştirmesi
+        assert_eq!(
+            categorize_dish("Hellim Peyniri"),
+            Some("YÖRESEL PEYNİRLER".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Otlu Peynir"),
+            Some("YÖRESEL PEYNİRLER".to_string())
+        );
+
+        // Çorba ve börek
+        assert_eq!(
+            categorize_dish("Un Çorbası"),
+            Some("ÇORBA ÇEŞİTLERİ".to_string())
+        );
+        assert_eq!(
+            categorize_dish("Karaköy Böreği"),
+            Some("BÖREK ÇEŞİTLERİ".to_string())
+        );
+    }
 }
