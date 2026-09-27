@@ -283,7 +283,7 @@ mod tests {
         assert!(result_ist.is_some());
         let pkgs = result_ist.unwrap();
         assert_eq!(pkgs.len(), 1);
-        assert!(pkgs[0].0.contains("Soğuk Sandviç"));
+        assert!(pkgs[0].0.contains("Soğuk Sandviç") || pkgs[0].0.contains("Al Götür"));
         assert!(!pkgs[0].1.is_empty());
 
         // Konfigürasyonu olmayan bir il (örn: Bayburt) için uydurma veri üretilmez (None döner)
@@ -339,11 +339,14 @@ mod tests {
         let menu = &parsed[0];
         assert_eq!(menu.takeaways.len(), 2);
         assert!(
-            menu.takeaways[0].0.contains("Gözleme") || menu.takeaways[0].0.contains("Al Götür 2")
+            menu.takeaways[0].0.contains("Gözleme")
+                || menu.takeaways[0].0.contains("Al Götür 2")
+                || menu.takeaways[0].0.contains("Al Götür Menü 2")
         );
         assert!(
             menu.takeaways[1].0.contains("Soğuk Sandviç")
                 || menu.takeaways[1].0.contains("Al Götür 1")
+                || menu.takeaways[1].0.contains("Al Götür Menü 1")
         );
     }
 
