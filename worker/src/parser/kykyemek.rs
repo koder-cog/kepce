@@ -91,21 +91,6 @@ pub fn parse_kykyemek_html(
         });
 
         for p in body.select(&p_selector) {
-            // Standart ikram veya bağımsız detay paragrafları (su, çeyrek ekmek vb.)
-            let is_standalone_detail = p.value().classes().any(|c| c == "food-detail-text")
-                && !p.value().classes().any(|c| c == "food-main-text");
-            if is_standalone_detail {
-                continue;
-            }
-
-            let text_raw_lower = p.text().collect::<String>().to_lowercase();
-            if text_raw_lower.contains("bardak su")
-                || text_raw_lower.contains("çeyrek ekmek")
-                || text_raw_lower.contains("ceyrek ekmek")
-            {
-                continue;
-            }
-
             if p.value().attr("data-fastmenus").is_some()
                 || p.value()
                     .attr("onclick")
@@ -117,6 +102,12 @@ pub fn parse_kykyemek_html(
 
             let text_nodes: Vec<&str> = p.text().collect();
             let text = text_nodes.join(" / ").trim().to_string();
+
+            // Bağımsız artı ile başlayan yetim garnitürler ana yemek yapılamaz
+            if text.starts_with('+') {
+                continue;
+            }
+
             let text_lower = text.to_lowercase();
 
             if ContentGuard::is_junk_dish_text(&text) {
@@ -554,8 +545,8 @@ mod tests {
         assert_eq!(results.len(), 1);
         let dishes = &results[0].dishes;
 
-        // Su ve ekmek elendiği için tam 4 kap yemek olmalı
-        assert_eq!(dishes.len(), 4);
+        // Su ve ekmek menüye dahil edildiği için 6 parça olmalı
+        assert_eq!(dishes.len(), 6);
 
         // 1. Kap: Çorba alternatifleri
         assert_eq!(dishes[0], vec!["Tarhana Çorba", "Mısır Çorba"]);
@@ -571,6 +562,12 @@ mod tests {
 
         // 4. Kap: Meze
         assert_eq!(dishes[3], vec!["Haydari"]);
+
+        // 5. Kap: Su
+        assert_eq!(dishes[4], vec!["200 ml Bardak Su"]);
+
+        // 6. Kap: Çeyrek Ekmek
+        assert_eq!(dishes[5], vec!["Çeyrek Ekmek"]);
     }
 
     #[test]
@@ -601,7 +598,7 @@ mod tests {
         assert_eq!(results.len(), 1);
         let dishes = &results[0].dishes;
 
-        assert_eq!(dishes.len(), 4);
+        assert_eq!(dishes.len(), 6);
         assert_eq!(dishes[0], vec!["Domates Çorba", "Havuç Çorba"]);
         assert_eq!(
             dishes[1],
@@ -613,6 +610,8 @@ mod tests {
         );
         assert_eq!(dishes[2], vec!["Salçalı Makarna"]);
         assert_eq!(dishes[3], vec!["Bisküvili Pasta"]);
+        assert_eq!(dishes[4], vec!["200 ml Bardak Su"]);
+        assert_eq!(dishes[5], vec!["Çeyrek Ekmek"]);
     }
 
     #[test]
@@ -677,12 +676,14 @@ mod tests {
         assert_eq!(results.len(), 1);
         let dishes = &results[0].dishes;
 
-        assert_eq!(dishes.len(), 5);
+        assert_eq!(dishes.len(), 7);
         assert_eq!(dishes[0], vec!["Haşlanmış Yumurta"]);
         assert_eq!(dishes[1], vec!["Menemen"]);
         assert_eq!(dishes[2], vec!["Zeytinli Açma", "Peynirli Açma"]);
         assert_eq!(dishes[3], vec!["Kaşar Peyniri"]);
         assert_eq!(dishes[4], vec!["Siyah Zeytin", "Yeşil Zeytin"]);
+        assert_eq!(dishes[5], vec!["200 ml Bardak Su"]);
+        assert_eq!(dishes[6], vec!["Çeyrek Ekmek"]);
     }
 
     #[test]
@@ -706,18 +707,6 @@ mod tests {
                     for slot in res.dishes {
                         assert!(!slot.is_empty());
                         for comp in slot {
-                            assert!(
-                                !comp.name.contains("Bardak Su"),
-                                "Su elenmeli: {:?} ({:?})",
-                                comp.name,
-                                fname
-                            );
-                            assert!(
-                                !comp.name.contains("Çeyrek Ekmek"),
-                                "Ekmek elenmeli: {:?} ({:?})",
-                                comp.name,
-                                fname
-                            );
                             assert!(
                                 !comp.name.starts_with('+'),
                                 "Garnitür tek başına olmamalı: {:?} ({:?})",

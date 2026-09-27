@@ -79,6 +79,15 @@ impl SourceRegistry {
                 is_auto_approvable: true,
             };
         }
+        if s.starts_with("kepce-anonim") {
+            return SourceMetadata {
+                source_type: source_type.to_string(),
+                family: SourceFamily::Field,
+                tier: TrustTier::GroundTruth,
+                priority: 8,
+                is_auto_approvable: true,
+            };
+        }
 
         // 2. Yurtmenu Ailesi (Karantina / Klon Ekosistemi - Tier 1)
         // yurtmenu.net ve kykyemekliste.com aynı altyapıyı paylaşır.
@@ -190,6 +199,12 @@ mod tests {
         assert_eq!(user_sub.tier, TrustTier::GroundTruth);
         assert_eq!(user_sub.priority, 9);
         assert!(user_sub.is_auto_approvable);
+
+        let anonim_sub = SourceRegistry::resolve("kepce-anonim");
+        assert_eq!(anonim_sub.family, SourceFamily::Field);
+        assert_eq!(anonim_sub.tier, TrustTier::GroundTruth);
+        assert_eq!(anonim_sub.priority, 8);
+        assert!(anonim_sub.is_auto_approvable);
 
         let yurtmenu = SourceRegistry::resolve("yurtmenu.net");
         assert_eq!(yurtmenu.family, SourceFamily::Yurtmenu);
