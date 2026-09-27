@@ -1427,6 +1427,13 @@ pub async fn upsert_menu(
         let existing_dish_inputs: Vec<shared::services::quality_score::DishInput> =
             existing_dishes_list
                 .iter()
+                .filter(|(_, alias)| {
+                    let name = alias.as_ref().map(|a| a.name.clone()).unwrap_or_default();
+                    let lower = name.to_lowercase();
+                    !lower.contains("bardak su")
+                        && !lower.contains("çeyrek ekmek")
+                        && !lower.contains("ceyrek ekmek")
+                })
                 .map(|(d, alias)| {
                     let name = alias.as_ref().map(|a| a.name.clone()).unwrap_or_default();
                     let weight = d.amount.as_ref().and_then(|a| {
@@ -1540,7 +1547,7 @@ pub async fn upsert_menu(
             // 3. Aynı Kaynak Güncellemesi (Self-Poisoning / Regresyon Koruması):
             // Eğer gelen verinin kalitesi mevcut kayıttan belirgin şekilde düşükse
             // (örneğin scraper 4 kaplık menüyü 1 kaba düşürdü, Cloudflare engeli, eksik parse):
-            if quality_delta < -10 {
+            if quality_delta < -15 && valid_primary_count < 4 {
                 tracing::warn!(
                     "Aynı kaynak regresyon koruması: kaynak {} için mevcut skor {} iken gelen skor {}. Gelen arşivleniyor.",
                     source_type, existing_quality.total, incoming_quality.total

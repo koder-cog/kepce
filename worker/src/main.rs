@@ -143,6 +143,24 @@ async fn main() -> anyhow::Result<()> {
         }
     }
 
+    if std::env::var("WORKER_RUN_SCRAPER").is_ok() {
+        tracing::info!("[SCRAPER] Tek seferlik kykyemek taraması başlatılıyor...");
+        let (_tx, rx) = tokio::sync::watch::channel(false);
+        let client = reqwest::Client::builder()
+            .cookie_store(true)
+            .timeout(std::time::Duration::from_secs(600))
+            .build()?;
+        if let Err(e) = tasks::scraper::run_kykyemek_scraper(&db, &client, rx).await {
+            tracing::error!("[SCRAPER] Scraper hatası: {:?}", e);
+        } else {
+            tracing::info!("[SCRAPER] Scraper tamamlandı.");
+        }
+        if std::env::var("WORKER_ONESHOT").is_ok() {
+            tracing::info!("[SCRAPER] Tek seferlik tarama tamamlandı. Çıkış yapılıyor.");
+            return Ok(());
+        }
+    }
+
     if std::env::var("WORKER_RECATEGORIZE").is_ok() {
         tracing::info!("[RECATEGORIZE] Yemek kategorileri yeniden sınıflandırılıyor...");
         if let Err(e) = tasks::historical_ingest::recategorize_all_dishes(&db).await {

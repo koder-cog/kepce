@@ -93,22 +93,25 @@ impl QualityScoreService {
                 1 => 10,
                 _ => 0,
             };
+            if has_bread {
+                tray_score += 15;
+            }
+            if has_beverage {
+                tray_score += 15;
+            }
         } else {
-            // Akşam Yemeği: 4 ana kap = 40p, 3 = 25p, 2 = 15p, 1 = 5p
+            // Akşam Yemeği: 4 ana kap tabldot = 60p, 3 = 40p, 2 = 25p, 1 = 10p
+            // Ekmek veya içecek ikramı listelenmişse +10 bonus; yoksa 4 kap zaten ana tabldottur.
             tray_score += match core_dishes_count {
-                n if n >= 4 => 40,
-                3 => 25,
-                2 => 15,
-                1 => 5,
+                n if n >= 4 => 60,
+                3 => 40,
+                2 => 25,
+                1 => 10,
                 _ => 0,
             };
-        }
-
-        if has_bread {
-            tray_score += 15;
-        }
-        if has_beverage {
-            tray_score += 15;
+            if has_bread || has_beverage {
+                tray_score += 10;
+            }
         }
         tray_score = tray_score.clamp(0, 70);
 
