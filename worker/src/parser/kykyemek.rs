@@ -84,12 +84,17 @@ pub fn parse_kykyemek_html(
 
         let mut raw_dishes = Vec::new();
         let mut takeaways = Vec::new();
-        for p in body.select(&p_selector) {
-            let text_nodes: Vec<&str> = p.text().collect();
-            let text = text_nodes.join(" / ").trim().to_string();
-            let text_lower = text.to_lowercase();
+        static RICH_SPAN_SEL: std::sync::OnceLock<Selector> = std::sync::OnceLock::new();
+        let rich_sel = RICH_SPAN_SEL.get_or_init(|| {
+            Selector::parse("span.slash-separator, span.food-main-text, span.food-detail-text")
+                .unwrap()
+        });
 
-            if ContentGuard::is_junk_dish_text(&text) {
+        for p in body.select(&p_selector) {
+            // Standart ikram veya bağımsız detay paragrafları (su, çeyrek ekmek vb.)
+            let is_standalone_detail = p.value().classes().any(|c| c == "food-detail-text")
+                && !p.value().classes().any(|c| c == "food-main-text");
+            if is_standalone_detail {
                 continue;
             }
 
@@ -99,6 +104,14 @@ pub fn parse_kykyemek_html(
                     .map(|o| o.contains("showFastMenu"))
                     .unwrap_or(false)
             {
+                continue;
+            }
+
+            let text_nodes: Vec<&str> = p.text().collect();
+            let text = text_nodes.join(" / ").trim().to_string();
+            let text_lower = text.to_lowercase();
+
+            if ContentGuard::is_junk_dish_text(&text) {
                 continue;
             }
 
@@ -115,8 +128,11 @@ pub fn parse_kykyemek_html(
                 continue;
             }
 
-            // Düzeltmeler (Shorthand expansions) ve Çöp Filtresi
-            let dish_group = clean_and_split_dish(text);
+            let dish_group = if p.select(rich_sel).next().is_some() {
+                parse_rich_dish_paragraph(p)
+            } else {
+                clean_and_split_dish(text)
+            };
 
             if !dish_group.is_empty() {
                 raw_dishes.push(dish_group);
@@ -239,11 +255,7 @@ pub fn extract_fastmenu_items(html_content: &str) -> Vec<(String, String)> {
     items_map.into_iter().collect()
 }
 
-pub fn clean_and_split_dish(mut text: String) -> Vec<crate::parser::models::MenuComponent> {
-    if ContentGuard::is_junk_dish_text(&text) {
-        return Vec::new();
-    }
-
+pub fn expand_dish_shorthands(mut text: String) -> String {
     text = text
         .replace("Siyah/Yeşil Zeytin", "Siyah Zeytin / Yeşil Zeytin")
         .replace("Siyah / Yeşil Zeytin", "Siyah Zeytin / Yeşil Zeytin")
@@ -258,6 +270,14 @@ pub fn clean_and_split_dish(mut text: String) -> Vec<crate::parser::models::Menu
         .replace(
             "Peynirli/Zeytinli Poğaça",
             "Peynirli Poğaça / Zeytinli Poğaça",
+        )
+        .replace(
+            "Peynirli/Ispanaklı Börek",
+            "Peynirli Börek / Ispanaklı Börek",
+        )
+        .replace(
+            "Ispanaklı/Peynirli Börek",
+            "Ispanaklı Börek / Peynirli Börek",
         )
         .replace(
             "Kakaolu/Sade Tahin Helvası",
@@ -275,8 +295,125 @@ pub fn clean_and_split_dish(mut text: String) -> Vec<crate::parser::models::Menu
             "Sade / Kakaolu Tahin Helvası",
             "Sade Tahin Helvası / Kakaolu Tahin Helvası",
         );
+    text
+}
 
-    let parts: Vec<&str> = text.split('/').collect();
+#[derive(Default)]
+struct AltAccumulator {
+    main_parts: Vec<String>,
+    detail_parts: Vec<String>,
+}
+
+fn flush_alt(acc: &mut AltAccumulator, results: &mut Vec<crate::parser::models::MenuComponent>) {
+    let main_raw = acc.main_parts.join(" ");
+    let main_str = main_raw.split_whitespace().collect::<Vec<_>>().join(" ");
+    let detail_raw = acc.detail_parts.join(" ");
+    let detail_str = detail_raw.split_whitespace().collect::<Vec<_>>().join(" ");
+    acc.main_parts.clear();
+    acc.detail_parts.clear();
+
+    if main_str.is_empty() && detail_str.is_empty() {
+        return;
+    }
+
+    let combined = if !main_str.is_empty() && !detail_str.is_empty() {
+        let formatted_detail = if let Some(stripped) = detail_str.strip_prefix('+') {
+            format!("+ {}", stripped.trim())
+        } else if detail_str.starts_with('(') {
+            detail_str
+        } else {
+            format!("+ {}", detail_str)
+        };
+        format!("{} {}", main_str, formatted_detail)
+    } else if !main_str.is_empty() {
+        main_str
+    } else {
+        detail_str
+    };
+
+    let dishes = clean_and_split_dish(combined);
+    results.extend(dishes);
+}
+
+pub fn parse_rich_dish_paragraph(
+    p: scraper::ElementRef,
+) -> Vec<crate::parser::models::MenuComponent> {
+    let mut results = Vec::new();
+    let mut acc = AltAccumulator::default();
+
+    for child in p.children() {
+        match child.value() {
+            scraper::Node::Element(el) => {
+                let name = el.name();
+                let is_slash = el.classes().any(|c| c == "slash-separator") || name == "br";
+                let is_detail = el.classes().any(|c| c == "food-detail-text");
+
+                if is_slash {
+                    flush_alt(&mut acc, &mut results);
+                } else if is_detail {
+                    if let Some(wrapped) = scraper::ElementRef::wrap(child) {
+                        let text = wrapped.text().collect::<String>().trim().to_string();
+                        if !text.is_empty() {
+                            acc.detail_parts.push(text);
+                        }
+                    }
+                } else if let Some(wrapped) = scraper::ElementRef::wrap(child) {
+                    let text = wrapped.text().collect::<String>();
+                    let expanded = expand_dish_shorthands(text);
+                    if expanded.contains('/') {
+                        let parts: Vec<&str> = expanded.split('/').collect();
+                        for (idx, part) in parts.iter().enumerate() {
+                            let trimmed = part.trim();
+                            if !trimmed.is_empty() {
+                                acc.main_parts.push(trimmed.to_string());
+                            }
+                            if idx < parts.len() - 1 {
+                                flush_alt(&mut acc, &mut results);
+                            }
+                        }
+                    } else {
+                        let trimmed = expanded.trim();
+                        if !trimmed.is_empty() {
+                            acc.main_parts.push(trimmed.to_string());
+                        }
+                    }
+                }
+            }
+            scraper::Node::Text(t) => {
+                let text = expand_dish_shorthands(t.text.to_string());
+                if text.contains('/') {
+                    let parts: Vec<&str> = text.split('/').collect();
+                    for (idx, part) in parts.iter().enumerate() {
+                        let trimmed = part.trim();
+                        if !trimmed.is_empty() {
+                            acc.main_parts.push(trimmed.to_string());
+                        }
+                        if idx < parts.len() - 1 {
+                            flush_alt(&mut acc, &mut results);
+                        }
+                    }
+                } else {
+                    let trimmed = text.trim();
+                    if !trimmed.is_empty() {
+                        acc.main_parts.push(trimmed.to_string());
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
+    flush_alt(&mut acc, &mut results);
+
+    results
+}
+
+pub fn clean_and_split_dish(text: String) -> Vec<crate::parser::models::MenuComponent> {
+    if ContentGuard::is_junk_dish_text(&text) {
+        return Vec::new();
+    }
+
+    let expanded = expand_dish_shorthands(text);
+    let parts: Vec<&str> = expanded.split('/').collect();
     let mut dish_group = Vec::new();
     for part in parts {
         let cleaned = part.trim().to_string();
@@ -376,5 +513,213 @@ mod tests {
         let results = parse_kyk_html(html_dinner, "istanbul", "breakfast");
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].detected_meal, Some(MealTypeEnum::Dinner));
+    }
+
+    #[test]
+    fn test_kyk_menu_rich_html_parsing() {
+        let html = r#"
+            <div class='card cardStyle mainPageColor' id="areaAll_0">
+                <p class="text-center fw-bold homePageCardElementColor cardDate" id="date_0">15 Eylül 2026 Salı</p>
+                <div class='card-body'>
+                    <div>
+                        <p class="food-main-text">
+                            <span class='food-main-text'>Tarhana Çorba</span><span class='slash-separator'>/</span><span class='food-main-text'>Mısır Çorba</span>
+                        </p>
+                        <p class="food-main-text">
+                            <span class='food-main-text'>Tavuk Sote</span><span class='food-detail-text'>+Küp Patates</span><span class='slash-separator'>/</span><span class='food-main-text'>Patlıcan Yemeği</span>
+                        </p>
+                        <p class="food-main-text">
+                            <span class='food-main-text'>Tereyağlı Şehriyeli Pirinç Pilavı</span>
+                        </p>
+                        <p class="food-main-text">Haydari</p>
+                        <p class="fw-bold food-detail-text">200 ml Bardak Su</p>
+                        <p class="fw-bold food-detail-text">Çeyrek Ekmek</p>
+                    </div>
+                    <div>
+                        <p class="text-end food-main-text"><i class="fa-solid fa-fire-flame-curved"></i> 1100-1500 kcal</p>
+                    </div>
+                </div>
+            </div>
+        "#;
+
+        let results = parse_kyk_html(html, "ankara", "dinner");
+        assert_eq!(results.len(), 1);
+        let dishes = &results[0].dishes;
+
+        // Su ve ekmek elendiği için tam 4 kap yemek olmalı
+        assert_eq!(dishes.len(), 4);
+
+        // 1. Kap: Çorba alternatifleri
+        assert_eq!(dishes[0], vec!["Tarhana Çorba", "Mısır Çorba"]);
+
+        // 2. Kap: Garnitür ana yemeğe eklendi, ayrı alternatif yapılmadı
+        assert_eq!(
+            dishes[1],
+            vec!["Tavuk Sote + Küp Patates", "Patlıcan Yemeği"]
+        );
+
+        // 3. Kap: Pilav
+        assert_eq!(dishes[2], vec!["Tereyağlı Şehriyeli Pirinç Pilavı"]);
+
+        // 4. Kap: Meze
+        assert_eq!(dishes[3], vec!["Haydari"]);
+    }
+
+    #[test]
+    fn test_kyk_menu_rich_html_multiple_garnishes() {
+        let html = r#"
+            <div class='card cardStyle mainPageColor'>
+                <p class="date">16 Eylül 2026 Çarşamba</p>
+                <div class='card-body'>
+                    <div>
+                        <p class="food-main-text">
+                            <span class='food-main-text'>Domates Çorba</span><span class='slash-separator'>/</span><span class='food-main-text'>Havuç Çorba</span>
+                        </p>
+                        <p class="food-main-text">
+                            <span class='food-main-text'>Izgara Köfte</span><span class='food-detail-text'>+Köz Domates, Biber, Soğan</span><span class='slash-separator'>/</span><span class='food-main-text'>Tavuk Izgara</span><span class='food-detail-text'>+Köz Domates Biber Soğan</span><span class='slash-separator'>/</span><span class='food-main-text'>Mücver</span><span class='food-detail-text'>+Yoğurt</span>
+                        </p>
+                        <p class="food-main-text">
+                            <span class='food-main-text'>Salçalı Makarna</span>
+                        </p>
+                        <p class="food-main-text">Bisküvili Pasta</p>
+                        <p class="fw-bold food-detail-text">200 ml Bardak Su</p>
+                        <p class="fw-bold food-detail-text">Çeyrek Ekmek</p>
+                    </div>
+                </div>
+            </div>
+        "#;
+
+        let results = parse_kyk_html(html, "ankara", "dinner");
+        assert_eq!(results.len(), 1);
+        let dishes = &results[0].dishes;
+
+        assert_eq!(dishes.len(), 4);
+        assert_eq!(dishes[0], vec!["Domates Çorba", "Havuç Çorba"]);
+        assert_eq!(
+            dishes[1],
+            vec![
+                "Izgara Köfte + Köz Domates, Biber, Soğan",
+                "Tavuk Izgara + Köz Domates Biber Soğan",
+                "Mücver + Yoğurt"
+            ]
+        );
+        assert_eq!(dishes[2], vec!["Salçalı Makarna"]);
+        assert_eq!(dishes[3], vec!["Bisküvili Pasta"]);
+    }
+
+    #[test]
+    fn test_kyk_menu_rich_parenthesis_detail() {
+        let html = r#"
+            <div class='card cardStyle mainPageColor'>
+                <p class="date">15 Eylül 2026 Salı</p>
+                <div class='card-body'>
+                    <div>
+                        <p class="food-main-text">
+                            <span class="food-main-text">Kuru Fasulye</span><span class="slash-separator">/</span><span class="food-main-text">Karışık Kızartma</span><span class="food-detail-text">(Domates Sos+Yoğurt)</span>
+                        </p>
+                        <p class="food-main-text">
+                            <span class="food-main-text">Hamburger</span><span class="food-detail-text">(80-100 Gr Hamburger Ekmeği İçerisinde Domates, Marul, Kornişon Turşu İle)</span><span class="slash-separator">/</span><span class="food-main-text">Karışık Dolma</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+        "#;
+
+        let results = parse_kyk_html(html, "konya", "dinner");
+        assert_eq!(results.len(), 1);
+        let dishes = &results[0].dishes;
+
+        assert_eq!(
+            dishes[0],
+            vec!["Kuru Fasulye", "Karışık Kızartma (Domates Sos+Yoğurt)"]
+        );
+        assert_eq!(
+            dishes[1],
+            vec![
+                "Hamburger (80-100 Gr Hamburger Ekmeği İçerisinde Domates, Marul, Kornişon Turşu İle)",
+                "Karışık Dolma"
+            ]
+        );
+    }
+
+    #[test]
+    fn test_kyk_menu_rich_breakfast_shorthands() {
+        let html = r#"
+            <div class='card cardStyle mainPageColor'>
+                <p class="date">15 Eylül 2026 Salı</p>
+                <div class='card-body'>
+                    <div>
+                        <p class="food-main-text">Haşlanmış Yumurta</p>
+                        <p class="food-main-text">Menemen</p>
+                        <p class="food-main-text">
+                            <span class="food-main-text">Zeytinli/Peynirli Açma</span>
+                        </p>
+                        <p class="food-main-text">Kaşar Peyniri</p>
+                        <p class="food-main-text">
+                            <span class="food-main-text">Siyah/Yeşil Zeytin</span>
+                        </p>
+                        <p class="fw-bold food-detail-text">200 ml Bardak Su</p>
+                        <p class="fw-bold food-detail-text">Çeyrek Ekmek</p>
+                    </div>
+                </div>
+            </div>
+        "#;
+
+        let results = parse_kyk_html(html, "ankara", "breakfast");
+        assert_eq!(results.len(), 1);
+        let dishes = &results[0].dishes;
+
+        assert_eq!(dishes.len(), 5);
+        assert_eq!(dishes[0], vec!["Haşlanmış Yumurta"]);
+        assert_eq!(dishes[1], vec!["Menemen"]);
+        assert_eq!(dishes[2], vec!["Zeytinli Açma", "Peynirli Açma"]);
+        assert_eq!(dishes[3], vec!["Kaşar Peyniri"]);
+        assert_eq!(dishes[4], vec!["Siyah Zeytin", "Yeşil Zeytin"]);
+    }
+
+    #[test]
+    fn test_kyk_menu_real_downloaded_files() {
+        let scratch_dir = std::path::Path::new(
+            "/home/omer/.gemini/antigravity-ide/brain/b7f820df-2544-4bec-9e59-76e80dd29219/scratch",
+        );
+        if !scratch_dir.exists() {
+            return;
+        }
+        for entry in std::fs::read_dir(scratch_dir).unwrap().flatten() {
+            let path = entry.path();
+            let fname = path.file_name().unwrap().to_str().unwrap();
+            if path.extension().and_then(|e| e.to_str()) == Some("html")
+                && fname.starts_with("menu_")
+            {
+                let html = std::fs::read_to_string(&path).unwrap();
+                let results = parse_kyk_html(&html, "test", "dinner");
+                assert!(!results.is_empty(), "Sonuç boş olmamalı: {:?}", fname);
+                for res in results {
+                    for slot in res.dishes {
+                        assert!(!slot.is_empty());
+                        for comp in slot {
+                            assert!(
+                                !comp.name.contains("Bardak Su"),
+                                "Su elenmeli: {:?} ({:?})",
+                                comp.name,
+                                fname
+                            );
+                            assert!(
+                                !comp.name.contains("Çeyrek Ekmek"),
+                                "Ekmek elenmeli: {:?} ({:?})",
+                                comp.name,
+                                fname
+                            );
+                            assert!(
+                                !comp.name.starts_with('+'),
+                                "Garnitür tek başına olmamalı: {:?} ({:?})",
+                                comp.name,
+                                fname
+                            );
+                        }
+                    }
+                }
+            }
+        }
     }
 }
