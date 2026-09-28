@@ -246,10 +246,20 @@ async fn main() -> anyhow::Result<()> {
             source_type: Some("kykyemek".to_string()),
         };
 
+        // Cloudflare, datacenter IP'lerinden gelen çıplak (tarayıcı başlığı olmayan)
+        // istekleri "managed challenge" ile karşılayabiliyor. İstek zaten gizli
+        // token ile korunuyor; yine de CDN'in bot sinyalini düşürmek için gerçekçi
+        // tarayıcı başlıkları gönderiyoruz.
         match ingest_client
             .post(&ingest_url)
             .header("X-Internal-Token", &secret_val)
             .header("Content-Type", "application/json")
+            .header("Accept", "application/json")
+            .header("Accept-Language", "tr-TR,tr;q=0.9,en;q=0.8")
+            .header(
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+            )
             .json(&payload)
             .send()
             .await

@@ -73,6 +73,10 @@ services:
       - MENU_INGEST_DIR=/app/data/menuler
       # Karantina kök dizini (WORKDIR /app'e göreli).
       - MENU_QUARANTINE_DIR=uploads/quarantine/menus
+      # Dahili aktarım (ingest) uç noktası doğrulama anahtarı (PSK).
+      # GitHub Actions secret'ı INTERNAL_INGEST_SECRET ile AYNI değer olmalı.
+      # Boşsa uç nokta 403 "İç aktarım servisi bu sunucuda aktif değil" döner.
+      - INTERNAL_INGEST_SECRET=${INTERNAL_INGEST_SECRET:-}
     volumes:
       - uploads:/app/uploads
       - avatars:/app/static/avatars
