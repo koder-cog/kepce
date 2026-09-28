@@ -113,6 +113,17 @@ async fn main() -> anyhow::Result<()> {
         .map(|s| s.trim().to_string())
         .filter(|s| !s.is_empty());
 
+    // Cloudflare Access service token (opsiyonel). Tünel + Access kurulumunda
+    // ingest isteği bot challenge'ını bu token ile aşar. Boşsa header eklenmez.
+    let cf_access_client_id = env::var("CF_ACCESS_CLIENT_ID")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+    let cf_access_client_secret = env::var("CF_ACCESS_CLIENT_SECRET")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
+
     if !dry_run {
         let secret = ingest_secret.as_deref().ok_or_else(|| {
             anyhow::anyhow!(
@@ -124,6 +135,16 @@ async fn main() -> anyhow::Result<()> {
                 "INTERNAL_INGEST_SECRET geçersiz bir HTTP header değeri içeriyor (görünmez karakter / satır sonu olabilir): {e}"
             )
         })?;
+        if let (Some(id), Some(cf_secret)) = (&cf_access_client_id, &cf_access_client_secret) {
+            reqwest::header::HeaderValue::try_from(id.as_str()).map_err(|e| {
+                anyhow::anyhow!("CF_ACCESS_CLIENT_ID geçersiz bir HTTP header değeri içeriyor: {e}")
+            })?;
+            reqwest::header::HeaderValue::try_from(cf_secret.as_str()).map_err(|e| {
+                anyhow::anyhow!(
+                    "CF_ACCESS_CLIENT_SECRET geçersiz bir HTTP header değeri içeriyor: {e}"
+                )
+            })?;
+        }
     }
 
     tracing::info!("Remote Scraper başlatılıyor (dry_run: {})...", dry_run);
@@ -250,7 +271,7 @@ async fn main() -> anyhow::Result<()> {
         // istekleri "managed challenge" ile karşılayabiliyor. İstek zaten gizli
         // token ile korunuyor; yine de CDN'in bot sinyalini düşürmek için gerçekçi
         // tarayıcı başlıkları gönderiyoruz.
-        match ingest_client
+        let mut ingest_req = ingest_client
             .post(&ingest_url)
             .header("X-Internal-Token", &secret_val)
             .header("Content-Type", "application/json")
@@ -259,11 +280,14 @@ async fn main() -> anyhow::Result<()> {
             .header(
                 "User-Agent",
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
-            )
-            .json(&payload)
-            .send()
-            .await
-        {
+            );
+        // Cloudflare Access service token varsa ekle (tünel + Access kurulumu).
+        if let (Some(id), Some(cf_secret)) = (&cf_access_client_id, &cf_access_client_secret) {
+            ingest_req = ingest_req
+                .header("CF-Access-Client-Id", id)
+                .header("CF-Access-Client-Secret", cf_secret);
+        }
+        match ingest_req.json(&payload).send().await {
             Ok(resp) => {
                 let status = resp.status();
                 if status.is_success() {

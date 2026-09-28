@@ -67,7 +67,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_KEY }}
-          source: "Caddyfile,docker-compose.yml,docker-compose.prod.yml,docker-compose.analytics.yml,static/maintenance.html,docker-compose.search.yml"
+          source: "Caddyfile,docker-compose.yml,docker-compose.prod.yml,docker-compose.analytics.yml,static/maintenance.html,docker-compose.search.yml,docker-compose.tunnel.yml"
           target: ~/kepce/
           overwrite: true
 
@@ -86,7 +86,7 @@ jobs:
             docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'umami'" 2>/dev/null | grep -q 1 || \
             docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -c "CREATE DATABASE umami;" 2>/dev/null || true
 
-            COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.analytics.yml -f docker-compose.search.yml"
+            COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.analytics.yml -f docker-compose.search.yml -f docker-compose.tunnel.yml"
             docker compose $COMPOSE_FILES pull api webapp worker searxng umami
             docker compose $COMPOSE_FILES up -d --remove-orphans
             docker restart kepce-caddy

@@ -37,6 +37,10 @@ jobs:
         env:
           INTERNAL_INGEST_URL: ${{ secrets.INTERNAL_INGEST_URL || 'https://kepce.org/api/v1/internal/ingest/kykyemek' }}
           INTERNAL_INGEST_SECRET: ${{ secrets.INTERNAL_INGEST_SECRET }}
+          # Cloudflare Access service token (tünel + Access kurulumu). Boşsa
+          # header eklenmez ve mevcut davranış korunur.
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
           KYKYEMEK_PROXY_TOOL: ${{ secrets.KYKYEMEK_PROXY_TOOL }}
           RUST_LOG: info
         run: |

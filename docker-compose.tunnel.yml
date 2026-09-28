@@ -1,0 +1,27 @@
+# Cloudflare Tunnel (cloudflared) — origin'i dünyaya kapatıp tüm trafiği
+# tünel üzerinden yayınlar. Varsayılan olarak BAŞLATILMAZ (compose profile: tunnel).
+#
+# Etkinleştirmek için (operatör, tünel token'ı .env'de tanımlıyken):
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+#     -f docker-compose.tunnel.yml --profile tunnel up -d cloudflared
+#
+# Tünel ingress'i Cloudflare panelinden yönetilir (token tabanlı uzak yapılandırma).
+# Public hostname'lerin "service" alanı Caddy'ye işaret etmelidir:
+#   https://caddy:443   (No TLS Verify = açık)
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: kepce-cloudflared
+    restart: unless-stopped
+    profiles:
+      - tunnel
+    command: tunnel --no-autoupdate run
+    environment:
+      # NOT: ':?' yerine ':-' kullanılır. Compose değişken interpolasyonu profile
+      # bakılmaksızın parse anında yapılır; ':?' token yokken tüm deploy'u kırar.
+      # Boş token ile yalnızca '--profile tunnel' açıkken cloudflared hata verir.
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN:-}
+    networks:
+      - frontend-net
+    depends_on:
+      - caddy
