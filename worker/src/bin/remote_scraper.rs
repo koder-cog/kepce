@@ -104,12 +104,26 @@ async fn main() -> anyhow::Result<()> {
 
     let ingest_url = env::var("INTERNAL_INGEST_URL")
         .unwrap_or_else(|_| "https://kepce.org/api/v1/internal/ingest/kykyemek".to_string());
-    let ingest_secret = env::var("INTERNAL_INGEST_SECRET").ok();
+    // GitHub Actions secret'ları kopyala-yapıştır sırasında sonunda görünmez bir
+    // satır sonu (\n / \r) veya boşluk taşıyabilir. Bu değer doğrudan HTTP
+    // header'ına yazıldığında reqwest `InvalidHeaderValue` ile patlar; bu yüzden
+    // değeri burada temizleyip erken doğrulıyoruz.
+    let ingest_secret = env::var("INTERNAL_INGEST_SECRET")
+        .ok()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty());
 
-    if !dry_run && ingest_secret.is_none() {
-        anyhow::bail!(
-            "INTERNAL_INGEST_SECRET ortam değişkeni tanımlanmamış. Canlı aktarım için gereklidir (veya --dry-run kullanın)."
-        );
+    if !dry_run {
+        let secret = ingest_secret.as_deref().ok_or_else(|| {
+            anyhow::anyhow!(
+                "INTERNAL_INGEST_SECRET ortam değişkeni tanımlanmamış. Canlı aktarım için gereklidir (veya --dry-run kullanın)."
+            )
+        })?;
+        reqwest::header::HeaderValue::try_from(secret).map_err(|e| {
+            anyhow::anyhow!(
+                "INTERNAL_INGEST_SECRET geçersiz bir HTTP header değeri içeriyor (görünmez karakter / satır sonu olabilir): {e}"
+            )
+        })?;
     }
 
     tracing::info!("Remote Scraper başlatılıyor (dry_run: {})...", dry_run);
