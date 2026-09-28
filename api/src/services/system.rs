@@ -158,24 +158,22 @@ impl SystemService {
                     .one(db)
                     .await?;
 
-                if let Some(menu) = latest_menu {
-                    if let Some(hash) = menu.merkle_root {
-                        let meal_type_str = match &meal_type {
-                            shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
-                                "breakfast"
-                            }
-                            shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch",
-                            shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => {
-                                "dinner"
-                            }
-                        };
-                        let key = format!("menu:{}:{}", city.slug, meal_type_str);
-                        heads.push(crate::dto::system::HeadDto {
-                            key,
-                            hash: hash.clone(),
-                        });
-                        head_hashes.push(hash);
-                    }
+                if let Some(menu) = latest_menu
+                    && let Some(hash) = menu.merkle_root
+                {
+                    let meal_type_str = match &meal_type {
+                        shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
+                            "breakfast"
+                        }
+                        shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch",
+                        shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner",
+                    };
+                    let key = format!("menu:{}:{}", city.slug, meal_type_str);
+                    heads.push(crate::dto::system::HeadDto {
+                        key,
+                        hash: hash.clone(),
+                    });
+                    head_hashes.push(hash);
                 }
             }
         }
@@ -283,7 +281,7 @@ impl SystemService {
                 });
 
                 let status = if is_affected {
-                    let impact = incidents
+                    incidents
                         .iter()
                         .find(|inc| {
                             if inc.component != component_name {
@@ -298,8 +296,7 @@ impl SystemService {
                                 && date.date_naive() <= end.date_naive()
                         })
                         .map(|inc| inc.impact.clone())
-                        .unwrap_or("yavas".to_string());
-                    impact
+                        .unwrap_or("yavas".to_string())
                 } else {
                     "aktif".to_string()
                 };

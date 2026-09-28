@@ -338,7 +338,9 @@ mod tests {
             "Bu yemek çok güzeldi, elinize sağlık."
         ));
         assert!(ContentGuard::is_spam("sitemize gidin: www.example.com"));
-        assert!(!ContentGuard::is_spam("Merhaba arkadaşlar, bugün kyk menüsünü inceledim ve şu adreste paylaştım: http://example.com/menu"));
+        assert!(!ContentGuard::is_spam(
+            "Merhaba arkadaşlar, bugün kyk menüsünü inceledim ve şu adreste paylaştım: http://example.com/menu"
+        ));
         assert!(ContentGuard::is_spam(
             "Linkler: www.site1.com ve www.site2.com adresleri."
         ));
@@ -348,7 +350,9 @@ mod tests {
         assert!(!ContentGuard::is_spam("Çooook lezzetliiiii bir yemekti."));
 
         // İç linkler (kepce.org) spam sayılmaz, birden fazla olsa dahi izin verilir
-        assert!(!ContentGuard::is_spam("Dünkü menü https://kepce.org/istanbul/2026-09-14 ile bugünkü https://www.kepce.org/istanbul/2026-09-15 menüsü çok farklıydı."));
+        assert!(!ContentGuard::is_spam(
+            "Dünkü menü https://kepce.org/istanbul/2026-09-14 ile bugünkü https://www.kepce.org/istanbul/2026-09-15 menüsü çok farklıydı."
+        ));
         assert!(!ContentGuard::is_spam(
             "Menü linki: https://kepce.org/istanbul"
         ));
@@ -357,7 +361,9 @@ mod tests {
         assert!(ContentGuard::is_spam(
             "Burs çekilişi için şu bağlantıya tıklayın: bit.ly/kyk-burs"
         ));
-        assert!(ContentGuard::is_spam("Öğrenci indirimleri için tinyurl.com/ogrenci adresini ziyaret edebilirsiniz arkadaslar"));
+        assert!(ContentGuard::is_spam(
+            "Öğrenci indirimleri için tinyurl.com/ogrenci adresini ziyaret edebilirsiniz arkadaslar"
+        ));
 
         // Telegram ve WhatsApp sohbet davetleri engellenir
         assert!(ContentGuard::is_spam(

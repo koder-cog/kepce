@@ -5,8 +5,8 @@
 
 use std::collections::HashMap;
 use std::net::{IpAddr, SocketAddr};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::time::{Duration, Instant};
 use uuid::Uuid;
 
@@ -17,7 +17,7 @@ use axum::{
     middleware::Next,
     response::Response,
 };
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{DecodingKey, Validation, decode};
 
 use crate::config::AppState;
 use crate::extractors::auth::Claims;
@@ -140,33 +140,31 @@ pub fn get_client_ip(headers: &HeaderMap, extensions: &Extensions) -> Option<IpA
 
     if trust_forwarded {
         // 0. CF-Connecting-IP (Cloudflare gerçek istemci IP'si)
-        if let Some(cf_ip) = headers.get("cf-connecting-ip") {
-            if let Ok(cf_ip_str) = cf_ip.to_str() {
-                if let Ok(ip) = cf_ip_str.trim().parse::<IpAddr>() {
-                    return Some(ip);
-                }
-            }
+        if let Some(cf_ip) = headers.get("cf-connecting-ip")
+            && let Ok(cf_ip_str) = cf_ip.to_str()
+            && let Ok(ip) = cf_ip_str.trim().parse::<IpAddr>()
+        {
+            return Some(ip);
         }
 
         // 1. X-Real-IP (Reverse proxy direkt ezer)
-        if let Some(xri) = headers.get("x-real-ip") {
-            if let Ok(xri_str) = xri.to_str() {
-                if let Ok(ip) = xri_str.trim().parse::<IpAddr>() {
-                    return Some(ip);
-                }
-            }
+        if let Some(xri) = headers.get("x-real-ip")
+            && let Ok(xri_str) = xri.to_str()
+            && let Ok(ip) = xri_str.trim().parse::<IpAddr>()
+        {
+            return Some(ip);
         }
 
         // 2. X-Forwarded-For (Proxy arkasında ise)
-        if let Some(xff) = headers.get("x-forwarded-for") {
-            if let Ok(xff_str) = xff.to_str() {
-                // Nginx append yapar, bu yüzden en sondaki IP en güvenilir olanıdır.
-                // İlk IP (next()) alınırsa spoofing yapılabilir.
-                if let Some(last_ip) = xff_str.split(',').next_back() {
-                    if let Ok(ip) = last_ip.trim().parse::<IpAddr>() {
-                        return Some(ip);
-                    }
-                }
+        if let Some(xff) = headers.get("x-forwarded-for")
+            && let Ok(xff_str) = xff.to_str()
+        {
+            // Nginx append yapar, bu yüzden en sondaki IP en güvenilir olanıdır.
+            // İlk IP (next()) alınırsa spoofing yapılabilir.
+            if let Some(last_ip) = xff_str.split(',').next_back()
+                && let Ok(ip) = last_ip.trim().parse::<IpAddr>()
+            {
+                return Some(ip);
             }
         }
     }
@@ -268,13 +266,13 @@ pub async fn rate_limit_middleware(
         get_client_ip(headers, extensions).unwrap_or(IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED));
 
     // Öncelik 2: IP + Tarayıcı Cihaz Kimliği (X-Client-ID)
-    if key.is_none() {
-        if let Some(client_id_header) = headers.get("x-client-id").and_then(|h| h.to_str().ok()) {
-            // Uzunluk üst sınırı: sınırsız uzunluktaki client-id'ler HashMap key'i
-            // olarak bellek şişirmesin diye 64 karakterde kesilir.
-            let client_id: String = client_id_header.chars().take(64).collect();
-            key = Some(RateLimitKey::IpClient(ip, client_id));
-        }
+    if key.is_none()
+        && let Some(client_id_header) = headers.get("x-client-id").and_then(|h| h.to_str().ok())
+    {
+        // Uzunluk üst sınırı: sınırsız uzunluktaki client-id'ler HashMap key'i
+        // olarak bellek şişirmesin diye 64 karakterde kesilir.
+        let client_id: String = client_id_header.chars().take(64).collect();
+        key = Some(RateLimitKey::IpClient(ip, client_id));
     }
 
     // Öncelik 3: Sadece IP Fallback

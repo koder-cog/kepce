@@ -2,12 +2,12 @@
 #[allow(clippy::module_inception)]
 mod tests {
     use crate::parser::core::{
-        infer_sheet_date_order, parse_date_with_order, parse_grid, DateTokenOrder, SheetGrid,
+        DateTokenOrder, SheetGrid, infer_sheet_date_order, parse_date_with_order, parse_grid,
     };
     use crate::parser::kykyemek::{parse_kykyemek_html, parse_turkish_date};
     use crate::parser::models::MenuComponent;
     use crate::parser::models::MenuDatabase;
-    use crate::parser::takeaway::{parse_takeaway_menu, TAKEAWAY_CACHE};
+    use crate::parser::takeaway::{TAKEAWAY_CACHE, parse_takeaway_menu};
     use chrono::NaiveDate;
     use std::collections::HashMap;
 

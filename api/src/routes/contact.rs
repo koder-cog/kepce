@@ -2,10 +2,10 @@ use crate::{
     error::AppError, extractors::auth::OptionalUser, extractors::validated::ValidatedJson,
 };
 use axum::{
-    extract::State,
-    http::{header, HeaderMap},
-    routing::post,
     Json, Router,
+    extract::State,
+    http::{HeaderMap, header},
+    routing::post,
 };
 use sea_orm::{ActiveModelTrait, Set};
 use serde::Deserialize;
@@ -54,10 +54,10 @@ async fn submit_contact_form(
         .map(|s| s.to_string());
 
     let source = payload.source.unwrap_or_else(|| {
-        if let Some(ref ref_url) = referer {
-            if ref_url.contains("ara.kepce.org") || ref_url.contains("/ara") {
-                return "ara".to_string();
-            }
+        if let Some(ref ref_url) = referer
+            && (ref_url.contains("ara.kepce.org") || ref_url.contains("/ara"))
+        {
+            return "ara".to_string();
         }
         "kepce".to_string()
     });

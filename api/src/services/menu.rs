@@ -168,18 +168,14 @@ impl MenuService {
         for item in items {
             // Alternatif yemekler aynı öğünde seçilemeyen ek seçenekler olduğundan
             // tabldot toplam kalorisine çift eklenmez.
-            if !item.is_alternative {
-                if let Some(cal) = item.calories {
-                    total += cal;
-                    has_calories = true;
-                }
+            if !item.is_alternative
+                && let Some(cal) = item.calories
+            {
+                total += cal;
+                has_calories = true;
             }
         }
-        if has_calories {
-            Some(total)
-        } else {
-            None
-        }
+        if has_calories { Some(total) } else { None }
     }
 
     async fn get_dish_vote_stats_map(
@@ -801,14 +797,12 @@ impl MenuService {
                     }
                     if hist.source_type != current_src
                         && seen_sources.insert(hist.source_type.clone())
-                    {
-                        if let Some(alt_dto) =
+                        && let Some(alt_dto) =
                             Self::parse_alternative_from_history(hist, meal_type_enum.clone())
-                        {
-                            let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
-                            if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
-                                alternatives.push(alt_dto);
-                            }
+                    {
+                        let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
+                        if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
+                            alternatives.push(alt_dto);
                         }
                     }
                 }
@@ -875,15 +869,15 @@ impl MenuService {
             query = query
                 .filter(menus::Column::ServeDate.gte(start_date))
                 .filter(menus::Column::ServeDate.lte(end_date));
-        } else if let (Some(y), Some(m)) = (year, month) {
-            if let Some(start_date) = NaiveDate::from_ymd_opt(y, m, 1) {
-                let next_m = if m == 12 { 1 } else { m + 1 };
-                let next_y = if m == 12 { y + 1 } else { y };
-                if let Some(end_date) = NaiveDate::from_ymd_opt(next_y, next_m, 1) {
-                    query = query
-                        .filter(menus::Column::ServeDate.gte(start_date))
-                        .filter(menus::Column::ServeDate.lt(end_date));
-                }
+        } else if let (Some(y), Some(m)) = (year, month)
+            && let Some(start_date) = NaiveDate::from_ymd_opt(y, m, 1)
+        {
+            let next_m = if m == 12 { 1 } else { m + 1 };
+            let next_y = if m == 12 { y + 1 } else { y };
+            if let Some(end_date) = NaiveDate::from_ymd_opt(next_y, next_m, 1) {
+                query = query
+                    .filter(menus::Column::ServeDate.gte(start_date))
+                    .filter(menus::Column::ServeDate.lt(end_date));
             }
         }
 
@@ -993,28 +987,28 @@ impl MenuService {
         }
 
         let mut my_votes_map = HashMap::new();
-        if let Some(uid) = user_id {
-            if !menu_ids.is_empty() {
-                let votes = menu_votes::Entity::find()
-                    .filter(menu_votes::Column::MenuId.is_in(menu_ids.clone()))
-                    .filter(menu_votes::Column::UserId.eq(uid))
-                    .all(db)
-                    .await
-                    .unwrap_or_default();
-                for v in votes {
-                    let sent_str = match v.sentiment {
-                        shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
-                            "positive".to_string()
-                        }
-                        shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
-                            "negative".to_string()
-                        }
-                        shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => {
-                            "neutral".to_string()
-                        }
-                    };
-                    my_votes_map.insert(v.menu_id, sent_str);
-                }
+        if let Some(uid) = user_id
+            && !menu_ids.is_empty()
+        {
+            let votes = menu_votes::Entity::find()
+                .filter(menu_votes::Column::MenuId.is_in(menu_ids.clone()))
+                .filter(menu_votes::Column::UserId.eq(uid))
+                .all(db)
+                .await
+                .unwrap_or_default();
+            for v in votes {
+                let sent_str = match v.sentiment {
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Positive => {
+                        "positive".to_string()
+                    }
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Negative => {
+                        "negative".to_string()
+                    }
+                    shared::entities::sea_orm_active_enums::SentimentEnum::Neutral => {
+                        "neutral".to_string()
+                    }
+                };
+                my_votes_map.insert(v.menu_id, sent_str);
             }
         }
 
@@ -1198,14 +1192,12 @@ impl MenuService {
                         }
                         if hist.source_type != current_src
                             && seen_sources.insert(hist.source_type.clone())
-                        {
-                            if let Some(alt_dto) =
+                            && let Some(alt_dto) =
                                 Self::parse_alternative_from_history(hist, meal_type_enum.clone())
-                            {
-                                let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
-                                if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
-                                    alternatives.push(alt_dto);
-                                }
+                        {
+                            let alt_sig = Self::compute_menu_dishes_signature(&alt_dto.items);
+                            if !alt_sig.is_empty() && seen_signatures.insert(alt_sig) {
+                                alternatives.push(alt_dto);
                             }
                         }
                     }
@@ -1289,7 +1281,7 @@ impl MenuService {
             }
         }
 
-        use sea_orm::{sea_query::Expr, QueryOrder, QuerySelect};
+        use sea_orm::{QueryOrder, QuerySelect, sea_query::Expr};
         let res: Vec<(i32,)> = query
             .select_only()
             .column_as(Expr::cust("EXTRACT(YEAR FROM serve_date)::int"), "year")

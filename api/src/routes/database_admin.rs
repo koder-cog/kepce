@@ -4,9 +4,9 @@
 //! filtreleme, satır düzenleme/silme ve kontrollü serbest SQL sorgusu çalıştırma imkanı sunar.
 
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     routing::{delete, get, post},
-    Json, Router,
 };
 use sea_orm::{ConnectionTrait, Statement};
 use serde::{Deserialize, Serialize};
@@ -300,7 +300,7 @@ async fn delete_row(
         _ => {
             return Err(AppError::BadRequest(
                 "Geçersiz birincil anahtar değeri.".into(),
-            ))
+            ));
         }
     };
 
@@ -353,7 +353,7 @@ async fn update_row(
         _ => {
             return Err(AppError::BadRequest(
                 "Geçersiz birincil anahtar değeri.".into(),
-            ))
+            ));
         }
     };
 
@@ -477,10 +477,10 @@ async fn execute_query(
 
         for (i, r) in rows_data.into_iter().enumerate() {
             if let Ok(val) = r.try_get::<serde_json::Value>("", "row_data") {
-                if i == 0 {
-                    if let Some(obj) = val.as_object() {
-                        columns = obj.keys().cloned().collect();
-                    }
+                if i == 0
+                    && let Some(obj) = val.as_object()
+                {
+                    columns = obj.keys().cloned().collect();
                 }
                 rows.push(val);
             }

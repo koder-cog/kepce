@@ -65,17 +65,17 @@ pub fn infer_sheet_date_order(sheet: &SheetGrid, file_name_hint: &str) -> DateTo
 
     for row in &sheet.rows {
         for cell in row {
-            if let Some(caps) = re.captures(cell) {
-                if let (Ok(p1), Ok(p2)) = (caps[1].parse::<u32>(), caps[2].parse::<u32>()) {
-                    if p1 > 12 && p1 <= 31 {
-                        p1_gt_12 += 1;
-                    }
-                    if p2 > 12 && p2 <= 31 {
-                        p2_gt_12 += 1;
-                    }
-                    p1_values.insert(p1);
-                    p2_values.insert(p2);
+            if let Some(caps) = re.captures(cell)
+                && let (Ok(p1), Ok(p2)) = (caps[1].parse::<u32>(), caps[2].parse::<u32>())
+            {
+                if p1 > 12 && p1 <= 31 {
+                    p1_gt_12 += 1;
                 }
+                if p2 > 12 && p2 <= 31 {
+                    p2_gt_12 += 1;
+                }
+                p1_values.insert(p1);
+                p2_values.insert(p2);
             }
         }
     }
@@ -571,11 +571,7 @@ pub fn parse_grid(sheet: &SheetGrid, db: &mut MenuDatabase, file_name_hint: &str
 
                         let amount_col = if has_gramaj { c + 1 } else { c };
                         let cal_col = if has_enerji {
-                            if has_gramaj {
-                                c + 2
-                            } else {
-                                c + 1
-                            }
+                            if has_gramaj { c + 2 } else { c + 1 }
                         } else {
                             c + 999
                         };

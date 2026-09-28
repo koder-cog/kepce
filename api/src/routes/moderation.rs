@@ -15,9 +15,9 @@ use crate::extractors::validated::ValidatedJson;
 use crate::services::bot::{BotError, BotService};
 use crate::services::moderation::ModerationService;
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     routing::{delete, get, post, put},
-    Json, Router,
 };
 use std::sync::Arc;
 use uuid::Uuid;
@@ -355,67 +355,67 @@ async fn get_menus(
 
     let mut condition = sea_orm::Condition::all();
 
-    if let Some(status) = &query.status {
-        if !status.is_empty() {
-            let status_enum = match status.as_str() {
-                "pending" => MenuStatusEnum::Pending,
-                "approved" => MenuStatusEnum::Approved,
-                "rejected" => MenuStatusEnum::Rejected,
-                _ => return Err(AppError::BadRequest("Invalid status".to_string())),
-            };
-            condition = condition.add(menus::Column::Status.eq(status_enum));
-        }
+    if let Some(status) = &query.status
+        && !status.is_empty()
+    {
+        let status_enum = match status.as_str() {
+            "pending" => MenuStatusEnum::Pending,
+            "approved" => MenuStatusEnum::Approved,
+            "rejected" => MenuStatusEnum::Rejected,
+            _ => return Err(AppError::BadRequest("Invalid status".to_string())),
+        };
+        condition = condition.add(menus::Column::Status.eq(status_enum));
     }
 
-    if let Some(month) = &query.month {
-        if !month.is_empty() {
-            if month.len() == 7 {
-                // YYYY-MM
-                let parts: Vec<&str> = month.split('-').collect();
-                if parts.len() == 2 {
-                    if let (Ok(y), Ok(m)) = (parts[0].parse::<i32>(), parts[1].parse::<u32>()) {
-                        let next_y = if m == 12 { y + 1 } else { y };
-                        let next_m = if m == 12 { 1 } else { m + 1 };
+    if let Some(month) = &query.month
+        && !month.is_empty()
+    {
+        if month.len() == 7 {
+            // YYYY-MM
+            let parts: Vec<&str> = month.split('-').collect();
+            if parts.len() == 2
+                && let (Ok(y), Ok(m)) = (parts[0].parse::<i32>(), parts[1].parse::<u32>())
+            {
+                let next_y = if m == 12 { y + 1 } else { y };
+                let next_m = if m == 12 { 1 } else { m + 1 };
 
-                        if let (Some(start_date), Some(end_date)) = (
-                            chrono::NaiveDate::from_ymd_opt(y, m, 1),
-                            chrono::NaiveDate::from_ymd_opt(next_y, next_m, 1),
-                        ) {
-                            condition = condition.add(menus::Column::ServeDate.gte(start_date));
-                            condition = condition.add(menus::Column::ServeDate.lt(end_date));
-                        }
-                    }
+                if let (Some(start_date), Some(end_date)) = (
+                    chrono::NaiveDate::from_ymd_opt(y, m, 1),
+                    chrono::NaiveDate::from_ymd_opt(next_y, next_m, 1),
+                ) {
+                    condition = condition.add(menus::Column::ServeDate.gte(start_date));
+                    condition = condition.add(menus::Column::ServeDate.lt(end_date));
                 }
-            } else if month.len() == 4 {
-                // YYYY
-                if let Ok(y) = month.parse::<i32>() {
-                    if let (Some(start_date), Some(end_date)) = (
-                        chrono::NaiveDate::from_ymd_opt(y, 1, 1),
-                        chrono::NaiveDate::from_ymd_opt(y + 1, 1, 1),
-                    ) {
-                        condition = condition.add(menus::Column::ServeDate.gte(start_date));
-                        condition = condition.add(menus::Column::ServeDate.lt(end_date));
-                    }
-                }
+            }
+        } else if month.len() == 4 {
+            // YYYY
+            if let Ok(y) = month.parse::<i32>()
+                && let (Some(start_date), Some(end_date)) = (
+                    chrono::NaiveDate::from_ymd_opt(y, 1, 1),
+                    chrono::NaiveDate::from_ymd_opt(y + 1, 1, 1),
+                )
+            {
+                condition = condition.add(menus::Column::ServeDate.gte(start_date));
+                condition = condition.add(menus::Column::ServeDate.lt(end_date));
             }
         }
     }
 
     let mut select = Menus::find().filter(condition);
 
-    if let Some(city_slug) = &query.city_slug {
-        if !city_slug.is_empty() {
-            let city = shared::entities::cities::Entity::find()
-                .filter(shared::entities::cities::Column::Slug.eq(city_slug))
-                .one(&db)
-                .await
-                .map_err(|e| AppError::Internal(e.to_string()))?;
+    if let Some(city_slug) = &query.city_slug
+        && !city_slug.is_empty()
+    {
+        let city = shared::entities::cities::Entity::find()
+            .filter(shared::entities::cities::Column::Slug.eq(city_slug))
+            .one(&db)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
-            if let Some(c) = city {
-                select = select.filter(menus::Column::CityId.eq(c.id));
-            } else {
-                return Ok(Json(Vec::new())); // City not found, return empty
-            }
+        if let Some(c) = city {
+            select = select.filter(menus::Column::CityId.eq(c.id));
+        } else {
+            return Ok(Json(Vec::new())); // City not found, return empty
         }
     }
 
@@ -584,7 +584,7 @@ async fn bulk_update_menu_status(
         _ => {
             return Err(AppError::BadRequest(
                 "Geçersiz menü durumu (yalnızca 'approved' veya 'rejected')".to_string(),
-            ))
+            ));
         }
     };
 
@@ -624,19 +624,18 @@ async fn bulk_update_menu_status(
                 .await;
             }
         } else if target_status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Rejected
+            && let Some(sub_id) = submitter_id
         {
-            if let Some(sub_id) = submitter_id {
-                let _ = crate::services::notification::NotificationService::send_notification(
-                    &db,
-                    sub_id,
-                    "moderation",
-                    "Menü Gönderin Reddedildi",
-                    "Gönderdiğin menü inceleme sonucunda uygun bulunmadı.",
-                    None,
-                    None,
-                )
-                .await;
-            }
+            let _ = crate::services::notification::NotificationService::send_notification(
+                &db,
+                sub_id,
+                "moderation",
+                "Menü Gönderin Reddedildi",
+                "Gönderdiğin menü inceleme sonucunda uygun bulunmadı.",
+                None,
+                None,
+            )
+            .await;
         }
     }
 
@@ -680,12 +679,12 @@ async fn update_menu_items(
         .one(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?;
-    if let Some(m) = menu {
-        if m.status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved {
-            shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id)
-                .await
-                .map_err(|e| AppError::Internal(e.to_string()))?;
-        }
+    if let Some(m) = menu
+        && m.status == shared::entities::sea_orm_active_enums::MenuStatusEnum::Approved
+    {
+        shared::services::immutable_store::ImmutableStore::write_menu_hash(&db, menu_id)
+            .await
+            .map_err(|e| AppError::Internal(e.to_string()))?;
     }
 
     Ok(Json(()))
@@ -708,10 +707,10 @@ async fn get_menu_items(
 
     let mut dish_ids = Vec::new();
     for (_, alias_opt) in &menu_dishes {
-        if let Some(alias) = alias_opt {
-            if let Some(id) = alias.dish_id {
-                dish_ids.push(id);
-            }
+        if let Some(alias) = alias_opt
+            && let Some(id) = alias.dish_id
+        {
+            dish_ids.push(id);
         }
     }
 
@@ -730,19 +729,18 @@ async fn get_menu_items(
 
     let mut result = Vec::new();
     for (md, alias_opt) in menu_dishes {
-        if let Some(alias) = alias_opt {
-            if let Some(d_id) = alias.dish_id {
-                if let Some(dish) = dishes_map.get(&d_id) {
-                    result.push(crate::dto::moderation::MenuDishItemDto {
-                        id: dish.id,
-                        name: dish.name.clone(),
-                        order_index: md.order_index,
-                        is_alternative: md.is_alternative,
-                        package_name: md.package_name,
-                        category: dish.category.clone(),
-                    });
-                }
-            }
+        if let Some(alias) = alias_opt
+            && let Some(d_id) = alias.dish_id
+            && let Some(dish) = dishes_map.get(&d_id)
+        {
+            result.push(crate::dto::moderation::MenuDishItemDto {
+                id: dish.id,
+                name: dish.name.clone(),
+                order_index: md.order_index,
+                is_alternative: md.is_alternative,
+                package_name: md.package_name,
+                category: dish.category.clone(),
+            });
         }
     }
 

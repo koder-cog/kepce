@@ -130,15 +130,15 @@ impl ReactionService {
         }
 
         // Yorum sahibinin karmasını güncelle (kendi kendine oy karma getirmez)
-        if let Some(author_id) = comment.user_id {
-            if author_id != user_id && karma_delta != 0 {
-                if let Ok(Some(author)) = Users::find_by_id(author_id).one(db).await {
-                    let current_karma = author.karma_score;
-                    let mut author_active: shared::entities::users::ActiveModel = author.into();
-                    author_active.karma_score = Set(current_karma + karma_delta);
-                    let _ = author_active.update(db).await;
-                }
-            }
+        if let Some(author_id) = comment.user_id
+            && author_id != user_id
+            && karma_delta != 0
+            && let Ok(Some(author)) = Users::find_by_id(author_id).one(db).await
+        {
+            let current_karma = author.karma_score;
+            let mut author_active: shared::entities::users::ActiveModel = author.into();
+            author_active.karma_score = Set(current_karma + karma_delta);
+            let _ = author_active.update(db).await;
         }
 
         // 3. Güncel Oylama Durumunu (Summary) Çek

@@ -60,25 +60,24 @@ pub fn evaluate_balance(
     let mut level = BalanceLevel::Normal;
 
     // 1. Anahtar üzerinde harcama limiti atanmışsa ve eşik değerinin altındaysa
-    if let Some(rem) = limit_rem {
-        if rem < key_limit_warn_threshold {
-            level = BalanceLevel::LowKeyLimit {
-                remaining: rem,
-                threshold: key_limit_warn_threshold,
-            };
-        }
+    if let Some(rem) = limit_rem
+        && rem < key_limit_warn_threshold
+    {
+        level = BalanceLevel::LowKeyLimit {
+            remaining: rem,
+            threshold: key_limit_warn_threshold,
+        };
     }
 
     // 2. Anahtar limiti sınırsız olsa bile hesap bakiyesi eşik değerinin altındaysa
-    if level == BalanceLevel::Normal {
-        if let Some(bal) = account_balance {
-            if bal < account_credits_warn_threshold {
-                level = BalanceLevel::LowAccountCredits {
-                    balance: bal,
-                    threshold: account_credits_warn_threshold,
-                };
-            }
-        }
+    if level == BalanceLevel::Normal
+        && let Some(bal) = account_balance
+        && bal < account_credits_warn_threshold
+    {
+        level = BalanceLevel::LowAccountCredits {
+            balance: bal,
+            threshold: account_credits_warn_threshold,
+        };
     }
 
     BalanceStatus {

@@ -142,43 +142,40 @@ pub fn parse_kykyemek_html(
         let btn_selector =
             Selector::parse("[data-fastmenus], [onclick*='showFastMenu'], button, a, p").unwrap();
         for btn in card.select(&btn_selector) {
-            if let Some(fast_json) = btn.value().attr("data-fastmenus") {
-                if let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json) {
-                    for item in items {
-                        let id_val = item.get("id").and_then(|v| v.as_str());
-                        let name_val = item
-                            .get("name")
-                            .or_else(|| item.get("title"))
-                            .and_then(|t| t.as_str())
-                            .unwrap_or("Al Götür");
+            if let Some(fast_json) = btn.value().attr("data-fastmenus")
+                && let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json)
+            {
+                for item in items {
+                    let id_val = item.get("id").and_then(|v| v.as_str());
+                    let name_val = item
+                        .get("name")
+                        .or_else(|| item.get("title"))
+                        .and_then(|t| t.as_str())
+                        .unwrap_or("Al Götür");
 
-                        let mut resolved = false;
-                        if let Some(uuid) = id_val {
-                            if let Some(slots) = crate::parser::takeaway::get_cached_fastmenu(uuid)
-                            {
-                                takeaways.push((name_val.to_string(), slots));
-                                resolved = true;
-                            }
-                        }
-
-                        if !resolved {
-                            if let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(
-                                name_val, city_slug, meal_type,
-                            ) {
-                                takeaways.append(&mut pkgs);
-                            }
-                        }
+                    let mut resolved = false;
+                    if let Some(uuid) = id_val
+                        && let Some(slots) = crate::parser::takeaway::get_cached_fastmenu(uuid)
+                    {
+                        takeaways.push((name_val.to_string(), slots));
+                        resolved = true;
                     }
-                }
-            }
-            if let Some(onclick) = btn.value().attr("onclick") {
-                if onclick.contains("showFastMenu") {
-                    if let Some(mut pkgs) =
-                        crate::parser::takeaway::parse_takeaway_menu(onclick, city_slug, meal_type)
+
+                    if !resolved
+                        && let Some(mut pkgs) = crate::parser::takeaway::parse_takeaway_menu(
+                            name_val, city_slug, meal_type,
+                        )
                     {
                         takeaways.append(&mut pkgs);
                     }
                 }
+            }
+            if let Some(onclick) = btn.value().attr("onclick")
+                && onclick.contains("showFastMenu")
+                && let Some(mut pkgs) =
+                    crate::parser::takeaway::parse_takeaway_menu(onclick, city_slug, meal_type)
+            {
+                takeaways.append(&mut pkgs);
             }
         }
         let mut seen_takeaways = std::collections::HashSet::new();
@@ -230,21 +227,21 @@ pub fn extract_fastmenu_items(html_content: &str) -> Vec<(String, String)> {
     let mut items_map = std::collections::HashMap::new();
 
     for el in document.select(&selector) {
-        if let Some(fast_json) = el.value().attr("data-fastmenus") {
-            if let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json) {
-                for item in items {
-                    if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
-                        let id_str = id.trim().to_string();
-                        if !id_str.is_empty() {
-                            let name = item
-                                .get("name")
-                                .or_else(|| item.get("title"))
-                                .and_then(|t| t.as_str())
-                                .unwrap_or("Al Götür")
-                                .trim()
-                                .to_string();
-                            items_map.entry(id_str).or_insert(name);
-                        }
+        if let Some(fast_json) = el.value().attr("data-fastmenus")
+            && let Ok(items) = serde_json::from_str::<Vec<serde_json::Value>>(fast_json)
+        {
+            for item in items {
+                if let Some(id) = item.get("id").and_then(|v| v.as_str()) {
+                    let id_str = id.trim().to_string();
+                    if !id_str.is_empty() {
+                        let name = item
+                            .get("name")
+                            .or_else(|| item.get("title"))
+                            .and_then(|t| t.as_str())
+                            .unwrap_or("Al Götür")
+                            .trim()
+                            .to_string();
+                        items_map.entry(id_str).or_insert(name);
                     }
                 }
             }

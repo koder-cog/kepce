@@ -197,13 +197,13 @@ pub async fn recategorize_all_dishes(db: &DatabaseConnection) -> Result<usize> {
     let mut updated = 0usize;
 
     for dish in all_dishes {
-        if let Some(cat) = shared::services::categorizer::categorize_dish(&dish.name) {
-            if dish.category.as_deref() != Some(&cat) {
-                let mut active: dishes::ActiveModel = dish.into();
-                active.category = Set(Some(cat));
-                active.update(db).await?;
-                updated += 1;
-            }
+        if let Some(cat) = shared::services::categorizer::categorize_dish(&dish.name)
+            && dish.category.as_deref() != Some(&cat)
+        {
+            let mut active: dishes::ActiveModel = dish.into();
+            active.category = Set(Some(cat));
+            active.update(db).await?;
+            updated += 1;
         }
     }
 

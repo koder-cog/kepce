@@ -4,9 +4,9 @@ use crate::dto::statistics::{HumanityStatsDto, ModerationStatsDto, TopDishDto, T
 use crate::services::comment::CommentService;
 use crate::services::statistics::{StatisticsService, StatsError};
 use axum::{
+    Json, Router,
     extract::{Query, State},
     routing::get,
-    Json, Router,
 };
 
 use crate::error::AppError;

@@ -5,9 +5,9 @@
 //! Bu sayede tüm endpoint'ler istemciye standart hata şemasında JSON yanıt döner.
 
 use axum::{
+    Json,
     http::StatusCode,
     response::{IntoResponse, Response},
-    Json,
 };
 use serde_json::json;
 

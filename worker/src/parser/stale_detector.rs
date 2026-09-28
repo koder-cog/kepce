@@ -67,12 +67,12 @@ impl StaleSequenceDetector {
             }
 
             // Önceki aydaki aynı gün numarasına bak (örn: 1 Eylül vs 1 Ağustos)
-            if let Some(prev_sig) = prev_by_day_num.get(&date.day()) {
-                if prev_sig == &incoming_sig {
-                    // Eşleşme var, seriye ekle
-                    current_streak.push((*date, incoming_sig));
-                    continue;
-                }
+            if let Some(prev_sig) = prev_by_day_num.get(&date.day())
+                && prev_sig == &incoming_sig
+            {
+                // Eşleşme var, seriye ekle
+                current_streak.push((*date, incoming_sig));
+                continue;
             }
 
             // Eşleşme bozuldu

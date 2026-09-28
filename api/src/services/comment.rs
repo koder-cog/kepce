@@ -201,68 +201,64 @@ impl CommentService {
         // 6. Yemek Oylarını (Tabldot) İşle
         if is_tabldot
             && db_sentiment != shared::entities::sea_orm_active_enums::SentimentEnum::Neutral
+            && let Some(d_id) = dto.dish_id
         {
-            if let Some(d_id) = dto.dish_id {
-                let existing_vote = dish_votes::Entity::find()
-                    .filter(dish_votes::Column::DishId.eq(d_id))
-                    .filter(dish_votes::Column::MenuId.eq(dto.menu_id))
-                    .filter(dish_votes::Column::UserId.eq(user_id))
-                    .one(&txn)
-                    .await
-                    .map_err(CommentError::DatabaseError)?;
+            let existing_vote = dish_votes::Entity::find()
+                .filter(dish_votes::Column::DishId.eq(d_id))
+                .filter(dish_votes::Column::MenuId.eq(dto.menu_id))
+                .filter(dish_votes::Column::UserId.eq(user_id))
+                .one(&txn)
+                .await
+                .map_err(CommentError::DatabaseError)?;
 
-                if let Some(existing) = existing_vote {
-                    let mut active: dish_votes::ActiveModel = existing.into();
-                    active.sentiment = Set(db_sentiment.clone());
-                    active.is_explicit = Set(true);
-                    active
-                        .update(&txn)
-                        .await
-                        .map_err(CommentError::DatabaseError)?;
-                } else {
-                    dish_votes::Entity::insert(dish_votes::ActiveModel {
-                        dish_id: Set(d_id),
-                        menu_id: Set(dto.menu_id),
-                        user_id: Set(user_id),
-                        sentiment: Set(db_sentiment.clone()),
-                        is_explicit: Set(true),
-                        ..Default::default()
-                    })
-                    .exec(&txn)
+            if let Some(existing) = existing_vote {
+                let mut active: dish_votes::ActiveModel = existing.into();
+                active.sentiment = Set(db_sentiment.clone());
+                active.is_explicit = Set(true);
+                active
+                    .update(&txn)
                     .await
                     .map_err(CommentError::DatabaseError)?;
-                }
+            } else {
+                dish_votes::Entity::insert(dish_votes::ActiveModel {
+                    dish_id: Set(d_id),
+                    menu_id: Set(dto.menu_id),
+                    user_id: Set(user_id),
+                    sentiment: Set(db_sentiment.clone()),
+                    is_explicit: Set(true),
+                    ..Default::default()
+                })
+                .exec(&txn)
+                .await
+                .map_err(CommentError::DatabaseError)?;
             }
         }
 
         txn.commit().await.map_err(CommentError::DatabaseError)?;
 
         // Yanıt bildirimi tetikleyici (Parent yorum sahibi kendisi değilse)
-        if let Some(p_id) = parent_id {
-            if let Ok(Some(parent_comment)) = Comments::find_by_id(p_id).one(db).await {
-                if let Some(parent_author_id) = parent_comment.user_id {
-                    if parent_author_id != user_id {
-                        let preview = inserted.content.as_deref().unwrap_or("Bir yanıt bıraktı");
-                        let truncated = if preview.chars().count() > 80 {
-                            format!("{}...", preview.chars().take(77).collect::<String>())
-                        } else {
-                            preview.to_string()
-                        };
-                        let action_href = format!("/yorumlar/{}?thread={}", dto.menu_id, p_id);
-                        let _ =
-                            crate::services::notification::NotificationService::send_notification(
-                                db,
-                                parent_author_id,
-                                "reply",
-                                &format!("@{} yorumuna yanıt verdi", author_username),
-                                &truncated,
-                                Some("Yanıta Git"),
-                                Some(&action_href),
-                            )
-                            .await;
-                    }
-                }
-            }
+        if let Some(p_id) = parent_id
+            && let Ok(Some(parent_comment)) = Comments::find_by_id(p_id).one(db).await
+            && let Some(parent_author_id) = parent_comment.user_id
+            && parent_author_id != user_id
+        {
+            let preview = inserted.content.as_deref().unwrap_or("Bir yanıt bıraktı");
+            let truncated = if preview.chars().count() > 80 {
+                format!("{}...", preview.chars().take(77).collect::<String>())
+            } else {
+                preview.to_string()
+            };
+            let action_href = format!("/yorumlar/{}?thread={}", dto.menu_id, p_id);
+            let _ = crate::services::notification::NotificationService::send_notification(
+                db,
+                parent_author_id,
+                "reply",
+                &format!("@{} yorumuna yanıt verdi", author_username),
+                &truncated,
+                Some("Yanıta Git"),
+                Some(&action_href),
+            )
+            .await;
         }
 
         let parent_username = if let Some(p_id) = parent_id {
@@ -486,17 +482,16 @@ impl CommentService {
         // 2. Ebeveyn kullanıcı adlarını toplu çek
         let parent_ids: Vec<Uuid> = results.iter().filter_map(|(c, _)| c.parent_id).collect();
         let mut parent_user_map: HashMap<Uuid, String> = HashMap::new();
-        if !parent_ids.is_empty() {
-            if let Ok(parent_comments) = Comments::find()
+        if !parent_ids.is_empty()
+            && let Ok(parent_comments) = Comments::find()
                 .filter(comments::Column::Id.is_in(parent_ids))
                 .find_also_related(shared::entities::users::Entity)
                 .all(db)
                 .await
-            {
-                for (pc, pu) in parent_comments {
-                    if let Some(u) = pu {
-                        parent_user_map.insert(pc.id, u.username);
-                    }
+        {
+            for (pc, pu) in parent_comments {
+                if let Some(u) = pu {
+                    parent_user_map.insert(pc.id, u.username);
                 }
             }
         }
@@ -504,15 +499,14 @@ impl CommentService {
         // 3. Yemek isimlerini toplu çek
         let dish_ids: Vec<i32> = results.iter().filter_map(|(c, _)| c.dish_id).collect();
         let mut dish_map: HashMap<i32, String> = HashMap::new();
-        if !dish_ids.is_empty() {
-            if let Ok(dishes_list) = shared::entities::dishes::Entity::find()
+        if !dish_ids.is_empty()
+            && let Ok(dishes_list) = shared::entities::dishes::Entity::find()
                 .filter(shared::entities::dishes::Column::Id.is_in(dish_ids))
                 .all(db)
                 .await
-            {
-                for d in dishes_list {
-                    dish_map.insert(d.id, d.name);
-                }
+        {
+            for d in dishes_list {
+                dish_map.insert(d.id, d.name);
             }
         }
 
@@ -667,7 +661,7 @@ impl CommentService {
 
         // HashMap tabanlı lookup için DTO'ları ID ile tutalım
         let mut flat_comments: HashMap<Uuid, (CommentResponseDto, Option<Uuid>)> = HashMap::new();
-        for (ref dto, parent_id) in &enriched_flat {
+        for (dto, parent_id) in &enriched_flat {
             flat_comments.insert(dto.id, (dto.clone(), *parent_id));
         }
 

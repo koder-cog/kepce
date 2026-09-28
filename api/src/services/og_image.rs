@@ -1,7 +1,7 @@
 //! Dinamik Open Graph (OG) görsel üretim motoru (resvg + tiny-skia).
 
 use resvg::tiny_skia::{Pixmap, Transform};
-use resvg::usvg::{self, fontdb, Tree};
+use resvg::usvg::{self, Tree, fontdb};
 use std::sync::{Arc, OnceLock};
 
 static FONT_DB: OnceLock<Arc<fontdb::Database>> = OnceLock::new();

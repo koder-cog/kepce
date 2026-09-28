@@ -92,41 +92,41 @@ impl VoteService {
                 .map_err(VoteError::DatabaseError)?;
 
             for (_, alias_opt) in menu_dishes_list {
-                if let Some(alias) = alias_opt {
-                    if let Some(dish_id) = alias.dish_id {
-                        // Check if explicit vote exists
-                        let existing_dish_vote = dish_votes::Entity::find()
-                            .filter(dish_votes::Column::DishId.eq(dish_id))
-                            .filter(dish_votes::Column::MenuId.eq(menu_id))
-                            .filter(dish_votes::Column::UserId.eq(user_id))
-                            .one(&txn)
-                            .await
-                            .map_err(VoteError::DatabaseError)?;
+                if let Some(alias) = alias_opt
+                    && let Some(dish_id) = alias.dish_id
+                {
+                    // Check if explicit vote exists
+                    let existing_dish_vote = dish_votes::Entity::find()
+                        .filter(dish_votes::Column::DishId.eq(dish_id))
+                        .filter(dish_votes::Column::MenuId.eq(menu_id))
+                        .filter(dish_votes::Column::UserId.eq(user_id))
+                        .one(&txn)
+                        .await
+                        .map_err(VoteError::DatabaseError)?;
 
-                        if let Some(existing) = existing_dish_vote {
-                            // Only overwrite if it's NOT explicit
-                            if !existing.is_explicit {
-                                let mut active: dish_votes::ActiveModel = existing.into();
-                                active.sentiment = Set(sentiment.clone());
-                                active
-                                    .update(&txn)
-                                    .await
-                                    .map_err(VoteError::DatabaseError)?;
-                            }
-                        } else {
-                            // Insert inherited vote
-                            dish_votes::Entity::insert(dish_votes::ActiveModel {
-                                dish_id: Set(dish_id),
-                                menu_id: Set(menu_id),
-                                user_id: Set(user_id),
-                                sentiment: Set(sentiment.clone()),
-                                is_explicit: Set(false),
-                                ..Default::default()
-                            })
-                            .exec(&txn)
-                            .await
-                            .map_err(VoteError::DatabaseError)?;
+                    if let Some(existing) = existing_dish_vote {
+                        // Only overwrite if it's NOT explicit
+                        if !existing.is_explicit {
+                            let mut active: dish_votes::ActiveModel = existing.into();
+                            active.sentiment = Set(sentiment.clone());
+                            active
+                                .update(&txn)
+                                .await
+                                .map_err(VoteError::DatabaseError)?;
                         }
+                    } else {
+                        // Insert inherited vote
+                        dish_votes::Entity::insert(dish_votes::ActiveModel {
+                            dish_id: Set(dish_id),
+                            menu_id: Set(menu_id),
+                            user_id: Set(user_id),
+                            sentiment: Set(sentiment.clone()),
+                            is_explicit: Set(false),
+                            ..Default::default()
+                        })
+                        .exec(&txn)
+                        .await
+                        .map_err(VoteError::DatabaseError)?;
                     }
                 }
             }

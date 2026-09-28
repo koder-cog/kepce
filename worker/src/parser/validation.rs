@@ -272,10 +272,10 @@ pub fn finalize_day_metadata(day_data: &mut crate::parser::models::DayData) {
     metadata.anomaly_score = crate::parser::anomaly::calculate_menu_distance(&combined_text);
 
     // Security layer: If the menu is highly anomalous compared to typical menus, flag for review
-    if let Some(distance) = metadata.anomaly_score {
-        if distance > 0.65 {
-            metadata.status = "needs_review".to_string();
-        }
+    if let Some(distance) = metadata.anomaly_score
+        && distance > 0.65
+    {
+        metadata.status = "needs_review".to_string();
     }
 
     // Retain the source file if it was previously set

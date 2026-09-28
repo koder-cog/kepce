@@ -10,8 +10,8 @@ use worker::parser::takeaway::{
     get_cached_fastmenu, insert_cached_fastmenu, parse_fast_menu_foods_html,
 };
 use worker::tasks::scraper::{
-    fetch_kykyemek_session, throttle_kykyemek, with_xhr_headers, ActiveKykSession,
-    KykYemekClientPool,
+    ActiveKykSession, KykYemekClientPool, fetch_kykyemek_session, throttle_kykyemek,
+    with_xhr_headers,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -334,10 +334,10 @@ async fn obtain_ready_session_and_cities(
 ) -> Option<(ActiveKykSession, Vec<String>)> {
     for _ in 0..15 {
         if let Some(s) = pool.acquire_session() {
-            if let Some(cached) = session_cache.get(&s.proxy_idx) {
-                if cached.token.is_some() {
-                    return Some((cached.clone(), Vec::new()));
-                }
+            if let Some(cached) = session_cache.get(&s.proxy_idx)
+                && cached.token.is_some()
+            {
+                return Some((cached.clone(), Vec::new()));
             }
 
             match fetch_kykyemek_session(&s.client).await {
@@ -466,14 +466,13 @@ async fn scrape_and_collect(
                         }
 
                         throttle_kykyemek().await;
-                        if let Ok(fast_res) = fast_req.send().await {
-                            if fast_res.status().is_success() {
-                                if let Ok(foods_html) = fast_res.text().await {
-                                    let slots = parse_fast_menu_foods_html(&foods_html);
-                                    if !slots.is_empty() {
-                                        insert_cached_fastmenu(fast_id, Some(fast_name), slots);
-                                    }
-                                }
+                        if let Ok(fast_res) = fast_req.send().await
+                            && fast_res.status().is_success()
+                            && let Ok(foods_html) = fast_res.text().await
+                        {
+                            let slots = parse_fast_menu_foods_html(&foods_html);
+                            if !slots.is_empty() {
+                                insert_cached_fastmenu(fast_id, Some(fast_name), slots);
                             }
                         }
 

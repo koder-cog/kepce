@@ -8,14 +8,14 @@ use crate::error::AppError;
 use crate::services::city::CityService;
 use crate::services::menu::MenuService;
 use axum::{
+    Json, Router,
     extract::{Path, State},
     http::HeaderMap,
     routing::get,
-    Json, Router,
 };
 use chrono::Utc;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use shared::entities::cities;
 
 #[derive(serde::Serialize)]

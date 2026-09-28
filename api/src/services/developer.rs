@@ -1,6 +1,6 @@
 use crate::dto::developer::{ApiKeyResponseDto, ApiUsageDto, ProjectResponseDto};
 use chrono::{Duration, Utc};
-use rand::{thread_rng, Rng};
+use rand::{Rng, thread_rng};
 use sea_orm::*;
 use sha2::{Digest, Sha256};
 use shared::entities::{api_keys, api_usage_logs, prelude::*, projects};

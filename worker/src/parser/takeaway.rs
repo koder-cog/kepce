@@ -288,10 +288,10 @@ pub fn get_takeaway_config(
 ) -> Option<HashMap<u32, TakeawayParsedPackage>> {
     let key = format!("{}_{}", city_slug, mapped_meal_type);
 
-    if let Ok(cache) = TAKEAWAY_CACHE.read() {
-        if let Some(cached) = cache.get(&key) {
-            return Some(cached.clone());
-        }
+    if let Ok(cache) = TAKEAWAY_CACHE.read()
+        && let Some(cached) = cache.get(&key)
+    {
+        return Some(cached.clone());
     }
 
     let turkish_meal_type = match mapped_meal_type {
@@ -362,10 +362,10 @@ pub fn parse_takeaway_menu(
             current_num.clear();
         }
     }
-    if !current_num.is_empty() {
-        if let Ok(num) = current_num.parse::<u32>() {
-            menu_ids.push(num);
-        }
+    if !current_num.is_empty()
+        && let Ok(num) = current_num.parse::<u32>()
+    {
+        menu_ids.push(num);
     }
 
     // Eğer numara bulunamadıysa ama metin config'deki başlıklardan birini içeriyorsa

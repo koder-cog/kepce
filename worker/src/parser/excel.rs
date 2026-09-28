@@ -1,8 +1,8 @@
 use anyhow::Result;
-use calamine::{open_workbook, Data, DataType, Reader, Xlsx};
+use calamine::{Data, DataType, Reader, Xlsx, open_workbook};
 use std::path::Path;
 
-use crate::parser::core::{parse_grid, SheetGrid};
+use crate::parser::core::{SheetGrid, parse_grid};
 use crate::parser::models::MenuDatabase;
 use crate::parser::validation;
 

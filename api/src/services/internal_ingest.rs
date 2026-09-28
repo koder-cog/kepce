@@ -61,10 +61,10 @@ fn parse_dish_calories(raw: &Option<String>) -> Option<i32> {
         }
     }
     let parts: Vec<&str> = cleaned.split(&['-', '–'][..]).map(|p| p.trim()).collect();
-    if parts.len() == 2 {
-        if let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
-            return Some((a + b) / 2);
-        }
+    if parts.len() == 2
+        && let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>())
+    {
+        return Some((a + b) / 2);
     }
     None
 }
@@ -450,17 +450,19 @@ impl InternalIngestService {
             }
 
             // Mevcut durumu geçmişe arşivle
-            let payload = serde_json::json!(existing_dishes_list
-                .iter()
-                .map(|(md, alias)| {
-                    serde_json::json!({
-                        "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
-                        "package_name": md.package_name.clone(),
-                        "order_index": md.order_index,
-                        "is_alternative": md.is_alternative
+            let payload = serde_json::json!(
+                existing_dishes_list
+                    .iter()
+                    .map(|(md, alias)| {
+                        serde_json::json!({
+                            "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
+                            "package_name": md.package_name.clone(),
+                            "order_index": md.order_index,
+                            "is_alternative": md.is_alternative
+                        })
                     })
-                })
-                .collect::<Vec<_>>());
+                    .collect::<Vec<_>>()
+            );
 
             let hist = shared::entities::menu_history::ActiveModel {
                 city_id: Set(m.city_id),
@@ -517,11 +519,10 @@ impl InternalIngestService {
 
         for (d, alias) in &existing_dishes_list {
             existing_alias_owner.insert((d.package_name.clone(), d.dish_alias_id), d.id);
-            if let Some(a) = alias {
-                if let Some(did) = a.dish_id {
-                    existing_dish_in_slot
-                        .insert((d.package_name.clone(), d.order_index, did), d.id);
-                }
+            if let Some(a) = alias
+                && let Some(did) = a.dish_id
+            {
+                existing_dish_in_slot.insert((d.package_name.clone(), d.order_index, did), d.id);
             }
         }
 
@@ -535,18 +536,16 @@ impl InternalIngestService {
                 matched_existing_ids.insert(existing.id);
 
                 if let Some(owner_id) = existing_alias_owner.get(&(package_name.clone(), alias_id))
+                    && *owner_id != existing.id
                 {
-                    if *owner_id != existing.id {
-                        continue;
-                    }
+                    continue;
                 }
 
                 if let Some(owner_id) =
                     existing_dish_in_slot.get(&(package_name.clone(), order_index, dish_id))
+                    && *owner_id != existing.id
                 {
-                    if *owner_id != existing.id {
-                        continue;
-                    }
+                    continue;
                 }
 
                 let final_amount = amount

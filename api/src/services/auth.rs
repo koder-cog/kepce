@@ -1,9 +1,9 @@
 use crate::dto::user::{LoginRequestDto, RegisterRequestDto, UserProfileDto, UserRole};
 use crate::extractors::auth::Claims;
-use bcrypt::{hash, verify, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::Utc;
-use jsonwebtoken::{encode, EncodingKey, Header};
-use rand::{distributions::Alphanumeric, Rng};
+use jsonwebtoken::{EncodingKey, Header, encode};
+use rand::{Rng, distributions::Alphanumeric};
 use sea_orm::*;
 use sha2::{Digest, Sha256};
 use shared::entities::{prelude::*, users};

@@ -136,13 +136,17 @@ mod tests {
         let menu = parse_kykmenum_html(html).expect("Menu bulunmalı");
         let breakfast = menu.breakfast.expect("Kahvaltı bulunmalı");
         // "*Siyah/Yeşil Zeytin" -> iki alternatife bölünmeli
-        assert!(breakfast
-            .iter()
-            .any(|g| g.iter().any(|c| c.name == "Siyah Zeytin")));
+        assert!(
+            breakfast
+                .iter()
+                .any(|g| g.iter().any(|c| c.name == "Siyah Zeytin"))
+        );
         let dinner = menu.dinner.expect("Akşam yemeği bulunmalı");
-        assert!(dinner
-            .iter()
-            .any(|g| g.iter().any(|c| c.name.contains("Mercimek Çorba"))));
+        assert!(
+            dinner
+                .iter()
+                .any(|g| g.iter().any(|c| c.name.contains("Mercimek Çorba")))
+        );
     }
 
     #[test]

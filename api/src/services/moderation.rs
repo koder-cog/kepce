@@ -232,7 +232,7 @@ impl ModerationService {
             _ => {
                 return Err(ModerationError::DatabaseError(DbErr::Custom(
                     "Geçersiz statü değeri".into(),
-                )))
+                )));
             }
         };
 
@@ -407,34 +407,33 @@ impl ModerationService {
         let txn = db.begin().await.map_err(ModerationError::DatabaseError)?;
 
         // Update notice or source_type if provided
-        if payload.notice.is_some() || payload.source_type.is_some() {
-            if let Some(menu) = menus::Entity::find_by_id(menu_id)
+        if (payload.notice.is_some() || payload.source_type.is_some())
+            && let Some(menu) = menus::Entity::find_by_id(menu_id)
                 .one(&txn)
                 .await
                 .map_err(ModerationError::DatabaseError)?
-            {
-                let mut active: menus::ActiveModel = menu.into();
-                if let Some(notice) = payload.notice {
-                    let trimmed = notice.trim();
-                    active.notice = Set(if trimmed.is_empty() {
-                        None
-                    } else {
-                        Some(trimmed.to_string())
-                    });
-                }
-                if let Some(source_type) = payload.source_type {
-                    let trimmed = source_type.trim();
-                    active.source_type = Set(if trimmed.is_empty() {
-                        None
-                    } else {
-                        Some(trimmed.to_string())
-                    });
-                }
-                active
-                    .update(&txn)
-                    .await
-                    .map_err(ModerationError::DatabaseError)?;
+        {
+            let mut active: menus::ActiveModel = menu.into();
+            if let Some(notice) = payload.notice {
+                let trimmed = notice.trim();
+                active.notice = Set(if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                });
             }
+            if let Some(source_type) = payload.source_type {
+                let trimmed = source_type.trim();
+                active.source_type = Set(if trimmed.is_empty() {
+                    None
+                } else {
+                    Some(trimmed.to_string())
+                });
+            }
+            active
+                .update(&txn)
+                .await
+                .map_err(ModerationError::DatabaseError)?;
         }
 
         // Determine items to insert
@@ -500,10 +499,9 @@ impl ModerationService {
             .one(txn)
             .await
             .map_err(ModerationError::DatabaseError)?
+            && direct.dish_id == Some(dish_id)
         {
-            if direct.dish_id == Some(dish_id) {
-                return Ok(direct.id);
-            }
+            return Ok(direct.id);
         }
 
         if let Some(alias) = dish_aliases::Entity::find()
@@ -747,10 +745,10 @@ impl ModerationService {
         let mut query =
             menu_submissions::Entity::find().order_by_desc(menu_submissions::Column::CreatedAt);
 
-        if let Some(s) = status_filter {
-            if !s.trim().is_empty() {
-                query = query.filter(menu_submissions::Column::Status.eq(s));
-            }
+        if let Some(s) = status_filter
+            && !s.trim().is_empty()
+        {
+            query = query.filter(menu_submissions::Column::Status.eq(s));
         }
 
         let submissions = query
@@ -824,17 +822,16 @@ impl ModerationService {
             .await
             .map_err(ModerationError::DatabaseError)?;
 
-        if new_status == "approved" && was_not_approved {
-            if let Some(user_id) = sub.user_id {
-                if let Ok(Some(user)) = shared::entities::users::Entity::find_by_id(user_id)
-                    .one(db)
-                    .await
-                {
-                    let mut user_active: shared::entities::users::ActiveModel = user.clone().into();
-                    user_active.karma_score = Set(user.karma_score + 25);
-                    let _ = user_active.update(db).await;
-                }
-            }
+        if new_status == "approved"
+            && was_not_approved
+            && let Some(user_id) = sub.user_id
+            && let Ok(Some(user)) = shared::entities::users::Entity::find_by_id(user_id)
+                .one(db)
+                .await
+        {
+            let mut user_active: shared::entities::users::ActiveModel = user.clone().into();
+            user_active.karma_score = Set(user.karma_score + 25);
+            let _ = user_active.update(db).await;
         }
 
         Ok(updated)
@@ -1446,11 +1443,13 @@ mod tests {
         );
 
         // Reddedilen arşivindeki klasör tamamen temizlenmiş olmalı
-        assert!(!ingest
-            .join("reddedilen")
-            .join("istanbul")
-            .join(ref_id)
-            .exists());
+        assert!(
+            !ingest
+                .join("reddedilen")
+                .join("istanbul")
+                .join(ref_id)
+                .exists()
+        );
 
         let _ = tokio::fs::remove_dir_all(&base_temp).await;
     }

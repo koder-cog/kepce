@@ -1,6 +1,6 @@
 use crate::parser::models::MenuDatabase;
 use anyhow::{Context, Result};
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use reqwest::Client;
 use serde_json::json;
 use std::path::Path;
@@ -134,22 +134,22 @@ pub fn menu_response_schema() -> serde_json::Value {
 }
 
 fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
-    if let Some(t) = json_res.get("output_text").and_then(|t| t.as_str()) {
-        if !t.trim().is_empty() {
-            return Some(t.to_string());
-        }
+    if let Some(t) = json_res.get("output_text").and_then(|t| t.as_str())
+        && !t.trim().is_empty()
+    {
+        return Some(t.to_string());
     }
-    if let Some(t) = json_res.get("text").and_then(|t| t.as_str()) {
-        if !t.trim().is_empty() {
-            return Some(t.to_string());
-        }
+    if let Some(t) = json_res.get("text").and_then(|t| t.as_str())
+        && !t.trim().is_empty()
+    {
+        return Some(t.to_string());
     }
     if let Some(outputs) = json_res.get("outputs").and_then(|o| o.as_array()) {
         for output in outputs.iter().rev() {
-            if let Some(t) = output.get("text").and_then(|t| t.as_str()) {
-                if !t.trim().is_empty() {
-                    return Some(t.to_string());
-                }
+            if let Some(t) = output.get("text").and_then(|t| t.as_str())
+                && !t.trim().is_empty()
+            {
+                return Some(t.to_string());
             }
         }
     }
@@ -160,45 +160,43 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
             // metin çıkarılamıyor ve ham zarf ayrıştırıcıya veriliyordu ("0 gün").
             if let Some(content) = step.get("content").and_then(|c| c.as_array()) {
                 for part in content.iter().rev() {
-                    if let Some(t) = part.get("text").and_then(|t| t.as_str()) {
-                        if !t.trim().is_empty() {
-                            return Some(t.to_string());
-                        }
+                    if let Some(t) = part.get("text").and_then(|t| t.as_str())
+                        && !t.trim().is_empty()
+                    {
+                        return Some(t.to_string());
                     }
                 }
             }
-            if let Some(t) = step.get("text").and_then(|t| t.as_str()) {
-                if !t.trim().is_empty() {
-                    return Some(t.to_string());
-                }
+            if let Some(t) = step.get("text").and_then(|t| t.as_str())
+                && !t.trim().is_empty()
+            {
+                return Some(t.to_string());
             }
-            if let Some(parts) = step.get("parts").and_then(|p| p.as_array()) {
-                if let Some(t) = parts
+            if let Some(parts) = step.get("parts").and_then(|p| p.as_array())
+                && let Some(t) = parts
                     .first()
                     .and_then(|p| p.get("text"))
                     .and_then(|t| t.as_str())
-                {
-                    if !t.trim().is_empty() {
-                        return Some(t.to_string());
-                    }
-                }
+                && !t.trim().is_empty()
+            {
+                return Some(t.to_string());
             }
             if let Some(output) = step.get("output") {
-                if let Some(t) = output.as_str() {
-                    if !t.trim().is_empty() {
-                        return Some(t.to_string());
-                    }
+                if let Some(t) = output.as_str()
+                    && !t.trim().is_empty()
+                {
+                    return Some(t.to_string());
                 }
-                if let Some(t) = output.get("text").and_then(|t| t.as_str()) {
-                    if !t.trim().is_empty() {
-                        return Some(t.to_string());
-                    }
+                if let Some(t) = output.get("text").and_then(|t| t.as_str())
+                    && !t.trim().is_empty()
+                {
+                    return Some(t.to_string());
                 }
             }
         }
     }
-    if let Some(candidates) = json_res.get("candidates").and_then(|c| c.as_array()) {
-        if let Some(t) = candidates
+    if let Some(candidates) = json_res.get("candidates").and_then(|c| c.as_array())
+        && let Some(t) = candidates
             .first()
             .and_then(|c| c.get("content"))
             .and_then(|c| c.get("parts"))
@@ -206,11 +204,9 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
             .and_then(|a| a.first())
             .and_then(|p| p.get("text"))
             .and_then(|t| t.as_str())
-        {
-            if !t.trim().is_empty() {
-                return Some(t.to_string());
-            }
-        }
+        && !t.trim().is_empty()
+    {
+        return Some(t.to_string());
     }
     None
 }
@@ -240,15 +236,15 @@ fn find_menu_json_deep(value: &serde_json::Value) -> Option<String> {
 
 fn clean_json_markdown(raw: &str) -> &str {
     let trimmed = raw.trim();
-    if let Some(stripped) = trimmed.strip_prefix("```json") {
-        if let Some(inner) = stripped.strip_suffix("```") {
-            return inner.trim();
-        }
+    if let Some(stripped) = trimmed.strip_prefix("```json")
+        && let Some(inner) = stripped.strip_suffix("```")
+    {
+        return inner.trim();
     }
-    if let Some(stripped) = trimmed.strip_prefix("```") {
-        if let Some(inner) = stripped.strip_suffix("```") {
-            return inner.trim();
-        }
+    if let Some(stripped) = trimmed.strip_prefix("```")
+        && let Some(inner) = stripped.strip_suffix("```")
+    {
+        return inner.trim();
     }
     trimmed
 }
@@ -490,10 +486,10 @@ async fn call_openrouter(
         "max_tokens": max_tokens
     });
 
-    if !effort.is_empty() {
-        if let Some(obj) = payload.as_object_mut() {
-            obj.insert("reasoning".to_string(), json!({ "effort": effort }));
-        }
+    if !effort.is_empty()
+        && let Some(obj) = payload.as_object_mut()
+    {
+        obj.insert("reasoning".to_string(), json!({ "effort": effort }));
     }
 
     let res = client
@@ -577,13 +573,13 @@ async fn call_gemini(
 
     // Yüksek muhakeme. Alan adı canlıda doğrulandı:
     // generation_config.thinking_level = "high" -> HTTP 200 + thought token.
-    if !thinking_level.is_empty() {
-        if let Some(obj) = payload.as_object_mut() {
-            obj.insert(
-                "generation_config".to_string(),
-                json!({ "thinking_level": thinking_level }),
-            );
-        }
+    if !thinking_level.is_empty()
+        && let Some(obj) = payload.as_object_mut()
+    {
+        obj.insert(
+            "generation_config".to_string(),
+            json!({ "thinking_level": thinking_level }),
+        );
     }
 
     let res = client

@@ -120,10 +120,14 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_alert_missing_env() {
-        std::env::remove_var("ALERT_WEBHOOK_URL");
-        std::env::remove_var("DISCORD_WEBHOOK_URL");
-        std::env::remove_var("TELEGRAM_BOT_TOKEN");
-        std::env::remove_var("TELEGRAM_ADMIN_CHAT_ID");
+        // Rust 2024: set_var/remove_var artık unsafe. Test tek başına çalıştığı ve
+        // bu değişkenleri okuyan başka bir thread olmadığı için güvenli.
+        unsafe {
+            std::env::remove_var("ALERT_WEBHOOK_URL");
+            std::env::remove_var("DISCORD_WEBHOOK_URL");
+            std::env::remove_var("TELEGRAM_BOT_TOKEN");
+            std::env::remove_var("TELEGRAM_ADMIN_CHAT_ID");
+        }
         let res = AlertingService::send_alert("Test uyarısı").await;
         assert!(res.is_ok());
     }

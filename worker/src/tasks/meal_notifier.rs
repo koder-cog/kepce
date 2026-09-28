@@ -18,7 +18,7 @@ use std::env;
 use std::str::FromStr;
 use std::sync::OnceLock;
 use web_push_native::{
-    jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, WebPushBuilder,
+    Auth, WebPushBuilder, jwt_simple::algorithms::ES256KeyPair, p256::PublicKey,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

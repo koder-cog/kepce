@@ -8,9 +8,9 @@ use crate::{
     services::admin as admin_service,
 };
 use axum::{
+    Json, Router,
     extract::{Path, State},
     routing::{delete, get, post, put},
-    Json, Router,
 };
 
 pub fn router() -> Router<AppState> {

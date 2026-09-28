@@ -5,7 +5,7 @@ use crate::dto::user::UserRole;
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
 use crate::services::system::SystemService;
-use axum::{extract::State, routing::get, Json, Router};
+use axum::{Json, Router, extract::State, routing::get};
 
 /// SA-11: Bütünlük doğrulama ve geçmiş sorguları iç altyapı bilgisi sızdırır
 /// ve DB ağırlığı yaratır; yalnızca adminlere açıktır.

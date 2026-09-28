@@ -5,9 +5,9 @@ use crate::extractors::auth::{AuthenticatedUser, OptionalUser};
 use crate::services::menu::{MenuError, MenuService};
 use crate::services::vote::{VoteError, VoteService};
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     routing::get,
-    Json, Router,
 };
 use chrono::NaiveDate;
 use serde::Deserialize;
@@ -109,7 +109,7 @@ async fn get_menus(
             Err(_) => {
                 return Err(AppError::BadRequest(
                     "Geçersiz tarih formatı. YYYY-MM-DD veya 'today' kullanılmalıdır.".to_string(),
-                ))
+                ));
             }
         },
         None => None,
@@ -171,7 +171,7 @@ pub fn validate_range_params(
         _ => {
             return Err(AppError::BadRequest(
                 "city parametresi zorunludur.".to_string(),
-            ))
+            ));
         }
     };
 
@@ -180,7 +180,7 @@ pub fn validate_range_params(
         _ => {
             return Err(AppError::BadRequest(
                 "start_date parametresi zorunludur.".to_string(),
-            ))
+            ));
         }
     };
 
@@ -189,7 +189,7 @@ pub fn validate_range_params(
         _ => {
             return Err(AppError::BadRequest(
                 "end_date parametresi zorunludur.".to_string(),
-            ))
+            ));
         }
     };
 

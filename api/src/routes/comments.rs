@@ -6,9 +6,9 @@ use crate::extractors::validated::ValidatedJson;
 use crate::services::comment::{CommentError, CommentService};
 use crate::services::reaction::{ReactionError, ReactionService};
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     routing::{get, post, put},
-    Json, Router,
 };
 use uuid::Uuid;
 

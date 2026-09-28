@@ -3,7 +3,7 @@ use crate::dto::admin::{
     CreateDishDto, DetachDishDto, DishAliasDto, DishModerationStatsDto, MergeDishesDto,
     SplitDishDto, UpdateDishDto,
 };
-use bcrypt::{hash, DEFAULT_COST};
+use bcrypt::{DEFAULT_COST, hash};
 use sea_orm::ActiveModelTrait;
 use sea_orm::ActiveValue::Set;
 use sea_orm::{
@@ -66,7 +66,9 @@ pub async fn bootstrap_admin(
             );
         }
     } else {
-        tracing::warn!("Admin kullanıcısı yok, ancak INITIAL_ADMIN_EMAIL veya INITIAL_ADMIN_PASSWORD eksik olduğu için kurulamadı.");
+        tracing::warn!(
+            "Admin kullanıcısı yok, ancak INITIAL_ADMIN_EMAIL veya INITIAL_ADMIN_PASSWORD eksik olduğu için kurulamadı."
+        );
     }
 
     Ok(())
@@ -352,11 +354,11 @@ pub async fn get_dish_stats(
     .to_string();
 
     let mut values = vec![];
-    if let Some(s) = search {
-        if !s.trim().is_empty() {
-            sql.push_str(" WHERE LOWER(d.name) LIKE LOWER($1)");
-            values.push(format!("%{}%", s.trim()).into());
-        }
+    if let Some(s) = search
+        && !s.trim().is_empty()
+    {
+        sql.push_str(" WHERE LOWER(d.name) LIKE LOWER($1)");
+        values.push(format!("%{}%", s.trim()).into());
     }
     sql.push_str(" GROUP BY d.id ORDER BY usage_count DESC");
 

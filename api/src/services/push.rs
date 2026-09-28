@@ -11,7 +11,7 @@ use std::str::FromStr;
 use std::sync::OnceLock;
 use uuid::Uuid;
 use web_push_native::{
-    jwt_simple::algorithms::ES256KeyPair, p256::PublicKey, Auth, WebPushBuilder,
+    Auth, WebPushBuilder, jwt_simple::algorithms::ES256KeyPair, p256::PublicKey,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -37,11 +37,11 @@ impl PushService {
         }
         let kp = Self::get_key_pair();
         let pk = kp.public_key();
-        if let Ok(der) = pk.to_der() {
-            if der.len() >= 65 {
-                let uncompressed = &der[der.len() - 65..];
-                return base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(uncompressed);
-            }
+        if let Ok(der) = pk.to_der()
+            && der.len() >= 65
+        {
+            let uncompressed = &der[der.len() - 65..];
+            return base64::engine::general_purpose::URL_SAFE_NO_PAD.encode(uncompressed);
         }
         String::new()
     }

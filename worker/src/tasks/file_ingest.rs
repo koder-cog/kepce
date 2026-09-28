@@ -162,7 +162,10 @@ pub async fn process_local_files(
             let city_id = match city_opt {
                 Some(c) => c.id,
                 None => {
-                    tracing::warn!("Lokal dosya taraması: '{}' adlı şehir veritabanında bulunamadı, atlanıyor.", city_slug);
+                    tracing::warn!(
+                        "Lokal dosya taraması: '{}' adlı şehir veritabanında bulunamadı, atlanıyor.",
+                        city_slug
+                    );
                     continue;
                 }
             };
@@ -325,7 +328,10 @@ pub async fn process_local_files(
                             e
                         );
                         if let Err(copy_err) = tokio::fs::copy(&path, &dest).await {
-                            tracing::error!("Kopyalama başarısız ({:?}). Sonsuz döngüyü önlemek için dosya uzantısı .failed yapılıyor...", copy_err);
+                            tracing::error!(
+                                "Kopyalama başarısız ({:?}). Sonsuz döngüyü önlemek için dosya uzantısı .failed yapılıyor...",
+                                copy_err
+                            );
                             let failed_dest = path.with_extension(format!("{}.failed", ext));
                             if let Err(rename_err) = tokio::fs::rename(&path, &failed_dest).await {
                                 tracing::error!(
@@ -335,7 +341,11 @@ pub async fn process_local_files(
                             }
                         } else {
                             if let Err(remove_err) = tokio::fs::remove_file(&path).await {
-                                tracing::error!("Kaynak dosya silinemedi ({:?}): {:?}. Yeniden işlenmemesi için .processed yapılıyor...", path, remove_err);
+                                tracing::error!(
+                                    "Kaynak dosya silinemedi ({:?}): {:?}. Yeniden işlenmemesi için .processed yapılıyor...",
+                                    path,
+                                    remove_err
+                                );
                                 let _ = tokio::fs::rename(
                                     &path,
                                     path.with_extension(format!("{}.processed", ext)),
@@ -354,7 +364,10 @@ pub async fn process_local_files(
                             e
                         );
                         if let Err(copy_err) = tokio::fs::copy(&path, &dest).await {
-                            tracing::error!("Kopyalama başarısız ({:?}). Sonsuz döngüyü önlemek için dosya uzantısı .failed yapılıyor...", copy_err);
+                            tracing::error!(
+                                "Kopyalama başarısız ({:?}). Sonsuz döngüyü önlemek için dosya uzantısı .failed yapılıyor...",
+                                copy_err
+                            );
                             let failed_dest = path.with_extension(format!("{}.failed", ext));
                             if let Err(rename_err) = tokio::fs::rename(&path, &failed_dest).await {
                                 tracing::error!(
@@ -364,7 +377,11 @@ pub async fn process_local_files(
                             }
                         } else {
                             if let Err(remove_err) = tokio::fs::remove_file(&path).await {
-                                tracing::error!("Kaynak dosya silinemedi ({:?}): {:?}. Yeniden işlenmemesi için .failed yapılıyor...", path, remove_err);
+                                tracing::error!(
+                                    "Kaynak dosya silinemedi ({:?}): {:?}. Yeniden işlenmemesi için .failed yapılıyor...",
+                                    path,
+                                    remove_err
+                                );
                                 let _ = tokio::fs::rename(
                                     &path,
                                     path.with_extension(format!("{}.failed", ext)),

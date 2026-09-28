@@ -76,14 +76,12 @@ pub fn calculate_menu_distance(text: &str) -> Option<f32> {
     }
 
     // Tier 1: Fastembed nöral embedding modeli
-    if let (Some(baseline), Some(model_mutex)) = (get_baseline_vector(), get_model()) {
-        if let Ok(mut model) = model_mutex.lock() {
-            if let Ok(mut embeddings) = model.embed(vec![text.to_string()], None) {
-                if let Some(emb) = embeddings.pop() {
-                    return Some(cosine_distance(&emb, baseline));
-                }
-            }
-        }
+    if let (Some(baseline), Some(model_mutex)) = (get_baseline_vector(), get_model())
+        && let Ok(mut model) = model_mutex.lock()
+        && let Ok(mut embeddings) = model.embed(vec![text.to_string()], None)
+        && let Some(emb) = embeddings.pop()
+    {
+        return Some(cosine_distance(&emb, baseline));
     }
 
     // Tier 2: Model çevrimdışıyken sözlük eşleşme oranından türetilen deterministik mesafe

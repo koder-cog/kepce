@@ -177,15 +177,13 @@ async fn purge_directory_files(
 
                 if age >= ttl {
                     let file_size = metadata.len();
-                    if !dry_run {
-                        if let Err(e) = tokio::fs::remove_file(&path).await {
-                            tracing::warn!(
-                                "Zaman aşımına uğrayan dosya silinemedi ({:?}): {}",
-                                path,
-                                e
-                            );
-                            continue;
-                        }
+                    if !dry_run && let Err(e) = tokio::fs::remove_file(&path).await {
+                        tracing::warn!(
+                            "Zaman aşımına uğrayan dosya silinemedi ({:?}): {}",
+                            path,
+                            e
+                        );
+                        continue;
                     }
                     files_deleted += 1;
                     bytes_freed += file_size;
@@ -216,12 +214,13 @@ async fn remove_empty_subdirectories(
         };
 
         while let Ok(Some(entry)) = reader.next_entry().await {
-            if let Ok(file_type) = entry.file_type().await {
-                if file_type.is_dir() && !file_type.is_symlink() {
-                    let p = entry.path();
-                    dirs_to_check.push(p.clone());
-                    stack.push(p);
-                }
+            if let Ok(file_type) = entry.file_type().await
+                && file_type.is_dir()
+                && !file_type.is_symlink()
+            {
+                let p = entry.path();
+                dirs_to_check.push(p.clone());
+                stack.push(p);
             }
         }
     }
@@ -239,13 +238,13 @@ async fn remove_empty_subdirectories(
         }
 
         // Yaş kontrolü: Aktif yüklemelerin yeni açtığı boş dizinleri yarış koşuluna karşı koru
-        if min_dir_age > Duration::ZERO {
-            if let Ok(metadata) = tokio::fs::metadata(&dir).await {
-                let modified = metadata.modified().unwrap_or(now);
-                let age = now.duration_since(modified).unwrap_or(Duration::ZERO);
-                if age < min_dir_age {
-                    continue;
-                }
+        if min_dir_age > Duration::ZERO
+            && let Ok(metadata) = tokio::fs::metadata(&dir).await
+        {
+            let modified = metadata.modified().unwrap_or(now);
+            let age = now.duration_since(modified).unwrap_or(Duration::ZERO);
+            if age < min_dir_age {
+                continue;
             }
         }
 

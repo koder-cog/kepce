@@ -5,9 +5,8 @@
 
 use crate::error::AppError;
 use axum::{
-    async_trait,
+    Json, async_trait,
     extract::{FromRequest, Request},
-    Json,
 };
 use serde::de::DeserializeOwned;
 use validator::Validate;
@@ -30,12 +29,11 @@ where
 
         if let Err(e) = value.validate() {
             let mut message = String::new();
-            if let Some((_, errors)) = e.field_errors().iter().next() {
-                if let Some(err) = errors.first() {
-                    if let Some(msg) = &err.message {
-                        message = msg.to_string();
-                    }
-                }
+            if let Some((_, errors)) = e.field_errors().iter().next()
+                && let Some(err) = errors.first()
+                && let Some(msg) = &err.message
+            {
+                message = msg.to_string();
             }
             if message.is_empty() {
                 message = "Girdi doğrulama hatası".to_string();

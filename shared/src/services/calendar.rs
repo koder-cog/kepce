@@ -63,10 +63,10 @@ pub fn get_special_day_name(date: NaiveDate, city_slug: &str) -> Option<String> 
     let mm_dd = format!("{:02}-{:02}", date.month(), date.day());
 
     // 1. Şehre özel yerel gün
-    if let Some(city_days) = data.cities.get(city_slug) {
-        if let Some(name) = city_days.get(&mm_dd) {
-            return Some(name.clone());
-        }
+    if let Some(city_days) = data.cities.get(city_slug)
+        && let Some(name) = city_days.get(&mm_dd)
+    {
+        return Some(name.clone());
     }
 
     // 2. Ulusal gün

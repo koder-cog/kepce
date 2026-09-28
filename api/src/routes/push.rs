@@ -3,14 +3,14 @@
 use crate::error::AppError;
 use crate::services::push::{PushPayload, PushService};
 use axum::{
+    Router,
     extract::{Json, State},
     routing::{get, post},
-    Router,
 };
 use chrono::Utc;
 use sea_orm::{ActiveModelTrait, ColumnTrait, DatabaseConnection, EntityTrait, QueryFilter, Set};
 use serde::Deserialize;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use shared::entities::{prelude::*, push_subscriptions};
 
 #[derive(Debug, Deserialize)]
@@ -174,7 +174,7 @@ async fn send_test_push(
         None => {
             return Err(AppError::NotFound(
                 "Bu cihaza ait bildirim aboneliği bulunamadı.".to_string(),
-            ))
+            ));
         }
     };
 

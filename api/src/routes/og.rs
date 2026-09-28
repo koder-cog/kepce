@@ -3,13 +3,13 @@
 use crate::config::AppState;
 use crate::services::og_image::{render_og_card, render_og_profile};
 use axum::{
+    Router,
     extract::{Path, Query, State},
-    http::{header, StatusCode},
+    http::{StatusCode, header},
     response::{IntoResponse, Response},
     routing::get,
-    Router,
 };
-use base64::{engine::general_purpose::STANDARD as BASE64, Engine as _};
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use chrono::{Datelike, NaiveDate};
 use sea_orm::*;
 use shared::entities::{
@@ -279,11 +279,11 @@ async fn get_user_og(
             clean_path.to_string(),
         ];
         for candidate in candidates {
-            if StdPath::new(&candidate).exists() {
-                if let Ok(bytes) = std::fs::read(&candidate) {
-                    avatar_b64 = Some(BASE64.encode(&bytes));
-                    break;
-                }
+            if StdPath::new(&candidate).exists()
+                && let Ok(bytes) = std::fs::read(&candidate)
+            {
+                avatar_b64 = Some(BASE64.encode(&bytes));
+                break;
             }
         }
     }

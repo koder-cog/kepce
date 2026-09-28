@@ -4,7 +4,7 @@
 //! Yapılandırma ortam değişkeni yoksa servis pasif kalır.
 
 use reqwest::Client;
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 
 #[derive(Debug)]
 pub enum BotError {

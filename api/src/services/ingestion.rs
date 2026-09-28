@@ -94,12 +94,12 @@ impl IngestionService {
                 "Geçersiz ay (1-12 arasında olmalıdır)".to_string(),
             ));
         }
-        if let Some(ref n) = input.notes {
-            if n.len() > 1000 {
-                return Err(IngestionError::InvalidInput(
-                    "Notlar en fazla 1000 karakter olabilir".to_string(),
-                ));
-            }
+        if let Some(ref n) = input.notes
+            && n.len() > 1000
+        {
+            return Err(IngestionError::InvalidInput(
+                "Notlar en fazla 1000 karakter olabilir".to_string(),
+            ));
         }
 
         // 2. Validate files

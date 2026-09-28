@@ -26,14 +26,14 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Veritabanı bağlantısı başarılı.");
 
     // OpenRouter bakiye ve kota denetimi
-    if let Ok(key) = env::var("OPENROUTER_API_KEY") {
-        if !key.trim().is_empty() {
-            let client = reqwest::Client::builder()
-                .timeout(Duration::from_secs(10))
-                .build()
-                .unwrap_or_default();
-            let _ = parser::openrouter_monitor::check_openrouter_balance(&client, &key, None).await;
-        }
+    if let Ok(key) = env::var("OPENROUTER_API_KEY")
+        && !key.trim().is_empty()
+    {
+        let client = reqwest::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()
+            .unwrap_or_default();
+        let _ = parser::openrouter_monitor::check_openrouter_balance(&client, &key, None).await;
     }
 
     // Otomatik Kendini Tamir Eden Temizleyici (Self-Healing Sanitizer)
@@ -197,7 +197,10 @@ async fn main() -> anyhow::Result<()> {
             Ok(report) => {
                 tracing::info!(
                     "[DISH-RECONCILE] Uzlaşma tamamlandı: {} yemek güncellendi, {} yemek birleştirildi, {} alias güncellendi, {} alias birleştirildi.",
-                    report.dishes_updated, report.dishes_merged, report.aliases_updated, report.aliases_merged
+                    report.dishes_updated,
+                    report.dishes_merged,
+                    report.aliases_updated,
+                    report.aliases_merged
                 );
             }
             Err(e) => {
@@ -338,29 +341,29 @@ async fn main() -> anyhow::Result<()> {
     );
 
     // OpenRouter erişilebilirlik kontrolü (birincil sağlayıcı).
-    if let Ok(or_key) = env::var("OPENROUTER_API_KEY") {
-        if !or_key.trim().is_empty() {
-            let base = env::var("OPENROUTER_BASE_URL")
-                .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
-            let url = format!("{}/key", base.trim_end_matches('/'));
-            match reqwest_client
-                .get(&url)
-                .header("Authorization", format!("Bearer {}", or_key))
-                .send()
-                .await
-            {
-                Ok(res) if res.status().is_success() => {
-                    tracing::info!("OpenRouter API anahtarı doğrulandı [OK]");
-                }
-                Ok(res) => {
-                    tracing::warn!(
-                        "OpenRouter erişilebilirlik kontrolü başarısız (HTTP {}).",
-                        res.status()
-                    );
-                }
-                Err(e) => {
-                    tracing::warn!("OpenRouter erişilebilirlik kontrolü başarısız: {:?}", e);
-                }
+    if let Ok(or_key) = env::var("OPENROUTER_API_KEY")
+        && !or_key.trim().is_empty()
+    {
+        let base = env::var("OPENROUTER_BASE_URL")
+            .unwrap_or_else(|_| "https://openrouter.ai/api/v1".to_string());
+        let url = format!("{}/key", base.trim_end_matches('/'));
+        match reqwest_client
+            .get(&url)
+            .header("Authorization", format!("Bearer {}", or_key))
+            .send()
+            .await
+        {
+            Ok(res) if res.status().is_success() => {
+                tracing::info!("OpenRouter API anahtarı doğrulandı [OK]");
+            }
+            Ok(res) => {
+                tracing::warn!(
+                    "OpenRouter erişilebilirlik kontrolü başarısız (HTTP {}).",
+                    res.status()
+                );
+            }
+            Err(e) => {
+                tracing::warn!("OpenRouter erişilebilirlik kontrolü başarısız: {:?}", e);
             }
         }
     }
@@ -519,7 +522,10 @@ async fn main() -> anyhow::Result<()> {
                 {
                     Ok(updated) => {
                         last_reconcile_date = Some(today);
-                        tracing::info!("--- [RECONCILE] GECE DERİN UZLAŞMA TAMAMLANDI ({} menü güncellendi) ---", updated);
+                        tracing::info!(
+                            "--- [RECONCILE] GECE DERİN UZLAŞMA TAMAMLANDI ({} menü güncellendi) ---",
+                            updated
+                        );
                     }
                     Err(e) => {
                         tracing::error!("[RECONCILE] Gece derin uzlaşma hatası: {:?}", e);
@@ -533,7 +539,10 @@ async fn main() -> anyhow::Result<()> {
                     Ok(report) => {
                         tracing::info!(
                             "--- [RECONCILE] GECE YEMEK UZLAŞMASI TAMAMLANDI: {} yemek güncellendi, {} yemek birleştirildi, {} alias güncellendi, {} alias birleştirildi. ---",
-                            report.dishes_updated, report.dishes_merged, report.aliases_updated, report.aliases_merged
+                            report.dishes_updated,
+                            report.dishes_merged,
+                            report.aliases_updated,
+                            report.aliases_merged
                         );
                     }
                     Err(e) => {
@@ -569,7 +578,7 @@ async fn main() -> anyhow::Result<()> {
     let shutdown_signal = async {
         #[cfg(unix)]
         {
-            use tokio::signal::unix::{signal, SignalKind};
+            use tokio::signal::unix::{SignalKind, signal};
             let mut sigterm = signal(SignalKind::terminate()).unwrap();
             let mut sigint = signal(SignalKind::interrupt()).unwrap();
             tokio::select! {

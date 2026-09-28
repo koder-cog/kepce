@@ -5,9 +5,9 @@ use crate::services::ingestion::{
     IngestedFile, IngestionError, IngestionService, MenuSubmissionInput,
 };
 use axum::{
+    Json, Router,
     extract::{Multipart, State},
     routing::post,
-    Json, Router,
 };
 
 pub fn router() -> Router<crate::config::AppState> {

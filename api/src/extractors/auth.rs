@@ -11,7 +11,7 @@ use axum::{
     extract::{FromRef, FromRequestParts},
     http::request::Parts,
 };
-use jsonwebtoken::{decode, DecodingKey, Validation};
+use jsonwebtoken::{DecodingKey, Validation, decode};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

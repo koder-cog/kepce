@@ -72,8 +72,8 @@ pub async fn run_telegram_bot_loop(
             res = client.get(&poll_url).send() => {
                 match res {
                     Ok(resp) => {
-                        if let Ok(json_data) = resp.json::<serde_json::Value>().await {
-                            if let Some(updates) = json_data.get("result").and_then(|r| r.as_array()) {
+                        if let Ok(json_data) = resp.json::<serde_json::Value>().await
+                            && let Some(updates) = json_data.get("result").and_then(|r| r.as_array()) {
                                 for update in updates {
                                     if let Some(up_id) = update.get("update_id").and_then(|u| u.as_i64()) {
                                         offset = up_id + 1;
@@ -126,7 +126,6 @@ pub async fn run_telegram_bot_loop(
                                     handle_command(db, &client, &bot_token, chat_id, text, shutdown_rx.clone()).await;
                                 }
                             }
-                        }
                     }
                     Err(e) => {
                         tracing::warn!("[TELEGRAM-BOT] getUpdates hatası: {:?}. 5 saniye bekleniyor...", e);
@@ -271,7 +270,10 @@ Kullanabileceğiniz komutlar:\n\
 
                 let finish_msg = match scrape_res {
                     Ok(count) => {
-                        format!("✅ *Manuel Kazıma Tamamlandı!*\n• Kaydedilen/Güncellenen: `{}` menü\n• Geçen süre: `{} sn`", count, elapsed)
+                        format!(
+                            "✅ *Manuel Kazıma Tamamlandı!*\n• Kaydedilen/Güncellenen: `{}` menü\n• Geçen süre: `{} sn`",
+                            count, elapsed
+                        )
                     }
                     Err(e) => {
                         format!(
@@ -305,7 +307,10 @@ Kullanabileceğiniz komutlar:\n\
 
                 let finish_msg = match gen_res {
                     Ok(count) => {
-                        format!("✅ *Yorum Üretimi Tamamlandı!*\n• Güncellenen menü: `{}` adet\n• Geçen süre: `{} sn`", count, elapsed)
+                        format!(
+                            "✅ *Yorum Üretimi Tamamlandı!*\n• Güncellenen menü: `{}` adet\n• Geçen süre: `{} sn`",
+                            count, elapsed
+                        )
                     }
                     Err(e) => {
                         format!(

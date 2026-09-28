@@ -264,10 +264,13 @@ fn validate_time_format(time_str: &str) -> Result<(), validator::ValidationError
     if parts.len() != 2 {
         return Err(validator::ValidationError::new("invalid_time_format"));
     }
-    if let (Ok(h), Ok(m)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>()) {
-        if h < 24 && m < 60 && parts[0].len() == 2 && parts[1].len() == 2 {
-            return Ok(());
-        }
+    if let (Ok(h), Ok(m)) = (parts[0].parse::<u32>(), parts[1].parse::<u32>())
+        && h < 24
+        && m < 60
+        && parts[0].len() == 2
+        && parts[1].len() == 2
+    {
+        return Ok(());
     }
     Err(validator::ValidationError::new("invalid_time_format"))
 }

@@ -105,17 +105,21 @@ mod tests {
         let menu = parse_yurtmenu_html(html);
         let breakfast = menu.breakfast.expect("Kahvaltı bulunmalı");
         assert_eq!(breakfast.len(), 2);
-        assert!(breakfast
-            .iter()
-            .any(|g| g.iter().any(|c| c.name == "Örgü Peynir")
-                || g.iter().any(|c| c.name.contains("Peynir"))));
+        assert!(
+            breakfast
+                .iter()
+                .any(|g| g.iter().any(|c| c.name == "Örgü Peynir")
+                    || g.iter().any(|c| c.name.contains("Peynir")))
+        );
         assert_eq!(menu.breakfast_kcal.as_deref(), Some("650-850 kcal"));
 
         let dinner = menu.dinner.expect("Akşam yemeği bulunmalı");
         // "Mercimek Çorbası / Köz Biber Çorba" iki alternatife bölünmeli
-        assert!(dinner
-            .iter()
-            .any(|g| g.len() >= 2 && g[0].name.contains("Mercimek")));
+        assert!(
+            dinner
+                .iter()
+                .any(|g| g.len() >= 2 && g[0].name.contains("Mercimek"))
+        );
         assert_eq!(menu.dinner_kcal.as_deref(), Some("1100-1500 kcal"));
     }
 

@@ -35,31 +35,31 @@ pub enum LlmProvider {
 
 impl LlmProvider {
     pub fn from_env() -> Option<Self> {
-        if let Ok(key) = std::env::var("OPENROUTER_API_KEY") {
-            if !key.trim().is_empty() {
-                let model = std::env::var("OPENROUTER_MODEL")
-                    .unwrap_or_else(|_| "google/gemini-3.8-flash:floor".to_string());
-                let reasoning_effort = std::env::var("OPENROUTER_REASONING_EFFORT")
-                    .unwrap_or_else(|_| "high".to_string());
-                return Some(Self::OpenRouter {
-                    api_key: key.trim().to_string(),
-                    model,
-                    reasoning_effort,
-                });
-            }
+        if let Ok(key) = std::env::var("OPENROUTER_API_KEY")
+            && !key.trim().is_empty()
+        {
+            let model = std::env::var("OPENROUTER_MODEL")
+                .unwrap_or_else(|_| "google/gemini-3.8-flash:floor".to_string());
+            let reasoning_effort =
+                std::env::var("OPENROUTER_REASONING_EFFORT").unwrap_or_else(|_| "high".to_string());
+            return Some(Self::OpenRouter {
+                api_key: key.trim().to_string(),
+                model,
+                reasoning_effort,
+            });
         }
 
-        if let Ok(key) = std::env::var("GEMINI_API_KEY") {
-            if !key.trim().is_empty() {
-                let model = std::env::var("GEMINI_MODEL")
-                    .ok()
-                    .filter(|s| !s.trim().is_empty())
-                    .unwrap_or_else(|| "gemini-flash-latest".to_string());
-                return Some(Self::Gemini {
-                    api_key: key.trim().to_string(),
-                    model,
-                });
-            }
+        if let Ok(key) = std::env::var("GEMINI_API_KEY")
+            && !key.trim().is_empty()
+        {
+            let model = std::env::var("GEMINI_MODEL")
+                .ok()
+                .filter(|s| !s.trim().is_empty())
+                .unwrap_or_else(|| "gemini-flash-latest".to_string());
+            return Some(Self::Gemini {
+                api_key: key.trim().to_string(),
+                model,
+            });
         }
 
         None
@@ -110,10 +110,9 @@ async fn build_batch_prompt(
             if let Some(alias) = dish_aliases::Entity::find_by_id(d.dish_alias_id)
                 .one(db)
                 .await?
+                && !shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name)
             {
-                if !shared::services::content_guard::ContentGuard::is_junk_dish_text(&alias.name) {
-                    dish_names.push(alias.name);
-                }
+                dish_names.push(alias.name);
             }
         }
 
@@ -154,18 +153,17 @@ pub fn parse_generated_comments(raw_response: &str) -> Result<Vec<GeneratedComme
             .or_else(|| wrapped.get("days"))
             .or_else(|| wrapped.get("gunler"))
             .or_else(|| wrapped.get("yorumlar"))
+            && let Ok(entries) = serde_json::from_value::<Vec<GeneratedCommentEntry>>(arr.clone())
         {
-            if let Ok(entries) = serde_json::from_value::<Vec<GeneratedCommentEntry>>(arr.clone()) {
-                return Ok(entries);
-            }
+            return Ok(entries);
         }
 
-        if let Some(arr) = wrapped.as_array() {
-            if let Ok(entries) = serde_json::from_value::<Vec<GeneratedCommentEntry>>(
+        if let Some(arr) = wrapped.as_array()
+            && let Ok(entries) = serde_json::from_value::<Vec<GeneratedCommentEntry>>(
                 serde_json::Value::Array(arr.clone()),
-            ) {
-                return Ok(entries);
-            }
+            )
+        {
+            return Ok(entries);
         }
     }
 
@@ -389,7 +387,9 @@ pub async fn run_comment_generation(db: &DatabaseConnection) -> Result<usize> {
     let provider = match LlmProvider::from_env() {
         Some(p) => p,
         None => {
-            tracing::warn!("[COMMENT-GEN] Ne OPENROUTER_API_KEY ne de GEMINI_API_KEY tanımlı. Bot yorumu üretimi atlanıyor.");
+            tracing::warn!(
+                "[COMMENT-GEN] Ne OPENROUTER_API_KEY ne de GEMINI_API_KEY tanımlı. Bot yorumu üretimi atlanıyor."
+            );
             return Ok(0);
         }
     };

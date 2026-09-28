@@ -1,7 +1,7 @@
 use anyhow::Result;
 use chrono::{Datelike, NaiveDate};
-use rand::seq::SliceRandom;
 use rand::Rng;
+use rand::seq::SliceRandom;
 use reqwest::Client;
 use std::collections::{HashMap, HashSet};
 use std::sync::atomic::{AtomicU32, AtomicU64, AtomicUsize, Ordering};
@@ -103,11 +103,7 @@ pub fn get_ban_status() -> Option<u64> {
     ensure_ban_state_loaded();
     let until = KYKYEMEK_COM_BANNED_UNTIL.load(Ordering::Relaxed);
     let now = chrono::Utc::now().timestamp().max(0) as u64;
-    if until > now {
-        Some(until - now)
-    } else {
-        None
-    }
+    if until > now { Some(until - now) } else { None }
 }
 
 /// Devre kesiciyi manuel olarak sıfırlar.
@@ -122,10 +118,10 @@ pub fn reset_ban_status() {
 
 /// Proxy URL'indeki kullanıcı ve şifre bilgilerini log güvenliği için maskeler.
 pub fn mask_proxy_url(raw: &str) -> String {
-    if let Some((scheme, rest)) = raw.split_once("://") {
-        if let Some((_creds, host_port)) = rest.split_once('@') {
-            return format!("{scheme}://***@{host_port}");
-        }
+    if let Some((scheme, rest)) = raw.split_once("://")
+        && let Some((_creds, host_port)) = rest.split_once('@')
+    {
+        return format!("{scheme}://***@{host_port}");
     }
     raw.to_string()
 }
@@ -234,7 +230,9 @@ impl KykYemekClientPool {
             .collect();
 
         if proxy_list.is_empty() {
-            tracing::info!("[KYKYEMEK.COM-POOL] Proxy yapılandırması (KYKYEMEK_PROXY_TOOL) bulunamadı. Doğrudan bağlantı modu aktif.");
+            tracing::info!(
+                "[KYKYEMEK.COM-POOL] Proxy yapılandırması (KYKYEMEK_PROXY_TOOL) bulunamadı. Doğrudan bağlantı modu aktif."
+            );
             return Self::Direct(default_client);
         }
 
@@ -277,7 +275,9 @@ impl KykYemekClientPool {
         }
 
         if entries.is_empty() {
-            tracing::warn!("[KYKYEMEK.COM-POOL] Hiçbir geçerli proxy oluşturulamadı, doğrudan bağlantıya dönülüyor.");
+            tracing::warn!(
+                "[KYKYEMEK.COM-POOL] Hiçbir geçerli proxy oluşturulamadı, doğrudan bağlantıya dönülüyor."
+            );
             Self::Direct(default_client)
         } else {
             tracing::info!(
@@ -543,10 +543,10 @@ pub fn extract_token_from_html(html: &str) -> Result<String> {
             .unwrap()
     });
 
-    if let Some(caps) = re.captures(html) {
-        if let Some(token) = caps.get(1) {
-            return Ok(token.as_str().to_string());
-        }
+    if let Some(caps) = re.captures(html)
+        && let Some(token) = caps.get(1)
+    {
+        return Ok(token.as_str().to_string());
     }
 
     static TOKEN_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
@@ -554,10 +554,10 @@ pub fn extract_token_from_html(html: &str) -> Result<String> {
         regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#)
             .unwrap()
     });
-    if let Some(caps) = re_fb.captures(html) {
-        if let Some(token) = caps.get(1) {
-            return Ok(token.as_str().to_string());
-        }
+    if let Some(caps) = re_fb.captures(html)
+        && let Some(token) = caps.get(1)
+    {
+        return Ok(token.as_str().to_string());
     }
 
     anyhow::bail!("__RequestVerificationToken HTML içinde bulunamadı")
@@ -612,7 +612,9 @@ pub async fn scrape_today_menus(
     let mut session = match pool.acquire_session() {
         Some(s) => s,
         None => {
-            tracing::warn!("[KYKYEMEK.COM-BREAKER] Cooldown aktif veya kullanılabilir proxy yok - bülten taraması bu tur atlanıyor.");
+            tracing::warn!(
+                "[KYKYEMEK.COM-BREAKER] Cooldown aktif veya kullanılabilir proxy yok - bülten taraması bu tur atlanıyor."
+            );
             return Ok(0);
         }
     };
@@ -707,7 +709,9 @@ pub async fn scrape_today_menus(
                             }
                             session = new_s;
                         } else {
-                            tracing::warn!("[KYKYEMEK.COM-BREAKER] Havuzdaki tüm oturumlar tükendi. Bülten taraması durduruluyor.");
+                            tracing::warn!(
+                                "[KYKYEMEK.COM-BREAKER] Havuzdaki tüm oturumlar tükendi. Bülten taraması durduruluyor."
+                            );
                             return Ok(total_saved);
                         }
                     }
@@ -750,7 +754,9 @@ pub async fn scrape_today_menus(
                             }
                             session = new_s;
                         } else {
-                            tracing::warn!("[KYKYEMEK.COM-BREAKER] Havuzdaki tüm oturumlar tükendi. Bülten taraması durduruluyor.");
+                            tracing::warn!(
+                                "[KYKYEMEK.COM-BREAKER] Havuzdaki tüm oturumlar tükendi. Bülten taraması durduruluyor."
+                            );
                             return Ok(total_saved);
                         }
                     }
@@ -998,7 +1004,10 @@ async fn fetch_and_save(
             .replace('\r', "");
         let alert_msg = format!(
             "KYK HTML şablon anomalisi algılandı! Şehir: {}, Öğün: {}, Shift: {}. Dönen içerik `.cardStyle` içermiyor. Kesit: `{}`",
-            city.name, kyk_meal_type, month_shift, sample.trim()
+            city.name,
+            kyk_meal_type,
+            month_shift,
+            sample.trim()
         );
         tracing::warn!("{}", alert_msg);
         let _ = shared::services::alerting::AlertingService::send_webhook_alert(&alert_msg).await;
@@ -1161,14 +1170,17 @@ async fn fetch_and_save(
     for menu in parsed_menus {
         // Öğün Doğrulama Kalkanı: Eğer kart açıkça başka bir öğün olduğunu beyan ediyorsa,
         // yanlış öğün türüyle kaydedilmesini kesinlikle engelle.
-        if let Some(ref detected) = menu.detected_meal {
-            if *detected != meal_type_enum {
-                tracing::warn!(
-                    "[MEAL-GUARD] {} şehri için {} ({:?}) menüsü istendi ancak kart açıkça {:?} beyan ediyor! Hatalı öğün kaydı engellendi.",
-                    city.name, kyk_meal_type, meal_type_enum, detected
-                );
-                continue;
-            }
+        if let Some(ref detected) = menu.detected_meal
+            && *detected != meal_type_enum
+        {
+            tracing::warn!(
+                "[MEAL-GUARD] {} şehri için {} ({:?}) menüsü istendi ancak kart açıkça {:?} beyan ediyor! Hatalı öğün kaydı engellendi.",
+                city.name,
+                kyk_meal_type,
+                meal_type_enum,
+                detected
+            );
+            continue;
         }
 
         upsert_menu(
@@ -1264,10 +1276,10 @@ fn parse_dish_calories(raw: &Option<String>) -> Option<i32> {
         }
     }
     let parts: Vec<&str> = cleaned.split(&['-', '–'][..]).map(|p| p.trim()).collect();
-    if parts.len() == 2 {
-        if let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>()) {
-            return Some((a + b) / 2);
-        }
+    if parts.len() == 2
+        && let (Ok(a), Ok(b)) = (parts[0].parse::<i32>(), parts[1].parse::<i32>())
+    {
+        return Some((a + b) / 2);
     }
     None
 }
@@ -1359,7 +1371,11 @@ pub async fn upsert_menu(
     if valid_primary_count < 2 && !has_celiac && !has_takeaways {
         tracing::warn!(
             "upsert_menu reddedildi: yetersiz veya çöp yemek listesi (geçerli kap: {}, city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
-            valid_primary_count, city_id, date, meal_type, source_type
+            valid_primary_count,
+            city_id,
+            date,
+            meal_type,
+            source_type
         );
         return Ok(false);
     }
@@ -1396,7 +1412,10 @@ pub async fn upsert_menu(
         if m.status == MenuStatusEnum::Rejected && m.source_type.as_deref() == Some(&source_type) {
             tracing::debug!(
                 "upsert_menu atlandı: menü bu kaynak ({}) için daha önce reddedilmiş (city_id: {}, tarih: {}, öğün: {:?})",
-                source_type, city_id, date, meal_type
+                source_type,
+                city_id,
+                date,
+                meal_type
             );
             txn.rollback().await?;
             return Ok(false);
@@ -1533,7 +1552,8 @@ pub async fn upsert_menu(
             // merkezi web kazıyıcıları bu menüyü ezemez.
             tracing::debug!(
                 "Saha gerçeği koruması: Mevcut menü ({}) saha teyitli (GroundTruth), gelen ({}) menüsü ezemez. Arşivleniyor.",
-                existing_source, source_type
+                existing_source,
+                source_type
             );
             true
         } else if source_type == existing_source {
@@ -1543,7 +1563,9 @@ pub async fn upsert_menu(
             if quality_delta < -15 && valid_primary_count < 4 {
                 tracing::warn!(
                     "Aynı kaynak regresyon koruması: kaynak {} için mevcut skor {} iken gelen skor {}. Gelen arşivleniyor.",
-                    source_type, existing_quality.total, incoming_quality.total
+                    source_type,
+                    existing_quality.total,
+                    incoming_quality.total
                 );
                 true
             } else {
@@ -1556,7 +1578,11 @@ pub async fn upsert_menu(
                 // Gelen menü belirgin şekilde daha zengin/kaliteli (+15 delta)
                 tracing::info!(
                     "Kalite üstünlüğü ile menü güncellemesi: gelen ({}) skoru {}, mevcut ({}) skoru {}. (Delta: +{})",
-                    source_type, incoming_quality.total, existing_source, existing_quality.total, quality_delta
+                    source_type,
+                    incoming_quality.total,
+                    existing_source,
+                    existing_quality.total,
+                    quality_delta
                 );
                 false
             } else if existing_quality.total < 45
@@ -1566,14 +1592,20 @@ pub async fn upsert_menu(
                 // Düşük kaliteli kayıt kurtarma
                 tracing::info!(
                     "Düşük kaliteli kayıt kurtarma: mevcut ({}) skoru {} < 45 iken gelen ({}) skoru {}.",
-                    existing_source, existing_quality.total, source_type, incoming_quality.total
+                    existing_source,
+                    existing_quality.total,
+                    source_type,
+                    incoming_quality.total
                 );
                 false
             } else if quality_delta <= -15 && current_priority >= 4 {
                 // Yüksek öncelikli ama bariz düşük kaliteli/eksik gelen veri engellenir
                 tracing::warn!(
                     "Yüksek öncelikli ama düşük kaliteli kaynak reddedildi: gelen ({}) skoru {}, mevcut ({}) skoru {}.",
-                    source_type, incoming_quality.total, existing_source, existing_quality.total
+                    source_type,
+                    incoming_quality.total,
+                    existing_source,
+                    existing_quality.total
                 );
                 true
             } else {
@@ -1585,7 +1617,13 @@ pub async fn upsert_menu(
         if should_archive_incoming {
             tracing::debug!(
                 "Gelen menü ({}, tarih: {}, öğün: {:?}) mevcut menüye ({}) göre arşivleniyor (Mevcut Skor: {}, Gelen Skor: {}, Öncelik Farkı: {}).",
-                source_type, date, meal_type, existing_source, existing_quality.total, incoming_quality.total, priority_delta
+                source_type,
+                date,
+                meal_type,
+                existing_source,
+                existing_quality.total,
+                incoming_quality.total,
+                priority_delta
             );
             let payload = serde_json::json!({
                 "dishes": dishes,
@@ -1605,10 +1643,10 @@ pub async fn upsert_menu(
                 .await?;
 
             let mut already_in_hist = false;
-            if let Some(eh) = existing_hist {
-                if eh.dishes_payload == payload {
-                    already_in_hist = true;
-                }
+            if let Some(eh) = existing_hist
+                && eh.dishes_payload == payload
+            {
+                already_in_hist = true;
             }
 
             if !already_in_hist {
@@ -1782,7 +1820,10 @@ pub async fn upsert_menu(
         if same_dishes && same_calories && same_source {
             tracing::trace!(
                 "upsert_menu no-op: menü ve yemekler zaten güncel (city_id: {}, tarih: {}, öğün: {:?}, kaynak: {})",
-                city_id, date, meal_type, source_type
+                city_id,
+                date,
+                meal_type,
+                source_type
             );
             txn.rollback().await?;
             return Ok(false);
@@ -1790,17 +1831,19 @@ pub async fn upsert_menu(
 
         // Eğer mevcut menüden farklı bir içerik geldiyse (revize edildiyse veya yeni kaynak geldiyse),
         // mevcut halini menu_history tablosuna arşivle
-        let payload = serde_json::json!(existing_dishes_list
-            .iter()
-            .map(|(md, alias)| {
-                serde_json::json!({
-                    "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
-                    "package_name": md.package_name.clone(),
-                    "order_index": md.order_index,
-                    "is_alternative": md.is_alternative
+        let payload = serde_json::json!(
+            existing_dishes_list
+                .iter()
+                .map(|(md, alias)| {
+                    serde_json::json!({
+                        "name": alias.as_ref().map(|a| a.name.clone()).unwrap_or_default(),
+                        "package_name": md.package_name.clone(),
+                        "order_index": md.order_index,
+                        "is_alternative": md.is_alternative
+                    })
                 })
-            })
-            .collect::<Vec<_>>());
+                .collect::<Vec<_>>()
+        );
 
         let hist = shared::entities::menu_history::ActiveModel {
             city_id: Set(m.city_id),
@@ -1861,10 +1904,10 @@ pub async fn upsert_menu(
         std::collections::HashMap::new();
     for (d, alias) in &existing_dishes_list {
         existing_alias_owner.insert((d.package_name.clone(), d.dish_alias_id), d.id);
-        if let Some(a) = alias {
-            if let Some(did) = a.dish_id {
-                existing_dish_in_slot.insert((d.package_name.clone(), d.order_index, did), d.id);
-            }
+        if let Some(a) = alias
+            && let Some(did) = a.dish_id
+        {
+            existing_dish_in_slot.insert((d.package_name.clone(), d.order_index, did), d.id);
         }
     }
 
@@ -1881,28 +1924,31 @@ pub async fn upsert_menu(
 
             // Güncelleme hedefi (package, alias) başka bir satır tarafından
             // sahiplenilmişse unique constraint'i önlemek için güncellemeyi atla.
-            if let Some(owner_id) = existing_alias_owner.get(&(package_name.clone(), alias_id)) {
-                if *owner_id != existing.id {
-                    tracing::debug!(
-                        "upsert_menu: alias {} paket '{}' içinde başka satırda mevcut, güncelleme atlandı (menu_id: {})",
-                        alias_id, package_name, menu_id
-                    );
-                    continue;
-                }
+            if let Some(owner_id) = existing_alias_owner.get(&(package_name.clone(), alias_id))
+                && *owner_id != existing.id
+            {
+                tracing::debug!(
+                    "upsert_menu: alias {} paket '{}' içinde başka satırda mevcut, güncelleme atlandı (menu_id: {})",
+                    alias_id,
+                    package_name,
+                    menu_id
+                );
+                continue;
             }
 
             // Slot trigger koruması: hedef dish_id aynı yuvada başka bir satırda
             // zaten varsa güncelleme trigger'ı patlatır, atla.
             if let Some(owner_id) =
                 existing_dish_in_slot.get(&(package_name.clone(), order_index, dish_id))
+                && *owner_id != existing.id
             {
-                if *owner_id != existing.id {
-                    tracing::debug!(
-                        "upsert_menu: dish_id {} slot {} içinde başka satırda mevcut, güncelleme atlandı (menu_id: {})",
-                        dish_id, order_index, menu_id
-                    );
-                    continue;
-                }
+                tracing::debug!(
+                    "upsert_menu: dish_id {} slot {} içinde başka satırda mevcut, güncelleme atlandı (menu_id: {})",
+                    dish_id,
+                    order_index,
+                    menu_id
+                );
+                continue;
             }
 
             let final_amount = amount
@@ -1924,7 +1970,10 @@ pub async fn upsert_menu(
         {
             tracing::debug!(
                 "upsert_menu: dish_id {} slot {} içinde zaten mevcut, insert atlandı (menu_id: {}, sahip: {})",
-                dish_id, order_index, menu_id, owner_id
+                dish_id,
+                order_index,
+                menu_id,
+                owner_id
             );
             continue;
         }
@@ -1973,10 +2022,10 @@ pub async fn upsert_menu(
     txn.commit().await?;
 
     let menu = menus::Entity::find_by_id(menu_id).one(db).await?;
-    if let Some(m) = menu {
-        if m.status == MenuStatusEnum::Approved {
-            shared::services::immutable_store::ImmutableStore::write_menu_hash(db, menu_id).await?;
-        }
+    if let Some(m) = menu
+        && m.status == MenuStatusEnum::Approved
+    {
+        shared::services::immutable_store::ImmutableStore::write_menu_hash(db, menu_id).await?;
     }
 
     Ok(true)

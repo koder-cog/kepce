@@ -4,11 +4,11 @@ mod tests {
     use axum::{
         extract::{FromRequest, FromRequestParts},
         http::{
-            header::{AUTHORIZATION, COOKIE},
             Request,
+            header::{AUTHORIZATION, COOKIE},
         },
     };
-    use jsonwebtoken::{encode, EncodingKey, Header};
+    use jsonwebtoken::{EncodingKey, Header, encode};
     use serde::{Deserialize, Serialize};
     use std::sync::Arc;
     use uuid::Uuid;
@@ -201,9 +201,10 @@ mod tests {
 
         assert!(result.is_err());
         let err = result.unwrap_err();
-        assert!(err
-            .to_string()
-            .contains("Missing or invalid authorization header or cookie"));
+        assert!(
+            err.to_string()
+                .contains("Missing or invalid authorization header or cookie")
+        );
     }
 
     #[tokio::test]

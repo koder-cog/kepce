@@ -6,9 +6,9 @@ use crate::services::comment::CommentService;
 use crate::services::moderation::{ModerationError, ModerationService};
 use crate::services::user::UserService;
 use axum::{
+    Json, Router,
     extract::{Path, Query, State},
     routing::{get, post},
-    Json, Router,
 };
 use uuid::Uuid;
 
@@ -109,25 +109,25 @@ async fn get_profile(
     use shared::entities::user_blocks;
 
     let mut profile = UserService::get_user_profile_by_username(&db, &username).await?;
-    if let Some(auth_user) = user.0 {
-        if auth_user.id != profile.id {
-            let is_blocked = user_blocks::Entity::find()
-                .filter(user_blocks::Column::BlockerId.eq(auth_user.id))
-                .filter(user_blocks::Column::BlockedId.eq(profile.id))
-                .one(&db)
-                .await
-                .map_err(|e| AppError::Internal(format!("Database error: {}", e)))?
-                .is_some();
-            let is_blocked_by = user_blocks::Entity::find()
-                .filter(user_blocks::Column::BlockerId.eq(profile.id))
-                .filter(user_blocks::Column::BlockedId.eq(auth_user.id))
-                .one(&db)
-                .await
-                .map_err(|e| AppError::Internal(format!("Database error: {}", e)))?
-                .is_some();
-            profile.is_blocked = Some(is_blocked);
-            profile.is_blocked_by = Some(is_blocked_by);
-        }
+    if let Some(auth_user) = user.0
+        && auth_user.id != profile.id
+    {
+        let is_blocked = user_blocks::Entity::find()
+            .filter(user_blocks::Column::BlockerId.eq(auth_user.id))
+            .filter(user_blocks::Column::BlockedId.eq(profile.id))
+            .one(&db)
+            .await
+            .map_err(|e| AppError::Internal(format!("Database error: {}", e)))?
+            .is_some();
+        let is_blocked_by = user_blocks::Entity::find()
+            .filter(user_blocks::Column::BlockerId.eq(profile.id))
+            .filter(user_blocks::Column::BlockedId.eq(auth_user.id))
+            .one(&db)
+            .await
+            .map_err(|e| AppError::Internal(format!("Database error: {}", e)))?
+            .is_some();
+        profile.is_blocked = Some(is_blocked);
+        profile.is_blocked_by = Some(is_blocked_by);
     }
     Ok(Json(profile))
 }

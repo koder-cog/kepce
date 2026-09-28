@@ -10,11 +10,11 @@ use crate::extractors::validated::ValidatedJson;
 use crate::services::auth::{AuthError, AuthService};
 use crate::services::user::UserService;
 use axum::{
+    Json, Router,
     extract::{Multipart, Path, Query, State},
-    http::{header::SET_COOKIE, HeaderMap},
+    http::{HeaderMap, header::SET_COOKIE},
     response::Redirect,
     routing::{delete, get, post, put},
-    Json, Router,
 };
 use rand::Rng;
 use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
@@ -497,20 +497,21 @@ async fn update_me(
         })?;
 
     // Şifre değiştiyse ve güvenlik e-postaları tercihi açıksa e-posta bildirimi gönder
-    if password_changed && profile.email_security.unwrap_or(false) {
-        if let Some(ref email) = profile.email {
-            let email_service = crate::services::email::EmailService::from_config(&config);
-            let to_email = email.clone();
-            let username = profile.username.clone();
-            tokio::spawn(async move {
-                let _ = email_service.send_security_alert(
+    if password_changed
+        && profile.email_security.unwrap_or(false)
+        && let Some(ref email) = profile.email
+    {
+        let email_service = crate::services::email::EmailService::from_config(&config);
+        let to_email = email.clone();
+        let username = profile.username.clone();
+        tokio::spawn(async move {
+            let _ = email_service.send_security_alert(
                     &to_email,
                     &username,
                     "Hesap Şifreniz Değiştirildi",
                     "Hesabınızın giriş şifresi ayarlar sayfası üzerinden başarıyla güncellendi. Eski oturumlarınız güvenlik gereği sonlandırıldı.",
                 ).await;
-            });
-        }
+        });
     }
 
     Ok(Json(profile))
@@ -782,12 +783,12 @@ async fn resend_verification(
             map.retain(|_, expires_at| *expires_at > now);
         }
 
-        if let Some(expires_at) = map.get(&user.id) {
-            if std::time::Instant::now() < *expires_at {
-                return Err(AppError::TooManyRequests(
-                    "Lütfen yeni bir onay e-postası istemeden önce 24 saat bekleyiniz.".to_string(),
-                ));
-            }
+        if let Some(expires_at) = map.get(&user.id)
+            && std::time::Instant::now() < *expires_at
+        {
+            return Err(AppError::TooManyRequests(
+                "Lütfen yeni bir onay e-postası istemeden önce 24 saat bekleyiniz.".to_string(),
+            ));
         }
 
         map.insert(
