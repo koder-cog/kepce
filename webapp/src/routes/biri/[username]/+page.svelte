@@ -20,7 +20,9 @@
 
   let username = $derived($page.params.username);
   let paginationMode = $derived(globalState.paginationMode || "sayfali");
-  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let urlPage = $derived(
+    parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1,
+  );
 
   let contentLoading = $state(true);
   let contentError = $state(null);
@@ -72,7 +74,8 @@
       if (currentTabToken !== token) return;
 
       const newData = Array.isArray(res) ? res : res?.items || res?.data || [];
-      totalItems = res?.total_items ?? res?.total ?? (Array.isArray(res) ? res.length : 0);
+      totalItems =
+        res?.total_items ?? res?.total ?? (Array.isArray(res) ? res.length : 0);
       totalPages = res?.total_pages ?? (Math.ceil(totalItems / limit) || 1);
 
       if (isLoadMore) {
@@ -269,7 +272,9 @@
   </div>
 {:else}
   <div class="profile-comments-list">
-    <div class="profile-comments-header u-mb-md u-flex u-flex-justify-between u-flex-align-center">
+    <div
+      class="profile-comments-header u-mb-md u-flex u-flex-justify-between u-flex-align-center"
+    >
       <Dropdown
         bind:value={commentsSort}
         options={[
@@ -319,10 +324,7 @@
                   >{timeAgo(c.created_at)}</a
                 >
                 {#if c.is_edited}
-                  <span
-                    class="comment-node__edited"
-                    title="Bu yorum daha sonra düzenlendi">(düzenlendi)</span
-                  >
+                  <span class="comment-node__edited">(düzenlendi)</span>
                 {/if}
               </div>
             </div>

@@ -51,7 +51,9 @@
                 comment.user?.nickname === "Engellemiş",
         ),
     );
-    let rawNickname = $derived(isDeleted || isBlocked ? null : comment.user?.nickname);
+    let rawNickname = $derived(
+        isDeleted || isBlocked ? null : comment.user?.nickname,
+    );
     let userName = $derived(
         isDeleted
             ? "Silinmiş"
@@ -403,7 +405,9 @@
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
         <div
-            class="comment-node__header {isCollapsed ? 'comment-node__header--collapsed' : ''}"
+            class="comment-node__header {isCollapsed
+                ? 'comment-node__header--collapsed'
+                : ''}"
             onclick={isCollapsed ? toggleCollapse : undefined}
             title={isCollapsed ? "Genişletmek için tıkla" : undefined}
         >
@@ -428,248 +432,266 @@
             </button>
 
             {#if comment.is_edited}
-                <span
-                    class="comment-node__edited"
-                    title="Bu yorum daha sonra düzenlendi">(düzenlendi)</span
-                >
+                <span class="comment-node__edited">(düzenlendi)</span>
             {/if}
         </div>
 
         {#if !isCollapsed}
             <div class="comment-node__body">
                 <div class="comment-node__content">
-                <div
-                    class="comment-node__text-container {isExpanded
-                        ? 'is-expanded'
-                        : ''}"
-                    bind:this={textContainer}
-                >
-                    <p
-                        class="comment-node__text {isDeleted
-                            ? 'is-deleted'
-                            : ''} {isBlocked ? 'is-blocked-text' : ''}"
+                    <div
+                        class="comment-node__text-container {isExpanded
+                            ? 'is-expanded'
+                            : ''}"
+                        bind:this={textContainer}
                     >
-                        {comment.comment || ""}
-                    </p>
-                    {#if isOverflowing && !isExpanded}
-                        <button
-                            class="comment-node__more-btn"
-                            onclick={() => (isExpanded = true)}
+                        <p
+                            class="comment-node__text {isDeleted
+                                ? 'is-deleted'
+                                : ''} {isBlocked ? 'is-blocked-text' : ''}"
                         >
-                            Devamını oku
-                        </button>
-                    {/if}
-                    {#if comment.tags && Array.isArray(comment.tags) && comment.tags.length > 0}
-                        <div class="comment-node__tags u-mt-xs">
-                            {#each comment.tags as tag}
-                                {#if tag === "tabldot" || tag.tag_id === "tabldot"}
-                                    <span class="comment-tag-badge"
-                                        >Tabldot</span
+                            {comment.comment || ""}
+                        </p>
+                        {#if isOverflowing && !isExpanded}
+                            <button
+                                class="comment-node__more-btn"
+                                onclick={() => (isExpanded = true)}
+                            >
+                                Devamını oku
+                            </button>
+                        {/if}
+                        {#if comment.tags && Array.isArray(comment.tags) && comment.tags.length > 0}
+                            <div class="comment-node__tags u-mt-xs">
+                                {#each comment.tags as tag}
+                                    {#if tag === "tabldot" || tag.tag_id === "tabldot"}
+                                        <span class="comment-tag-badge"
+                                            >Tabldot</span
+                                        >
+                                    {:else if tag.name || typeof tag === "string"}
+                                        <span class="comment-tag-badge"
+                                            >{@html sanitizeText(
+                                                tag.name || tag,
+                                            )}</span
+                                        >
+                                    {/if}
+                                {/each}
+                            </div>
+                        {/if}
+                    </div>
+
+                    {#if !isDeleted && !isBlocked}
+                        <div class="comment-node__actions">
+                            <div class="comment-node__vote">
+                                <button
+                                    class="vote-btn {reaction.my_vote === 'up'
+                                        ? 'is-active'
+                                        : ''} {isOwn || isBlocked
+                                        ? 'is-disabled'
+                                        : ''}"
+                                    data-vote="up"
+                                    disabled={isOwn || isBlocked}
+                                    onclick={(e) => handleVote("up", e)}
+                                    title={isOwn
+                                        ? "Kendi yorumunuza oy veremezsiniz"
+                                        : isBlocked
+                                          ? "Engellenen içeriklere oy verilemez"
+                                          : "Beğen"}
+                                >
+                                    {@html icon(
+                                        reaction.my_vote === "up"
+                                            ? "voteUpFilled"
+                                            : "voteUp",
+                                        16,
+                                    )}
+                                </button>
+                                <span
+                                    class="vote-count {reaction.my_vote === 'up'
+                                        ? 'positive'
+                                        : reaction.my_vote === 'down'
+                                          ? 'negative'
+                                          : score > 0
+                                            ? 'positive'
+                                            : score < 0
+                                              ? 'negative'
+                                              : ''}">{score}</span
+                                >
+                                <button
+                                    class="vote-btn {reaction.my_vote === 'down'
+                                        ? 'is-active'
+                                        : ''} {isOwn || isBlocked
+                                        ? 'is-disabled'
+                                        : ''}"
+                                    data-vote="down"
+                                    disabled={isOwn || isBlocked}
+                                    onclick={(e) => handleVote("down", e)}
+                                    title={isOwn
+                                        ? "Kendi yorumunuza oy veremezsiniz"
+                                        : isBlocked
+                                          ? "Engellenen içeriklere oy verilemez"
+                                          : "Beğenme"}
+                                >
+                                    {@html icon(
+                                        reaction.my_vote === "down"
+                                            ? "voteDownFilled"
+                                            : "voteDown",
+                                        16,
+                                    )}
+                                </button>
+                            </div>
+                            {#if !isBlocked}
+                                <button
+                                    class="action-btn"
+                                    onclick={toggleReply}
+                                    title="Yanıtla"
+                                >
+                                    {@html icon("chat", 14)}
+                                    <span class="action-btn__text">Yanıtla</span
                                     >
-                                {:else if tag.name || typeof tag === "string"}
-                                    <span class="comment-tag-badge"
-                                        >{@html sanitizeText(
-                                            tag.name || tag,
-                                        )}</span
-                                    >
-                                {/if}
-                            {/each}
+                                </button>
+                            {/if}
+                            <button
+                                class="action-btn"
+                                onclick={handleShare}
+                                title="Paylaş"
+                            >
+                                {@html icon("share", 14)}
+                                <span class="action-btn__text">Paylaş</span>
+                            </button>
+                            <ActionMenu
+                                triggerClass="action-btn"
+                                triggerTitle="Daha fazla seçenek"
+                                items={[
+                                    ...(isOwn && !isDeleted
+                                        ? [
+                                              {
+                                                  label: "Düzenle",
+                                                  onClick: () =>
+                                                      openEditCommentModal(),
+                                              },
+                                          ]
+                                        : []),
+                                    ...(!isOwn
+                                        ? [
+                                              {
+                                                  label: "Şikayet et",
+                                                  onClick: (e) =>
+                                                      handleDropdownAction(
+                                                          "report",
+                                                          e,
+                                                      ),
+                                              },
+                                              ...(comment.user?.nickname &&
+                                              ![
+                                                  "anonim",
+                                                  "silinmiş",
+                                                  "Engellenmiş",
+                                                  "Engellemiş",
+                                              ].includes(comment.user?.nickname)
+                                                  ? [
+                                                        {
+                                                            label: "Kullanıcıyı engelle",
+                                                            onClick: (e) =>
+                                                                handleDropdownAction(
+                                                                    "block",
+                                                                    e,
+                                                                ),
+                                                        },
+                                                    ]
+                                                  : []),
+                                          ]
+                                        : []),
+                                    ...(!isOwn &&
+                                    globalState?.user?.role === "admin"
+                                        ? [{ divider: true }]
+                                        : []),
+                                    ...(isOwn ||
+                                    globalState?.user?.role === "admin"
+                                        ? [
+                                              {
+                                                  label: "Sil",
+                                                  variant: "danger",
+                                                  onClick: (e) =>
+                                                      handleDropdownAction(
+                                                          "delete",
+                                                          e,
+                                                      ),
+                                              },
+                                          ]
+                                        : []),
+                                    ...(globalState?.user?.role === "admin"
+                                        ? [
+                                              {
+                                                  label: "Kalıcı sil",
+                                                  variant: "danger",
+                                                  onClick: (e) =>
+                                                      handleDropdownAction(
+                                                          "purge",
+                                                          e,
+                                                      ),
+                                              },
+                                          ]
+                                        : []),
+                                ]}
+                            />
                         </div>
                     {/if}
-                </div>
 
-                {#if !isDeleted && !isBlocked}
-                <div class="comment-node__actions">
-                    <div class="comment-node__vote">
-                        <button
-                            class="vote-btn {reaction.my_vote === 'up'
-                                ? 'is-active'
-                                : ''} {isOwn || isBlocked ? 'is-disabled' : ''}"
-                            data-vote="up"
-                            disabled={isOwn || isBlocked}
-                            onclick={(e) => handleVote("up", e)}
-                            title={isOwn
-                                ? "Kendi yorumunuza oy veremezsiniz"
-                                : isBlocked
-                                  ? "Engellenen içeriklere oy verilemez"
-                                  : "Beğen"}
-                        >
-                            {@html icon(
-                                reaction.my_vote === "up"
-                                    ? "voteUpFilled"
-                                    : "voteUp",
-                                16,
-                            )}
-                        </button>
-                        <span
-                            class="vote-count {reaction.my_vote === 'up'
-                                ? 'positive'
-                                : reaction.my_vote === 'down'
-                                  ? 'negative'
-                                  : score > 0
-                                    ? 'positive'
-                                    : score < 0
-                                      ? 'negative'
-                                      : ''}">{score}</span
-                        >
-                        <button
-                            class="vote-btn {reaction.my_vote === 'down'
-                                ? 'is-active'
-                                : ''} {isOwn || isBlocked ? 'is-disabled' : ''}"
-                            data-vote="down"
-                            disabled={isOwn || isBlocked}
-                            onclick={(e) => handleVote("down", e)}
-                            title={isOwn
-                                ? "Kendi yorumunuza oy veremezsiniz"
-                                : isBlocked
-                                  ? "Engellenen içeriklere oy verilemez"
-                                  : "Beğenme"}
-                        >
-                            {@html icon(
-                                reaction.my_vote === "down"
-                                    ? "voteDownFilled"
-                                    : "voteDown",
-                                16,
-                            )}
-                        </button>
-                    </div>
-                    {#if !isBlocked}
-                        <button
-                            class="action-btn"
-                            onclick={toggleReply}
-                            title="Yanıtla"
-                        >
-                            {@html icon("chat", 14)}
-                            <span class="action-btn__text">Yanıtla</span>
-                        </button>
-                    {/if}
-                    <button
-                        class="action-btn"
-                        onclick={handleShare}
-                        title="Paylaş"
-                    >
-                        {@html icon("share", 14)}
-                        <span class="action-btn__text">Paylaş</span>
-                    </button>
-                    <ActionMenu
-                        triggerClass="action-btn"
-                        triggerTitle="Daha fazla seçenek"
-                        items={[
-                            ...(isOwn && !isDeleted
-                                ? [
-                                      {
-                                          label: "Düzenle",
-                                          onClick: () => openEditCommentModal(),
-                                      },
-                                  ]
-                                : []),
-                            ...(!isOwn
-                                ? [
-                                      {
-                                          label: "Şikayet et",
-                                          onClick: (e) =>
-                                              handleDropdownAction("report", e),
-                                      },
-                                      ...(comment.user?.nickname &&
-                                      ![
-                                          "anonim",
-                                          "silinmiş",
-                                          "Engellenmiş",
-                                          "Engellemiş",
-                                      ].includes(comment.user?.nickname)
-                                          ? [
-                                                {
-                                                    label: "Kullanıcıyı engelle",
-                                                    onClick: (e) =>
-                                                        handleDropdownAction(
-                                                            "block",
-                                                            e,
-                                                        ),
-                                                },
-                                            ]
-                                          : []),
-                                  ]
-                                : []),
-                            ...(!isOwn && globalState?.user?.role === "admin"
-                                ? [{ divider: true }]
-                                : []),
-                            ...(isOwn || globalState?.user?.role === "admin"
-                                ? [
-                                      {
-                                          label: "Sil",
-                                          variant: "danger",
-                                          onClick: (e) =>
-                                              handleDropdownAction("delete", e),
-                                      },
-                                  ]
-                                : []),
-                            ...(globalState?.user?.role === "admin"
-                                ? [
-                                      {
-                                          label: "Kalıcı sil",
-                                          variant: "danger",
-                                          onClick: (e) =>
-                                              handleDropdownAction("purge", e),
-                                      },
-                                  ]
-                                : []),
-                        ]}
-                    />
-                </div>
-                {/if}
-
-                {#if replying}
-                    <div class="comment-reply-form-container">
-                        <div class="comment-reply-form active u-mt-md">
-                            <!-- svelte-ignore a11y_autofocus -->
-                            <textarea
-                                bind:value={replyText}
-                                autofocus
-                                placeholder="Yanıtınızı buraya yazın..."
-                                class="comment-reply-textarea"
-                            ></textarea>
-                            <div
-                                class="u-flex u-flex-justify-end u-flex-gap-sm u-mt-sm"
-                            >
-                                <button
-                                    class="btn btn--secondary btn--sm btn--squish"
-                                    onclick={() => (replying = false)}
-                                    >Vazgeç</button
+                    {#if replying}
+                        <div class="comment-reply-form-container">
+                            <div class="comment-reply-form active u-mt-md">
+                                <!-- svelte-ignore a11y_autofocus -->
+                                <textarea
+                                    bind:value={replyText}
+                                    autofocus
+                                    placeholder="Yanıtınızı buraya yazın..."
+                                    class="comment-reply-textarea"
+                                ></textarea>
+                                <div
+                                    class="u-flex u-flex-justify-end u-flex-gap-sm u-mt-sm"
                                 >
-                                <button
-                                    class="btn btn--primary btn--sm btn--squish"
-                                    onclick={submitReply}>Yanıtla</button
-                                >
+                                    <button
+                                        class="btn btn--secondary btn--sm btn--squish"
+                                        onclick={() => (replying = false)}
+                                        >Vazgeç</button
+                                    >
+                                    <button
+                                        class="btn btn--primary btn--sm btn--squish"
+                                        onclick={submitReply}>Yanıtla</button
+                                    >
+                                </div>
                             </div>
                         </div>
-                    </div>
-                {/if}
-            </div>
+                    {/if}
+                </div>
 
-            {#if hasChildren}
-                {#if depth >= MAX_INDENT_DEPTH - 1}
-                    {#if countAllDescendants(comment) > 0}
-                        <div class="comment-node__more-replies">
-                            <button class="btn-more-replies" onclick={handleFocus}>
-                                {@html icon("plusCircle", 16)}
-                                <span
-                                    >{countAllDescendants(comment)} yanıtı daha gör</span
+                {#if hasChildren}
+                    {#if depth >= MAX_INDENT_DEPTH - 1}
+                        {#if countAllDescendants(comment) > 0}
+                            <div class="comment-node__more-replies">
+                                <button
+                                    class="btn-more-replies"
+                                    onclick={handleFocus}
                                 >
-                            </button>
+                                    {@html icon("plusCircle", 16)}
+                                    <span
+                                        >{countAllDescendants(comment)} yanıtı daha
+                                        gör</span
+                                    >
+                                </button>
+                            </div>
+                        {/if}
+                    {:else}
+                        <div class="comment-node__replies">
+                            <CommentList
+                                comments={comment.children}
+                                depth={depth + 1}
+                                {menuId}
+                                {onloadData}
+                            />
                         </div>
                     {/if}
-                {:else}
-                    <div class="comment-node__replies">
-                        <CommentList
-                            comments={comment.children}
-                            depth={depth + 1}
-                            {menuId}
-                            {onloadData}
-                        />
-                    </div>
                 {/if}
-            {/if}
-        </div>
-    {/if}
-</div>
+            </div>
+        {/if}
+    </div>
 </div>

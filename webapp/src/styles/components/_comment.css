@@ -888,7 +888,6 @@
     .comment-node__edited {
       font-size: clamp(10px, 2vw, 11px);
       color: var(--color-text-dim);
-      font-style: italic;
       white-space: nowrap;
       user-select: none;
     }
