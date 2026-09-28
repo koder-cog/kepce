@@ -24,7 +24,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Native aarch64 binary derle (rust:trixie + g++)
         run: |
@@ -59,7 +59,7 @@ jobs:
     needs: build-images
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Compose ve config dosyalarini sunucuya gonder
         uses: appleboy/scp-action@v0.1.7

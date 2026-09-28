@@ -13,9 +13,9 @@ jobs:
     name: webapp npm audit (high+)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 20
           cache: npm
@@ -36,7 +36,7 @@ jobs:
     # yapar ama deploy'u engellemez (deploy.yml'den bağımsız).
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: cargo-audit kur
         run: cargo install cargo-audit --locked
