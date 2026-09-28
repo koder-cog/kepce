@@ -40,7 +40,7 @@
   schema={aboutSchema}
 />
 
-<ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 2026.08.05">
+<ContentPage title="Hakkında" dateLabel="Yayımlanma tarihi: 5 Ağustos 2026">
   <p>
     Kepçe, temel olarak API sağlayıcı görevini üstlenen açık kaynaklı ve kâr
     amacı gütmeyen özgür bir yazılımdır. Kepçe'nin temel değerlerinde

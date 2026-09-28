@@ -12,7 +12,7 @@
 
 <ContentPage
   title="Kepçe Kullanım Koşulları"
-  dateLabel="Son güncelleme: 2026.09.27"
+  dateLabel="Son güncelleme: 27 Eylül 2026"
   archiveLink="/kullanim-kosullari/arsiv"
 >
   <CurrentContent />

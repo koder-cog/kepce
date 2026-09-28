@@ -12,7 +12,7 @@
 
 <ContentPage
   title="Gizlilik Politikası ve Aydınlatma Metni"
-  dateLabel="Son güncelleme: 2026.09.27"
+  dateLabel="Son güncelleme: 27 Eylül 2026"
   archiveLink="/gizlilik-politikasi/arsiv"
 >
   <CurrentContent />

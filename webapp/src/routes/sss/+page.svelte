@@ -54,7 +54,7 @@
 
 <ContentPage
   title="Sıkça Sorulabilecek Sorular"
-  dateLabel="Yayımlanma tarihi: 2026.08.05"
+  dateLabel="Yayımlanma tarihi: 5 Ağustos 2026"
 >
   <p>
     SSS sayfaları, yazılımcıların insanlığın okuduğunu anlama konusundaki
