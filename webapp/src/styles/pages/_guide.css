@@ -1,0 +1,122 @@
+@layer pages {
+  /*
+   * Rehber sayfaları (kyk-beslenme-yardimi, kyk-yemek-saatleri) için
+   * "hap özet kutusu" stilleri.
+   *
+   * Özet kutusu, zaman çizelgesindeki bildirim banner'ı ile aynı görsel dili
+   * kullanır (`status-card--main status-card--yavas status-card--notice`):
+   * yumuşak uyarı tonlu arka plan, yuvarlak köşe, ikon + başlık. Kenarlık
+   * çizgisi (border-left) YOKTUR.
+   *
+   * NOT: FAQ akordeonu kaldırıldı. Google, Ağustos 2023'te FAQ rich results'ı
+   * yalnızca devlet (.gov) ve sağlık siteleriyle sınırlandırdı; bağımsız
+   * projelerde SERP faydası yok. Ayrıca akordeon içeriği h2 bölümlerini
+   * tekrarlıyordu. Şema tarafında FAQPage zaten kullanılmıyor (AGENTS.md).
+   */
+
+  .guide-summary {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-md);
+    margin: 0 0 var(--space-2xl);
+    padding: var(--space-lg);
+    border-radius: var(--radius-lg);
+    background: rgba(var(--color-accent-disclaimer-rgb), 0.1);
+    color: var(--color-text);
+    text-align: left;
+  }
+
+  .guide-summary__head {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  .guide-summary__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    color: var(--color-text);
+  }
+
+  .guide-summary__title {
+    font-family: var(--font-body);
+    font-weight: var(--font-weight-bold);
+    font-size: var(--text-base);
+    color: var(--color-text-primary);
+    line-height: var(--leading-snug);
+  }
+
+  .guide-summary__grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0;
+    margin: 0;
+  }
+
+  .guide-summary__row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-sm) 0;
+    border-bottom: 1px dashed var(--color-text-secondary);
+  }
+
+  .guide-summary__row:last-child {
+    border-bottom: none;
+  }
+
+  /* Geniş satır: iki kolonluk görünümde her iki kolonu kaplar. */
+  .guide-summary__row--wide {
+    grid-column: 1 / -1;
+  }
+
+  .guide-summary__label {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    font-weight: var(--font-weight-medium);
+    margin: 0;
+  }
+
+  .guide-summary__value {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-primary);
+    text-align: right;
+    white-space: nowrap;
+    margin: 0;
+  }
+
+  .guide-summary__note {
+    margin: 0;
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    line-height: var(--leading-body);
+  }
+
+  /* Tablet ve üzeri (600px+): etiket-değer çiftleri iki kolona yayılır. */
+  @media (min-width: 600px) {
+    .guide-summary__grid {
+      grid-template-columns: repeat(2, 1fr);
+      column-gap: var(--space-xl);
+    }
+  }
+
+  /* Mobil (600px ve altı): iç boşluk ve tipografi küçülür, satırlar tek kolonda kalır. */
+  @media (max-width: 600px) {
+    .guide-summary__row {
+      gap: var(--space-sm);
+    }
+
+    .guide-summary__label {
+      font-size: var(--text-xs);
+    }
+
+    .guide-summary__value {
+      font-size: var(--text-sm);
+    }
+  }
+}

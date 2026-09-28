@@ -2,6 +2,7 @@
   import ContentPage from "@/components/layout/ContentPage.svelte";
   import Seo from "@/components/ui/Seo.svelte";
   import PricingCalculator from "@/components/features/pricing/PricingCalculator.svelte";
+  import GuideSummary from "@/components/features/guide/GuideSummary.svelte";
 
   const guideSchema = {
     "@context": "https://schema.org",
@@ -24,34 +25,37 @@
         ],
       },
       {
-        "@type": "Article",
-        headline: "KYK Beslenme Yardımı",
+        "@type": "WebPage",
+        "@id": "https://kepce.org/kyk-beslenme-yardimi#webpage",
+        url: "https://kepce.org/kyk-beslenme-yardimi",
+        name: "KYK Beslenme Yardımı | Kepçe",
         description:
-          "KYK yurtlarında beslenme yardımı, fiks menü işleyişi, günlük kota ve tavan fiyat kuralları.",
-        datePublished: "2026-08-20",
-        dateModified: "2026-08-20",
+          "KYK beslenme yardımı tutarları, standart tabldot menü kapsamı, kahvaltı ve akşam yemeği kotaları ile tavan fiyat kuralları.",
         inLanguage: "tr-TR",
-        mainEntityOfPage: "https://kepce.org/kyk-beslenme-yardimi",
-        author: {
-          "@type": "Organization",
-          name: "Kepçe",
-          url: "https://kepce.org/",
-        },
-        publisher: {
-          "@type": "Organization",
-          name: "Kepçe",
-          logo: "https://kepce.org/icon-512.png",
-        },
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://kepce.org/#organization",
+        name: "Kepçe",
+        url: "https://kepce.org/",
+        logo: "https://kepce.org/icon-512.png",
       },
     ],
   };
+
+  const summaryRows = [
+    { label: "Kahvaltı", value: "110 ₺" },
+    { label: "Akşam yemeği", value: "190 ₺" },
+    { label: "Günlük toplam", value: "300 ₺", wide: true },
+  ];
+
   let { data } = $props();
 </script>
 
 <Seo
   title={data?.seoTitle || "KYK Beslenme Yardımı | Kepçe"}
   description={data?.seoDescription ||
-    "KYK yurtlarında kahvaltı ve akşam yemeği için tanımlanan günlük beslenme yardımı ve yemekhane harcama kuralları."}
+    "KYK beslenme yardımı tutarları, standart tabldot menü kapsamı, kahvaltı ve akşam yemeği kotaları ile tavan fiyat kuralları."}
   image={data?.ogImage || "https://kepce.org/api/v1/public/og/page/rehber"}
   canonical="https://kepce.org/kyk-beslenme-yardimi"
   schema={guideSchema}
@@ -59,56 +63,68 @@
 
 <ContentPage
   title="KYK Beslenme Yardımı"
-  dateLabel="Yayımlanma tarihi: 2026.08.20"
+  dateLabel="Son güncelleme: 28 Eylül 2026"
 >
+  <GuideSummary
+    title="2026-2027 Tutarları"
+    rows={summaryRows}
+    note="Belirtilen tutarlar nakit harçlık değildir. Yemekhanede standart tabldot menüyü karşılamak üzere tanımlanan günlük bütçedir, kantinde harcanamaz."
+  />
+
   <p>
-    KYK yurtlarında kalan her öğrenciye kahvaltı ve akşam yemeği için günlük
-    nakdi beslenme yardımı tanımlanır. Bu tutar öğrencinin hesabına para olarak
-    yatmaz. Doğrudan yemekhane kasalarında indirim fişi olarak kullanılır.
+    KYK yurtlarında barınan öğrencilere kahvaltı ve akşam yemeği için günlük
+    beslenme yardımı tanımlanır. Bu bütçe banka hesabına nakit olarak yatmaz.
+    Yemekhane kasalarında doğrudan o günkü tabldot menü ücretini karşılar.
   </p>
 
-  <h2>Menü Düzeni ve Fiks Menü Mantığı</h2>
+  <h2>Menü Düzeni</h2>
   <p>
-    KYK yurt yemekhanelerinde yemek servisi fiks menü (standart tabldot) olarak
-    verilir. Her öğünde mutfak tarafından belirlenen 4 kap yemek sunulur: çorba,
-    ana yemek, yan yemek ve tamamlayıcı bir ürün (tatlı, meyve veya yoğurt).
+    KYK yemekhanelerinde yemekler tabldot olarak sunulur. Kahvaltıda çay, ekmek
+    ve suyun yanına peynir, zeytin, yumurta ve gününe göre sıcak bir seçenek
+    eklenerek kahvaltı tabağı verilir.
   </p>
   <p>
-    Devlet tarafından tanımlanan günlük beslenme yardımı tutarı, bu standart
-    tabldot menünün ücretini tam olarak karşılayacak şekilde ayarlanır.
-    Dolayısıyla menüyü eksiksiz aldığınızda cebinizden herhangi bir ek ücret
-    çıkmaz.
+    Akşam yemeğinde ise ekmek ve suyun haricinde mutfağın belirlediği dört-beş
+    kaplık klasik tabldot sunulur: çorba, ana yemek, yan yemek (pilav, makarna
+    vb.) ve tamamlayıcı bir ürün (tatlı, meyve veya yoğurt).
+  </p>
+  <p>
+    Tanımlanan günlük beslenme yardımı, her iki öğünde de bu standart menüleri
+    tam olarak karşılayacak şekilde ayarlanır. Dolayısıyla standart tabldotu
+    aldığınızda cebinizden fazladan bir ücret çıkmaz.
   </p>
 
   <h2>Kota Nasıl İşler?</h2>
   <p>
-    Beslenme yardımı kahvaltı ve akşam yemeği için iki ayrı kota halinde
+    Beslenme yardımı kahvaltı ve akşam yemeği için iki ayrı kota hâlinde
     tanımlanır. Kahvaltı kotasını yalnızca kahvaltı saatlerinde, akşam kotasını
-    ise akşam yemeğinde harcayabilirsiniz.
+    ise yalnızca akşam yemeğinde kullanabilirsiniz.
   </p>
   <p>
-    Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanmadığınız yardım
-    hakkı o gün bittiğinde sıfırlanır, sonraki güne devretmez veya nakit olarak
-    geri alınamaz.
+    Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanılmayan yardım
+    hakkı gün sonunda sıfırlanır, sonraki güne devretmez veya nakit olarak
+    alınamaz.
   </p>
 
-  <h2>Ekstra Seçenekler ve Limitler</h2>
+  <h2>Ek Ürünler ve Tavan Fiyat</h2>
   <p>
     Yemekhanelerde standart menü haricinde sunulan ilave ürün veya kantin
     seçimlerinde yurtlar için belirlenen tavan fiyat tarifesi geçerlidir. Yardım
-    limitini aşan ekstra taleplerde aradaki fark kasada ödenir.
+    limitini aşan ilave taleplerde aradaki fark kasada ödenir.
   </p>
 
-  <h2>Yurttan İzinli Olduğunuz Günler</h2>
+  <h2>Hafta Sonu ve İzinli Günler</h2>
   <p>
-    Hafta sonu izne çıktığınızda veya tatil dönemlerinde yemekhaneyi
-    kullanmadığınız günlerin beslenme yardımı geçerliliğini yitirir, geriye
-    dönük hak talep edilemez.
+    Hafta sonları beslenme yardımı açısından özel bir ayrıcalık veya kısıtlama
+    yoktur, haklar hafta içiyle tamamen aynı işler. İster hafta sonu iznine
+    çıkın ister tatilde memlekete gidin, yurtta bulunmayıp yemekhaneyi
+    kullanmadığınız günlerin beslenme yardımı devretmez, gün sonunda silinir ve
+    geriye dönük talep edilemez.
   </p>
   <p>
-    Bugün hangi tabldot menünün çıktığını ve besin değerlerini görmek için
-    <a href="/" data-link>ana sayfaya</a> göz atabilir, kendi tepsinizi oluşturup
-    bütçeyi sınırda bırakacak kombinasyonları aşağıdaki simülatörle arayabilirsiniz.
+    Günün menüsünü görmek için <a href="/" data-link>ana sayfaya</a> göz atabilirsiniz.
+    "Kendi tepsimi dizsem bu bütçeye denkleşir mi?" diyorsanız aşağıdaki simülatörle
+    bütçeyi tutturmayı deneyebilirsiniz.
   </p>
 
   <PricingCalculator />

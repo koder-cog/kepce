@@ -11,7 +11,7 @@ export function load({ url }) {
       ogImage: "https://kepce.org/api/v1/public/og/page/rehber",
       seoTitle: "KYK Beslenme Yardımı | Kepçe",
       seoDescription:
-        "KYK yurtlarında kahvaltı ve akşam yemeği için tanımlanan günlük beslenme yardımı ve yemekhane harcama kuralları.",
+        "KYK beslenme yardımı tutarları, standart tabldot menü kapsamı, kahvaltı ve akşam yemeği kotaları ile tavan fiyat kuralları.",
     };
   }
 

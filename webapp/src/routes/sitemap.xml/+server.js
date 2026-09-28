@@ -12,8 +12,8 @@ const BASE_URL = 'https://kepce.org';
 const staticPagesWithLastmod = [
 	{ path: '', dynamicRoot: true },
 	{ path: '/sehirler', lastmod: '2026-09-01' },
-	{ path: '/kyk-yemek-saatleri', lastmod: '2026-08-20' },
-	{ path: '/kyk-beslenme-yardimi', lastmod: '2026-08-20' },
+	{ path: '/kyk-yemek-saatleri', lastmod: '2026-09-28' },
+	{ path: '/kyk-beslenme-yardimi', lastmod: '2026-09-28' },
 	{ path: '/arsiv', lastmod: '2026-08-15' },
 	{ path: '/durum', lastmod: '2026-09-01' },
 	{ path: '/menu-gonder', lastmod: '2026-08-10' },
