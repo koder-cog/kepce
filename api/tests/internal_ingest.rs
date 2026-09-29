@@ -29,6 +29,7 @@ async fn setup_test_app(secret: Option<&str>) -> (axum::Router, sea_orm::Databas
 }
 
 #[tokio::test]
+#[ignore = "requires live postgres database"]
 async fn test_internal_ingest_auth_guards() {
     let (app_without_secret, _) = setup_test_app(None).await;
 
@@ -71,6 +72,7 @@ async fn test_internal_ingest_auth_guards() {
 }
 
 #[tokio::test]
+#[ignore = "requires live postgres database"]
 async fn test_internal_ingest_success_and_idempotency() {
     let test_secret = "test_ingest_token_super_secret_987";
     let (app, db) = setup_test_app(Some(test_secret)).await;
@@ -157,6 +159,7 @@ async fn test_internal_ingest_success_and_idempotency() {
 }
 
 #[tokio::test]
+#[ignore = "requires live postgres database"]
 async fn test_internal_ingest_junk_menu_rejected() {
     let test_secret = "test_ingest_junk_secret_333";
     let (app, _) = setup_test_app(Some(test_secret)).await;

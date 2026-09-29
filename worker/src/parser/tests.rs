@@ -2,7 +2,8 @@
 #[allow(clippy::module_inception)]
 mod tests {
     use crate::parser::core::{
-        DateTokenOrder, SheetGrid, infer_sheet_date_order, parse_date_with_order, parse_grid,
+        DateOrderResolution, DateTokenOrder, SheetGrid, parse_date_with_order, parse_grid,
+        resolve_file_date_order,
     };
     use crate::parser::kykyemek::{parse_kykyemek_html, parse_turkish_date};
     use crate::parser::models::MenuComponent;
@@ -12,8 +13,8 @@ mod tests {
     use std::collections::HashMap;
 
     #[test]
-    fn test_infer_sheet_date_order_anchors() {
-        // Tabloda 15.06.2026 hücresi var -> p1 > 12 -> kesinlikle DayMonth
+    fn test_resolve_file_date_order_anchors() {
+        // T1: Tabloda 15.06.2026 hücresi var -> p1 > 12 -> kesinlikle DayMonth
         let grid_standard = SheetGrid {
             name: "Menu".to_string(),
             rows: vec![vec![
@@ -23,11 +24,11 @@ mod tests {
             ]],
         };
         assert_eq!(
-            infer_sheet_date_order(&grid_standard, "dosya.xlsx"),
-            DateTokenOrder::DayMonth
+            resolve_file_date_order(&[grid_standard], "dosya.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::DayMonth)
         );
 
-        // Tabloda 06.15.2026 hücresi var -> p2 > 12 -> kesinlikle MonthDay
+        // T1: Tabloda 06.15.2026 hücresi var -> p2 > 12 -> kesinlikle MonthDay
         let grid_inverted = SheetGrid {
             name: "Menu".to_string(),
             rows: vec![vec![
@@ -37,14 +38,14 @@ mod tests {
             ]],
         };
         assert_eq!(
-            infer_sheet_date_order(&grid_inverted, "dosya.xlsx"),
-            DateTokenOrder::MonthDay
+            resolve_file_date_order(&[grid_inverted], "dosya.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::MonthDay)
         );
     }
 
     #[test]
-    fn test_infer_sheet_date_order_variance_without_anchors() {
-        // Tüm sayılar <= 12 (örn. ayın ilk 5 günü): p1 (1..=5) artıyor, p2 (6) sabit -> DayMonth
+    fn test_resolve_file_date_order_variance_without_anchors() {
+        // T2: Tüm sayılar <= 12 (örn. ayın ilk 5 günü): p1 (1..=5) artıyor, p2 (6) sabit -> DayMonth
         let grid_small_dm = SheetGrid {
             name: "Menu".to_string(),
             rows: vec![vec![
@@ -55,11 +56,11 @@ mod tests {
             ]],
         };
         assert_eq!(
-            infer_sheet_date_order(&grid_small_dm, "bilinmeyen.xlsx"),
-            DateTokenOrder::DayMonth
+            resolve_file_date_order(&[grid_small_dm], "bilinmeyen.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::DayMonth)
         );
 
-        // Ters format: p1 (6) sabit, p2 (1..=4) artıyor -> MonthDay
+        // T2 ters format: p1 (6) sabit, p2 (1..=4) artıyor -> MonthDay
         let grid_small_md = SheetGrid {
             name: "Menu".to_string(),
             rows: vec![vec![
@@ -70,8 +71,90 @@ mod tests {
             ]],
         };
         assert_eq!(
-            infer_sheet_date_order(&grid_small_md, "bilinmeyen.xlsx"),
-            DateTokenOrder::MonthDay
+            resolve_file_date_order(&[grid_small_md], "bilinmeyen.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::MonthDay)
+        );
+    }
+
+    /// T1: hem p1 hem p2 için >12 çapa varsa ÇELİŞKİ (karantina sinyali).
+    #[test]
+    fn test_resolve_file_date_order_conflict_both_anchors() {
+        let grid = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![vec!["15.06.2026".into(), "06.20.2026".into()]],
+        };
+        assert!(matches!(
+            resolve_file_date_order(&[grid], "dosya.xlsx"),
+            DateOrderResolution::Conflict(_)
+        ));
+    }
+
+    /// T2: hem p1 hem p2 çok değerliyse ÇELİŞKİ.
+    #[test]
+    fn test_resolve_file_date_order_conflict_both_varying() {
+        let grid = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![vec![
+                "01.06.2026".into(),
+                "02.07.2026".into(),
+                "03.06.2026".into(),
+                "04.08.2026".into(),
+            ]],
+        };
+        assert!(matches!(
+            resolve_file_date_order(&[grid], "dosya.xlsx"),
+            DateOrderResolution::Conflict(_)
+        ));
+    }
+
+    /// T3: tek tarih ve ipucu yoksa karar ZAYIF (WEAK_DATE_ORDER kuyruğa düşer).
+    #[test]
+    fn test_resolve_file_date_order_weak_single_date() {
+        let grid = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![vec!["05.04.2026".into()]],
+        };
+        assert_eq!(
+            resolve_file_date_order(&[grid], "YENI_LISTE.xlsx"),
+            DateOrderResolution::Weak(DateTokenOrder::DayMonth)
+        );
+    }
+
+    /// T4: tek tarihli dosyada beyan edilen ay yalnızca bir okumayla uyuşuyorsa
+    /// karar Resolved'a terfi eder.
+    #[test]
+    fn test_resolve_file_date_order_month_cross_validation() {
+        let grid = SheetGrid {
+            name: "Menu".to_string(),
+            rows: vec![vec!["05.04.2026".into()]],
+        };
+        // Dosya adı Nisan: DMY okuması ay=4 (uyuşur), MDY okuması ay=5 (uyuşmaz)
+        assert_eq!(
+            resolve_file_date_order(std::slice::from_ref(&grid), "Nisan_2026_Menusu.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::DayMonth)
+        );
+        // Dosya adı Mayıs: MDY okuması ay=5 (uyuşur), DMY ay=4 (uyuşmaz)
+        assert_eq!(
+            resolve_file_date_order(std::slice::from_ref(&grid), "Mayis_2026_Menusu.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::MonthDay)
+        );
+        // Dosya adı Haziran: hiçbir okumayla uyuşmaz -> ÇELİŞKİ
+        assert!(matches!(
+            resolve_file_date_order(std::slice::from_ref(&grid), "Haziran_2026_Menusu.xlsx"),
+            DateOrderResolution::Conflict(_)
+        ));
+    }
+
+    /// T5: yıl asla takas edilmez; sayfa adındaki ay da çapraz doğrulamada kullanılır.
+    #[test]
+    fn test_resolve_file_date_order_uses_sheet_name_hint() {
+        let grid = SheetGrid {
+            name: "NİSAN AYI".to_string(),
+            rows: vec![vec!["05.04.2026".into()]],
+        };
+        assert_eq!(
+            resolve_file_date_order(&[grid], "isimsiz.xlsx"),
+            DateOrderResolution::Resolved(DateTokenOrder::DayMonth)
         );
     }
 
@@ -111,10 +194,16 @@ mod tests {
             parse_date_with_order("06.04.2026", DateTokenOrder::MonthDay),
             Some("2026-06-04".to_string())
         );
-        // Geçersiz ay/gün self-healing
+        // KRİTİK: sessiz takas KALDIRILDI (D-3d). Seçilen sırayla imkansız ay/gün
+        // artık None döner; çağıran taraf bunu şüphe olarak kaydeder.
         assert_eq!(
             parse_date_with_order("15.06.2026", DateTokenOrder::MonthDay),
-            Some("2026-06-15".to_string())
+            None
+        );
+        // Takvimde olmayan gün de None döner (31 Nisan)
+        assert_eq!(
+            parse_date_with_order("31.04.2026", DateTokenOrder::DayMonth),
+            None
         );
     }
 

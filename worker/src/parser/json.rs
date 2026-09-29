@@ -65,6 +65,11 @@ pub struct IngestItemJson {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct IngestDayJson {
     pub date: String,
+    /// Belgede YAZILI HAM tarih (örn. `01.04.2026`). LLM'in ISO çıktısı bu
+    /// alanla deterministik olarak çapraz doğrulanır; tarih yorumu LLM'e
+    /// bırakılmaz (Faz 3.4).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date_raw: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meal_type: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -147,10 +152,23 @@ fn normalize_date_str(raw: &str) -> Result<String> {
 }
 
 pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabase> {
+    parse_json_str_with_diagnostics(content, file_name_hint).map(|(db, _)| db)
+}
+
+/// `parse_json_str` + LLM `date_raw` çapraz doğrulaması (Faz 3.4).
+///
+/// Dönen vektör, LLM'in ISO tarihi ile ham yazılı tarihin deterministik
+/// (DMY, Türkiye standardı) çözümünün UYUŞMADIĞI günlerin açıklamalarını taşır.
+/// Uyuşmazlık karar motorunda `Suspect(DATE_ORDER_MISMATCH)` olur.
+pub fn parse_json_str_with_diagnostics(
+    content: &str,
+    file_name_hint: &str,
+) -> Result<(MenuDatabase, Vec<String>)> {
     let parsed: IngestMenuJson =
         serde_json::from_str(content).context("JSON formatı IngestMenuJson şemasına uymuyor")?;
 
     let mut db: MenuDatabase = HashMap::new();
+    let mut date_raw_mismatches: Vec<String> = Vec::new();
     let default_meal = resolve_meal_type(parsed.meal_type.as_deref(), file_name_hint);
     let is_colyak = parsed.is_colyak;
 
@@ -162,6 +180,24 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
                 continue;
             }
         };
+
+        // Faz 3.4: ham yazılı tarihi deterministik motorla yeniden çöz ve
+        // LLM'in ISO çıktısıyla karşılaştır.
+        if let Some(raw) = day
+            .date_raw
+            .as_deref()
+            .map(str::trim)
+            .filter(|s| !s.is_empty())
+            && let Some(deterministic) = super::core::parse_date_string(raw)
+            && deterministic != date_iso
+        {
+            let msg = format!(
+                "LLM '{}' tarihini {} olarak verdi ama ham '{}' deterministik çözümde {} oluyor",
+                raw, date_iso, raw, deterministic
+            );
+            tracing::warn!("DATE_ORDER_MISMATCH: {}", msg);
+            date_raw_mismatches.push(msg);
+        }
 
         let meal_type = match day.meal_type.as_deref() {
             Some(m) => resolve_meal_type(Some(m), file_name_hint),
@@ -331,7 +367,7 @@ pub fn parse_json_str(content: &str, file_name_hint: &str) -> Result<MenuDatabas
         }
     }
 
-    Ok(db)
+    Ok((db, date_raw_mismatches))
 }
 
 pub fn parse_json_file(file_path: &str, _city_slug: &str) -> Result<MenuDatabase> {

@@ -2092,6 +2092,86 @@ pub fn sanitize_dish_name(name: &str) -> String {
     spaced.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
+/// Ay atomikliği (yerel menü akışı planı 6.4): bir kaynak için (şehir, ay)
+/// kapsamı yeniden işlendiğinde, o kapsamda daha önce bu kaynaktan yazılmış ve
+/// yeni dosyada BULUNMAYAN tüm (tarih, öğün) ikililerini siler.
+///
+/// - **Sert DELETE:** `menu_dishes`, `comments`, `votes` ve `reports` tabloları
+///   `menus(id)` üzerinden `ON DELETE CASCADE` ile bağlıdır; tek silme yeterlidir
+///   ve yetim kayıt kalmaz.
+/// - **`Rejected` bilinçli olarak KULLANILMAZ:** Rejected satırı aynı kaynağın
+///   o tarihe ileride doğru veriyi yazmasını kalıcı olarak engeller. Sert silme
+///   satırın yeniden doğmasına izin verir.
+/// - Kaynak filtresi önekle sınırlıdır (örn. `kepce-`); kykyemek ve diğer
+///   bağımsız kaynak kayıtları korunur.
+///
+/// `keep`, yeni dosyadan yazılan (tarih, öğün) ikililerini taşır; öğün değeri
+/// `meal_type_str` ile aynı biçimde ("breakfast" | "lunch" | "dinner") olmalıdır.
+pub async fn delete_out_of_scope_menus(
+    db: &sea_orm::DatabaseConnection,
+    city_id: i32,
+    source_prefix: &str,
+    month_start: NaiveDate,
+    keep: &HashSet<(NaiveDate, String)>,
+) -> Result<usize> {
+    use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+    use shared::entities::menus;
+
+    let next_month = if month_start.month() == 12 {
+        NaiveDate::from_ymd_opt(month_start.year() + 1, 1, 1)
+    } else {
+        NaiveDate::from_ymd_opt(month_start.year(), month_start.month() + 1, 1)
+    }
+    .ok_or_else(|| anyhow::anyhow!("geçersiz ay başlangıcı: {}", month_start))?;
+
+    let existing = menus::Entity::find()
+        .filter(menus::Column::CityId.eq(city_id))
+        .filter(menus::Column::SourceType.like(format!("{}%", source_prefix)))
+        .filter(menus::Column::ServeDate.gte(month_start))
+        .filter(menus::Column::ServeDate.lt(next_month))
+        .all(db)
+        .await?;
+
+    let meal_str = |m: &shared::entities::sea_orm_active_enums::MealTypeEnum| -> String {
+        match m {
+            shared::entities::sea_orm_active_enums::MealTypeEnum::Breakfast => {
+                "breakfast".to_string()
+            }
+            shared::entities::sea_orm_active_enums::MealTypeEnum::Lunch => "lunch".to_string(),
+            shared::entities::sea_orm_active_enums::MealTypeEnum::Dinner => "dinner".to_string(),
+        }
+    };
+
+    let obsolete: Vec<(i32, NaiveDate, String)> = existing
+        .iter()
+        .filter(|m| !keep.contains(&(m.serve_date, meal_str(&m.meal_type))))
+        .map(|m| (m.id, m.serve_date, meal_str(&m.meal_type)))
+        .collect();
+
+    if obsolete.is_empty() {
+        return Ok(0);
+    }
+
+    let ids: Vec<i32> = obsolete.iter().map(|(id, _, _)| *id).collect();
+    for (id, date, meal) in &obsolete {
+        tracing::warn!(
+            "[AY-ATOMİK] Kapsam dışı kayıt siliniyor: menu_id={} {} {} (şehir {}, kaynak öneki '{}')",
+            id,
+            date,
+            meal,
+            city_id,
+            source_prefix
+        );
+    }
+
+    menus::Entity::delete_many()
+        .filter(menus::Column::Id.is_in(ids))
+        .exec(db)
+        .await?;
+
+    Ok(obsolete.len())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

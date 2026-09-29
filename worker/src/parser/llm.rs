@@ -34,6 +34,84 @@ fn detect_mime_type(path: &Path, bytes: &[u8]) -> &'static str {
 }
 
 pub fn menu_response_schema() -> serde_json::Value {
+    // Şema PARÇALAR halinde kurulur: tek dev `json!` çağrısı makro özyineleme
+    // sınırına (recursion limit) takılır.
+    let alternative_schema = json!({
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Name of the alternative dish."
+            },
+            "amount": {
+                "type": "string",
+                "description": "Portion size or weight for this alternative dish alone (e.g. '200 g')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories for this alternative dish alone if listed (e.g. '164 kcal')."
+            }
+        },
+        "required": ["name"]
+    });
+
+    let item_schema = json!({
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Name of the dish (e.g. 'Mercimek Çorbası')."
+            },
+            "amount": {
+                "type": "string",
+                "description": "Portion size or weight if listed (e.g. '200 gr', '1 adet')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories for this specific item if listed."
+            },
+            "alternatives": {
+                "type": "array",
+                "description": "Alternative dish choices for the same slot (e.g. separated by '/' or 'veya'). Each alternative must have its own separate name, amount, and calories.",
+                "items": alternative_schema
+            }
+        },
+        "required": ["name"]
+    });
+
+    let day_schema = json!({
+        "type": "object",
+        "properties": {
+            "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date in strict ISO 8601 YYYY-MM-DD format."
+            },
+            "date_raw": {
+                "type": "string",
+                "description": "The date EXACTLY as written in the source document, verbatim (e.g. '01.04.2026' or '1 Nisan 2026'). Never reformat or reinterpret it."
+            },
+            "meal_type": {
+                "type": "string",
+                "description": "Meal type for this day ('breakfast', 'dinner', 'lunch')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories for this day (e.g. '950 kcal')."
+            },
+            "takeaway": {
+                "type": "string",
+                "description": "Al Götür package name or id if specified (e.g. 'Al Götür 1')."
+            },
+            "items": {
+                "type": "array",
+                "description": "Dishes and food items served on this day.",
+                "items": item_schema
+            }
+        },
+        "required": ["date", "items"]
+    });
+
     json!({
         "type": "object",
         "description": "Turkish university and dormitory monthly menu structure.",
@@ -61,72 +139,7 @@ pub fn menu_response_schema() -> serde_json::Value {
             "days": {
                 "type": "array",
                 "description": "List of daily menus extracted from the document.",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "date": {
-                            "type": "string",
-                            "description": "Date in YYYY-MM-DD or DD.MM.YYYY format."
-                        },
-                        "meal_type": {
-                            "type": "string",
-                            "description": "Meal type for this day ('breakfast', 'dinner', 'lunch')."
-                        },
-                        "calories": {
-                            "type": "string",
-                            "description": "Calories for this day (e.g. '950 kcal')."
-                        },
-                        "takeaway": {
-                            "type": "string",
-                            "description": "Al Götür package name or id if specified (e.g. 'Al Götür 1')."
-                        },
-                        "items": {
-                            "type": "array",
-                            "description": "Dishes and food items served on this day.",
-                            "items": {
-                                "type": "object",
-                                "properties": {
-                                    "name": {
-                                        "type": "string",
-                                        "description": "Name of the dish (e.g. 'Mercimek Çorbası')."
-                                    },
-                                    "amount": {
-                                        "type": "string",
-                                        "description": "Portion size or weight if listed (e.g. '200 gr', '1 adet')."
-                                    },
-                                    "calories": {
-                                        "type": "string",
-                                        "description": "Calories for this specific item if listed."
-                                    },
-                                    "alternatives": {
-                                        "type": "array",
-                                        "description": "Alternative dish choices for the same slot (e.g. separated by '/' or 'veya'). Each alternative must have its own separate name, amount, and calories.",
-                                        "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                "name": {
-                                                    "type": "string",
-                                                    "description": "Name of the alternative dish."
-                                                },
-                                                "amount": {
-                                                    "type": "string",
-                                                    "description": "Portion size or weight for this alternative dish alone (e.g. '200 g')."
-                                                },
-                                                "calories": {
-                                                    "type": "string",
-                                                    "description": "Calories for this alternative dish alone if listed (e.g. '164 kcal')."
-                                                }
-                                            },
-                                            "required": ["name"]
-                                        }
-                                    }
-                                },
-                                "required": ["name"]
-                            }
-                        }
-                    },
-                    "required": ["date", "items"]
-                }
+                "items": day_schema
             }
         },
         "required": ["days"]
@@ -412,9 +425,11 @@ pub fn llm_available(gemini_api_key: Option<&str>) -> bool {
 ///
 /// Boş menü "başarı" sayılırsa dosya vault'a taşınır ve veri sessizce
 /// kaybolur; bu yüzden 0 gün dönen sonuç hata olarak ele alınır.
-fn parse_and_finalize(text: &str, file_name_hint: &str) -> Result<MenuDatabase> {
+/// İkinci değer, `date_raw` çapraz doğrulama uyuşmazlıklarını taşır (Faz 3.4).
+fn parse_and_finalize(text: &str, file_name_hint: &str) -> Result<(MenuDatabase, Vec<String>)> {
     let cleaned = clean_json_markdown(text);
-    let mut db = crate::parser::json::parse_json_str(cleaned, file_name_hint)?;
+    let (mut db, mismatches) =
+        crate::parser::json::parse_json_str_with_diagnostics(cleaned, file_name_hint)?;
     if db.is_empty() {
         anyhow::bail!(
             "Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
@@ -424,7 +439,7 @@ fn parse_and_finalize(text: &str, file_name_hint: &str) -> Result<MenuDatabase> 
     for day_data in db.values_mut() {
         crate::parser::validation::finalize_day_metadata(day_data);
     }
-    Ok(db)
+    Ok((db, mismatches))
 }
 
 /// Sağlayıcıdan bağımsız istek verisi (istem metni + belge).
@@ -613,7 +628,7 @@ async fn call_gemini(
 pub const MENU_EXTRACTION_PROMPT: &str = "You are a precise data extraction engine for Turkish university and dormitory dining hall menus (KYK menüleri).
 Extract all daily menus, dates, meal types (Kahvaltı -> breakfast, Akşam Yemeği -> dinner, Öğle -> lunch), food items, portions/weights, calories, and alternatives from the provided document or image.
 The document may contain MULTIPLE separate tables for different meal types (e.g. a Kahvaltı/breakfast table and an Akşam Yemeği/dinner table). Extract EVERY table as separate entries in 'days', each tagged with its own meal_type. Do not stop after the first table.
-Ensure every day present in the document is extracted into the 'days' array with accurate dates (YYYY-MM-DD or DD.MM.YYYY).
+Ensure every day present in the document is extracted into the 'days' array. The 'date' field MUST be strict ISO 8601 (YYYY-MM-DD). Additionally, for EVERY day set 'date_raw' to the date EXACTLY as written in the source document, verbatim (e.g. '01.04.2026'). Never swap day and month yourself; Turkish documents use DD.MM.YYYY order.
 If multiple dish options are offered for a slot (separated by '/', 'veya', or alternate lines), put the first option into the item's own name/amount/calories fields and the rest into the 'alternatives' array. Each alternative is an object with its own name, amount and calories fields. Do not combine multiple values into one field with a '/' separator.
 Garnishes, sides, and sauces served alongside a main dish (e.g. garnitür havuç-kabak, patates püresi, sos) are part of the main dish, not separate alternatives.
 If bread (ekmek, çeyrek ekmek) appears multiple times in the same meal from both a table row and a footnote, include it only once.
@@ -623,7 +638,7 @@ pub async fn parse_document_with_llm(
     client: &Client,
     gemini_api_key: Option<&str>,
     file_path: &Path,
-) -> Result<MenuDatabase> {
+) -> Result<(MenuDatabase, crate::parser::core::ParseDiagnostics)> {
     tracing::info!("Belge LLM ile ayrıştırılıyor: {:?}", file_path);
 
     let metadata = tokio::fs::metadata(file_path)
@@ -714,13 +729,19 @@ pub async fn parse_document_with_llm(
                     .await
                     {
                         Ok(text) => match parse_and_finalize(&text, file_name_hint) {
-                            Ok(db) => {
+                            Ok((db, mismatches)) => {
                                 tracing::info!(
                                     "  Başarıyla ayrıştırıldı: {} gün bulundu (sağlayıcı: openrouter, model: {}).",
                                     db.len(),
                                     openrouter_model
                                 );
-                                return Ok(db);
+                                return Ok((
+                                    db,
+                                    crate::parser::core::ParseDiagnostics {
+                                        date_raw_mismatches: mismatches,
+                                        ..Default::default()
+                                    },
+                                ));
                             }
                             Err(e) => {
                                 tracing::warn!("  Ayrıştırma hatası (deneme {}): {}", attempt, e);
@@ -760,13 +781,19 @@ pub async fn parse_document_with_llm(
                         match call_gemini(client, key, model_name, &thinking_level, &llm_req).await
                         {
                             Ok(text) => match parse_and_finalize(&text, file_name_hint) {
-                                Ok(db) => {
+                                Ok((db, mismatches)) => {
                                     tracing::info!(
                                         "  Başarıyla ayrıştırıldı: {} gün bulundu (sağlayıcı: gemini, model: {}).",
                                         db.len(),
                                         model_name
                                     );
-                                    return Ok(db);
+                                    return Ok((
+                                        db,
+                                        crate::parser::core::ParseDiagnostics {
+                                            date_raw_mismatches: mismatches,
+                                            ..Default::default()
+                                        },
+                                    ));
                                 }
                                 Err(e) => {
                                     tracing::warn!(
@@ -998,7 +1025,7 @@ mod tests {
             .expect("reqwest client kurulamadı");
         eprintln!("PROBE: belge={:?} | timeout={}s", path, timeout_secs);
 
-        let db = parse_document_with_llm(&client, gemini_key.as_deref(), &path)
+        let (db, _diag) = parse_document_with_llm(&client, gemini_key.as_deref(), &path)
             .await
             .expect("LLM ayrıştırma başarılı olmalı");
 

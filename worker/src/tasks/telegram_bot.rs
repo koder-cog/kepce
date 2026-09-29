@@ -158,11 +158,147 @@ async fn handle_command(
 Kullanabileceğiniz komutlar:\n\
 • `/durum` - Canlı sunucu, DB ve IP devre kesici sağlığı\n\
 • `/tara [sehir]` - Menü kazımayı anlık tetikle (örn: `/tara` veya `/tara istanbul`)\n\
+• `/karantina` - Karantina kuyruğunu listele (karar bekleyen dosyalar)\n\
+• `/karantina detay <id>` - Karantina öğesinin teşhis ayrıntıları\n\
+• `/onayla <id>` - Karantinadaki dosyayı kapsam içi tarihlerle işle\n\
+• `/reddet <id>` - Karantinadaki dosyayı hatali/ altına taşı\n\
+• `/ata <id> <sehir>` - Şehirsiz karantina öğesine şehir ata ve işleme al\n\
 • `/yorumlar_uret` - Eksik menüler için otomatik LLM öğrenci yorumu üret\n\
 • `/ban_kaldir` - IP ban devre kesicisini erken sıfırla\n\
 • `/son_menuler` - Sisteme eklenen son 5 güncel menü\n\
 • `/yardim` - Bu yardım menüsü";
             send_reply(client, bot_token, chat_id, help_msg).await;
+        }
+
+        "/karantina" | "karantina" => {
+            let base = crate::tasks::quarantine::menu_base_dir();
+            if parts.get(1).map(|s| s.to_lowercase()) == Some("detay".to_string()) {
+                match parts.get(2) {
+                    Some(id) => match crate::tasks::quarantine::find_item(&base, id).await {
+                        Some(item) => {
+                            let msg = crate::tasks::quarantine::format_item_detail(&item).await;
+                            send_reply(client, bot_token, chat_id, &msg).await;
+                        }
+                        None => {
+                            send_reply(
+                                client,
+                                bot_token,
+                                chat_id,
+                                &format!("❓ `'{}'` kimlikli karantina öğesi bulunamadı.", id),
+                            )
+                            .await;
+                        }
+                    },
+                    None => {
+                        send_reply(
+                            client,
+                            bot_token,
+                            chat_id,
+                            "Kullanım: `/karantina detay <id>`",
+                        )
+                        .await;
+                    }
+                }
+            } else {
+                let msg = crate::tasks::quarantine::format_queue_listing(&base).await;
+                send_reply(client, bot_token, chat_id, &msg).await;
+            }
+        }
+
+        "/onayla" | "onayla" => {
+            let Some(id) = parts.get(1).copied() else {
+                send_reply(client, bot_token, chat_id, "Kullanım: `/onayla <id>`").await;
+                return;
+            };
+            send_reply(
+                client,
+                bot_token,
+                chat_id,
+                &format!("⏳ `{}` onaylanıyor, dosya yeniden ayrıştırılıyor...", id),
+            )
+            .await;
+
+            let db_clone = db.clone();
+            let client_clone = client.clone();
+            let bot_token_clone = bot_token.to_string();
+            let id_owned = id.to_string();
+            let gemini_key = std::env::var("GEMINI_API_KEY").ok();
+            tokio::spawn(async move {
+                let res = crate::tasks::file_ingest::approve_quarantine_item(
+                    &db_clone,
+                    &client_clone,
+                    gemini_key.as_deref(),
+                    &id_owned,
+                )
+                .await;
+                let msg = match res {
+                    Ok(m) => m,
+                    Err(e) => format!("❌ *Onaylama başarısız* `{}`\n`{:?}`", id_owned, e),
+                };
+                send_reply(&client_clone, &bot_token_clone, chat_id, &msg).await;
+            });
+        }
+
+        "/reddet" | "reddet" => {
+            let Some(id) = parts.get(1).copied() else {
+                send_reply(client, bot_token, chat_id, "Kullanım: `/reddet <id>`").await;
+                return;
+            };
+            match crate::tasks::file_ingest::reject_quarantine_item(id).await {
+                Ok(m) => send_reply(client, bot_token, chat_id, &m).await,
+                Err(e) => {
+                    send_reply(
+                        client,
+                        bot_token,
+                        chat_id,
+                        &format!("❌ *Reddetme başarısız* `{}`\n`{:?}`", id, e),
+                    )
+                    .await
+                }
+            }
+        }
+
+        "/ata" | "ata" => {
+            let (Some(id), Some(slug)) = (parts.get(1).copied(), parts.get(2).copied()) else {
+                send_reply(client, bot_token, chat_id, "Kullanım: `/ata <id> <sehir>`").await;
+                return;
+            };
+            match crate::tasks::file_ingest::assign_quarantine_item(db, id, slug).await {
+                Ok(m) => {
+                    send_reply(client, bot_token, chat_id, &m).await;
+                    // Taşınan dosya hemen işleme alınsın (plan 2.3).
+                    let db_clone = db.clone();
+                    let client_clone = client.clone();
+                    let bot_token_clone = bot_token.to_string();
+                    let gemini_key = std::env::var("GEMINI_API_KEY").ok();
+                    tokio::spawn(async move {
+                        let res = crate::tasks::file_ingest::process_local_files(
+                            &db_clone,
+                            &client_clone,
+                            gemini_key.as_deref(),
+                        )
+                        .await;
+                        if let Err(e) = res {
+                            send_reply(
+                                &client_clone,
+                                &bot_token_clone,
+                                chat_id,
+                                &format!("❌ /ata sonrası işleme hatası: `{:?}`", e),
+                            )
+                            .await;
+                        }
+                    });
+                }
+                Err(e) => {
+                    send_reply(
+                        client,
+                        bot_token,
+                        chat_id,
+                        &format!("❌ *Şehir atanamadı* `{}`\n`{:?}`", id, e),
+                    )
+                    .await
+                }
+            }
         }
 
         "/durum" | "durum" => {

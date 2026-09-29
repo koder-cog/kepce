@@ -19,6 +19,28 @@ karantina (uploads/quarantine/menus/<sehir>/<yil>/<uuid>/, TTL: 30 gün)
     └→ red  → reddedilen (data/menuler/reddedilen/<sehir>/<uuid>/, TTL: 90 gün)
 ```
 
+### Yerel ingest karar kapısı (29 Eylül 2026)
+
+`bekleyen/` drop-zone akışında dosya artık doğrudan `vault`'a gitmez; önce
+**karar motorundan** geçer. Şüpheli veya kısmi çıkarım veritabanına YAZILMAZ,
+`_karantina/` kuyruğuna düşer ve operatör kararı bekler:
+
+```
+bekleyen/<sehir>/<dosya>
+    ├→ tam ve tutarlı     → vault (DB'ye yazılır + ay atomikliği)
+    ├→ kısmi/şüpheli      → _karantina/<dosya> + <dosya>.karantina.json (TTL: 14 gün)
+    │                        ├→ /onayla → kapsam içi tarihlerle vault
+    │                        ├→ /reddet → hatali/
+    │                        └→ TTL dolar → hatali/ + 🔴 alarm
+    └→ kalıcı hata / 0 gün → hatali/
+```
+
+Karantina kuyruğunun operatör akışı, karar matrisi ve ortam değişkenleri için
+bkz. [`karantina-runbook.md`](karantina-runbook.md). Kuyruk TTL taraması her
+`process_local_files` döngüsünde çalışır (`WORKER_QUARANTINE_TTL_DAYS`,
+varsayılan 14 gün; kırmızı alarm eşiği `WORKER_QUARANTINE_ESCALATE_DAYS`,
+varsayılan 7 gün).
+
 ## Süreler ve yapılandırma
 
 | Değişken | Varsayılan | Kapsam |
@@ -27,6 +49,8 @@ karantina (uploads/quarantine/menus/<sehir>/<yil>/<uuid>/, TTL: 30 gün)
 | `RETENTION_REJECTED_DAYS` | 90 (çeyrek dönem) | `reddedilen/` arşivi (`MENU_INGEST_DIR/reddedilen`) |
 | `MENU_QUARANTINE_DIR` | `/app/uploads/quarantine/menus` | Karantina kökü |
 | `MENU_INGEST_DIR` | `/app/data/menuler` | Onaylanan dosyaların hedef kökü |
+| `WORKER_QUARANTINE_TTL_DAYS` | 14 | İngest karar kuyruğu (`_karantina/`) TTL'i |
+| `WORKER_QUARANTINE_ESCALATE_DAYS` | 7 | Kuyrukta kırmızı alarm eşiği |
 
 Süre ölçütü dosyanın `mtime` değeridir. Boş dizinler de yaş ölçütüyle temizlenir,
 sembolik bağlar dizin dışına sızmayı önlemek için izlenmez.

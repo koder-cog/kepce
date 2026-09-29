@@ -14,6 +14,28 @@ use serde_json::json;
 pub struct AlertingService;
 
 impl AlertingService {
+    /// En az bir operatör uyarı kanalı (Telegram admin veya webhook) tanımlı mı?
+    ///
+    /// Karantina akışı bu kontrole dayanır: kanal yoksa karantinaya düşen öğeler
+    /// kimseye ulaşmaz ve sessiz kaybın yeni adı olur (plan 5.4).
+    pub fn alert_channel_configured() -> bool {
+        let telegram_ready = std::env::var("TELEGRAM_BOT_TOKEN")
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .is_some()
+            && std::env::var("TELEGRAM_ADMIN_CHAT_ID")
+                .or_else(|_| std::env::var("TELEGRAM_CHAT_ID"))
+                .ok()
+                .filter(|s| !s.trim().is_empty())
+                .is_some();
+        let webhook_ready = std::env::var("ALERT_WEBHOOK_URL")
+            .or_else(|_| std::env::var("DISCORD_WEBHOOK_URL"))
+            .ok()
+            .filter(|s| !s.trim().is_empty())
+            .is_some();
+        telegram_ready || webhook_ready
+    }
+
     /// Birleşik alarm gönderir: Hem Telegram hem Discord yapılandırılmışsa ikisine de iletir.
     pub async fn send_alert(message: &str) -> anyhow::Result<()> {
         let _ = Self::send_webhook_alert(message).await;

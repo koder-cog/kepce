@@ -9,6 +9,7 @@ pub mod file_ingest;
 pub mod historical_ingest;
 pub mod indexnow;
 pub mod meal_notifier;
+pub mod quarantine;
 pub mod sanitizer;
 pub mod scraper;
 pub mod telegram_bot;

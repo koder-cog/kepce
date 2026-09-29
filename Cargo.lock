@@ -6930,6 +6930,7 @@ dependencies = [
  "sea-orm",
  "serde",
  "serde_json",
+ "sha2 0.11.0",
  "shared",
  "thiserror 1.0.69",
  "tokio",
