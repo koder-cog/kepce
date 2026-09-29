@@ -1,4 +1,12 @@
-kepce.org, www.kepce.org {
+# www -> apex kalici yonlendirme. Cloudflare edge tarafinda bir Redirect Rule da
+# vardir, ancak origin seviyesinde de tanimli olmasi o kuralin kaybolmasina karsi
+# korur ve www uzerinden kopya icerik servis edilmesini engeller.
+www.kepce.org {
+    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+    redir https://kepce.org{uri} permanent
+}
+
+kepce.org {
     tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
     encode zstd gzip
 
