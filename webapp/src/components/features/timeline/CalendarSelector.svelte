@@ -82,31 +82,36 @@
     }
 
     function handleScrollToActive(e) {
-        if (timelinestate.viewtype === "calendar") return;
-        const forcecenter = e.detail?.forcecenter;
-        if (!dayselectorwrapper) return;
-        requestanimationframe(() => {
-            if (!dayselectorwrapper) return;
-            const activeitem =
-                dayselectorwrapper.queryselector(
+        if (timelineState.viewType === "calendar") return;
+        const forceCenter = e.detail?.forceCenter;
+        if (!daySelectorWrapper) return;
+
+        requestAnimationFrame(() => {
+            if (!daySelectorWrapper) return;
+
+            const activeItem =
+                daySelectorWrapper.querySelector(
                     ".day-selector__item--active",
                 ) ||
-                dayselectorwrapper.queryselector(".day-selector__item--today");
-            if (activeitem) {
-                const container = activeitem.parentelement;
+                daySelectorWrapper.querySelector(".day-selector__item--today");
+
+            if (activeItem) {
+                const container = activeItem.parentElement;
                 if (!container) return;
-                const behavior = ismotionenabled() ? "smooth" : "auto";
-                const rect = activeitem.getboundingclientrect();
-                const containerrect = container.getboundingclientrect();
-                const isvisible =
-                    rect.left >= containerrect.left &&
-                    rect.right <= containerrect.right;
-                if (forcecenter || !isvisible) {
-                    const scrollleft =
-                        activeitem.offsetleft -
-                        container.clientwidth / 2 +
-                        activeitem.offsetwidth / 2;
-                    container.scrollto({ left: scrollleft, behavior });
+
+                const behavior = isMotionEnabled() ? "smooth" : "auto";
+                const rect = activeItem.getBoundingClientRect();
+                const containerRect = container.getBoundingClientRect();
+                const isVisible =
+                    rect.left >= containerRect.left &&
+                    rect.right <= containerRect.right;
+
+                if (forceCenter || !isVisible) {
+                    const targetLeft =
+                        activeItem.offsetLeft -
+                        container.clientWidth / 2 +
+                        activeItem.offsetWidth / 2;
+                    container.scrollTo({ left: targetLeft, behavior });
                 }
             }
         });
