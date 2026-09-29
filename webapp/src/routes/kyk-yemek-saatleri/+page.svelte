@@ -69,7 +69,7 @@
   <GuideSummary
     title="Öğün Saatleri"
     rows={summaryRows}
-    note="Saatler yurttan yurda farklılık gösterebilir. Kapanış saatinden sonra turnike sistemi otomatik olarak kapanır ve o öğünün hakkı devretmez."
+    note="Saatler yurttan yurda farklılık gösterebilir. Kapanış saatinden sonra turnike sistemi otomatik olarak kapanır ve kullanılmayan yemek hakkı yanar."
   />
 
   <p>
@@ -125,15 +125,20 @@
     bakmadığı bir ayrıntıya dönüşür.
   </p>
   <p>
-    Gece sahura kalkacaklar için ayrı bir servis açılır ve günlük kahvaltı hakkı
-    burada kullanılır. Gece saatlerinde sıcak çorba ve taze kahvaltılıklar
-    verildiği için yemekhaneyi sahurda değerlendirmek iyi bir alternatiftir.
+    Gece sahura kalkacaklar için ayrı bir servis açılır (00:00 - 06:00). Sahur
+    menüsü sabah kahvaltısı ile aynı ürünleri sunar, tek farkı menüye fazladan
+    sıcak çorba eklenmesidir. Sahur servisi takvim günü mantığıyla o günün yeni
+    başlayan kahvaltı kotasını kullanır. Dolayısıyla sahurda yemek alan öğrenci,
+    aynı günün sabah kahvaltısı hakkını tüketmiş sayılır.
   </p>
 
   <h2>Öğün Hakları</h2>
   <p>
-    Kahvaltı hakkı akşama devretmez, kullanılmayan öğün gün sonunda sıfırlanır.
-    Girişlerde parmak izi, yüz tanıma ya da öğrenci kimlik kartı okutulur.
+    Yemekhane girişlerinde parmak izi, yüz tanıma ya da öğrenci kimlik kartı
+    okutularak öğün hakkı sorgulanır. Günlük bütçe kotaları, standart tabldot
+    kapsamı ve tavan fiyat kuralları hakkında ayrıntılı bilgi için
+    <a href="/kyk-beslenme-yardimi" data-link>KYK Beslenme Yardımı</a>
+    rehberine göz atabilirsiniz.
   </p>
   <p>
     Bugünün güncel yemek listesini görmek için <a href="/" data-link

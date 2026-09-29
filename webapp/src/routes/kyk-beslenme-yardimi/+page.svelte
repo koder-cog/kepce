@@ -84,7 +84,7 @@
     eklenerek kahvaltı tabağı verilir.
   </p>
   <p>
-    Akşam yemeğinde ise ekmek ve suyun haricinde mutfağın belirlediği dört-beş
+    Akşam yemeğinde ise ekmek ve suyun haricinde mutfağın belirlediği dört beş
     kaplık klasik tabldot sunulur: çorba, ana yemek, yan yemek (pilav, makarna
     vb.) ve tamamlayıcı bir ürün (tatlı, meyve veya yoğurt).
   </p>
@@ -98,7 +98,10 @@
   <p>
     Beslenme yardımı kahvaltı ve akşam yemeği için iki ayrı kota hâlinde
     tanımlanır. Kahvaltı kotasını yalnızca kahvaltı saatlerinde, akşam kotasını
-    ise yalnızca akşam yemeğinde kullanabilirsiniz.
+    ise yalnızca akşam yemeğinde kullanabilirsiniz. Hafta içi, hafta sonu ve
+    Ramazan servis saatlerinin ayrıntıları için
+    <a href="/kyk-yemek-saatleri" data-link>KYK Yemek Saatleri</a>
+    rehberine bakabilirsiniz.
   </p>
   <p>
     Sabah yemediğiniz yemek akşamki bakiyenize eklenmez. Kullanılmayan yardım
@@ -122,9 +125,10 @@
     geriye dönük talep edilemez.
   </p>
   <p>
-    Günün menüsünü görmek için <a href="/" data-link>ana sayfaya</a> göz atabilirsiniz.
-    "Kendi tepsimi dizsem bu bütçeye denkleşir mi?" diyorsanız aşağıdaki simülatörle
-    bütçeyi tutturmayı deneyebilirsiniz.
+    Günün menüsünü görmek için <a href="/" data-link>ana sayfaya</a>, yemekhane
+    servis düzeni için <a href="/kyk-yemek-saatleri" data-link>KYK Yemek Saatleri</a>
+    rehberine göz atabilirsiniz. "Kendi tepsimi dizsem bu bütçeye denkleşir mi?"
+    diyorsanız aşağıdaki simülatörle bütçeyi tutturmayı deneyebilirsiniz.
   </p>
 
   <PricingCalculator />
