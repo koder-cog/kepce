@@ -118,6 +118,11 @@ jobs:
                 || { echo "DEPLOY_HATASI: cloudflared ayakta degil"; exit 1; }
               docker port kepce-caddy | grep -q '443/tcp -> 127.0.0.1:443' \
                 || { echo "DEPLOY_HATASI: caddy 443 portu loopback adresine bagli degil"; exit 1; }
+              # Yerel katman: Cloudflare'den bagimsiz olarak Caddy ve webapp ayakta mi.
+              # -k gerekir, origin Cloudflare Origin Certificate kullanir.
+              curl -fsS -k -o /dev/null --max-time 10 --resolve kepce.org:443:127.0.0.1 https://kepce.org/ \
+                || { echo "DEPLOY_HATASI: caddy loopback yanit vermiyor"; exit 1; }
+              # Uctan uca: tünel ve Cloudflare uzerinden site erisilebilir mi.
               HEALTHY=0
               for _ in 1 2 3 4 5 6; do
                 if curl -fsS -o /dev/null --max-time 10 https://kepce.org/; then HEALTHY=1; break; fi

@@ -39,3 +39,13 @@ graph TD
 - Kaynak Önceliği: Doğrulanmış veya yönetici onaylı menü kayıtları, otomatik taranan ham verilerin önüne geçer.
 - Şehir İzolasyonu: Yemek fiyatları ve porsiyonlar yalnızca o şehrin geçerli resmî tarifesi üzerinden hesaplanır; tarifesi olmayan şehirlerde tahmini fiyat gösterilmez.
 - Denetim Günlüğü: Onaylanan menülerin değişiklik geçmişi kayıt altında tutulur.
+
+## Ağ ve Yayın Hattı
+
+Origin sunucusu dışarıdan yalnızca SSH (22) kabul eder. Tüm genel trafik
+Cloudflare Tunnel üzerinden akar ve Caddy portları loopback adresine bağlıdır.
+Dahili ingest uç noktası Cloudflare Access service token ile bot korumasından
+muaf tutulur.
+
+Ayrıntılı kurulum, doğrulama ve geri alma adımları:
+[`docs/operations/cloudflare-tunnel.md`](operations/cloudflare-tunnel.md).
