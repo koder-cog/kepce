@@ -171,7 +171,7 @@
 
     n.is_read = true; // Optimistic update
     try {
-      await api.markAsRead(id);
+      await api.markNotificationRead(id);
     } catch (err) {
       n.is_read = false; // Revert
       console.error(err);
@@ -185,7 +185,7 @@
     notifications = notifications.map((n) => ({ ...n, is_read: true }));
 
     try {
-      await api.markAllAsRead();
+      await api.markAllNotificationsRead();
       showToast("Tüm bildirimler okundu olarak işaretlendi.", "success");
     } catch (err) {
       notifications = previousState;
@@ -218,7 +218,7 @@
           variant: "danger",
           onClick: async () => {
             try {
-              await api.deleteAllNotifications();
+              await api.clearAllNotifications();
               notifications = [];
               showToast("Tüm bildirimler temizlendi.", "success");
               return true;
