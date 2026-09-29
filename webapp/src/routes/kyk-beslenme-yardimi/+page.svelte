@@ -125,10 +125,9 @@
     geriye dönük talep edilemez.
   </p>
   <p>
-    Günün menüsünü görmek için <a href="/" data-link>ana sayfaya</a>, yemekhane
-    servis düzeni için <a href="/kyk-yemek-saatleri" data-link>KYK Yemek Saatleri</a>
-    rehberine göz atabilirsiniz. "Kendi tepsimi dizsem bu bütçeye denkleşir mi?"
-    diyorsanız aşağıdaki simülatörle bütçeyi tutturmayı deneyebilirsiniz.
+    Günün menüsünü görmek için <a href="/" data-link>ana sayfaya</a> göz
+    atabilirsiniz. "Kendi tepsimi dizsem bu bütçeye denkleşir mi?" diyorsanız
+    aşağıdaki simülatörle bütçeyi tutturmayı deneyebilirsiniz.
   </p>
 
   <PricingCalculator />
