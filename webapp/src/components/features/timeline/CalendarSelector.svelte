@@ -81,7 +81,7 @@
         return dayHolidays;
     }
 
-    function handlescrolltoactive(e) {
+    function handleScrollToActive(e) {
         if (timelinestate.viewtype === "calendar") return;
         const forcecenter = e.detail?.forcecenter;
         if (!dayselectorwrapper) return;
