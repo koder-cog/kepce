@@ -47,5 +47,9 @@ Cloudflare Tunnel üzerinden akar ve Caddy portları loopback adresine bağlıd�
 Dahili ingest uç noktası Cloudflare Access service token ile bot korumasından
 muaf tutulur.
 
-Ayrıntılı kurulum, doğrulama ve geri alma adımları:
-[`docs/operations/cloudflare-tunnel.md`](operations/cloudflare-tunnel.md).
+Operasyon belgeleri:
+
+- [`operations/cloudflare-tunnel.md`](operations/cloudflare-tunnel.md): tünel kurulumu, doğrulama, sorun giderme ve geri alma.
+- [`operations/cloudflare-waf-bypass.md`](operations/cloudflare-waf-bypass.md): dahili ingest yolu için WAF muafiyeti.
+- [`operations/file-retention.md`](operations/file-retention.md): karantina ve reddedilen arşiv için saklama süreleri.
+- [`decisions/llm-reasoning-effort.md`](decisions/llm-reasoning-effort.md): LLM muhakeme eforu karar kaydı.
