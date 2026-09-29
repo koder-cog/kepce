@@ -568,4 +568,14 @@ mod tests {
         assert_eq!(item.name, Some("Persist Test Paketi".to_string()));
         assert!(item.updated_at.is_some());
     }
+
+    #[test]
+    fn test_split_outside_parens_independent_brackets() {
+        let text = "Kuru Fasulye (Etli / Acılı) / Pirinç Pilavı [Tereyağlı / Sade] / Ayran";
+        let parts = crate::parser::core::split_outside_parens(text, '/');
+        assert_eq!(parts.len(), 3);
+        assert_eq!(parts[0], "Kuru Fasulye (Etli / Acılı)");
+        assert_eq!(parts[1], "Pirinç Pilavı [Tereyağlı / Sade]");
+        assert_eq!(parts[2], "Ayran");
+    }
 }

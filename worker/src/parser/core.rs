@@ -329,19 +329,37 @@ fn is_date_cell(s: &str, order: DateTokenOrder) -> bool {
 pub fn split_outside_parens(s: &str, sep: char) -> Vec<String> {
     let mut result = Vec::new();
     let mut current = String::new();
-    let mut parens: usize = 0;
+    let mut round_parens: usize = 0;
+    let mut square_brackets: usize = 0;
+    let mut curly_braces: usize = 0;
 
     for c in s.chars() {
         match c {
-            '(' | '[' => {
-                parens += 1;
+            '(' => {
+                round_parens += 1;
                 current.push(c);
             }
-            ')' | ']' => {
-                parens = parens.saturating_sub(1);
+            ')' => {
+                round_parens = round_parens.saturating_sub(1);
                 current.push(c);
             }
-            x if x == sep && parens == 0 => {
+            '[' => {
+                square_brackets += 1;
+                current.push(c);
+            }
+            ']' => {
+                square_brackets = square_brackets.saturating_sub(1);
+                current.push(c);
+            }
+            '{' => {
+                curly_braces += 1;
+                current.push(c);
+            }
+            '}' => {
+                curly_braces = curly_braces.saturating_sub(1);
+                current.push(c);
+            }
+            x if x == sep && round_parens == 0 && square_brackets == 0 && curly_braces == 0 => {
                 result.push(current.trim().to_string());
                 current.clear();
             }

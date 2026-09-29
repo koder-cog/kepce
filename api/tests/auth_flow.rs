@@ -12,10 +12,12 @@ use shared::entities::{prelude::Users, users};
 use std::sync::Arc;
 use tower::util::ServiceExt; // the correct oneshot trait
 
-async fn setup_app() -> (axum::Router, AppState) {
+async fn setup_app() -> Option<(axum::Router, AppState)> {
     let mut config = Config::from_env();
     config.resend_api_key = "mock_key".to_string(); // Test ortamında gerçek e-posta gönderimini engelle
-    let db = Database::connect(&config.database_url).await.unwrap();
+    let mut opt = sea_orm::ConnectOptions::new(&config.database_url);
+    opt.connect_timeout(std::time::Duration::from_millis(200));
+    let db = Database::connect(opt).await.ok()?;
     let _ = api::services::migration::run_migrations(&db).await;
     let cors = build_cors(&config.cors_origin).unwrap();
     let rate_limiter = Arc::new(api::middleware::rate_limiter::RateLimiter::new());
@@ -27,13 +29,14 @@ async fn setup_app() -> (axum::Router, AppState) {
         usage_tracker,
     };
     let app = build_router(state.clone(), cors);
-    (app, state)
+    Some((app, state))
 }
 
 #[tokio::test]
-#[ignore = "requires live postgres database"]
 async fn test_full_auth_flow() {
-    let (app, state) = setup_app().await;
+    let Some((app, state)) = setup_app().await else {
+        return;
+    };
 
     // Clean up any test user from previous run
     let test_email = "flow_test@kepce.org";

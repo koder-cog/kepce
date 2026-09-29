@@ -1,20 +1,14 @@
-use api::{
-    build_cors, build_router,
-    config::{AppState, Config},
-};
+use api::config::{AppState, Config};
 use axum::{
     body::Body,
     http::{self, Request, StatusCode},
 };
-use sea_orm::Database;
 use std::sync::Arc;
 use tower::util::ServiceExt;
 
 async fn setup_app() -> axum::Router {
-    dotenvy::dotenv().ok();
     let config = Config {
-        database_url: std::env::var("DATABASE_URL")
-            .unwrap_or_else(|_| "postgres://mock:mock@localhost/mock".to_string()),
+        database_url: "postgres://mock:mock@localhost/mock".to_string(),
         jwt_secret: "test_jwt_secret_key_12345678901234567890".to_string(),
         cors_origin: "*".to_string(),
         gemini_api_key: None,
@@ -35,11 +29,7 @@ async fn setup_app() -> axum::Router {
         smtp_password: None,
         internal_ingest_secret: None,
     };
-    let db = match Database::connect(&config.database_url).await {
-        Ok(conn) => conn,
-        Err(_) => sea_orm::DatabaseConnection::Disconnected,
-    };
-    let cors = build_cors(&config.cors_origin).unwrap();
+    let db = sea_orm::DatabaseConnection::Disconnected;
     let rate_limiter = Arc::new(api::middleware::rate_limiter::RateLimiter::new());
     let usage_tracker = Arc::new(api::services::usage_tracker::UsageTracker::new(db.clone()));
     let state = AppState {
@@ -48,37 +38,42 @@ async fn setup_app() -> axum::Router {
         rate_limiter,
         usage_tracker,
     };
-    build_router(state, cors)
+    axum::Router::new()
+        .route(
+            "/api/v1/auth/login",
+            axum::routing::post(|| async { StatusCode::OK }),
+        )
+        .layer(axum::middleware::from_fn_with_state(
+            state,
+            api::middleware::rate_limiter::rate_limit_middleware,
+        ))
 }
 
 #[tokio::test]
-#[ignore = "requires live postgres database"]
 async fn test_rate_limiter_triggers() {
     let app = setup_app().await;
 
-    // Login Category allows 5 requests per 60 seconds (6th should fail)
     let login_payload = serde_json::json!({
-        "identifier": "nonexistent@kepce.org",
-        "password": "wrong_password",
+        "identifier": "test@kepce.org",
+        "password": "password",
         "remember": false
     });
 
-    // Make 5 requests - all should pass rate limiter (not 429)
+    // Login kategorisi 60 saniyede 5 isteğe izin verir; ilk 5 istek 200 OK dönmeli
     for _ in 0..5 {
         let req = Request::builder()
             .method(http::Method::POST)
             .uri("/api/v1/auth/login")
             .header(http::header::CONTENT_TYPE, "application/json")
-            // Use static client id to identify the same "device"
             .header("x-client-id", "test-client-123")
             .body(Body::from(serde_json::to_string(&login_payload).unwrap()))
             .unwrap();
 
         let response = app.clone().oneshot(req).await.unwrap();
-        assert_ne!(response.status(), StatusCode::TOO_MANY_REQUESTS);
+        assert_eq!(response.status(), StatusCode::OK);
     }
 
-    // 6th request should be rate limited with 429 Too Many Requests
+    // 6. istek rate limiter tarafından 429 Too Many Requests ile engellenmeli
     let req = Request::builder()
         .method(http::Method::POST)
         .uri("/api/v1/auth/login")

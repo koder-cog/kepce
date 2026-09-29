@@ -53,6 +53,8 @@ pub enum ReasonCode {
     WeakDateOrder,
     /// LLM ISO tarihi ile ham tarih (`date_raw`) uyuşmuyor.
     DateOrderMismatch,
+    /// Sütun başlığı gün adı ile tarihin haftanın günü uyuşmuyor.
+    WeekdayMismatch,
     /// Karantina TTL'i doldu.
     TtlExpired,
 }
@@ -70,6 +72,7 @@ impl ReasonCode {
             ReasonCode::AmbiguousDateOrder => "AMBIGUOUS_DATE_ORDER",
             ReasonCode::WeakDateOrder => "WEAK_DATE_ORDER",
             ReasonCode::DateOrderMismatch => "DATE_ORDER_MISMATCH",
+            ReasonCode::WeekdayMismatch => "WEEKDAY_MISMATCH",
             ReasonCode::TtlExpired => "TTL_EXPIRED",
         }
     }
@@ -178,17 +181,15 @@ pub fn quarantine_root(base_dir: &str, role: &str) -> PathBuf {
 
 use std::fmt::Write;
 
-async fn sha256_of(path: &Path) -> String {
-    match tokio::fs::read(path).await {
-        Ok(bytes) => {
-            let digest = Sha256::digest(&bytes);
-            digest.iter().fold(String::with_capacity(64), |mut s, b| {
-                let _ = write!(s, "{:02x}", b);
-                s
-            })
-        }
-        Err(_) => String::new(),
-    }
+async fn sha256_of(path: &Path) -> Result<String> {
+    let bytes = tokio::fs::read(path)
+        .await
+        .map_err(|e| anyhow::anyhow!("dosya okunamadı {:?}: {}", path, e))?;
+    let digest = Sha256::digest(&bytes);
+    Ok(digest.iter().fold(String::with_capacity(64), |mut s, b| {
+        let _ = write!(s, "{:02x}", b);
+        s
+    }))
 }
 
 /// Dosyayı karantinaya taşır, yan meta dosyasını yazar ve operatöre bildirir.
@@ -213,10 +214,8 @@ pub async fn quarantine_file(
     let q_root = quarantine_root(base_dir, role);
     tokio::fs::create_dir_all(&q_root).await?;
 
-    let sha = sha256_of(src).await;
-
-    let dest = unique_dest(&q_root, &file_name).await;
-    move_file(src, &dest).await?;
+    let sha = sha256_of(src).await?;
+    let dest = move_to_unique_dest(src, &q_root, &file_name).await?;
 
     let id = format!(
         "k_{}",
@@ -267,23 +266,35 @@ pub fn sidecar_path(file: &Path) -> PathBuf {
     PathBuf::from(s)
 }
 
-/// Aynı ad zaten varsa çakışmayı sonuna sayaç ekleyerek çözer.
-async fn unique_dest(dir: &Path, file_name: &str) -> PathBuf {
-    let candidate = dir.join(file_name);
-    if !candidate.exists() {
-        return candidate;
-    }
+/// Çakışmasız ve atomik taşıma (TOCTOU yarış durumunu önler).
+pub async fn move_to_unique_dest(src: &Path, dir: &Path, file_name: &str) -> Result<PathBuf> {
+    tokio::fs::create_dir_all(dir).await?;
     let (stem, ext) = match file_name.rsplit_once('.') {
         Some((s, e)) => (s.to_string(), format!(".{}", e)),
         None => (file_name.to_string(), String::new()),
     };
+
+    let first = dir.join(file_name);
+    if !first.exists() && move_file(src, &first).await.is_ok() {
+        return Ok(first);
+    }
+
     for i in 1..1000 {
         let candidate = dir.join(format!("{}_{}{}", stem, i, ext));
-        if !candidate.exists() {
-            return candidate;
+        if !candidate.exists() && move_file(src, &candidate).await.is_ok() {
+            return Ok(candidate);
         }
     }
-    dir.join(format!("{}_{}{}", stem, Utc::now().timestamp(), ext))
+
+    let fallback = dir.join(format!(
+        "{}_{}_{}{}",
+        stem,
+        Utc::now().timestamp_micros(),
+        uuid::Uuid::new_v4().simple(),
+        ext
+    ));
+    move_file(src, &fallback).await?;
+    Ok(fallback)
 }
 
 /// Rename -> copy+remove zinciriyle dosya taşıma (mevcut ingest davranışıyla aynı).
@@ -510,17 +521,18 @@ pub async fn sweep(base_dir: &str) -> Result<SweepReport> {
         if age >= ttl {
             // TTL doldu: hatali/ altına taşı, sonucu meta'ya işle, kırmızı alarm.
             let err_dir = PathBuf::from(base_dir).join(&item.meta.role).join("hatali");
-            tokio::fs::create_dir_all(&err_dir).await?;
-            let dest = unique_dest(&err_dir, &item.meta.file).await;
-            if let Err(e) = move_file(&item.file_path, &dest).await {
-                tracing::error!(
-                    "[KARANTİNA] TTL dolan dosya hatali/ altına taşınamadı ({:?}): {:?}",
-                    item.file_path,
-                    e
-                );
-                remaining.push(item);
-                continue;
-            }
+            let dest = match move_to_unique_dest(&item.file_path, &err_dir, &item.meta.file).await {
+                Ok(d) => d,
+                Err(e) => {
+                    tracing::error!(
+                        "[KARANTİNA] TTL dolan dosya hatali/ altına taşınamadı ({:?}): {:?}",
+                        item.file_path,
+                        e
+                    );
+                    remaining.push(item);
+                    continue;
+                }
+            };
             let mut meta = item.meta.clone();
             meta.resolution = Some("ttl_expired".to_string());
             let new_meta_path = sidecar_path(&dest);

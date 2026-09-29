@@ -240,19 +240,36 @@ fn pick_scope_month(
     candidates.first().copied()
 }
 
+/// Çıkarılan tarihlerin kesintisiz bir haftalık/iki haftalık blok oluşturup oluşturmadığını kontrol eder.
+/// Ay geçişine denk gelen (ör. 28 Eylül - 4 Ekim) meşru haftalık menülerin MultiMonthScope hatasına
+/// düşmesini engeller.
+pub fn is_contiguous_weekly_span(dates: &BTreeSet<NaiveDate>) -> bool {
+    if dates.len() < 3 || dates.len() > 14 {
+        return false;
+    }
+    let Some(min_d) = dates.first() else {
+        return false;
+    };
+    let Some(max_d) = dates.last() else {
+        return false;
+    };
+    (max_d.signed_duration_since(*min_d)).num_days() + 1 == dates.len() as i64
+}
+
 /// Saf karar fonksiyonu (Faz 0.2, karar matrisi 4.4).
 ///
 /// Hiçbir G/Ç veya veritabanı çağrısı içermez; sıralı zincir:
 /// 1. `day_count == 0` -> `Permanent(NO_DATES)`
 /// 2. Tarih sırası çelişkisi/çözülemeyen tarih -> `Suspect(AMBIGUOUS_DATE_ORDER)`
 /// 3. LLM ham tarih uyuşmazlığı -> `Suspect(DATE_ORDER_MISMATCH)`
-/// 4. Zayıf sıra kanıtı -> `Suspect(WEAK_DATE_ORDER)`
-/// 5. Birden fazla ay -> `Suspect(MULTI_MONTH_SCOPE)`
-/// 6. Beyan edilen ay uyuşmuyor -> `Suspect(DECLARED_MONTH_MISMATCH)`
-/// 7. Katı modda beyan yok -> `Suspect(UNDECLARED_MONTH)`
-/// 8. Eksik <= tolerans -> `Complete`
-/// 9. oran >= eşik -> `Partial(LOW_COVERAGE)`
-/// 10. oran < eşik -> `Suspect(LOW_COVERAGE)`
+/// 4. Sütun başlığı gün adı uyuşmazlığı -> `Suspect(WEEKDAY_MISMATCH)`
+/// 5. Zayıf sıra kanıtı -> `Suspect(WEAK_DATE_ORDER)`
+/// 6. Birden fazla ay -> `Suspect(MULTI_MONTH_SCOPE)` (kesintisiz haftalık listeler hariç)
+/// 7. Beyan edilen ay uyuşmuyor -> `Suspect(DECLARED_MONTH_MISMATCH)`
+/// 8. Katı modda beyan yok -> `Suspect(UNDECLARED_MONTH)`
+/// 9. Eksik <= tolerans -> `Complete`
+/// 10. oran >= eşik -> `Partial(LOW_COVERAGE)`
+/// 11. oran < eşik -> `Suspect(LOW_COVERAGE)`
 pub fn classify_ingest(parsed: &ParsedFile, cfg: &GateConfig) -> (IngestOutcome, ScopeDecision) {
     let mut scope = ScopeDecision::default();
 
@@ -311,7 +328,16 @@ pub fn classify_ingest(parsed: &ParsedFile, cfg: &GateConfig) -> (IngestOutcome,
             scope,
         );
     }
-    // Satır 4: zayıf sıra kanıtı (T3)
+    // Satır 4b: Sütun başlığı gün adı ile tarihin haftanın günü uyuşmuyor
+    if !parsed.diagnostics.weekday_mismatches.is_empty() {
+        return (
+            IngestOutcome::Suspect {
+                reason: ReasonCode::WeekdayMismatch,
+            },
+            scope,
+        );
+    }
+    // Satır 4c: zayıf sıra kanıtı (T3)
     if let Some(DateOrderResolution::Weak(_)) = parsed.diagnostics.date_order {
         return (
             IngestOutcome::Suspect {
@@ -321,8 +347,14 @@ pub fn classify_ingest(parsed: &ParsedFile, cfg: &GateConfig) -> (IngestOutcome,
         );
     }
 
-    // Satır 5: birden fazla aya ait tarih (Haziran vakası: 46146 -> 4 Mayıs)
-    if scope.detected_months.len() > 1 {
+    // Satır 5: birden fazla aya ait tarih (Haziran vakası: 46146 -> 4 Mayıs).
+    // İstisna: Kesintisiz haftalık/iki haftalık ay geçişi menüleri (ör. 28 Eylül - 4 Ekim).
+    let is_weekly = is_contiguous_weekly_span(&parsed.dates);
+    if is_weekly && scope.detected_months.len() > 1 {
+        scope.expected_days = Some(parsed.dates.len() as u32);
+        scope.in_scope_days = parsed.dates.len();
+        scope.stray_dates.clear();
+    } else if scope.detected_months.len() > 1 {
         return (
             IngestOutcome::Suspect {
                 reason: ReasonCode::MultiMonthScope,
@@ -331,8 +363,9 @@ pub fn classify_ingest(parsed: &ParsedFile, cfg: &GateConfig) -> (IngestOutcome,
         );
     }
 
-    // Satır 6: beyan edilen ay ile veri kapsamı uyuşmuyor
-    if let Some(dm) = &parsed.declared_month
+    // Satır 6: beyan edilen ay ile veri kapsamı uyuşmuyor (haftalık ay geçişi değilse)
+    if !is_weekly
+        && let Some(dm) = &parsed.declared_month
         && let Some(sm) = scope.scope_month
         && (dm.month != sm.1 || dm.year.is_some_and(|y| y != sm.0))
     {
@@ -432,6 +465,24 @@ pub fn reason_message(reason: ReasonCode, parsed: &ParsedFile, scope: &ScopeDeci
         ReasonCode::DateOrderMismatch => {
             "LLM'in ürettiği ISO tarihleri, belgedeki ham yazılı tarihlerin deterministik çözümüyle uyuşmuyor."
                 .to_string()
+        }
+        ReasonCode::WeekdayMismatch => {
+            if parsed.diagnostics.weekday_mismatches.is_empty() {
+                "Sütun başlığındaki gün adı ile tarihin haftanın günü uyuşmuyor.".to_string()
+            } else {
+                let sample: Vec<&str> = parsed
+                    .diagnostics
+                    .weekday_mismatches
+                    .iter()
+                    .take(3)
+                    .map(|m| m.as_str())
+                    .collect();
+                format!(
+                    "Sütun başlığındaki gün adı ile tarihin günü uyuşmuyor ({} uyuşmazlık: {}).",
+                    parsed.diagnostics.weekday_mismatches.len(),
+                    sample.join("; ")
+                )
+            }
         }
         ReasonCode::NoCity => {
             "Dosya bekleyen/ köküne bırakılmış, bir şehir klasöründe değil. /ata <id> <sehir> ile şehir atayın."
@@ -758,11 +809,19 @@ async fn write_scoped_menu(
 // Ana döngü
 // ---------------------------------------------------------------------------
 
+static INGEST_LOCK: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
 pub async fn process_local_files(
     db: &DatabaseConnection,
     reqwest_client: &reqwest::Client,
     gemini_api_key: Option<&str>,
 ) -> Result<()> {
+    let Ok(_lock_guard) = INGEST_LOCK.try_lock() else {
+        tracing::info!(
+            "[LOKAL] Ingest işlemi şu anda başka bir iş parçacığı tarafından yürütülüyor, eşzamanlı çalıştırma atlandı."
+        );
+        return Ok(());
+    };
     let base_dir = env::var("WORKER_MENU_DIR").unwrap_or_else(|_| "../data/menuler".to_string());
     let cfg = GateConfig::from_env();
 
@@ -1715,5 +1774,45 @@ mod tests {
             env::remove_var("WORKER_MENU_DIR");
         }
         let _ = tokio::fs::remove_dir_all(&base).await;
+    }
+
+    #[test]
+    fn test_classify_weekday_mismatch() {
+        let dates = full_month(2026, 5);
+        let strs: Vec<&str> = dates.iter().map(|s| s.as_str()).collect();
+        let db = db_with_dates(&strs, 3, 0, 4);
+        let mut p = parsed("Mayis.xlsx", &db);
+        p.diagnostics.weekday_mismatches =
+            vec!["2026-05-04 (Perşembe) != başlık Pazartesi".to_string()];
+        let cfg = GateConfig::default();
+        let (outcome, _) = classify_ingest(&p, &cfg);
+        match outcome {
+            IngestOutcome::Suspect { reason } => {
+                assert_eq!(reason, ReasonCode::WeekdayMismatch);
+            }
+            other => panic!("beklenen WeekdayMismatch, alınan {:?}", other),
+        }
+    }
+
+    #[test]
+    fn test_classify_contiguous_weekly_span_cross_month() {
+        // 28 Eylül - 4 Ekim (7 günlük kesintisiz ay geçişi haftalık menüsü)
+        let dates = vec![
+            "2026-09-28",
+            "2026-09-29",
+            "2026-09-30",
+            "2026-10-01",
+            "2026-10-02",
+            "2026-10-03",
+            "2026-10-04",
+        ];
+        let db = db_with_dates(&dates, 3, 0, 4);
+        let p = parsed("Haftalik_Menu.xlsx", &db);
+        let cfg = GateConfig::default();
+        let (outcome, scope) = classify_ingest(&p, &cfg);
+        assert_eq!(outcome, IngestOutcome::Complete);
+        assert_eq!(scope.expected_days, Some(7));
+        assert_eq!(scope.in_scope_days, 7);
+        assert!(scope.stray_dates.is_empty());
     }
 }
