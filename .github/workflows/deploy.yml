@@ -80,7 +80,11 @@ jobs:
           script: |
             set -euo pipefail
             cd ~/kepce
-            export $(grep -v '^#' .env | xargs) 2>/dev/null || true
+            # .env yalnizca ihtiyac duyulan degisken icin deterministik okunur.
+            # 'export $(grep ... | xargs)' bosluk veya tirnak iceren degerlerde
+            # zinciri kirar ve sonraki degiskenleri sessizce dusurur.
+            POSTGRES_USER_VAL="$(grep '^POSTGRES_USER=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' || true)"
+            export POSTGRES_USER="${POSTGRES_USER_VAL:-kepce_admin}"
 
             # Umami veritabani hazirligi (varsa dokunmaz)
             docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'umami'" 2>/dev/null | grep -q 1 || \
@@ -103,6 +107,11 @@ jobs:
 
             docker compose $COMPOSE_FILES $PROFILE_ARGS pull $PULL_TARGETS
             docker compose $COMPOSE_FILES $PROFILE_ARGS up -d --remove-orphans
+            # Caddyfile dogrulamasi: scp ile gelen dosya gecersizse caddy'yi yeniden
+            # baslatmadan dur. Calisan caddy bellekteki saglam yapilandirmayla hizmet
+            # vermeye devam eder, boylece hatali yapilandirma siteyi dusurmez.
+            docker exec kepce-caddy caddy validate --adapter caddyfile --config /etc/caddy/Caddyfile \
+              || { echo "DEPLOY_HATASI: Caddyfile gecersiz, caddy yeniden baslatilmadi"; exit 1; }
             docker restart kepce-caddy
             docker image prune -f
 
