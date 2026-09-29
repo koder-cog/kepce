@@ -86,11 +86,47 @@ jobs:
             docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -tc "SELECT 1 FROM pg_database WHERE datname = 'umami'" 2>/dev/null | grep -q 1 || \
             docker exec kepce-db psql -U "${POSTGRES_USER:-kepce_admin}" -d postgres -c "CREATE DATABASE umami;" 2>/dev/null || true
 
+            # Tunnel modu: token dogrudan .env'den okunur, export zincirine bagimli
+            # degildir (deger bosluk veya tirnak icerebilir).
+            TUNNEL_TOKEN="$(grep '^CLOUDFLARE_TUNNEL_TOKEN=' .env 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' | tr -d "'" | tr -d '\r' || true)"
+
             COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml -f docker-compose.analytics.yml -f docker-compose.search.yml -f docker-compose.tunnel.yml"
-            docker compose $COMPOSE_FILES pull api webapp worker searxng umami
-            docker compose $COMPOSE_FILES up -d --remove-orphans
+
+            # Tunnel profili yalnizca token tanimliyken acilir. Bos token ile
+            # cloudflared baslatilirsa konteyner hata dongusune girer.
+            PROFILE_ARGS=""
+            PULL_TARGETS="api webapp worker searxng umami"
+            if [ -n "$TUNNEL_TOKEN" ]; then
+              PROFILE_ARGS="--profile tunnel"
+              PULL_TARGETS="$PULL_TARGETS cloudflared"
+            fi
+
+            docker compose $COMPOSE_FILES $PROFILE_ARGS pull $PULL_TARGETS
+            docker compose $COMPOSE_FILES $PROFILE_ARGS up -d --remove-orphans
             docker restart kepce-caddy
             docker image prune -f
+
+            # Saglik kapisi: tunnel bekleniyorsa origin kapali kalmali ve site
+            # tünel uzerinden yanit vermeli. Saglanmazsa sessiz kesinti yerine
+            # deploy hata ile durur ve Telegram alarmi tetiklenir.
+            if [ -n "$TUNNEL_TOKEN" ] || docker ps -a --format '{{.Names}}' | grep -qx kepce-cloudflared; then
+              if [ -z "$TUNNEL_TOKEN" ]; then
+                echo "DEPLOY_HATASI: cloudflared mevcut ama CLOUDFLARE_TUNNEL_TOKEN tanimli degil"
+                exit 1
+              fi
+              docker ps --format '{{.Names}}' | grep -qx kepce-cloudflared \
+                || { echo "DEPLOY_HATASI: cloudflared ayakta degil"; exit 1; }
+              docker port kepce-caddy | grep -q '443/tcp -> 127.0.0.1:443' \
+                || { echo "DEPLOY_HATASI: caddy 443 portu loopback adresine bagli degil"; exit 1; }
+              HEALTHY=0
+              for _ in 1 2 3 4 5 6; do
+                if curl -fsS -o /dev/null --max-time 10 https://kepce.org/; then HEALTHY=1; break; fi
+                sleep 5
+              done
+              [ "$HEALTHY" = "1" ] || { echo "DEPLOY_HATASI: kepce.org yanit vermiyor"; exit 1; }
+              echo "TUNNEL_OK"
+            fi
+
             echo "DEPLOY_OK"
 
       - name: Telegram Bildirimi (Hata Durumu)
