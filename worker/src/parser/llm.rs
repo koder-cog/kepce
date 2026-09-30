@@ -349,15 +349,21 @@ pub fn resolve_thinking_level() -> String {
 /// bu hatalarda zincirdeki sonraki modele geçilir.
 fn is_model_switchable_error(err_msg: &str) -> bool {
     let msg = err_msg.to_lowercase();
-    const MARKERS: [&str; 8] = [
+    // Yoğunluk/kota ve geçici sunucu hataları: aynı modeli zorlamak yerine
+    // zincirdeki sonraki modele, ardından sonraki sağlayıcıya geçilir.
+    const MARKERS: [&str; 12] = [
         "429",
         "too_many_requests",
         "rate limit",
         "resource_exhausted",
         "503",
-        "service_unavailable",
+        "502",
+        "504",
+        "unavailable",
         "high demand",
         "overloaded",
+        "deadline exceeded",
+        "timeout",
     ];
     MARKERS.iter().any(|marker| msg.contains(marker))
 }
@@ -392,6 +398,37 @@ pub fn resolve_provider_order() -> Vec<LlmProvider> {
         out = vec![LlmProvider::OpenRouter, LlmProvider::Gemini];
     }
     out
+}
+
+/// Tüm zincir başarısız olduğunda zincirin kaç kez baştan deneneceği.
+///
+/// `503 "high demand"` gibi yoğunluk hataları saniyeler içinde geçebilir; tek
+/// turda pes etmek dosyayı gereksiz yere kuyrukta bekletir.
+fn chain_passes() -> usize {
+    std::env::var("LLM_CHAIN_PASSES")
+        .ok()
+        .and_then(|v| v.trim().parse::<usize>().ok())
+        .filter(|p| *p > 0)
+        .map(|p| p.min(5))
+        .unwrap_or(2)
+}
+
+/// Zincir turları arasındaki taban bekleme (ms); tur başına doğrusal artar.
+fn chain_retry_delay_ms() -> u64 {
+    std::env::var("LLM_CHAIN_RETRY_BASE_MS")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .map(|d| d.min(30_000))
+        .unwrap_or(2_000)
+}
+
+/// Yoğunluk hatasından sonra sonraki modele geçmeden önceki bekleme (ms).
+fn model_switch_delay_ms() -> u64 {
+    std::env::var("LLM_MODEL_SWITCH_DELAY_MS")
+        .ok()
+        .and_then(|v| v.trim().parse::<u64>().ok())
+        .map(|d| d.min(30_000))
+        .unwrap_or(1_500)
 }
 
 fn openrouter_api_key() -> Option<String> {
@@ -701,7 +738,34 @@ pub async fn parse_document_with_llm(
     let mut last_error = String::new();
     let mut attempted_any = false;
 
-    for provider in providers {
+    // Zincir turu planı: `passes` tur × sağlayıcı sırası. Böylece 503/429 gibi
+    // geçici yoğunluk hatalarında zincir, artan bekleme ile baştan denenir.
+    let passes = chain_passes();
+    let base_delay_ms = chain_retry_delay_ms();
+    let mut plan: Vec<(usize, LlmProvider)> = Vec::with_capacity(passes * providers.len());
+    for pass in 1..=passes {
+        for provider in providers.iter().copied() {
+            plan.push((pass, provider));
+        }
+    }
+
+    let mut current_pass = 0usize;
+    for (pass, provider) in plan {
+        if pass != current_pass {
+            current_pass = pass;
+            if pass > 1 {
+                let wait_ms = base_delay_ms * (pass as u64 - 1);
+                tracing::warn!(
+                    "LLM zinciri {}/{} kez denenecek ({} ms bekleniyor). Son hata: {}",
+                    pass,
+                    passes,
+                    wait_ms,
+                    last_error
+                );
+                tokio::time::sleep(std::time::Duration::from_millis(wait_ms)).await;
+            }
+        }
+
         match provider {
             LlmProvider::OpenRouter => {
                 let Some(key) = openrouter_key.as_deref() else {
@@ -816,6 +880,16 @@ pub async fn parse_document_with_llm(
                     }
 
                     if !is_last_model {
+                        // Yoğunluk hatasında modeli hemen ardından denemek
+                        // kuyruğu boşa meşgul eder; kısa bir bekleme konur.
+                        if is_model_switchable_error(&last_error) {
+                            let wait = model_switch_delay_ms();
+                            tracing::warn!(
+                                "  Yoğunluk/kota hatası; {} ms sonra sonraki modele geçilecek.",
+                                wait
+                            );
+                            tokio::time::sleep(std::time::Duration::from_millis(wait)).await;
+                        }
                         tracing::warn!(
                             "  '{}' modeli başarısız oldu, zincirdeki sonraki modele geçiliyor: '{}'",
                             model_name,
@@ -885,6 +959,31 @@ mod tests {
         let found = find_menu_json_deep(&odd).expect("days nesnesi bulunmalı");
         assert!(found.contains("\"days\""));
         assert!(crate::parser::json::parse_json_str(&found, "test.pdf").is_ok());
+    }
+
+    /// 5xx/yoğunluk hataları da model/sağlayıcı devrini tetiklemeli.
+    #[test]
+    fn test_transient_5xx_is_switchable() {
+        assert!(is_model_switchable_error(
+            "Gemini API Error (502 Bad Gateway): upstream error"
+        ));
+        assert!(is_model_switchable_error(
+            "API Error (504 Deadline Exceeded)"
+        ));
+        assert!(is_model_switchable_error("model is currently unavailable"));
+        assert!(is_model_switchable_error("request timeout"));
+        assert!(!is_model_switchable_error(
+            "API Error (400 Bad Request): Unknown parameter 'thinking_budget'"
+        ));
+    }
+
+    /// Zincir yeniden deneme ayarları sınırlı olmalı (env verilmese de).
+    #[test]
+    fn test_chain_retry_settings_bounds() {
+        let passes = chain_passes();
+        assert!((1..=5).contains(&passes), "tur sayısı 1..=5 olmalı");
+        assert!(chain_retry_delay_ms() <= 30_000);
+        assert!(model_switch_delay_ms() <= 30_000);
     }
 
     /// Kota/yoğunluk hatalarında model değiştirilmeli; içerik/söz dizimi
