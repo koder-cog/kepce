@@ -14,6 +14,7 @@
 //! data/menuler/<rol>/_karantina/<dosya>.karantina.json   (karar meta verisi)
 //! ```
 
+use crate::parser::models::MenuDatabase;
 use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -104,6 +105,13 @@ pub struct QuarantineMeta {
     pub details: Vec<String>,
     #[serde(default)]
     pub sha256: String,
+    /// Karantinaya alınırken yapılmış ayrıştırmanın anlık görüntüsü.
+    ///
+    /// `/onayla` bu görüntüyü esas alır: sağlayıcı (LLM/ağ) erişilemez olduğunda
+    /// bile operatör kararı uygulanabilir ve dosya karantinada kilitli kalmaz.
+    /// Onay öncesi `sha256` ile dosyanın değişmediği doğrulanır.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parsed_days: Option<MenuDatabase>,
     pub first_seen_at: String,
     #[serde(default)]
     pub notify_count: u32,
@@ -123,6 +131,9 @@ pub struct QuarantineDetail {
     pub expected_days: Option<u32>,
     pub stray_dates: Vec<String>,
     pub details: Vec<String>,
+    /// Karar anındaki çıkarım. Onay sırasında yeniden ayrıştırmayı (ve dolayısıyla
+    /// LLM bağımlılığını) ortadan kaldırır.
+    pub parsed_days: Option<MenuDatabase>,
 }
 
 /// Kuyruktaki bir öğe: meta + dosya ve yan dosya yolları.
@@ -150,6 +161,15 @@ impl QueueItem {
             })
             .unwrap_or(0)
     }
+}
+
+/// Yan dosyaya gömülecek çıkarım görüntüsünün üst sınırı (KB). Varsayılan 512.
+pub fn snapshot_max_kb() -> usize {
+    std::env::var("WORKER_QUARANTINE_SNAPSHOT_MAX_KB")
+        .ok()
+        .and_then(|v| v.trim().parse().ok())
+        .filter(|v: &usize| *v > 0)
+        .unwrap_or(512)
 }
 
 /// Karantina TTL'i (gün). Varsayılan 14 (K-6).
@@ -181,7 +201,8 @@ pub fn quarantine_root(base_dir: &str, role: &str) -> PathBuf {
 
 use std::fmt::Write;
 
-async fn sha256_of(path: &Path) -> Result<String> {
+/// Dosyanın sha256 özeti (karantina yan dosyasındaki kaydı doğrulamak için).
+pub async fn sha256_of(path: &Path) -> Result<String> {
     let bytes = tokio::fs::read(path)
         .await
         .map_err(|e| anyhow::anyhow!("dosya okunamadı {:?}: {}", path, e))?;
@@ -217,6 +238,32 @@ pub async fn quarantine_file(
     let sha = sha256_of(src).await?;
     let dest = move_to_unique_dest(src, &q_root, &file_name).await?;
 
+    // Yan dosya küçük bir karar kaydıdır: aşırı büyük çıkarımlar gömülmez
+    // (listeleme/sweep maliyeti ve disk şişmesi engellenir).
+    let parsed_days = detail.parsed_days.filter(|snapshot| {
+        let limit = snapshot_max_kb() * 1024;
+        match serde_json::to_string(snapshot) {
+            Ok(json) if json.len() <= limit => true,
+            Ok(json) => {
+                tracing::warn!(
+                    "Karantina: çıkarım görüntüsü çok büyük ({} KB > {} KB), yan dosyaya gömülmedi: {}",
+                    json.len() / 1024,
+                    snapshot_max_kb(),
+                    file_name
+                );
+                false
+            }
+            Err(e) => {
+                tracing::warn!(
+                    "Karantina: çıkarım görüntüsü serileştirilemedi ({}): {}",
+                    file_name,
+                    e
+                );
+                false
+            }
+        }
+    });
+
     let id = format!(
         "k_{}",
         uuid::Uuid::new_v4().simple().to_string()[..12].to_uppercase()
@@ -240,6 +287,7 @@ pub async fn quarantine_file(
         stray_dates: detail.stray_dates,
         details: detail.details,
         sha256: sha,
+        parsed_days,
         first_seen_at: now.clone(),
         notify_count: 0,
         last_notified_at: None,
@@ -754,6 +802,7 @@ mod tests {
             stray_dates: vec!["2026-05-04".into()],
             details: vec![],
             sha256: "abc".to_string(),
+            parsed_days: None,
             first_seen_at: first_seen.to_string(),
             notify_count: 0,
             last_notified_at: None,
@@ -767,6 +816,71 @@ mod tests {
         assert_eq!(json, "\"MULTI_MONTH_SCOPE\"");
         let back: ReasonCode = serde_json::from_str("\"WEAK_DATE_ORDER\"").unwrap();
         assert_eq!(back, ReasonCode::WeakDateOrder);
+    }
+
+    /// Anlık görüntü yan dosyaya yazılmalı ve okunabilmeli: `/onayla` bu veriyle
+    /// LLM/sağlayıcı erişimi olmadan da ilerleyebilir.
+    #[tokio::test]
+    async fn test_snapshot_roundtrip() {
+        let base = std::env::temp_dir().join(format!("kepce_q_snap_{}", uuid::Uuid::new_v4()));
+        let bekleyen = base.join("admin").join("bekleyen").join("istanbul");
+        tokio::fs::create_dir_all(&bekleyen).await.unwrap();
+        let src = bekleyen.join("Haziran_Snapshot.xlsx");
+        tokio::fs::write(&src, b"snapshot icerigi").await.unwrap();
+
+        let mut snapshot = MenuDatabase::new();
+        snapshot.insert(
+            "2026-06-01".to_string(),
+            crate::parser::models::DayData::default(),
+        );
+
+        let meta = quarantine_file(
+            base.to_str().unwrap(),
+            "admin",
+            Some("istanbul"),
+            &src,
+            ReasonCode::LowCoverage,
+            "test".to_string(),
+            QuarantineDetail {
+                parsed_days: Some(snapshot),
+                ..Default::default()
+            },
+        )
+        .await
+        .unwrap();
+
+        assert!(meta.parsed_days.is_some(), "dönen meta anlık görüntüyü taşımalı");
+
+        let items = list_queue(base.to_str().unwrap()).await;
+        assert_eq!(items.len(), 1);
+        let stored = items[0]
+            .meta
+            .parsed_days
+            .as_ref()
+            .expect("anlık görüntü yan dosyada saklanmalı");
+        assert!(stored.contains_key("2026-06-01"));
+
+        let _ = tokio::fs::remove_dir_all(&base).await;
+    }
+
+    /// Anlık görüntü alanı olmayan eski yan dosyalar okunabilmeye devam etmeli.
+    #[test]
+    fn test_meta_without_snapshot_is_backward_compatible() {
+        let legacy = r#"{
+            "id": "k_LEGACY1",
+            "file": "Haziran.xlsx",
+            "role": "admin",
+            "city": "istanbul",
+            "reason_code": "LOW_COVERAGE",
+            "reason_tr": "eski kayıt",
+            "sha256": "deadbeef",
+            "first_seen_at": "2026-01-01T00:00:00+00:00"
+        }"#;
+
+        let meta: QuarantineMeta =
+            serde_json::from_str(legacy).expect("eski kayıt geriye dönük okunabilmeli");
+        assert_eq!(meta.id, "k_LEGACY1");
+        assert!(meta.parsed_days.is_none());
     }
 
     #[test]
@@ -801,6 +915,7 @@ mod tests {
                 expected_days: Some(30),
                 stray_dates: vec!["2026-05-04".into()],
                 details: vec![],
+                parsed_days: None,
             },
         )
         .await

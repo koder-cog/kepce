@@ -31,7 +31,8 @@ use crate::tasks::quarantine::{self, QuarantineDetail, ReasonCode};
 /// döngüsünde yeniden denenir. Kalıcı hatada ise `hatali` klasörüne taşınır.
 /// (Örn. Gemini 503 "high demand" / 429 "rate limit" geçicidir; tek denemede
 /// kalıcı sayılıp `hatali` klasörüne atılması veri kaybına yol açar.)
-fn is_transient_error(err_msg: &str) -> bool {
+/// Operatör mesajlarında da kullanılır (Telegram `/onayla`).
+pub fn is_transient_error(err_msg: &str) -> bool {
     const TRANSIENT_MARKERS: [&str; 13] = [
         "timeout",
         "geçici api hatası",
@@ -529,6 +530,8 @@ fn detail_from(parsed: &ParsedFile, scope: &ScopeDecision) -> QuarantineDetail {
             .map(|d| d.format("%Y-%m-%d").to_string())
             .collect(),
         details,
+        // Çağıran taraf, karar anındaki çıkarımı (karantina anlık görüntüsü) buraya koyar.
+        parsed_days: None,
     }
 }
 
@@ -1145,6 +1148,11 @@ pub async fn process_local_files(
                             reason.as_str(),
                             reason_message(reason, &parsed, &scope)
                         );
+                        let mut detail = detail_from(&parsed, &scope);
+                        // Karar anındaki çıkarımı yan dosyaya göm: `/onayla` bu görüntüyle
+                        // ilerler, böylece LLM/ağ erişilemez olsa bile dosya karantinadan
+                        // çıkarılabilir (yeniden ayrıştırmaya mecbur kalmaz).
+                        detail.parsed_days = Some(file_db);
                         if let Err(e) = quarantine::quarantine_file(
                             &base_dir,
                             folder,
@@ -1152,7 +1160,7 @@ pub async fn process_local_files(
                             &path,
                             reason,
                             reason_message(reason, &parsed, &scope),
-                            detail_from(&parsed, &scope),
+                            detail,
                         )
                         .await
                         {
@@ -1202,11 +1210,98 @@ pub async fn process_local_files(
 // Operatör komutları (Telegram botu buradan çağırır — Faz 0.5)
 // ---------------------------------------------------------------------------
 
+/// Onay sırasında kullanılan ayrıştırma kaynağı.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ParseSource {
+    /// Karantina anında saklanan anlık görüntü (ağ/LLM çağrısı YOK).
+    Snapshot,
+    /// Dosya yeniden ayrıştırıldı (görüntü/PDF ise LLM gerekir).
+    Fresh,
+}
+
+impl ParseSource {
+    /// Operatöre gösterilecek kısa etiket.
+    pub fn label_tr(&self) -> &'static str {
+        match self {
+            ParseSource::Snapshot => "karantina anındaki çıkarım (önbellek, LLM'siz)",
+            ParseSource::Fresh => "dosya yeniden ayrıştırıldı",
+        }
+    }
+}
+
+/// Karantina öğesi için ayrıştırma kaynağını çözer.
+///
+/// Sıra:
+/// 1. Yan dosyada saklanan çıkarım — dosya `sha256` ile doğrulanır. Böylece
+///    sağlayıcı (LLM/ağ) erişilemez olduğunda bile onay tamamlanabilir; karantina
+///    kuyruğu tek bir dış servisin keyfine bırakılmaz.
+/// 2. Yeniden ayrıştırma: görüntü/PDF için LLM, xlsx/json için deterministik yol.
+pub async fn resolve_quarantine_parse(
+    item: &quarantine::QueueItem,
+    city_slug: &str,
+    reqwest_client: &reqwest::Client,
+    gemini_api_key: Option<&str>,
+) -> Result<(MenuDatabase, ParseDiagnostics, ParseSource)> {
+    if let Some(snapshot) = item.meta.parsed_days.as_ref().filter(|s| !s.is_empty()) {
+        if snapshot_matches_file(item).await {
+            tracing::info!(
+                "Karantina {}: yan dosyadaki çıkarım kullanılıyor ({} gün, LLM çağrısı yapılmadı).",
+                item.meta.id,
+                snapshot.len()
+            );
+            return Ok((
+                snapshot.clone(),
+                ParseDiagnostics::default(),
+                ParseSource::Snapshot,
+            ));
+        }
+        tracing::warn!(
+            "Karantina {}: yan dosyadaki çıkarım dosyayla eşleşmiyor (sha256 değişmiş), yeniden ayrıştırılıyor.",
+            item.meta.id
+        );
+    }
+
+    let (db, diag) = parse_local_file(&item.file_path, city_slug, reqwest_client, gemini_api_key)
+        .await?
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "Dosya ayrıştırılamadı: {} (desteklenmeyen uzantı veya LLM kapalı)",
+                item.meta.file
+            )
+        })?;
+
+    Ok((db, diag, ParseSource::Fresh))
+}
+
+/// Yan dosyadaki anlık görüntü hâlâ dosyanın kendisine mi ait?
+///
+/// Özet (`sha256`) boşsa geriye dönük uyumluluk için yalnızca dosyanın varlığına
+/// bakılır (eski karantina kayıtları bu alanı taşımaz).
+async fn snapshot_matches_file(item: &quarantine::QueueItem) -> bool {
+    if item.meta.sha256.is_empty() {
+        return tokio::fs::metadata(&item.file_path).await.is_ok();
+    }
+    match quarantine::sha256_of(&item.file_path).await {
+        Ok(actual) => actual == item.meta.sha256,
+        Err(e) => {
+            tracing::warn!(
+                "Karantina {}: dosya özeti okunamadı, dosya değişmiş kabul ediliyor: {}",
+                item.meta.id,
+                e
+            );
+            false
+        }
+    }
+}
+
 /// `/onayla <id>`: karantinadaki dosyayı KAPSAM İÇİ tarihlerle işler.
 ///
 /// Terfi kapsam dışı hiçbir tarihi yazmaz: ay dışı tarihler sessizce değil,
 /// log ve rapor eşliğinde düşürülür. Böylece hayalet kayıt operatörün eliyle
 /// bile oluşturulamaz.
+///
+/// Ayrıştırma, karantina anındaki anlık görüntüden (varsa) okunur; LLM/ağ
+/// erişilemez olduğunda bile karar uygulanır.
 pub async fn approve_quarantine_item(
     db: &DatabaseConnection,
     reqwest_client: &reqwest::Client,
@@ -1231,15 +1326,8 @@ pub async fn approve_quarantine_item(
         .await?
         .ok_or_else(|| anyhow::anyhow!("'{}' şehri veritabanında yok.", city_slug))?;
 
-    let (file_db, diag) =
-        parse_local_file(&item.file_path, &city_slug, reqwest_client, gemini_api_key)
-            .await?
-            .ok_or_else(|| {
-                anyhow::anyhow!(
-                    "Dosya ayrıştırılamadı (desteklenmeyen uzantı veya LLM kapalı): {}",
-                    item.meta.file
-                )
-            })?;
+    let (file_db, diag, parse_source) =
+        resolve_quarantine_parse(&item, &city_slug, reqwest_client, gemini_api_key).await?;
 
     let parsed = build_parsed_file(&item.meta.file, &file_db, diag);
     let cfg = GateConfig::from_env();
@@ -1298,13 +1386,14 @@ pub async fn approve_quarantine_item(
     let _ = tokio::fs::remove_file(&item.meta_path).await;
 
     let _ = shared::services::alerting::AlertingService::send_webhook_alert(&format!(
-        "✅ KARANTİNA ONAYLANDI  {}\n{} · {}\n{} gün yazıldı (kapsam {}-{:02}).{}",
+        "✅ KARANTİNA ONAYLANDI  {}\n{} · {}\n{} gün yazıldı (kapsam {}-{:02}, kaynak: {}).{}",
         item.meta.id,
         city_slug,
         item.meta.file,
         written_days,
         scope_month.0,
         scope_month.1,
+        parse_source.label_tr(),
         if dropped.is_empty() {
             String::new()
         } else {
@@ -1318,13 +1407,14 @@ pub async fn approve_quarantine_item(
     .await;
 
     Ok(format!(
-        "✅ *Onaylandı* `{}`\n• {} · {}\n• {} gün yazıldı (kapsam `{}-{:02}`)\n• Kapsam dışı düşürülen tarih: {}",
+        "✅ *Onaylandı* `{}`\n• {} · {}\n• {} gün yazıldı (kapsam `{}-{:02}`)\n• Kaynak: {}\n• Kapsam dışı düşürülen tarih: {}",
         item.meta.id,
         city_slug,
         item.meta.file,
         written_days,
         scope_month.0,
         scope_month.1,
+        parse_source.label_tr(),
         if dropped.is_empty() {
             "yok".to_string()
         } else {
@@ -1403,6 +1493,114 @@ pub async fn assign_quarantine_item(
 mod tests {
     use super::*;
     use crate::parser::models::{DayData, MenuComponent, MenuItem};
+
+    /// Onay akışı LLM'e mecbur değildir: yan dosyada doğrulanmış çıkarım varsa
+    /// ağ/LLM çağrısı yapılmadan o veri kullanılır (sha256 eşleşmesi şartıyla).
+    #[tokio::test]
+    async fn test_approval_uses_snapshot_without_llm() {
+        let base = std::env::temp_dir().join(format!("kepce_snap_{}", uuid::Uuid::new_v4()));
+        let q_root = crate::tasks::quarantine::quarantine_root(base.to_str().unwrap(), "admin");
+        tokio::fs::create_dir_all(&q_root).await.unwrap();
+
+        let file_path = q_root.join("Temmuz.pdf");
+        tokio::fs::write(&file_path, b"pdf taklidi").await.unwrap();
+        let sha = crate::tasks::quarantine::sha256_of(&file_path).await.unwrap();
+
+        let mut snapshot = MenuDatabase::new();
+        let mut day_data = DayData::default();
+        day_data.normal.lunch.push(item("Mercimek Çorbası"));
+        snapshot.insert("2026-07-01".to_string(), day_data);
+
+        let item = crate::tasks::quarantine::QueueItem {
+            meta: crate::tasks::quarantine::QuarantineMeta {
+                id: "k_SNAP1".to_string(),
+                file: "Temmuz.pdf".to_string(),
+                role: "admin".to_string(),
+                city: Some("istanbul".to_string()),
+                reason_code: ReasonCode::LowCoverage,
+                reason_tr: "test".to_string(),
+                detected_months: vec!["2026-07".to_string()],
+                scope_month: Some("2026-07".to_string()),
+                day_count: 1,
+                expected_days: Some(31),
+                stray_dates: vec![],
+                details: vec![],
+                sha256: sha,
+                parsed_days: Some(snapshot),
+                first_seen_at: chrono::Utc::now().to_rfc3339(),
+                notify_count: 0,
+                last_notified_at: None,
+                resolution: None,
+            },
+            file_path: file_path.clone(),
+            meta_path: crate::tasks::quarantine::sidecar_path(&file_path),
+        };
+
+        let client = reqwest::Client::new();
+        let (db, _diag, source) = resolve_quarantine_parse(&item, "istanbul", &client, None)
+            .await
+            .expect("anlık görüntü ile ayrıştırma çözülmeli");
+
+        assert_eq!(source, ParseSource::Snapshot);
+        assert_eq!(db.len(), 1);
+        assert!(db.contains_key("2026-07-01"));
+
+        let _ = tokio::fs::remove_dir_all(&base).await;
+    }
+
+    /// Dosya değişmişse (sha256 tutmuyorsa) anlık görüntü ESKİMİŞ sayılır.
+    ///
+    /// Desteklenmeyen uzantıda yeniden ayrıştırma da sonuç üretmez; onay net bir
+    /// hatayla durur ve dosya karantinada kalır (sessiz yazma yok).
+    #[tokio::test]
+    async fn test_stale_snapshot_is_rejected() {
+        let base = std::env::temp_dir().join(format!("kepce_snap_stale_{}", uuid::Uuid::new_v4()));
+        let q_root = crate::tasks::quarantine::quarantine_root(base.to_str().unwrap(), "admin");
+        tokio::fs::create_dir_all(&q_root).await.unwrap();
+
+        let file_path = q_root.join("notlar.txt");
+        tokio::fs::write(&file_path, b"degismis icerik").await.unwrap();
+
+        let mut snapshot = MenuDatabase::new();
+        snapshot.insert("2026-07-01".to_string(), DayData::default());
+
+        let item = crate::tasks::quarantine::QueueItem {
+            meta: crate::tasks::quarantine::QuarantineMeta {
+                id: "k_SNAP2".to_string(),
+                file: "notlar.txt".to_string(),
+                role: "admin".to_string(),
+                city: Some("istanbul".to_string()),
+                reason_code: ReasonCode::LowCoverage,
+                reason_tr: "test".to_string(),
+                detected_months: vec![],
+                scope_month: None,
+                day_count: 1,
+                expected_days: None,
+                stray_dates: vec![],
+                details: vec![],
+                sha256: "deadbeef".to_string(),
+                parsed_days: Some(snapshot),
+                first_seen_at: chrono::Utc::now().to_rfc3339(),
+                notify_count: 0,
+                last_notified_at: None,
+                resolution: None,
+            },
+            file_path: file_path.clone(),
+            meta_path: crate::tasks::quarantine::sidecar_path(&file_path),
+        };
+
+        let client = reqwest::Client::new();
+        let err = resolve_quarantine_parse(&item, "istanbul", &client, None)
+            .await
+            .expect_err("eskimiş anlık görüntü kullanılmamalı");
+        assert!(
+            format!("{:?}", err).contains("ayrıştırılamadı"),
+            "desteklenmeyen uzantıda net hata beklenir: {:?}",
+            err
+        );
+
+        let _ = tokio::fs::remove_dir_all(&base).await;
+    }
 
     fn item(name: &str) -> MenuItem {
         MenuItem {
