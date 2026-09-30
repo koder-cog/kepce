@@ -1004,34 +1004,44 @@ pub async fn process_local_files(
                 let source_type = format!("kepce-{}", folder);
 
                 // 1. Ayrıştır (veritabanına HENÜZ yazılmıyor)
-                let parsed_opt =
-                    match parse_local_file(&path, &city_slug, reqwest_client, gemini_api_key).await
-                    {
-                        Ok(Some(v)) => Some(v),
-                        Ok(None) => continue, // desteklenmeyen uzantı / LLM kapalı: yerinde kalır
-                        Err(e) => {
-                            let err_msg = format!("{:?}", e).to_lowercase();
-                            if is_transient_error(&err_msg) {
-                                tracing::error!(
-                                    "{}: Geçici ağ/API hatası, dosya kuyrukta bekletilecek: {:?}",
-                                    filename,
-                                    e
-                                );
-                                continue; // Transient: dosya bekleyen'de kalır
-                            }
-                            tracing::error!("{}: Kalıcı ayrıştırma hatası: {:?}", filename, e);
-                            let _ =
-                                shared::services::alerting::AlertingService::send_webhook_alert(
-                                    &format!(
-                                        "🔴 KALICI HATA  {}\n{} · {}\nSebep: PARSE_ERROR\n{:?}",
-                                        filename, city_slug, source_type, e
-                                    ),
-                                )
-                                .await;
-                            finalize_file(&base_dir, folder, &path, FinalDest::Hatali).await;
-                            continue;
+                let parsed_opt = match parse_local_file(
+                    &path,
+                    &city_slug,
+                    reqwest_client,
+                    gemini_api_key,
+                )
+                .await
+                {
+                    Ok(Some(v)) => Some(v),
+                    Ok(None) => {
+                        tracing::warn!(
+                            "{}: desteklenmeyen uzantı veya LLM devre dışı, dosya bekleyen'de bırakıldı.",
+                            filename
+                        );
+                        continue;
+                    }
+                    Err(e) => {
+                        let err_msg = format!("{:?}", e).to_lowercase();
+                        if is_transient_error(&err_msg) {
+                            tracing::error!(
+                                "{}: Geçici ağ/API hatası, dosya kuyrukta bekletilecek: {:?}",
+                                filename,
+                                e
+                            );
+                            continue; // Transient: dosya bekleyen'de kalır
                         }
-                    };
+                        tracing::error!("{}: Kalıcı ayrıştırma hatası: {:?}", filename, e);
+                        let _ = shared::services::alerting::AlertingService::send_webhook_alert(
+                            &format!(
+                                "🔴 KALICI HATA  {}\n{} · {}\nSebep: PARSE_ERROR\n{:?}",
+                                filename, city_slug, source_type, e
+                            ),
+                        )
+                        .await;
+                        finalize_file(&base_dir, folder, &path, FinalDest::Hatali).await;
+                        continue;
+                    }
+                };
                 let Some((file_db, diag)) = parsed_opt else {
                     continue;
                 };
