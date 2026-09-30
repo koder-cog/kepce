@@ -1,0 +1,16 @@
+# api/worker/webapp'in `build:` blokları bilinçli olarak temel docker-compose.yml'de
+# DEĞİL, buradadır. Sunucu bu dosyayı kullanmadığı için üretimde `up`/`build` asla
+# yerel veya eski bir artifact'ten imaj üretemez; tek imaj kaynağı GHCR'dan `pull`.
+services:
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+  worker:
+    build:
+      context: .
+      dockerfile: worker/Dockerfile
+  webapp:
+    build:
+      context: ./webapp
+      dockerfile: Dockerfile

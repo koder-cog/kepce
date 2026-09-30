@@ -73,16 +73,7 @@ echo -e "\n${BLUE}--- Dağıtım Başlatılıyor ---${NC}"
 # 3. Dosyaların Senkronizasyonu (Rsync)
 echo -e "${YELLOW}[1/5] Proje dosyaları sunucuya aktarılıyor...${NC}"
 
-MISSING_BINARIES=()
-[ ! -f "target/aarch64-unknown-linux-gnu/release/api" ] && MISSING_BINARIES+=("api")
-[ ! -f "target/aarch64-unknown-linux-gnu/release/worker" ] && MISSING_BINARIES+=("worker")
-
-if [ ${#MISSING_BINARIES[@]} -gt 0 ]; then
-    echo -e "${YELLOW}İpucu: Yerel ARM64 binary eksik (${MISSING_BINARIES[*]}).${NC}"
-    echo -e "${YELLOW}Yerel makinenizde cross-compile yapmak derlemeyi hızlandırabilir: './manage.sh build-arm64'${NC}"
-fi
-
-ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,models,static,target/aarch64-unknown-linux-gnu/release}"
+ssh -i "$SSH_KEY" "$SERVER_HOST" "mkdir -p $REMOTE_DIR/{certs,logs/caddy,db/migrations,api,worker,webapp,models,static}"
 
 rsync -avz --delete \
     --exclude-from='.gitignore' \
@@ -110,7 +101,8 @@ ssh -i "$SSH_KEY" "$SERVER_HOST" "
 "
 
 # 5. Compose Dosyalarının Belirlenmesi
-COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.prod.yml"
+# build override yalnızca yerel/fallback derleme içindir; üretim akışı imajı GHCR'dan çeker.
+COMPOSE_CMD="docker compose -f docker-compose.yml -f docker-compose.build.yml -f docker-compose.prod.yml"
 
 if [[ "$OPT_UMAMI" =~ ^[EeYy]$ ]]; then
     COMPOSE_CMD="$COMPOSE_CMD -f docker-compose.analytics.yml"

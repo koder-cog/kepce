@@ -36,13 +36,8 @@ services:
       retries: 5
 
   api:
-    build:
-      context: .
-      dockerfile: api/Dockerfile
-      # NOT: api/Dockerfile de önceden derlenmiş binary kopyalar; yukarıdaki
-      # worker notu api için de geçerlidir (sunucuda build değil, CI + pull).
-    # CI/CD: imajlar GitHub Actions'ta derlenip GHCR'a gonderilir;
-    # sunucuda 'docker compose pull' ile alinir (yerel build yedegi).
+    # build: docker-compose.build.yml'dedir; sunucu imajı yalnızca pull ile alır,
+    # böylece eski bir artifact'ten bayat imaj üretilemez.
     image: ghcr.io/koder-cog/kepce-api:latest
     container_name: kepce-api
     environment:
@@ -93,16 +88,8 @@ services:
         condition: service_healthy
 
   worker:
-    # !!! DİKKAT: worker/Dockerfile DERLEME YAPMAZ. Önceden derlenmiş ARM64
-    # binary'yi imaja kopyalar (COPY target/aarch64-unknown-linux-gnu/release/worker).
-    # Sunucuda cargo YOKTUR. Bu yüzden sunucuda `docker compose build worker`
-    # ÇALIŞTIRILMAMALIDIR: var olan (bayat) binary'yi yeni imaja kopyalar ve
-    # kod düzeltmelerini sessizce geri alır (canlıda "0 dosya işlendi" bu şekilde
-    # oluştu). Doğru akış: CI (ubuntu-24.04-arm runner) imajı derleyip GHCR'a
-    # gönderir; sunucuda yalnızca `docker compose pull worker` + `up -d` çalıştırılır.
-    build:
-      context: .
-      dockerfile: worker/Dockerfile
+    # build: docker-compose.build.yml'dedir; sunucu imajı yalnızca pull ile alır,
+    # böylece eski bir artifact'ten bayat imaj üretilemez.
     image: ghcr.io/koder-cog/kepce-worker:latest
     container_name: kepce-worker
     environment:
@@ -168,9 +155,7 @@ services:
         condition: service_healthy
 
   webapp:
-    build:
-      context: ./webapp
-      dockerfile: Dockerfile
+    # build: docker-compose.build.yml'dedir (bkz. api/worker notu).
     image: ghcr.io/koder-cog/kepce-webapp:latest
     container_name: kepce-webapp
     environment:
