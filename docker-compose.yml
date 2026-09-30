@@ -119,6 +119,12 @@ services:
       # Muhakeme token'ları bu bütçeden düşer; medium/high için 16000 YETMEZ.
       - OPENROUTER_MAX_TOKENS=${OPENROUTER_MAX_TOKENS:-32000}
       - OPENROUTER_BASE_URL=${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      # Kesinti dayanıklılığı: tüm zincir LLM_CHAIN_PASSES kez, turlar arası
+      # LLM_CHAIN_RETRY_BASE_MS kadar artan beklemeyle yeniden denenir. Yoğunluk
+      # hatasında (429/5xx) model değiştirilmeden önce LLM_MODEL_SWITCH_DELAY_MS beklenir.
+      - LLM_CHAIN_PASSES=${LLM_CHAIN_PASSES:-2}
+      - LLM_CHAIN_RETRY_BASE_MS=${LLM_CHAIN_RETRY_BASE_MS:-2000}
+      - LLM_MODEL_SWITCH_DELAY_MS=${LLM_MODEL_SWITCH_DELAY_MS:-1500}
       - RUST_LOG=${RUST_LOG:-info}
       - INDEXNOW_KEY=${INDEXNOW_KEY:-}
       - INDEXNOW_HOST=${INDEXNOW_HOST:-kepce.org}
