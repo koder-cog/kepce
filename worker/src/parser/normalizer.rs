@@ -93,6 +93,17 @@ pub fn normalize_food_name(raw: &str) -> String {
     let re_plus = RE_PLUS.get_or_init(|| Regex::new(r"\s*\+\s*").unwrap());
     s = re_plus.replace_all(&s, " + ").to_string();
 
+    // 2.5 Strip numerical portion parentheses (e.g. "(50 g)", "(120 gr)", "(200 ml)")
+    // Descriptive parentheses like "(Yoğurt+Sos)" or "(Göbek Marul+Dilim Limon)" are preserved.
+    static RE_NUMERIC_PORTION_PARENS: OnceLock<Regex> = OnceLock::new();
+    let re_numeric_portion_parens = RE_NUMERIC_PORTION_PARENS.get_or_init(|| {
+        Regex::new(
+            r"(?i)\s*\(\s*\d+(?:[.,]\d+)?\s*(?:g|gr|kg|ml|lt|l|adet|porsiyon|dilim|paket)\s*\)",
+        )
+        .unwrap()
+    });
+    s = re_numeric_portion_parens.replace_all(&s, "").to_string();
+
     static RE_SPACES: OnceLock<Regex> = OnceLock::new();
     let re_spaces = RE_SPACES.get_or_init(|| Regex::new(r"\s+").unwrap());
     s = re_spaces.replace_all(&s, " ").to_string();
@@ -104,12 +115,14 @@ pub fn normalize_food_name(raw: &str) -> String {
 
     // 3. Normalize liquid and volume units
     static RE_500ML_SU: OnceLock<Regex> = OnceLock::new();
-    let re_500ml_su = RE_500ML_SU.get_or_init(|| Regex::new(r"(?i)\b500\s*ml\.?\s*su\b").unwrap());
+    let re_500ml_su = RE_500ML_SU
+        .get_or_init(|| Regex::new(r"(?i)\b(?:500\s*ml\.?|0[.,]5\s*(?:l|lt)\.?)\s*su\b").unwrap());
     s = re_500ml_su.replace_all(&s, "500 ml Su").to_string();
 
     static RE_200ML_AYRAN: OnceLock<Regex> = OnceLock::new();
-    let re_200ml_ayran =
-        RE_200ML_AYRAN.get_or_init(|| Regex::new(r"(?i)\b200\s*ml\.?\s*ayran\b").unwrap());
+    let re_200ml_ayran = RE_200ML_AYRAN.get_or_init(|| {
+        Regex::new(r"(?i)\b(?:200\s*ml\.?|0[.,]2\s*(?:l|lt)\.?)\s*ayran\b").unwrap()
+    });
     s = re_200ml_ayran.replace_all(&s, "200 ml Ayran").to_string();
 
     static RE_200ML_SUT: OnceLock<Regex> = OnceLock::new();
@@ -216,11 +229,14 @@ pub fn normalize_food_name(raw: &str) -> String {
         .replace_all(&s, "${1}Yeşil Mercimek Çorbası")
         .to_string();
 
+    // Generative soup expansion: expands any `<Ad> Ç.` token into `<Ad> Çorbası`
     static RE_CORBA_ABBR: OnceLock<Regex> = OnceLock::new();
-    let re_corba_abbr = RE_CORBA_ABBR.get_or_init(|| Regex::new(
-        r"(?i)\b(mercimek|ezogelin|domates|yayla|tarhana|tavuk|düğün|şehriye|köz\s*biber|ayran\s*aşı|yeşil\s*mercimek|mahluta|brokoli|dövme|tutmaç)\s+ç\.?\b"
-    ).unwrap());
-    s = re_corba_abbr.replace_all(&s, "$1 Çorbası").to_string();
+    let re_corba_abbr = RE_CORBA_ABBR.get_or_init(|| {
+        Regex::new(
+            r"(?i)\b([A-Za-zğüşıöçĞÜŞİÖÇ]{2,}(?:\s+[A-Za-zğüşıöçĞÜŞİÖÇ]{2,})*)\s+[çÇ]\.?(\s*(?:\+|,|$))"
+        ).unwrap()
+    });
+    s = re_corba_abbr.replace_all(&s, "$1 Çorbası$2").to_string();
 
     // Salata/Piyaz abbreviations
     static RE_K_FASULYE_PIYAZ: OnceLock<Regex> = OnceLock::new();
@@ -504,5 +520,25 @@ mod tests {
             normalize_food_name("glutensiz roll"),
             "Glutensiz Roll Ekmek"
         );
+    }
+
+    #[test]
+    fn test_dish_normalization_corpus() {
+        let tsv = include_str!("../../tests/fixtures/dish_normalization.tsv");
+        for line in tsv.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            let mut parts = line.split('\t');
+            let input = parts.next().expect("input");
+            let expected = parts.next().expect("expected");
+            let actual = normalize_food_name(input);
+            assert_eq!(
+                actual, expected,
+                "Normalizasyon hatası: input='{}', expected='{}', actual='{}'",
+                input, expected, actual
+            );
+        }
     }
 }
