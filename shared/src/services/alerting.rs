@@ -43,7 +43,10 @@ impl AlertingService {
         Ok(())
     }
 
-    /// Telegram Bot API üzerinden doğrudan Markdown formatında alarm mesajı gönderir.
+    /// Telegram Bot API üzerinden alarm mesajı gönderir.
+    ///
+    /// `parse_mode` kullanılmaz: biçimlendirme hatası, mesajın Telegram tarafından
+    /// tümden reddedilip operatöre hiç ulaşmamasına yol açabiliyor.
     pub async fn send_telegram_alert(message: &str) -> anyhow::Result<()> {
         let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
             Ok(token) if !token.trim().is_empty() => token,
@@ -69,8 +72,7 @@ impl AlertingService {
         let client = Client::new();
         let payload = json!({
             "chat_id": chat_id.trim(),
-            "text": format!("🚨 *[KEPÇE ALARM]*\n\n{}", message),
-            "parse_mode": "Markdown"
+            "text": format!("🚨 [KEPÇE ALARM]\n\n{}", message)
         });
 
         tracing::info!("Telegram alarmı gönderiliyor: {}", message);
@@ -95,7 +97,6 @@ impl AlertingService {
     /// Webhook uyarısı gönderir (Discord uyumlu JSON payload).
     /// Geriye dönük uyumluluk için, Telegram yapılandırılmışsa Telegram'a da iletir.
     pub async fn send_webhook_alert(message: &str) -> anyhow::Result<()> {
-        // Eğer Telegram ayarlıysa Telegram'a da kopyala
         if std::env::var("TELEGRAM_BOT_TOKEN").is_ok() {
             let _ = Self::send_telegram_alert(message).await;
         }
