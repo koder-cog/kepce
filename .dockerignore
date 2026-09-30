@@ -24,9 +24,9 @@ node_modules/
 **/node_modules/
 webapp/
 
+# docs/ dışlanır; ancak `prompts/` DIŞLANMAZ ve `*.md` deseni KULLANILMAZ:
+# api ve worker, prompt dosyasını `include_str!` ile derlemeye gömer.
 docs/
-prompts/
-*.md
 
 *.pdf
 *.xlsx
