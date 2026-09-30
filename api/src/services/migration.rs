@@ -1,4 +1,4 @@
-use sea_orm::{ConnectionTrait, DatabaseConnection, Statement};
+use sea_orm::{ConnectionTrait, DatabaseConnection, Statement, TransactionTrait};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -58,16 +58,7 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
 
         if !is_applied {
             tracing::info!("Migrasyon çalıştırılıyor: {}", file_name);
-            execute_sql_file(db, &file_path).await?;
-
-            let record_stmt = Statement::from_string(
-                db.get_database_backend(),
-                format!(
-                    "INSERT INTO schema_migrations (version) VALUES ('{}');",
-                    file_name
-                ),
-            );
-            db.execute(record_stmt).await?;
+            execute_sql_file(db, &file_path, Some(&file_name)).await?;
             tracing::info!("Migrasyon başarıyla uygulandı ve kaydedildi: {}", file_name);
         } else {
             tracing::debug!("Migrasyon zaten uygulanmış, atlanıyor: {}", file_name);
@@ -109,7 +100,7 @@ pub async fn run_migrations(db: &DatabaseConnection) -> Result<(), anyhow::Error
             for seed_file in seed_files {
                 if let Some(name) = seed_file.file_name().and_then(|s| s.to_str()) {
                     tracing::info!("Seed çalıştırılıyor: {}", name);
-                    execute_sql_file(db, &seed_file).await?;
+                    execute_sql_file(db, &seed_file, None).await?;
                 }
             }
             tracing::info!("Prod seed verileri başarıyla yüklendi.");
@@ -132,9 +123,55 @@ fn find_directory(candidates: &[&str]) -> Option<PathBuf> {
     None
 }
 
-async fn execute_sql_file(db: &DatabaseConnection, path: &Path) -> Result<(), anyhow::Error> {
+/// SQL dosyasını TEK bir bağlantı ve TEK bir işlem (transaction) içinde çalıştırır.
+///
+/// Dosya içindeki `BEGIN;` / `COMMIT;` gibi işlem kontrol ifadeleri yok sayılır.
+/// Daha önce bu ifadeler havuzdan alınan bağlantılara dağıtıldığı için `BEGIN`
+/// bir bağlantıda sonsuza kadar açık kalıyor, `COMMIT` başka bir bağlantıya
+/// düşüyor ve o bağlantıda yapılan tüm yazmalar (migration kaydı, kullanıcı
+/// kaydı) hiç commit edilmiyordu.
+///
+/// `record_version` verildiğinde migration kaydı da aynı işlem içinde yazılır;
+/// böylece kayıt ile şema değişikliği atomik olur ve migration her çalıştırmada
+/// yeniden uygulanmaz.
+async fn execute_sql_file(
+    db: &DatabaseConnection,
+    path: &Path,
+    record_version: Option<&str>,
+) -> Result<(), anyhow::Error> {
     let sql_content = fs::read_to_string(path)?;
+    let statements = split_sql_statements(&sql_content);
 
+    let txn = db.begin().await?;
+
+    for sql in statements {
+        // İşlem kontrolü bu katman tarafından yönetilir, dosyadan gelenler atlanır.
+        if is_transaction_control(&sql) {
+            continue;
+        }
+        let stmt = Statement::from_string(txn.get_database_backend(), sql);
+        txn.execute(stmt).await?;
+    }
+
+    if let Some(version) = record_version {
+        let record_stmt = Statement::from_string(
+            txn.get_database_backend(),
+            format!("INSERT INTO schema_migrations (version) VALUES ('{}');", version),
+        );
+        txn.execute(record_stmt).await?;
+    }
+
+    txn.commit().await?;
+
+    Ok(())
+}
+
+/// SQL içeriğini tek tek ifadelere ayırır.
+///
+/// `$$ ... $$` ile tanımlanan fonksiyon/`DO` blokları tek bir ifade olarak
+/// korunur; blok içindeki noktalı virgüller ayraç sayılmaz.
+fn split_sql_statements(sql_content: &str) -> Vec<String> {
+    let mut statements = Vec::new();
     let mut current_stmt = String::new();
     let mut in_dollar_block = false;
 
@@ -157,23 +194,37 @@ async fn execute_sql_file(db: &DatabaseConnection, path: &Path) -> Result<(), an
         current_stmt.push_str(line);
         current_stmt.push('\n');
 
-        // Cümle ; ile bitiyorsa ve $$ bloğu içinde değilsek çalıştır
+        // Cümle ; ile bitiyorsa ve $$ bloğu içinde değilsek ayır
         if !in_dollar_block && trimmed.ends_with(';') {
             let stmt_str = current_stmt.trim();
             if !stmt_str.is_empty() {
-                let stmt = Statement::from_string(db.get_database_backend(), stmt_str.to_string());
-                db.execute(stmt).await?;
+                statements.push(stmt_str.to_string());
             }
             current_stmt.clear();
         }
     }
 
-    // Execute any remaining statement
+    // Kalan ifadeyi de ekle
     let stmt_str = current_stmt.trim();
     if !stmt_str.is_empty() {
-        let stmt = Statement::from_string(db.get_database_backend(), stmt_str.to_string());
-        db.execute(stmt).await?;
+        statements.push(stmt_str.to_string());
     }
 
-    Ok(())
+    statements
+}
+
+/// İfadenin işlem kontrol komutu olup olmadığını söyler.
+///
+/// `DO $$ ... END $$;` gibi bloklar yanlışlıkla eşleşmesin diye yalnızca
+/// tek kelimelik ifadeler kontrol edilir.
+fn is_transaction_control(stmt: &str) -> bool {
+    let normalized: String = stmt
+        .trim()
+        .trim_end_matches(';')
+        .chars()
+        .filter(|c| !c.is_whitespace())
+        .collect::<String>()
+        .to_uppercase();
+
+    matches!(normalized.as_str(), "BEGIN" | "COMMIT" | "END" | "ROLLBACK" | "STARTTRANSACTION")
 }
