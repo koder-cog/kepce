@@ -65,6 +65,28 @@ tarihleri yazar. Ay dışı tarihler (ör. Haziran dosyasındaki hayali 4 Mayıs
 koşulda veritabanına girmez. Onay sonrası ay atomikliği çalışır: aynı kaynak ve ay
 kapsamında yeni dosyada olmayan eski `kepce-%` kayıtları sert DELETE ile silinir.
 
+## Onay akışı ve sağlayıcı kesintileri (LLM'e bağımlılık YOK)
+
+Karantinaya alınırken **karar anındaki çıkarımın anlık görüntüsü** yan dosyaya
+(`<dosya>.karantina.json` → `parsed_days`) gömülür. `/onayla` bu görüntüyü esas alır:
+
+1. Yan dosyada görüntü varsa ve dosyanın `sha256` özeti hâlâ eşleşiyorsa,
+   **hiçbir ağ/LLM çağrısı yapılmadan** karar uygulanır (yanıtta `Kaynak:
+   karantina anındaki çıkarım (önbellek, LLM'siz)` yazar).
+2. Görüntü yoksa (ör. bu sürümden önce kuyruğa girmiş kayıtlar) veya dosya
+   değişmişse yeniden ayrıştırılır: `xlsx`/`json` deterministik yolla, `pdf`/görsel
+   ise LLM ile.
+
+Bu sayede sağlayıcı 503/429 verdiğinde karantina kuyruğu kilitlenmez; dosya
+operatör kararıyla çıkarılabilir. Onay sırasında yeniden ayrıştırma gerekirse ve
+sağlayıcı geçici hata verirse Telegram yanıtı "öğe karantinada KALDI, birazdan
+tekrar deneyin" der; kalıcı hatada `/reddet` önerilir.
+
+LLM zinciri kesintilere karşı dayanıklıdır: sağlayıcı sırası (`LLM_PROVIDER_ORDER`,
+varsayılan `openrouter,gemini`) tümüyle `LLM_CHAIN_PASSES` kez, artan bekleme ile
+yeniden denenir; 429/5xx hatalarında model atlanır. Aşırı büyük çıkarımlar (>`WORKER_QUARANTINE_SNAPSHOT_MAX_KB`)
+yan dosyaya gömülmez, uyarı loglanır.
+
 ## Bildirim ve yükseltme (escalation)
 
 | Zaman | Davranış |
@@ -88,6 +110,11 @@ kaybın yeni adıdır**; kanal mutlaka tanımlı olmalıdır.
 | `WORKER_REQUIRE_DECLARED_MONTH` | `0` | `1` = dosya adı ay beyan etmiyorsa şüpheli say |
 | `WORKER_QUARANTINE_TTL_DAYS` | `14` | Karantina TTL'i |
 | `WORKER_QUARANTINE_ESCALATE_DAYS` | `7` | Kırmızı alarm eşiği |
+| `WORKER_QUARANTINE_SNAPSHOT_MAX_KB` | `512` | Yan dosyaya gömülecek çıkarım görüntüsü üst sınırı |
+| `LLM_PROVIDER_ORDER` | `openrouter,gemini` | Sağlayıcı sırası (birincil OpenRouter) |
+| `LLM_CHAIN_PASSES` | `2` | Tüm zincirin yeniden denenme sayısı (1-5) |
+| `LLM_CHAIN_RETRY_BASE_MS` | `2000` | Tur arası taban bekleme (ms) |
+| `LLM_MODEL_SWITCH_DELAY_MS` | `1500` | Yoğunluk hatasında model değiştirmeden önceki bekleme (ms) |
 
 ## Rutin kontroller
 
