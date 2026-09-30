@@ -780,12 +780,14 @@ async fn write_scoped_menu(
     if let Some((y, m)) = scope_month
         && let Some(month_start) = NaiveDate::from_ymd_opt(y, m, 1)
     {
+        let scoped_meal_types: HashSet<String> = keep.iter().map(|(_, m)| m.clone()).collect();
         match crate::tasks::scraper::delete_out_of_scope_menus(
             db,
             city_id,
             "kepce-",
             month_start,
             &keep,
+            Some(&scoped_meal_types),
         )
         .await
         {

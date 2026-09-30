@@ -2113,6 +2113,7 @@ pub async fn delete_out_of_scope_menus(
     source_prefix: &str,
     month_start: NaiveDate,
     keep: &HashSet<(NaiveDate, String)>,
+    scoped_meal_types: Option<&HashSet<String>>,
 ) -> Result<usize> {
     use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
     use shared::entities::menus;
@@ -2144,7 +2145,15 @@ pub async fn delete_out_of_scope_menus(
 
     let obsolete: Vec<(i32, NaiveDate, String)> = existing
         .iter()
-        .filter(|m| !keep.contains(&(m.serve_date, meal_str(&m.meal_type))))
+        .filter(|m| {
+            let m_str = meal_str(&m.meal_type);
+            if let Some(types) = scoped_meal_types
+                && !types.contains(&m_str)
+            {
+                return false;
+            }
+            !keep.contains(&(m.serve_date, m_str))
+        })
         .map(|m| (m.id, m.serve_date, meal_str(&m.meal_type)))
         .collect();
 
