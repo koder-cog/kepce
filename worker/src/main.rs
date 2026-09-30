@@ -13,6 +13,11 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Kepçe Distributed Ingestion Worker başlatılıyor...");
 
+    // Deploy kapısı bu değeri beklenen commit ile karşılaştırır.
+    if let Ok(sha) = env::var("KEPCE_GIT_SHA") {
+        tracing::info!("Derleme sürümü (git): {}", sha);
+    }
+
     let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     // Worker arka planda sıralı görevler çalıştırır; API kadar bağlantıya ihtiyacı yok.
     let mut db_opts = sea_orm::ConnectOptions::new(&db_url);

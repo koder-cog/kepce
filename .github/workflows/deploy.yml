@@ -26,16 +26,6 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Native aarch64 binary derle (rust:trixie + g++)
-        run: |
-          docker run --rm -v "$PWD":/app -w /app rust:trixie bash -c "
-            set -euo pipefail
-            apt-get update -qq && apt-get install -y -qq pkg-config libssl-dev g++ >/dev/null
-            cargo build --release -p api -p worker
-            mkdir -p target/aarch64-unknown-linux-gnu/release
-            cp target/release/api target/release/worker target/aarch64-unknown-linux-gnu/release/
-          "
-
       - name: GHCR login
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
@@ -45,9 +35,9 @@ jobs:
           SHA: ${{ github.sha }}
         run: |
           SHORT_SHA="${SHA:0:7}"
-          docker build -f api/Dockerfile       -t ghcr.io/$OWNER/kepce-api:latest -t ghcr.io/$OWNER/kepce-api:$SHORT_SHA       .
-          docker build -f worker/Dockerfile    -t ghcr.io/$OWNER/kepce-worker:latest -t ghcr.io/$OWNER/kepce-worker:$SHORT_SHA    .
-          docker build -f webapp/Dockerfile    -t ghcr.io/$OWNER/kepce-webapp:latest -t ghcr.io/$OWNER/kepce-webapp:$SHORT_SHA    ./webapp
+          docker build -f api/Dockerfile    --build-arg GIT_SHA="$SHA" -t ghcr.io/$OWNER/kepce-api:latest -t ghcr.io/$OWNER/kepce-api:$SHORT_SHA       .
+          docker build -f worker/Dockerfile --build-arg GIT_SHA="$SHA" -t ghcr.io/$OWNER/kepce-worker:latest -t ghcr.io/$OWNER/kepce-worker:$SHORT_SHA    .
+          docker build -f webapp/Dockerfile -t ghcr.io/$OWNER/kepce-webapp:latest -t ghcr.io/$OWNER/kepce-webapp:$SHORT_SHA    ./webapp
           docker push ghcr.io/$OWNER/kepce-api:latest
           docker push ghcr.io/$OWNER/kepce-api:$SHORT_SHA
           docker push ghcr.io/$OWNER/kepce-worker:latest
@@ -107,6 +97,22 @@ jobs:
 
             docker compose $COMPOSE_FILES $PROFILE_ARGS pull $PULL_TARGETS
             docker compose $COMPOSE_FILES $PROFILE_ARGS up -d --remove-orphans
+
+            # Çalışan imajlar beklenen commit'e mi ait? Eşleşmezse deploy gürültülü
+            # şekilde durur; sessiz eski binary fark edilmeden canlıya çıkamaz.
+            EXPECTED_SHA="${{ github.sha }}"
+            for svc in kepce-worker kepce-api; do
+              RUNNING_SHA=""
+              for _ in 1 2 3 4 5 6 7 8 9 10; do
+                RUNNING_SHA="$(docker exec "$svc" printenv KEPCE_GIT_SHA 2>/dev/null || true)"
+                if [ "$RUNNING_SHA" = "$EXPECTED_SHA" ]; then break; fi
+                sleep 3
+              done
+              if [ "$RUNNING_SHA" != "$EXPECTED_SHA" ]; then
+                echo "DEPLOY_HATASI: ${svc} sürümü beklenen commit ile uyuşmuyor (çalışan='${RUNNING_SHA}' beklenen='${EXPECTED_SHA}')"
+                exit 1
+              fi
+            done
             # Caddyfile dogrulamasi: scp ile gelen dosya gecersizse caddy'yi yeniden
             # baslatmadan dur. Calisan caddy bellekteki saglam yapilandirmayla hizmet
             # vermeye devam eder, boylece hatali yapilandirma siteyi dusurmez.
