@@ -15,6 +15,11 @@ use tower::util::ServiceExt; // the correct oneshot trait
 async fn setup_app() -> Option<(axum::Router, AppState)> {
     let mut config = Config::from_env();
     config.resend_api_key = "mock_key".to_string(); // Test ortamında gerçek e-posta gönderimini engelle
+    // `.env` içinde SMTP kimlik bilgileri tanımlı olsa bile testte gerçek bir AWS SES
+    // bağlantısı açılmasın: mock koruması yalnızca SMTP yapılandırılmamışsa devreye giriyor.
+    config.smtp_host = None;
+    config.smtp_username = None;
+    config.smtp_password = None;
     let mut opt = sea_orm::ConnectOptions::new(&config.database_url);
     opt.connect_timeout(std::time::Duration::from_secs(5));
     opt.acquire_timeout(std::time::Duration::from_secs(5));
