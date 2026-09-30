@@ -6,7 +6,7 @@
   let { card = null } = $props();
 
   let formattedDate = $derived(
-    card?.date ? formatFullTurkishDate(card.date, true) : null
+    card?.date ? formatFullTurkishDate(card.date, true) : null,
   );
 </script>
 
@@ -14,7 +14,7 @@
   <aside class="c-kepce-direct-card" aria-label="Kepçe Menü Sonucu">
     <div class="c-kepce-direct-card__top">
       <h2 class="c-kepce-direct-card__title">
-        <a href={card.href}>{card.title}</a>
+        <a href={card.href}>https://kepce.org/{card.title}</a>
       </h2>
       {#if formattedDate}
         <time class="c-kepce-direct-card__date">{formattedDate}</time>
@@ -47,25 +47,36 @@
             {#if items.length > 0}
               <ul class="c-kepce-direct-card__dishes">
                 {#each items as item}
-                  {@const dishes = item.dishes && item.dishes.length > 0 ? item.dishes : [{ name: item.name }]}
+                  {@const dishes =
+                    item.dishes && item.dishes.length > 0
+                      ? item.dishes
+                      : [{ name: item.name }]}
                   {#each dishes as dish, idx}
                     {#if idx > 0}
                       <li class="c-kepce-direct-card__dish-separator">
-                        <span class="c-kepce-direct-card__dish-separator-text">- ya da -</span>
+                        <span class="c-kepce-direct-card__dish-separator-text"
+                          >- ya da -</span
+                        >
                       </li>
                     {/if}
                     <li class="c-kepce-direct-card__dish-item">
                       <span class="c-kepce-direct-card__dish-bullet">•</span>
-                      <span class="c-kepce-direct-card__dish-name">{dish.name}</span>
+                      <span class="c-kepce-direct-card__dish-name"
+                        >{dish.name}</span
+                      >
                       {#if dish.weight}
-                        <span class="c-kepce-direct-card__dish-portion">({dish.weight})</span>
+                        <span class="c-kepce-direct-card__dish-portion"
+                          >({dish.weight})</span
+                        >
                       {/if}
                     </li>
                   {/each}
                 {/each}
               </ul>
             {:else}
-              <p class="c-kepce-direct-card__dish-empty">Menü detayı bulunmuyor</p>
+              <p class="c-kepce-direct-card__dish-empty">
+                Menü detayı bulunmuyor
+              </p>
             {/if}
           </div>
         {/each}
@@ -74,7 +85,7 @@
       <p class="c-kepce-direct-card__desc">
         {card.type === "city_menu"
           ? "Bu tarih için kayıtlı yemekhane menüsü bulunmuyor."
-          : (card.description || "")}
+          : card.description || ""}
       </p>
     {/if}
 
