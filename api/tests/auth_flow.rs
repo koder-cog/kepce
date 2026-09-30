@@ -16,9 +16,12 @@ async fn setup_app() -> Option<(axum::Router, AppState)> {
     let mut config = Config::from_env();
     config.resend_api_key = "mock_key".to_string(); // Test ortamında gerçek e-posta gönderimini engelle
     let mut opt = sea_orm::ConnectOptions::new(&config.database_url);
-    opt.connect_timeout(std::time::Duration::from_millis(200));
+    opt.connect_timeout(std::time::Duration::from_secs(5));
+    opt.acquire_timeout(std::time::Duration::from_secs(5));
     let db = Database::connect(opt).await.ok()?;
-    let _ = api::services::migration::run_migrations(&db).await;
+    api::services::migration::run_migrations(&db)
+        .await
+        .expect("Migration çalıştırma başarısız oldu!");
     let cors = build_cors(&config.cors_origin).unwrap();
     let rate_limiter = Arc::new(api::middleware::rate_limiter::RateLimiter::new());
     let usage_tracker = Arc::new(api::services::usage_tracker::UsageTracker::new(db.clone()));
@@ -34,16 +37,20 @@ async fn setup_app() -> Option<(axum::Router, AppState)> {
 
 #[tokio::test]
 async fn test_full_auth_flow() {
+    let _ = tracing_subscriber::fmt().with_test_writer().try_init();
+
     let Some((app, state)) = setup_app().await else {
+        println!("Veritabanı bağlantısı kurulamadığı için test atlandı.");
         return;
     };
 
     // Clean up any test user from previous run
     let test_email = "flow_test@kepce.org";
-    let _ = users::Entity::delete_many()
+    users::Entity::delete_many()
         .filter(users::Column::Email.eq(test_email))
         .exec(&state.db)
-        .await;
+        .await
+        .expect("Test öncesi kullanıcı temizliği başarısız oldu!");
 
     // 1. Register User
     let register_payload = serde_json::json!({
