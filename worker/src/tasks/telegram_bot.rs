@@ -233,7 +233,18 @@ Kullanabileceğiniz komutlar:\n\
                 .await;
                 let msg = match res {
                     Ok(m) => m,
-                    Err(e) => format!("❌ *Onaylama başarısız* `{}`\n`{:?}`", id_owned, e),
+                    Err(e) => {
+                        let raw = format!("{:?}", e);
+                        // Geçici sağlayıcı hatası (503/429) ile kalıcı hatayı ayır:
+                        // operatöre ne yapacağını söylemeyen çıplak hata metni bırakma.
+                        let hint = if crate::tasks::file_ingest::is_transient_error(&raw.to_lowercase())
+                        {
+                            "⏳ Sağlayıcı geçici olarak yanıt vermedi (503/429). Öğe karantinada KALDI; birkaç dakika sonra `/onayla` komutunu tekrar deneyin."
+                        } else {
+                            "ℹ️ Öğe karantinada kaldı (`/karantina detay` ile inceleyin). Sorun kalıcıysa `/reddet` ile hatali/ altına alın."
+                        };
+                        format!("❌ *Onaylama başarısız* `{}`\n{}\n\n`{}`", id_owned, hint, raw)
+                    }
                 };
                 send_reply(&client_clone, &bot_token_clone, chat_id, &msg).await;
             });
