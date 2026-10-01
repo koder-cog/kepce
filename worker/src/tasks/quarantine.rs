@@ -449,20 +449,36 @@ pub enum NotifyKind {
     TtlExpired,
 }
 
+/// Karantina öğesi için standart inline buton klavyesini üretir.
+pub fn item_inline_keyboard(id: &str) -> serde_json::Value {
+    serde_json::json!({
+        "inline_keyboard": [
+            [
+                { "text": "Onayla", "callback_data": format!("q:approve:{}", id) },
+                { "text": "Reddet", "callback_data": format!("q:reject_confirm:{}", id) }
+            ],
+            [
+                { "text": "Detay", "callback_data": format!("q:detail:{}", id) },
+                { "text": "Dosyayı Gönder", "callback_data": format!("q:file:{}", id) }
+            ]
+        ]
+    })
+}
+
 /// Bildirim mesajını plan 5.1 biçiminde üretir.
 pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> String {
     let ttl = ttl_days();
     let head = match kind {
-        NotifyKind::New => format!("🟠 KARANTİNA  {}", item.meta.id),
-        NotifyKind::Reminder => format!("🟠 KARANTİNA HATIRLATMA  {}", item.meta.id),
+        NotifyKind::New => format!("KARANTİNA: {}", item.meta.id),
+        NotifyKind::Reminder => format!("KARANTİNA HATIRLATMA: {}", item.meta.id),
         NotifyKind::Escalation => format!(
-            "🔴 KARANTİNA KRİTİK  {}  (bu öğe {} gündür bekliyor, {} gün eşiği aşıldı)",
+            "KARANTİNA KRİTİK: {} (bu öğe {} gündür bekliyor, {} gün eşiği aşıldı)",
             item.meta.id,
             age_days,
             escalate_days()
         ),
         NotifyKind::TtlExpired => format!(
-            "🔴 KARANTİNA TTL DOLDU  {}  ({} gün bekledi, dosya hatali/ altına taşındı)",
+            "KARANTİNA TTL DOLDU: {} ({} gün bekledi, dosya hatali/ altına taşındı)",
             item.meta.id, age_days
         ),
     };
@@ -566,21 +582,38 @@ pub async fn notify_item(item: &mut QueueItem, kind: NotifyKind) {
         );
     }
 
+    let kb = if kind != NotifyKind::TtlExpired {
+        item_inline_keyboard(&item.meta.id)
+    } else {
+        serde_json::json!({})
+    };
+
     if item.file_path.exists() {
-        if let Err(e) = shared::services::alerting::AlertingService::send_telegram_document(
-            &message,
-            &item.file_path,
-        )
-        .await
+        if let Err(e) =
+            shared::services::alerting::AlertingService::send_telegram_document_with_buttons(
+                &message,
+                &item.file_path,
+                kb.clone(),
+            )
+            .await
         {
             tracing::error!(
                 "[KARANTİNA] Dosya ekli bildirim gönderilemedi ({}): {:?}",
                 item.meta.id,
                 e
             );
-            let _ = shared::services::alerting::AlertingService::send_alert(&message).await;
+            let _ =
+                shared::services::alerting::AlertingService::send_telegram_message_with_buttons(
+                    &message, kb,
+                )
+                .await;
         }
-    } else if let Err(e) = shared::services::alerting::AlertingService::send_alert(&message).await {
+    } else if let Err(e) =
+        shared::services::alerting::AlertingService::send_telegram_message_with_buttons(
+            &message, kb,
+        )
+        .await
+    {
         tracing::error!(
             "[KARANTİNA] Bildirim gönderilemedi ({}): {:?}",
             item.meta.id,
@@ -1117,5 +1150,23 @@ mod tests {
         assert!(alert.contains("Al Götür: 1 paket tespit edildi"));
         assert!(alert.contains("Paket A: 1 seçim slotu"));
         assert!(alert.contains("/onayla k_POLY1"));
+    }
+
+    #[test]
+    fn test_item_inline_keyboard() {
+        let kb = item_inline_keyboard("k_TEST1");
+        let rows = kb
+            .get("inline_keyboard")
+            .and_then(|r| r.as_array())
+            .unwrap();
+        assert_eq!(rows.len(), 2);
+        assert_eq!(rows[0][0]["text"], "Onayla");
+        assert_eq!(rows[0][0]["callback_data"], "q:approve:k_TEST1");
+        assert_eq!(rows[0][1]["text"], "Reddet");
+        assert_eq!(rows[0][1]["callback_data"], "q:reject_confirm:k_TEST1");
+        assert_eq!(rows[1][0]["text"], "Detay");
+        assert_eq!(rows[1][0]["callback_data"], "q:detail:k_TEST1");
+        assert_eq!(rows[1][1]["text"], "Dosyayı Gönder");
+        assert_eq!(rows[1][1]["callback_data"], "q:file:k_TEST1");
     }
 }

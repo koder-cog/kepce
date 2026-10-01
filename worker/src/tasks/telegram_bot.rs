@@ -1,7 +1,7 @@
 //! Telegram operatör botu dinleyicisi.
 //!
 //! Long-polling yöntemiyle Telegram Bot API üzerinden gelen yönetici komutlarını
-//! işler ve anlık sistem durumu/işlem yanıtlarını döner. Dışa açık port veya
+//! ve inline buton (callback_query) etkileşimlerini işler. Dışa açık port veya
 //! webhook sertifikası gerektirmez.
 
 use chrono::Local;
@@ -14,18 +14,111 @@ use shared::entities::{
 };
 use std::time::Duration;
 
-/// Telegram botuna Markdown formatında yanıt gönderir.
+/// Telegram botuna düz metin olarak yanıt gönderir.
 async fn send_reply(client: &Client, bot_token: &str, chat_id: i64, text: &str) {
     let url = format!("https://api.telegram.org/bot{}/sendMessage", bot_token);
     let payload = json!({
         "chat_id": chat_id,
-        "text": text,
-        "parse_mode": "Markdown"
+        "text": text
     });
 
     if let Err(e) = client.post(&url).json(&payload).send().await {
         tracing::error!("[TELEGRAM-BOT] Yanıt gönderilemedi: {:?}", e);
     }
+}
+
+/// Telegram komut menüsünü (setMyCommands) Telegram API'sine kaydeder.
+/// Böylece kullanıcı '/' yazdığında desteklenen komutlar listelenir.
+pub async fn register_bot_commands(client: &Client, bot_token: &str) {
+    let url = format!("https://api.telegram.org/bot{}/setMyCommands", bot_token);
+    let payload = json!({
+        "commands": [
+            { "command": "durum", "description": "Sistem, veritabanı ve scraper sağlığı" },
+            { "command": "karantina", "description": "Karar bekleyen dosyaları listele" },
+            { "command": "tara", "description": "Menü kazımayı anlık tetikle" },
+            { "command": "son_menuler", "description": "Sisteme kaydedilen güncel menüler" },
+            { "command": "ban_kaldir", "description": "Kazıyıcı devre kesicisini sıfırla" },
+            { "command": "yardim", "description": "Kullanım kılavuzunu görüntüle" }
+        ]
+    });
+
+    match client.post(&url).json(&payload).send().await {
+        Ok(res) if res.status().is_success() => {
+            tracing::info!("[TELEGRAM-BOT] Komut menüsü Telegram'a başarıyla kaydedildi.");
+        }
+        Ok(res) => {
+            let body = res.text().await.unwrap_or_default();
+            tracing::warn!("[TELEGRAM-BOT] setMyCommands yanıt hatası: {}", body);
+        }
+        Err(e) => {
+            tracing::warn!("[TELEGRAM-BOT] setMyCommands isteği başarısız: {:?}", e);
+        }
+    }
+}
+
+/// Butona tıklandığında Telegram istemcisindeki yükleniyor göstergesini sonlandırır.
+async fn answer_callback_query(
+    client: &Client,
+    bot_token: &str,
+    callback_query_id: &str,
+    text: Option<&str>,
+) {
+    let url = format!(
+        "https://api.telegram.org/bot{}/answerCallbackQuery",
+        bot_token
+    );
+    let mut payload = json!({
+        "callback_query_id": callback_query_id
+    });
+    if let Some(t) = text {
+        payload["text"] = json!(t);
+    }
+    let _ = client.post(&url).json(&payload).send().await;
+}
+
+/// Mesajın inline klavyesini günceller.
+async fn edit_message_reply_markup(
+    client: &Client,
+    bot_token: &str,
+    chat_id: i64,
+    message_id: i64,
+    reply_markup: serde_json::Value,
+) {
+    let url = format!(
+        "https://api.telegram.org/bot{}/editMessageReplyMarkup",
+        bot_token
+    );
+    let payload = json!({
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "reply_markup": reply_markup
+    });
+    let _ = client.post(&url).json(&payload).send().await;
+}
+
+/// Mesaj metnini veya başlığını (caption) düzenler ve butonları kaldırır.
+async fn edit_message_content(
+    client: &Client,
+    bot_token: &str,
+    chat_id: i64,
+    message_id: i64,
+    is_caption: bool,
+    new_text: &str,
+) {
+    let method = if is_caption {
+        "editMessageCaption"
+    } else {
+        "editMessageText"
+    };
+    let field = if is_caption { "caption" } else { "text" };
+    let url = format!("https://api.telegram.org/bot{}/{}", bot_token, method);
+    let payload = json!({
+        "chat_id": chat_id,
+        "message_id": message_id,
+        field: new_text,
+        "reply_markup": { "inline_keyboard": [] }
+    });
+    let _ = client.post(&url).json(&payload).send().await;
 }
 
 /// Ana bot dinleme döngüsü
@@ -44,6 +137,9 @@ pub async fn run_telegram_bot_loop(
     };
 
     let client = Client::builder().timeout(Duration::from_secs(35)).build()?;
+
+    // Bot komut menüsünü Telegram'a kaydet
+    register_bot_commands(&client, &bot_token).await;
 
     let mut offset: i64 = 0;
     tracing::info!("[TELEGRAM-BOT] İki yönlü Telegram operatör botu aktif. Dinleniyor...");
@@ -79,6 +175,13 @@ pub async fn run_telegram_bot_loop(
                                         offset = up_id + 1;
                                     }
 
+                                    // A) Callback Query (Inline Buton Tıklaması)
+                                    if let Some(cq) = update.get("callback_query") {
+                                        handle_callback_query_event(db, &client, &bot_token, cq, admin_chat_id_env).await;
+                                        continue;
+                                    }
+
+                                    // B) Standart Mesaj
                                     let msg = match update.get("message") {
                                         Some(m) => m,
                                         None => continue,
@@ -94,7 +197,7 @@ pub async fn run_telegram_bot_loop(
                                         continue;
                                     }
 
-                                    // 1. Admin Doğrulama / Chat ID Keşfi
+                                    // Yetki Doğrulama / Chat ID Keşfi
                                     match admin_chat_id_env {
                                         Some(admin_id) if admin_id != chat_id => {
                                             tracing::warn!("[TELEGRAM-BOT] Yetkisiz erişim denemesi: Chat ID {}", chat_id);
@@ -102,18 +205,17 @@ pub async fn run_telegram_bot_loop(
                                                 &client,
                                                 &bot_token,
                                                 chat_id,
-                                                &format!("⛔ *Yetkisiz Erişim!*\nBu bot yalnızca Kepçe sistem yöneticisine aittir.\nChat ID'niz: `{}`", chat_id)
+                                                &format!("[YETKİSİZ ERİŞİM]\nBu bot yalnızca Kepçe sistem yöneticisine aittir.\nChat ID: {}", chat_id)
                                             ).await;
                                             continue;
                                         }
                                         None => {
-                                            // Admin ID henüz .env'de tanımlı değil -> Kullanıcıya chat ID'sini söyle
                                             send_reply(
                                                 &client,
                                                 &bot_token,
                                                 chat_id,
                                                 &format!(
-                                                    "👋 *Kepçe Operatör Botu Hazır!*\n\nHenüz `.env` dosyanızda yönetici Chat ID tanımlanmamış.\n\nSizin Chat ID numaranız: `{}`\n\nBu numarayı `.env` dosyanıza `TELEGRAM_ADMIN_CHAT_ID={}` olarak ekleyin ve sistemi yeniden başlatın.",
+                                                    "[KEPÇE OPERATÖR BOTU]\nHenüz .env dosyasında yönetici Chat ID tanımlanmamış.\nChat ID numaranız: {}\nBu numarayı .env dosyasına TELEGRAM_ADMIN_CHAT_ID={} olarak ekleyip sistemi yeniden başlatın.",
                                                     chat_id, chat_id
                                                 )
                                             ).await;
@@ -122,7 +224,7 @@ pub async fn run_telegram_bot_loop(
                                         _ => {} // Yetkili admin
                                     }
 
-                                    // 2. Komut İşleme
+                                    // Komut İşleme
                                     handle_command(db, &client, &bot_token, chat_id, text, shutdown_rx.clone()).await;
                                 }
                             }
@@ -139,7 +241,236 @@ pub async fn run_telegram_bot_loop(
     Ok(())
 }
 
-/// Gelen komutu işleyip yanıt döner
+/// Buton tıklamalarını işler
+async fn handle_callback_query_event(
+    db: &DatabaseConnection,
+    client: &Client,
+    bot_token: &str,
+    cq: &serde_json::Value,
+    admin_chat_id_env: Option<i64>,
+) {
+    let cq_id = cq.get("id").and_then(|i| i.as_str()).unwrap_or_default();
+    let data = cq
+        .get("data")
+        .and_then(|d| d.as_str())
+        .unwrap_or_default()
+        .trim();
+    let message = cq.get("message");
+    let chat_id = message
+        .and_then(|m| m.get("chat"))
+        .and_then(|c| c.get("id"))
+        .and_then(|i| i.as_i64())
+        .unwrap_or_default();
+    let message_id = message
+        .and_then(|m| m.get("message_id"))
+        .and_then(|i| i.as_i64())
+        .unwrap_or_default();
+    let is_caption = message.and_then(|m| m.get("caption")).is_some();
+
+    // Yetki kontrolü
+    if let Some(admin_id) = admin_chat_id_env
+        && admin_id != chat_id
+    {
+        answer_callback_query(
+            client,
+            bot_token,
+            cq_id,
+            Some("Bu işlem için yetkiniz bulunmuyor."),
+        )
+        .await;
+        return;
+    }
+
+    let parts: Vec<&str> = data.split(':').collect();
+    if parts.len() < 3 || parts[0] != "q" {
+        answer_callback_query(client, bot_token, cq_id, None).await;
+        return;
+    }
+
+    let action = parts[1];
+    let id = parts[2];
+
+    match action {
+        "approve" => {
+            answer_callback_query(client, bot_token, cq_id, Some("Onaylama başlatıldı...")).await;
+            send_reply(
+                client,
+                bot_token,
+                chat_id,
+                &format!("[İŞLEM] '{}' onaylanıyor, veriler işleniyor...", id),
+            )
+            .await;
+
+            let db_clone = db.clone();
+            let client_clone = client.clone();
+            let bot_token_clone = bot_token.to_string();
+            let id_owned = id.to_string();
+            let gemini_key = std::env::var("GEMINI_API_KEY").ok();
+
+            tokio::spawn(async move {
+                let res = crate::tasks::file_ingest::approve_quarantine_item(
+                    &db_clone,
+                    &client_clone,
+                    gemini_key.as_deref(),
+                    &id_owned,
+                )
+                .await;
+
+                match res {
+                    Ok(msg) => {
+                        let final_card = format!(
+                            "[ONAYLANDI: {}]\n{}\nİşlem Zamanı: {}",
+                            id_owned,
+                            msg,
+                            Local::now().format("%d.%m.%Y %H:%M")
+                        );
+                        edit_message_content(
+                            &client_clone,
+                            &bot_token_clone,
+                            chat_id,
+                            message_id,
+                            is_caption,
+                            &final_card,
+                        )
+                        .await;
+                    }
+                    Err(e) => {
+                        let raw = format!("{:?}", e);
+                        send_reply(
+                            &client_clone,
+                            &bot_token_clone,
+                            chat_id,
+                            &format!("[HATA] Onaylama başarısız ({}):\n{}", id_owned, raw),
+                        )
+                        .await;
+                    }
+                }
+            });
+        }
+
+        "reject_confirm" => {
+            answer_callback_query(client, bot_token, cq_id, None).await;
+            let confirm_kb = json!({
+                "inline_keyboard": [
+                    [
+                        { "text": "Reddetmeyi Onayla", "callback_data": format!("q:reject:{}", id) },
+                        { "text": "Vazgeç", "callback_data": format!("q:cancel:{}", id) }
+                    ]
+                ]
+            });
+            edit_message_reply_markup(client, bot_token, chat_id, message_id, confirm_kb).await;
+        }
+
+        "cancel" => {
+            answer_callback_query(client, bot_token, cq_id, Some("İşlem iptal edildi.")).await;
+            let orig_kb = crate::tasks::quarantine::item_inline_keyboard(id);
+            edit_message_reply_markup(client, bot_token, chat_id, message_id, orig_kb).await;
+        }
+
+        "reject" => {
+            answer_callback_query(client, bot_token, cq_id, Some("Dosya reddedildi.")).await;
+            match crate::tasks::file_ingest::reject_quarantine_item(id).await {
+                Ok(msg) => {
+                    let final_card = format!(
+                        "[REDDEDİLDİ: {}]\n{}\nİşlem Zamanı: {}",
+                        id,
+                        msg,
+                        Local::now().format("%d.%m.%Y %H:%M")
+                    );
+                    edit_message_content(
+                        client,
+                        bot_token,
+                        chat_id,
+                        message_id,
+                        is_caption,
+                        &final_card,
+                    )
+                    .await;
+                }
+                Err(e) => {
+                    send_reply(
+                        client,
+                        bot_token,
+                        chat_id,
+                        &format!("[HATA] Reddetme başarısız ({}): {:?}", id, e),
+                    )
+                    .await;
+                }
+            }
+        }
+
+        "detail" => {
+            answer_callback_query(client, bot_token, cq_id, None).await;
+            let base = crate::tasks::quarantine::menu_base_dir();
+            match crate::tasks::quarantine::find_item(&base, id).await {
+                Some(item) => {
+                    let msg = crate::tasks::quarantine::format_item_detail(&item).await;
+                    send_reply(client, bot_token, chat_id, &msg).await;
+                }
+                None => {
+                    send_reply(
+                        client,
+                        bot_token,
+                        chat_id,
+                        &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
+                    )
+                    .await;
+                }
+            }
+        }
+
+        "file" => {
+            answer_callback_query(client, bot_token, cq_id, Some("Dosya gönderiliyor...")).await;
+            let base = crate::tasks::quarantine::menu_base_dir();
+            match crate::tasks::quarantine::find_item(&base, id).await {
+                Some(item) => {
+                    if item.file_path.exists() {
+                        let caption =
+                            format!("Karantina Dosyası: {} ({})", item.meta.file, item.meta.id);
+                        if let Err(e) =
+                            shared::services::alerting::AlertingService::send_telegram_document(
+                                &caption,
+                                &item.file_path,
+                            )
+                            .await
+                        {
+                            send_reply(
+                                client,
+                                bot_token,
+                                chat_id,
+                                &format!("[HATA] Dosya gönderilemedi: {:?}", e),
+                            )
+                            .await;
+                        }
+                    } else {
+                        send_reply(
+                            client,
+                            bot_token,
+                            chat_id,
+                            "[HATA] Dosya diskte bulunamadı.",
+                        )
+                        .await;
+                    }
+                }
+                None => {
+                    send_reply(
+                        client,
+                        bot_token,
+                        chat_id,
+                        &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
+                    )
+                    .await;
+                }
+            }
+        }
+
+        _ => {
+            answer_callback_query(client, bot_token, cq_id, None).await;
+        }
+    }
+}
+
+/// Gelen metin komutunu işler ve yanıt döner
 async fn handle_command(
     db: &DatabaseConnection,
     client: &Client,
@@ -154,36 +485,34 @@ async fn handle_command(
     match command.as_str() {
         "/" | "/start" | "/help" | "help" | "/yardim" | "yardim" => {
             let help_msg = "\
-🤖 *Kepçe Operatör Botu*\n\n\
-Kullanabileceğiniz komutlar:\n\
-• `/durum` - Canlı sunucu, DB ve IP devre kesici sağlığı\n\
-• `/tara [sehir]` - Menü kazımayı anlık tetikle (örn: `/tara` veya `/tara istanbul`)\n\
-• `/karantina` - Karantina kuyruğunu listele (karar bekleyen dosyalar)\n\
-• `/karantina detay <id>` - Karantina öğesinin teşhis ayrıntıları\n\
-• `/dosya <id>` - Karantinadaki dosyanın orijinalini sohbete gönderir\n\
-• `/onayla <id>` - Karantinadaki dosyayı kapsam içi tarihlerle işle\n\
-• `/reddet <id>` - Karantinadaki dosyayı hatali/ altına taşı\n\
-• `/ata <id> <sehir>` - Şehirsiz karantina öğesine şehir ata ve işleme al\n\
-• `/yorumlar_uret` - Eksik menüler için otomatik LLM öğrenci yorumu üret\n\
-• `/ban_kaldir` - IP ban devre kesicisini erken sıfırla\n\
-• `/son_menuler` - Sisteme eklenen son 5 güncel menü\n\
-• `/yardim` - Bu yardım menüsü";
+[KEPÇE OPERATÖR BOTU]
+
+Kullanılabilir komutlar:
+• /durum - Sunucu, veritabanı ve devre kesici durumu
+• /karantina - Karar bekleyen karantina kuyruğunu listele
+• /karantina detay <id> - Öğenin teşhis ayrıntılarını göster
+• /dosya <id> - Dosyanın orijinalini sohbete gönder
+• /onayla <id> - Karantinadaki dosyayı kapsam içi tarihlerle onayla
+• /reddet <id> - Karantinadaki dosyayı hatali/ klasörüne taşı
+• /ata <id> <sehir> - Şehirsiz karantina öğesine şehir ata
+• /tara [sehir] - Menü kazımayı anlık tetikle
+• /son_menuler - Sisteme kaydedilen en güncel menüler
+• /ban_kaldir - Kazıyıcı devre kesicisini sıfırla
+• /yardim - Bu kullanım kılavuzu";
             send_reply(client, bot_token, chat_id, help_msg).await;
         }
 
         "/dosya" | "dosya" => {
             let Some(id) = parts.get(1).copied() else {
-                send_reply(client, bot_token, chat_id, "Kullanım: `/dosya <id>`").await;
+                send_reply(client, bot_token, chat_id, "Kullanım: /dosya <id>").await;
                 return;
             };
             let base = crate::tasks::quarantine::menu_base_dir();
             match crate::tasks::quarantine::find_item(&base, id).await {
                 Some(item) => {
                     if item.file_path.exists() {
-                        let caption = format!(
-                            "📁 Karantina Dosyası: {} ({})",
-                            item.meta.file, item.meta.id
-                        );
+                        let caption =
+                            format!("Karantina Dosyası: {} ({})", item.meta.file, item.meta.id);
                         if let Err(e) =
                             shared::services::alerting::AlertingService::send_telegram_document(
                                 &caption,
@@ -195,12 +524,18 @@ Kullanabileceğiniz komutlar:\n\
                                 client,
                                 bot_token,
                                 chat_id,
-                                &format!("❌ Dosya gönderilemedi: {:?}", e),
+                                &format!("[HATA] Dosya gönderilemedi: {:?}", e),
                             )
                             .await;
                         }
                     } else {
-                        send_reply(client, bot_token, chat_id, "❌ Dosya diskte bulunamadı.").await;
+                        send_reply(
+                            client,
+                            bot_token,
+                            chat_id,
+                            "[HATA] Dosya diskte bulunamadı.",
+                        )
+                        .await;
                     }
                 }
                 None => {
@@ -208,7 +543,7 @@ Kullanabileceğiniz komutlar:\n\
                         client,
                         bot_token,
                         chat_id,
-                        &format!("❓ `'{}'` kimlikli karantina öğesi bulunamadı.", id),
+                        &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
                     )
                     .await;
                 }
@@ -229,7 +564,7 @@ Kullanabileceğiniz komutlar:\n\
                                 client,
                                 bot_token,
                                 chat_id,
-                                &format!("❓ `'{}'` kimlikli karantina öğesi bulunamadı.", id),
+                                &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
                             )
                             .await;
                         }
@@ -239,7 +574,7 @@ Kullanabileceğiniz komutlar:\n\
                             client,
                             bot_token,
                             chat_id,
-                            "Kullanım: `/karantina detay <id>`",
+                            "Kullanım: /karantina detay <id>",
                         )
                         .await;
                     }
@@ -252,14 +587,17 @@ Kullanabileceğiniz komutlar:\n\
 
         "/onayla" | "onayla" => {
             let Some(id) = parts.get(1).copied() else {
-                send_reply(client, bot_token, chat_id, "Kullanım: `/onayla <id>`").await;
+                send_reply(client, bot_token, chat_id, "Kullanım: /onayla <id>").await;
                 return;
             };
             send_reply(
                 client,
                 bot_token,
                 chat_id,
-                &format!("⏳ `{}` onaylanıyor, dosya yeniden ayrıştırılıyor...", id),
+                &format!(
+                    "[İŞLEM] '{}' onaylanıyor, dosya yeniden ayrıştırılıyor...",
+                    id
+                ),
             )
             .await;
 
@@ -280,17 +618,15 @@ Kullanabileceğiniz komutlar:\n\
                     Ok(m) => m,
                     Err(e) => {
                         let raw = format!("{:?}", e);
-                        // Geçici sağlayıcı hatası (503/429) ile kalıcı hatayı ayır:
-                        // operatöre ne yapacağını söylemeyen çıplak hata metni bırakma.
                         let hint = if crate::tasks::file_ingest::is_transient_error(
                             &raw.to_lowercase(),
                         ) {
-                            "⏳ Sağlayıcı geçici olarak yanıt vermedi (503/429). Öğe karantinada KALDI; birkaç dakika sonra `/onayla` komutunu tekrar deneyin."
+                            "Sağlayıcı geçici olarak yanıt vermedi (503/429). Öğe karantinada kaldı; birkaç dakika sonra /onayla komutunu tekrar deneyin."
                         } else {
-                            "ℹ️ Öğe karantinada kaldı (`/karantina detay` ile inceleyin). Sorun kalıcıysa `/reddet` ile hatali/ altına alın."
+                            "Öğe karantinada kaldı (/karantina detay ile inceleyin). Sorun kalıcıysa /reddet ile hatali/ altına alın."
                         };
                         format!(
-                            "❌ *Onaylama başarısız* `{}`\n{}\n\n`{}`",
+                            "[HATA] Onaylama başarısız ({}):\n{}\n\n{}",
                             id_owned, hint, raw
                         )
                     }
@@ -301,7 +637,7 @@ Kullanabileceğiniz komutlar:\n\
 
         "/reddet" | "reddet" => {
             let Some(id) = parts.get(1).copied() else {
-                send_reply(client, bot_token, chat_id, "Kullanım: `/reddet <id>`").await;
+                send_reply(client, bot_token, chat_id, "Kullanım: /reddet <id>").await;
                 return;
             };
             match crate::tasks::file_ingest::reject_quarantine_item(id).await {
@@ -311,7 +647,7 @@ Kullanabileceğiniz komutlar:\n\
                         client,
                         bot_token,
                         chat_id,
-                        &format!("❌ *Reddetme başarısız* `{}`\n`{:?}`", id, e),
+                        &format!("[HATA] Reddetme başarısız ({}):\n{:?}", id, e),
                     )
                     .await
                 }
@@ -320,13 +656,12 @@ Kullanabileceğiniz komutlar:\n\
 
         "/ata" | "ata" => {
             let (Some(id), Some(slug)) = (parts.get(1).copied(), parts.get(2).copied()) else {
-                send_reply(client, bot_token, chat_id, "Kullanım: `/ata <id> <sehir>`").await;
+                send_reply(client, bot_token, chat_id, "Kullanım: /ata <id> <sehir>").await;
                 return;
             };
             match crate::tasks::file_ingest::assign_quarantine_item(db, id, slug).await {
                 Ok(m) => {
                     send_reply(client, bot_token, chat_id, &m).await;
-                    // Taşınan dosya hemen işleme alınsın (plan 2.3).
                     let db_clone = db.clone();
                     let client_clone = client.clone();
                     let bot_token_clone = bot_token.to_string();
@@ -343,7 +678,7 @@ Kullanabileceğiniz komutlar:\n\
                                 &client_clone,
                                 &bot_token_clone,
                                 chat_id,
-                                &format!("❌ /ata sonrası işleme hatası: `{:?}`", e),
+                                &format!("[HATA] /ata sonrası işleme hatası: {:?}", e),
                             )
                             .await;
                         }
@@ -354,7 +689,7 @@ Kullanabileceğiniz komutlar:\n\
                         client,
                         bot_token,
                         chat_id,
-                        &format!("❌ *Şehir atanamadı* `{}`\n`{:?}`", id, e),
+                        &format!("[HATA] Şehir atanamadı ({}):\n{:?}", id, e),
                     )
                     .await
                 }
@@ -362,7 +697,6 @@ Kullanabileceğiniz komutlar:\n\
         }
 
         "/durum" | "durum" => {
-            // DB ve Menü Durumu
             let today = Local::now().naive_local().date();
             let total_cities = cities::Entity::find().count(db).await.unwrap_or(0);
             let today_approved = menus::Entity::find()
@@ -375,18 +709,18 @@ Kullanabileceğiniz komutlar:\n\
             let ban_status_msg = match crate::tasks::scraper::get_ban_status() {
                 Some(remaining_secs) => {
                     let mins = remaining_secs / 60;
-                    format!("🔴 *DEVRE KESİCİ AKTİF* (Banlı, kalan süre: ~{} dk)", mins)
+                    format!("[DEVRE KESİCİ AKTİF] (Kalan süre: ~{} dk)", mins)
                 }
-                None => "🟢 *Normal* (Engelleme yok)".to_string(),
+                None => "Normal (Engelleme yok)".to_string(),
             };
 
             let status_msg = format!(
-                "📊 *Kepçe Sistem Durumu*\n\n\
-                • *Tarih:* `{}`\n\
-                • *Veritabanı:* Bağlı (OK)\n\
-                • *Kayıtlı Şehir:* `{}` il\n\
-                • *Bugünkü Onaylı Menü:* `{}` adet\n\
-                • *Scraper Hat Durumu:* {}",
+                "[KEPÇE SİSTEM DURUMU]\n\n\
+                • Tarih: {}\n\
+                • Veritabanı: Bağlı (OK)\n\
+                • Kayıtlı Şehir: {} il\n\
+                • Bugünkü Onaylı Menü: {} adet\n\
+                • Scraper Hat Durumu: {}",
                 today.format("%d.%m.%Y"),
                 total_cities,
                 today_approved,
@@ -398,7 +732,7 @@ Kullanabileceğiniz komutlar:\n\
 
         "/ban_kaldir" | "ban_kaldir" => {
             crate::tasks::scraper::reset_ban_status();
-            let msg = "✅ *Devre kesici başarıyla sıfırlandı!*\nScraper engelleme bayrağı kaldırıldı; yeni istekler kykyemek sunucusuna iletilecektir.";
+            let msg = "[BİLGİ] Devre kesici sıfırlandı. Scraper engelleme bayrağı kaldırıldı; yeni istekler kykyemek sunucusuna iletilecektir.";
             send_reply(client, bot_token, chat_id, msg).await;
         }
 
@@ -412,7 +746,7 @@ Kullanabileceğiniz komutlar:\n\
 
             match last_menus {
                 Ok(items) if !items.is_empty() => {
-                    let mut lines = vec!["📋 *Sisteme Eklenen Son 5 Menü:*".to_string()];
+                    let mut lines = vec!["[SİSTEME EKLENEN SON 5 MENÜ]".to_string()];
                     for (m, city_opt) in items {
                         let city_name = city_opt
                             .map(|c| c.name)
@@ -423,7 +757,7 @@ Kullanabileceğiniz komutlar:\n\
                             MealTypeEnum::Dinner => "Akşam",
                         };
                         lines.push(format!(
-                            "• *{}* ({}): `{}` - [Durum: {:?}]",
+                            "• {} ({}) - {} [Durum: {:?}]",
                             city_name,
                             m.serve_date.format("%d.%m.%Y"),
                             meal,
@@ -446,7 +780,7 @@ Kullanabileceğiniz komutlar:\n\
                 client,
                 bot_token,
                 chat_id,
-                &format!("🚀 *Kazıma işlemi tetiklendi!*\nHedef: `{}`\nArka planda çalışıyor, tamamlandığında özet bildirimi gelecektir.", target_desc)
+                &format!("[İŞLEM] Kazıma işlemi tetiklendi. Hedef: {}\nTamamlandığında özet bildirimi gelecektir.", target_desc)
             ).await;
 
             let db_clone = db.clone();
@@ -467,15 +801,12 @@ Kullanabileceğiniz komutlar:\n\
                 let finish_msg = match scrape_res {
                     Ok(count) => {
                         format!(
-                            "✅ *Manuel Kazıma Tamamlandı!*\n• Kaydedilen/Güncellenen: `{}` menü\n• Geçen süre: `{} sn`",
+                            "[BİLGİ] Kazıma tamamlandı.\n• Kaydedilen/Güncellenen: {} menü\n• Geçen süre: {} sn",
                             count, elapsed
                         )
                     }
                     Err(e) => {
-                        format!(
-                            "❌ *Manuel Kazıma Sırasında Hata Oluştu!*\nHata detayı: `{:?}`",
-                            e
-                        )
+                        format!("[HATA] Kazıma sırasında hata oluştu:\n{:?}", e)
                     }
                 };
 
@@ -488,7 +819,7 @@ Kullanabileceğiniz komutlar:\n\
                 client,
                 bot_token,
                 chat_id,
-                "🤖 *Otomatik LLM yorum üretimi başlatıldı!*\nEksik menüler öncelik sırasına göre işleniyor. Tamamlandığında bildirim gelecektir."
+                "[İŞLEM] Otomatik LLM yorum üretimi başlatıldı. Eksik menüler öncelik sırasına göre işleniyor."
             ).await;
 
             let db_clone = db.clone();
@@ -504,15 +835,12 @@ Kullanabileceğiniz komutlar:\n\
                 let finish_msg = match gen_res {
                     Ok(count) => {
                         format!(
-                            "✅ *Yorum Üretimi Tamamlandı!*\n• Güncellenen menü: `{}` adet\n• Geçen süre: `{} sn`",
+                            "[BİLGİ] Yorum üretimi tamamlandı.\n• Güncellenen menü: {} adet\n• Geçen süre: {} sn",
                             count, elapsed
                         )
                     }
                     Err(e) => {
-                        format!(
-                            "❌ *Yorum Üretimi Sırasında Hata Oluştu!*\nHata detayı: `{:?}`",
-                            e
-                        )
+                        format!("[HATA] Yorum üretimi sırasında hata oluştu:\n{:?}", e)
                     }
                 };
 
@@ -525,8 +853,61 @@ Kullanabileceğiniz komutlar:\n\
                 client,
                 bot_token,
                 chat_id,
-                "❓ Bilinmeyen komut. Kullanılabilir komutları görmek için `/yardim` yazabilirsiniz."
+                "[BİLGİ] Bilinmeyen komut. Kullanılabilir komutları görmek için /yardim yazabilirsiniz."
             ).await;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+
+    #[test]
+    fn test_callback_data_parsing() {
+        let valid_payloads = [
+            ("q:approve:k_01ABC", "approve", "k_01ABC"),
+            ("q:reject_confirm:k_01ABC", "reject_confirm", "k_01ABC"),
+            ("q:reject:k_01ABC", "reject", "k_01ABC"),
+            ("q:cancel:k_01ABC", "cancel", "k_01ABC"),
+            ("q:detail:k_01ABC", "detail", "k_01ABC"),
+            ("q:file:k_01ABC", "file", "k_01ABC"),
+        ];
+
+        for (raw, expected_action, expected_id) in valid_payloads {
+            let parts: Vec<&str> = raw.split(':').collect();
+            assert_eq!(parts.len(), 3);
+            assert_eq!(parts[0], "q");
+            assert_eq!(parts[1], expected_action);
+            assert_eq!(parts[2], expected_id);
+        }
+    }
+
+    #[test]
+    fn test_help_message_has_no_emojis() {
+        let help_msg = "\
+[KEPÇE OPERATÖR BOTU]
+
+Kullanılabilir komutlar:
+• /durum - Sunucu, veritabanı ve devre kesici durumu
+• /karantina - Karar bekleyen karantina kuyruğunu listele
+• /karantina detay <id> - Öğenin teşhis ayrıntılarını göster
+• /dosya <id> - Dosyanın orijinalini sohbete gönder
+• /onayla <id> - Karantinadaki dosyayı kapsam içi tarihlerle onayla
+• /reddet <id> - Karantinadaki dosyayı hatali/ klasörüne taşı
+• /ata <id> <sehir> - Şehirsiz karantina öğesine şehir ata
+• /tara [sehir] - Menü kazımayı anlık tetikle
+• /son_menuler - Sisteme kaydedilen en güncel menüler
+• /ban_kaldir - Kazıyıcı devre kesicisini sıfırla
+• /yardim - Bu kullanım kılavuzu";
+
+        // Yaygın emoji aralıklarını kontrol et
+        for c in help_msg.chars() {
+            let code = c as u32;
+            let is_emoji = (0x1F300..=0x1F9FF).contains(&code)
+                || (0x2600..=0x26FF).contains(&code)
+                || (0x2700..=0x27BF).contains(&code)
+                || (0x1FA70..=0x1FAFF).contains(&code);
+            assert!(!is_emoji, "Yardım mesajında emoji bulundu: {}", c);
         }
     }
 }

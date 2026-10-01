@@ -72,7 +72,7 @@ impl AlertingService {
         let client = Client::new();
         let payload = json!({
             "chat_id": chat_id.trim(),
-            "text": format!("🚨 [KEPÇE ALARM]\n\n{}", message)
+            "text": format!("[KEPÇE ALARMI]\n\n{}", message)
         });
 
         tracing::info!("Telegram alarmı gönderiliyor: {}", message);
@@ -99,6 +99,16 @@ impl AlertingService {
         caption: &str,
         file_path: &std::path::Path,
     ) -> anyhow::Result<()> {
+        let empty_kb = serde_json::json!({});
+        Self::send_telegram_document_with_buttons(caption, file_path, empty_kb).await
+    }
+
+    /// Telegram Bot API üzerinden doküman ve inline butonlarla birlikte mesaj gönderir.
+    pub async fn send_telegram_document_with_buttons(
+        caption: &str,
+        file_path: &std::path::Path,
+        inline_keyboard: serde_json::Value,
+    ) -> anyhow::Result<()> {
         let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
             Ok(token) if !token.trim().is_empty() => token,
             _ => return Ok(()),
@@ -112,7 +122,7 @@ impl AlertingService {
         };
 
         if !file_path.exists() {
-            return Self::send_telegram_alert(caption).await;
+            return Self::send_telegram_message_with_buttons(caption, inline_keyboard).await;
         }
 
         let file_bytes = std::fs::read(file_path)?;
@@ -123,10 +133,17 @@ impl AlertingService {
             .to_string();
 
         let part = reqwest::multipart::Part::bytes(file_bytes).file_name(file_name);
-        let form = reqwest::multipart::Form::new()
+        let mut form = reqwest::multipart::Form::new()
             .text("chat_id", chat_id.trim().to_string())
             .text("caption", caption.to_string())
             .part("document", part);
+
+        if inline_keyboard.get("inline_keyboard").is_some() {
+            let kb_str = serde_json::to_string(&inline_keyboard).unwrap_or_default();
+            if !kb_str.is_empty() {
+                form = form.text("reply_markup", kb_str);
+            }
+        }
 
         let url = format!(
             "https://api.telegram.org/bot{}/sendDocument",
@@ -138,10 +155,54 @@ impl AlertingService {
         if !res.status().is_success() {
             let err = res.text().await.unwrap_or_default();
             tracing::warn!(
-                "sendDocument başarısız ({}), düz metin uyarısına geçiliyor",
+                "sendDocumentWithButtons başarısız ({}), metin uyarısına geçiliyor",
                 err
             );
-            return Self::send_telegram_alert(caption).await;
+            return Self::send_telegram_message_with_buttons(caption, inline_keyboard).await;
+        }
+
+        Ok(())
+    }
+
+    /// Telegram Bot API üzerinden inline butonlu metin mesajı gönderir.
+    pub async fn send_telegram_message_with_buttons(
+        text: &str,
+        inline_keyboard: serde_json::Value,
+    ) -> anyhow::Result<()> {
+        let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
+            Ok(token) if !token.trim().is_empty() => token,
+            _ => return Ok(()),
+        };
+
+        let chat_id = match std::env::var("TELEGRAM_ADMIN_CHAT_ID")
+            .or_else(|_| std::env::var("TELEGRAM_CHAT_ID"))
+        {
+            Ok(id) if !id.trim().is_empty() => id,
+            _ => return Ok(()),
+        };
+
+        let url = format!(
+            "https://api.telegram.org/bot{}/sendMessage",
+            bot_token.trim()
+        );
+        let client = Client::new();
+        let mut payload = serde_json::Map::new();
+        payload.insert(
+            "chat_id".to_string(),
+            serde_json::Value::String(chat_id.trim().to_string()),
+        );
+        payload.insert(
+            "text".to_string(),
+            serde_json::Value::String(text.to_string()),
+        );
+        if inline_keyboard.get("inline_keyboard").is_some() {
+            payload.insert("reply_markup".to_string(), inline_keyboard);
+        }
+
+        let res = client.post(&url).json(&payload).send().await?;
+        if !res.status().is_success() {
+            let err_body = res.text().await.unwrap_or_default();
+            tracing::error!("Telegram butonlu mesaj isteği başarısız oldu: {}", err_body);
         }
 
         Ok(())
