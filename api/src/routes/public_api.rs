@@ -36,6 +36,7 @@ pub fn router() -> Router<crate::config::AppState> {
         .route("/menus/latest-by-city", get(get_menu_latest_by_city))
         .route("/menus/today/:city", get(get_today_menu))
         .route("/menus/:id", get(get_single_menu))
+        .route("/pricing/:city", get(get_pricing_by_city))
         .nest("/contact", crate::routes::contact::router())
         .nest("/og", crate::routes::og::router())
         .nest("/push", crate::routes::push::router())
@@ -352,4 +353,39 @@ pub async fn get_menu_latest_by_city(
     }
 
     crate::utils::response::cached_json_response(&headers, &result, 3600)
+}
+
+/// GET /api/v1/public/pricing/:city
+/// Şehre ait resmi tavan fiyat tarifesi (kategoriler, gramajlar ve fiyatlar).
+pub async fn get_pricing_by_city(
+    State(db): State<sea_orm::DatabaseConnection>,
+    Path(city): Path<String>,
+    headers: HeaderMap,
+) -> Result<axum::response::Response, AppError> {
+    let city_slug = match city.parse::<i32>() {
+        Ok(id) => {
+            let c = cities::Entity::find_by_id(id)
+                .one(&db)
+                .await
+                .map_err(|e| {
+                    tracing::error!("DB error resolving city id: {}", e);
+                    AppError::Internal("DB Error".to_string())
+                })?
+                .ok_or_else(|| AppError::NotFound("Şehir bulunamadı.".to_string()))?;
+            c.slug
+        }
+        Err(_) => city.to_lowercase(),
+    };
+
+    let pricing = crate::services::pricing::get_city_pricing(&db, &city_slug, None)
+        .await
+        .map_err(|e| {
+            tracing::error!("get_city_pricing failed: {}", e);
+            AppError::Internal("Database error".to_string())
+        })?
+        .ok_or_else(|| {
+            AppError::NotFound("Bu şehir için fiyat tarifesi bulunamadı.".to_string())
+        })?;
+
+    crate::utils::response::cached_json_response(&headers, &pricing, 3600)
 }

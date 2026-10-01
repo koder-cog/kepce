@@ -556,9 +556,14 @@ mod tests {
         let db = parse_json_str(sample, "test.json").unwrap();
         let day = db.get("2026-05-01").expect("2026-05-01 olmali");
         assert_eq!(day.normal.dinner.len(), 1);
-        assert_eq!(day.normal.dinner[0].alternatives[0].name, "Mercimek Çorbası");
+        assert_eq!(
+            day.normal.dinner[0].alternatives[0].name,
+            "Mercimek Çorbası"
+        );
         assert_eq!(day.colyak.dinner.len(), 1);
-        assert_eq!(day.colyak.dinner[0].alternatives[0].name, "Glutensiz Yayla Çorbası");
+        assert_eq!(
+            day.colyak.dinner[0].alternatives[0].name,
+            "Glutensiz Yayla Çorbası"
+        );
     }
 }
-

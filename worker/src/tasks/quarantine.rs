@@ -857,7 +857,10 @@ pub async fn format_item_detail(item: &QueueItem) -> String {
         ),
     ];
     if item.meta.has_colyak || item.meta.colyak_day_count > 0 {
-        lines.push(format!("• Çölyak Menüsü: Var ({} gün)", item.meta.colyak_day_count));
+        lines.push(format!(
+            "• Çölyak Menüsü: Var ({} gün)",
+            item.meta.colyak_day_count
+        ));
     }
     if !item.meta.detected_months.is_empty() {
         lines.push(format!(

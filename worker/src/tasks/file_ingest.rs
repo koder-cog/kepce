@@ -654,10 +654,7 @@ fn meal_mix_warning(parsed: &ParsedFile) -> Option<String> {
         let b = parsed.normal_breakfast + parsed.colyak_breakfast;
         let l = parsed.normal_lunch + parsed.colyak_lunch;
         let d = parsed.normal_dinner + parsed.colyak_dinner;
-        let meal_types_present = [b, l, d]
-            .iter()
-            .filter(|&&c| c > 0)
-            .count();
+        let meal_types_present = [b, l, d].iter().filter(|&&c| c > 0).count();
         if meal_types_present == 1 {
             return Some(format!(
                 "{} günlük belgede yalnızca tek öğün tipi bulundu (kahvaltı {}, öğle {}, akşam {}). Çoklu-tablo atlanmış olabilir.",
@@ -938,7 +935,9 @@ async fn write_scoped_menu(
     crate::parser::save_menu_database(db, city_id, source_type, filtered, city_slug).await?;
     tracing::info!(
         "{}: menü yazımı tamamlandı — {} gün normal, {} gün çölyak menüsü veritabanına işlendi.",
-        filename, normal_days, colyak_days
+        filename,
+        normal_days,
+        colyak_days
     );
 
     // Faz 5.2: ay atomikliği. Bu kaynak için (şehir, ay) kapsamında yeni dosyada

@@ -218,6 +218,87 @@ pub fn get_pricing_info_for_city(
     None
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct CategoryPriceItemDto {
+    pub category_name: String,
+    pub portion_amount: Option<String>,
+    pub price: f32,
+}
+
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone)]
+pub struct CityPricingResponseDto {
+    pub city_slug: String,
+    pub period_start: chrono::NaiveDate,
+    pub period_end: chrono::NaiveDate,
+    pub is_off_season: bool,
+    pub breakfast: Vec<CategoryPriceItemDto>,
+    pub dinner: Vec<CategoryPriceItemDto>,
+    pub lunch: Vec<CategoryPriceItemDto>,
+}
+
+/// Belirtilen şehre ait aktif dönem tavan fiyat tarifesini döndürür.
+pub async fn get_city_pricing(
+    db: &DatabaseConnection,
+    city_slug: &str,
+    target_date: Option<chrono::NaiveDate>,
+) -> Result<Option<CityPricingResponseDto>, anyhow::Error> {
+    use sea_orm::{ColumnTrait, QueryFilter};
+    use shared::entities::pricing_periods;
+
+    let date = target_date.unwrap_or_else(crate::utils::time::istanbul_today);
+    let off_season = is_off_season_date(date);
+
+    let periods = PricingPeriods::find()
+        .filter(pricing_periods::Column::CitySlug.eq(city_slug))
+        .all(db)
+        .await?;
+
+    let matched_period = periods
+        .iter()
+        .find(|p| date >= p.period_start && date <= p.period_end)
+        .or_else(|| periods.last());
+
+    let period = match matched_period {
+        Some(p) => p,
+        None => return Ok(None),
+    };
+
+    let prices = period.find_related(MealCategoryPrices).all(db).await?;
+
+    let mut breakfast = Vec::new();
+    let mut dinner = Vec::new();
+    let mut lunch = Vec::new();
+
+    for p in prices {
+        let price_f32 = p.price.to_string().parse::<f32>().unwrap_or(0.0);
+        let item = CategoryPriceItemDto {
+            category_name: p.category_name,
+            portion_amount: p.portion_amount,
+            price: price_f32,
+        };
+        match p.meal_type.as_str() {
+            "breakfast" => breakfast.push(item),
+            "dinner" => dinner.push(item),
+            "lunch" => lunch.push(item),
+            _ => dinner.push(item),
+        }
+    }
+
+    breakfast.sort_by(|a, b| a.category_name.cmp(&b.category_name));
+    dinner.sort_by(|a, b| a.category_name.cmp(&b.category_name));
+    lunch.sort_by(|a, b| a.category_name.cmp(&b.category_name));
+
+    Ok(Some(CityPricingResponseDto {
+        city_slug: city_slug.to_string(),
+        period_start: period.period_start,
+        period_end: period.period_end,
+        is_off_season: off_season,
+        breakfast,
+        dinner,
+        lunch,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -338,5 +419,32 @@ mod tests {
             "TAVUK SOTE",
         );
         assert!(ankara_price.is_none());
+    }
+
+    #[test]
+    fn test_city_pricing_response_dto_serialization() {
+        let dto = CityPricingResponseDto {
+            city_slug: "istanbul".to_string(),
+            period_start: NaiveDate::from_ymd_opt(2025, 9, 1).unwrap(),
+            period_end: NaiveDate::from_ymd_opt(2026, 8, 31).unwrap(),
+            is_off_season: false,
+            breakfast: vec![CategoryPriceItemDto {
+                category_name: "TOST".to_string(),
+                portion_amount: Some("1 adet".to_string()),
+                price: 45.0,
+            }],
+            dinner: vec![CategoryPriceItemDto {
+                category_name: "ÇORBA".to_string(),
+                portion_amount: Some("250 ml".to_string()),
+                price: 25.0,
+            }],
+            lunch: vec![],
+        };
+
+        let json = serde_json::to_string(&dto).unwrap();
+        assert!(json.contains("istanbul"));
+        assert!(json.contains("TOST"));
+        assert!(json.contains("45"));
+        assert!(json.contains("ÇORBA"));
     }
 }

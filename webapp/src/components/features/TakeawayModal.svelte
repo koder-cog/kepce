@@ -30,21 +30,16 @@
   let groupedItems = $derived(groupItems(normalizedItems));
 
   let noteLines = $derived.by(() => {
-    const isIstanbul = currentCity === "istanbul";
-    const isBreakfast =
-      takeawayMenu &&
-      (takeawayMenu.meal_type === "breakfast" ||
-        (takeawayLabel && takeawayLabel.toLowerCase().includes("kahvaltı")));
     let notes = [];
-    if (isIstanbul && isBreakfast) {
-      notes.push("Al Götür Menü her gün saat 10:30'a kadar verilmektedir.");
-      notes.push(
-        "Al Götür Menü için alternatiflerden ikisi serviste bulundurularak, biri kahvaltı yerine verilir.",
-      );
+    if (takeawayMenu?.notes) {
+      if (Array.isArray(takeawayMenu.notes)) {
+        notes.push(...takeawayMenu.notes.filter(Boolean));
+      } else if (typeof takeawayMenu.notes === "string" && takeawayMenu.notes.trim()) {
+        notes.push(takeawayMenu.notes.trim());
+      }
+    } else if (takeawayMenu?.note && typeof takeawayMenu.note === "string" && takeawayMenu.note.trim()) {
+      notes.push(takeawayMenu.note.trim());
     }
-    notes.push(
-      "Verilen bilgilerin kesinliği hakkında Kepçe herhangi bir garanti sunmamaktadır.",
-    );
     return notes;
   });
 

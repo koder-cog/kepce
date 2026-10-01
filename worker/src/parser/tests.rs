@@ -636,4 +636,3 @@ mod tests {
         assert!(!colyak_dinner_dishes.is_empty());
     }
 }
-
