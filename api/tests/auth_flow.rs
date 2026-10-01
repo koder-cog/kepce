@@ -15,14 +15,12 @@ use tower::util::ServiceExt; // the correct oneshot trait
 async fn setup_app() -> Option<(axum::Router, AppState)> {
     let mut config = Config::from_env();
     config.resend_api_key = "mock_key".to_string(); // Test ortamında gerçek e-posta gönderimini engelle
-    // `.env` içinde SMTP kimlik bilgileri tanımlı olsa bile testte gerçek bir AWS SES
-    // bağlantısı açılmasın: mock koruması yalnızca SMTP yapılandırılmamışsa devreye giriyor.
     config.smtp_host = None;
     config.smtp_username = None;
     config.smtp_password = None;
     let mut opt = sea_orm::ConnectOptions::new(&config.database_url);
-    opt.connect_timeout(std::time::Duration::from_secs(5));
-    opt.acquire_timeout(std::time::Duration::from_secs(5));
+    opt.connect_timeout(std::time::Duration::from_millis(200));
+    opt.acquire_timeout(std::time::Duration::from_millis(200));
     let db = Database::connect(opt).await.ok()?;
     api::services::migration::run_migrations(&db)
         .await
@@ -49,19 +47,15 @@ async fn test_full_auth_flow() {
         return;
     };
 
-    // Clean up any test user from previous run
-    let test_email = "flow_test@kepce.org";
-    users::Entity::delete_many()
-        .filter(users::Column::Email.eq(test_email))
-        .exec(&state.db)
-        .await
-        .expect("Test öncesi kullanıcı temizliği başarısız oldu!");
+    let run_id = uuid::Uuid::new_v4().simple().to_string()[..8].to_string();
+    let test_email = format!("flow_{}@kepce.org", run_id);
+    let test_username = format!("flow_{}", run_id);
 
     // 1. Register User
     let register_payload = serde_json::json!({
         "email": test_email,
         "password": "SuperSecretPassword123",
-        "username": "flow_test"
+        "username": test_username
     });
 
     let req = Request::builder()
@@ -90,7 +84,7 @@ async fn test_full_auth_flow() {
 
     // Verify user created but not verified in DB
     let user_db = Users::find()
-        .filter(users::Column::Email.eq(test_email))
+        .filter(users::Column::Email.eq(&test_email))
         .one(&state.db)
         .await
         .unwrap()
@@ -111,7 +105,7 @@ async fn test_full_auth_flow() {
 
     // Check DB that user is now verified
     let user_db_verified = Users::find()
-        .filter(users::Column::Email.eq(test_email))
+        .filter(users::Column::Email.eq(&test_email))
         .one(&state.db)
         .await
         .unwrap()
@@ -161,9 +155,12 @@ async fn test_full_auth_flow() {
     let response = app.clone().oneshot(me_req).await.unwrap();
     assert_eq!(response.status(), StatusCode::OK);
 
-    // Clean up test user
-    let _ = users::Entity::delete_many()
-        .filter(users::Column::Email.eq(test_email))
+    // Clean up test user & related sessions
+    let _ = shared::entities::user_sessions::Entity::delete_many()
+        .filter(shared::entities::user_sessions::Column::UserId.eq(user_db.id))
+        .exec(&state.db)
+        .await;
+    let _ = users::Entity::delete_by_id(user_db.id)
         .exec(&state.db)
         .await;
 }

@@ -123,6 +123,7 @@ pub struct ParsedFile {
     /// Dosya adından çıkarılan beyan edilen ay (yalnızca çapraz doğrulama sinyali).
     pub declared_month: Option<DeclaredMonth>,
     pub diagnostics: ParseDiagnostics,
+    pub payload: Option<crate::parser::models::ParsedDocumentPayload>,
 }
 
 /// Karar motorunun çıktısı (Faz 0.1).
@@ -161,6 +162,16 @@ pub fn build_parsed_file(
     db: &MenuDatabase,
     diagnostics: ParseDiagnostics,
 ) -> ParsedFile {
+    build_parsed_file_with_payload(file_name, db, diagnostics, None)
+}
+
+/// Çok biçimli veri yükünü (`ParsedDocumentPayload`) de içeren karar girdisini kurar.
+pub fn build_parsed_file_with_payload(
+    file_name: &str,
+    db: &MenuDatabase,
+    diagnostics: ParseDiagnostics,
+    payload: Option<crate::parser::models::ParsedDocumentPayload>,
+) -> ParsedFile {
     let mut dates = BTreeSet::new();
     let (mut breakfast, mut lunch, mut dinner) = (0usize, 0usize, 0usize);
     for (date_str, day) in db {
@@ -185,6 +196,7 @@ pub fn build_parsed_file(
         dinner,
         declared_month: extract_declared_month(file_name),
         diagnostics,
+        payload,
     }
 }
 
@@ -274,14 +286,58 @@ pub fn is_contiguous_weekly_span(dates: &BTreeSet<NaiveDate>) -> bool {
 pub fn classify_ingest(parsed: &ParsedFile, cfg: &GateConfig) -> (IngestOutcome, ScopeDecision) {
     let mut scope = ScopeDecision::default();
 
+    // Çok biçimli payload kontrolü (öncelikli): Tarihsiz resmi belgeler doğrudan karantinaya yönlendirilir
+    if let Some(ref payload) = parsed.payload {
+        match payload {
+            crate::parser::models::ParsedDocumentPayload::OfficialPricing(_) => {
+                return (
+                    IngestOutcome::Suspect {
+                        reason: ReasonCode::OfficialPricingDocument,
+                    },
+                    scope,
+                );
+            }
+            crate::parser::models::ParsedDocumentPayload::Takeaway(_) => {
+                return (
+                    IngestOutcome::Suspect {
+                        reason: ReasonCode::TakeawayDocument,
+                    },
+                    scope,
+                );
+            }
+            _ => {}
+        }
+    }
+
     // Satır 3: hiç tarih yok
     if parsed.dates.is_empty() {
-        return (
-            IngestOutcome::Permanent {
-                reason: ReasonCode::NoDates,
-            },
-            scope,
-        );
+        let profile = crate::parser::profiler::profile_text(&parsed.file_name);
+        match profile {
+            crate::parser::profiler::DocumentProfile::OfficialPricing => {
+                return (
+                    IngestOutcome::Suspect {
+                        reason: ReasonCode::OfficialPricingDocument,
+                    },
+                    scope,
+                );
+            }
+            crate::parser::profiler::DocumentProfile::TakeawayPackage => {
+                return (
+                    IngestOutcome::Suspect {
+                        reason: ReasonCode::TakeawayDocument,
+                    },
+                    scope,
+                );
+            }
+            _ => {
+                return (
+                    IngestOutcome::Permanent {
+                        reason: ReasonCode::NoDates,
+                    },
+                    scope,
+                );
+            }
+        }
     }
 
     // Ay kapsamı (4.2): kapsam VERİDEN çıkar, dosya adına asla tek başına güvenilmez
@@ -494,6 +550,14 @@ pub fn reason_message(reason: ReasonCode, parsed: &ParsedFile, scope: &ScopeDeci
                 .to_string()
         }
         ReasonCode::TtlExpired => "Karantina TTL'i doldu.".to_string(),
+        ReasonCode::OfficialPricingDocument => {
+            "Dosya resmi fiyat ve gramaj cetveli olarak profillendi; onay ve işleme bekleniyor."
+                .to_string()
+        }
+        ReasonCode::TakeawayDocument => {
+            "Dosya Al Götür menü paketi / slot listesi olarak profillendi; onay ve işleme bekleniyor."
+                .to_string()
+        }
     }
 }
 
@@ -532,6 +596,8 @@ fn detail_from(parsed: &ParsedFile, scope: &ScopeDecision) -> QuarantineDetail {
         details,
         // Çağıran taraf, karar anındaki çıkarımı (karantina anlık görüntüsü) buraya koyar.
         parsed_days: None,
+        parsed_pricing: None,
+        parsed_takeaway: None,
     }
 }
 
@@ -644,12 +710,18 @@ pub async fn finalize_file(base_dir: &str, folder: &str, path: &Path, dest: Fina
 /// `Ok(None)` = desteklenmeyen uzantı veya LLM devre dışı; dosya yerinde kalır.
 /// Karar yazımdan ÖNCE verildiği için hiçbir dal burada `save_menu_database`
 /// çağırmaz (plan ilke 2).
-pub async fn parse_local_file(
+/// Dosyayı veritabanına DOKUNMADAN çok biçimli (Polymorphic) olarak ayrıştırır.
+pub async fn parse_local_file_polymorphic(
     path: &Path,
     city_slug: &str,
     reqwest_client: &reqwest::Client,
     gemini_api_key: Option<&str>,
-) -> Result<Option<(MenuDatabase, ParseDiagnostics)>> {
+) -> Result<
+    Option<(
+        crate::parser::models::ParsedDocumentPayload,
+        ParseDiagnostics,
+    )>,
+> {
     let ext = path
         .extension()
         .and_then(|e| e.to_str())
@@ -668,24 +740,24 @@ pub async fn parse_local_file(
         for day_data in file_db.values_mut() {
             crate::parser::validation::finalize_day_metadata(day_data);
         }
-        return Ok(Some((file_db, diag)));
+        return Ok(Some((
+            crate::parser::models::ParsedDocumentPayload::DailyMenu(file_db),
+            diag,
+        )));
     }
 
     if ext == "json" {
         let content = tokio::fs::read_to_string(path)
             .await
             .map_err(|e| anyhow::anyhow!("JSON dosyası okunamadı: {}", e))?;
-        let (mut file_db, mismatches) =
-            crate::parser::json::parse_json_str_with_diagnostics(&content, file_name)
+        let (payload, mismatches) =
+            crate::parser::llm::parse_and_finalize_polymorphic(&content, file_name)
                 .map_err(|e| anyhow::anyhow!("JSON parse hatası: {}", e))?;
-        for day_data in file_db.values_mut() {
-            crate::parser::validation::finalize_day_metadata(day_data);
-        }
         let diag = ParseDiagnostics {
             date_raw_mismatches: mismatches,
             ..Default::default()
         };
-        return Ok(Some((file_db, diag)));
+        return Ok(Some((payload, diag)));
     }
 
     if matches!(
@@ -699,15 +771,39 @@ pub async fn parse_local_file(
             );
             return Ok(None);
         }
-        let (file_db, diag) =
-            crate::parser::llm::parse_document_with_llm(reqwest_client, gemini_api_key, path)
-                .await
-                .map_err(|e| anyhow::anyhow!("Belge/Görsel LLM parse hatası: {}", e))?;
+        let (payload, diag) = crate::parser::llm::parse_document_with_llm_polymorphic(
+            reqwest_client,
+            gemini_api_key,
+            path,
+        )
+        .await
+        .map_err(|e| anyhow::anyhow!("Belge/Görsel LLM parse hatası: {}", e))?;
         let _ = city_slug;
-        return Ok(Some((file_db, diag)));
+        return Ok(Some((payload, diag)));
     }
 
     Ok(None)
+}
+
+/// Dosyayı veritabanına DOKUNMADAN menü veritabanı olarak ayrıştırır.
+pub async fn parse_local_file(
+    path: &Path,
+    city_slug: &str,
+    reqwest_client: &reqwest::Client,
+    gemini_api_key: Option<&str>,
+) -> Result<Option<(MenuDatabase, ParseDiagnostics)>> {
+    let opt = parse_local_file_polymorphic(path, city_slug, reqwest_client, gemini_api_key).await?;
+    match opt {
+        Some((crate::parser::models::ParsedDocumentPayload::DailyMenu(db), diag)) => {
+            Ok(Some((db, diag)))
+        }
+        Some((
+            crate::parser::models::ParsedDocumentPayload::Compound { menu: Some(db), .. },
+            diag,
+        )) => Ok(Some((db, diag))),
+        Some((_, diag)) => Ok(Some((MenuDatabase::new(), diag))),
+        None => Ok(None),
+    }
 }
 
 /// Yazılacak (tarih, öğün) ikilileri kümesi (ay atomikliği için).
@@ -895,6 +991,7 @@ pub async fn process_local_files(
                     dinner: 0,
                     declared_month: None,
                     diagnostics: ParseDiagnostics::default(),
+                    payload: None,
                 };
                 let stub_scope = ScopeDecision::default();
                 if let Err(e) = quarantine::quarantine_file(
@@ -974,6 +1071,7 @@ pub async fn process_local_files(
                                         dinner: 0,
                                         declared_month: None,
                                         diagnostics: ParseDiagnostics::default(),
+                                        payload: None,
                                     },
                                     &ScopeDecision::default(),
                                 ),
@@ -1009,7 +1107,7 @@ pub async fn process_local_files(
                 let source_type = format!("kepce-{}", folder);
 
                 // 1. Ayrıştır (veritabanına HENÜZ yazılmıyor)
-                let parsed_opt = match parse_local_file(
+                let parsed_opt = match parse_local_file_polymorphic(
                     &path,
                     &city_slug,
                     reqwest_client,
@@ -1047,12 +1145,26 @@ pub async fn process_local_files(
                         continue;
                     }
                 };
-                let Some((file_db, diag)) = parsed_opt else {
+                let Some((payload, diag)) = parsed_opt else {
                     continue;
                 };
 
+                let file_db = match &payload {
+                    crate::parser::models::ParsedDocumentPayload::DailyMenu(db) => db.clone(),
+                    crate::parser::models::ParsedDocumentPayload::Compound {
+                        menu: Some(db),
+                        ..
+                    } => db.clone(),
+                    _ => MenuDatabase::new(),
+                };
+
                 // 2. Karar ver (saf karar motoru)
-                let parsed = build_parsed_file(&filename, &file_db, diag);
+                let parsed = build_parsed_file_with_payload(
+                    &filename,
+                    &file_db,
+                    diag,
+                    Some(payload.clone()),
+                );
                 let (mut outcome, scope) = classify_ingest(&parsed, &cfg);
 
                 if let Some(warning) = meal_mix_warning(&parsed) {
@@ -1152,7 +1264,28 @@ pub async fn process_local_files(
                         // Karar anındaki çıkarımı yan dosyaya göm: `/onayla` bu görüntüyle
                         // ilerler, böylece LLM/ağ erişilemez olsa bile dosya karantinadan
                         // çıkarılabilir (yeniden ayrıştırmaya mecbur kalmaz).
-                        detail.parsed_days = Some(file_db);
+                        match &payload {
+                            crate::parser::models::ParsedDocumentPayload::DailyMenu(db) => {
+                                detail.parsed_days = Some(db.clone());
+                            }
+                            crate::parser::models::ParsedDocumentPayload::OfficialPricing(
+                                pricing,
+                            ) => {
+                                detail.parsed_pricing = Some(pricing.clone());
+                            }
+                            crate::parser::models::ParsedDocumentPayload::Takeaway(takeaway) => {
+                                detail.parsed_takeaway = Some(takeaway.clone());
+                            }
+                            crate::parser::models::ParsedDocumentPayload::Compound {
+                                menu,
+                                pricing,
+                                takeaway,
+                            } => {
+                                detail.parsed_days = menu.clone();
+                                detail.parsed_pricing = pricing.clone();
+                                detail.parsed_takeaway = takeaway.clone();
+                            }
+                        }
                         if let Err(e) = quarantine::quarantine_file(
                             &base_dir,
                             folder,
@@ -1300,8 +1433,187 @@ async fn snapshot_matches_file(item: &quarantine::QueueItem) -> bool {
 /// log ve rapor eşliğinde düşürülür. Böylece hayalet kayıt operatörün eliyle
 /// bile oluşturulamaz.
 ///
-/// Ayrıştırma, karantina anındaki anlık görüntüden (varsa) okunur; LLM/ağ
-/// erişilemez olduğunda bile karar uygulanır.
+/// Resmi fiyat panosu kalemlerini pricing_periods ve meal_category_prices tablolarına yazar.
+async fn write_official_pricing(
+    db: &DatabaseConnection,
+    city_slug: &str,
+    pricing_data: &crate::parser::models::OfficialPricingData,
+) -> Result<usize> {
+    use chrono::{Datelike, Local, NaiveDate};
+    use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, IntoActiveModel, QueryFilter, Set};
+    use shared::entities::{meal_category_prices, pricing_periods};
+
+    let now = Local::now().naive_local().date();
+    let current_academic_year = if now.month() >= 9 {
+        now.year()
+    } else {
+        now.year() - 1
+    };
+
+    let start_date = pricing_data
+        .period_start
+        .unwrap_or_else(|| NaiveDate::from_ymd_opt(current_academic_year, 9, 1).unwrap_or(now));
+    let end_date = pricing_data.period_end.unwrap_or_else(|| {
+        NaiveDate::from_ymd_opt(current_academic_year + 1, 8, 31).unwrap_or(now)
+    });
+
+    let period = match pricing_periods::Entity::find()
+        .filter(pricing_periods::Column::CitySlug.eq(city_slug))
+        .filter(pricing_periods::Column::PeriodStart.eq(start_date))
+        .filter(pricing_periods::Column::PeriodEnd.eq(end_date))
+        .one(db)
+        .await?
+    {
+        Some(p) => p,
+        None => {
+            let new_period = pricing_periods::ActiveModel {
+                city_slug: Set(city_slug.to_string()),
+                period_start: Set(start_date),
+                period_end: Set(end_date),
+                ..Default::default()
+            };
+            new_period.insert(db).await?
+        }
+    };
+
+    let mut count = 0;
+    for item in &pricing_data.items {
+        let existing = meal_category_prices::Entity::find()
+            .filter(meal_category_prices::Column::PricingPeriodId.eq(period.id))
+            .filter(meal_category_prices::Column::MealType.eq(&item.meal_type))
+            .filter(meal_category_prices::Column::CategoryName.eq(&item.category_name))
+            .one(db)
+            .await?;
+
+        if let Some(mut existing_model) = existing.map(|m| m.into_active_model()) {
+            existing_model.price = Set(item.price);
+            existing_model.portion_amount = Set(item.portion_amount.clone());
+            existing_model.update(db).await?;
+        } else {
+            let new_price = meal_category_prices::ActiveModel {
+                pricing_period_id: Set(period.id),
+                meal_type: Set(item.meal_type.clone()),
+                category_name: Set(item.category_name.clone()),
+                portion_amount: Set(item.portion_amount.clone()),
+                price: Set(item.price),
+                ..Default::default()
+            };
+            new_price.insert(db).await?;
+        }
+        count += 1;
+    }
+
+    Ok(count)
+}
+
+/// Al Götür menü paketlerini, seçim slotlarını ve yemek alternatiflerini yazar.
+async fn write_takeaway_data(
+    db: &DatabaseConnection,
+    city_slug: &str,
+    takeaway_data: &crate::parser::models::TakeawayData,
+) -> Result<usize> {
+    use chrono::{Datelike, Local};
+    use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+    use shared::entities::{dishes, takeaway_packages, takeaway_slot_items, takeaway_slots};
+
+    let now = Local::now().naive_local().date();
+    let current_academic_year = if now.month() >= 9 {
+        format!("{}-{}", now.year(), now.year() + 1)
+    } else {
+        format!("{}-{}", now.year() - 1, now.year())
+    };
+    let academic_year = takeaway_data
+        .academic_year
+        .as_deref()
+        .unwrap_or(&current_academic_year);
+
+    let mut total_items = 0;
+
+    for pkg_data in &takeaway_data.packages {
+        let package = match takeaway_packages::Entity::find()
+            .filter(takeaway_packages::Column::CitySlug.eq(city_slug))
+            .filter(takeaway_packages::Column::PackageName.eq(&pkg_data.package_name))
+            .filter(takeaway_packages::Column::AcademicYear.eq(academic_year))
+            .one(db)
+            .await?
+        {
+            Some(p) => p,
+            None => {
+                let new_pkg = takeaway_packages::ActiveModel {
+                    city_slug: Set(city_slug.to_string()),
+                    package_name: Set(pkg_data.package_name.clone()),
+                    academic_year: Set(academic_year.to_string()),
+                    is_active: Set(true),
+                    ..Default::default()
+                };
+                new_pkg.insert(db).await?
+            }
+        };
+
+        for slot_data in &pkg_data.slots {
+            let slot = match takeaway_slots::Entity::find()
+                .filter(takeaway_slots::Column::PackageId.eq(package.id))
+                .filter(takeaway_slots::Column::SlotIndex.eq(slot_data.slot_index))
+                .one(db)
+                .await?
+            {
+                Some(s) => s,
+                None => {
+                    let new_slot = takeaway_slots::ActiveModel {
+                        package_id: Set(package.id),
+                        slot_index: Set(slot_data.slot_index),
+                        slot_title: Set(slot_data.slot_title.clone()),
+                        is_required: Set(slot_data.is_required),
+                        ..Default::default()
+                    };
+                    new_slot.insert(db).await?
+                }
+            };
+
+            for item_data in &slot_data.items {
+                let clean_name = item_data.dish_name.trim();
+                if clean_name.is_empty() {
+                    continue;
+                }
+                let dish = match dishes::Entity::find()
+                    .filter(dishes::Column::Name.eq(clean_name))
+                    .one(db)
+                    .await?
+                {
+                    Some(d) => d,
+                    None => {
+                        let new_dish = dishes::ActiveModel {
+                            name: Set(clean_name.to_string()),
+                            ..Default::default()
+                        };
+                        new_dish.insert(db).await?
+                    }
+                };
+
+                let existing_item = takeaway_slot_items::Entity::find()
+                    .filter(takeaway_slot_items::Column::SlotId.eq(slot.id))
+                    .filter(takeaway_slot_items::Column::DishId.eq(dish.id))
+                    .one(db)
+                    .await?;
+
+                if existing_item.is_none() {
+                    let new_item = takeaway_slot_items::ActiveModel {
+                        slot_id: Set(slot.id),
+                        dish_id: Set(dish.id),
+                        portion_override: Set(item_data.portion.clone()),
+                        ..Default::default()
+                    };
+                    new_item.insert(db).await?;
+                }
+                total_items += 1;
+            }
+        }
+    }
+
+    Ok(total_items)
+}
+
+/// `/onayla <id>`: karantinadaki dosyayı KAPSAM İÇİ tarihlerle veya resmi belge tablolarıyla işler.
 pub async fn approve_quarantine_item(
     db: &DatabaseConnection,
     reqwest_client: &reqwest::Client,
@@ -1326,6 +1638,108 @@ pub async fn approve_quarantine_item(
         .await?
         .ok_or_else(|| anyhow::anyhow!("'{}' şehri veritabanında yok.", city_slug))?;
 
+    // 1. Resmi Fiyat Panosu Onay Dalı
+    if item.meta.reason_code == ReasonCode::OfficialPricingDocument
+        || item.meta.parsed_pricing.is_some()
+    {
+        let pricing_data = if let Some(ref p) = item.meta.parsed_pricing {
+            p.clone()
+        } else {
+            let opt = parse_local_file_polymorphic(
+                &item.file_path,
+                &city_slug,
+                reqwest_client,
+                gemini_api_key,
+            )
+            .await?;
+            match opt {
+                Some((crate::parser::models::ParsedDocumentPayload::OfficialPricing(p), _)) => p,
+                _ => anyhow::bail!("Dosya resmi fiyat panosu verisi içermiyor."),
+            }
+        };
+
+        let written_items = write_official_pricing(db, &city_slug, &pricing_data).await?;
+
+        let ext = item
+            .file_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        finalize_file(
+            &base,
+            &item.meta.role,
+            &item.file_path,
+            FinalDest::Vault {
+                ext,
+                city_slug: &city_slug,
+            },
+        )
+        .await;
+        let _ = tokio::fs::remove_file(&item.meta_path).await;
+
+        let _ = shared::services::alerting::AlertingService::send_webhook_alert(&format!(
+            "✅ FİYAT PANOSU ONAYLANDI  {}\n{} · {}\n{} fiyat kalemi veritabanına yazıldı.",
+            item.meta.id, city_slug, item.meta.file, written_items
+        ))
+        .await;
+
+        return Ok(format!(
+            "{} ({}) resmi fiyat panosu onaylandı: {} fiyat kalemi yazıldı.",
+            item.meta.id, city_slug, written_items
+        ));
+    }
+
+    // 2. Al Götür Menü Paketi Onay Dalı
+    if item.meta.reason_code == ReasonCode::TakeawayDocument || item.meta.parsed_takeaway.is_some()
+    {
+        let takeaway_data = if let Some(ref t) = item.meta.parsed_takeaway {
+            t.clone()
+        } else {
+            let opt = parse_local_file_polymorphic(
+                &item.file_path,
+                &city_slug,
+                reqwest_client,
+                gemini_api_key,
+            )
+            .await?;
+            match opt {
+                Some((crate::parser::models::ParsedDocumentPayload::Takeaway(t), _)) => t,
+                _ => anyhow::bail!("Dosya Al Götür verisi içermiyor."),
+            }
+        };
+
+        let written_items = write_takeaway_data(db, &city_slug, &takeaway_data).await?;
+
+        let ext = item
+            .file_path
+            .extension()
+            .and_then(|e| e.to_str())
+            .unwrap_or("");
+        finalize_file(
+            &base,
+            &item.meta.role,
+            &item.file_path,
+            FinalDest::Vault {
+                ext,
+                city_slug: &city_slug,
+            },
+        )
+        .await;
+        let _ = tokio::fs::remove_file(&item.meta_path).await;
+
+        let _ = shared::services::alerting::AlertingService::send_webhook_alert(&format!(
+            "✅ AL GÖTÜR ONAYLANDI  {}\n{} · {}\n{} paket/slot öğesi veritabanına yazıldı.",
+            item.meta.id, city_slug, item.meta.file, written_items
+        ))
+        .await;
+
+        return Ok(format!(
+            "{} ({}) Al Götür belgesi onaylandı: {} paket/slot öğesi yazıldı.",
+            item.meta.id, city_slug, written_items
+        ));
+    }
+
+    // 3. Günlük Tabldot Menü Onay Dalı
     let (file_db, diag, parse_source) =
         resolve_quarantine_parse(&item, &city_slug, reqwest_client, gemini_api_key).await?;
 
@@ -1504,7 +1918,9 @@ mod tests {
 
         let file_path = q_root.join("Temmuz.pdf");
         tokio::fs::write(&file_path, b"pdf taklidi").await.unwrap();
-        let sha = crate::tasks::quarantine::sha256_of(&file_path).await.unwrap();
+        let sha = crate::tasks::quarantine::sha256_of(&file_path)
+            .await
+            .unwrap();
 
         let mut snapshot = MenuDatabase::new();
         let mut day_data = DayData::default();
@@ -1527,6 +1943,8 @@ mod tests {
                 details: vec![],
                 sha256: sha,
                 parsed_days: Some(snapshot),
+                parsed_pricing: None,
+                parsed_takeaway: None,
                 first_seen_at: chrono::Utc::now().to_rfc3339(),
                 notify_count: 0,
                 last_notified_at: None,
@@ -1559,7 +1977,9 @@ mod tests {
         tokio::fs::create_dir_all(&q_root).await.unwrap();
 
         let file_path = q_root.join("notlar.txt");
-        tokio::fs::write(&file_path, b"degismis icerik").await.unwrap();
+        tokio::fs::write(&file_path, b"degismis icerik")
+            .await
+            .unwrap();
 
         let mut snapshot = MenuDatabase::new();
         snapshot.insert("2026-07-01".to_string(), DayData::default());
@@ -1580,6 +2000,8 @@ mod tests {
                 details: vec![],
                 sha256: "deadbeef".to_string(),
                 parsed_days: Some(snapshot),
+                parsed_pricing: None,
+                parsed_takeaway: None,
                 first_seen_at: chrono::Utc::now().to_rfc3339(),
                 notify_count: 0,
                 last_notified_at: None,
@@ -2024,5 +2446,68 @@ mod tests {
         assert_eq!(scope.expected_days, Some(7));
         assert_eq!(scope.in_scope_days, 7);
         assert!(scope.stray_dates.is_empty());
+    }
+
+    #[test]
+    fn test_classify_official_pricing_without_dates_is_suspect() {
+        let pricing = crate::parser::models::OfficialPricingData {
+            city_slug: Some("istanbul".to_string()),
+            academic_year: Some("2026-2027".to_string()),
+            period_start: None,
+            period_end: None,
+            items: vec![crate::parser::models::PricingCategoryItem {
+                meal_type: "dinner".to_string(),
+                category_name: "1. GRUP YEMEKLER (ÇORBALAR)".to_string(),
+                portion_amount: Some("250 GR".to_string()),
+                price: sea_orm::prelude::Decimal::from(35),
+            }],
+        };
+        let empty_db = MenuDatabase::new();
+        let p = build_parsed_file_with_payload(
+            "Istanbul_Tavan_Fiyat.jpg",
+            &empty_db,
+            crate::parser::core::ParseDiagnostics::default(),
+            Some(crate::parser::models::ParsedDocumentPayload::OfficialPricing(pricing)),
+        );
+        let cfg = GateConfig::default();
+        let (outcome, _) = classify_ingest(&p, &cfg);
+        match outcome {
+            IngestOutcome::Suspect { reason } => {
+                assert_eq!(reason, ReasonCode::OfficialPricingDocument);
+            }
+            other => panic!(
+                "beklenen Suspect (OfficialPricingDocument), alınan {:?}",
+                other
+            ),
+        }
+    }
+
+    #[test]
+    fn test_classify_takeaway_without_dates_is_suspect() {
+        let takeaway = crate::parser::models::TakeawayData {
+            city_slug: Some("istanbul".to_string()),
+            academic_year: Some("2026-2027".to_string()),
+            packages: vec![crate::parser::models::TakeawayPackageData {
+                package_name: "Paket A".to_string(),
+                slots: vec![],
+            }],
+        };
+        let empty_db = MenuDatabase::new();
+        let p = build_parsed_file_with_payload(
+            "Al_Gotur_Menu.jpg",
+            &empty_db,
+            crate::parser::core::ParseDiagnostics::default(),
+            Some(crate::parser::models::ParsedDocumentPayload::Takeaway(
+                takeaway,
+            )),
+        );
+        let cfg = GateConfig::default();
+        let (outcome, _) = classify_ingest(&p, &cfg);
+        match outcome {
+            IngestOutcome::Suspect { reason } => {
+                assert_eq!(reason, ReasonCode::TakeawayDocument);
+            }
+            other => panic!("beklenen Suspect (TakeawayDocument), alınan {:?}", other),
+        }
     }
 }

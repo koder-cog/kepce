@@ -10,6 +10,7 @@ pub mod models;
 pub mod normalizer;
 pub mod openrouter_monitor;
 pub mod orientation;
+pub mod profiler;
 pub mod stale_detector;
 pub mod takeaway;
 pub mod validation;

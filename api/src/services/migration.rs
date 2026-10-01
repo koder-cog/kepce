@@ -156,7 +156,10 @@ async fn execute_sql_file(
     if let Some(version) = record_version {
         let record_stmt = Statement::from_string(
             txn.get_database_backend(),
-            format!("INSERT INTO schema_migrations (version) VALUES ('{}');", version),
+            format!(
+                "INSERT INTO schema_migrations (version) VALUES ('{}');",
+                version
+            ),
         );
         txn.execute(record_stmt).await?;
     }
@@ -226,5 +229,8 @@ fn is_transaction_control(stmt: &str) -> bool {
         .collect::<String>()
         .to_uppercase();
 
-    matches!(normalized.as_str(), "BEGIN" | "COMMIT" | "END" | "ROLLBACK" | "STARTTRANSACTION")
+    matches!(
+        normalized.as_str(),
+        "BEGIN" | "COMMIT" | "END" | "ROLLBACK" | "STARTTRANSACTION"
+    )
 }

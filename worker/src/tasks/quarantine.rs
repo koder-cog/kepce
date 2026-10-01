@@ -58,6 +58,10 @@ pub enum ReasonCode {
     WeekdayMismatch,
     /// Karantina TTL'i doldu.
     TtlExpired,
+    /// Resmi fiyat ve gramaj cetveli (tarihsiz onay belgesi).
+    OfficialPricingDocument,
+    /// Al Götür menü paketi / slot listesi.
+    TakeawayDocument,
 }
 
 impl ReasonCode {
@@ -75,6 +79,8 @@ impl ReasonCode {
             ReasonCode::DateOrderMismatch => "DATE_ORDER_MISMATCH",
             ReasonCode::WeekdayMismatch => "WEEKDAY_MISMATCH",
             ReasonCode::TtlExpired => "TTL_EXPIRED",
+            ReasonCode::OfficialPricingDocument => "OFFICIAL_PRICING_DOCUMENT",
+            ReasonCode::TakeawayDocument => "TAKEAWAY_DOCUMENT",
         }
     }
 }
@@ -112,6 +118,10 @@ pub struct QuarantineMeta {
     /// Onay öncesi `sha256` ile dosyanın değişmediği doğrulanır.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parsed_days: Option<MenuDatabase>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parsed_pricing: Option<crate::parser::models::OfficialPricingData>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parsed_takeaway: Option<crate::parser::models::TakeawayData>,
     pub first_seen_at: String,
     #[serde(default)]
     pub notify_count: u32,
@@ -134,6 +144,8 @@ pub struct QuarantineDetail {
     /// Karar anındaki çıkarım. Onay sırasında yeniden ayrıştırmayı (ve dolayısıyla
     /// LLM bağımlılığını) ortadan kaldırır.
     pub parsed_days: Option<MenuDatabase>,
+    pub parsed_pricing: Option<crate::parser::models::OfficialPricingData>,
+    pub parsed_takeaway: Option<crate::parser::models::TakeawayData>,
 }
 
 /// Kuyruktaki bir öğe: meta + dosya ve yan dosya yolları.
@@ -288,6 +300,8 @@ pub async fn quarantine_file(
         details: detail.details,
         sha256: sha,
         parsed_days,
+        parsed_pricing: detail.parsed_pricing,
+        parsed_takeaway: detail.parsed_takeaway,
         first_seen_at: now.clone(),
         notify_count: 0,
         last_notified_at: None,
@@ -481,6 +495,38 @@ pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> S
                 .unwrap_or_else(|| "?".to_string())
         ));
     }
+    if let Some(ref pricing) = item.meta.parsed_pricing {
+        let kahvalti = pricing
+            .items
+            .iter()
+            .filter(|i| i.meal_type == "breakfast")
+            .count();
+        let yemek = pricing
+            .items
+            .iter()
+            .filter(|i| i.meal_type != "breakfast")
+            .count();
+        lines.push(format!(
+            "Fiyat Listesi: {} Kahvaltı, {} Yemek/Öğle/Akşam kalemi",
+            kahvalti, yemek
+        ));
+        if let Some(ref year) = pricing.academic_year {
+            lines.push(format!("Akademik Dönem: {}", year));
+        }
+    }
+    if let Some(ref takeaway) = item.meta.parsed_takeaway {
+        lines.push(format!(
+            "Al Götür: {} paket tespit edildi",
+            takeaway.packages.len()
+        ));
+        for pkg in &takeaway.packages {
+            lines.push(format!(
+                "• {}: {} seçim slotu",
+                pkg.package_name,
+                pkg.slots.len()
+            ));
+        }
+    }
     for d in &item.meta.details {
         lines.push(format!("• {}", d));
     }
@@ -520,8 +566,21 @@ pub async fn notify_item(item: &mut QueueItem, kind: NotifyKind) {
         );
     }
 
-    if let Err(e) = shared::services::alerting::AlertingService::send_webhook_alert(&message).await
-    {
+    if item.file_path.exists() {
+        if let Err(e) = shared::services::alerting::AlertingService::send_telegram_document(
+            &message,
+            &item.file_path,
+        )
+        .await
+        {
+            tracing::error!(
+                "[KARANTİNA] Dosya ekli bildirim gönderilemedi ({}): {:?}",
+                item.meta.id,
+                e
+            );
+            let _ = shared::services::alerting::AlertingService::send_alert(&message).await;
+        }
+    } else if let Err(e) = shared::services::alerting::AlertingService::send_alert(&message).await {
         tracing::error!(
             "[KARANTİNA] Bildirim gönderilemedi ({}): {:?}",
             item.meta.id,
@@ -803,6 +862,8 @@ mod tests {
             details: vec![],
             sha256: "abc".to_string(),
             parsed_days: None,
+            parsed_pricing: None,
+            parsed_takeaway: None,
             first_seen_at: first_seen.to_string(),
             notify_count: 0,
             last_notified_at: None,
@@ -849,7 +910,10 @@ mod tests {
         .await
         .unwrap();
 
-        assert!(meta.parsed_days.is_some(), "dönen meta anlık görüntüyü taşımalı");
+        assert!(
+            meta.parsed_days.is_some(),
+            "dönen meta anlık görüntüyü taşımalı"
+        );
 
         let items = list_queue(base.to_str().unwrap()).await;
         assert_eq!(items.len(), 1);
@@ -916,6 +980,8 @@ mod tests {
                 stray_dates: vec!["2026-05-04".into()],
                 details: vec![],
                 parsed_days: None,
+                parsed_pricing: None,
+                parsed_takeaway: None,
             },
         )
         .await
@@ -1000,5 +1066,56 @@ mod tests {
         assert!(file_path.exists(), "taze dosya yerinde kalmalı");
 
         let _ = tokio::fs::remove_dir_all(&base).await;
+    }
+
+    #[test]
+    fn test_format_item_alert_polymorphic() {
+        let mut meta = test_meta("k_POLY1", &Utc::now().to_rfc3339());
+        meta.parsed_pricing = Some(crate::parser::models::OfficialPricingData {
+            city_slug: Some("istanbul".to_string()),
+            academic_year: Some("2026-2027".to_string()),
+            period_start: None,
+            period_end: None,
+            items: vec![
+                crate::parser::models::PricingCategoryItem {
+                    meal_type: "dinner".to_string(),
+                    category_name: "1. GRUP YEMEKLER (ÇORBALAR)".to_string(),
+                    portion_amount: Some("250 GR".to_string()),
+                    price: sea_orm::prelude::Decimal::from(35),
+                },
+                crate::parser::models::PricingCategoryItem {
+                    meal_type: "breakfast".to_string(),
+                    category_name: "KAHVALTI KALEMİ".to_string(),
+                    portion_amount: None,
+                    price: sea_orm::prelude::Decimal::from(20),
+                },
+            ],
+        });
+        meta.parsed_takeaway = Some(crate::parser::models::TakeawayData {
+            city_slug: Some("istanbul".to_string()),
+            academic_year: Some("2026-2027".to_string()),
+            packages: vec![crate::parser::models::TakeawayPackageData {
+                package_name: "Paket A".to_string(),
+                slots: vec![crate::parser::models::TakeawaySlotData {
+                    slot_index: 1,
+                    slot_title: Some("Ana Sandviç".to_string()),
+                    is_required: true,
+                    items: vec![],
+                }],
+            }],
+        });
+
+        let item = QueueItem {
+            meta,
+            file_path: PathBuf::from("/tmp/test.jpg"),
+            meta_path: PathBuf::from("/tmp/test.karantina.json"),
+        };
+
+        let alert = format_item_alert(&item, 1, NotifyKind::New);
+        assert!(alert.contains("Fiyat Listesi: 1 Kahvaltı, 1 Yemek/Öğle/Akşam kalemi"));
+        assert!(alert.contains("Akademik Dönem: 2026-2027"));
+        assert!(alert.contains("Al Götür: 1 paket tespit edildi"));
+        assert!(alert.contains("Paket A: 1 seçim slotu"));
+        assert!(alert.contains("/onayla k_POLY1"));
     }
 }

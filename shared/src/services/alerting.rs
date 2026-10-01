@@ -94,6 +94,59 @@ impl AlertingService {
         Ok(())
     }
 
+    /// Telegram Bot API üzerinden dosya (belge/fotoğraf) ile birlikte alarm mesajı gönderir.
+    pub async fn send_telegram_document(
+        caption: &str,
+        file_path: &std::path::Path,
+    ) -> anyhow::Result<()> {
+        let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
+            Ok(token) if !token.trim().is_empty() => token,
+            _ => return Ok(()),
+        };
+
+        let chat_id = match std::env::var("TELEGRAM_ADMIN_CHAT_ID")
+            .or_else(|_| std::env::var("TELEGRAM_CHAT_ID"))
+        {
+            Ok(id) if !id.trim().is_empty() => id,
+            _ => return Ok(()),
+        };
+
+        if !file_path.exists() {
+            return Self::send_telegram_alert(caption).await;
+        }
+
+        let file_bytes = std::fs::read(file_path)?;
+        let file_name = file_path
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or("document")
+            .to_string();
+
+        let part = reqwest::multipart::Part::bytes(file_bytes).file_name(file_name);
+        let form = reqwest::multipart::Form::new()
+            .text("chat_id", chat_id.trim().to_string())
+            .text("caption", caption.to_string())
+            .part("document", part);
+
+        let url = format!(
+            "https://api.telegram.org/bot{}/sendDocument",
+            bot_token.trim()
+        );
+        let client = Client::new();
+        let res = client.post(&url).multipart(form).send().await?;
+
+        if !res.status().is_success() {
+            let err = res.text().await.unwrap_or_default();
+            tracing::warn!(
+                "sendDocument başarısız ({}), düz metin uyarısına geçiliyor",
+                err
+            );
+            return Self::send_telegram_alert(caption).await;
+        }
+
+        Ok(())
+    }
+
     /// Webhook uyarısı gönderir (Discord uyumlu JSON payload).
     /// Geriye dönük uyumluluk için, Telegram yapılandırılmışsa Telegram'a da iletir.
     pub async fn send_webhook_alert(message: &str) -> anyhow::Result<()> {

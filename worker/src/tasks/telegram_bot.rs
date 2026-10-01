@@ -152,7 +152,7 @@ async fn handle_command(
     let command = parts.first().map(|s| s.to_lowercase()).unwrap_or_default();
 
     match command.as_str() {
-        "/start" | "/yardim" | "yardim" => {
+        "/" | "/start" | "/help" | "help" | "/yardim" | "yardim" => {
             let help_msg = "\
 🤖 *Kepçe Operatör Botu*\n\n\
 Kullanabileceğiniz komutlar:\n\
@@ -160,6 +160,7 @@ Kullanabileceğiniz komutlar:\n\
 • `/tara [sehir]` - Menü kazımayı anlık tetikle (örn: `/tara` veya `/tara istanbul`)\n\
 • `/karantina` - Karantina kuyruğunu listele (karar bekleyen dosyalar)\n\
 • `/karantina detay <id>` - Karantina öğesinin teşhis ayrıntıları\n\
+• `/dosya <id>` - Karantinadaki dosyanın orijinalini sohbete gönderir\n\
 • `/onayla <id>` - Karantinadaki dosyayı kapsam içi tarihlerle işle\n\
 • `/reddet <id>` - Karantinadaki dosyayı hatali/ altına taşı\n\
 • `/ata <id> <sehir>` - Şehirsiz karantina öğesine şehir ata ve işleme al\n\
@@ -168,6 +169,50 @@ Kullanabileceğiniz komutlar:\n\
 • `/son_menuler` - Sisteme eklenen son 5 güncel menü\n\
 • `/yardim` - Bu yardım menüsü";
             send_reply(client, bot_token, chat_id, help_msg).await;
+        }
+
+        "/dosya" | "dosya" => {
+            let Some(id) = parts.get(1).copied() else {
+                send_reply(client, bot_token, chat_id, "Kullanım: `/dosya <id>`").await;
+                return;
+            };
+            let base = crate::tasks::quarantine::menu_base_dir();
+            match crate::tasks::quarantine::find_item(&base, id).await {
+                Some(item) => {
+                    if item.file_path.exists() {
+                        let caption = format!(
+                            "📁 Karantina Dosyası: {} ({})",
+                            item.meta.file, item.meta.id
+                        );
+                        if let Err(e) =
+                            shared::services::alerting::AlertingService::send_telegram_document(
+                                &caption,
+                                &item.file_path,
+                            )
+                            .await
+                        {
+                            send_reply(
+                                client,
+                                bot_token,
+                                chat_id,
+                                &format!("❌ Dosya gönderilemedi: {:?}", e),
+                            )
+                            .await;
+                        }
+                    } else {
+                        send_reply(client, bot_token, chat_id, "❌ Dosya diskte bulunamadı.").await;
+                    }
+                }
+                None => {
+                    send_reply(
+                        client,
+                        bot_token,
+                        chat_id,
+                        &format!("❓ `'{}'` kimlikli karantina öğesi bulunamadı.", id),
+                    )
+                    .await;
+                }
+            }
         }
 
         "/karantina" | "karantina" => {
@@ -237,13 +282,17 @@ Kullanabileceğiniz komutlar:\n\
                         let raw = format!("{:?}", e);
                         // Geçici sağlayıcı hatası (503/429) ile kalıcı hatayı ayır:
                         // operatöre ne yapacağını söylemeyen çıplak hata metni bırakma.
-                        let hint = if crate::tasks::file_ingest::is_transient_error(&raw.to_lowercase())
-                        {
+                        let hint = if crate::tasks::file_ingest::is_transient_error(
+                            &raw.to_lowercase(),
+                        ) {
                             "⏳ Sağlayıcı geçici olarak yanıt vermedi (503/429). Öğe karantinada KALDI; birkaç dakika sonra `/onayla` komutunu tekrar deneyin."
                         } else {
                             "ℹ️ Öğe karantinada kaldı (`/karantina detay` ile inceleyin). Sorun kalıcıysa `/reddet` ile hatali/ altına alın."
                         };
-                        format!("❌ *Onaylama başarısız* `{}`\n{}\n\n`{}`", id_owned, hint, raw)
+                        format!(
+                            "❌ *Onaylama başarısız* `{}`\n{}\n\n`{}`",
+                            id_owned, hint, raw
+                        )
                     }
                 };
                 send_reply(&client_clone, &bot_token_clone, chat_id, &msg).await;

@@ -146,6 +146,229 @@ pub fn menu_response_schema() -> serde_json::Value {
     })
 }
 
+pub fn unified_document_response_schema() -> serde_json::Value {
+    let alternative_schema = json!({
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Name of the alternative dish."
+            },
+            "amount": {
+                "type": "string",
+                "description": "Portion size or weight for this alternative dish alone (e.g. '200 g')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories for this alternative dish alone if listed (e.g. '164 kcal')."
+            }
+        },
+        "required": ["name"]
+    });
+
+    let item_schema = json!({
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Name of the dish (e.g. 'Mercimek Çorbası')."
+            },
+            "amount": {
+                "type": "string",
+                "description": "Portion size or weight if listed (e.g. '200 gr', '1 adet')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories for this specific item if listed."
+            },
+            "alternatives": {
+                "type": "array",
+                "description": "Alternative dish choices for the same slot.",
+                "items": alternative_schema
+            }
+        },
+        "required": ["name"]
+    });
+
+    let day_schema = json!({
+        "type": "object",
+        "properties": {
+            "date": {
+                "type": "string",
+                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
+                "description": "Date in strict ISO 8601 YYYY-MM-DD format."
+            },
+            "date_raw": {
+                "type": "string",
+                "description": "The date EXACTLY as written in the source document, verbatim (e.g. '01.04.2026')."
+            },
+            "meal_type": {
+                "type": "string",
+                "description": "Meal type ('breakfast', 'dinner', 'lunch')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories for this day (e.g. '950 kcal')."
+            },
+            "takeaway": {
+                "type": "string",
+                "description": "Takeaway package name or id if specified."
+            },
+            "items": {
+                "type": "array",
+                "description": "Dishes served on this day.",
+                "items": item_schema
+            }
+        },
+        "required": ["date", "items"]
+    });
+
+    let pricing_item_schema = json!({
+        "type": "object",
+        "properties": {
+            "meal_type": {
+                "type": "string",
+                "enum": ["breakfast", "dinner", "lunch"],
+                "description": "'breakfast' for Kahvalti, 'dinner' for Aksam/Yemek, 'lunch' for Ogle"
+            },
+            "category_name": {
+                "type": "string",
+                "description": "Dish, product, or category name (e.g. 'ZEYTİN', 'KAŞARLI TOST', 'ÇORBA', 'PİLAV', 'ET DÖNER')"
+            },
+            "portion_amount": {
+                "type": "string",
+                "description": "Grammage or portion amount (e.g. '30 g', '100 g Kaşar', '150 g', '1 Porsiyon')"
+            },
+            "price": {
+                "type": "number",
+                "description": "Official ceiling price in Turkish Lira (e.g. 11.0, 65.0, 120.0)"
+            }
+        },
+        "required": ["meal_type", "category_name", "price"]
+    });
+
+    let pricing_board_schema = json!({
+        "type": "object",
+        "description": "Official ceiling price and grammage board data.",
+        "properties": {
+            "period_start": {
+                "type": "string",
+                "description": "Valid from date (YYYY-MM-DD), usually 'YYYY-09-01'."
+            },
+            "period_end": {
+                "type": "string",
+                "description": "Valid to date (YYYY-MM-DD), usually 'YYYY-08-31'."
+            },
+            "items": {
+                "type": "array",
+                "description": "All price items listed on the board.",
+                "items": pricing_item_schema
+            }
+        },
+        "required": ["items"]
+    });
+
+    let takeaway_item_schema = json!({
+        "type": "object",
+        "properties": {
+            "dish_name": {
+                "type": "string",
+                "description": "Item or food choice (e.g. 'Kaşarlı Soğuk Sandviç', 'Ayran (300 ml)', 'Elma')"
+            },
+            "portion": {
+                "type": "string",
+                "description": "Portion override or size if specified (e.g. '100 g', '200 ml')"
+            }
+        },
+        "required": ["dish_name"]
+    });
+
+    let takeaway_slot_schema = json!({
+        "type": "object",
+        "properties": {
+            "slot_index": {
+                "type": "integer",
+                "description": "Slot index (1, 2, 3, 4, 5)"
+            },
+            "slot_title": {
+                "type": "string",
+                "description": "Slot description (e.g. 'Ana Sandviç', 'İçecek', 'Meyve/Tatlı', 'Çay / Su')"
+            },
+            "is_required": {
+                "type": "boolean",
+                "description": "Whether this slot is required."
+            },
+            "items": {
+                "type": "array",
+                "description": "Available choices for this slot.",
+                "items": takeaway_item_schema
+            }
+        },
+        "required": ["slot_index", "items"]
+    });
+
+    let takeaway_package_schema = json!({
+        "type": "object",
+        "properties": {
+            "package_name": {
+                "type": "string",
+                "description": "Package name (e.g. 'Al Götür Menü 1', 'Al Götür Menü 2')"
+            },
+            "slots": {
+                "type": "array",
+                "description": "Selection slots in this package.",
+                "items": takeaway_slot_schema
+            }
+        },
+        "required": ["package_name", "slots"]
+    });
+
+    let takeaway_schema = json!({
+        "type": "object",
+        "description": "Al Götür packages and choice slots.",
+        "properties": {
+            "packages": {
+                "type": "array",
+                "description": "List of takeaway packages.",
+                "items": takeaway_package_schema
+            }
+        },
+        "required": ["packages"]
+    });
+
+    json!({
+        "type": "object",
+        "description": "Polymorphic schema for Turkish dining menus, price lists, and takeaway packages.",
+        "properties": {
+            "document_type": {
+                "type": "string",
+                "enum": ["daily_menu", "official_pricing", "takeaway_package", "compound"],
+                "description": "Classification of the document."
+            },
+            "city": {
+                "type": "string",
+                "description": "City name if identifiable (e.g. 'istanbul', 'ankara')."
+            },
+            "academic_year": {
+                "type": "string",
+                "description": "Academic year if mentioned (e.g. '2026-2027')."
+            },
+            "period": {
+                "type": "string",
+                "description": "Menu period or month-year (e.g. 'Ekim 2026')."
+            },
+            "days": {
+                "type": "array",
+                "description": "List of daily menus extracted if this is a daily menu document.",
+                "items": day_schema
+            },
+            "pricing_board": pricing_board_schema,
+            "takeaway": takeaway_schema
+        },
+        "required": ["document_type"]
+    })
+}
+
 fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
     if let Some(t) = json_res.get("output_text").and_then(|t| t.as_str())
         && !t.trim().is_empty()
@@ -224,27 +447,34 @@ fn extract_response_text(json_res: &serde_json::Value) -> Option<String> {
     None
 }
 
-/// Yanıt zarfının şekli bilinmese bile içinde `days` anahtarı taşıyan ilk JSON
-/// nesnesini bulur. `extract_response_text()` bilinen şekilleri çözemediğinde
-/// son çare olarak kullanılır; böylece API zarfı değişse de ayrıştırma kırılmaz.
-fn find_menu_json_deep(value: &serde_json::Value) -> Option<String> {
+/// Yanıt zarfının şekli bilinmese bile içinde hedef veri anahtarları taşıyan ilk JSON
+/// nesnesini bulur (`document_type`, `days`, `pricing_board`, `takeaway`).
+fn find_payload_json_deep(value: &serde_json::Value) -> Option<String> {
     match value {
         serde_json::Value::Object(map) => {
-            if map.contains_key("days") {
+            if map.contains_key("document_type")
+                || map.contains_key("days")
+                || map.contains_key("pricing_board")
+                || map.contains_key("takeaway")
+            {
                 return Some(serde_json::Value::Object(map.clone()).to_string());
             }
-            map.values().find_map(find_menu_json_deep)
+            map.values().find_map(find_payload_json_deep)
         }
-        serde_json::Value::Array(items) => items.iter().find_map(find_menu_json_deep),
-        // Menü JSON'u bazı yanıtlarda string olarak gömülü olabilir.
+        serde_json::Value::Array(items) => items.iter().find_map(find_payload_json_deep),
+        // Bazı yanıtlarda string olarak gömülü olabilir.
         serde_json::Value::String(s) => {
             let cleaned = clean_json_markdown(s);
             serde_json::from_str::<serde_json::Value>(cleaned)
                 .ok()
-                .and_then(|parsed| find_menu_json_deep(&parsed))
+                .and_then(|parsed| find_payload_json_deep(&parsed))
         }
         _ => None,
     }
+}
+
+fn find_menu_json_deep(value: &serde_json::Value) -> Option<String> {
+    find_payload_json_deep(value)
 }
 
 fn clean_json_markdown(raw: &str) -> &str {
@@ -463,29 +693,214 @@ pub fn llm_available(gemini_api_key: Option<&str>) -> bool {
 /// Boş menü "başarı" sayılırsa dosya vault'a taşınır ve veri sessizce
 /// kaybolur; bu yüzden 0 gün dönen sonuç hata olarak ele alınır.
 /// İkinci değer, `date_raw` çapraz doğrulama uyuşmazlıklarını taşır (Faz 3.4).
+#[allow(dead_code)]
 fn parse_and_finalize(text: &str, file_name_hint: &str) -> Result<(MenuDatabase, Vec<String>)> {
-    let cleaned = clean_json_markdown(text);
-    let (mut db, mismatches) =
-        crate::parser::json::parse_json_str_with_diagnostics(cleaned, file_name_hint)?;
-    if db.is_empty() {
-        anyhow::bail!(
-            "Ayrıştırma 0 gün döndürdü (boş menü). Ham yanıt (ilk 500 karakter): {}",
-            cleaned.chars().take(500).collect::<String>()
-        );
+    let (payload, mismatches) = parse_and_finalize_polymorphic(text, file_name_hint)?;
+    match payload {
+        crate::parser::models::ParsedDocumentPayload::DailyMenu(db) => Ok((db, mismatches)),
+        _ => anyhow::bail!("Ayrıştırma sonucu günlük tabldot menüsü değil."),
     }
-    for day_data in db.values_mut() {
-        crate::parser::validation::finalize_day_metadata(day_data);
-    }
-    Ok((db, mismatches))
 }
 
-/// Sağlayıcıdan bağımsız istek verisi (istem metni + belge).
+/// LLM yanıtını çok biçimli (Polymorphic) veri yüküne (`ParsedDocumentPayload`) çevirir.
+/// Günlük menü, tavan fiyat panosu veya Al Götür paketi başarıyla yapılandırılır.
+pub fn parse_and_finalize_polymorphic(
+    text: &str,
+    file_name_hint: &str,
+) -> Result<(crate::parser::models::ParsedDocumentPayload, Vec<String>)> {
+    let cleaned = clean_json_markdown(text);
+    let val: serde_json::Value =
+        serde_json::from_str(cleaned).context("Ayrıştırma sonucu geçerli bir JSON değil")?;
+
+    let doc_type = val
+        .get("document_type")
+        .and_then(|t| t.as_str())
+        .unwrap_or("");
+
+    // 1. Resmi Fiyat Panosu
+    if doc_type == "official_pricing" || val.get("pricing_board").is_some() {
+        let pricing_val = val.get("pricing_board").unwrap_or(&val);
+        let items_val = pricing_val.get("items").and_then(|i| i.as_array());
+        if let Some(items_arr) = items_val
+            && !items_arr.is_empty()
+        {
+            let mut pricing_items = Vec::new();
+            for item in items_arr {
+                let meal_type = item
+                    .get("meal_type")
+                    .and_then(|m| m.as_str())
+                    .unwrap_or("dinner")
+                    .to_lowercase();
+                let category_name = item
+                    .get("category_name")
+                    .and_then(|c| c.as_str())
+                    .unwrap_or("")
+                    .trim()
+                    .to_uppercase();
+                let portion_amount = item
+                    .get("portion_amount")
+                    .and_then(|p| p.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty());
+                let price_num = item.get("price").and_then(|p| p.as_f64()).unwrap_or(0.0);
+                if !category_name.is_empty() {
+                    pricing_items.push(crate::parser::models::PricingCategoryItem {
+                        meal_type,
+                        category_name,
+                        portion_amount,
+                        price: sea_orm::prelude::Decimal::from_f64_retain(price_num)
+                            .unwrap_or_default(),
+                    });
+                }
+            }
+
+            let period_start = pricing_val
+                .get("period_start")
+                .and_then(|s| s.as_str())
+                .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+            let period_end = pricing_val
+                .get("period_end")
+                .and_then(|s| s.as_str())
+                .and_then(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok());
+            let academic_year = val
+                .get("academic_year")
+                .and_then(|s| s.as_str())
+                .map(|s| s.to_string());
+            let city_slug = val
+                .get("city")
+                .and_then(|s| s.as_str())
+                .map(|s| s.to_lowercase());
+
+            return Ok((
+                crate::parser::models::ParsedDocumentPayload::OfficialPricing(
+                    crate::parser::models::OfficialPricingData {
+                        city_slug,
+                        academic_year,
+                        period_start,
+                        period_end,
+                        items: pricing_items,
+                    },
+                ),
+                Vec::new(),
+            ));
+        }
+    }
+
+    // 2. Al Götür Menü Paketi
+    if doc_type == "takeaway_package" || val.get("takeaway").is_some() {
+        let takeaway_val = val.get("takeaway").unwrap_or(&val);
+        let pkgs_val = takeaway_val.get("packages").and_then(|p| p.as_array());
+        if let Some(pkgs_arr) = pkgs_val
+            && !pkgs_arr.is_empty()
+        {
+            let mut packages = Vec::new();
+            for pkg in pkgs_arr {
+                let package_name = pkg
+                    .get("package_name")
+                    .and_then(|n| n.as_str())
+                    .unwrap_or("Al Götür")
+                    .trim()
+                    .to_string();
+                let mut slots = Vec::new();
+                if let Some(slots_arr) = pkg.get("slots").and_then(|s| s.as_array()) {
+                    for slot in slots_arr {
+                        let slot_index =
+                            slot.get("slot_index").and_then(|i| i.as_i64()).unwrap_or(1) as i32;
+                        let slot_title = slot
+                            .get("slot_title")
+                            .and_then(|t| t.as_str())
+                            .map(|s| s.trim().to_string());
+                        let is_required = slot
+                            .get("is_required")
+                            .and_then(|r| r.as_bool())
+                            .unwrap_or(true);
+                        let mut items = Vec::new();
+                        if let Some(items_arr) = slot.get("items").and_then(|i| i.as_array()) {
+                            for item in items_arr {
+                                let dish_name = item
+                                    .get("dish_name")
+                                    .or_else(|| item.get("name"))
+                                    .and_then(|n| n.as_str())
+                                    .unwrap_or("")
+                                    .trim()
+                                    .to_string();
+                                let portion = item
+                                    .get("portion")
+                                    .or_else(|| item.get("amount"))
+                                    .and_then(|p| p.as_str())
+                                    .map(|s| s.trim().to_string());
+                                if !dish_name.is_empty() {
+                                    items.push(crate::parser::models::TakeawayItemData {
+                                        dish_name,
+                                        portion,
+                                    });
+                                }
+                            }
+                        }
+                        slots.push(crate::parser::models::TakeawaySlotData {
+                            slot_index,
+                            slot_title,
+                            is_required,
+                            items,
+                        });
+                    }
+                }
+                packages.push(crate::parser::models::TakeawayPackageData {
+                    package_name,
+                    slots,
+                });
+            }
+
+            let academic_year = val
+                .get("academic_year")
+                .and_then(|s| s.as_str())
+                .map(|s| s.to_string());
+            let city_slug = val
+                .get("city")
+                .and_then(|s| s.as_str())
+                .map(|s| s.to_lowercase());
+
+            return Ok((
+                crate::parser::models::ParsedDocumentPayload::Takeaway(
+                    crate::parser::models::TakeawayData {
+                        city_slug,
+                        academic_year,
+                        packages,
+                    },
+                ),
+                Vec::new(),
+            ));
+        }
+    }
+
+    // 3. Günlük Tabldot Menü (varsayılan veya doc_type == "daily_menu")
+    if let Ok((mut db, mismatches)) =
+        crate::parser::json::parse_json_str_with_diagnostics(cleaned, file_name_hint)
+        && !db.is_empty()
+    {
+        for day_data in db.values_mut() {
+            crate::parser::validation::finalize_day_metadata(day_data);
+        }
+        return Ok((
+            crate::parser::models::ParsedDocumentPayload::DailyMenu(db),
+            mismatches,
+        ));
+    }
+
+    anyhow::bail!(
+        "Ayrıştırma sonucu geçerli bir veri (günlük menü, fiyat panosu veya al götür) içermiyor. Ham yanıt: {}",
+        cleaned.chars().take(300).collect::<String>()
+    );
+}
+
+/// Sağlayıcıdan bağımsız istek verisi (istem metni + belge + şema).
 struct LlmRequest<'a> {
     prompt: &'a str,
     mime_type: &'a str,
     base64_data: &'a str,
     /// Gemini Interactions API için `document` | `image`.
     input_type: &'a str,
+    schema: &'a serde_json::Value,
 }
 
 /// OpenRouter `/chat/completions` çağrısı (OpenAI uyumlu şema).
@@ -527,7 +942,7 @@ async fn call_openrouter(
         }],
         "response_format": {
             "type": "json_schema",
-            "json_schema": { "name": "menu", "strict": true, "schema": menu_response_schema() }
+            "json_schema": { "name": "document", "strict": true, "schema": req.schema }
         },
         // NOT: `provider.require_parameters: true` BİLİNÇLİ OLARAK KULLANILMAZ.
         // Canlıda doğrulandı: bu bayrak, akışı 502 "provider_unavailable" ile
@@ -619,7 +1034,7 @@ async fn call_gemini(
         "response_format": {
             "type": "text",
             "mime_type": "application/json",
-            "schema": menu_response_schema()
+            "schema": req.schema
         }
     });
 
@@ -671,12 +1086,31 @@ Garnishes, sides, and sauces served alongside a main dish (e.g. garnitür havuç
 If bread (ekmek, çeyrek ekmek) appears multiple times in the same meal from both a table row and a footnote, include it only once.
 Output strictly conforming to the requested JSON schema.";
 
-pub async fn parse_document_with_llm(
+pub const UNIFIED_EXTRACTION_PROMPT: &str = "You are a precise data extraction engine for Turkish university dining, dormitories (KYK), cafeteria ceiling price boards, and takeaway packages.
+Examine the provided image or document carefully and determine its 'document_type':
+- 'daily_menu': Monthly, weekly, or daily dining hall tabldot menus with specific dates (Kahvaltı, Öğle, Akşam Yemeği).
+- 'official_pricing': Official ceiling price and grammage board lists (Gramaj ve Fiyat Listesi, Tavan Fiyat) containing meal types (Kahvaltı, Yemek/Öğle/Akşam), categories/items, portion weights, and ceiling prices in TL.
+- 'takeaway_package': Takeaway meal packages (Al Götür Menü 1, 2, 3...) with customizable selection slots (Sandviç, İçecek, Meyve/Tatlı, Su vb.).
+- 'compound': Contains multiple distinct data types (e.g. daily menus alongside takeaway slots or price lists).
+
+Extract all details strictly into the corresponding fields of the JSON schema:
+1. If official_pricing: Extract every single row into 'pricing_board.items' with meal_type ('breakfast' for Kahvalti, 'dinner' for Aksam/Yemek, 'lunch' for Ogle), category_name (item name in uppercase), portion_amount, and numeric price in TL. If dates or academic year are stated (e.g. 2026-2027), extract period_start and period_end.
+2. If takeaway_package: Extract each package into 'takeaway.packages', including slots (index, title, is_required) and alternative item names and portions.
+3. If daily_menu: Extract all days into 'days' with ISO dates (YYYY-MM-DD), date_raw, meal_type, food items, amounts, calories, and alternatives.
+Output strictly conforming to the requested JSON schema.";
+
+pub async fn parse_document_with_llm_polymorphic(
     client: &Client,
     gemini_api_key: Option<&str>,
     file_path: &Path,
-) -> Result<(MenuDatabase, crate::parser::core::ParseDiagnostics)> {
-    tracing::info!("Belge LLM ile ayrıştırılıyor: {:?}", file_path);
+) -> Result<(
+    crate::parser::models::ParsedDocumentPayload,
+    crate::parser::core::ParseDiagnostics,
+)> {
+    tracing::info!(
+        "Belge LLM (çok biçimli) ile ayrıştırılıyor: {:?}",
+        file_path
+    );
 
     let metadata = tokio::fs::metadata(file_path)
         .await
@@ -690,8 +1124,6 @@ pub async fn parse_document_with_llm(
         .context(format!("Dosya okunamadı: {:?}", file_path))?;
     let original_mime = detect_mime_type(file_path, &file_bytes);
 
-    // Modele gönderim öncesi sayfa bazlı yön düzeltmesi (en iyi çaba; başarısızsa
-    // orijinal baytlar kullanılır). `ORIENTATION_CORRECTION=0` ile kapatılabilir.
     let corrected = crate::parser::orientation::correct_document(&file_bytes, original_mime);
     if corrected.corrected_pages > 0 {
         tracing::info!(
@@ -705,7 +1137,8 @@ pub async fn parse_document_with_llm(
     let base64_data = BASE64.encode(&corrected.bytes);
     let mime_type = corrected.mime_type.as_str();
 
-    let prompt = MENU_EXTRACTION_PROMPT;
+    let prompt = UNIFIED_EXTRACTION_PROMPT;
+    let schema = unified_document_response_schema();
 
     let input_type = if mime_type == "application/pdf" {
         "document"
@@ -723,6 +1156,7 @@ pub async fn parse_document_with_llm(
         mime_type,
         base64_data: &base64_data,
         input_type,
+        schema: &schema,
     };
 
     let providers = resolve_provider_order();
@@ -732,14 +1166,10 @@ pub async fn parse_document_with_llm(
     let gemini_models = resolve_gemini_models();
     let thinking_level = resolve_thinking_level();
 
-    // Model başına deneme sayısı. Kota/doluluk hatasında aynı modeli zorlamak
-    // kotayı boşa harcar; bu durumda hemen sonraki modele/sağlayıcıya geçilir.
     const MAX_ATTEMPTS_PER_MODEL: usize = 2;
     let mut last_error = String::new();
     let mut attempted_any = false;
 
-    // Zincir turu planı: `passes` tur × sağlayıcı sırası. Böylece 503/429 gibi
-    // geçici yoğunluk hatalarında zincir, artan bekleme ile baştan denenir.
     let passes = chain_passes();
     let base_delay_ms = chain_retry_delay_ms();
     let mut plan: Vec<(usize, LlmProvider)> = Vec::with_capacity(passes * providers.len());
@@ -792,15 +1222,14 @@ pub async fn parse_document_with_llm(
                     )
                     .await
                     {
-                        Ok(text) => match parse_and_finalize(&text, file_name_hint) {
-                            Ok((db, mismatches)) => {
+                        Ok(text) => match parse_and_finalize_polymorphic(&text, file_name_hint) {
+                            Ok((payload, mismatches)) => {
                                 tracing::info!(
-                                    "  Başarıyla ayrıştırıldı: {} gün bulundu (sağlayıcı: openrouter, model: {}).",
-                                    db.len(),
+                                    "  Başarıyla çok biçimli ayrıştırıldı (sağlayıcı: openrouter, model: {}).",
                                     openrouter_model
                                 );
                                 return Ok((
-                                    db,
+                                    payload,
                                     crate::parser::core::ParseDiagnostics {
                                         date_raw_mismatches: mismatches,
                                         ..Default::default()
@@ -844,30 +1273,31 @@ pub async fn parse_document_with_llm(
 
                         match call_gemini(client, key, model_name, &thinking_level, &llm_req).await
                         {
-                            Ok(text) => match parse_and_finalize(&text, file_name_hint) {
-                                Ok((db, mismatches)) => {
-                                    tracing::info!(
-                                        "  Başarıyla ayrıştırıldı: {} gün bulundu (sağlayıcı: gemini, model: {}).",
-                                        db.len(),
-                                        model_name
-                                    );
-                                    return Ok((
-                                        db,
-                                        crate::parser::core::ParseDiagnostics {
-                                            date_raw_mismatches: mismatches,
-                                            ..Default::default()
-                                        },
-                                    ));
+                            Ok(text) => {
+                                match parse_and_finalize_polymorphic(&text, file_name_hint) {
+                                    Ok((payload, mismatches)) => {
+                                        tracing::info!(
+                                            "  Başarıyla çok biçimli ayrıştırıldı (sağlayıcı: gemini, model: {}).",
+                                            model_name
+                                        );
+                                        return Ok((
+                                            payload,
+                                            crate::parser::core::ParseDiagnostics {
+                                                date_raw_mismatches: mismatches,
+                                                ..Default::default()
+                                            },
+                                        ));
+                                    }
+                                    Err(e) => {
+                                        tracing::warn!(
+                                            "  Ayrıştırma hatası (deneme {}): {}",
+                                            attempt,
+                                            e
+                                        );
+                                        last_error = format!("{}", e);
+                                    }
                                 }
-                                Err(e) => {
-                                    tracing::warn!(
-                                        "  Ayrıştırma hatası (deneme {}): {}",
-                                        attempt,
-                                        e
-                                    );
-                                    last_error = format!("{}", e);
-                                }
-                            },
+                            }
                             Err(e) => {
                                 let msg = format!("{:?}", e);
                                 tracing::warn!("  Hata: {}", msg);
@@ -880,8 +1310,6 @@ pub async fn parse_document_with_llm(
                     }
 
                     if !is_last_model {
-                        // Yoğunluk hatasında modeli hemen ardından denemek
-                        // kuyruğu boşa meşgul eder; kısa bir bekleme konur.
                         if is_model_switchable_error(&last_error) {
                             let wait = model_switch_delay_ms();
                             tracing::warn!(
@@ -911,6 +1339,24 @@ pub async fn parse_document_with_llm(
         "Tüm LLM denemeleri başarısız oldu. Son hata: {}",
         last_error
     ))
+}
+
+pub async fn parse_document_with_llm(
+    client: &Client,
+    gemini_api_key: Option<&str>,
+    file_path: &Path,
+) -> Result<(MenuDatabase, crate::parser::core::ParseDiagnostics)> {
+    let (payload, diag) =
+        parse_document_with_llm_polymorphic(client, gemini_api_key, file_path).await?;
+    match payload {
+        crate::parser::models::ParsedDocumentPayload::DailyMenu(db) => Ok((db, diag)),
+        crate::parser::models::ParsedDocumentPayload::Compound { menu: Some(db), .. } => {
+            Ok((db, diag))
+        }
+        _ => {
+            anyhow::bail!("Belge günlük tabldot menüsü değil (fiyat panosu veya al götür paketi).")
+        }
+    }
 }
 
 pub use parse_document_with_llm as parse_pdf_with_llm;
@@ -1150,6 +1596,139 @@ mod tests {
             .and_then(|v| v.trim().parse::<usize>().ok())
         {
             assert!(days >= min, "beklenen en az {} gün, {} bulundu", min, days);
+        }
+    }
+
+    #[test]
+    fn test_polymorphic_pricing_board_json_parsing() {
+        let json = r#"{
+            "document_type": "official_pricing",
+            "city": "istanbul",
+            "academic_year": "2026-2027",
+            "pricing_board": {
+                "items": [
+                    {
+                        "meal_type": "dinner",
+                        "category_name": "1. GRUP YEMEKLER (ÇORBALAR)",
+                        "portion_amount": "250 GR",
+                        "price": 35.0
+                    },
+                    {
+                        "meal_type": "dinner",
+                        "category_name": "2. GRUP YEMEKLER (ANA YEMEKLER)",
+                        "portion_amount": "200 GR",
+                        "price": 95.0
+                    }
+                ]
+            }
+        }"#;
+
+        let (payload, mismatches) =
+            parse_and_finalize_polymorphic(json, "Istanbul_Tavan_Fiyat.jpg").unwrap();
+        assert!(mismatches.is_empty());
+        match payload {
+            crate::parser::models::ParsedDocumentPayload::OfficialPricing(data) => {
+                assert_eq!(data.city_slug.as_deref(), Some("istanbul"));
+                assert_eq!(data.academic_year.as_deref(), Some("2026-2027"));
+                assert_eq!(data.items.len(), 2);
+                assert_eq!(data.items[0].category_name, "1. GRUP YEMEKLER (ÇORBALAR)");
+                assert_eq!(data.items[0].portion_amount.as_deref(), Some("250 GR"));
+                assert_eq!(data.items[0].price, sea_orm::prelude::Decimal::from(35));
+                assert_eq!(data.items[1].price, sea_orm::prelude::Decimal::from(95));
+            }
+            _ => panic!("OfficialPricing bekleniyordu, başka tip döndü"),
+        }
+    }
+
+    #[test]
+    fn test_polymorphic_takeaway_json_parsing() {
+        let json = r#"{
+            "document_type": "takeaway_package",
+            "city": "istanbul",
+            "academic_year": "2026-2027",
+            "takeaway": {
+                "packages": [
+                    {
+                        "package_name": "Sandviç Menü Paketi",
+                        "slots": [
+                            {
+                                "slot_index": 1,
+                                "slot_title": "Ana Sandviç",
+                                "is_required": true,
+                                "items": [
+                                    { "dish_name": "Kaşarlı Sandviç", "portion": "1 Adet" },
+                                    { "dish_name": "Tavuklu Sandviç", "portion": "1 Adet" }
+                                ]
+                            },
+                            {
+                                "slot_index": 2,
+                                "slot_title": "İçecek",
+                                "is_required": true,
+                                "items": [
+                                    { "dish_name": "Ayran", "portion": "200 ml" },
+                                    { "dish_name": "Meyve Suyu", "portion": "200 ml" }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }
+        }"#;
+
+        let (payload, _mismatches) =
+            parse_and_finalize_polymorphic(json, "Al_Gotur_Menu.jpg").unwrap();
+        match payload {
+            crate::parser::models::ParsedDocumentPayload::Takeaway(data) => {
+                assert_eq!(data.city_slug.as_deref(), Some("istanbul"));
+                assert_eq!(data.academic_year.as_deref(), Some("2026-2027"));
+                assert_eq!(data.packages.len(), 1);
+                let pkg = &data.packages[0];
+                assert_eq!(pkg.package_name, "Sandviç Menü Paketi");
+                assert_eq!(pkg.slots.len(), 2);
+                assert_eq!(pkg.slots[0].items.len(), 2);
+                assert_eq!(pkg.slots[0].items[0].dish_name, "Kaşarlı Sandviç");
+                assert_eq!(pkg.slots[0].items[0].portion.as_deref(), Some("1 Adet"));
+            }
+            _ => panic!("Takeaway bekleniyordu, başka tip döndü"),
+        }
+    }
+
+    #[test]
+    fn test_polymorphic_daily_menu_json_parsing() {
+        let json = r#"{
+            "document_type": "daily_menu",
+            "city": "istanbul",
+            "meal_type": "dinner",
+            "days": [
+                {
+                    "date": "2026-10-15",
+                    "items": [
+                        { "name": "Mercimek Çorbası", "calories": "180" },
+                        { "name": "Orman Kebabı", "calories": "420" },
+                        { "name": "Pirinç Pilavı", "calories": "250" },
+                        { "name": "Ayran", "calories": "75" }
+                    ]
+                }
+            ]
+        }"#;
+
+        let (payload, _mismatches) =
+            parse_and_finalize_polymorphic(json, "Ekim_Menu.xlsx").unwrap();
+        match payload {
+            crate::parser::models::ParsedDocumentPayload::DailyMenu(db) => {
+                assert_eq!(db.len(), 1);
+                let day = db.get("2026-10-15").expect("günün menüsü olmalı");
+                assert_eq!(day.normal.dinner.len(), 4);
+                assert_eq!(
+                    day.normal.dinner[0].alternatives[0].name,
+                    "Mercimek Çorbası"
+                );
+                assert_eq!(
+                    day.normal.dinner[0].alternatives[0].calories.as_deref(),
+                    Some("180")
+                );
+            }
+            _ => panic!("DailyMenu bekleniyordu, başka tip döndü"),
         }
     }
 }
