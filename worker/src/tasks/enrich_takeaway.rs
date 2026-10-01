@@ -20,6 +20,7 @@ pub async fn enrich_all_takeaways(db: &DatabaseConnection) -> Result<usize> {
         .filter(menu_dishes::Column::PackageName.ne("NORMAL"))
         .filter(menu_dishes::Column::PackageName.not_like("%ÇÖLYAK%"))
         .filter(menu_dishes::Column::PackageName.not_like("%COLYAK%"))
+        .filter(menu_dishes::Column::PackageName.not_like("%GLUTEN%"))
         .all(db)
         .await?;
 

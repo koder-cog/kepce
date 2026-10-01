@@ -12,23 +12,47 @@ use worker::tasks::file_ingest::{
     GateConfig, IngestOutcome, build_parsed_file, classify_ingest, reason_message,
 };
 
-fn summarize(db: &MenuDatabase) -> (usize, usize, usize, usize, Option<String>, Option<String>) {
+fn summarize(
+    db: &MenuDatabase,
+) -> (
+    usize,
+    usize,
+    usize,
+    usize,
+    usize,
+    usize,
+    usize,
+    Option<String>,
+    Option<String>,
+) {
     let mut days = 0usize;
-    let mut b = 0usize;
-    let mut l = 0usize;
-    let mut d = 0usize;
+    let mut nb = 0usize;
+    let mut nl = 0usize;
+    let mut nd = 0usize;
+    let mut cb = 0usize;
+    let mut cl = 0usize;
+    let mut cd = 0usize;
     let mut first: Option<String> = None;
     let mut last: Option<String> = None;
     for (date, day) in db {
         days += 1;
-        if !day.normal.breakfast.is_empty() || !day.colyak.breakfast.is_empty() {
-            b += 1;
+        if !day.normal.breakfast.is_empty() {
+            nb += 1;
         }
-        if !day.normal.lunch.is_empty() || !day.colyak.lunch.is_empty() {
-            l += 1;
+        if !day.normal.lunch.is_empty() {
+            nl += 1;
         }
-        if !day.normal.dinner.is_empty() || !day.colyak.dinner.is_empty() {
-            d += 1;
+        if !day.normal.dinner.is_empty() {
+            nd += 1;
+        }
+        if !day.colyak.breakfast.is_empty() {
+            cb += 1;
+        }
+        if !day.colyak.lunch.is_empty() {
+            cl += 1;
+        }
+        if !day.colyak.dinner.is_empty() {
+            cd += 1;
         }
         match &first {
             Some(f) if f <= date => {}
@@ -39,7 +63,7 @@ fn summarize(db: &MenuDatabase) -> (usize, usize, usize, usize, Option<String>, 
             _ => last = Some(date.clone()),
         }
     }
-    (days, b, l, d, first, last)
+    (days, nb, nl, nd, cb, cl, cd, first, last)
 }
 
 fn dump_excel_sheets(path: &Path) {
@@ -216,12 +240,20 @@ fn main() {
         }
         match parse_offline(f) {
             Some((db, diag)) => {
-                let (days, b, l, d, first, last) = summarize(&db);
-                println!(
-                    "[OK ] {rel:<55} gün={days:<3} kahvaltı={b:<3} öğle={l:<3} akşam={d:<3} aralık={}..{}",
-                    first.unwrap_or_else(|| "-".into()),
-                    last.unwrap_or_else(|| "-".into())
-                );
+                let (days, nb, nl, nd, cb, cl, cd, first, last) = summarize(&db);
+                if cb > 0 || cl > 0 || cd > 0 {
+                    println!(
+                        "[OK ] {rel:<55} gün={days:<3} normal(k={nb},ö={nl},a={nd}) çölyak(k={cb},ö={cl},a={cd}) aralık={}..{}",
+                        first.unwrap_or_else(|| "-".into()),
+                        last.unwrap_or_else(|| "-".into())
+                    );
+                } else {
+                    println!(
+                        "[OK ] {rel:<55} gün={days:<3} kahvaltı={nb:<3} öğle={nl:<3} akşam={nd:<3} aralık={}..{}",
+                        first.unwrap_or_else(|| "-".into()),
+                        last.unwrap_or_else(|| "-".into())
+                    );
+                }
                 let mut keys: Vec<String> = db.keys().cloned().collect();
                 keys.sort();
                 println!("       tarihler: {}", keys.join(", "));

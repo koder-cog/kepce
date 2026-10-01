@@ -201,7 +201,10 @@ pub fn validate_meal_item_count(count: usize) -> bool {
 /// Checks if the sheet name contains çölyak indicators.
 pub fn is_colyak_sheet(sheet_name: &str) -> bool {
     let upper = sheet_name.to_uppercase();
-    upper.contains("ÇÖLYAK") || upper.contains("COLYAK")
+    upper.contains("ÇÖLYAK")
+        || upper.contains("COLYAK")
+        || upper.contains("GLUTENSİZ")
+        || upper.contains("GLUTENSIZ")
 }
 
 /// Computes the overall trust score of a DayData by averaging the match ratio of its items.
@@ -473,6 +476,8 @@ mod tests {
     fn test_colyak_detection() {
         assert!(is_colyak_sheet("ÇÖLYAK KAHVALTI"));
         assert!(is_colyak_sheet("Colyak Yemek"));
+        assert!(is_colyak_sheet("GLUTENSİZ MENÜ"));
+        assert!(is_colyak_sheet("Glutensiz Yemek"));
         assert!(!is_colyak_sheet("KAHVALTI"));
     }
 }

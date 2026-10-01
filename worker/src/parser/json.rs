@@ -77,6 +77,8 @@ pub struct IngestDayJson {
     #[serde(default)]
     pub items: Vec<IngestItemJson>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_colyak: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub takeaway: Option<String>,
 }
 
@@ -339,7 +341,8 @@ pub fn parse_json_str_with_diagnostics(
             ..Default::default()
         });
 
-        let target_menu: &mut DailyMenu = if is_colyak {
+        let is_colyak_for_day = day.is_colyak.unwrap_or(is_colyak);
+        let target_menu: &mut DailyMenu = if is_colyak_for_day {
             &mut day_data.colyak
         } else {
             &mut day_data.normal
@@ -531,4 +534,31 @@ mod tests {
         assert_eq!(slot.alternatives[1].name, "Bulgur Pilavı");
         assert_eq!(slot.alternatives[1].amount.as_deref(), Some("180 g"));
     }
+
+    #[test]
+    fn test_mixed_normal_and_colyak_day_json() {
+        let sample = r#"{
+            "days": [
+                {
+                    "date": "2026-05-01",
+                    "meal_type": "dinner",
+                    "is_colyak": false,
+                    "items": [{ "name": "Mercimek Çorbası" }]
+                },
+                {
+                    "date": "2026-05-01",
+                    "meal_type": "dinner",
+                    "is_colyak": true,
+                    "items": [{ "name": "Glutensiz Yayla Çorbası" }]
+                }
+            ]
+        }"#;
+        let db = parse_json_str(sample, "test.json").unwrap();
+        let day = db.get("2026-05-01").expect("2026-05-01 olmali");
+        assert_eq!(day.normal.dinner.len(), 1);
+        assert_eq!(day.normal.dinner[0].alternatives[0].name, "Mercimek Çorbası");
+        assert_eq!(day.colyak.dinner.len(), 1);
+        assert_eq!(day.colyak.dinner[0].alternatives[0].name, "Glutensiz Yayla Çorbası");
+    }
 }
+

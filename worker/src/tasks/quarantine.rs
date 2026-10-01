@@ -104,6 +104,10 @@ pub struct QuarantineMeta {
     pub day_count: usize,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_days: Option<u32>,
+    #[serde(default)]
+    pub has_colyak: bool,
+    #[serde(default)]
+    pub colyak_day_count: usize,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stray_dates: Vec<String>,
     /// Ek teşhis ayrıntıları (çelişen tarihler, çözülemeyen hücreler vb.).
@@ -139,6 +143,8 @@ pub struct QuarantineDetail {
     pub scope_month: Option<String>,
     pub day_count: usize,
     pub expected_days: Option<u32>,
+    pub has_colyak: bool,
+    pub colyak_day_count: usize,
     pub stray_dates: Vec<String>,
     pub details: Vec<String>,
     /// Karar anındaki çıkarım. Onay sırasında yeniden ayrıştırmayı (ve dolayısıyla
@@ -296,6 +302,8 @@ pub async fn quarantine_file(
         scope_month: detail.scope_month,
         day_count: detail.day_count,
         expected_days: detail.expected_days,
+        has_colyak: detail.has_colyak,
+        colyak_day_count: detail.colyak_day_count,
         stray_dates: detail.stray_dates,
         details: detail.details,
         sha256: sha,
@@ -509,6 +517,12 @@ pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> S
                 .expected_days
                 .map(|d| d.to_string())
                 .unwrap_or_else(|| "?".to_string())
+        ));
+    }
+    if item.meta.has_colyak || item.meta.colyak_day_count > 0 {
+        lines.push(format!(
+            "Çölyak Menüsü: Var ({} gün)",
+            item.meta.colyak_day_count
         ));
     }
     if let Some(ref pricing) = item.meta.parsed_pricing {
@@ -824,7 +838,7 @@ pub async fn format_queue_listing(base_dir: &str) -> String {
 pub async fn format_item_detail(item: &QueueItem) -> String {
     let age = item.age_days().await;
     let mut lines = vec![
-        format!("🔎 *Karantina Detayı* `{}`", item.meta.id),
+        format!("[KARANTİNA DETAYI: `{}`]", item.meta.id),
         format!("• Dosya: `{}`", item.meta.file),
         format!("• Rol: `{}`", item.meta.role),
         format!(
@@ -842,6 +856,9 @@ pub async fn format_item_detail(item: &QueueItem) -> String {
                 .unwrap_or_else(|| "?".to_string())
         ),
     ];
+    if item.meta.has_colyak || item.meta.colyak_day_count > 0 {
+        lines.push(format!("• Çölyak Menüsü: Var ({} gün)", item.meta.colyak_day_count));
+    }
     if !item.meta.detected_months.is_empty() {
         lines.push(format!(
             "• Tespit edilen aylar: `{}`",
@@ -891,6 +908,8 @@ mod tests {
             scope_month: Some("2026-06".into()),
             day_count: 31,
             expected_days: Some(30),
+            has_colyak: false,
+            colyak_day_count: 0,
             stray_dates: vec!["2026-05-04".into()],
             details: vec![],
             sha256: "abc".to_string(),
@@ -1010,6 +1029,8 @@ mod tests {
                 scope_month: Some("2026-06".into()),
                 day_count: 31,
                 expected_days: Some(30),
+                has_colyak: false,
+                colyak_day_count: 0,
                 stray_dates: vec!["2026-05-04".into()],
                 details: vec![],
                 parsed_days: None,

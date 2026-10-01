@@ -578,4 +578,62 @@ mod tests {
         assert_eq!(parts[1], "Pirinç Pilavı [Tereyağlı / Sade]");
         assert_eq!(parts[2], "Ayran");
     }
+
+    #[test]
+    fn test_parse_real_mayis_colyak_excel() {
+        let path = "data/menuler/admin/bekleyen/istanbul/MAYIS_MENÜLERİ_GÜNCEL.xlsx";
+        if !std::path::Path::new(path).exists() {
+            return;
+        }
+        let mut db = crate::parser::models::MenuDatabase::new();
+        let diag = crate::parser::excel::parse_excel_with_diagnostics(path, &mut db).unwrap();
+        println!("Parse diag: {:?}", diag);
+        println!("Total days: {}", db.len());
+
+        let mut normal_b = 0;
+        let mut normal_d = 0;
+        let mut colyak_b = 0;
+        let mut colyak_d = 0;
+
+        for day in db.values() {
+            if !day.normal.breakfast.is_empty() {
+                normal_b += 1;
+            }
+            if !day.normal.dinner.is_empty() {
+                normal_d += 1;
+            }
+            if !day.colyak.breakfast.is_empty() {
+                colyak_b += 1;
+            }
+            if !day.colyak.dinner.is_empty() {
+                colyak_d += 1;
+            }
+        }
+
+        println!(
+            "normal_b: {}, normal_d: {}, colyak_b: {}, colyak_d: {}",
+            normal_b, normal_d, colyak_b, colyak_d
+        );
+
+        assert_eq!(db.len(), 31);
+        assert_eq!(normal_b, 31);
+        assert_eq!(normal_d, 31);
+        assert_eq!(colyak_b, 31);
+        assert_eq!(colyak_d, 31);
+
+        // Örnek bir günün çölyak menüsü içeriğini kontrol et (örn: 2026-05-01)
+        let may1 = db.get("2026-05-01").expect("2026-05-01 olmali");
+        assert!(!may1.colyak.breakfast.is_empty());
+        assert!(!may1.colyak.dinner.is_empty());
+
+        let colyak_dinner_dishes: Vec<String> = may1
+            .colyak
+            .dinner
+            .iter()
+            .flat_map(|it| it.alternatives.iter().map(|c| c.name.clone()))
+            .collect();
+        println!("2026-05-01 Colyak Dinner: {:?}", colyak_dinner_dishes);
+        assert!(!colyak_dinner_dishes.is_empty());
+    }
 }
+

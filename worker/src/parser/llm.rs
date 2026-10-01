@@ -33,119 +33,6 @@ fn detect_mime_type(path: &Path, bytes: &[u8]) -> &'static str {
     }
 }
 
-pub fn menu_response_schema() -> serde_json::Value {
-    // Şema PARÇALAR halinde kurulur: tek dev `json!` çağrısı makro özyineleme
-    // sınırına (recursion limit) takılır.
-    let alternative_schema = json!({
-        "type": "object",
-        "properties": {
-            "name": {
-                "type": "string",
-                "description": "Name of the alternative dish."
-            },
-            "amount": {
-                "type": "string",
-                "description": "Portion size or weight for this alternative dish alone (e.g. '200 g')."
-            },
-            "calories": {
-                "type": "string",
-                "description": "Calories for this alternative dish alone if listed (e.g. '164 kcal')."
-            }
-        },
-        "required": ["name"]
-    });
-
-    let item_schema = json!({
-        "type": "object",
-        "properties": {
-            "name": {
-                "type": "string",
-                "description": "Name of the dish (e.g. 'Mercimek Çorbası')."
-            },
-            "amount": {
-                "type": "string",
-                "description": "Portion size or weight if listed (e.g. '200 gr', '1 adet')."
-            },
-            "calories": {
-                "type": "string",
-                "description": "Calories for this specific item if listed."
-            },
-            "alternatives": {
-                "type": "array",
-                "description": "Alternative dish choices for the same slot (e.g. separated by '/' or 'veya'). Each alternative must have its own separate name, amount, and calories.",
-                "items": alternative_schema
-            }
-        },
-        "required": ["name"]
-    });
-
-    let day_schema = json!({
-        "type": "object",
-        "properties": {
-            "date": {
-                "type": "string",
-                "pattern": "^\\d{4}-\\d{2}-\\d{2}$",
-                "description": "Date in strict ISO 8601 YYYY-MM-DD format."
-            },
-            "date_raw": {
-                "type": "string",
-                "description": "The date EXACTLY as written in the source document, verbatim (e.g. '01.04.2026' or '1 Nisan 2026'). Never reformat or reinterpret it."
-            },
-            "meal_type": {
-                "type": "string",
-                "description": "Meal type for this day ('breakfast', 'dinner', 'lunch')."
-            },
-            "calories": {
-                "type": "string",
-                "description": "Calories for this day (e.g. '950 kcal')."
-            },
-            "takeaway": {
-                "type": "string",
-                "description": "Al Götür package name or id if specified (e.g. 'Al Götür 1')."
-            },
-            "items": {
-                "type": "array",
-                "description": "Dishes and food items served on this day.",
-                "items": item_schema
-            }
-        },
-        "required": ["date", "items"]
-    });
-
-    json!({
-        "type": "object",
-        "description": "Turkish university and dormitory monthly menu structure.",
-        "properties": {
-            "city": {
-                "type": "string",
-                "description": "City name if identifiable from document (e.g. 'istanbul', 'ankara')."
-            },
-            "period": {
-                "type": "string",
-                "description": "Menu period or month-year (e.g. 'Eylül 2026')."
-            },
-            "meal_type": {
-                "type": "string",
-                "description": "Default meal type: 'breakfast' for Kahvaltı, 'dinner' for Akşam Yemeği, 'lunch' for Öğle Yemeği."
-            },
-            "is_colyak": {
-                "type": "boolean",
-                "description": "True if this is specifically a Celiac (Glutensiz/Çölyak) menu, false otherwise."
-            },
-            "default_calories": {
-                "type": "string",
-                "description": "Overall target calories (e.g. '850-1000 kcal')."
-            },
-            "days": {
-                "type": "array",
-                "description": "List of daily menus extracted from the document.",
-                "items": day_schema
-            }
-        },
-        "required": ["days"]
-    })
-}
-
 pub fn unified_document_response_schema() -> serde_json::Value {
     let alternative_schema = json!({
         "type": "object",
@@ -205,6 +92,10 @@ pub fn unified_document_response_schema() -> serde_json::Value {
             "meal_type": {
                 "type": "string",
                 "description": "Meal type ('breakfast', 'dinner', 'lunch')."
+            },
+            "is_colyak": {
+                "type": "boolean",
+                "description": "True if this meal is specifically a Celiac (Çölyak / Glutensiz) diet menu, false otherwise."
             },
             "calories": {
                 "type": "string",
@@ -344,6 +235,10 @@ pub fn unified_document_response_schema() -> serde_json::Value {
                 "type": "string",
                 "enum": ["daily_menu", "official_pricing", "takeaway_package", "compound"],
                 "description": "Classification of the document."
+            },
+            "is_colyak": {
+                "type": "boolean",
+                "description": "True if the entire document is specifically a Celiac (Çölyak / Glutensiz) diet menu."
             },
             "city": {
                 "type": "string",

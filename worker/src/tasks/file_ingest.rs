@@ -117,13 +117,38 @@ pub struct ParsedFile {
     pub file_name: String,
     /// Çıkarılan tüm geçerli tarihler (sıralı, tekrarsız).
     pub dates: BTreeSet<NaiveDate>,
-    pub breakfast: usize,
-    pub lunch: usize,
-    pub dinner: usize,
+    pub normal_breakfast: usize,
+    pub normal_lunch: usize,
+    pub normal_dinner: usize,
+    pub colyak_breakfast: usize,
+    pub colyak_lunch: usize,
+    pub colyak_dinner: usize,
     /// Dosya adından çıkarılan beyan edilen ay (yalnızca çapraz doğrulama sinyali).
     pub declared_month: Option<DeclaredMonth>,
     pub diagnostics: ParseDiagnostics,
     pub payload: Option<crate::parser::models::ParsedDocumentPayload>,
+}
+
+impl ParsedFile {
+    pub fn has_normal(&self) -> bool {
+        self.normal_breakfast > 0 || self.normal_lunch > 0 || self.normal_dinner > 0
+    }
+
+    pub fn has_colyak(&self) -> bool {
+        self.colyak_breakfast > 0 || self.colyak_lunch > 0 || self.colyak_dinner > 0
+    }
+
+    pub fn colyak_days(&self) -> usize {
+        self.colyak_breakfast
+            .max(self.colyak_lunch)
+            .max(self.colyak_dinner)
+    }
+
+    pub fn normal_days(&self) -> usize {
+        self.normal_breakfast
+            .max(self.normal_lunch)
+            .max(self.normal_dinner)
+    }
 }
 
 /// Karar motorunun çıktısı (Faz 0.1).
@@ -173,27 +198,40 @@ pub fn build_parsed_file_with_payload(
     payload: Option<crate::parser::models::ParsedDocumentPayload>,
 ) -> ParsedFile {
     let mut dates = BTreeSet::new();
-    let (mut breakfast, mut lunch, mut dinner) = (0usize, 0usize, 0usize);
+    let (mut normal_b, mut normal_l, mut normal_d) = (0usize, 0usize, 0usize);
+    let (mut colyak_b, mut colyak_l, mut colyak_d) = (0usize, 0usize, 0usize);
     for (date_str, day) in db {
         if let Ok(d) = NaiveDate::parse_from_str(date_str, "%Y-%m-%d") {
             dates.insert(d);
         }
-        if !day.normal.breakfast.is_empty() || !day.colyak.breakfast.is_empty() {
-            breakfast += 1;
+        if !day.normal.breakfast.is_empty() {
+            normal_b += 1;
         }
-        if !day.normal.lunch.is_empty() || !day.colyak.lunch.is_empty() {
-            lunch += 1;
+        if !day.normal.lunch.is_empty() {
+            normal_l += 1;
         }
-        if !day.normal.dinner.is_empty() || !day.colyak.dinner.is_empty() {
-            dinner += 1;
+        if !day.normal.dinner.is_empty() {
+            normal_d += 1;
+        }
+        if !day.colyak.breakfast.is_empty() {
+            colyak_b += 1;
+        }
+        if !day.colyak.lunch.is_empty() {
+            colyak_l += 1;
+        }
+        if !day.colyak.dinner.is_empty() {
+            colyak_d += 1;
         }
     }
     ParsedFile {
         file_name: file_name.to_string(),
         dates,
-        breakfast,
-        lunch,
-        dinner,
+        normal_breakfast: normal_b,
+        normal_lunch: normal_l,
+        normal_dinner: normal_d,
+        colyak_breakfast: colyak_b,
+        colyak_lunch: colyak_l,
+        colyak_dinner: colyak_d,
         declared_month: extract_declared_month(file_name),
         diagnostics,
         payload,
@@ -588,6 +626,8 @@ fn detail_from(parsed: &ParsedFile, scope: &ScopeDecision) -> QuarantineDetail {
         scope_month: scope.scope_month.map(|m| format!("{}-{:02}", m.0, m.1)),
         day_count: parsed.dates.len(),
         expected_days: scope.expected_days,
+        has_colyak: parsed.has_colyak(),
+        colyak_day_count: parsed.colyak_days(),
         stray_dates: scope
             .stray_dates
             .iter()
@@ -611,14 +651,17 @@ const MEAL_MIX_MIN_DAYS: usize = 10;
 fn meal_mix_warning(parsed: &ParsedFile) -> Option<String> {
     let days = parsed.dates.len();
     if days >= MEAL_MIX_MIN_DAYS {
-        let meal_types_present = [parsed.breakfast, parsed.lunch, parsed.dinner]
+        let b = parsed.normal_breakfast + parsed.colyak_breakfast;
+        let l = parsed.normal_lunch + parsed.colyak_lunch;
+        let d = parsed.normal_dinner + parsed.colyak_dinner;
+        let meal_types_present = [b, l, d]
             .iter()
             .filter(|&&c| c > 0)
             .count();
         if meal_types_present == 1 {
             return Some(format!(
                 "{} günlük belgede yalnızca tek öğün tipi bulundu (kahvaltı {}, öğle {}, akşam {}). Çoklu-tablo atlanmış olabilir.",
-                days, parsed.breakfast, parsed.lunch, parsed.dinner
+                days, b, l, d
             ));
         }
     }
@@ -870,9 +913,33 @@ async fn write_scoped_menu(
         );
     }
 
+    let (normal_days, colyak_days) = {
+        let mut n = 0;
+        let mut c = 0;
+        for day in filtered.values() {
+            if !day.normal.breakfast.is_empty()
+                || !day.normal.lunch.is_empty()
+                || !day.normal.dinner.is_empty()
+            {
+                n += 1;
+            }
+            if !day.colyak.breakfast.is_empty()
+                || !day.colyak.lunch.is_empty()
+                || !day.colyak.dinner.is_empty()
+            {
+                c += 1;
+            }
+        }
+        (n, c)
+    };
+
     let keep = build_keep_set(&filtered);
     let written_days = filtered.len();
     crate::parser::save_menu_database(db, city_id, source_type, filtered, city_slug).await?;
+    tracing::info!(
+        "{}: menü yazımı tamamlandı — {} gün normal, {} gün çölyak menüsü veritabanına işlendi.",
+        filename, normal_days, colyak_days
+    );
 
     // Faz 5.2: ay atomikliği. Bu kaynak için (şehir, ay) kapsamında yeni dosyada
     // bulunmayan (tarih, öğün) ikilileri sert DELETE ile silinir.
@@ -986,9 +1053,12 @@ pub async fn process_local_files(
                 let parsed_stub = ParsedFile {
                     file_name: fname.clone(),
                     dates: BTreeSet::new(),
-                    breakfast: 0,
-                    lunch: 0,
-                    dinner: 0,
+                    normal_breakfast: 0,
+                    normal_lunch: 0,
+                    normal_dinner: 0,
+                    colyak_breakfast: 0,
+                    colyak_lunch: 0,
+                    colyak_dinner: 0,
                     declared_month: None,
                     diagnostics: ParseDiagnostics::default(),
                     payload: None,
@@ -1066,9 +1136,12 @@ pub async fn process_local_files(
                                             .to_string_lossy()
                                             .to_string(),
                                         dates: BTreeSet::new(),
-                                        breakfast: 0,
-                                        lunch: 0,
-                                        dinner: 0,
+                                        normal_breakfast: 0,
+                                        normal_lunch: 0,
+                                        normal_dinner: 0,
+                                        colyak_breakfast: 0,
+                                        colyak_lunch: 0,
+                                        colyak_dinner: 0,
                                         declared_month: None,
                                         diagnostics: ParseDiagnostics::default(),
                                         payload: None,
@@ -1192,15 +1265,30 @@ pub async fn process_local_files(
                 // 3. Sonuca göre eyleme geç
                 match outcome {
                     IngestOutcome::Complete => {
-                        tracing::info!(
-                            "{}: {} gün ({} kahvaltı + {} öğle + {} akşam) TAM bulundu (kaynak: {})",
-                            filename,
-                            parsed.dates.len(),
-                            parsed.breakfast,
-                            parsed.lunch,
-                            parsed.dinner,
-                            source_type
-                        );
+                        if parsed.has_colyak() {
+                            tracing::info!(
+                                "{}: {} gün (normal: {}k/{}ö/{}a · çölyak: {}k/{}ö/{}a) TAM bulundu (kaynak: {})",
+                                filename,
+                                parsed.dates.len(),
+                                parsed.normal_breakfast,
+                                parsed.normal_lunch,
+                                parsed.normal_dinner,
+                                parsed.colyak_breakfast,
+                                parsed.colyak_lunch,
+                                parsed.colyak_dinner,
+                                source_type
+                            );
+                        } else {
+                            tracing::info!(
+                                "{}: {} gün ({} kahvaltı + {} öğle + {} akşam) TAM bulundu (kaynak: {})",
+                                filename,
+                                parsed.dates.len(),
+                                parsed.normal_breakfast,
+                                parsed.normal_lunch,
+                                parsed.normal_dinner,
+                                source_type
+                            );
+                        }
                         match write_scoped_menu(
                             db,
                             city_id,
@@ -1939,6 +2027,8 @@ mod tests {
                 scope_month: Some("2026-07".to_string()),
                 day_count: 1,
                 expected_days: Some(31),
+                has_colyak: false,
+                colyak_day_count: 0,
                 stray_dates: vec![],
                 details: vec![],
                 sha256: sha,
@@ -1996,6 +2086,8 @@ mod tests {
                 scope_month: None,
                 day_count: 1,
                 expected_days: None,
+                has_colyak: false,
+                colyak_day_count: 0,
                 stray_dates: vec![],
                 details: vec![],
                 sha256: "deadbeef".to_string(),
@@ -2068,9 +2160,32 @@ mod tests {
         let db = db_with_dates(&["2026-09-01", "2026-09-02"], 2, 0, 3);
         let p = parsed("Eylul.xlsx", &db);
         assert_eq!(p.dates.len(), 2);
-        assert_eq!(p.breakfast, 2);
-        assert_eq!(p.lunch, 0);
-        assert_eq!(p.dinner, 2);
+        assert_eq!(p.normal_breakfast, 2);
+        assert_eq!(p.normal_lunch, 0);
+        assert_eq!(p.normal_dinner, 2);
+        assert_eq!(p.colyak_breakfast, 0);
+        assert_eq!(p.colyak_dinner, 0);
+        assert!(p.has_normal());
+        assert!(!p.has_colyak());
+    }
+
+    #[test]
+    fn test_build_parsed_file_colyak_counts() {
+        let mut db = MenuDatabase::new();
+        let mut d = DayData::default();
+        d.colyak.breakfast = vec![item("Glutensiz Ekmek")];
+        d.colyak.dinner = vec![item("Glutensiz Çorba")];
+        db.insert("2026-09-01".to_string(), d);
+
+        let p = parsed("Colyak.xlsx", &db);
+        assert_eq!(p.dates.len(), 1);
+        assert_eq!(p.normal_breakfast, 0);
+        assert_eq!(p.normal_dinner, 0);
+        assert_eq!(p.colyak_breakfast, 1);
+        assert_eq!(p.colyak_dinner, 1);
+        assert!(!p.has_normal());
+        assert!(p.has_colyak());
+        assert_eq!(p.colyak_days(), 1);
     }
 
     /// Satır 3: 0 gün dönen dosya kalıcı hatadır (D-2).
