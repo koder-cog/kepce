@@ -275,22 +275,24 @@ pub fn parse_json_str_with_diagnostics(
                     }
                 };
 
-                let primary_clean = normalizer::normalize_food_name(&item.name);
-                if !primary_clean.is_empty() {
+                let primary_norm = normalizer::normalize_food_item(&item.name);
+                if !primary_norm.name.is_empty() {
+                    let amt = pick_amount(0, None).or(primary_norm.amount);
                     alternatives.push(MenuComponent {
-                        name: primary_clean,
-                        amount: pick_amount(0, None),
+                        name: primary_norm.name,
+                        amount: amt,
                         calories: pick_cal(0, None),
                         category: None,
                     });
                 }
 
                 for (i, alt) in alts.iter().enumerate() {
-                    let clean = normalizer::normalize_food_name(alt.name());
-                    if !clean.is_empty() {
+                    let alt_norm = normalizer::normalize_food_item(alt.name());
+                    if !alt_norm.name.is_empty() {
+                        let amt = pick_amount(i + 1, alt.amount()).or(alt_norm.amount);
                         alternatives.push(MenuComponent {
-                            name: clean,
-                            amount: pick_amount(i + 1, alt.amount()),
+                            name: alt_norm.name,
+                            amount: amt,
                             calories: pick_cal(i + 1, alt.calories()),
                             category: None,
                         });
@@ -299,11 +301,12 @@ pub fn parse_json_str_with_diagnostics(
             } else {
                 let split_names = normalizer::split_smart_alternatives(&item.name);
                 for n in split_names {
-                    let clean = normalizer::normalize_food_name(&n);
-                    if !clean.is_empty() {
+                    let norm = normalizer::normalize_food_item(&n);
+                    if !norm.name.is_empty() {
+                        let amt = parent_amount.clone().or(norm.amount);
                         alternatives.push(MenuComponent {
-                            name: clean,
-                            amount: parent_amount.clone(),
+                            name: norm.name,
+                            amount: amt,
                             calories: parent_calories.clone(),
                             category: None,
                         });
@@ -312,11 +315,12 @@ pub fn parse_json_str_with_diagnostics(
             }
 
             if alternatives.is_empty() {
-                let clean = normalizer::normalize_food_name(&item.name);
-                if !clean.is_empty() {
+                let norm = normalizer::normalize_food_item(&item.name);
+                if !norm.name.is_empty() {
+                    let amt = parent_amount.or(norm.amount);
                     alternatives.push(MenuComponent {
-                        name: clean,
-                        amount: parent_amount,
+                        name: norm.name,
+                        amount: amt,
                         calories: parent_calories,
                         category: None,
                     });

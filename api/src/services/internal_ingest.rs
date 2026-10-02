@@ -75,8 +75,14 @@ async fn get_or_create_dish_alias(
     category: Option<String>,
 ) -> anyhow::Result<(i32, i32)> {
     let sanitized = sanitize_dish_name(raw_name);
+    let canonical = shared::services::normalizer::normalize_food_name(&sanitized);
+    let final_dish_name = if canonical.is_empty() {
+        sanitized.clone()
+    } else {
+        canonical
+    };
     let final_category =
-        category.or_else(|| shared::services::categorizer::categorize_dish(&sanitized));
+        category.or_else(|| shared::services::categorizer::categorize_dish(&final_dish_name));
 
     let stmt = sea_orm::Statement::from_sql_and_values(
         sea_orm::DbBackend::Postgres,
@@ -92,7 +98,7 @@ async fn get_or_create_dish_alias(
         RETURNING id, dish_id;
         "#,
         vec![
-            sanitized.clone().into(),
+            final_dish_name.into(),
             final_category.into(),
             sanitized.into(),
         ],

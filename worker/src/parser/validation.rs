@@ -92,12 +92,33 @@ pub fn validate_date_range(date: &str) -> bool {
 }
 
 /// Validates an item name: must be non-empty and at most 150 characters.
+/// Rejects shifted cells (pure numeric gramaj/portions or orphaned parenthetical notes).
 /// Returns the trimmed name if valid, None otherwise.
 pub fn validate_item_name(name: &str) -> Option<String> {
     let trimmed = name.trim();
     if trimmed.is_empty() || trimmed.len() > MAX_ITEM_NAME_LEN {
         return None;
     }
+
+    // Must contain at least two alphabetic characters (e.g. not "100 g", "60", "---")
+    let alpha_count = trimmed.chars().filter(|c| c.is_alphabetic()).count();
+    if alpha_count < 2 {
+        return None;
+    }
+
+    // If it's purely a numeric portion/energy value (e.g. "100 g", "60 gr", "200 ml", "250 kcal")
+    if validate_numeric_value(trimmed).is_some() {
+        return None;
+    }
+
+    // If it's wrapped entirely in parentheses without an external dish name (e.g. "(Söğüşlü)", "(Kemiksiz)")
+    if trimmed.starts_with('(')
+        && trimmed.ends_with(')')
+        && !trimmed[1..trimmed.len() - 1].contains('(')
+    {
+        return None;
+    }
+
     Some(trimmed.to_string())
 }
 
@@ -479,5 +500,18 @@ mod tests {
         assert!(is_colyak_sheet("GLUTENSİZ MENÜ"));
         assert!(is_colyak_sheet("Glutensiz Yemek"));
         assert!(!is_colyak_sheet("KAHVALTI"));
+    }
+
+    #[test]
+    fn test_item_name_rejects_shifted_cells() {
+        assert_eq!(validate_item_name("100 g"), None);
+        assert_eq!(validate_item_name("60 gr"), None);
+        assert_eq!(validate_item_name("200 ml"), None);
+        assert_eq!(validate_item_name("250 kcal"), None);
+        assert_eq!(validate_item_name("(Söğüşlü)"), None);
+        assert_eq!(validate_item_name("(Kemiksiz)"), None);
+        assert_eq!(validate_item_name("(Domates Sos + Yoğurt)"), None);
+        assert_eq!(validate_item_name("Simit"), Some("Simit".to_string()));
+        assert_eq!(validate_item_name("Su"), Some("Su".to_string()));
     }
 }

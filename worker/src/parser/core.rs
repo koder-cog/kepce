@@ -583,20 +583,28 @@ pub fn parse_grid_with_order(
                             let names: Vec<String> =
                                 crate::parser::normalizer::split_smart_alternatives(&name);
                             for n in names {
-                                alternatives.push(MenuComponent {
-                                    name: n,
-                                    amount: amount.clone(),
-                                    calories: None,
-                                    category: None,
-                                });
+                                let norm = crate::parser::normalizer::normalize_food_item(&n);
+                                if !norm.name.is_empty() {
+                                    let comp_amount = amount.clone().or(norm.amount);
+                                    alternatives.push(MenuComponent {
+                                        name: norm.name,
+                                        amount: comp_amount,
+                                        calories: None,
+                                        category: None,
+                                    });
+                                }
                             }
                             if alternatives.is_empty() {
-                                alternatives.push(MenuComponent {
-                                    name: crate::parser::normalizer::normalize_food_name(&name),
-                                    amount,
-                                    calories: None,
-                                    category: None,
-                                });
+                                let norm = crate::parser::normalizer::normalize_food_item(&name);
+                                if !norm.name.is_empty() {
+                                    let comp_amount = amount.or(norm.amount);
+                                    alternatives.push(MenuComponent {
+                                        name: norm.name,
+                                        amount: comp_amount,
+                                        calories: None,
+                                        category: None,
+                                    });
+                                }
                             }
                             long_items.push(MenuItem {
                                 takeaway_id: None,
@@ -874,21 +882,29 @@ pub fn parse_grid_with_order(
                                 None
                             };
 
-                            alternatives.push(MenuComponent {
-                                name: name.to_string(),
-                                amount: amt,
-                                calories: cal_val,
-                                category: None,
-                            });
+                            let norm = crate::parser::normalizer::normalize_food_item(name);
+                            if !norm.name.is_empty() {
+                                let comp_amount = amt.or(norm.amount);
+                                alternatives.push(MenuComponent {
+                                    name: norm.name,
+                                    amount: comp_amount,
+                                    calories: cal_val,
+                                    category: None,
+                                });
+                            }
                         }
 
                         if alternatives.is_empty() {
-                            alternatives.push(MenuComponent {
-                                name: crate::parser::normalizer::normalize_food_name(&item_name),
-                                amount,
-                                calories,
-                                category: None,
-                            });
+                            let norm = crate::parser::normalizer::normalize_food_item(&item_name);
+                            if !norm.name.is_empty() {
+                                let comp_amount = amount.or(norm.amount);
+                                alternatives.push(MenuComponent {
+                                    name: norm.name,
+                                    amount: comp_amount,
+                                    calories,
+                                    category: None,
+                                });
+                            }
                         }
 
                         target_list.push(MenuItem {

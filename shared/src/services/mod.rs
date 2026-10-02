@@ -5,5 +5,6 @@ pub mod calendar;
 pub mod categorizer;
 pub mod content_guard;
 pub mod immutable_store;
+pub mod normalizer;
 pub mod quality_score;
 pub mod source_registry;
