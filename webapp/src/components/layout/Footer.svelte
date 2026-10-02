@@ -1,14 +1,12 @@
 <div class="site-footer__inner">
   <div class="site-footer__brand">
     <div class="site-footer__brand-title">
-      Kepçe <span class="site-footer__brand-tagline"
-        >- Önüne Hazır Konanı Yeme Sanatı</span
-      >
+      Kepçe <span class="site-footer__brand-tagline">- Önüne Hazır Konanı Yeme Sanatı</span>
     </div>
     <p class="site-footer__brand-desc">
-      Kepçe, KYK yurtlarındaki tabldot menülerini önünüze döken süfer bir
-      hededir. Kullanıcı verilerini satıp zengin olmak gibi bir gayesi yoktur,
-      açık kaynaklıdır ve kendi yağında kavrulur.
+      Kepçe, KYK yurtlarındaki tabldot menülerini önünüze döken süfer bir hededir. Kullanıcı
+      verilerini satıp zengin olmak gibi bir gayesi yoktur, açık kaynaklıdır ve kendi yağında
+      kavrulur.
     </p>
   </div>
 
@@ -30,15 +28,9 @@
   <div class="site-footer__col">
     <div class="site-footer__col-title">Rehber</div>
     <a href="/sehirler" class="site-footer__link" data-link>Şehirler</a>
-    <a href="/kyk-yemek-saatleri" class="site-footer__link" data-link
-      >Yemek saatleri</a
-    >
-    <a href="/kyk-beslenme-yardimi" class="site-footer__link" data-link
-      >Beslenme yardımı</a
-    >
-    <a href="/sss" class="site-footer__link" data-link
-      >Sıkça sorulabilecek sorular</a
-    >
+    <a href="/kyk-yemek-saatleri" class="site-footer__link" data-link>Yemek saatleri</a>
+    <a href="/kyk-beslenme-yardimi" class="site-footer__link" data-link>Beslenme yardımı</a>
+    <a href="/sss" class="site-footer__link" data-link>Sıkça sorulabilecek sorular</a>
     <!--
     <a href="/istatistikler" class="site-footer__link" data-link
       >İstatistikler</a
@@ -49,27 +41,17 @@
   <div class="site-footer__col">
     <div class="site-footer__col-title">Yasal</div>
     <a href="/iletisim" class="site-footer__link" data-link>İletişim / Künye</a>
-    <a href="/gizlilik-politikasi" class="site-footer__link" data-link
-      >Gizlilik politikası</a
-    >
-    <a href="/kullanim-kosullari" class="site-footer__link" data-link
-      >Kullanım koşulları</a
-    >
+    <a href="/gizlilik-politikasi" class="site-footer__link" data-link>Gizlilik politikası</a>
+    <a href="/kullanim-kosullari" class="site-footer__link" data-link>Kullanım koşulları</a>
   </div>
 
   <div class="site-footer__col">
     <div class="site-footer__col-title">Topluluk</div>
-    <a
-      href="https://reddit.com/r/kepce"
-      target="_blank"
-      rel="noopener"
-      class="site-footer__link">Subreddit</a
+    <a href="https://reddit.com/r/kepce" target="_blank" rel="noopener" class="site-footer__link"
+      >Subreddit</a
     >
-    <a
-      href="https://twitter.com/kepceorg"
-      target="_blank"
-      rel="noopener"
-      class="site-footer__link">Twitter</a
+    <a href="https://twitter.com/kepceorg" target="_blank" rel="noopener" class="site-footer__link"
+      >Twitter</a
     >
     <a
       href="https://instagram.com/kepceorg"

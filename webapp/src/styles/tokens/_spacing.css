@@ -1,5 +1,5 @@
 @layer tokens {
-/*
+  /*
  * kepçe design tokens - spacing & layout
  *
  * Spacing scale, border radii, control height, z-index stack,
@@ -8,7 +8,7 @@
  * These tokens are theme-agnostic - no dark mode overrides needed.
  */
 
-:root {
+  :root {
     /* ── spacing scale ──────────────────────────────────────── */
     --space-xs: 0.25rem;
     --space-sm: 0.5rem;
@@ -50,5 +50,5 @@
     --footer-bg: var(--color-background);
     --nav-bg-opacity: 0.5;
     --bottom-bar-offset: 180px;
-}
+  }
 }

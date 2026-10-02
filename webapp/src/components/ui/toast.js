@@ -11,12 +11,12 @@ export function subscribeToasts(fn) {
   subscribers.push(fn);
   fn({ activeToast, toastQueue });
   return () => {
-    subscribers = subscribers.filter(f => f !== fn);
+    subscribers = subscribers.filter((f) => f !== fn);
   };
 }
 
 function notify() {
-  subscribers.forEach(fn => fn({ activeToast, toastQueue }));
+  subscribers.forEach((fn) => fn({ activeToast, toastQueue }));
 }
 
 function showNextToast() {
@@ -123,4 +123,3 @@ export function dismissAllToasts() {
     notify();
   }
 }
-

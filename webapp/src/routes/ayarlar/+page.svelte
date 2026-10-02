@@ -1,27 +1,27 @@
 <script>
-  import "@/styles/pages/_settings.css";
-  import { globalState, authActions } from "@/state.svelte.js";
-  import { goto } from "$app/navigation";
+  import '@/styles/pages/_settings.css';
+  import { globalState, authActions } from '@/state.svelte.js';
+  import { goto } from '$app/navigation';
 
-  import { onMount } from "svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import { api } from "@/api/index.js";
-  import { getCitiesData } from "@/stores/city.svelte.js";
-  import { timelineState } from "@/stores/timeline.svelte.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import Modal from "@/components/ui/Modal.svelte";
-  import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
-  import * as ui from "@/components/ui/forms.js";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import SessionManagerModal from "@/components/features/SessionManagerModal.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import { onMount } from 'svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import { api } from '@/api/index.js';
+  import { getCitiesData } from '@/stores/city.svelte.js';
+  import { timelineState } from '@/stores/timeline.svelte.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import Modal from '@/components/ui/Modal.svelte';
+  import SegmentedControl from '@/components/ui/SegmentedControl.svelte';
+  import * as ui from '@/components/ui/forms.js';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import SessionManagerModal from '@/components/features/SessionManagerModal.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
   import {
     subscribeToPush,
     unsubscribeFromPush,
     sendTestPush,
-    isPushSupported,
-  } from "@/utils/push.js";
-  import { nativeBridge } from "@/lib/native/bridge.js";
+    isPushSupported
+  } from '@/utils/push.js';
+  import { nativeBridge } from '@/lib/native/bridge.js';
 
   let user = $derived(globalState?.user);
   let isResending = $state(false);
@@ -31,18 +31,15 @@
     isResending = true;
     try {
       await api.resendVerification();
-      showToast("Doğrulama bağlantısı e-posta adresinize gönderildi.", {
-        type: "success",
+      showToast('Doğrulama bağlantısı e-posta adresinize gönderildi.', {
+        type: 'success'
       });
     } catch (e) {
       if (e.status === 429) {
-        showToast(
-          "Lütfen yeni bir e-posta istemeden önce 24 saat bekleyiniz.",
-          { type: "error" },
-        );
+        showToast('Lütfen yeni bir e-posta istemeden önce 24 saat bekleyiniz.', { type: 'error' });
       } else {
-        showToast(e.message || "E-posta gönderilirken bir hata oluştu.", {
-          type: "error",
+        showToast(e.message || 'E-posta gönderilirken bir hata oluştu.', {
+          type: 'error'
         });
       }
     } finally {
@@ -51,62 +48,49 @@
   }
   let cities = $state([]);
   let cityOptions = $derived([
-    { value: "", label: "Belirtmek istemiyorum" },
+    { value: '', label: 'Belirtmek istemiyorum' },
     ...cities
       .map((c) => ({ value: c.slug, label: c.name }))
-      .sort((a, b) => a.label.localeCompare(b.label, "tr")),
+      .sort((a, b) => a.label.localeCompare(b.label, 'tr'))
   ]);
 
   const safeStorageGet = (key, fallback) => {
-    if (typeof window === "undefined" || typeof localStorage === "undefined") {
+    if (typeof window === 'undefined' || typeof localStorage === 'undefined') {
       return fallback;
     }
     return localStorage.getItem(key) ?? fallback;
   };
 
-  let currentTheme = $state(safeStorageGet("renkTercihi", "sistem"));
+  let currentTheme = $state(safeStorageGet('renkTercihi', 'sistem'));
 
-  let showBot = $state(safeStorageGet("kepce_show_bot", "true") !== "false");
+  let showBot = $state(safeStorageGet('kepce_show_bot', 'true') !== 'false');
 
   if (
-    typeof window !== "undefined" &&
-    typeof localStorage !== "undefined" &&
-    localStorage.getItem("kepce_show_empty_cards") === null &&
-    localStorage.getItem("kepce_hide_empty_cards") !== null
+    typeof window !== 'undefined' &&
+    typeof localStorage !== 'undefined' &&
+    localStorage.getItem('kepce_show_empty_cards') === null &&
+    localStorage.getItem('kepce_hide_empty_cards') !== null
   ) {
-    const wasHidden = localStorage.getItem("kepce_hide_empty_cards") === "true";
-    localStorage.setItem(
-      "kepce_show_empty_cards",
-      !wasHidden ? "true" : "false",
-    );
-    localStorage.removeItem("kepce_hide_empty_cards");
+    const wasHidden = localStorage.getItem('kepce_hide_empty_cards') === 'true';
+    localStorage.setItem('kepce_show_empty_cards', !wasHidden ? 'true' : 'false');
+    localStorage.removeItem('kepce_hide_empty_cards');
   }
 
-  let showEmptyCards = $state(
-    safeStorageGet("kepce_show_empty_cards", "true") === "true",
-  );
-  let scrollbarPermanent = $state(
-    safeStorageGet("kepce_scrollbar_permanent", "false") === "true",
-  );
-  let animationsEnabled = $state(
-    safeStorageGet("kepce_animations", "true") !== "false",
-  );
-  let effectsEnabled = $state(
-    safeStorageGet("kepce_effects", "true") !== "false",
-  );
-  let showIndicators = $state(
-    safeStorageGet("kepce_show_indicators", "false") === "true",
-  );
-  import { setPaginationMode } from "@/state.svelte.js";
-  let paginationMode = $state(safeStorageGet("sayfalamaModu", "sayfali"));
+  let showEmptyCards = $state(safeStorageGet('kepce_show_empty_cards', 'true') === 'true');
+  let scrollbarPermanent = $state(safeStorageGet('kepce_scrollbar_permanent', 'false') === 'true');
+  let animationsEnabled = $state(safeStorageGet('kepce_animations', 'true') !== 'false');
+  let effectsEnabled = $state(safeStorageGet('kepce_effects', 'true') !== 'false');
+  let showIndicators = $state(safeStorageGet('kepce_show_indicators', 'false') === 'true');
+  import { setPaginationMode } from '@/state.svelte.js';
+  let paginationMode = $state(safeStorageGet('sayfalamaModu', 'sayfali'));
 
   function handlePaginationModeChange(val) {
     setPaginationMode(val);
   }
 
-  let dietMode = $state(safeStorageGet("kepce_diet_mode", "standard"));
+  let dietMode = $state(safeStorageGet('kepce_diet_mode', 'standard'));
   let externalLinkWarning = $state(
-    safeStorageGet("kepce_external_link_warning", "true") !== "false",
+    safeStorageGet('kepce_external_link_warning', 'true') !== 'false'
   );
 
   onMount(async () => {
@@ -117,74 +101,63 @@
     }
 
     if (
-      typeof window !== "undefined" &&
+      typeof window !== 'undefined' &&
       window.AndroidBridge &&
       window.AndroidBridge.getNotificationSettings
     ) {
       try {
-        const notifJson = JSON.parse(
-          window.AndroidBridge.getNotificationSettings(),
-        );
+        const notifJson = JSON.parse(window.AndroidBridge.getNotificationSettings());
         if (notifJson && !user) {
           anonBreakfastEnabled = Boolean(notifJson.breakfast_enabled);
-          anonBreakfastTime = notifJson.breakfast_time || "07:30";
+          anonBreakfastTime = notifJson.breakfast_time || '07:30';
           anonDinnerEnabled = Boolean(notifJson.dinner_enabled);
-          anonDinnerTime = notifJson.dinner_time || "16:30";
+          anonDinnerTime = notifJson.dinner_time || '16:30';
         }
       } catch (err) {
-        console.warn("AndroidBridge ayar okuma hatası:", err);
+        console.warn('AndroidBridge ayar okuma hatası:', err);
       }
     }
   });
 
   $effect(() => {
     if (currentTheme) {
-      localStorage.setItem("renkTercihi", currentTheme);
+      localStorage.setItem('renkTercihi', currentTheme);
       window.applyTheme && window.applyTheme(currentTheme);
     }
   });
 
   function handleBotToggle() {
-    localStorage.setItem("kepce_show_bot", showBot);
-    document.documentElement.classList.toggle("hide-ai", !showBot);
+    localStorage.setItem('kepce_show_bot', showBot);
+    document.documentElement.classList.toggle('hide-ai', !showBot);
   }
 
   function handleShowEmptyCardsToggle() {
-    localStorage.setItem("kepce_show_empty_cards", showEmptyCards);
+    localStorage.setItem('kepce_show_empty_cards', showEmptyCards);
   }
 
   function handleDevModeToggle() {
-    localStorage.setItem("kepce_dev_mode", globalState.devMode);
+    localStorage.setItem('kepce_dev_mode', globalState.devMode);
   }
 
   function handleScrollbarToggle() {
-    localStorage.setItem("kepce_scrollbar_permanent", scrollbarPermanent);
-    window.dispatchEvent(new CustomEvent("scrollbar-setting-changed"));
+    localStorage.setItem('kepce_scrollbar_permanent', scrollbarPermanent);
+    window.dispatchEvent(new CustomEvent('scrollbar-setting-changed'));
   }
 
   function handleAnimationsToggle() {
-    localStorage.setItem("kepce_animations", animationsEnabled);
-    document.documentElement.classList.toggle(
-      "disable-animations",
-      !animationsEnabled,
-    );
+    localStorage.setItem('kepce_animations', animationsEnabled);
+    document.documentElement.classList.toggle('disable-animations', !animationsEnabled);
   }
 
   function handleEffectsToggle() {
-    localStorage.setItem("kepce_effects", effectsEnabled);
-    document.documentElement.classList.toggle(
-      "disable-effects",
-      !effectsEnabled,
-    );
+    localStorage.setItem('kepce_effects', effectsEnabled);
+    document.documentElement.classList.toggle('disable-effects', !effectsEnabled);
   }
 
   function handleIndicatorsToggle() {
-    localStorage.setItem("kepce_show_indicators", showIndicators);
-    document.documentElement.classList.toggle(
-      "show-indicators",
-      showIndicators,
-    );
-    document.body.classList.toggle("show-indicators", showIndicators);
+    localStorage.setItem('kepce_show_indicators', showIndicators);
+    document.documentElement.classList.toggle('show-indicators', showIndicators);
+    document.body.classList.toggle('show-indicators', showIndicators);
   }
 
   function handleDietToggle() {
@@ -192,17 +165,17 @@
   }
 
   function handleExternalLinkWarningToggle() {
-    localStorage.setItem("kepce_external_link_warning", externalLinkWarning);
+    localStorage.setItem('kepce_external_link_warning', externalLinkWarning);
   }
 
   async function handleDefaultCityChange(val) {
     try {
       await api.updateProfile({ default_city_slug: val || null });
       globalState.user.default_city_slug = val || null;
-      nativeBridge.triggerHaptic("success");
+      nativeBridge.triggerHaptic('success');
     } catch (err) {
-      nativeBridge.triggerHaptic("error");
-      showToast(err.message, "error");
+      nativeBridge.triggerHaptic('error');
+      showToast(err.message, 'error');
     }
   }
 
@@ -210,10 +183,10 @@
     try {
       await api.updateProfile({ opt_out_statistics: e.target.checked });
       globalState.user.opt_out_statistics = e.target.checked;
-      nativeBridge.triggerHaptic("success");
+      nativeBridge.triggerHaptic('success');
     } catch (err) {
-      nativeBridge.triggerHaptic("error");
-      showToast(err.message, "error");
+      nativeBridge.triggerHaptic('error');
+      showToast(err.message, 'error');
     }
   }
 
@@ -222,16 +195,16 @@
 
   async function handlePreferenceChange(key, value, label) {
     try {
-      nativeBridge.triggerHaptic("light");
+      nativeBridge.triggerHaptic('light');
       await api.updateProfile({ [key]: value });
       if (globalState.user) {
         globalState.user[key] = value;
       }
-      nativeBridge.triggerHaptic("success");
+      nativeBridge.triggerHaptic('success');
     } catch (err) {
-      nativeBridge.triggerHaptic("error");
-      showToast(err.message || "Ayar güncellenirken bir hata oluştu.", {
-        type: "error",
+      nativeBridge.triggerHaptic('error');
+      showToast(err.message || 'Ayar güncellenirken bir hata oluştu.', {
+        type: 'error'
       });
     }
   }
@@ -240,38 +213,27 @@
 
   // Anonim öğün bildirim state'leri
   let anonBreakfastEnabled = $state(
-    safeStorageGet("kepce_notif_breakfast_enabled", "false") === "true",
+    safeStorageGet('kepce_notif_breakfast_enabled', 'false') === 'true'
   );
-  let anonBreakfastTime = $state(
-    safeStorageGet("kepce_notif_breakfast_time", "07:30"),
-  );
-  let anonDinnerEnabled = $state(
-    safeStorageGet("kepce_notif_dinner_enabled", "false") === "true",
-  );
-  let anonDinnerTime = $state(
-    safeStorageGet("kepce_notif_dinner_time", "17:00"),
-  );
+  let anonBreakfastTime = $state(safeStorageGet('kepce_notif_breakfast_time', '07:30'));
+  let anonDinnerEnabled = $state(safeStorageGet('kepce_notif_dinner_enabled', 'false') === 'true');
+  let anonDinnerTime = $state(safeStorageGet('kepce_notif_dinner_time', '17:00'));
 
-  async function syncPushSubscription(
-    breakfastEnabled,
-    breakfastTime,
-    dinnerEnabled,
-    dinnerTime,
-  ) {
+  async function syncPushSubscription(breakfastEnabled, breakfastTime, dinnerEnabled, dinnerTime) {
     if (
-      typeof window !== "undefined" &&
+      typeof window !== 'undefined' &&
       window.AndroidBridge &&
       window.AndroidBridge.updateNotificationSettings
     ) {
       try {
         window.AndroidBridge.updateNotificationSettings(
           Boolean(breakfastEnabled),
-          breakfastTime || "07:30",
+          breakfastTime || '07:30',
           Boolean(dinnerEnabled),
-          dinnerTime || "16:30",
+          dinnerTime || '16:30'
         );
       } catch (err) {
-        console.warn("AndroidBridge bildirim senkronizasyon hatası:", err);
+        console.warn('AndroidBridge bildirim senkronizasyon hatası:', err);
       }
     }
 
@@ -283,9 +245,7 @@
 
     try {
       const activeCitySlug =
-        globalState.user?.default_city_slug ||
-        timelineState.selectedCitySlug ||
-        "ankara";
+        globalState.user?.default_city_slug || timelineState.selectedCitySlug || 'ankara';
       const matchedCity = cities.find((c) => c.slug === activeCitySlug);
       const cityId = matchedCity ? matchedCity.id : null;
 
@@ -294,11 +254,11 @@
         breakfastEnabled,
         breakfastTime,
         dinnerEnabled,
-        dinnerTime,
+        dinnerTime
       });
     } catch (err) {
-      console.error("Push sync hatası:", err);
-      showToast(err.message || "Bildirim izni alınamadı.", { type: "error" });
+      console.error('Push sync hatası:', err);
+      showToast(err.message || 'Bildirim izni alınamadı.', { type: 'error' });
     }
   }
 
@@ -306,46 +266,39 @@
     if (checked && globalState.isApp) {
       pendingMealToggle = { meal, checked };
       showNotifExplainModal = true;
-      nativeBridge.triggerHaptic("medium");
+      nativeBridge.triggerHaptic('medium');
       return;
     }
     executeMealNotifToggle(meal, checked);
   }
 
   async function executeMealNotifToggle(meal, checked) {
-    nativeBridge.triggerHaptic(checked ? "success" : "light");
+    nativeBridge.triggerHaptic(checked ? 'success' : 'light');
     if (user) {
-      const key =
-        meal === "breakfast"
-          ? "notif_breakfast_enabled"
-          : "notif_dinner_enabled";
+      const key = meal === 'breakfast' ? 'notif_breakfast_enabled' : 'notif_dinner_enabled';
       await handlePreferenceChange(
         key,
         checked,
-        meal === "breakfast" ? "Kahvaltı bildirimi" : "Akşam yemeği bildirimi",
+        meal === 'breakfast' ? 'Kahvaltı bildirimi' : 'Akşam yemeği bildirimi'
       );
-      const bEnabled =
-        meal === "breakfast"
-          ? checked
-          : (user.notif_breakfast_enabled ?? false);
-      const bTime = user.notif_breakfast_time || "07:30";
-      const dEnabled =
-        meal === "dinner" ? checked : (user.notif_dinner_enabled ?? false);
-      const dTime = user.notif_dinner_time || "17:00";
+      const bEnabled = meal === 'breakfast' ? checked : (user.notif_breakfast_enabled ?? false);
+      const bTime = user.notif_breakfast_time || '07:30';
+      const dEnabled = meal === 'dinner' ? checked : (user.notif_dinner_enabled ?? false);
+      const dTime = user.notif_dinner_time || '17:00';
       await syncPushSubscription(bEnabled, bTime, dEnabled, dTime);
     } else {
-      if (meal === "breakfast") {
+      if (meal === 'breakfast') {
         anonBreakfastEnabled = checked;
-        localStorage.setItem("kepce_notif_breakfast_enabled", String(checked));
+        localStorage.setItem('kepce_notif_breakfast_enabled', String(checked));
       } else {
         anonDinnerEnabled = checked;
-        localStorage.setItem("kepce_notif_dinner_enabled", String(checked));
+        localStorage.setItem('kepce_notif_dinner_enabled', String(checked));
       }
       await syncPushSubscription(
         anonBreakfastEnabled,
         anonBreakfastTime,
         anonDinnerEnabled,
-        anonDinnerTime,
+        anonDinnerTime
       );
     }
   }
@@ -356,43 +309,37 @@
       executeMealNotifToggle(pendingMealToggle.meal, pendingMealToggle.checked);
       pendingMealToggle = null;
     }
-    if (
-      typeof window !== "undefined" &&
-      window.AndroidBridge?.requestNotificationPermission
-    ) {
+    if (typeof window !== 'undefined' && window.AndroidBridge?.requestNotificationPermission) {
       window.AndroidBridge.requestNotificationPermission();
     }
   }
 
   async function handleMealTimeChange(meal, time) {
     if (user) {
-      const key =
-        meal === "breakfast" ? "notif_breakfast_time" : "notif_dinner_time";
+      const key = meal === 'breakfast' ? 'notif_breakfast_time' : 'notif_dinner_time';
       await handlePreferenceChange(
         key,
         time,
-        meal === "breakfast" ? "Kahvaltı saati" : "Akşam yemeği saati",
+        meal === 'breakfast' ? 'Kahvaltı saati' : 'Akşam yemeği saati'
       );
       const bEnabled = user.notif_breakfast_enabled ?? false;
-      const bTime =
-        meal === "breakfast" ? time : user.notif_breakfast_time || "07:30";
+      const bTime = meal === 'breakfast' ? time : user.notif_breakfast_time || '07:30';
       const dEnabled = user.notif_dinner_enabled ?? false;
-      const dTime =
-        meal === "dinner" ? time : user.notif_dinner_time || "17:00";
+      const dTime = meal === 'dinner' ? time : user.notif_dinner_time || '17:00';
       await syncPushSubscription(bEnabled, bTime, dEnabled, dTime);
     } else {
-      if (meal === "breakfast") {
+      if (meal === 'breakfast') {
         anonBreakfastTime = time;
-        localStorage.setItem("kepce_notif_breakfast_time", time);
+        localStorage.setItem('kepce_notif_breakfast_time', time);
       } else {
         anonDinnerTime = time;
-        localStorage.setItem("kepce_notif_dinner_time", time);
+        localStorage.setItem('kepce_notif_dinner_time', time);
       }
       await syncPushSubscription(
         anonBreakfastEnabled,
         anonBreakfastTime,
         anonDinnerEnabled,
-        anonDinnerTime,
+        anonDinnerTime
       );
     }
   }
@@ -402,10 +349,10 @@
     isTestingPush = true;
     try {
       await sendTestPush();
-      showToast("Test bildirimi cihazınıza gönderildi!", { type: "success" });
+      showToast('Test bildirimi cihazınıza gönderildi!', { type: 'success' });
     } catch (err) {
-      showToast(err.message || "Test bildirimi gönderilemedi.", {
-        type: "error",
+      showToast(err.message || 'Test bildirimi gönderilemedi.', {
+        type: 'error'
       });
     } finally {
       isTestingPush = false;
@@ -413,46 +360,46 @@
   }
 
   let isNicknameModalOpen = $state(false);
-  let nicknameInput = $state("");
+  let nicknameInput = $state('');
 
   let isEmailModalOpen = $state(false);
-  let emailInput = $state("");
-  let emailPasswordInput = $state("");
+  let emailInput = $state('');
+  let emailPasswordInput = $state('');
 
   let isPasswordModalOpen = $state(false);
-  let currentPasswordInput = $state("");
-  let newPasswordInput = $state("");
-  let confirmPasswordInput = $state("");
+  let currentPasswordInput = $state('');
+  let newPasswordInput = $state('');
+  let confirmPasswordInput = $state('');
 
   let isDeleteModalOpen = $state(false);
-  let deletePasswordInput = $state("");
-  let nicknamePasswordInput = $state("");
+  let deletePasswordInput = $state('');
+  let nicknamePasswordInput = $state('');
 
   let isSessionModalOpen = $state(false);
 
   function changeNickname() {
-    nicknameInput = user.username || "";
-    nicknamePasswordInput = "";
+    nicknameInput = user.username || '';
+    nicknamePasswordInput = '';
     isNicknameModalOpen = true;
   }
 
   const USERNAME_RE = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\-_]+$/;
   const RESERVED_NAMES = [
-    "silinmis",
-    "silinmiş",
-    "deleted",
-    "anonim",
-    "anonymous",
-    "admin",
-    "kepce",
-    "kepçe",
-    "moderator",
-    "moderasyon",
-    "destek",
-    "support",
-    "system",
-    "sistem",
-    "bot",
+    'silinmis',
+    'silinmiş',
+    'deleted',
+    'anonim',
+    'anonymous',
+    'admin',
+    'kepce',
+    'kepçe',
+    'moderator',
+    'moderasyon',
+    'destek',
+    'support',
+    'system',
+    'sistem',
+    'bot'
   ];
 
   async function saveNickname() {
@@ -462,46 +409,37 @@
       return;
     }
     if (nickname.length < 3 || nickname.length > 25) {
-      showToast(
-        "Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.",
-        "error",
-      );
+      showToast('Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.', 'error');
       return;
     }
     if (RESERVED_NAMES.includes(nickname.toLowerCase())) {
-      showToast(
-        "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.",
-        "error",
-      );
+      showToast('Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.', 'error');
       return;
     }
     if (!USERNAME_RE.test(nickname)) {
-      showToast(
-        "Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.",
-        "error",
-      );
+      showToast('Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.', 'error');
       return;
     }
     if (!nicknamePasswordInput) {
-      showToast("Güvenlik için mevcut şifreni girmelisin.", "error");
+      showToast('Güvenlik için mevcut şifreni girmelisin.', 'error');
       return;
     }
     try {
       await api.updateProfile({
         username: nickname,
-        current_password: nicknamePasswordInput,
+        current_password: nicknamePasswordInput
       });
-      showToast("Kullanıcı adın başarıyla güncellendi!", "success");
+      showToast('Kullanıcı adın başarıyla güncellendi!', 'success');
       await authActions.refreshUser();
       isNicknameModalOpen = false;
     } catch (err) {
-      showToast(err.message, "error");
+      showToast(err.message, 'error');
     }
   }
 
   function changeEmail() {
-    emailInput = user.email || "";
-    emailPasswordInput = "";
+    emailInput = user.email || '';
+    emailPasswordInput = '';
     isEmailModalOpen = true;
   }
 
@@ -512,70 +450,70 @@
       return;
     }
     if (!emailPasswordInput) {
-      showToast("Lütfen mevcut şifrenizi giriniz.", "warning");
+      showToast('Lütfen mevcut şifrenizi giriniz.', 'warning');
       return;
     }
     try {
       await api.updateProfile({
         email,
-        current_password: emailPasswordInput,
+        current_password: emailPasswordInput
       });
-      showToast("E-posta adresin başarıyla güncellendi!", "success");
+      showToast('E-posta adresin başarıyla güncellendi!', 'success');
       await authActions.refreshUser();
       isEmailModalOpen = false;
     } catch (err) {
-      showToast(err.message, "error");
+      showToast(err.message, 'error');
     }
   }
 
   function changePassword() {
-    currentPasswordInput = "";
-    newPasswordInput = "";
-    confirmPasswordInput = "";
+    currentPasswordInput = '';
+    newPasswordInput = '';
+    confirmPasswordInput = '';
     isPasswordModalOpen = true;
   }
 
   async function savePassword() {
     if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) {
-      showToast("Lütfen tüm alanları doldurunuz.", "warning");
+      showToast('Lütfen tüm alanları doldurunuz.', 'warning');
       return;
     }
     if (newPasswordInput !== confirmPasswordInput) {
-      showToast("Yeni şifreler eşleşmiyor.", "error");
+      showToast('Yeni şifreler eşleşmiyor.', 'error');
       return;
     }
     if (newPasswordInput.length < 8) {
-      showToast("Yeni şifre en az 8 karakter olmalıdır.", "warning");
+      showToast('Yeni şifre en az 8 karakter olmalıdır.', 'warning');
       return;
     }
     try {
       await api.updateProfile({
         password: newPasswordInput,
-        current_password: currentPasswordInput,
+        current_password: currentPasswordInput
       });
-      showToast("Şifren başarıyla güncellendi!", "success");
+      showToast('Şifren başarıyla güncellendi!', 'success');
       isPasswordModalOpen = false;
     } catch (err) {
-      showToast(err.message, "error");
+      showToast(err.message, 'error');
     }
   }
 
   function deleteAccount() {
-    deletePasswordInput = "";
+    deletePasswordInput = '';
     isDeleteModalOpen = true;
   }
 
   async function confirmDeleteAccount() {
     if (!deletePasswordInput) {
-      showToast("Hesabını silmek için şifreni girmelisin.", "error");
+      showToast('Hesabını silmek için şifreni girmelisin.', 'error');
       return;
     }
     try {
       await api.deleteAccount(deletePasswordInput);
-      showToast("Hesabın ve tüm verilerin kalıcı olarak silindi.", "success");
+      showToast('Hesabın ve tüm verilerin kalıcı olarak silindi.', 'success');
       await authActions.logout();
     } catch (err) {
-      showToast(err.message || "Hesap silinirken bir hata oluştu.", "error");
+      showToast(err.message || 'Hesap silinirken bir hata oluştu.', 'error');
     }
   }
 </script>
@@ -589,7 +527,7 @@
 <!-- Modallar tamamen aynı kalıyor -->
 {#if isNicknameModalOpen}
   <Modal
-    options={{ title: "Kullanıcı adını değiştir", iconHtml: icon("edit", 24) }}
+    options={{ title: 'Kullanıcı adını değiştir', iconHtml: icon('edit', 24) }}
     onClose={() => (isNicknameModalOpen = false)}
   >
     {#snippet children()}
@@ -605,8 +543,7 @@
         <label class="form-label" for="new-nickname">Yeni kullanıcı adı</label>
       </div>
       <span class="form-help u-mb-md u-display-block">
-        En az 3, en fazla 25 karakter. Harf, rakam, alt çizgi ve tire
-        kullanılabilir.
+        En az 3, en fazla 25 karakter. Harf, rakam, alt çizgi ve tire kullanılabilir.
       </span>
       <div class="form-group form-group--floating">
         <input
@@ -624,20 +561,17 @@
       </p>
     {/snippet}
     {#snippet footer()}
-      <button
-        class="btn btn--secondary btn--squish"
-        onclick={() => (isNicknameModalOpen = false)}>İptal</button
+      <button class="btn btn--secondary btn--squish" onclick={() => (isNicknameModalOpen = false)}
+        >İptal</button
       >
-      <button class="btn btn--primary btn--squish" onclick={saveNickname}
-        >Güncelle</button
-      >
+      <button class="btn btn--primary btn--squish" onclick={saveNickname}>Güncelle</button>
     {/snippet}
   </Modal>
 {/if}
 
 {#if isEmailModalOpen}
   <Modal
-    options={{ title: "E-posta adresini değiştir", iconHtml: icon("mail", 24) }}
+    options={{ title: 'E-posta adresini değiştir', iconHtml: icon('mail', 24) }}
     onClose={() => (isEmailModalOpen = false)}
   >
     {#snippet children()}
@@ -660,26 +594,21 @@
           bind:value={emailPasswordInput}
           maxlength="72"
         />
-        <label class="form-label" for="current-password-email"
-          >Mevcut şifre</label
-        >
+        <label class="form-label" for="current-password-email">Mevcut şifre</label>
       </div>
     {/snippet}
     {#snippet footer()}
-      <button
-        class="btn btn--secondary btn--squish"
-        onclick={() => (isEmailModalOpen = false)}>İptal</button
+      <button class="btn btn--secondary btn--squish" onclick={() => (isEmailModalOpen = false)}
+        >İptal</button
       >
-      <button class="btn btn--primary btn--squish" onclick={saveEmail}
-        >Güncelle</button
-      >
+      <button class="btn btn--primary btn--squish" onclick={saveEmail}>Güncelle</button>
     {/snippet}
   </Modal>
 {/if}
 
 {#if isPasswordModalOpen}
   <Modal
-    options={{ title: "Şifreni değiştir", iconHtml: icon("lock", 24) }}
+    options={{ title: 'Şifreni değiştir', iconHtml: icon('lock', 24) }}
     onClose={() => (isPasswordModalOpen = false)}
   >
     {#snippet children()}
@@ -714,22 +643,15 @@
           bind:value={confirmPasswordInput}
           maxlength="72"
         />
-        <label class="form-label" for="confirm-password"
-          >Yeni şifre (Tekrar)</label
-        >
+        <label class="form-label" for="confirm-password">Yeni şifre (Tekrar)</label>
       </div>
-      <span class="form-help"
-        >Şifreniz en az 8, en fazla 72 karakter olmalıdır.</span
-      >
+      <span class="form-help">Şifreniz en az 8, en fazla 72 karakter olmalıdır.</span>
     {/snippet}
     {#snippet footer()}
-      <button
-        class="btn btn--secondary btn--squish"
-        onclick={() => (isPasswordModalOpen = false)}>İptal</button
+      <button class="btn btn--secondary btn--squish" onclick={() => (isPasswordModalOpen = false)}
+        >İptal</button
       >
-      <button class="btn btn--primary btn--squish" onclick={savePassword}
-        >Şifreyi güncelle</button
-      >
+      <button class="btn btn--primary btn--squish" onclick={savePassword}>Şifreyi güncelle</button>
     {/snippet}
   </Modal>
 {/if}
@@ -737,9 +659,9 @@
 {#if isDeleteModalOpen}
   <Modal
     options={{
-      title: "Hesabını sil",
-      iconHtml: icon("warning", 24),
-      iconColor: "danger",
+      title: 'Hesabını sil',
+      iconHtml: icon('warning', 24),
+      iconColor: 'danger'
     }}
     onClose={() => (isDeleteModalOpen = false)}
   >
@@ -758,13 +680,8 @@
       </div>
     {/snippet}
     {#snippet footer()}
-      <button
-        class="btn btn--secondary"
-        onclick={() => (isDeleteModalOpen = false)}>İptal</button
-      >
-      <button class="btn btn--danger" onclick={confirmDeleteAccount}
-        >Evet, Sil</button
-      >
+      <button class="btn btn--secondary" onclick={() => (isDeleteModalOpen = false)}>İptal</button>
+      <button class="btn btn--danger" onclick={confirmDeleteAccount}>Evet, Sil</button>
     {/snippet}
   </Modal>
 {/if}
@@ -772,8 +689,8 @@
 {#if showNotifExplainModal}
   <Modal
     options={{
-      title: "Öğün Bildirimleri",
-      iconHtml: icon("bell", 24),
+      title: 'Öğün Bildirimleri',
+      iconHtml: icon('bell', 24)
     }}
     onClose={() => {
       showNotifExplainModal = false;
@@ -782,12 +699,12 @@
   >
     {#snippet children()}
       <p class="u-text-base u-line-height-1-6">
-        Kahvaltı ve akşam yemeği menülerini tam vaktinde alabilmeniz ve günün
-        tabldotunu kaçırmamanız için sistem bildirim izni gerekmektedir.
+        Kahvaltı ve akşam yemeği menülerini tam vaktinde alabilmeniz ve günün tabldotunu
+        kaçırmamanız için sistem bildirim izni gerekmektedir.
       </p>
       <p class="u-mt-sm u-text-sm u-color-muted">
-        İzin verdiğinizde belirlediğiniz saatlerde cihazınıza bildirim
-        gönderilir. İstediğiniz an buradan kapatabilirsiniz.
+        İzin verdiğinizde belirlediğiniz saatlerde cihazınıza bildirim gönderilir. İstediğiniz an
+        buradan kapatabilirsiniz.
       </p>
     {/snippet}
     {#snippet footer()}
@@ -798,9 +715,7 @@
           pendingMealToggle = null;
         }}>Vazgeç</button
       >
-      <button class="btn btn--primary" onclick={confirmNotifPermission}
-        >İzin Ver ve Aç</button
-      >
+      <button class="btn btn--primary" onclick={confirmNotifPermission}>İzin Ver ve Aç</button>
     {/snippet}
   </Modal>
 {/if}
@@ -821,13 +736,11 @@
           <div class="c-list-row__info">
             <div class="c-list-row__title">Kullanıcı adı</div>
             <div class="c-list-row__desc">
-              {user.username || "Belirlenmedi"}
+              {user.username || 'Belirlenmedi'}
             </div>
           </div>
           <div class="c-list-row__control">
-            <button
-              class="btn btn--secondary btn--squish"
-              onclick={changeNickname}>Değiştir</button
+            <button class="btn btn--secondary btn--squish" onclick={changeNickname}>Değiştir</button
             >
           </div>
         </label>
@@ -838,13 +751,9 @@
             <div class="c-list-row__title">
               E-posta adresi
               {#if !user.is_verified}
-                <span class="u-color-negative u-text-xs u-ml-xs"
-                  >(Doğrulanmadı)</span
-                >
+                <span class="u-color-negative u-text-xs u-ml-xs">(Doğrulanmadı)</span>
               {:else}
-                <span class="u-color-positive u-text-xs u-ml-xs"
-                  >(Doğrulandı)</span
-                >
+                <span class="u-color-positive u-text-xs u-ml-xs">(Doğrulandı)</span>
               {/if}
             </div>
             <div class="c-list-row__desc">
@@ -857,15 +766,13 @@
                   onclick={handleResendVerification}
                   disabled={isResending}
                 >
-                  {isResending ? "Gönderiliyor..." : "Doğrulama Gönder"}
+                  {isResending ? 'Gönderiliyor...' : 'Doğrulama Gönder'}
                 </button>
               {/if}
             </div>
           </div>
           <div class="c-list-row__control">
-            <button class="btn btn--secondary btn--squish" onclick={changeEmail}
-              >Değiştir</button
-            >
+            <button class="btn btn--secondary btn--squish" onclick={changeEmail}>Değiştir</button>
           </div>
         </div>
 
@@ -875,9 +782,7 @@
             <div class="c-list-row__title">Şifre</div>
           </div>
           <div class="c-list-row__control">
-            <button
-              class="btn btn--secondary btn--squish"
-              onclick={changePassword}>Değiştir</button
+            <button class="btn btn--secondary btn--squish" onclick={changePassword}>Değiştir</button
             >
           </div>
         </label>
@@ -886,9 +791,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Varsayılan şehir</div>
-            <div class="c-list-row__desc">
-              Siteye girdiğinde otomatik seçilecek şehir
-            </div>
+            <div class="c-list-row__desc">Siteye girdiğinde otomatik seçilecek şehir</div>
           </div>
           <div class="c-list-row__control">
             <div class="city-dropdown-wrapper">
@@ -932,8 +835,8 @@
       <div
         class="c-list-row c-list-row--clickable c-list-row--tall"
         onclick={(e) => {
-          if (!e.target.closest(".c-segmented-control__btn")) {
-            const themes = ["sistem", "acik", "koyu"];
+          if (!e.target.closest('.c-segmented-control__btn')) {
+            const themes = ['sistem', 'acik', 'koyu'];
             const idx = themes.indexOf(currentTheme);
             currentTheme = themes[(idx + 1) % themes.length];
           }
@@ -947,9 +850,9 @@
             bind:value={currentTheme}
             variant="responsive"
             options={[
-              { value: "sistem", icon: icon("system", 18), label: "Sistem" },
-              { value: "acik", icon: icon("sun", 18), label: "Açık" },
-              { value: "koyu", icon: icon("moon", 18), label: "Koyu" },
+              { value: 'sistem', icon: icon('system', 18), label: 'Sistem' },
+              { value: 'acik', icon: icon('sun', 18), label: 'Açık' },
+              { value: 'koyu', icon: icon('moon', 18), label: 'Koyu' }
             ]}
           />
         </div>
@@ -975,10 +878,7 @@
 
       <!-- Animasyon efektleri -->
       <div class="c-list-row c-list-row--tall">
-        <label
-          for="settings-animations-toggle"
-          class="c-list-row__info u-cursor-pointer"
-        >
+        <label for="settings-animations-toggle" class="c-list-row__info u-cursor-pointer">
           <div class="c-list-row__title">Animasyon efektleri</div>
         </label>
         <div class="c-list-row__control u-flex u-align-center u-gap-sm">
@@ -992,12 +892,9 @@
               e.stopPropagation();
             }}
           >
-            {@html icon("info", 20)}
+            {@html icon('info', 20)}
           </button>
-          <label
-            for="settings-animations-toggle"
-            class="u-flex u-align-center u-cursor-pointer"
-          >
+          <label for="settings-animations-toggle" class="u-flex u-align-center u-cursor-pointer">
             <input
               type="checkbox"
               id="settings-animations-toggle"
@@ -1018,9 +915,7 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Açık/kapalı indikatörleri</div>
-          <div class="c-list-row__desc">
-            Anahtar durumu için semboller kullan
-          </div>
+          <div class="c-list-row__desc">Anahtar durumu için semboller kullan</div>
         </div>
         <div class="c-list-row__control">
           <input
@@ -1061,18 +956,16 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Çölyak modu</div>
-          <div class="c-list-row__desc">
-            Glutensiz menüleri ve uyarıları önceliklendir
-          </div>
+          <div class="c-list-row__desc">Glutensiz menüleri ve uyarıları önceliklendir</div>
         </div>
         <div class="c-list-row__control">
           <input
             type="checkbox"
             id="settings-celiac-toggle"
             class="c-input-hidden"
-            checked={dietMode === "celiac"}
+            checked={dietMode === 'celiac'}
             onchange={(e) => {
-              dietMode = e.target.checked ? "celiac" : "standard";
+              dietMode = e.target.checked ? 'celiac' : 'standard';
               handleDietToggle();
             }}
           />
@@ -1084,9 +977,7 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Kepçe Bot</div>
-          <div class="c-list-row__desc">
-            Günlük menülerdeki YZ yorumlarını göster
-          </div>
+          <div class="c-list-row__desc">Günlük menülerdeki YZ yorumlarını göster</div>
         </div>
         <div class="c-list-row__control">
           <input
@@ -1104,9 +995,7 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Boş içerik kartları</div>
-          <div class="c-list-row__desc">
-            İçinde bilgi bulunmayan kartları göster
-          </div>
+          <div class="c-list-row__desc">İçinde bilgi bulunmayan kartları göster</div>
         </div>
         <div class="c-list-row__control">
           <input
@@ -1193,11 +1082,7 @@
               class="c-input-hidden"
               checked={globalState.user?.notif_replies ?? false}
               onchange={(e) =>
-                handlePreferenceChange(
-                  "notif_replies",
-                  e.target.checked,
-                  "Yanıt bildirimleri",
-                )}
+                handlePreferenceChange('notif_replies', e.target.checked, 'Yanıt bildirimleri')}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -1217,9 +1102,9 @@
               checked={globalState.user?.notif_interactions ?? false}
               onchange={(e) =>
                 handlePreferenceChange(
-                  "notif_interactions",
+                  'notif_interactions',
                   e.target.checked,
-                  "Etkileşim bildirimleri",
+                  'Etkileşim bildirimleri'
                 )}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
@@ -1230,9 +1115,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Sistem</div>
-            <div class="c-list-row__desc">
-              Önemli güncellemeler ve moderasyon duyuruları
-            </div>
+            <div class="c-list-row__desc">Önemli güncellemeler ve moderasyon duyuruları</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -1241,11 +1124,7 @@
               class="c-input-hidden"
               checked={globalState.user?.notif_system ?? false}
               onchange={(e) =>
-                handlePreferenceChange(
-                  "notif_system",
-                  e.target.checked,
-                  "Sistem bildirimleri",
-                )}
+                handlePreferenceChange('notif_system', e.target.checked, 'Sistem bildirimleri')}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -1266,11 +1145,8 @@
               type="time"
               id="settings-notif-breakfast-time"
               class="c-time-input"
-              value={user
-                ? user.notif_breakfast_time || "07:30"
-                : anonBreakfastTime}
-              onchange={(e) =>
-                handleMealTimeChange("breakfast", e.target.value)}
+              value={user ? user.notif_breakfast_time || '07:30' : anonBreakfastTime}
+              onchange={(e) => handleMealTimeChange('breakfast', e.target.value)}
               title="Kahvaltı bildirim saati"
             />
           {/if}
@@ -1279,11 +1155,8 @@
               type="checkbox"
               id="settings-notif-breakfast"
               class="c-input-hidden"
-              checked={user
-                ? (user.notif_breakfast_enabled ?? false)
-                : anonBreakfastEnabled}
-              onchange={(e) =>
-                handleMealNotifToggle("breakfast", e.target.checked)}
+              checked={user ? (user.notif_breakfast_enabled ?? false) : anonBreakfastEnabled}
+              onchange={(e) => handleMealNotifToggle('breakfast', e.target.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </label>
@@ -1301,8 +1174,8 @@
               type="time"
               id="settings-notif-dinner-time"
               class="c-time-input"
-              value={user ? user.notif_dinner_time || "17:00" : anonDinnerTime}
-              onchange={(e) => handleMealTimeChange("dinner", e.target.value)}
+              value={user ? user.notif_dinner_time || '17:00' : anonDinnerTime}
+              onchange={(e) => handleMealTimeChange('dinner', e.target.value)}
               title="Akşam yemeği bildirim saati"
             />
           {/if}
@@ -1311,11 +1184,8 @@
               type="checkbox"
               id="settings-notif-dinner"
               class="c-input-hidden"
-              checked={user
-                ? (user.notif_dinner_enabled ?? false)
-                : anonDinnerEnabled}
-              onchange={(e) =>
-                handleMealNotifToggle("dinner", e.target.checked)}
+              checked={user ? (user.notif_dinner_enabled ?? false) : anonDinnerEnabled}
+              onchange={(e) => handleMealNotifToggle('dinner', e.target.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </label>
@@ -1335,7 +1205,7 @@
               onclick={handleTestPushNotification}
               disabled={isTestingPush}
             >
-              {isTestingPush ? "Gönderiliyor..." : "Test et"}
+              {isTestingPush ? 'Gönderiliyor...' : 'Test et'}
             </button>
           </div>
         </div>
@@ -1349,9 +1219,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Güvenlik</div>
-            <div class="c-list-row__desc">
-              Şifre değişiklikleri ve kritik güvenlik alarmları
-            </div>
+            <div class="c-list-row__desc">Şifre değişiklikleri ve kritik güvenlik alarmları</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -1360,11 +1228,7 @@
               class="c-input-hidden"
               checked={globalState.user?.email_security ?? false}
               onchange={(e) =>
-                handlePreferenceChange(
-                  "email_security",
-                  e.target.checked,
-                  "Güvenlik e-postaları",
-                )}
+                handlePreferenceChange('email_security', e.target.checked, 'Güvenlik e-postaları')}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -1380,9 +1244,7 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Dış bağlantı uyarısı</div>
-          <div class="c-list-row__desc">
-            Kepçe dışındaki sitelere giderken uyarı göster
-          </div>
+          <div class="c-list-row__desc">Kepçe dışındaki sitelere giderken uyarı göster</div>
         </div>
         <div class="c-list-row__control">
           <input
@@ -1427,38 +1289,29 @@
 
       <h3>Keşfet</h3>
       <div class="c-boxed-list">
-        <a
-          href="/menu-gonder"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
+        <a href="/menu-gonder" class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Menü gönder</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
+            {@html icon('arrowRight', 20)}
           </div>
         </a>
-        <a
-          href="/sss"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
+        <a href="/sss" class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Sıkça sorulan sorular</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
+            {@html icon('arrowRight', 20)}
           </div>
         </a>
 
-        <a
-          href="/durum"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
+        <a href="/durum" class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Sistem durumu</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
+            {@html icon('arrowRight', 20)}
           </div>
         </a>
         <a
@@ -1470,7 +1323,7 @@
             <div class="c-list-row__title">RSS akışı</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("externalLink", 20)}
+            {@html icon('externalLink', 20)}
           </div>
         </a>
       </div>
@@ -1487,7 +1340,7 @@
             <div class="c-list-row__title">Kaynak kodu</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("externalLink", 20)}
+            {@html icon('externalLink', 20)}
           </div>
         </a>
         <a
@@ -1500,7 +1353,7 @@
             <div class="c-list-row__title">Instagram</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("externalLink", 20)}
+            {@html icon('externalLink', 20)}
           </div>
         </a>
         <a
@@ -1513,7 +1366,7 @@
             <div class="c-list-row__title">Twitter</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("externalLink", 20)}
+            {@html icon('externalLink', 20)}
           </div>
         </a>
         <a
@@ -1526,44 +1379,35 @@
             <div class="c-list-row__title">Subreddit</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("externalLink", 20)}
+            {@html icon('externalLink', 20)}
           </div>
         </a>
       </div>
 
       <h3>Yasal</h3>
       <div class="c-boxed-list">
-        <a
-          href="/iletisim"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
+        <a href="/iletisim" class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Künye</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
+            {@html icon('arrowRight', 20)}
           </div>
         </a>
-        <a
-          href="/gizlilik-politikasi"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
+        <a href="/gizlilik-politikasi" class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Gizlilik politikası</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
+            {@html icon('arrowRight', 20)}
           </div>
         </a>
-        <a
-          href="/kullanim-kosullari"
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-        >
+        <a href="/kullanim-kosullari" class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Kullanım koşulları</div>
           </div>
           <div class="c-list-row__control u-color-muted">
-            {@html icon("arrowRight", 20)}
+            {@html icon('arrowRight', 20)}
           </div>
         </a>
       </div>
@@ -1581,30 +1425,21 @@
             onclick={() => authActions.logout()}
           >
             <div class="c-list-row__info">
-              <div class="c-list-row__title u-color-accent-negative">
-                Çıkış yap
-              </div>
+              <div class="c-list-row__title u-color-accent-negative">Çıkış yap</div>
             </div>
             <div class="c-list-row__control u-color-muted">
-              {@html icon("log-out", 20)}
+              {@html icon('log-out', 20)}
             </div>
           </div>
         {/if}
         <!-- svelte-ignore a11y_click_events_have_key_events -->
         <!-- svelte-ignore a11y_no_static_element_interactions -->
-        <div
-          class="c-list-row c-list-row--clickable c-list-row--regular"
-          onclick={deleteAccount}
-        >
+        <div class="c-list-row c-list-row--clickable c-list-row--regular" onclick={deleteAccount}>
           <div class="c-list-row__info">
-            <div class="c-list-row__title u-color-accent-negative">
-              Hesabını sil
-            </div>
+            <div class="c-list-row__title u-color-accent-negative">Hesabını sil</div>
           </div>
           <div class="c-list-row__control">
-            <button class="btn btn--danger btn--squish" onclick={deleteAccount}
-              >Hesabı sil</button
-            >
+            <button class="btn btn--danger btn--squish" onclick={deleteAccount}>Hesabı sil</button>
           </div>
         </div>
       </div>

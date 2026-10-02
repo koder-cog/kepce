@@ -92,7 +92,9 @@
     border-radius: var(--radius-2xs);
     background: var(--color-success);
     opacity: 0.8;
-    transition: transform var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard);
   }
 
   .pill::after {

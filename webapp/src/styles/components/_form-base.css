@@ -34,15 +34,15 @@
   /* ── Global Form Resets ───────────────────────────────────── */
 
   :where(
-    input[type="text"],
-    input[type="email"],
-    input[type="password"],
-    input[type="search"],
-    input[type="tel"],
-    input[type="url"],
-    input[type="number"],
-    input[type="month"],
-    input[type="date"],
+    input[type='text'],
+    input[type='email'],
+    input[type='password'],
+    input[type='search'],
+    input[type='tel'],
+    input[type='url'],
+    input[type='number'],
+    input[type='month'],
+    input[type='date'],
     textarea
   ) {
     width: 100%;
@@ -98,8 +98,6 @@
     background-color: var(--color-surface-sunken) !important;
     color: var(--color-text) !important;
   }
-
-
 
   .form-textarea--resizable {
     min-height: 80px !important;

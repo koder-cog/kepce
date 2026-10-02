@@ -1,7 +1,7 @@
 /**
  * Precision Engineered Tooltip Manager
  * Strictly adheres to geometric rules while ensuring robust event delegation.
- * 
+ *
  * Fixes applied:
  * - Proper cleanup of previous tooltip before creating new one
  * - Guard against stale references in async callbacks (rAF)
@@ -48,18 +48,18 @@ export function initTooltipManager() {
   const validateActiveTooltip = () => {
     if (!activeTooltip) return;
     const trigger = activeTooltip._trigger;
-    
+
     // 1. Is the trigger still mounted in the DOM?
     if (!document.body.contains(trigger)) {
       startDismissal();
       return;
     }
-    
+
     // 2. Is the trigger disabled or hidden?
     const rect = trigger.getBoundingClientRect();
     const isHidden = rect.width === 0 && rect.height === 0;
     const isDisabled = trigger.hasAttribute('disabled') || trigger.disabled === true;
-    
+
     if (isHidden || isDisabled) {
       startDismissal();
     }
@@ -70,7 +70,7 @@ export function initTooltipManager() {
 
     let content = '';
     const sourceTooltip = trigger.querySelector('.meal-card__source-tooltip, .tooltip-template');
-    
+
     if (sourceTooltip) {
       content = sourceTooltip.innerHTML;
     } else if (trigger.dataset.tooltip) {
@@ -91,7 +91,7 @@ export function initTooltipManager() {
     // 1. Mount
     const tooltip = document.createElement('div');
     tooltip.className = 'tooltip-instance tooltip-instance--measuring';
-    
+
     // Expressive threshold: If content is long or contains HTML, make it expressive
     if (content.length > 60 || content.includes('<br') || content.includes('<p')) {
       tooltip.classList.add('tooltip-instance--expressive');
@@ -130,7 +130,7 @@ export function initTooltipManager() {
       const scrollY = window.pageYOffset || document.documentElement.scrollTop;
 
       // Horizontal Centering with Viewport Clamping
-      const idealLeft = triggerRect.left + (triggerRect.width / 2) - (tooltipRect.width / 2);
+      const idealLeft = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
       const clampedLeft = Math.max(12, Math.min(idealLeft, vw - tooltipRect.width - 12));
       const finalLeft = clampedLeft + scrollX;
 
@@ -141,17 +141,17 @@ export function initTooltipManager() {
 
       if (spaceBelow < tooltipRect.height + gap && spaceAbove > tooltipRect.height + gap) {
         // Place Above
-        finalTop = (triggerRect.top - tooltipRect.height - gap) + scrollY;
+        finalTop = triggerRect.top - tooltipRect.height - gap + scrollY;
         tooltip.classList.add('tooltip-instance--placed-above');
       } else {
         // Place Below
-        finalTop = (triggerRect.bottom + gap) + scrollY;
+        finalTop = triggerRect.bottom + gap + scrollY;
         tooltip.classList.add('tooltip-instance--placed-below');
       }
 
       tooltip.style.left = `${Math.round(finalLeft)}px`;
       tooltip.style.top = `${Math.round(finalTop)}px`;
-      
+
       requestAnimationFrame(() => {
         tooltip.classList.remove('tooltip-instance--measuring');
         tooltip.classList.add('tooltip-instance--visible');
@@ -160,35 +160,17 @@ export function initTooltipManager() {
   };
 
   // Delegate listeners
-  document.addEventListener('mouseover', (e) => {
-    // 0. Suppress on touch devices to prevent "sticky" tooltips on hover
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-    
-    const trigger = e.target.closest('[data-tooltip], [data-tooltip-trigger], [title], .meal-card__source-wrapper');
-    if (!trigger) return;
+  document.addEventListener(
+    'mouseover',
+    (e) => {
+      // 0. Suppress on touch devices to prevent "sticky" tooltips on hover
+      if (window.matchMedia('(pointer: coarse)').matches) return;
 
-    if (trigger.hasAttribute('title')) {
-      const titleContent = trigger.getAttribute('title');
-      if (titleContent) {
-        trigger.setAttribute('data-tooltip', titleContent);
-        if (!trigger.hasAttribute('aria-label')) {
-          trigger.setAttribute('aria-label', titleContent);
-        }
-        trigger.removeAttribute('title');
-      }
-    }
+      const trigger = e.target.closest(
+        '[data-tooltip], [data-tooltip-trigger], [title], .meal-card__source-wrapper'
+      );
+      if (!trigger) return;
 
-    if (trigger.dataset.tooltipTrigger === 'click') return;
-
-    showTooltip(trigger);
-  }, { passive: true });
-
-  // Click/Touch Tap lifecycle: Toggles tooltips and handles click-outside dismissal
-  // Registered in capture phase to intercept taps before other handlers can call stopPropagation()
-  document.addEventListener('click', (e) => {
-    const trigger = e.target.closest('[data-tooltip], [data-tooltip-trigger], [title], .meal-card__source-wrapper');
-    if (trigger) {
-      // Convert native title attributes to custom tooltips on click/tap
       if (trigger.hasAttribute('title')) {
         const titleContent = trigger.getAttribute('title');
         if (titleContent) {
@@ -200,80 +182,132 @@ export function initTooltipManager() {
         }
       }
 
-      // c-list-row veya form satırları içindeki bilgi ikonlarına tıklandığında
-      // satırın veya form kontrolünün (switch/checkbox) tetiklenmesini önle
-      const infoIcon = trigger.closest('.c-list-row__info-icon');
-      if (infoIcon) {
-        e.preventDefault();
-        e.stopPropagation();
-      }
+      if (trigger.dataset.tooltipTrigger === 'click') return;
 
-      // Toggle off if clicking the same trigger on touch devices OR if it's explicitly click-triggered
-      if (window.matchMedia('(pointer: coarse)').matches || trigger.dataset.tooltipTrigger === 'click' || infoIcon) {
-        if (activeTooltip && activeTooltip._trigger === trigger) {
+      showTooltip(trigger);
+    },
+    { passive: true }
+  );
+
+  // Click/Touch Tap lifecycle: Toggles tooltips and handles click-outside dismissal
+  // Registered in capture phase to intercept taps before other handlers can call stopPropagation()
+  document.addEventListener(
+    'click',
+    (e) => {
+      const trigger = e.target.closest(
+        '[data-tooltip], [data-tooltip-trigger], [title], .meal-card__source-wrapper'
+      );
+      if (trigger) {
+        // Convert native title attributes to custom tooltips on click/tap
+        if (trigger.hasAttribute('title')) {
+          const titleContent = trigger.getAttribute('title');
+          if (titleContent) {
+            trigger.setAttribute('data-tooltip', titleContent);
+            if (!trigger.hasAttribute('aria-label')) {
+              trigger.setAttribute('aria-label', titleContent);
+            }
+            trigger.removeAttribute('title');
+          }
+        }
+
+        // c-list-row veya form satırları içindeki bilgi ikonlarına tıklandığında
+        // satırın veya form kontrolünün (switch/checkbox) tetiklenmesini önle
+        const infoIcon = trigger.closest('.c-list-row__info-icon');
+        if (infoIcon) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+
+        // Toggle off if clicking the same trigger on touch devices OR if it's explicitly click-triggered
+        if (
+          window.matchMedia('(pointer: coarse)').matches ||
+          trigger.dataset.tooltipTrigger === 'click' ||
+          infoIcon
+        ) {
+          if (activeTooltip && activeTooltip._trigger === trigger) {
+            startDismissal();
+            return;
+          }
+        }
+
+        // On all devices: clicking an actionable element (button/link) implies action taken.
+        // Dismiss the tooltip immediately to prevent it from overlaying subsequent UI changes (e.g. modals)
+        // Ancak bilgi ikonları (c-list-row__info-icon) doğrudan tooltip gösterme amaçlıdır; istisnadır.
+        if ((trigger.tagName === 'BUTTON' || trigger.closest('button, a')) && !infoIcon) {
           startDismissal();
           return;
         }
+
+        showTooltip(trigger);
+        // Defer validation to check if the trigger got destroyed/disabled by its click event
+        setTimeout(validateActiveTooltip, 150);
+      } else {
+        // Dismiss active tooltip if clicking completely outside
+        if (activeTooltip && !activeTooltip.contains(e.target)) {
+          startDismissal();
+        }
       }
-      
-      // On all devices: clicking an actionable element (button/link) implies action taken.
-      // Dismiss the tooltip immediately to prevent it from overlaying subsequent UI changes (e.g. modals)
-      // Ancak bilgi ikonları (c-list-row__info-icon) doğrudan tooltip gösterme amaçlıdır; istisnadır.
-      if ((trigger.tagName === 'BUTTON' || trigger.closest('button, a')) && !infoIcon) {
+    },
+    { capture: true, passive: false }
+  );
+
+  document.addEventListener(
+    'mouseout',
+    (e) => {
+      // 0. Suppress on touch devices to prevent synthetic event conflicts (e.g. sticky/flickering)
+      if (window.matchMedia('(pointer: coarse)').matches) return;
+
+      const trigger = e.target.closest(
+        '[data-tooltip], [data-tooltip-trigger], .meal-card__source-wrapper'
+      );
+      if (!trigger) return;
+
+      if (trigger.dataset.tooltipTrigger === 'click') return;
+
+      const movingToTooltip = activeTooltip && activeTooltip.contains(e.relatedTarget);
+      const movingToChild = trigger.contains(e.relatedTarget);
+
+      if (!movingToTooltip && !movingToChild) {
         startDismissal();
-        return;
       }
-      
-      showTooltip(trigger);
-      // Defer validation to check if the trigger got destroyed/disabled by its click event
-      setTimeout(validateActiveTooltip, 150);
-    } else {
-      // Dismiss active tooltip if clicking completely outside
-      if (activeTooltip && !activeTooltip.contains(e.target)) {
-        startDismissal();
-      }
-    }
-  }, { capture: true, passive: false });
-
-  document.addEventListener('mouseout', (e) => {
-    // 0. Suppress on touch devices to prevent synthetic event conflicts (e.g. sticky/flickering)
-    if (window.matchMedia('(pointer: coarse)').matches) return;
-
-    const trigger = e.target.closest('[data-tooltip], [data-tooltip-trigger], .meal-card__source-wrapper');
-    if (!trigger) return;
-
-    if (trigger.dataset.tooltipTrigger === 'click') return;
-
-    const movingToTooltip = activeTooltip && activeTooltip.contains(e.relatedTarget);
-    const movingToChild = trigger.contains(e.relatedTarget);
-
-    if (!movingToTooltip && !movingToChild) {
-      startDismissal();
-    }
-  }, { passive: true });
+    },
+    { passive: true }
+  );
 
   // Dismiss tooltips instantly on scroll events (critical for mobile scrolling UX)
-  window.addEventListener('scroll', () => {
-    if (activeTooltip) {
-      startDismissal();
-    }
-  }, { passive: true });
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (activeTooltip) {
+        startDismissal();
+      }
+    },
+    { passive: true }
+  );
 
   // Dismiss tooltips if the cursor leaves the window boundary entirely
-  document.addEventListener('mouseleave', () => {
-    if (activeTooltip) {
-      startDismissal();
-    }
-  }, { passive: true });
+  document.addEventListener(
+    'mouseleave',
+    () => {
+      if (activeTooltip) {
+        startDismissal();
+      }
+    },
+    { passive: true }
+  );
 
   // Continuously monitor active tooltip validity on mouse/pointer movement to prevent orphans
   document.addEventListener('pointermove', validateActiveTooltip, { passive: true });
 
   // Clean up and remove tooltips instantly on any SPA route changes
-  window.addEventListener('navigate', () => {
-    if (activeTooltip) {
-      activeTooltip.remove();
-      activeTooltip = null;
-    }
-  }, { passive: true });
+  window.addEventListener(
+    'navigate',
+    () => {
+      if (activeTooltip) {
+        activeTooltip.remove();
+        activeTooltip = null;
+      }
+    },
+    { passive: true }
+  );
 }

@@ -8,7 +8,9 @@ const DEFAULT_CITIES = Object.entries(CITY_MAP).map(([slug, name], i) => ({
   has_celiac: slug === 'istanbul'
 }));
 
-let currentCity = $state(typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || 'istanbul' : 'istanbul');
+let currentCity = $state(
+  typeof window !== 'undefined' ? localStorage.getItem('kepce_city') || 'istanbul' : 'istanbul'
+);
 let onCityChangeListeners = [];
 
 // ── Şehir Listesi (Stale-While-Revalidate Önbellek) ──────────
@@ -32,7 +34,9 @@ export function getCitiesData() {
           citiesData = parsed;
         }
       }
-    } catch (_) { /* bozuk cache, yok say */ }
+    } catch (_) {
+      /* bozuk cache, yok say */
+    }
 
     // 2. Arka planda API'den tazeleyerek önbelleği yenile (SWR)
     if (!citiesPromise) {
@@ -83,5 +87,5 @@ export function setCurrentCity(slug) {
   if (typeof window !== 'undefined') {
     localStorage.setItem('kepce_city', slug);
   }
-  onCityChangeListeners.forEach(cb => cb(slug));
+  onCityChangeListeners.forEach((cb) => cb(slug));
 }

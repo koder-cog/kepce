@@ -6,8 +6,8 @@
   Recursive (kendi kendini çağıran) bir Svelte bileşenidir.
 -->
 <script>
-  import "@/styles/pages/_comments.css";
-  import CommentCard from "./CommentCard.svelte";
+  import '@/styles/pages/_comments.css';
+  import CommentCard from './CommentCard.svelte';
   let { comments = [], depth = 0, menuId, onloadData } = $props();
 </script>
 

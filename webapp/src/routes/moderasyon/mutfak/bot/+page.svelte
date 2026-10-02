@@ -4,23 +4,40 @@
   import Loader from '@/components/ui/Loader.svelte';
   import { icon } from '@/components/ui/icons.js';
   import { showToast } from '@/components/ui/toast.js';
-  import Dropdown from "@/components/features/Dropdown.svelte";
+  import Dropdown from '@/components/features/Dropdown.svelte';
 
   let cities = $state([]);
   let botCitySelect = $state('');
-  
+
   const now = new Date();
   let botMonthSelect = $state(String(now.getMonth() + 1).padStart(2, '0'));
   let botYearSelect = $state(now.getFullYear().toString());
 
   const monthsTR = [
-    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", 
-    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    'Ocak',
+    'Şubat',
+    'Mart',
+    'Nisan',
+    'Mayıs',
+    'Haziran',
+    'Temmuz',
+    'Ağustos',
+    'Eylül',
+    'Ekim',
+    'Kasım',
+    'Aralık'
   ];
 
-  let cityOptions = $derived(cities.map(c => ({ label: c.name, value: c.slug })));
-  let monthOptions = $derived(monthsTR.map((m, i) => ({ label: m, value: (i + 1).toString().padStart(2, '0') })));
-  let yearOptions = $derived([now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map(y => ({ label: y.toString(), value: y.toString() })));
+  let cityOptions = $derived(cities.map((c) => ({ label: c.name, value: c.slug })));
+  let monthOptions = $derived(
+    monthsTR.map((m, i) => ({ label: m, value: (i + 1).toString().padStart(2, '0') }))
+  );
+  let yearOptions = $derived(
+    [now.getFullYear() - 1, now.getFullYear(), now.getFullYear() + 1].map((y) => ({
+      label: y.toString(),
+      value: y.toString()
+    }))
+  );
 
   let isLoading = $state(true);
   let cachedBotData = null;
@@ -56,7 +73,9 @@
       const data = await getBotData();
       await navigator.clipboard.writeText(data.directive);
       showToast('Sistem direktifi kopyalandı.');
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function exportMenuData() {
@@ -64,7 +83,9 @@
       const data = await getBotData();
       await navigator.clipboard.writeText(data.menu_data);
       showToast('Menü verisi kopyalandı.');
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function exportSchema() {
@@ -72,7 +93,9 @@
       const data = await getBotData();
       await navigator.clipboard.writeText(JSON.stringify(data.schema, null, 2));
       showToast('JSON şeması kopyalandı.');
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function exportCombined() {
@@ -80,7 +103,9 @@
       const data = await getBotData();
       await navigator.clipboard.writeText(data.prompt);
       showToast('Tüm girdi (tek parça) kopyalandı.');
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   function processAIOutput() {
@@ -102,18 +127,20 @@
       }
 
       const data = JSON.parse(raw);
-      const entries = Array.isArray(data) ? data : (data.yorum_listesi || data.gunler || []);
+      const entries = Array.isArray(data) ? data : data.yorum_listesi || data.gunler || [];
 
       if (entries.length === 0) throw new Error('Geçerli yorum verisi bulunamadı.');
 
       previewEntries = entries;
       injectionCity = botCitySelect;
       showToast('JSON başarıyla çözümlendi.');
-    } catch (err) { showToast('JSON geçersiz: ' + err.message, 'error'); }
+    } catch (err) {
+      showToast('JSON geçersiz: ' + err.message, 'error');
+    }
   }
 
   async function confirmInjection() {
-    const comments = previewEntries.map(entry => ({
+    const comments = previewEntries.map((entry) => ({
       date: entry.date || entry.tarih,
       commentary: entry.comment || entry.yorum
     }));
@@ -123,7 +150,9 @@
       showToast(`${res.updated_count} menü kaydı bot yorumuyla güncellendi!`);
       previewEntries = null;
       aiOutputJson = '';
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 </script>
 
@@ -166,18 +195,10 @@
         </div>
 
         <div class="kepce-bot-actions">
-          <button class="btn btn--primary" onclick={exportDirective}>
-            Direktifi kopyala
-          </button>
-          <button class="btn btn--primary" onclick={exportMenuData}>
-            Menüyü kopyala
-          </button>
-          <button class="btn btn--secondary" onclick={exportSchema}>
-            Şemayı kopyala
-          </button>
-          <button class="btn btn--secondary" onclick={exportCombined}>
-            Tümünü kopyala
-          </button>
+          <button class="btn btn--primary" onclick={exportDirective}> Direktifi kopyala </button>
+          <button class="btn btn--primary" onclick={exportMenuData}> Menüyü kopyala </button>
+          <button class="btn btn--secondary" onclick={exportSchema}> Şemayı kopyala </button>
+          <button class="btn btn--secondary" onclick={exportCombined}> Tümünü kopyala </button>
         </div>
       </div>
     </section>
@@ -187,9 +208,7 @@
       <div class="kepce-bot-step__header">
         <div class="kepce-bot-step__title">
           <h3 class="u-text-md">2. Çözümle</h3>
-          <p class="u-text-sm">
-            Modelin JSON çıktısını çözümle ve önizlemeyi oluştur.
-          </p>
+          <p class="u-text-sm">Modelin JSON çıktısını çözümle ve önizlemeyi oluştur.</p>
         </div>
       </div>
 
@@ -200,13 +219,10 @@
             bind:value={aiOutputJson}
             rows="8"
             class="form-textarea--resizable form-input"
-            placeholder={'[{"tarih": "1 Nisan 2026", "yorum": "..."}]'}
-          ></textarea>
+            placeholder={'[{"tarih": "1 Nisan 2026", "yorum": "..."}]'}></textarea>
         </div>
 
-        <button class="btn btn--secondary btn--full" onclick={processAIOutput}>
-          Çözümle
-        </button>
+        <button class="btn btn--secondary btn--full" onclick={processAIOutput}> Çözümle </button>
       </div>
     </section>
 
@@ -216,9 +232,7 @@
         <div class="kepce-bot-step__header">
           <div class="kepce-bot-step__title">
             <h3 class="u-text-md">3. Enjekte et</h3>
-            <p class="u-text-sm">
-              Önizlenen bot yorumlarını onayla ve veritabanına yaz.
-            </p>
+            <p class="u-text-sm">Önizlenen bot yorumlarını onayla ve veritabanına yaz.</p>
           </div>
         </div>
 
@@ -227,9 +241,7 @@
             <h4 class="u-text-md">
               Önizleme ({previewEntries.length} Gün)
             </h4>
-            <button class="btn btn--primary" onclick={confirmInjection}>
-              Veritabanına yaz
-            </button>
+            <button class="btn btn--primary" onclick={confirmInjection}> Veritabanına yaz </button>
           </div>
 
           <div class="admin-preview-list">

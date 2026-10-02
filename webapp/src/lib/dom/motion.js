@@ -62,12 +62,12 @@ export const getDuration = (val = 'default') => {
  * @param {number|keyof typeof DURATION} ms
  * @returns {Promise<void>}
  */
-export const wait = (ms) => new Promise(resolve => setTimeout(resolve, getDuration(ms)));
+export const wait = (ms) => new Promise((resolve) => setTimeout(resolve, getDuration(ms)));
 
 /**
  * Runs a function in the next animation frame if motion is enabled,
  * otherwise runs it immediately.
- * @param {Function} fn 
+ * @param {Function} fn
  */
 export const runNextTick = (fn) => {
   if (isMotionEnabled()) {
@@ -90,9 +90,10 @@ export const animate = (element, keyframes, options) => {
   if (typeof options === 'number') {
     options = { duration: isEnabled ? options : 0 };
   } else if (options) {
-    const rawDuration = typeof options.duration === 'string'
-      ? (DURATION[options.duration] ?? DURATION.default)
-      : (options.duration ?? DURATION.default);
+    const rawDuration =
+      typeof options.duration === 'string'
+        ? (DURATION[options.duration] ?? DURATION.default)
+        : (options.duration ?? DURATION.default);
 
     options.duration = isEnabled ? rawDuration : 0;
   } else {
@@ -105,7 +106,7 @@ export const animate = (element, keyframes, options) => {
       finish: () => {},
       onfinish: null,
       play: () => {},
-      pause: () => {},
+      pause: () => {}
     };
     setTimeout(() => {
       if (typeof dummyAnimation.onfinish === 'function') {
@@ -139,7 +140,7 @@ export async function smartLoad(task, onLoading, onComplete, options = {}) {
     if (isLoadingShown) {
       const elapsed = Date.now() - (startTime + getDuration(threshold));
       const remaining = Math.max(0, getDuration(minDuration) - elapsed);
-      if (remaining > 0) await new Promise(r => setTimeout(r, remaining));
+      if (remaining > 0) await new Promise((r) => setTimeout(r, remaining));
     }
 
     onComplete(result);

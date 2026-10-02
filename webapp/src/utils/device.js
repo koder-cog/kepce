@@ -8,10 +8,16 @@ export function parseUserAgent(uaString) {
   // OS Tespiti
   if (uaString.includes('Windows')) os = 'Windows';
   else if (uaString.includes('Mac OS X')) os = 'macOS';
-  else if (uaString.includes('Android')) { os = 'Android'; icon = 'smartphone'; }
-  else if (uaString.includes('iPhone')) { os = 'iOS'; icon = 'smartphone'; }
-  else if (uaString.includes('iPad')) { os = 'iPadOS'; icon = 'tablet'; }
-  else if (uaString.includes('Linux')) os = 'Linux';
+  else if (uaString.includes('Android')) {
+    os = 'Android';
+    icon = 'smartphone';
+  } else if (uaString.includes('iPhone')) {
+    os = 'iOS';
+    icon = 'smartphone';
+  } else if (uaString.includes('iPad')) {
+    os = 'iPadOS';
+    icon = 'tablet';
+  } else if (uaString.includes('Linux')) os = 'Linux';
 
   // Tarayıcı Tespiti
   if (uaString.includes('Firefox') && !uaString.includes('Seamonkey')) browser = 'Firefox';

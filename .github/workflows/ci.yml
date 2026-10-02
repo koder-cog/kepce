@@ -118,6 +118,9 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm ci
 
+      - name: Run Frontend Format Check
+        run: npm run format:check
+
       - name: Run Frontend Code Checks
         run: npm run check
 

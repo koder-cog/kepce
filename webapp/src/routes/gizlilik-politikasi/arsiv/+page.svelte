@@ -1,9 +1,9 @@
 <script>
-  import { LEGAL_VERSIONS } from "$lib/data/legal/versions.js";
-  import ContentPage from "@/components/layout/ContentPage.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import { LEGAL_VERSIONS } from '$lib/data/legal/versions.js';
+  import ContentPage from '@/components/layout/ContentPage.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
-  const versions = [...LEGAL_VERSIONS["gizlilik-politikasi"]].reverse();
+  const versions = [...LEGAL_VERSIONS['gizlilik-politikasi']].reverse();
 </script>
 
 <Seo
@@ -17,12 +17,8 @@
   <ul>
     {#each versions as v}
       <li>
-        <a
-          href={v.current
-            ? "/gizlilik-politikasi"
-            : `/gizlilik-politikasi/arsiv/${v.slug}`}
-        >
-          {v.current ? "Mevcut sürüm" : v.version}
+        <a href={v.current ? '/gizlilik-politikasi' : `/gizlilik-politikasi/arsiv/${v.slug}`}>
+          {v.current ? 'Mevcut sürüm' : v.version}
         </a>
         {#if v.note}
           <br /><small class="u-color-muted">{v.note}</small>

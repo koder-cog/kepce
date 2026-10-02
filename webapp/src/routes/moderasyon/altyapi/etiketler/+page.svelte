@@ -12,11 +12,13 @@
   let isTagsLoading = $state(true);
   let tagsData = $state([]);
   let tagsError = $state(null);
-  let groupedTags = $derived(tagsData.reduce((acc, t) => {
-    if (!acc[t.category]) acc[t.category] = [];
-    acc[t.category].push(t);
-    return acc;
-  }, {}));
+  let groupedTags = $derived(
+    tagsData.reduce((acc, t) => {
+      if (!acc[t.category]) acc[t.category] = [];
+      acc[t.category].push(t);
+      return acc;
+    }, {})
+  );
 
   async function loadTags() {
     isTagsLoading = true;
@@ -76,7 +78,9 @@
       buttons: [
         { label: 'İptal', variant: 'secondary' },
         {
-          label: 'Sil', variant: 'danger', onClick: async () => {
+          label: 'Sil',
+          variant: 'danger',
+          onClick: async () => {
             try {
               await api.deleteTag(id);
               showToast('Etiket silindi.');
@@ -106,9 +110,13 @@
     <div class="card__header u-flex u-justify-between u-items-center">
       <div>
         <h3 class="card__title">Etiket Yönetimi</h3>
-        <p class="u-color-muted u-text-sm">Sistemin kullandığı tüm dinamik etiketler burada. Dikkatli düzenle.</p>
+        <p class="u-color-muted u-text-sm">
+          Sistemin kullandığı tüm dinamik etiketler burada. Dikkatli düzenle.
+        </p>
       </div>
-      <button class="btn btn--primary btn--sm" onclick={() => handleTagModal()}>{@html icon('plus', 16)} Yeni Etiket</button>
+      <button class="btn btn--primary btn--sm" onclick={() => handleTagModal()}
+        >{@html icon('plus', 16)} Yeni Etiket</button
+      >
     </div>
     <div class="card__body">
       {#each Object.entries(groupedTags) as [cat, list]}
@@ -130,8 +138,14 @@
                     <td>{tag.sort_order}</td>
                     <td class="col-actions">
                       <div class="u-flex u-gap-sm u-justify-end">
-                        <button class="btn btn--xs btn--secondary edit-tag" onclick={() => handleTagModal(tag)}>Düzenle</button>
-                        <button class="btn btn--xs btn--primary delete-tag" onclick={() => handleDeleteTag(tag.id)}>Sil</button>
+                        <button
+                          class="btn btn--xs btn--secondary edit-tag"
+                          onclick={() => handleTagModal(tag)}>Düzenle</button
+                        >
+                        <button
+                          class="btn btn--xs btn--primary delete-tag"
+                          onclick={() => handleDeleteTag(tag.id)}>Sil</button
+                        >
                       </div>
                     </td>
                   </tr>
@@ -146,31 +160,49 @@
 {/if}
 
 {#if isTagModalOpen}
-<Modal options={{ title: activeTagId ? 'Etiketi Düzenle' : 'Yeni Etiket Ekle', iconHtml: icon('tag', 24) }} onClose={() => (isTagModalOpen = false)}>
-  {#snippet children()}
-    <div class="form-group form-group--floating u-mb-md">
-      <input id="tag-name" type="text" class="form-input" placeholder=" " bind:value={tagFormState.name}>
-      <label for="tag-name" class="form-label">Etiket İsmi</label>
-    </div>
-    <div class="form-group u-mb-md">
-      <div class="u-display-block u-mb-xs u-text-sm u-color-muted">Kategori</div>
-      <Dropdown
-        options={[
-          { value: 'sentiment', label: 'Duygu (Sentiment)' },
-          { value: 'content', label: 'İçerik' },
-          { value: 'dietary', label: 'Diyet' }
-        ]}
-        bind:value={tagFormState.category}
-      />
-    </div>
-    <div class="form-group form-group--floating">
-      <input id="tag-sort-order" type="number" class="form-input" placeholder=" " bind:value={tagFormState.sort_order}>
-      <label for="tag-sort-order" class="form-label">Sıralama (Sort Order)</label>
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isTagModalOpen = false}>İptal</button>
-    <button class="btn btn--primary" onclick={submitTag}>Kaydet</button>
-  {/snippet}
-</Modal>
+  <Modal
+    options={{
+      title: activeTagId ? 'Etiketi Düzenle' : 'Yeni Etiket Ekle',
+      iconHtml: icon('tag', 24)
+    }}
+    onClose={() => (isTagModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="form-group form-group--floating u-mb-md">
+        <input
+          id="tag-name"
+          type="text"
+          class="form-input"
+          placeholder=" "
+          bind:value={tagFormState.name}
+        />
+        <label for="tag-name" class="form-label">Etiket İsmi</label>
+      </div>
+      <div class="form-group u-mb-md">
+        <div class="u-display-block u-mb-xs u-text-sm u-color-muted">Kategori</div>
+        <Dropdown
+          options={[
+            { value: 'sentiment', label: 'Duygu (Sentiment)' },
+            { value: 'content', label: 'İçerik' },
+            { value: 'dietary', label: 'Diyet' }
+          ]}
+          bind:value={tagFormState.category}
+        />
+      </div>
+      <div class="form-group form-group--floating">
+        <input
+          id="tag-sort-order"
+          type="number"
+          class="form-input"
+          placeholder=" "
+          bind:value={tagFormState.sort_order}
+        />
+        <label for="tag-sort-order" class="form-label">Sıralama (Sort Order)</label>
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isTagModalOpen = false)}>İptal</button>
+      <button class="btn btn--primary" onclick={submitTag}>Kaydet</button>
+    {/snippet}
+  </Modal>
 {/if}

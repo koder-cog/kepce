@@ -5,11 +5,11 @@ export const favoritesApi = {
   toggleFavorite: (dishId) =>
     request('/auth/me/favorites/toggle', {
       method: 'POST',
-      body: JSON.stringify({ dish_id: dishId }),
+      body: JSON.stringify({ dish_id: dishId })
     }),
   togglePinned: (dishId) =>
     request('/auth/me/pinned/toggle', {
       method: 'POST',
-      body: JSON.stringify({ dish_id: dishId }),
-    }),
+      body: JSON.stringify({ dish_id: dishId })
+    })
 };

@@ -4,7 +4,9 @@
     border-top: 1px solid var(--color-border);
     padding: var(--space-3xl) var(--space-xl);
     margin-top: var(--space-xl);
-    transition: padding var(--dur-slow) var(--ease-standard), margin var(--dur-slow) var(--ease-standard);
+    transition:
+      padding var(--dur-slow) var(--ease-standard),
+      margin var(--dur-slow) var(--ease-standard);
     view-transition-name: kepce-footer;
   }
 
@@ -14,7 +16,9 @@
     display: grid;
     grid-template-columns: 2fr 1fr 1fr 1fr 1fr;
     gap: var(--space-2xl);
-    transition: gap var(--dur-slow) var(--ease-standard), grid-template-columns var(--dur-slow) var(--ease-standard);
+    transition:
+      gap var(--dur-slow) var(--ease-standard),
+      grid-template-columns var(--dur-slow) var(--ease-standard);
   }
 
   .site-footer__brand-title {
@@ -97,7 +101,6 @@
   }
 
   @media (max-width: 600px) {
-
     /* Only add padding if the fixed bottom comment bar is present */
     body:has(.ci-container) .site-footer {
       padding-bottom: var(--bottom-bar-offset);

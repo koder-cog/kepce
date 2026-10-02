@@ -1,5 +1,5 @@
 @layer tokens {
-/*
+  /*
  * kepçe design tokens - typography
  *
  * Font families, text size scale, line heights, letter-spacing,
@@ -8,7 +8,7 @@
  * These tokens are theme-agnostic - no dark mode overrides needed.
  */
 
-:root {
+  :root {
     /* ── font families ──────────────────────────────────────── */
     --font-display: 'paytone one', sans-serif;
     --font-body: 'public sans', -apple-system, blinkmacsystemfont, 'segoe ui', sans-serif;
@@ -66,5 +66,5 @@
     --font-weight-bold: 700;
     --font-weight-extrabold: 800;
     --font-weight-black: 900;
-}
+  }
 }

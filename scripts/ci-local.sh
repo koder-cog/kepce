@@ -92,9 +92,16 @@ else
 fi
 
 # ------------------------------------------------------------------------------
-section "5/7 Webapp: check + test + build"
+section "5/7 Webapp: fmt + check + test + build"
 # ------------------------------------------------------------------------------
 cd webapp || exit 1
+
+FMT_WEB_OUT=$(npm run format:check 2>&1)
+if echo "$FMT_WEB_OUT" | grep -q "All matched files use Prettier code style"; then
+    report "webapp fmt" true "biçimlendirme temiz"
+else
+    report "webapp fmt" false "biçimlendirme hatası (npm run format çalıştırın)"
+fi
 
 CHECK_OUT=$(npm run check 2>&1)
 if echo "$CHECK_OUT" | grep -q "0 errors"; then

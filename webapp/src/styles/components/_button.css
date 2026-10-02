@@ -12,7 +12,8 @@
   .archive-row__btn,
   .ci-submit,
   .modal__close {
-    transition: transform var(--dur-default) var(--ease-spring-bounce),
+    transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       background-color var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
       box-shadow var(--dur-fast) var(--ease-standard),
@@ -222,7 +223,9 @@
 
   .btn--row-action:active,
   .meal-card__takeaway-btn:active {
-    transform: scale(1); /* Satır eylem butonunda genel buton squish yerine şevron hareketi kullanılır */
+    transform: scale(
+      1
+    ); /* Satır eylem butonunda genel buton squish yerine şevron hareketi kullanılır */
   }
 
   .btn--row-action__label,
@@ -241,7 +244,8 @@
     color: var(--color-muted);
     flex-shrink: 0;
     margin-left: var(--space-sm);
-    transition: transform var(--dur-fast) var(--ease-standard),
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard);
   }
 

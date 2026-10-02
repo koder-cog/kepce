@@ -19,11 +19,14 @@
   <div class="btn__loader">
     <div class="m3-loader m3-loader--sm m3-loader--current">
       <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-        <path d="M50,10 C72,10 90,28 90,50 C90,72 72,90 50,90 C28,90 10,72 10,50 C10,28 28,10 50,10 Z" fill="currentColor">
-          <animate 
-            attributeName="d" 
-            dur="3s" 
-            repeatCount="indefinite" 
+        <path
+          d="M50,10 C72,10 90,28 90,50 C90,72 72,90 50,90 C28,90 10,72 10,50 C10,28 28,10 50,10 Z"
+          fill="currentColor"
+        >
+          <animate
+            attributeName="d"
+            dur="3s"
+            repeatCount="indefinite"
             calcMode="spline"
             keyTimes="0; 0.33; 0.66; 1"
             keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"
@@ -41,11 +44,14 @@
 {:else}
   <div class="m3-loader {sizeClass} {colorClass}">
     <svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-      <path d="M50,10 C72,10 90,28 90,50 C90,72 72,90 50,90 C28,90 10,72 10,50 C10,28 28,10 50,10 Z" fill="currentColor">
-        <animate 
-          attributeName="d" 
-          dur="3s" 
-          repeatCount="indefinite" 
+      <path
+        d="M50,10 C72,10 90,28 90,50 C90,72 72,90 50,90 C28,90 10,72 10,50 C10,28 28,10 50,10 Z"
+        fill="currentColor"
+      >
+        <animate
+          attributeName="d"
+          dur="3s"
+          repeatCount="indefinite"
           calcMode="spline"
           keyTimes="0; 0.33; 0.66; 1"
           keySplines="0.4 0 0.2 1; 0.4 0 0.2 1; 0.4 0 0.2 1"

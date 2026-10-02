@@ -1,13 +1,11 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
-  import { formatFullTurkishDate } from "@/utils/turkish.js";
-  import { normalizeItems, groupItems } from "@/utils/menu.js";
+  import { icon } from '@/components/ui/icons.js';
+  import { formatFullTurkishDate } from '@/utils/turkish.js';
+  import { normalizeItems, groupItems } from '@/utils/menu.js';
 
   let { card = null } = $props();
 
-  let formattedDate = $derived(
-    card?.date ? formatFullTurkishDate(card.date, true) : null,
-  );
+  let formattedDate = $derived(card?.date ? formatFullTurkishDate(card.date, true) : null);
 </script>
 
 {#if card}
@@ -21,7 +19,7 @@
       {/if}
     </div>
 
-    {#if card.type === "city_menu" && card.menus && card.menus.length > 0}
+    {#if card.type === 'city_menu' && card.menus && card.menus.length > 0}
       <!-- Doğrudan Menü Tabldot / Yemek Listesi Görünümü -->
       <div class="c-kepce-direct-card__meals">
         {#each card.menus as meal}
@@ -29,7 +27,7 @@
           <div class="c-kepce-direct-card__meal-box">
             <div class="c-kepce-direct-card__meal-header">
               <span class="c-kepce-direct-card__meal-type">
-                {meal.meal_type === "breakfast" ? "Kahvaltı" : "Akşam Yemeği"}
+                {meal.meal_type === 'breakfast' ? 'Kahvaltı' : 'Akşam Yemeği'}
               </span>
               {#if meal.calorie_range_min && meal.calorie_range_max}
                 <span class="c-kepce-direct-card__meal-cal">
@@ -48,51 +46,41 @@
               <ul class="c-kepce-direct-card__dishes">
                 {#each items as item}
                   {@const dishes =
-                    item.dishes && item.dishes.length > 0
-                      ? item.dishes
-                      : [{ name: item.name }]}
+                    item.dishes && item.dishes.length > 0 ? item.dishes : [{ name: item.name }]}
                   {#each dishes as dish, idx}
                     {#if idx > 0}
                       <li class="c-kepce-direct-card__dish-separator">
-                        <span class="c-kepce-direct-card__dish-separator-text"
-                          >- ya da -</span
-                        >
+                        <span class="c-kepce-direct-card__dish-separator-text">- ya da -</span>
                       </li>
                     {/if}
                     <li class="c-kepce-direct-card__dish-item">
                       <span class="c-kepce-direct-card__dish-bullet">•</span>
-                      <span class="c-kepce-direct-card__dish-name"
-                        >{dish.name}</span
-                      >
+                      <span class="c-kepce-direct-card__dish-name">{dish.name}</span>
                       {#if dish.weight}
-                        <span class="c-kepce-direct-card__dish-portion"
-                          >({dish.weight})</span
-                        >
+                        <span class="c-kepce-direct-card__dish-portion">({dish.weight})</span>
                       {/if}
                     </li>
                   {/each}
                 {/each}
               </ul>
             {:else}
-              <p class="c-kepce-direct-card__dish-empty">
-                Menü detayı bulunmuyor
-              </p>
+              <p class="c-kepce-direct-card__dish-empty">Menü detayı bulunmuyor</p>
             {/if}
           </div>
         {/each}
       </div>
     {:else}
       <p class="c-kepce-direct-card__desc">
-        {card.type === "city_menu"
-          ? "Bu tarih için kayıtlı yemekhane menüsü bulunmuyor."
-          : card.description || ""}
+        {card.type === 'city_menu'
+          ? 'Bu tarih için kayıtlı yemekhane menüsü bulunmuyor.'
+          : card.description || ''}
       </p>
     {/if}
 
     <div class="c-kepce-direct-card__footer">
       <a href={card.href} class="c-kepce-direct-card__more-link">
         <span>{card.cta || "Detayları Kepçe'de incele"}</span>
-        {@html icon("arrowRight", 14)}
+        {@html icon('arrowRight', 14)}
       </a>
     </div>
   </aside>

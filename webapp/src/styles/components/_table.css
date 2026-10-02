@@ -1,5 +1,4 @@
 @layer components {
-
   /* ── Standard Table System ─────────────────────────────── */
   .table-wrapper {
     width: 100%;
@@ -42,5 +41,4 @@
   .table tr:hover td {
     background: rgba(var(--color-accent-primary-rgb), 0.02);
   }
-
 }

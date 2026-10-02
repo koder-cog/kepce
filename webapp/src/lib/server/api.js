@@ -12,11 +12,11 @@ const API_INTERNAL = env('API_INTERNAL', 'http://127.0.0.1:8000');
 const DEFAULT_TIMEOUT_MS = 1500;
 
 function env(key, fallback) {
-	try {
-		return process.env[key] || fallback;
-	} catch {
-		return fallback;
-	}
+  try {
+    return process.env[key] || fallback;
+  } catch {
+    return fallback;
+  }
 }
 
 /**
@@ -25,12 +25,12 @@ function env(key, fallback) {
  * farkı önlemek için açık tarih göndermeyi tercih ediyoruz.
  */
 export function istanbulToday() {
-	return new Intl.DateTimeFormat('en-CA', {
-		timeZone: 'Europe/Istanbul',
-		year: 'numeric',
-		month: '2-digit',
-		day: '2-digit'
-	}).format(new Date());
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Istanbul',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).format(new Date());
 }
 
 /**
@@ -41,16 +41,16 @@ export function istanbulToday() {
  * @param {{ timeout?: number, fallback?: any }} [options]
  */
 export async function apiGet(path, { timeout = DEFAULT_TIMEOUT_MS, fallback = null } = {}) {
-	try {
-		const res = await fetch(`${API_INTERNAL}${path}`, {
-			headers: { Accept: 'application/json' },
-			signal: AbortSignal.timeout(timeout)
-		});
-		if (!res.ok) return fallback;
-		return await res.json();
-	} catch {
-		return fallback;
-	}
+  try {
+    const res = await fetch(`${API_INTERNAL}${path}`, {
+      headers: { Accept: 'application/json' },
+      signal: AbortSignal.timeout(timeout)
+    });
+    if (!res.ok) return fallback;
+    return await res.json();
+  } catch {
+    return fallback;
+  }
 }
 
 /**
@@ -58,6 +58,6 @@ export async function apiGet(path, { timeout = DEFAULT_TIMEOUT_MS, fallback = nu
  * API bazen düz dizi, bazen { menus } / { results } / { data } sarmalayıcısı döner.
  */
 export function normalizeMenuList(payload) {
-	if (Array.isArray(payload)) return payload;
-	return payload?.menus ?? payload?.results ?? payload?.data ?? [];
+  if (Array.isArray(payload)) return payload;
+  return payload?.menus ?? payload?.results ?? payload?.data ?? [];
 }

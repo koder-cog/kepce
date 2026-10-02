@@ -1,5 +1,5 @@
 <script>
-  import ContentPage from "@/components/layout/ContentPage.svelte";
+  import ContentPage from '@/components/layout/ContentPage.svelte';
   let { data } = $props();
 </script>
 
@@ -8,8 +8,8 @@
   <meta name="robots" content="noindex, nofollow" />
 </svelte:head>
 
-<ContentPage 
-  title="Kepçe Kullanım Koşulları" 
+<ContentPage
+  title="Kepçe Kullanım Koşulları"
   dateLabel={`Arşivlenmiş sürüm tarihi: ${data.versionData.version}`}
   isArchived={true}
   archiveLink="/kullanim-kosullari/arsiv"

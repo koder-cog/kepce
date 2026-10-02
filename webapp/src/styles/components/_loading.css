@@ -91,7 +91,8 @@
   .btn {
     position: relative;
     overflow: hidden;
-    transition: transform var(--dur-default) var(--ease-spatial-default),
+    transition:
+      transform var(--dur-default) var(--ease-spatial-default),
       background var(--dur-fast) var(--ease-standard),
       opacity var(--dur-fast) var(--ease-standard);
   }
@@ -102,7 +103,8 @@
 
   .btn__text {
     display: inline-block;
-    transition: transform var(--motion-effects-default),
+    transition:
+      transform var(--motion-effects-default),
       opacity var(--motion-effects-default);
   }
 
@@ -122,7 +124,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--motion-effects-default),
+    transition:
+      transform var(--motion-effects-default),
       opacity var(--motion-effects-default);
     color: currentColor;
   }

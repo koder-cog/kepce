@@ -8,33 +8,33 @@
    * 5. Web Push API: Sekme kapalıyken bile tarayıcı/işletim sistemi üzerinden "Yorumunuza yanıt geldi" bildirimi gönderilebilir.
    */
 
-  import { api } from "@/api/index.js";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Loader from "@/components/ui/Loader.svelte";
-  import TabBar from "@/components/ui/TabBar.svelte";
-  import { onMount } from "svelte";
-  import { globalState } from "@/state.svelte.js";
-  import { slide } from "svelte/transition";
-  import { getDuration } from "@/lib/dom/motion.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import { createModal } from "@/components/features/modal.js";
-  import Seo from "@/components/ui/Seo.svelte";
-  import Pagination from "@/components/ui/Pagination.svelte";
-  import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
+  import { api } from '@/api/index.js';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import TabBar from '@/components/ui/TabBar.svelte';
+  import { onMount } from 'svelte';
+  import { globalState } from '@/state.svelte.js';
+  import { slide } from 'svelte/transition';
+  import { getDuration } from '@/lib/dom/motion.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import { createModal } from '@/components/features/modal.js';
+  import Seo from '@/components/ui/Seo.svelte';
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
 
   let user = $derived(globalState?.user);
   let notifications = $state([]);
   let isLoading = $state(true);
   let errorMsg = $state(null);
 
-  let activeTab = $state("inbox"); // 'inbox' | 'unread' | 'archived'
+  let activeTab = $state('inbox'); // 'inbox' | 'unread' | 'archived'
   let archivedIds = $state(new Set());
 
   onMount(() => {
     try {
-      const stored = localStorage.getItem("kepce_archived_notifications");
+      const stored = localStorage.getItem('kepce_archived_notifications');
       if (stored) {
         archivedIds = new Set(JSON.parse(stored));
       }
@@ -45,24 +45,19 @@
     const next = new Set(archivedIds);
     if (next.has(id)) {
       next.delete(id);
-      showToast("Bildirim arşivden çıkarıldı.");
+      showToast('Bildirim arşivden çıkarıldı.');
     } else {
       next.add(id);
-      showToast("Bildirim arşivlendi.");
+      showToast('Bildirim arşivlendi.');
     }
     archivedIds = next;
     try {
-      localStorage.setItem(
-        "kepce_archived_notifications",
-        JSON.stringify([...archivedIds]),
-      );
+      localStorage.setItem('kepce_archived_notifications', JSON.stringify([...archivedIds]));
     } catch {}
   }
 
-  let paginationMode = $derived(globalState.paginationMode || "sayfali");
-  let urlPage = $derived(
-    parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1,
-  );
+  let paginationMode = $derived(globalState.paginationMode || 'sayfali');
+  let urlPage = $derived(parseInt($page.url.searchParams.get('sayfa') || '1', 10) || 1);
 
   // Pagination states
   let limit = 20;
@@ -70,13 +65,13 @@
 
   // Derived states
   let unreadCount = $derived(
-    notifications.filter((n) => !n.is_read && !archivedIds.has(n.id)).length,
+    notifications.filter((n) => !n.is_read && !archivedIds.has(n.id)).length
   );
   let filteredNotifications = $derived.by(() => {
-    if (activeTab === "unread") {
+    if (activeTab === 'unread') {
       return notifications.filter((n) => !n.is_read && !archivedIds.has(n.id));
     }
-    if (activeTab === "archived") {
+    if (activeTab === 'archived') {
       return notifications.filter((n) => archivedIds.has(n.id));
     }
     return notifications.filter((n) => !archivedIds.has(n.id));
@@ -89,7 +84,7 @@
   });
 
   let paginatedNotifications = $derived.by(() => {
-    if (paginationMode === "sayfali") {
+    if (paginationMode === 'sayfali') {
       const start = (currentPage - 1) * limit;
       return filteredNotifications.slice(start, start + limit);
     }
@@ -99,17 +94,13 @@
   // Grouping logic
   let groupedNotifications = $derived.by(() => {
     const groups = {
-      today: { label: "Bugün", items: [] },
-      yesterday: { label: "Dün", items: [] },
-      older: { label: "Daha Eski", items: [] },
+      today: { label: 'Bugün', items: [] },
+      yesterday: { label: 'Dün', items: [] },
+      older: { label: 'Daha Eski', items: [] }
     };
 
     const now = new Date();
-    const today = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-    ).getTime();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
     const yesterday = today - 86400000;
 
     paginatedNotifications.forEach((n) => {
@@ -123,18 +114,16 @@
       }
     });
 
-    return [groups.today, groups.yesterday, groups.older].filter(
-      (g) => g.items.length > 0,
-    );
+    return [groups.today, groups.yesterday, groups.older].filter((g) => g.items.length > 0);
   });
 
   function handlePageChange(newPage) {
     currentPage = newPage;
     const url = new URL(window.location.href);
     if (newPage > 1) {
-      url.searchParams.set("sayfa", String(newPage));
+      url.searchParams.set('sayfa', String(newPage));
     } else {
-      url.searchParams.delete("sayfa");
+      url.searchParams.delete('sayfa');
     }
     goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
@@ -148,7 +137,7 @@
         loadNotifications();
       } else {
         isLoading = false;
-        errorMsg = "Bildirimleri görüntülemek için giriş yapmalısınız.";
+        errorMsg = 'Bildirimleri görüntülemek için giriş yapmalısınız.';
       }
     }
   });
@@ -159,7 +148,7 @@
     try {
       notifications = await api.getNotifications();
     } catch (err) {
-      errorMsg = "Bildirimler yüklenirken bir hata oluştu.";
+      errorMsg = 'Bildirimler yüklenirken bir hata oluştu.';
     } finally {
       isLoading = false;
     }
@@ -186,10 +175,10 @@
 
     try {
       await api.markAllNotificationsRead();
-      showToast("Tüm bildirimler okundu olarak işaretlendi.", "success");
+      showToast('Tüm bildirimler okundu olarak işaretlendi.', 'success');
     } catch (err) {
       notifications = previousState;
-      showToast("Bildirimler güncellenemedi.", "error");
+      showToast('Bildirimler güncellenemedi.', 'error');
     }
   }
 
@@ -198,52 +187,52 @@
     notifications = notifications.filter((n) => n.id !== id);
     try {
       await api.deleteNotification(id);
-      showToast("Bildirim silindi.", "success");
+      showToast('Bildirim silindi.', 'success');
     } catch (err) {
       notifications = previousState;
-      showToast(err.message || "Bildirim silinemedi.", "error");
+      showToast(err.message || 'Bildirim silinemedi.', 'error');
     }
   }
 
   function confirmDeleteAll() {
     createModal({
-      title: "Bildirimleri Temizle",
-      iconHtml: icon("trash", 24),
+      title: 'Bildirimleri Temizle',
+      iconHtml: icon('trash', 24),
       contentHtml:
         '<p class="modal-confirm-text">Tüm bildirimlerini silmek istediğine emin misin? Bu işlem geri alınamaz.</p>',
       buttons: [
-        { label: "Vazgeç", variant: "secondary" },
+        { label: 'Vazgeç', variant: 'secondary' },
         {
-          label: "Tümünü Sil",
-          variant: "danger",
+          label: 'Tümünü Sil',
+          variant: 'danger',
           onClick: async () => {
             try {
               await api.clearAllNotifications();
               notifications = [];
-              showToast("Tüm bildirimler temizlendi.", "success");
+              showToast('Tüm bildirimler temizlendi.', 'success');
               return true;
             } catch (err) {
-              showToast(err.message || "Bildirimler temizlenemedi.", "error");
+              showToast(err.message || 'Bildirimler temizlenemedi.', 'error');
               return false;
             }
-          },
-        },
-      ],
+          }
+        }
+      ]
     });
   }
 
   function getIconForType(type) {
     switch (type) {
-      case "system":
-        return icon("info", 24);
-      case "achievement":
-        return icon("star", 24);
-      case "comment":
-        return icon("chat", 24);
-      case "moderation":
-        return icon("check", 24);
+      case 'system':
+        return icon('info', 24);
+      case 'achievement':
+        return icon('star', 24);
+      case 'comment':
+        return icon('chat', 24);
+      case 'moderation':
+        return icon('check', 24);
       default:
-        return icon("bell", 24);
+        return icon('bell', 24);
     }
   }
 
@@ -256,7 +245,7 @@
     if (hours < 24) return `${hours} saat önce`;
 
     const d = new Date(isoString);
-    return `${d.getDate().toString().padStart(2, "0")}.${(d.getMonth() + 1).toString().padStart(2, "0")}.${d.getFullYear()}`;
+    return `${d.getDate().toString().padStart(2, '0')}.${(d.getMonth() + 1).toString().padStart(2, '0')}.${d.getFullYear()}`;
   }
 </script>
 
@@ -273,22 +262,16 @@
     </div>
     <div class="notification-page__header-actions">
       {#if unreadCount > 0}
-        <button
-          class="btn btn--secondary btn--sm btn--squish"
-          onclick={handleMarkAllAsRead}
-        >
+        <button class="btn btn--secondary btn--sm btn--squish" onclick={handleMarkAllAsRead}>
           Tümünü okudum say
         </button>
       {/if}
       {#if notifications.length > 0}
-        <button
-          class="btn btn--secondary btn--sm btn--squish"
-          onclick={confirmDeleteAll}
-        >
+        <button class="btn btn--secondary btn--sm btn--squish" onclick={confirmDeleteAll}>
           Tümünü temizle
         </button>
       {/if}
-      {#if paginationMode === "sayfali" && totalPages > 1}
+      {#if paginationMode === 'sayfali' && totalPages > 1}
         <Pagination
           compact={true}
           page={currentPage}
@@ -304,26 +287,21 @@
     bind:activeId={activeTab}
     tabs={[
       {
-        id: "inbox",
-        label: "Gelen Kutusu",
-        icon: icon("inbox", 18) || icon("bell", 18),
+        id: 'inbox',
+        label: 'Gelen Kutusu',
+        icon: icon('inbox', 18) || icon('bell', 18)
       },
       {
-        id: "unread",
-        label: "Okunmayanlar",
-        icon: icon("eyeSlash", 18),
-        badge:
-          unreadCount > 0
-            ? unreadCount > 99
-              ? "99+"
-              : unreadCount
-            : undefined,
+        id: 'unread',
+        label: 'Okunmayanlar',
+        icon: icon('eyeSlash', 18),
+        badge: unreadCount > 0 ? (unreadCount > 99 ? '99+' : unreadCount) : undefined
       },
       {
-        id: "archived",
-        label: "Arşiv",
-        icon: icon("archive", 18) || icon("folder", 18),
-      },
+        id: 'archived',
+        label: 'Arşiv',
+        icon: icon('archive', 18) || icon('folder', 18)
+      }
     ]}
   />
 
@@ -351,27 +329,22 @@
     />
   {:else if filteredNotifications.length === 0}
     <EmptyState
-      desc={activeTab === "unread"
-        ? "Okunmamış bildiriminiz bulunmuyor."
-        : activeTab === "archived"
-          ? "Arşivlenmiş bildiriminiz bulunmuyor."
-          : "Henüz hiç bildiriminiz yok."}
-      iconHtml={icon("checkCircle", 48)}
+      desc={activeTab === 'unread'
+        ? 'Okunmamış bildiriminiz bulunmuyor.'
+        : activeTab === 'archived'
+          ? 'Arşivlenmiş bildiriminiz bulunmuyor.'
+          : 'Henüz hiç bildiriminiz yok.'}
+      iconHtml={icon('checkCircle', 48)}
     />
   {:else}
     {#each groupedNotifications as group (group.label)}
-      <div
-        class="notification-group"
-        transition:slide={{ duration: getDuration("standard") }}
-      >
+      <div class="notification-group" transition:slide={{ duration: getDuration('standard') }}>
         <h2 class="notification-group__title">{group.label}</h2>
         <div class="notification-list">
           {#each group.items as item (item.id)}
             <div
-              class="notification-card {item.is_read
-                ? ''
-                : 'notification-card--unread'}"
-              transition:slide={{ duration: getDuration("fast") }}
+              class="notification-card {item.is_read ? '' : 'notification-card--unread'}"
+              transition:slide={{ duration: getDuration('fast') }}
             >
               <div class="notification-card__icon">
                 {@html getIconForType(item.type)}
@@ -380,20 +353,15 @@
               <div class="notification-card__content">
                 <div class="notification-card__header">
                   <h3 class="notification-card__title">{item.title}</h3>
-                  <span class="notification-card__time"
-                    >{formatTimeAgo(item.created_at)}</span
-                  >
+                  <span class="notification-card__time">{formatTimeAgo(item.created_at)}</span>
                 </div>
 
                 <p class="notification-card__message">{item.message}</p>
 
                 <div class="notification-card__actions">
                   {#if item.action_href}
-                    <a
-                      href={item.action_href}
-                      class="btn btn--sm btn--primary btn--squish"
-                    >
-                      {item.action_label || "Görüntüle"}
+                    <a href={item.action_href} class="btn btn--sm btn--primary btn--squish">
+                      {item.action_label || 'Görüntüle'}
                     </a>
                   {/if}
                   {#if !item.is_read}
@@ -407,18 +375,16 @@
                   <button
                     class="btn btn--sm btn--ghost btn--squish"
                     onclick={() => toggleArchive(item.id)}
-                    title={archivedIds.has(item.id)
-                      ? "Arşivden Çıkar"
-                      : "Arşive Al"}
+                    title={archivedIds.has(item.id) ? 'Arşivden Çıkar' : 'Arşive Al'}
                   >
-                    {archivedIds.has(item.id) ? "Arşivden Çıkar" : "Arşive Al"}
+                    {archivedIds.has(item.id) ? 'Arşivden Çıkar' : 'Arşive Al'}
                   </button>
                   <button
                     class="btn btn--sm btn--icon-only btn--ghost btn--squish notification-card__delete-btn"
                     title="Bildirimi sil"
                     onclick={() => handleDeleteNotification(item.id)}
                   >
-                    {@html icon("trash", 14)}
+                    {@html icon('trash', 14)}
                   </button>
                 </div>
               </div>
@@ -428,13 +394,8 @@
       </div>
     {/each}
 
-    {#if paginationMode === "sayfali" && totalPages > 1}
-      <Pagination
-        page={currentPage}
-        {totalPages}
-        {totalItems}
-        onPageChange={handlePageChange}
-      />
+    {#if paginationMode === 'sayfali' && totalPages > 1}
+      <Pagination page={currentPage} {totalPages} {totalItems} onPageChange={handlePageChange} />
     {/if}
   {/if}
 </div>

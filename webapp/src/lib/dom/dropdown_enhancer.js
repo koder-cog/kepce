@@ -9,18 +9,19 @@ export function enhanceSelects(root = document) {
   // Find all select elements that haven't been enhanced yet
   const selects = root.querySelectorAll('select:not(.enhanced)');
 
-  selects.forEach(select => {
+  selects.forEach((select) => {
     // Skip if it's explicitly marked to stay native
     if (select.dataset.native === 'true') return;
 
     // 1. Extract options from native select
-    const options = Array.from(select.options).map(opt => ({
+    const options = Array.from(select.options).map((opt) => ({
       value: opt.value,
       label: opt.text,
       disabled: opt.disabled
     }));
 
-    const isSecondary = select.classList.contains('select-secondary') ||
+    const isSecondary =
+      select.classList.contains('select-secondary') ||
       select.classList.contains('select--secondary') ||
       select.dataset.variant === 'secondary';
 
@@ -60,7 +61,7 @@ export function enhanceSelects(root = document) {
 
     // 5. Watch for programmatic changes on the original select
     const observer = new MutationObserver(() => {
-      // This is a bit complex for a generic enhancer, 
+      // This is a bit complex for a generic enhancer,
       // but for now we trust the one-way sync.
     });
     observer.observe(select, { attributes: true });

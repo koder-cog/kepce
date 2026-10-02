@@ -159,7 +159,8 @@
     font-weight: var(--font-weight-medium);
     justify-content: center;
     text-align: center;
-    margin: var(--space-xs) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1);
+    margin: var(--space-xs) calc(var(--space-xs) * -1) calc(var(--space-xs) * -1)
+      calc(var(--space-xs) * -1);
     width: calc(100% + var(--space-xs) * 2);
     padding: var(--space-md) var(--space-md);
     border: none;
@@ -315,7 +316,9 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    transition: opacity var(--motion-effects-default), visibility var(--motion-effects-default);
+    transition:
+      opacity var(--motion-effects-default),
+      visibility var(--motion-effects-default);
   }
 
   .c-menu__overlay--open {

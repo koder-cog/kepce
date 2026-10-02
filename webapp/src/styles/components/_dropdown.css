@@ -58,7 +58,8 @@
     box-shadow: none;
     overflow: hidden;
     transform: translateZ(0);
-    transition: transform var(--dur-default) var(--ease-spring-bounce),
+    transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       background-color var(--dur-fast) var(--ease-standard),
       border-color var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
@@ -72,12 +73,12 @@
     transform: translateZ(0) !important;
   }
 
-  .dropdown__trigger--primary>*:not(.dropdown__chevron) {
+  .dropdown__trigger--primary > *:not(.dropdown__chevron) {
     transition: transform var(--dur-default) var(--ease-spring-bounce);
     will-change: transform;
   }
 
-  .dropdown__trigger--primary:active>*:not(.dropdown__chevron) {
+  .dropdown__trigger--primary:active > *:not(.dropdown__chevron) {
     transform: scale(0.98);
     transition-duration: var(--dur-instant);
     transition-timing-function: var(--ease-tactile);
@@ -114,11 +115,9 @@
     color: var(--color-text);
     border-color: var(--color-border);
   }
-
 }
 
 @layer components.modifiers {
-
   /* ── Varyant: Secondary (Hap / Pill) ── */
   .dropdown__trigger--secondary {
     background: var(--color-accent-primary);
@@ -182,7 +181,6 @@
   }
 
   @media (hover: hover) {
-
     button.dropdown__trigger.dropdown__trigger--ghost:hover,
     .dropdown__trigger--ghost:hover {
       background: var(--color-surface-sunken) !important;
@@ -235,7 +233,6 @@
 
   /* ── Mobil: Şehir seçici tam genişlik ── */
   @media (max-width: 600px) {
-
     #city-selector-container,
     #city-selector-container .dropdown,
     #city-selector-container .dropdown__trigger--secondary {

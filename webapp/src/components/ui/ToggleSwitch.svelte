@@ -6,7 +6,7 @@
   Tüm formlarda (Ayarlar vb.) bu bileşen kullanılacak.
 -->
 <script>
-  let { checked = $bindable(false), label = "" } = $props();
+  let { checked = $bindable(false), label = '' } = $props();
 </script>
 
 <label class="toggle-switch squish-effect">

@@ -5,7 +5,7 @@ import ToggleSwitch from './ToggleSwitch.svelte';
 describe('ToggleSwitch Component', () => {
   it('should render correct label text', () => {
     render(ToggleSwitch, { label: 'Aktif Et' });
-    
+
     const label = screen.getByText('Aktif Et');
     expect(label).toBeTruthy();
   });

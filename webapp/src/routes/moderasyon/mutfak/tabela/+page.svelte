@@ -1,24 +1,24 @@
 <script>
-  import "@/styles/pages/_menu-table.css";
-  import { onMount, tick } from "svelte";
-  import { page } from "$app/state";
+  import '@/styles/pages/_menu-table.css';
+  import { onMount, tick } from 'svelte';
+  import { page } from '$app/state';
   import { api } from '@/api/index.js';
-  import { getCitiesData } from "@/stores/city.svelte.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import * as ui from "@/components/ui/forms.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import Modal from "@/components/ui/Modal.svelte";
-  import { sanitizeText } from "@/utils/sanitize.js";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import ActionMenu from "@/components/features/ActionMenu.svelte";
+  import { getCitiesData } from '@/stores/city.svelte.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import * as ui from '@/components/ui/forms.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import Modal from '@/components/ui/Modal.svelte';
+  import { sanitizeText } from '@/utils/sanitize.js';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import ActionMenu from '@/components/features/ActionMenu.svelte';
 
   let cities = $state([]);
-  let menuCityFilter = $state("");
+  let menuCityFilter = $state('');
   let menuYearFilter = $state(new Date().getFullYear().toString());
   let menuMonthFilter = $state((new Date().getMonth() + 1).toString().padStart(2, '0'));
-  let menuStatusFilter = $state("");
+  let menuStatusFilter = $state('');
   let displayLimit = $state(10);
 
   let isLoading = $state(true);
@@ -28,11 +28,11 @@
   // Modal State
   let isEditMenuModalOpen = $state(false);
   let editMenuTarget = $state(null);
-  let editMenuNotice = $state("");
-  let editMenuSourceType = $state("kepce-admin");
+  let editMenuNotice = $state('');
+  let editMenuSourceType = $state('kepce-admin');
   let editMenuSlots = $state([]);
   let activeSlotTarget = $state({ slotIndex: 0, isAlternative: false });
-  let editMenuSearchQuery = $state("");
+  let editMenuSearchQuery = $state('');
   let editMenuSearchResults = $state([]);
   let searchTimeout;
   let currentLoadToken = 0;
@@ -40,44 +40,57 @@
 
   let isEditBotModalOpen = $state(false);
   let editBotTarget = $state(null);
-  let editBotCommentText = $state("");
+  let editBotCommentText = $state('');
 
   // Yeni Menü Oluşturma State'i
   let isCreateMenuModalOpen = $state(false);
   let newMenuCityId = $state(null);
   let newMenuDate = $state(new Date().toISOString().split('T')[0]);
-  let newMenuMealType = $state("breakfast");
-  let newMenuSourceType = $state("kepce-admin");
-  let newMenuNotice = $state("");
+  let newMenuMealType = $state('breakfast');
+  let newMenuSourceType = $state('kepce-admin');
+  let newMenuNotice = $state('');
   let isCreatingMenu = $state(false);
 
   const currentYear = new Date().getFullYear();
   const yearOptions = [
-    { label: "Tümü", value: "" },
+    { label: 'Tümü', value: '' },
     { label: (currentYear - 1).toString(), value: (currentYear - 1).toString() },
     { label: currentYear.toString(), value: currentYear.toString() },
-    { label: (currentYear + 1).toString(), value: (currentYear + 1).toString() },
+    { label: (currentYear + 1).toString(), value: (currentYear + 1).toString() }
   ];
 
-  const monthsTR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+  const monthsTR = [
+    'Ocak',
+    'Şubat',
+    'Mart',
+    'Nisan',
+    'Mayıs',
+    'Haziran',
+    'Temmuz',
+    'Ağustos',
+    'Eylül',
+    'Ekim',
+    'Kasım',
+    'Aralık'
+  ];
 
   let sortedGroupedMenus = $derived(
     Object.entries(groupedMenus)
-      .sort(([cityA], [cityB]) => cityA.localeCompare(cityB, "tr"))
+      .sort(([cityA], [cityB]) => cityA.localeCompare(cityB, 'tr'))
       .map(([city, monthsObj]) => {
         const sortedMonths = Object.entries(monthsObj)
           .sort(([monthA], [monthB]) => monthB.localeCompare(monthA)) // YYYY-MM ters sıralama
           .map(([monthKey, menus]) => {
-            const [y, m] = monthKey.split("-");
+            const [y, m] = monthKey.split('-');
             const monthName = `${monthsTR[parseInt(m, 10) - 1]} ${y}`;
             return { monthKey, monthName, menus };
           });
         return { city, months: sortedMonths };
-      }),
+      })
   );
 
   let totalMonthsCount = $derived(
-    sortedGroupedMenus.reduce((acc, cityGroup) => acc + cityGroup.months.length, 0),
+    sortedGroupedMenus.reduce((acc, cityGroup) => acc + cityGroup.months.length, 0)
   );
 
   let displayedMenus = $derived.by(() => {
@@ -95,16 +108,18 @@
   async function loadInitialData() {
     try {
       cities = await getCitiesData();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
 
-    const pCity = page.url.searchParams.get("sehir");
-    const pGun = page.url.searchParams.get("gun") || page.url.searchParams.get("tarih");
+    const pCity = page.url.searchParams.get('sehir');
+    const pGun = page.url.searchParams.get('gun') || page.url.searchParams.get('tarih');
 
     if (pCity) {
       menuCityFilter = pCity;
     }
     if (pGun && /^\d{4}-\d{2}/.test(pGun)) {
-      const parts = pGun.split("-");
+      const parts = pGun.split('-');
       menuYearFilter = parts[0];
       menuMonthFilter = parts[1];
     }
@@ -126,7 +141,7 @@
     isLoading = true;
     errorMsg = null;
     groupedMenus = {};
-    
+
     let monthFilterStr = '';
     const token = ++currentLoadToken;
     if (menuYearFilter && menuMonthFilter) {
@@ -166,9 +181,9 @@
 
   async function handleEditMenuItems(menu) {
     editMenuTarget = menu;
-    editMenuNotice = menu.notice || "";
-    editMenuSourceType = menu.source_type || "kepce-admin";
-    editMenuSearchQuery = "";
+    editMenuNotice = menu.notice || '';
+    editMenuSourceType = menu.source_type || 'kepce-admin';
+    editMenuSearchQuery = '';
     editMenuSearchResults = [];
     isEditMenuModalOpen = true;
     try {
@@ -181,7 +196,12 @@
         // paketler ayrı slot olarak gelir.
         const key = `${idx}::${d.package_name ?? 'NORMAL'}`;
         if (!map.has(key)) {
-          map.set(key, { order_index: idx, package_name: d.package_name ?? 'NORMAL', primary: null, alternatives: [] });
+          map.set(key, {
+            order_index: idx,
+            package_name: d.package_name ?? 'NORMAL',
+            primary: null,
+            alternatives: []
+          });
         }
         const slot = map.get(key);
         if (d.is_alternative) {
@@ -190,13 +210,18 @@
           slot.primary = d;
         }
       }
-      const sorted = Array.from(map.values()).sort((a, b) => a.order_index - b.order_index || a.package_name.localeCompare(b.package_name));
-      editMenuSlots = sorted.length > 0 ? sorted : [{ order_index: 0, package_name: 'NORMAL', primary: null, alternatives: [] }];
+      const sorted = Array.from(map.values()).sort(
+        (a, b) => a.order_index - b.order_index || a.package_name.localeCompare(b.package_name)
+      );
+      editMenuSlots =
+        sorted.length > 0
+          ? sorted
+          : [{ order_index: 0, package_name: 'NORMAL', primary: null, alternatives: [] }];
       activeSlotTarget = { slotIndex: 0, isAlternative: false };
     } catch (err) {
       editMenuSlots = [{ order_index: 0, primary: null, alternatives: [] }];
       activeSlotTarget = { slotIndex: 0, isAlternative: false };
-      showToast("Yemekler yüklenemedi", "error");
+      showToast('Yemekler yüklenemedi', 'error');
     }
   }
 
@@ -205,13 +230,18 @@
     clearTimeout(searchTimeout);
     searchTimeout = setTimeout(async () => {
       const query = editMenuSearchQuery.trim();
-      if (!query) { editMenuSearchResults = []; return; }
+      if (!query) {
+        editMenuSearchResults = [];
+        return;
+      }
       const token = ++currentSearchToken;
       try {
         const results = await api.getDishStats(query);
         if (token !== currentSearchToken) return;
         editMenuSearchResults = results;
-      } catch (err) { console.error(err); }
+      } catch (err) {
+        console.error(err);
+      }
     }, 300);
   }
 
@@ -219,20 +249,14 @@
 
   async function applyBreakfastTemplate() {
     if (editMenuSlots.some((s) => s.primary)) {
-      if (!confirm("Mevcut yemek sıraları standart kahvaltı şablonuyla değiştirilsin mi?")) {
+      if (!confirm('Mevcut yemek sıraları standart kahvaltı şablonuyla değiştirilsin mi?')) {
         return;
       }
     }
 
     isApplyingTemplate = true;
     try {
-      const templateItems = [
-        'Haşlanmış Yumurta',
-        'Beyaz Peynir',
-        'Siyah Zeytin',
-        'Reçel',
-        'Ekmek'
-      ];
+      const templateItems = ['Haşlanmış Yumurta', 'Beyaz Peynir', 'Siyah Zeytin', 'Reçel', 'Ekmek'];
 
       const newSlots = [];
       for (let i = 0; i < templateItems.length; i++) {
@@ -241,7 +265,9 @@
         try {
           const results = await api.getDishStats(itemQuery);
           if (results && results.length > 0) {
-            dishMatch = results.find((d) => d.name.toLowerCase().includes(itemQuery.toLowerCase())) || results[0];
+            dishMatch =
+              results.find((d) => d.name.toLowerCase().includes(itemQuery.toLowerCase())) ||
+              results[0];
           }
         } catch (_) {}
 
@@ -260,10 +286,10 @@
         activeSlotTarget = { slotIndex: 0, isAlternative: false };
         showToast(`${newSlots.length} kahvaltılık yemek şablondan yüklendi.`);
       } else {
-        showToast("Kahvaltı yemekleri veritabanında arandı ancak eşleşme bulunamadı.", "warning");
+        showToast('Kahvaltı yemekleri veritabanında arandı ancak eşleşme bulunamadı.', 'warning');
       }
     } catch (err) {
-      showToast("Şablon uygulanırken hata oluştu: " + err.message, "error");
+      showToast('Şablon uygulanırken hata oluştu: ' + err.message, 'error');
     } finally {
       isApplyingTemplate = false;
     }
@@ -271,7 +297,12 @@
 
   function addNewSlot() {
     const nextIdx = editMenuSlots.length;
-    editMenuSlots.push({ order_index: nextIdx, package_name: 'NORMAL', primary: null, alternatives: [] });
+    editMenuSlots.push({
+      order_index: nextIdx,
+      package_name: 'NORMAL',
+      primary: null,
+      alternatives: []
+    });
     activeSlotTarget = { slotIndex: nextIdx, isAlternative: false };
   }
 
@@ -282,7 +313,7 @@
     }
     activeSlotTarget = {
       slotIndex: Math.min(activeSlotTarget.slotIndex, editMenuSlots.length - 1),
-      isAlternative: false,
+      isAlternative: false
     };
   }
 
@@ -323,7 +354,9 @@
 
   function removeAlternativeFromSlot(slotIndex, altDishId) {
     if (editMenuSlots[slotIndex]) {
-      editMenuSlots[slotIndex].alternatives = editMenuSlots[slotIndex].alternatives.filter((a) => a.id !== altDishId);
+      editMenuSlots[slotIndex].alternatives = editMenuSlots[slotIndex].alternatives.filter(
+        (a) => a.id !== altDishId
+      );
     }
   }
 
@@ -337,7 +370,7 @@
             dish_id: slot.primary.id,
             order_index: sIdx,
             is_alternative: false,
-            package_name: pkg,
+            package_name: pkg
           });
         }
         if (slot.alternatives && slot.alternatives.length > 0) {
@@ -346,7 +379,7 @@
               dish_id: alt.id,
               order_index: sIdx,
               is_alternative: true,
-              package_name: pkg,
+              package_name: pkg
             });
           });
         }
@@ -355,9 +388,9 @@
       await api.updateMenuItems(editMenuTarget.id, {
         items,
         notice: editMenuNotice,
-        source_type: editMenuSourceType,
+        source_type: editMenuSourceType
       });
-      showToast("Menü yemekleri ve ayarları güncellendi!");
+      showToast('Menü yemekleri ve ayarları güncellendi!');
       isEditMenuModalOpen = false;
       fetchMenus();
     } catch (err) {
@@ -367,14 +400,14 @@
 
   function handleEditBotComment(menu) {
     editBotTarget = menu;
-    editBotCommentText = menu.bot_commentary || "";
+    editBotCommentText = menu.bot_commentary || '';
     isEditBotModalOpen = true;
   }
 
   async function saveBotComment() {
     try {
       await api.updateMenuCommentary(editBotTarget.id, editBotCommentText.trim());
-      showToast("Bot yorumu başarıyla güncellendi!");
+      showToast('Bot yorumu başarıyla güncellendi!');
       isEditBotModalOpen = false;
       fetchMenus();
     } catch (err) {
@@ -409,12 +442,15 @@
   async function handleBulkApprovePending(menus) {
     const pending = menus.filter((m) => m.status === 'pending');
     if (pending.length === 0) {
-      showToast("Bu ayda onay bekleyen menü bulunamadı.");
+      showToast('Bu ayda onay bekleyen menü bulunamadı.');
       return;
     }
     isBulkProcessing = true;
     try {
-      const res = await api.bulkUpdateMenuStatus(pending.map((m) => m.id), 'approved');
+      const res = await api.bulkUpdateMenuStatus(
+        pending.map((m) => m.id),
+        'approved'
+      );
       showToast(`${res.updated_count} menü toplu onaylandı!`);
       fetchMenus();
     } catch (err) {
@@ -425,12 +461,17 @@
   }
 
   async function handleBulkRejectMonth(menus) {
-    if (!confirm(`Bu aydaki ${menus.length} menünün tamamını reddetmek istediğinize emin misiniz?`)) {
+    if (
+      !confirm(`Bu aydaki ${menus.length} menünün tamamını reddetmek istediğinize emin misiniz?`)
+    ) {
       return;
     }
     isBulkProcessing = true;
     try {
-      const res = await api.bulkUpdateMenuStatus(menus.map((m) => m.id), 'rejected');
+      const res = await api.bulkUpdateMenuStatus(
+        menus.map((m) => m.id),
+        'rejected'
+      );
       showToast(`${res.updated_count} menü toplu reddedildi.`, 'danger');
       fetchMenus();
     } catch (err) {
@@ -445,7 +486,10 @@
     if (selected.length === 0) return;
     isBulkProcessing = true;
     try {
-      const res = await api.bulkUpdateMenuStatus(selected.map((m) => m.id), 'approved');
+      const res = await api.bulkUpdateMenuStatus(
+        selected.map((m) => m.id),
+        'approved'
+      );
       showToast(`${res.updated_count} seçili menü onaylandı!`);
       const next = new Set(selectedMenuIds);
       selected.forEach((m) => next.delete(m.id));
@@ -466,7 +510,10 @@
     }
     isBulkProcessing = true;
     try {
-      const res = await api.bulkUpdateMenuStatus(selected.map((m) => m.id), 'rejected');
+      const res = await api.bulkUpdateMenuStatus(
+        selected.map((m) => m.id),
+        'rejected'
+      );
       showToast(`${res.updated_count} seçili menü reddedildi.`, 'danger');
       const next = new Set(selectedMenuIds);
       selected.forEach((m) => next.delete(m.id));
@@ -482,37 +529,41 @@
   async function approveMenu(id) {
     try {
       await api.approveMenu(id);
-      showToast("Menü onaylandı!");
+      showToast('Menü onaylandı!');
       fetchMenus();
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function rejectMenu(id) {
     try {
       await api.rejectMenu(id);
-      showToast("Menü reddedildi.", "danger");
+      showToast('Menü reddedildi.', 'danger');
       fetchMenus();
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   function openCreateMenuModal() {
     if (menuCityFilter) {
       const matched = cities.find((c) => c.slug === menuCityFilter);
-      newMenuCityId = matched ? matched.id : (cities[0]?.id || 1);
+      newMenuCityId = matched ? matched.id : cities[0]?.id || 1;
     } else {
       newMenuCityId = cities[0]?.id || 1;
     }
     newMenuDate = new Date().toISOString().split('T')[0];
-    newMenuMealType = "breakfast";
-    newMenuSourceType = "kepce-admin";
-    newMenuNotice = "";
+    newMenuMealType = 'breakfast';
+    newMenuSourceType = 'kepce-admin';
+    newMenuNotice = '';
     isCreateMenuModalOpen = true;
   }
 
   async function submitCreateMenu() {
-    if (!newMenuCityId) return showToast("Lütfen bir şehir seçin", "error");
-    if (!newMenuDate) return showToast("Lütfen bir tarih seçin", "error");
-    if (!newMenuMealType) return showToast("Lütfen bir öğün seçin", "error");
+    if (!newMenuCityId) return showToast('Lütfen bir şehir seçin', 'error');
+    if (!newMenuDate) return showToast('Lütfen bir tarih seçin', 'error');
+    if (!newMenuMealType) return showToast('Lütfen bir öğün seçin', 'error');
 
     isCreatingMenu = true;
     try {
@@ -520,11 +571,11 @@
         city_id: parseInt(newMenuCityId, 10),
         serve_date: newMenuDate,
         meal_type: newMenuMealType,
-        source_type: newMenuSourceType.trim() || "kepce-admin",
-        notice: newMenuNotice.trim() || null,
+        source_type: newMenuSourceType.trim() || 'kepce-admin',
+        notice: newMenuNotice.trim() || null
       });
 
-      showToast("Menü başarıyla oluşturuldu");
+      showToast('Menü başarıyla oluşturuldu');
       isCreateMenuModalOpen = false;
 
       const createdCity = cities.find((c) => c.id === parseInt(newMenuCityId, 10));
@@ -541,7 +592,7 @@
         handleEditMenuItems(createdMenu);
       }
     } catch (err) {
-      showToast(err.message || "Menü oluşturulamadı", "error");
+      showToast(err.message || 'Menü oluşturulamadı', 'error');
     } finally {
       isCreatingMenu = false;
     }
@@ -558,8 +609,8 @@
       <span class="admin-filter-label">Şehir</span>
       <Dropdown
         options={[
-          { label: "Tümü", value: "" },
-          ...cities.map((c) => ({ label: c.name, value: c.slug })),
+          { label: 'Tümü', value: '' },
+          ...cities.map((c) => ({ label: c.name, value: c.slug }))
         ]}
         bind:value={menuCityFilter}
         onChange={handleFilter}
@@ -568,22 +619,18 @@
 
     <div class="dev-filter-group">
       <span class="admin-filter-label">Yıl</span>
-      <Dropdown
-        options={yearOptions}
-        bind:value={menuYearFilter}
-        onChange={handleFilter}
-      />
+      <Dropdown options={yearOptions} bind:value={menuYearFilter} onChange={handleFilter} />
     </div>
 
     <div class="dev-filter-group">
       <span class="admin-filter-label">Ay</span>
       <Dropdown
         options={[
-          { label: "Tümü", value: "" },
+          { label: 'Tümü', value: '' },
           ...monthsTR.map((m, i) => ({
             label: m,
-            value: (i + 1).toString().padStart(2, "0"),
-          })),
+            value: (i + 1).toString().padStart(2, '0')
+          }))
         ]}
         bind:value={menuMonthFilter}
         onChange={handleFilter}
@@ -594,10 +641,10 @@
       <span class="admin-filter-label">Durum</span>
       <Dropdown
         options={[
-          { label: "Tümü", value: "" },
-          { label: "Onay Bekleyenler", value: "pending" },
-          { label: "Onaylananlar", value: "approved" },
-          { label: "Reddedilenler", value: "rejected" },
+          { label: 'Tümü', value: '' },
+          { label: 'Onay Bekleyenler', value: 'pending' },
+          { label: 'Onaylananlar', value: 'approved' },
+          { label: 'Reddedilenler', value: 'rejected' }
         ]}
         bind:value={menuStatusFilter}
         onChange={handleFilter}
@@ -624,9 +671,9 @@
     <EmptyState statusCode={500} desc={errorMsg} />
   {:else if Object.keys(groupedMenus).length === 0}
     <EmptyState
-      iconName={"calendar"}
-      title={"Kayıt Bulunamadı"}
-      desc={"Seçilen filtrelere uygun menü bulunamadı."}
+      iconName={'calendar'}
+      title={'Kayıt Bulunamadı'}
+      desc={'Seçilen filtrelere uygun menü bulunamadı.'}
     />
   {:else}
     {#each displayedMenus as { city, months } (city)}
@@ -643,7 +690,8 @@
               <div class="admin-month-title-group">
                 <h4 class="u-color-accent-primary">{monthName}</h4>
                 <span class="u-text-xs u-color-muted">
-                  {menus.length} Menü ({pendingCount} Bekleyen, {approvedCount} Onaylı, {rejectedCount} Reddedildi)
+                  {menus.length} Menü ({pendingCount} Bekleyen, {approvedCount} Onaylı, {rejectedCount}
+                  Reddedildi)
                 </span>
               </div>
               <div class="admin-month-actions">
@@ -721,47 +769,41 @@
                           />
                           <div class="admin-table-cell--primary">
                             {(() => {
-                              const [, m, d] = menu.date.split("-");
+                              const [, m, d] = menu.date.split('-');
                               return `${parseInt(d, 10)} ${monthsTR[parseInt(m, 10) - 1]}`;
                             })()}
                           </div>
                         </div>
                       </td>
-                      <td
-                        ><span class="admin-table-cell--secondary"
-                          >{menu.meal_type}</span
-                        ></td
-                      >
+                      <td><span class="admin-table-cell--secondary">{menu.meal_type}</span></td>
                       <td>
                         {@html ui.createBadge({
                           label:
-                            menu.status === "approved"
-                              ? "Onaylandı"
-                              : menu.status === "rejected"
-                                ? "Reddedildi"
-                                : "Bekliyor",
+                            menu.status === 'approved'
+                              ? 'Onaylandı'
+                              : menu.status === 'rejected'
+                                ? 'Reddedildi'
+                                : 'Bekliyor',
                           variant:
-                            menu.status === "approved"
-                              ? "success"
-                              : menu.status === "rejected"
-                                ? "danger"
-                                : "warning",
-                          size: "sm",
+                            menu.status === 'approved'
+                              ? 'success'
+                              : menu.status === 'rejected'
+                                ? 'danger'
+                                : 'warning',
+                          size: 'sm'
                         })}
                       </td>
                       <td>
                         <div
                           class="admin-table-cell--meta u-text-sm"
-                          title={menu.bot_commentary || ""}
+                          title={menu.bot_commentary || ''}
                         >
-                          <span
-                            class="u-hidden-desktop u-text-xs u-color-muted u-mr-xs"
+                          <span class="u-hidden-desktop u-text-xs u-color-muted u-mr-xs"
                             >Bot yorumu:</span
                           >
                           {#if menu.bot_commentary}
-                            {sanitizeText(
-                              menu.bot_commentary.substring(0, 30),
-                            ) + (menu.bot_commentary.length > 30 ? "..." : "")}
+                            {sanitizeText(menu.bot_commentary.substring(0, 30)) +
+                              (menu.bot_commentary.length > 30 ? '...' : '')}
                           {:else}
                             <span class="u-color-muted">Yok</span>
                           {/if}
@@ -770,10 +812,32 @@
                       <td class="col-actions">
                         <ActionMenu
                           items={[
-                            { label: "Yemekleri Düzenle", onClick: () => handleEditMenuItems(menu) },
-                            { label: "Bot yorumunu Düzenle", onClick: () => handleEditBotComment(menu) },
-                            ...(menu.status !== "approved" ? [{ label: "Onayla", class: "u-color-text-success", onClick: () => approveMenu(menu.id) }] : []),
-                            ...(menu.status !== "rejected" ? [{ label: "Reddet", class: "u-color-text-danger", onClick: () => rejectMenu(menu.id) }] : []),
+                            {
+                              label: 'Yemekleri Düzenle',
+                              onClick: () => handleEditMenuItems(menu)
+                            },
+                            {
+                              label: 'Bot yorumunu Düzenle',
+                              onClick: () => handleEditBotComment(menu)
+                            },
+                            ...(menu.status !== 'approved'
+                              ? [
+                                  {
+                                    label: 'Onayla',
+                                    class: 'u-color-text-success',
+                                    onClick: () => approveMenu(menu.id)
+                                  }
+                                ]
+                              : []),
+                            ...(menu.status !== 'rejected'
+                              ? [
+                                  {
+                                    label: 'Reddet',
+                                    class: 'u-color-text-danger',
+                                    onClick: () => rejectMenu(menu.id)
+                                  }
+                                ]
+                              : [])
                           ]}
                         />
                       </td>
@@ -798,296 +862,318 @@
 </div>
 
 {#if isEditMenuModalOpen}
-<Modal options={{ title: "Menü Yemeklerini & Ayarlarını Düzenle", iconHtml: icon('list', 24) }} onClose={() => (isEditMenuModalOpen = false)}>
-  {#snippet children()}
-    <div class="c-modal__form-group">
-      <div class="u-flex u-items-center u-justify-between u-mb-xs">
-        <span class="c-modal__label u-mb-0">Yemek Sıraları (Slotlar & Alternatifler)</span>
-        <div class="u-flex u-items-center u-gap-xs">
-          {#if editMenuTarget?.meal_type === 'breakfast' || !editMenuSlots.some((s) => s.primary)}
+  <Modal
+    options={{ title: 'Menü Yemeklerini & Ayarlarını Düzenle', iconHtml: icon('list', 24) }}
+    onClose={() => (isEditMenuModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="c-modal__form-group">
+        <div class="u-flex u-items-center u-justify-between u-mb-xs">
+          <span class="c-modal__label u-mb-0">Yemek Sıraları (Slotlar & Alternatifler)</span>
+          <div class="u-flex u-items-center u-gap-xs">
+            {#if editMenuTarget?.meal_type === 'breakfast' || !editMenuSlots.some((s) => s.primary)}
+              <button
+                type="button"
+                class="btn btn--xs btn--ghost btn--squish"
+                disabled={isApplyingTemplate}
+                onclick={applyBreakfastTemplate}
+                title="Standart KYK kahvaltı öğelerini (Yumurta, Peynir, Zeytin, Reçel, Ekmek) otomatik doldurur"
+              >
+                {isApplyingTemplate ? 'Yükleniyor...' : 'Kahvaltı Şablonu'}
+              </button>
+            {/if}
             <button
               type="button"
-              class="btn btn--xs btn--ghost btn--squish"
-              disabled={isApplyingTemplate}
-              onclick={applyBreakfastTemplate}
-              title="Standart KYK kahvaltı öğelerini (Yumurta, Peynir, Zeytin, Reçel, Ekmek) otomatik doldurur"
+              class="btn btn--xs btn--secondary btn--squish"
+              onclick={addNewSlot}
             >
-              {isApplyingTemplate ? 'Yükleniyor...' : 'Kahvaltı Şablonu'}
+              + Yeni Sıra Ekle
             </button>
-          {/if}
-          <button type="button" class="btn btn--xs btn--secondary btn--squish" onclick={addNewSlot}>
-            + Yeni Sıra Ekle
-          </button>
+          </div>
         </div>
-      </div>
-      <div class="admin-slots-container">
-        {#each editMenuSlots as slot, sIdx}
-          <div class="admin-slot-card {activeSlotTarget.slotIndex === sIdx ? 'admin-slot-card--active' : ''}">
-          <div class="admin-slot-header">
-              <span class="admin-slot-title">Sıra {sIdx + 1}</span>
-              <div class="u-flex u-items-center u-gap-xs">
-                <select
-                  class="c-modal__input u-text-xs u-py-2xs u-px-xs"
-                  bind:value={slot.package_name}
-                  title="Paket"
+        <div class="admin-slots-container">
+          {#each editMenuSlots as slot, sIdx}
+            <div
+              class="admin-slot-card {activeSlotTarget.slotIndex === sIdx
+                ? 'admin-slot-card--active'
+                : ''}"
+            >
+              <div class="admin-slot-header">
+                <span class="admin-slot-title">Sıra {sIdx + 1}</span>
+                <div class="u-flex u-items-center u-gap-xs">
+                  <select
+                    class="c-modal__input u-text-xs u-py-2xs u-px-xs"
+                    bind:value={slot.package_name}
+                    title="Paket"
+                  >
+                    <option value="NORMAL">NORMAL</option>
+                    <option value="ÇÖLYAK MENÜSÜ">ÇÖLYAK MENÜSÜ</option>
+                  </select>
+                  {#if editMenuSlots.length > 1}
+                    <button
+                      type="button"
+                      class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-text-xs"
+                      onclick={() => removeSlot(sIdx)}
+                      title="Bu sırayı kaldır"
+                    >
+                      Sırayı Sil
+                    </button>
+                  {/if}
+                </div>
+              </div>
+
+              <div class="admin-slot-dishes">
+                {#if slot.primary}
+                  <div class="admin-slot-dish-row">
+                    <div class="admin-slot-dish-info">
+                      <span class="u-font-bold">{slot.primary.name}</span>
+                      <span class="admin-slot-dish-tag">Asıl</span>
+                      {#if slot.primary.category}
+                        <span class="admin-slot-dish-tag">{slot.primary.category}</span>
+                      {/if}
+                    </div>
+                    <button
+                      type="button"
+                      class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-font-bold"
+                      onclick={() => removePrimaryFromSlot(sIdx)}
+                      title="Yemeği kaldır"
+                    >
+                      ×
+                    </button>
+                  </div>
+                {:else}
+                  <div class="admin-slot-dish-row u-color-muted u-text-xs">
+                    <span>Asıl yemek atanmadı</span>
+                    <button
+                      type="button"
+                      class="btn btn--2xs btn--secondary btn--squish"
+                      onclick={() => setTargetForSlot(sIdx, false)}
+                    >
+                      {activeSlotTarget.slotIndex === sIdx && !activeSlotTarget.isAlternative
+                        ? 'Seçiliyor...'
+                        : 'Asıl Ata'}
+                    </button>
+                  </div>
+                {/if}
+
+                {#each slot.alternatives as alt}
+                  <div class="admin-slot-dish-row">
+                    <div class="admin-slot-dish-info">
+                      <span>{alt.name}</span>
+                      <span class="admin-slot-dish-tag admin-slot-dish-tag--alt">Alternatif</span>
+                      {#if alt.category}
+                        <span class="admin-slot-dish-tag">{alt.category}</span>
+                      {/if}
+                    </div>
+                    <button
+                      type="button"
+                      class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-font-bold"
+                      onclick={() => removeAlternativeFromSlot(sIdx, alt.id)}
+                      title="Alternatifi kaldır"
+                    >
+                      ×
+                    </button>
+                  </div>
+                {/each}
+              </div>
+
+              <div class="admin-slot-actions">
+                <button
+                  type="button"
+                  class="btn btn--2xs btn--ghost btn--squish"
+                  onclick={() => setTargetForSlot(sIdx, true)}
                 >
-                  <option value="NORMAL">NORMAL</option>
-                  <option value="ÇÖLYAK MENÜSÜ">ÇÖLYAK MENÜSÜ</option>
-                </select>
-                {#if editMenuSlots.length > 1}
+                  {activeSlotTarget.slotIndex === sIdx && activeSlotTarget.isAlternative
+                    ? 'Alternatif Aranıyor...'
+                    : '+ Alternatif Ekle'}
+                </button>
+                {#if slot.primary}
                   <button
                     type="button"
-                    class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-text-xs"
-                    onclick={() => removeSlot(sIdx)}
-                    title="Bu sırayı kaldır"
+                    class="btn btn--2xs btn--ghost btn--squish"
+                    onclick={() => setTargetForSlot(sIdx, false)}
                   >
-                    Sırayı Sil
+                    {activeSlotTarget.slotIndex === sIdx && !activeSlotTarget.isAlternative
+                      ? 'Asıl Değiştiriliyor...'
+                      : 'Asıl Değiştir'}
                   </button>
                 {/if}
               </div>
             </div>
-
-            <div class="admin-slot-dishes">
-              {#if slot.primary}
-                <div class="admin-slot-dish-row">
-                  <div class="admin-slot-dish-info">
-                    <span class="u-font-bold">{slot.primary.name}</span>
-                    <span class="admin-slot-dish-tag">Asıl</span>
-                    {#if slot.primary.category}
-                      <span class="admin-slot-dish-tag">{slot.primary.category}</span>
-                    {/if}
-                  </div>
-                  <button
-                    type="button"
-                    class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-font-bold"
-                    onclick={() => removePrimaryFromSlot(sIdx)}
-                    title="Yemeği kaldır"
-                  >
-                    ×
-                  </button>
-                </div>
-              {:else}
-                <div class="admin-slot-dish-row u-color-muted u-text-xs">
-                  <span>Asıl yemek atanmadı</span>
-                  <button
-                    type="button"
-                    class="btn btn--2xs btn--secondary btn--squish"
-                    onclick={() => setTargetForSlot(sIdx, false)}
-                  >
-                    {activeSlotTarget.slotIndex === sIdx && !activeSlotTarget.isAlternative ? 'Seçiliyor...' : 'Asıl Ata'}
-                  </button>
-                </div>
-              {/if}
-
-              {#each slot.alternatives as alt}
-                <div class="admin-slot-dish-row">
-                  <div class="admin-slot-dish-info">
-                    <span>{alt.name}</span>
-                    <span class="admin-slot-dish-tag admin-slot-dish-tag--alt">Alternatif</span>
-                    {#if alt.category}
-                      <span class="admin-slot-dish-tag">{alt.category}</span>
-                    {/if}
-                  </div>
-                  <button
-                    type="button"
-                    class="u-bg-transparent u-border-none u-color-muted u-cursor-pointer u-font-bold"
-                    onclick={() => removeAlternativeFromSlot(sIdx, alt.id)}
-                    title="Alternatifi kaldır"
-                  >
-                    ×
-                  </button>
-                </div>
-              {/each}
-            </div>
-
-            <div class="admin-slot-actions">
-              <button
-                type="button"
-                class="btn btn--2xs btn--ghost btn--squish"
-                onclick={() => setTargetForSlot(sIdx, true)}
-              >
-                {activeSlotTarget.slotIndex === sIdx && activeSlotTarget.isAlternative ? 'Alternatif Aranıyor...' : '+ Alternatif Ekle'}
-              </button>
-              {#if slot.primary}
-                <button
-                  type="button"
-                  class="btn btn--2xs btn--ghost btn--squish"
-                  onclick={() => setTargetForSlot(sIdx, false)}
-                >
-                  {activeSlotTarget.slotIndex === sIdx && !activeSlotTarget.isAlternative ? 'Asıl Değiştiriliyor...' : 'Asıl Değiştir'}
-                </button>
-              {/if}
-            </div>
-          </div>
-        {/each}
-      </div>
-    </div>
-
-    <div class="c-modal__form-group">
-      <div class="u-flex u-items-center u-justify-between u-mb-xs">
-        <label for="dish-search" class="c-modal__label u-mb-0">
-          Yemek Ekle:
-          <span class="u-color-primary u-font-bold">
-            Sıra {activeSlotTarget.slotIndex + 1} ({activeSlotTarget.isAlternative ? 'Alternatif' : 'Asıl Yemek'})
-          </span>
-        </label>
-      </div>
-      <div class="admin-search-wrapper">
-        <input
-          id="dish-search"
-          type="text"
-          class="c-modal__input"
-          placeholder="Yemek ismi yaz..."
-          bind:value={editMenuSearchQuery}
-          oninput={handleDishSearchInput}
-        />
-      </div>
-      {#if editMenuSearchResults.length > 0}
-        <div class="admin-modal-search-results u-mt-xs">
-          {#each editMenuSearchResults as d}
-            <div class="dish-item-select">
-              <div>
-                <div class="u-text-sm u-font-bold">{d.name}</div>
-                <div class="u-text-xs u-color-muted">ID: {d.id} | {d.category || 'Kategorisiz'}</div>
-              </div>
-              <button
-                type="button"
-                class="btn btn--xs btn--primary btn--squish add-dish-btn"
-                onclick={() => addDishToSlot(d)}
-              >
-                Hedefe Ekle
-              </button>
-            </div>
           {/each}
         </div>
-      {/if}
-    </div>
+      </div>
 
-    <div class="c-modal__form-group">
-      <label for="menu-notice" class="c-modal__label">Günün Özel Uyarısı</label>
-      <input
-        id="menu-notice"
-        type="text"
-        class="c-modal__input"
-        placeholder="Örn: Bu menü il müdürlüğü onaylı olmayıp yurt yemekhanesi numune tepsisinden derlenmiştir."
-        bind:value={editMenuNotice}
-      />
-      <span class="u-text-xs u-color-muted u-mt-2xs">Doluysa timeline gün kutusunda sarı uyarı kartı basılır.</span>
-    </div>
+      <div class="c-modal__form-group">
+        <div class="u-flex u-items-center u-justify-between u-mb-xs">
+          <label for="dish-search" class="c-modal__label u-mb-0">
+            Yemek Ekle:
+            <span class="u-color-primary u-font-bold">
+              Sıra {activeSlotTarget.slotIndex + 1} ({activeSlotTarget.isAlternative
+                ? 'Alternatif'
+                : 'Asıl Yemek'})
+            </span>
+          </label>
+        </div>
+        <div class="admin-search-wrapper">
+          <input
+            id="dish-search"
+            type="text"
+            class="c-modal__input"
+            placeholder="Yemek ismi yaz..."
+            bind:value={editMenuSearchQuery}
+            oninput={handleDishSearchInput}
+          />
+        </div>
+        {#if editMenuSearchResults.length > 0}
+          <div class="admin-modal-search-results u-mt-xs">
+            {#each editMenuSearchResults as d}
+              <div class="dish-item-select">
+                <div>
+                  <div class="u-text-sm u-font-bold">{d.name}</div>
+                  <div class="u-text-xs u-color-muted">
+                    ID: {d.id} | {d.category || 'Kategorisiz'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  class="btn btn--xs btn--primary btn--squish add-dish-btn"
+                  onclick={() => addDishToSlot(d)}
+                >
+                  Hedefe Ekle
+                </button>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
 
-    <div class="c-modal__form-group">
-      <label for="menu-source-type" class="c-modal__label">Kaynak Türü</label>
-      <input
-        id="menu-source-type"
-        type="text"
-        class="c-modal__input"
-        placeholder="kepce-admin, kepce-kullanici, yurtmenu.net..."
-        bind:value={editMenuSourceType}
-      />
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary btn--squish" onclick={() => (isEditMenuModalOpen = false)}>İptal</button>
-    <button class="btn btn--primary btn--squish" onclick={saveMenuDishes}>Değişiklikleri Kaydet</button>
-  {/snippet}
-</Modal>
+      <div class="c-modal__form-group">
+        <label for="menu-notice" class="c-modal__label">Günün Özel Uyarısı</label>
+        <input
+          id="menu-notice"
+          type="text"
+          class="c-modal__input"
+          placeholder="Örn: Bu menü il müdürlüğü onaylı olmayıp yurt yemekhanesi numune tepsisinden derlenmiştir."
+          bind:value={editMenuNotice}
+        />
+        <span class="u-text-xs u-color-muted u-mt-2xs"
+          >Doluysa timeline gün kutusunda sarı uyarı kartı basılır.</span
+        >
+      </div>
+
+      <div class="c-modal__form-group">
+        <label for="menu-source-type" class="c-modal__label">Kaynak Türü</label>
+        <input
+          id="menu-source-type"
+          type="text"
+          class="c-modal__input"
+          placeholder="kepce-admin, kepce-kullanici, yurtmenu.net..."
+          bind:value={editMenuSourceType}
+        />
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary btn--squish" onclick={() => (isEditMenuModalOpen = false)}
+        >İptal</button
+      >
+      <button class="btn btn--primary btn--squish" onclick={saveMenuDishes}
+        >Değişiklikleri Kaydet</button
+      >
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isEditBotModalOpen}
-<Modal options={{ title: "Bot yorumunu Düzenle", iconHtml: icon('bot', 24) }} onClose={() => (isEditBotModalOpen = false)}>
-  {#snippet children()}
-    <div class="c-modal__form-group">
-      <label for="bot-comment" class="c-modal__label">Kepçe Bot yorumu</label>
-      <textarea id="bot-comment" class="c-modal__input" rows="5" placeholder="Kepçe Bot bu menü için ne desin?" bind:value={editBotCommentText}></textarea>
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => (isEditBotModalOpen = false)}>İptal</button>
-    <button class="btn btn--primary" onclick={saveBotComment}>Kaydet</button>
-  {/snippet}
-</Modal>
+  <Modal
+    options={{ title: 'Bot yorumunu Düzenle', iconHtml: icon('bot', 24) }}
+    onClose={() => (isEditBotModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="c-modal__form-group">
+        <label for="bot-comment" class="c-modal__label">Kepçe Bot yorumu</label>
+        <textarea
+          id="bot-comment"
+          class="c-modal__input"
+          rows="5"
+          placeholder="Kepçe Bot bu menü için ne desin?"
+          bind:value={editBotCommentText}></textarea>
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isEditBotModalOpen = false)}>İptal</button>
+      <button class="btn btn--primary" onclick={saveBotComment}>Kaydet</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isCreateMenuModalOpen}
-<Modal
-  options={{ title: "Yeni Menü Oluştur", iconHtml: icon('calendar', 24) }}
-  onClose={() => (isCreateMenuModalOpen = false)}
->
-  {#snippet children()}
-    <div class="c-modal__form-group">
-      <label for="new-menu-city" class="c-modal__label">Şehir</label>
-      <select
-        id="new-menu-city"
-        class="c-modal__input"
-        bind:value={newMenuCityId}
+  <Modal
+    options={{ title: 'Yeni Menü Oluştur', iconHtml: icon('calendar', 24) }}
+    onClose={() => (isCreateMenuModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="c-modal__form-group">
+        <label for="new-menu-city" class="c-modal__label">Şehir</label>
+        <select id="new-menu-city" class="c-modal__input" bind:value={newMenuCityId}>
+          {#each cities as c}
+            <option value={c.id}>{c.name}</option>
+          {/each}
+        </select>
+      </div>
+
+      <div class="c-modal__form-group">
+        <label for="new-menu-date" class="c-modal__label">Tarih</label>
+        <input id="new-menu-date" type="date" class="c-modal__input" bind:value={newMenuDate} />
+      </div>
+
+      <div class="c-modal__form-group">
+        <label for="new-menu-meal" class="c-modal__label">Öğün</label>
+        <select id="new-menu-meal" class="c-modal__input" bind:value={newMenuMealType}>
+          <option value="breakfast">Kahvaltı</option>
+          <option value="dinner">Akşam Yemeği</option>
+        </select>
+      </div>
+
+      <div class="c-modal__form-group">
+        <label for="new-menu-source" class="c-modal__label">Kaynak Türü</label>
+        <input
+          id="new-menu-source"
+          type="text"
+          class="c-modal__input"
+          bind:value={newMenuSourceType}
+          placeholder="kepce-admin"
+        />
+      </div>
+
+      <div class="c-modal__form-group">
+        <label for="new-menu-notice" class="c-modal__label">Günün Uyarısı / Not (Opsiyonel)</label>
+        <input
+          id="new-menu-notice"
+          type="text"
+          class="c-modal__input"
+          bind:value={newMenuNotice}
+          placeholder="Örn: Hafta sonu nöbetçi yurt"
+        />
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button
+        type="button"
+        class="btn btn--secondary btn--squish"
+        disabled={isCreatingMenu}
+        onclick={() => (isCreateMenuModalOpen = false)}
       >
-        {#each cities as c}
-          <option value={c.id}>{c.name}</option>
-        {/each}
-      </select>
-    </div>
-
-    <div class="c-modal__form-group">
-      <label for="new-menu-date" class="c-modal__label">Tarih</label>
-      <input
-        id="new-menu-date"
-        type="date"
-        class="c-modal__input"
-        bind:value={newMenuDate}
-      />
-    </div>
-
-    <div class="c-modal__form-group">
-      <label for="new-menu-meal" class="c-modal__label">Öğün</label>
-      <select
-        id="new-menu-meal"
-        class="c-modal__input"
-        bind:value={newMenuMealType}
+        İptal
+      </button>
+      <button
+        type="button"
+        class="btn btn--primary btn--squish"
+        disabled={isCreatingMenu}
+        onclick={submitCreateMenu}
       >
-        <option value="breakfast">Kahvaltı</option>
-        <option value="dinner">Akşam Yemeği</option>
-      </select>
-    </div>
-
-    <div class="c-modal__form-group">
-      <label for="new-menu-source" class="c-modal__label">Kaynak Türü</label>
-      <input
-        id="new-menu-source"
-        type="text"
-        class="c-modal__input"
-        bind:value={newMenuSourceType}
-        placeholder="kepce-admin"
-      />
-    </div>
-
-    <div class="c-modal__form-group">
-      <label for="new-menu-notice" class="c-modal__label">Günün Uyarısı / Not (Opsiyonel)</label>
-      <input
-        id="new-menu-notice"
-        type="text"
-        class="c-modal__input"
-        bind:value={newMenuNotice}
-        placeholder="Örn: Hafta sonu nöbetçi yurt"
-      />
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button
-      type="button"
-      class="btn btn--secondary btn--squish"
-      disabled={isCreatingMenu}
-      onclick={() => (isCreateMenuModalOpen = false)}
-    >
-      İptal
-    </button>
-    <button
-      type="button"
-      class="btn btn--primary btn--squish"
-      disabled={isCreatingMenu}
-      onclick={submitCreateMenu}
-    >
-      {isCreatingMenu ? "Oluşturuluyor..." : "Menü Oluştur"}
-    </button>
-  {/snippet}
-</Modal>
+        {isCreatingMenu ? 'Oluşturuluyor...' : 'Menü Oluştur'}
+      </button>
+    {/snippet}
+  </Modal>
 {/if}

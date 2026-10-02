@@ -24,7 +24,8 @@
       display: none !important;
     }
 
-    html, body {
+    html,
+    body {
       scrollbar-gutter: auto !important;
     }
   }
@@ -48,7 +49,7 @@
   }
 
   /* The visible track background - Flat Style */
-    .c-scrollbar::before {
+  .c-scrollbar::before {
     content: '';
     position: absolute;
     top: 0;
@@ -62,7 +63,6 @@
   }
 
   @media (hover: hover) {
-
     .c-scrollbar:hover::before,
     .c-scrollbar.is-active::before {
       width: var(--scrollbar-width-wide);
@@ -88,7 +88,6 @@
   }
 
   @media (hover: hover) {
-
     .c-scrollbar:hover .c-scrollbar__thumb,
     .c-scrollbar.is-active .c-scrollbar__thumb {
       width: var(--scrollbar-width-wide);
@@ -114,9 +113,9 @@
 
   /* ── Native Scrollbar Overrides (Applied only to desktop/pointer devices) ── */
   @media (hover: hover) and (min-width: 901px) {
-
     /* Standard Scrollbar Properties (Baseline 2024) */
-    html, body {
+    html,
+    body {
       scrollbar-gutter: stable;
     }
 
@@ -127,7 +126,6 @@
 
     /* Chrome, Edge, Safari */
     @supports selector(::-webkit-scrollbar) {
-
       /* Not: Burada `*::` yerine açıkça `html::` / `body::` kullanılıyor.
          Bazı CSS minifier'lar `*::` kuralını geçersiz bir `::` selektöre
          dönüştürüp tarayıcıda "Ruleset ignored due to bad selector"

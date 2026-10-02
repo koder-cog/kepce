@@ -1,12 +1,12 @@
 <script>
-  import "@/styles/pages/_content.css";
-  import "@/styles/pages/_status.css";
-  import { api } from "@/api/index.js";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { afterNavigate } from "$app/navigation";
-  import { icon } from "@/components/ui/icons.js";
-  import { onDestroy, tick } from "svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import '@/styles/pages/_content.css';
+  import '@/styles/pages/_status.css';
+  import { api } from '@/api/index.js';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { afterNavigate } from '$app/navigation';
+  import { icon } from '@/components/ui/icons.js';
+  import { onDestroy, tick } from 'svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
   let current = $state(null);
   let history = $state(null);
@@ -26,17 +26,13 @@
 
     // Resize listener'ı yalnızca ilk seferinde bağla
     if (!resizeCleanup) {
-      window.addEventListener("resize", updateHistoryDays);
-      resizeCleanup = () =>
-        window.removeEventListener("resize", updateHistoryDays);
+      window.addEventListener('resize', updateHistoryDays);
+      resizeCleanup = () => window.removeEventListener('resize', updateHistoryDays);
     }
 
     const loadData = async () => {
       try {
-        const [c, h] = await Promise.all([
-          api.getStatus(),
-          api.getStatusHistory(90),
-        ]);
+        const [c, h] = await Promise.all([api.getStatus(), api.getStatusHistory(90)]);
         current = c;
         history = h;
       } catch (err) {
@@ -54,10 +50,10 @@
   function getOverallStatusLabel(status) {
     return (
       {
-        aktif: "Tüm Sistemler Çalışıyor",
-        yavas: "Kısmi Yavaşlama Mevcut",
-        kesinti: "Sistemde Kesinti Var",
-      }[status] || "Durum Belirlenemiyor"
+        aktif: 'Tüm Sistemler Çalışıyor',
+        yavas: 'Kısmi Yavaşlama Mevcut',
+        kesinti: 'Sistemde Kesinti Var'
+      }[status] || 'Durum Belirlenemiyor'
     );
   }
 
@@ -74,14 +70,11 @@
     if (!current?.incidents) return [];
     const acc = {};
     current.incidents.forEach((incident) => {
-      const dateStr = new Date(incident.started_at).toLocaleDateString(
-        "tr-TR",
-        {
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        },
-      );
+      const dateStr = new Date(incident.started_at).toLocaleDateString('tr-TR', {
+        month: 'long',
+        day: 'numeric',
+        year: 'numeric'
+      });
       if (!acc[dateStr]) acc[dateStr] = [];
       acc[dateStr].push(incident);
     });
@@ -104,7 +97,7 @@
     {:else if current && history}
       <div class="status-banner-container">
         <div class="status-card--main status-card--{current.status}">
-          {#if current.status === "aktif"}
+          {#if current.status === 'aktif'}
             <svg
               width="48"
               height="48"
@@ -113,10 +106,9 @@
               stroke="var(--status-color, var(--color-success))"
               stroke-width="2.5"
               stroke-linecap="round"
-              stroke-linejoin="round"
-              ><polyline points="20 6 9 17 4 12"></polyline></svg
+              stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg
             >
-          {:else if current.status === "yavas"}
+          {:else if current.status === 'yavas'}
             <svg
               width="48"
               height="48"
@@ -126,11 +118,7 @@
               stroke-width="2.5"
               stroke-linecap="round"
               stroke-linejoin="round"
-              ><circle cx="12" cy="12" r="10"></circle><line
-                x1="12"
-                y1="8"
-                x2="12"
-                y2="12"
+              ><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"
               ></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg
             >
           {:else}
@@ -143,11 +131,7 @@
               stroke-width="2.5"
               stroke-linecap="round"
               stroke-linejoin="round"
-              ><circle cx="12" cy="12" r="10"></circle><line
-                x1="15"
-                y1="9"
-                x2="9"
-                y2="15"
+              ><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"
               ></line><line x1="9" y1="9" x2="15" y2="15"></line></svg
             >
           {/if}
@@ -168,45 +152,40 @@
                     class="pill pill--{day.status}"
                     role="button"
                     tabindex="0"
-                    aria-label="{new Date(day.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })}: {day.status === 'aktif' ? 'Sistem Sorunsuz' : 'Olay Kaydı'}"
+                    aria-label="{new Date(day.date).toLocaleDateString('tr-TR', {
+                      day: 'numeric',
+                      month: 'long'
+                    })}: {day.status === 'aktif' ? 'Sistem Sorunsuz' : 'Olay Kaydı'}"
                     data-tooltip-trigger="click"
                   >
                     <div class="tooltip-template u-hidden">
                       <div class="rich-status-tooltip">
                         <div class="rich-status-tooltip__header">
-                          {new Date(day.date).toLocaleDateString("tr-TR", {
-                            month: "short",
-                            day: "numeric",
-                            year: "numeric",
+                          {new Date(day.date).toLocaleDateString('tr-TR', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric'
                           })}
                         </div>
-                        {#if day.status === "aktif"}
-                          <div class="rich-status-tooltip__body">
-                            Bu gün için kayıtlı sorun yok
-                          </div>
+                        {#if day.status === 'aktif'}
+                          <div class="rich-status-tooltip__body">Bu gün için kayıtlı sorun yok</div>
                         {:else}
-                          {@const dayStr = day.date.split("T")[0]}
+                          {@const dayStr = day.date.split('T')[0]}
                           {@const dayIncident = current?.incidents?.find(
-                            (i) =>
-                              i.component === component.name &&
-                              i.started_at.startsWith(dayStr),
+                            (i) => i.component === component.name && i.started_at.startsWith(dayStr)
                           )}
                           <div
                             class="rich-status-tooltip__badge rich-status-tooltip__badge--{day.status}"
                           >
-                            {@html day.status === "kesinti"
-                              ? icon("error")
-                              : icon("warning")}
+                            {@html day.status === 'kesinti' ? icon('error') : icon('warning')}
                             <span
-                              >{day.status === "kesinti"
-                                ? "Tam Kesinti"
-                                : "Kısmi Yavaşlama Mevcut"}</span
+                              >{day.status === 'kesinti'
+                                ? 'Tam Kesinti'
+                                : 'Kısmi Yavaşlama Mevcut'}</span
                             >
                           </div>
                           <div class="rich-status-tooltip__related">
-                            <div class="rich-status-tooltip__related-label">
-                              İlgili
-                            </div>
+                            <div class="rich-status-tooltip__related-label">İlgili</div>
                             <div class="rich-status-tooltip__related-text">
                               {day.incident_title ||
                                 day.title ||
@@ -215,10 +194,7 @@
                             </div>
                             {#if dayIncident && dayIncident.resolved_at}
                               <div class="rich-status-tooltip__duration">
-                                {formatDuration(
-                                  dayIncident.started_at,
-                                  dayIncident.resolved_at,
-                                )} sürdü
+                                {formatDuration(dayIncident.started_at, dayIncident.resolved_at)} sürdü
                               </div>
                             {/if}
                           </div>
@@ -252,14 +228,11 @@
                     {#if resolvedDate}
                       <div class="incident-event">Düzeltildi</div>
                       <div class="incident-update-time">
-                        {new Date(resolvedDate).toLocaleTimeString(
-                          "tr-TR",
-                          { hour: "2-digit", minute: "2-digit" },
-                        )}
-                        ({formatDuration(
-                          incident.started_at,
-                          resolvedDate,
-                        )} sürdü)
+                        {new Date(resolvedDate).toLocaleTimeString('tr-TR', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                        ({formatDuration(incident.started_at, resolvedDate)} sürdü)
                       </div>
                     {/if}
 
@@ -267,10 +240,10 @@
                       Fark edildi: {incident.message}
                     </div>
                     <div class="incident-update-time">
-                      {new Date(incident.started_at).toLocaleTimeString(
-                        "tr-TR",
-                        { hour: "2-digit", minute: "2-digit" },
-                      )}
+                      {new Date(incident.started_at).toLocaleTimeString('tr-TR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
                     </div>
                   </div>
                 {/each}

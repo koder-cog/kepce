@@ -1,41 +1,40 @@
 <script>
-  import { onMount } from "svelte";
-  import { page } from "$app/stores";
-  import { icon } from "@/components/ui/icons.js";
-  import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import { showToast } from "@/components/ui/toast.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+  import { onMount } from 'svelte';
+  import { page } from '$app/stores';
+  import { icon } from '@/components/ui/icons.js';
+  import SegmentedControl from '@/components/ui/SegmentedControl.svelte';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import { showToast } from '@/components/ui/toast.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
 
   let isSubdomain = $derived(
-    $page.url.hostname.startsWith("ara.") ||
-      $page.url.hostname === "ara.localhost",
+    $page.url.hostname.startsWith('ara.') || $page.url.hostname === 'ara.localhost'
   );
-  let basePath = $derived(isSubdomain ? "" : "/ara");
+  let basePath = $derived(isSubdomain ? '' : '/ara');
 
   // ── State ──────────────────────────────────────────────────
-  let activeTab = $state("general");
+  let activeTab = $state('general');
 
   // 1. Genel
-  let defaultCategory = $state("general");
-  let language = $state("tr");
-  let autocomplete = $state("duckduckgo");
-  let faviconResolver = $state("duckduckgo");
-  let safeSearch = $state("1");
+  let defaultCategory = $state('general');
+  let language = $state('tr');
+  let autocomplete = $state('duckduckgo');
+  let faviconResolver = $state('duckduckgo');
+  let safeSearch = $state('1');
   let pluginCalculator = $state(true);
   let pluginSelfInfo = $state(true);
   let pluginTimezones = $state(true);
   let pluginUnitConverter = $state(true);
 
   // 2. Görünüm
-  let theme = $state("sistem");
+  let theme = $state('sistem');
   let openInNewTab = $state(false);
   let compactResults = $state(false);
   let infiniteScroll = $state(false);
-  let resultsPerPage = $state("10");
+  let resultsPerPage = $state('10');
 
   // 3. Gizlilik
-  let httpMethod = $state("POST");
+  let httpMethod = $state('POST');
   let trackerRemover = $state(true);
   let hideQueryInTitle = $state(false);
 
@@ -58,71 +57,71 @@
     // Medya
     youtube: true,
     vimeo: false,
-    unsplash: true,
+    unsplash: true
   });
 
   // 5. İçe/Dışa Aktarma
-  let importHashInput = $state("");
-  let preferencesHash = $state("");
-  let shareUrl = $state("");
+  let importHashInput = $state('');
+  let preferencesHash = $state('');
+  let shareUrl = $state('');
 
   const TABS = [
-    { value: "general", label: "Genel" },
-    { value: "ui", label: "Görünüm" },
-    { value: "engines", label: "Motorlar" },
-    { value: "privacy", label: "Gizlilik" },
-    { value: "data", label: "Veri ve Aktarma" },
+    { value: 'general', label: 'Genel' },
+    { value: 'ui', label: 'Görünüm' },
+    { value: 'engines', label: 'Motorlar' },
+    { value: 'privacy', label: 'Gizlilik' },
+    { value: 'data', label: 'Veri ve Aktarma' }
   ];
 
   const CATEGORY_OPTIONS = [
-    { value: "general", label: "Genel" },
-    { value: "images", label: "Görseller" },
-    { value: "videos", label: "Videolar" },
-    { value: "news", label: "Haberler" },
-    { value: "it", label: "BT ve Kod" },
-    { value: "science", label: "Bilim" },
+    { value: 'general', label: 'Genel' },
+    { value: 'images', label: 'Görseller' },
+    { value: 'videos', label: 'Videolar' },
+    { value: 'news', label: 'Haberler' },
+    { value: 'it', label: 'BT ve Kod' },
+    { value: 'science', label: 'Bilim' }
   ];
 
   const THEME_OPTIONS = [
-    { value: "sistem", icon: icon("system", 18), label: "Sistem" },
-    { value: "acik", icon: icon("sun", 18), label: "Açık" },
-    { value: "koyu", icon: icon("moon", 18), label: "Koyu" },
+    { value: 'sistem', icon: icon('system', 18), label: 'Sistem' },
+    { value: 'acik', icon: icon('sun', 18), label: 'Açık' },
+    { value: 'koyu', icon: icon('moon', 18), label: 'Koyu' }
   ];
 
   const LANG_OPTIONS = [
-    { value: "tr", label: "Türkçe (tr)" },
-    { value: "en", label: "English (en)" },
-    { value: "all", label: "Tüm Diller" },
+    { value: 'tr', label: 'Türkçe (tr)' },
+    { value: 'en', label: 'English (en)' },
+    { value: 'all', label: 'Tüm Diller' }
   ];
 
   const AUTOCOMPLETE_OPTIONS = [
-    { value: "duckduckgo", label: "DuckDuckGo" },
-    { value: "google", label: "Google" },
-    { value: "wikipedia", label: "Vikipedi" },
-    { value: "off", label: "Kapalı" },
+    { value: 'duckduckgo', label: 'DuckDuckGo' },
+    { value: 'google', label: 'Google' },
+    { value: 'wikipedia', label: 'Vikipedi' },
+    { value: 'off', label: 'Kapalı' }
   ];
 
   const FAVICON_OPTIONS = [
-    { value: "duckduckgo", label: "DuckDuckGo" },
-    { value: "google", label: "Google" },
-    { value: "off", label: "Kapalı" },
+    { value: 'duckduckgo', label: 'DuckDuckGo' },
+    { value: 'google', label: 'Google' },
+    { value: 'off', label: 'Kapalı' }
   ];
 
   const SAFE_OPTIONS = [
-    { value: "0", label: "Kapalı" },
-    { value: "1", label: "Orta" },
-    { value: "2", label: "Katı" },
+    { value: '0', label: 'Kapalı' },
+    { value: '1', label: 'Orta' },
+    { value: '2', label: 'Katı' }
   ];
 
   const RESULTS_PER_PAGE_OPTIONS = [
-    { value: "10", label: "10 Sonuç" },
-    { value: "20", label: "20 Sonuç" },
-    { value: "50", label: "50 Sonuç" },
+    { value: '10', label: '10 Sonuç' },
+    { value: '20', label: '20 Sonuç' },
+    { value: '50', label: '50 Sonuç' }
   ];
 
   const HTTP_METHOD_OPTIONS = [
-    { value: "POST", label: "POST (Gizlilik Odaklı)" },
-    { value: "GET", label: "GET (URL Paylaşılabilir)" },
+    { value: 'POST', label: 'POST (Gizlilik Odaklı)' },
+    { value: 'GET', label: 'GET (URL Paylaşılabilir)' }
   ];
 
   function getSerializedState() {
@@ -144,7 +143,7 @@
       httpMethod,
       trackerRemover,
       hideQueryInTitle,
-      engines,
+      engines
     };
   }
 
@@ -153,8 +152,8 @@
       const data = getSerializedState();
       const base64 = btoa(unescape(encodeURIComponent(JSON.stringify(data))));
       preferencesHash = base64;
-      if (typeof window !== "undefined") {
-        shareUrl = `${window.location.origin}${basePath || "/ara"}/ayarlar?pref=${base64}`;
+      if (typeof window !== 'undefined') {
+        shareUrl = `${window.location.origin}${basePath || '/ara'}/ayarlar?pref=${base64}`;
       }
     } catch (e) {}
   }
@@ -166,13 +165,10 @@
     if (data.autocomplete) autocomplete = data.autocomplete;
     if (data.faviconResolver) faviconResolver = data.faviconResolver;
     if (data.safeSearch) safeSearch = data.safeSearch;
-    if (data.pluginCalculator !== undefined)
-      pluginCalculator = data.pluginCalculator;
+    if (data.pluginCalculator !== undefined) pluginCalculator = data.pluginCalculator;
     if (data.pluginSelfInfo !== undefined) pluginSelfInfo = data.pluginSelfInfo;
-    if (data.pluginTimezones !== undefined)
-      pluginTimezones = data.pluginTimezones;
-    if (data.pluginUnitConverter !== undefined)
-      pluginUnitConverter = data.pluginUnitConverter;
+    if (data.pluginTimezones !== undefined) pluginTimezones = data.pluginTimezones;
+    if (data.pluginUnitConverter !== undefined) pluginUnitConverter = data.pluginUnitConverter;
 
     if (data.theme) {
       theme = data.theme;
@@ -181,17 +177,13 @@
     if (data.openInNewTab !== undefined) openInNewTab = data.openInNewTab;
     if (data.compactResults !== undefined) {
       compactResults = data.compactResults;
-      document.documentElement.classList.toggle(
-        "is-compact-results",
-        compactResults,
-      );
+      document.documentElement.classList.toggle('is-compact-results', compactResults);
     }
     if (data.infiniteScroll !== undefined) infiniteScroll = data.infiniteScroll;
     if (data.resultsPerPage) resultsPerPage = data.resultsPerPage;
     if (data.httpMethod) httpMethod = data.httpMethod;
     if (data.trackerRemover !== undefined) trackerRemover = data.trackerRemover;
-    if (data.hideQueryInTitle !== undefined)
-      hideQueryInTitle = data.hideQueryInTitle;
+    if (data.hideQueryInTitle !== undefined) hideQueryInTitle = data.hideQueryInTitle;
 
     if (data.engines) {
       engines = { ...engines, ...data.engines };
@@ -232,53 +224,43 @@
     try {
       // 1. URL'den dış tercih içe aktarma
       const urlPref =
-        $page.url.searchParams.get("pref") ||
-        $page.url.searchParams.get("preferences");
+        $page.url.searchParams.get('pref') || $page.url.searchParams.get('preferences');
       if (urlPref) {
         try {
           const jsonStr = decodeURIComponent(escape(atob(urlPref)));
           const data = JSON.parse(jsonStr);
           applyState(data);
-          showToast("Arama tercihleri bağlantıdan başarıyla içe aktarıldı.", {
-            type: "success",
+          showToast('Arama tercihleri bağlantıdan başarıyla içe aktarıldı.', {
+            type: 'success'
           });
           return;
         } catch (err) {
-          showToast("Geçersiz tercih bağlantısı.", { type: "error" });
+          showToast('Geçersiz tercih bağlantısı.', { type: 'error' });
         }
       }
 
       // 2. Yerel depolamadan yükleme
-      defaultCategory =
-        localStorage.getItem("kepce_search_category") || "general";
-      language = localStorage.getItem("kepce_search_lang") || "tr";
-      autocomplete =
-        localStorage.getItem("kepce_search_autocomplete") || "duckduckgo";
-      faviconResolver =
-        localStorage.getItem("kepce_search_favicons") || "duckduckgo";
-      safeSearch = localStorage.getItem("kepce_search_safe") || "1";
-      pluginCalculator =
-        localStorage.getItem("kepce_search_plugin_calc") !== "false";
-      pluginSelfInfo =
-        localStorage.getItem("kepce_search_plugin_ip") !== "false";
-      pluginTimezones =
-        localStorage.getItem("kepce_search_plugin_time") !== "false";
-      pluginUnitConverter =
-        localStorage.getItem("kepce_search_plugin_unit") !== "false";
+      defaultCategory = localStorage.getItem('kepce_search_category') || 'general';
+      language = localStorage.getItem('kepce_search_lang') || 'tr';
+      autocomplete = localStorage.getItem('kepce_search_autocomplete') || 'duckduckgo';
+      faviconResolver = localStorage.getItem('kepce_search_favicons') || 'duckduckgo';
+      safeSearch = localStorage.getItem('kepce_search_safe') || '1';
+      pluginCalculator = localStorage.getItem('kepce_search_plugin_calc') !== 'false';
+      pluginSelfInfo = localStorage.getItem('kepce_search_plugin_ip') !== 'false';
+      pluginTimezones = localStorage.getItem('kepce_search_plugin_time') !== 'false';
+      pluginUnitConverter = localStorage.getItem('kepce_search_plugin_unit') !== 'false';
 
-      theme = localStorage.getItem("renkTercihi") || "sistem";
-      openInNewTab = localStorage.getItem("kepce_search_new_tab") === "true";
-      compactResults = localStorage.getItem("kepce_search_compact") === "true";
-      infiniteScroll = localStorage.getItem("kepce_search_infinite") === "true";
-      resultsPerPage = localStorage.getItem("kepce_search_per_page") || "10";
+      theme = localStorage.getItem('renkTercihi') || 'sistem';
+      openInNewTab = localStorage.getItem('kepce_search_new_tab') === 'true';
+      compactResults = localStorage.getItem('kepce_search_compact') === 'true';
+      infiniteScroll = localStorage.getItem('kepce_search_infinite') === 'true';
+      resultsPerPage = localStorage.getItem('kepce_search_per_page') || '10';
 
-      httpMethod = localStorage.getItem("kepce_search_method") || "POST";
-      trackerRemover =
-        localStorage.getItem("kepce_search_tracker_remover") !== "false";
-      hideQueryInTitle =
-        localStorage.getItem("kepce_search_hide_title") === "true";
+      httpMethod = localStorage.getItem('kepce_search_method') || 'POST';
+      trackerRemover = localStorage.getItem('kepce_search_tracker_remover') !== 'false';
+      hideQueryInTitle = localStorage.getItem('kepce_search_hide_title') === 'true';
 
-      const savedEngines = localStorage.getItem("kepce_search_engines");
+      const savedEngines = localStorage.getItem('kepce_search_engines');
       if (savedEngines) {
         engines = { ...engines, ...JSON.parse(savedEngines) };
       }
@@ -290,11 +272,8 @@
   function handleThemeChange(newTheme) {
     theme = newTheme;
     try {
-      localStorage.setItem("renkTercihi", newTheme);
-      if (
-        typeof window !== "undefined" &&
-        typeof window.applyTheme === "function"
-      ) {
+      localStorage.setItem('renkTercihi', newTheme);
+      if (typeof window !== 'undefined' && typeof window.applyTheme === 'function') {
         window.applyTheme(newTheme);
       }
       updateHashes();
@@ -312,24 +291,24 @@
   }
 
   function resetAll() {
-    defaultCategory = "general";
-    language = "tr";
-    autocomplete = "duckduckgo";
-    faviconResolver = "duckduckgo";
-    safeSearch = "1";
+    defaultCategory = 'general';
+    language = 'tr';
+    autocomplete = 'duckduckgo';
+    faviconResolver = 'duckduckgo';
+    safeSearch = '1';
     pluginCalculator = true;
     pluginSelfInfo = true;
     pluginTimezones = true;
     pluginUnitConverter = true;
 
-    handleThemeChange("sistem");
+    handleThemeChange('sistem');
     openInNewTab = false;
     compactResults = false;
     infiniteScroll = false;
-    resultsPerPage = "10";
-    document.documentElement.classList.remove("is-compact-results");
+    resultsPerPage = '10';
+    document.documentElement.classList.remove('is-compact-results');
 
-    httpMethod = "POST";
+    httpMethod = 'POST';
     trackerRemover = true;
     hideQueryInTitle = false;
 
@@ -347,20 +326,20 @@
       stackoverflow: true,
       youtube: true,
       vimeo: false,
-      unsplash: true,
+      unsplash: true
     };
 
     persistAll();
     updateHashes();
-    showToast("Tüm ayarlar varsayılana sıfırlandı.", { type: "info" });
+    showToast('Tüm ayarlar varsayılana sıfırlandı.', { type: 'info' });
   }
 
   async function copyText(text, successMsg) {
     try {
       await navigator.clipboard.writeText(text);
-      showToast(successMsg, { type: "success" });
+      showToast(successMsg, { type: 'success' });
     } catch (e) {
-      showToast("Kopyalama başarısız oldu.", { type: "error" });
+      showToast('Kopyalama başarısız oldu.', { type: 'error' });
     }
   }
 
@@ -370,20 +349,17 @@
       const jsonStr = decodeURIComponent(escape(atob(importHashInput.trim())));
       const data = JSON.parse(jsonStr);
       applyState(data);
-      importHashInput = "";
-      showToast("Tercihler başarıyla içe aktarıldı.", { type: "success" });
+      importHashInput = '';
+      showToast('Tercihler başarıyla içe aktarıldı.', { type: 'success' });
     } catch (err) {
-      showToast("Geçersiz tercih hash verisi.", { type: "error" });
+      showToast('Geçersiz tercih hash verisi.', { type: 'error' });
     }
   }
 </script>
 
 <svelte:head>
   <title>Ayarlar | Kepçe Ara</title>
-  <meta
-    name="description"
-    content="Arama motoru tercihleri, motor yönetimi ve veri aktarımı."
-  />
+  <meta name="description" content="Arama motoru tercihleri, motor yönetimi ve veri aktarımı." />
 </svelte:head>
 
 <div class="settings-page c-search-adv-page" id="settings-page">
@@ -391,15 +367,11 @@
 
   <!-- ── 5'li Sekme Seçici ────────────────────────────────── -->
   <div class="c-search-adv-tabs-box">
-    <SegmentedControl
-      options={TABS}
-      value={activeTab}
-      onChange={(t) => (activeTab = t)}
-    />
+    <SegmentedControl options={TABS} value={activeTab} onChange={(t) => (activeTab = t)} />
   </div>
 
   <!-- ── 1. GENEL (General) ───────────────────────────────── -->
-  {#if activeTab === "general"}
+  {#if activeTab === 'general'}
     <section class="settings-section">
       <h2 class="settings-section__heading">Arama Tercihleri</h2>
       <div class="c-boxed-list">
@@ -407,9 +379,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Varsayılan kategori</div>
-            <div class="c-list-row__desc">
-              Arama başladığında seçili gelen alan
-            </div>
+            <div class="c-list-row__desc">Arama başladığında seçili gelen alan</div>
           </div>
           <div class="c-list-row__control">
             <Dropdown
@@ -447,9 +417,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Otomatik tamamlama</div>
-            <div class="c-list-row__desc">
-              Arama kutusunda öneri getiren servis
-            </div>
+            <div class="c-list-row__desc">Arama kutusunda öneri getiren servis</div>
           </div>
           <div class="c-list-row__control">
             <Dropdown
@@ -468,9 +436,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Site simgeleri (Favicon)</div>
-            <div class="c-list-row__desc">
-              Sonuçların yanında site simgelerini gösterir
-            </div>
+            <div class="c-list-row__desc">Sonuçların yanında site simgelerini gösterir</div>
           </div>
           <div class="c-list-row__control">
             <Dropdown
@@ -489,9 +455,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Güvenli arama (SafeSearch)</div>
-            <div class="c-list-row__desc">
-              Yetişkin içerik filtreleme düzeyi
-            </div>
+            <div class="c-list-row__desc">Yetişkin içerik filtreleme düzeyi</div>
           </div>
           <div class="c-list-row__control">
             <Dropdown
@@ -512,10 +476,7 @@
     <section class="settings-section">
       <h2 class="settings-section__heading">Anında Yanıt Eklentileri</h2>
       <div class="c-boxed-list">
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="plug-calc"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="plug-calc">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Hesap makinesi</div>
             <div class="c-list-row__desc">
@@ -537,10 +498,7 @@
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="plug-ip"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="plug-ip">
           <div class="c-list-row__info">
             <div class="c-list-row__title">IP ve bağlantı bilgisi</div>
             <div class="c-list-row__desc">
@@ -562,10 +520,7 @@
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="plug-time"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="plug-time">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Saat ve zaman dilimleri</div>
             <div class="c-list-row__desc">
@@ -587,10 +542,7 @@
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="plug-unit"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="plug-unit">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Birim ve kur çevirici</div>
             <div class="c-list-row__desc">
@@ -615,7 +567,7 @@
     </section>
 
     <!-- ── 2. GÖRÜNÜM (UI) ─────────────────────────────────── -->
-  {:else if activeTab === "ui"}
+  {:else if activeTab === 'ui'}
     <section class="settings-section">
       <h2 class="settings-section__heading">Tema ve Düzen</h2>
       <div class="c-boxed-list">
@@ -636,15 +588,10 @@
         </div>
 
         <!-- Kompakt Sonuçlar -->
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="ui-compact"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="ui-compact">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Kompakt sonuçlar</div>
-            <div class="c-list-row__desc">
-              Sonuç kartları arasındaki boşluğu daraltır
-            </div>
+            <div class="c-list-row__desc">Sonuç kartları arasındaki boşluğu daraltır</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -654,10 +601,7 @@
               checked={compactResults}
               onchange={(e) => {
                 compactResults = e.currentTarget.checked;
-                document.documentElement.classList.toggle(
-                  "is-compact-results",
-                  compactResults,
-                );
+                document.documentElement.classList.toggle('is-compact-results', compactResults);
                 handleGenericChange();
               }}
             />
@@ -666,15 +610,10 @@
         </label>
 
         <!-- Yeni Sekmede Aç -->
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="ui-new-tab"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="ui-new-tab">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Bağlantıları yeni sekmede aç</div>
-            <div class="c-list-row__desc">
-              Arama sonuçlarını yeni tarayıcı sekmesinde açar
-            </div>
+            <div class="c-list-row__desc">Arama sonuçlarını yeni tarayıcı sekmesinde açar</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -692,15 +631,10 @@
         </label>
 
         <!-- Sonsuz Kaydırma -->
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="ui-infinite"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="ui-infinite">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Sonsuz kaydırma</div>
-            <div class="c-list-row__desc">
-              Sayfa sonuna gelince yeni sonuçları otomatik yükler
-            </div>
+            <div class="c-list-row__desc">Sayfa sonuna gelince yeni sonuçları otomatik yükler</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -721,9 +655,7 @@
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Sayfa başına sonuç</div>
-            <div class="c-list-row__desc">
-              Her sayfada listelenecek sonuç sayısı
-            </div>
+            <div class="c-list-row__desc">Her sayfada listelenecek sonuç sayısı</div>
           </div>
           <div class="c-list-row__control">
             <Dropdown
@@ -741,14 +673,11 @@
     </section>
 
     <!-- ── 3. MOTORLAR (Engines) ────────────────────────────── -->
-  {:else if activeTab === "engines"}
+  {:else if activeTab === 'engines'}
     <section class="settings-section">
       <h2 class="settings-section__heading">Genel Arama Motorları</h2>
       <div class="c-boxed-list">
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-google"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-google">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Google <span class="c-search-bang-pill">!g</span>
@@ -761,23 +690,18 @@
               id="eng-google"
               class="c-input-hidden"
               checked={engines.google}
-              onchange={(e) => toggleEngine("google", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('google', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-bing"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-bing">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Bing <span class="c-search-bang-pill">!b</span>
             </div>
-            <div class="c-list-row__desc">
-              Microsoft web ve görsel arama indeksi
-            </div>
+            <div class="c-list-row__desc">Microsoft web ve görsel arama indeksi</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -785,16 +709,13 @@
               id="eng-bing"
               class="c-input-hidden"
               checked={engines.bing}
-              onchange={(e) => toggleEngine("bing", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('bing', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-duckduckgo"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-duckduckgo">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               DuckDuckGo <span class="c-search-bang-pill">!ddg</span>
@@ -807,17 +728,13 @@
               id="eng-duckduckgo"
               class="c-input-hidden"
               checked={engines.duckduckgo}
-              onchange={(e) =>
-                toggleEngine("duckduckgo", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('duckduckgo', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-brave"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-brave">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Brave Search <span class="c-search-bang-pill">!brave</span>
@@ -830,16 +747,13 @@
               id="eng-brave"
               class="c-input-hidden"
               checked={engines.brave}
-              onchange={(e) => toggleEngine("brave", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('brave', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-startpage"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-startpage">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Startpage <span class="c-search-bang-pill">!sp</span>
@@ -852,8 +766,7 @@
               id="eng-startpage"
               class="c-input-hidden"
               checked={engines.startpage}
-              onchange={(e) =>
-                toggleEngine("startpage", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('startpage', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -864,10 +777,7 @@
     <section class="settings-section">
       <h2 class="settings-section__heading">Ansiklopedi ve Bilgi</h2>
       <div class="c-boxed-list">
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-wikipedia"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-wikipedia">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Vikipedi <span class="c-search-bang-pill">!w</span>
@@ -880,17 +790,13 @@
               id="eng-wikipedia"
               class="c-input-hidden"
               checked={engines.wikipedia}
-              onchange={(e) =>
-                toggleEngine("wikipedia", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('wikipedia', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-wikidata"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-wikidata">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Wikidata <span class="c-search-bang-pill">!wd</span>
@@ -903,8 +809,7 @@
               id="eng-wikidata"
               class="c-input-hidden"
               checked={engines.wikidata}
-              onchange={(e) =>
-                toggleEngine("wikidata", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('wikidata', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -915,17 +820,12 @@
     <section class="settings-section">
       <h2 class="settings-section__heading">Topluluk ve Kod</h2>
       <div class="c-boxed-list">
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-reddit"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-reddit">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Reddit <span class="c-search-bang-pill">!r</span>
             </div>
-            <div class="c-list-row__desc">
-              Topluluk tartışmaları ve gönderiler
-            </div>
+            <div class="c-list-row__desc">Topluluk tartışmaları ve gönderiler</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -933,23 +833,18 @@
               id="eng-reddit"
               class="c-input-hidden"
               checked={engines.reddit}
-              onchange={(e) => toggleEngine("reddit", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('reddit', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-github"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-github">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               GitHub <span class="c-search-bang-pill">!gh</span>
             </div>
-            <div class="c-list-row__desc">
-              Açık kaynak kod depoları ve dokümanlar
-            </div>
+            <div class="c-list-row__desc">Açık kaynak kod depoları ve dokümanlar</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -957,16 +852,13 @@
               id="eng-github"
               class="c-input-hidden"
               checked={engines.github}
-              onchange={(e) => toggleEngine("github", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('github', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-stackoverflow"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-stackoverflow">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Stack Overflow <span class="c-search-bang-pill">!so</span>
@@ -979,8 +871,7 @@
               id="eng-stackoverflow"
               class="c-input-hidden"
               checked={engines.stackoverflow}
-              onchange={(e) =>
-                toggleEngine("stackoverflow", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('stackoverflow', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -991,10 +882,7 @@
     <section class="settings-section">
       <h2 class="settings-section__heading">Medya</h2>
       <div class="c-boxed-list">
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-youtube"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-youtube">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               YouTube <span class="c-search-bang-pill">!yt</span>
@@ -1007,16 +895,13 @@
               id="eng-youtube"
               class="c-input-hidden"
               checked={engines.youtube}
-              onchange={(e) => toggleEngine("youtube", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('youtube', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="eng-unsplash"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="eng-unsplash">
           <div class="c-list-row__info">
             <div class="c-list-row__title">
               Unsplash <span class="c-search-bang-pill">!unsplash</span>
@@ -1029,8 +914,7 @@
               id="eng-unsplash"
               class="c-input-hidden"
               checked={engines.unsplash}
-              onchange={(e) =>
-                toggleEngine("unsplash", e.currentTarget.checked)}
+              onchange={(e) => toggleEngine('unsplash', e.currentTarget.checked)}
             />
             <span class="c-switch"><span class="c-switch__handle"></span></span>
           </div>
@@ -1039,7 +923,7 @@
     </section>
 
     <!-- ── 4. GİZLİLİK (Privacy) ────────────────────────────── -->
-  {:else if activeTab === "privacy"}
+  {:else if activeTab === 'privacy'}
     <section class="settings-section">
       <h2 class="settings-section__heading">Arama Yöntemi</h2>
       <div class="c-boxed-list">
@@ -1063,14 +947,9 @@
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="priv-tracker"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="priv-tracker">
           <div class="c-list-row__info">
-            <div class="c-list-row__title">
-              İzleyici temizleyici (Tracker Remover)
-            </div>
+            <div class="c-list-row__title">İzleyici temizleyici (Tracker Remover)</div>
             <div class="c-list-row__desc">
               Bağlantılardaki utm_ ve fbclid gibi izleme etiketlerini temizler
             </div>
@@ -1090,15 +969,10 @@
           </div>
         </label>
 
-        <label
-          class="c-list-row c-list-row--clickable c-list-row--tall"
-          for="priv-title"
-        >
+        <label class="c-list-row c-list-row--clickable c-list-row--tall" for="priv-title">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Sekme başlığında sorguyu gizle</div>
-            <div class="c-list-row__desc">
-              Sekme başlığında arama terimini göstermez
-            </div>
+            <div class="c-list-row__desc">Sekme başlığında arama terimini göstermez</div>
           </div>
           <div class="c-list-row__control">
             <input
@@ -1118,7 +992,7 @@
     </section>
 
     <!-- ── 5. VERİ & AKTARMA (Data & Cookies) ────────────────── -->
-  {:else if activeTab === "data"}
+  {:else if activeTab === 'data'}
     <section class="settings-section">
       <h2 class="settings-section__heading">Tercihleri Dışa Aktar</h2>
       <div class="c-boxed-list">
@@ -1126,17 +1000,14 @@
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Tercih Kodu</div>
-            <div class="c-list-row__desc">
-              Mevcut ayarlarınızı içeren metin dizesi
-            </div>
+            <div class="c-list-row__desc">Mevcut ayarlarınızı içeren metin dizesi</div>
             <div class="c-search-adv-hash-preview">{preferencesHash}</div>
           </div>
           <div class="c-list-row__control">
             <button
               type="button"
               class="btn btn--sm btn--secondary btn--squish"
-              onclick={() =>
-                copyText(preferencesHash, "Tercih kodu kopyalandı.")}
+              onclick={() => copyText(preferencesHash, 'Tercih kodu kopyalandı.')}
             >
               Kopyala
             </button>
@@ -1147,16 +1018,13 @@
         <div class="c-list-row c-list-row--tall">
           <div class="c-list-row__info">
             <div class="c-list-row__title">Paylaşım Bağlantısı</div>
-            <div class="c-list-row__desc">
-              Ayarlarınızı başka cihazda açan bağlantı
-            </div>
+            <div class="c-list-row__desc">Ayarlarınızı başka cihazda açan bağlantı</div>
           </div>
           <div class="c-list-row__control">
             <button
               type="button"
               class="btn btn--sm btn--secondary btn--squish"
-              onclick={() =>
-                copyText(shareUrl, "Paylaşım bağlantısı kopyalandı.")}
+              onclick={() => copyText(shareUrl, 'Paylaşım bağlantısı kopyalandı.')}
             >
               Bağlantıyı Kopyala
             </button>
@@ -1200,8 +1068,8 @@
 
   <!-- ── Alt Eylem Butonları ───────────────────────────────── -->
   <div class="c-search-adv-footer-actions">
-    <a href={basePath || "/"} class="btn btn--secondary btn--squish">
-      {@html icon("chevronLeft", 16)}
+    <a href={basePath || '/'} class="btn btn--secondary btn--squish">
+      {@html icon('chevronLeft', 16)}
       <span>Aramaya Dön</span>
     </a>
 

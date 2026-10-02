@@ -1,11 +1,11 @@
-import { json } from "@sveltejs/kit";
-import { env } from "$env/dynamic/private";
-import { suggestUnitCorrection } from "$lib/search/instantSolvers.js";
-import { resolveCityFromQuery } from "@/utils/turkish.js";
+import { json } from '@sveltejs/kit';
+import { env } from '$env/dynamic/private';
+import { suggestUnitCorrection } from '$lib/search/instantSolvers.js';
+import { resolveCityFromQuery } from '@/utils/turkish.js';
 
 async function fetchUpstreamSuggestions(q, motor, customFetch = fetch) {
   try {
-    if (motor === "google") {
+    if (motor === 'google') {
       const gRes = await customFetch(
         `https://suggestqueries.google.com/complete/search?client=firefox&hl=tr&q=${encodeURIComponent(q)}`,
         { signal: AbortSignal.timeout(2500) }
@@ -36,8 +36,8 @@ async function fetchUpstreamSuggestions(q, motor, customFetch = fetch) {
 }
 
 export async function GET({ url, fetch }) {
-  const q = (url.searchParams.get("q") || "").trim();
-  const motor = (url.searchParams.get("motor") || "").trim();
+  const q = (url.searchParams.get('q') || '').trim();
+  const motor = (url.searchParams.get('motor') || '').trim();
   if (!q || q.length < 2) {
     return json([]);
   }
@@ -45,13 +45,14 @@ export async function GET({ url, fetch }) {
   let suggestions = [];
 
   // 1. Önce yerel SearXNG servisinden çekmeyi dene
-  const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
+  const searxUrl = env.SEARXNG_URL || 'http://localhost:8080';
   try {
-    const completerQuery = motor && motor !== "off" ? `&completer=${encodeURIComponent(motor)}` : "";
+    const completerQuery =
+      motor && motor !== 'off' ? `&completer=${encodeURIComponent(motor)}` : '';
     const res = await fetch(
-      `${searxUrl.replace(/\/+$/, "")}/autocompleter?q=${encodeURIComponent(q)}${completerQuery}`,
+      `${searxUrl.replace(/\/+$/, '')}/autocompleter?q=${encodeURIComponent(q)}${completerQuery}`,
       {
-        signal: AbortSignal.timeout(2000),
+        signal: AbortSignal.timeout(2000)
       }
     );
 
@@ -60,7 +61,7 @@ export async function GET({ url, fetch }) {
       if (Array.isArray(data) && Array.isArray(data[1])) {
         suggestions = data[1];
       } else if (Array.isArray(data)) {
-        suggestions = data.filter((item) => typeof item === "string");
+        suggestions = data.filter((item) => typeof item === 'string');
       }
     }
   } catch {
@@ -68,7 +69,7 @@ export async function GET({ url, fetch }) {
   }
 
   // 2. SearXNG boş döndüyse veya çevrimdışıysa doğrudan sağlayıcıya danış
-  if (suggestions.length === 0 && motor !== "off") {
+  if (suggestions.length === 0 && motor !== 'off') {
     suggestions = await fetchUpstreamSuggestions(q, motor, fetch);
   }
 

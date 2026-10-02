@@ -1,38 +1,38 @@
 <script>
-  import { onMount } from "svelte";
-  import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
-  import pricingData from "@/lib/data/pricing/istanbul_2025_2026.json";
-  import { showToast } from "@/components/ui/toast.js";
-  import { evaluateTrayPersona } from "@/lib/utils/trayPersona.js";
+  import { onMount } from 'svelte';
+  import SegmentedControl from '@/components/ui/SegmentedControl.svelte';
+  import pricingData from '@/lib/data/pricing/istanbul_2025_2026.json';
+  import { showToast } from '@/components/ui/toast.js';
+  import { evaluateTrayPersona } from '@/lib/utils/trayPersona.js';
 
   // Svelte 5 State
-  let selectedMeal = $state("dinner"); // "breakfast" | "dinner"
+  let selectedMeal = $state('dinner'); // "breakfast" | "dinner"
   let allowanceInput = $state(pricingData.defaultAllowances.dinner);
-  let searchQuery = $state("");
-  let selectedCategory = $state("all");
+  let searchQuery = $state('');
+  let selectedCategory = $state('all');
   let tray = $state({}); // { [itemId]: quantity }
   let isDrawerOpen = $state(false);
 
   const mealOptions = [
-    { value: "breakfast", label: "Kahvaltı" },
-    { value: "dinner", label: "Akşam" },
+    { value: 'breakfast', label: 'Kahvaltı' },
+    { value: 'dinner', label: 'Akşam' }
   ];
 
   // Load from URL params if present
   onMount(() => {
     try {
       const params = new URLSearchParams(window.location.search);
-      const mealParam = params.get("ogun");
-      if (mealParam === "breakfast" || mealParam === "dinner") {
+      const mealParam = params.get('ogun');
+      if (mealParam === 'breakfast' || mealParam === 'dinner') {
         selectedMeal = mealParam;
         allowanceInput = pricingData.defaultAllowances[mealParam];
       }
-      const sepetParam = params.get("sepet");
+      const sepetParam = params.get('sepet');
       if (sepetParam) {
         const parsedTray = {};
-        const pairs = sepetParam.split(",");
+        const pairs = sepetParam.split(',');
         for (const pair of pairs) {
-          const [id, qtyStr] = pair.split(":");
+          const [id, qtyStr] = pair.split(':');
           const qty = parseInt(qtyStr, 10);
           if (id && qty > 0 && pricingData.items.some((i) => i.id === id)) {
             parsedTray[id] = qty;
@@ -81,45 +81,45 @@
   }
 
   const CATEGORY_LABELS = {
-    all: "Tümü",
-    ana_yemek_etli: "Etli Yemekler",
-    ana_yemek_tavuk: "Tavuk Yemekleri",
-    ana_yemek_sebze: "Sebze Yemekleri",
-    pilav_makarna: "Pilav & Makarna",
-    corba: "Çorbalar",
-    tatli: "Tatlılar",
-    salata_meze: "Salata & Meze",
-    kahvaltilik: "Kahvaltılık",
-    pide_hamur: "Pide & Börek",
-    icecek: "İçecekler",
-    ekmek: "Ekmek & Hamur",
-    meyve: "Meyveler",
-    diger: "Diğer",
+    all: 'Tümü',
+    ana_yemek_etli: 'Etli Yemekler',
+    ana_yemek_tavuk: 'Tavuk Yemekleri',
+    ana_yemek_sebze: 'Sebze Yemekleri',
+    pilav_makarna: 'Pilav & Makarna',
+    corba: 'Çorbalar',
+    tatli: 'Tatlılar',
+    salata_meze: 'Salata & Meze',
+    kahvaltilik: 'Kahvaltılık',
+    pide_hamur: 'Pide & Börek',
+    icecek: 'İçecekler',
+    ekmek: 'Ekmek & Hamur',
+    meyve: 'Meyveler',
+    diger: 'Diğer'
   };
 
   function getCategoryLabel(catKey) {
-    if (!catKey) return "";
+    if (!catKey) return '';
     if (CATEGORY_LABELS[catKey]) return CATEGORY_LABELS[catKey];
-    return catKey.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase());
+    return catKey.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
   }
 
   // ── Dynamic Themed Dice Presets (Randomized Knapsack Generators) ──
   function notifyPresetResult(newTray, defaultMessage) {
     const res = evaluateTrayPersona(newTray, pricingData.items, allowanceInput);
     if (res.activePersona) {
-      showToast(`${res.activePersona.title} denk geldi.`, "success");
+      showToast(`${res.activePersona.title} denk geldi.`, 'success');
     } else {
-      showToast(defaultMessage, "success");
+      showToast(defaultMessage, 'success');
     }
   }
 
   function applyPreset(type) {
     const availableItems = pricingData.items.filter(
-      (i) => i.mealType === "all" || i.mealType === selectedMeal,
+      (i) => i.mealType === 'all' || i.mealType === selectedMeal
     );
     const target = allowanceInput;
 
-    if (type === "zero") {
+    if (type === 'zero') {
       // Kesinlikle tam 0 TL fark hedefli kombinasyon uzayından rastgele seçim
       const shuffled = shuffle(availableItems);
       const exactCombos = [];
@@ -149,7 +149,7 @@
                       [a.id]: 1,
                       [b.id]: 1,
                       [c.id]: 1,
-                      [d.id]: 1,
+                      [d.id]: 1
                     });
                   }
                 }
@@ -160,35 +160,29 @@
       }
 
       if (exactCombos.length > 0) {
-        const selected =
-          exactCombos[Math.floor(Math.random() * exactCombos.length)];
+        const selected = exactCombos[Math.floor(Math.random() * exactCombos.length)];
         tray = selected;
-        notifyPresetResult(selected, "Bütçeye tam denk tepsi oluşturuldu.");
+        notifyPresetResult(selected, 'Bütçeye tam denk tepsi oluşturuldu.');
       } else {
-        showToast(
-          "Bu bütçeye tam denk gelen bir tepsi bulunamadı.",
-          "warning",
-        );
+        showToast('Bu bütçeye tam denk gelen bir tepsi bulunamadı.', 'warning');
       }
-    } else if (type === "protein") {
+    } else if (type === 'protein') {
       const proteinKeywords = [
-        "tavuk",
-        "köfte",
-        "et",
-        "yumurta",
-        "yoğurt",
-        "ayran",
-        "süt",
-        "peynir",
-        "kavurma",
-        "döner",
+        'tavuk',
+        'köfte',
+        'et',
+        'yumurta',
+        'yoğurt',
+        'ayran',
+        'süt',
+        'peynir',
+        'kavurma',
+        'döner'
       ];
       const proteinItems = shuffle(
         availableItems.filter((i) =>
-          proteinKeywords.some((k) =>
-            i.name.toLocaleLowerCase("tr-TR").includes(k),
-          ),
-        ),
+          proteinKeywords.some((k) => i.name.toLocaleLowerCase('tr-TR').includes(k))
+        )
       );
 
       let currentTotal = 0;
@@ -201,26 +195,24 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        notifyPresetResult(combo, "Protein ağırlıklı tepsi oluşturuldu.");
+        notifyPresetResult(combo, 'Protein ağırlıklı tepsi oluşturuldu.');
       }
-    } else if (type === "classic") {
+    } else if (type === 'classic') {
       const classicKeywords = [
-        "tost",
-        "lahmacun",
-        "pide",
-        "gözleme",
-        "ayran",
-        "sandviç",
-        "börek",
-        "poğaça",
-        "çay",
+        'tost',
+        'lahmacun',
+        'pide',
+        'gözleme',
+        'ayran',
+        'sandviç',
+        'börek',
+        'poğaça',
+        'çay'
       ];
       const classicItems = shuffle(
         availableItems.filter((i) =>
-          classicKeywords.some((k) =>
-            i.name.toLocaleLowerCase("tr-TR").includes(k),
-          ),
-        ),
+          classicKeywords.some((k) => i.name.toLocaleLowerCase('tr-TR').includes(k))
+        )
       );
 
       let currentTotal = 0;
@@ -233,28 +225,26 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        notifyPresetResult(combo, "Büfe tepsisi oluşturuldu.");
+        notifyPresetResult(combo, 'Büfe tepsisi oluşturuldu.');
       }
-    } else if (type === "sweet") {
+    } else if (type === 'sweet') {
       const sweetKeywords = [
-        "tatlı",
-        "baklava",
-        "pasta",
-        "kek",
-        "sütlaç",
-        "çikolata",
-        "kruvasan",
-        "meyve",
-        "kahve",
-        "çay",
-        "süt",
+        'tatlı',
+        'baklava',
+        'pasta',
+        'kek',
+        'sütlaç',
+        'çikolata',
+        'kruvasan',
+        'meyve',
+        'kahve',
+        'çay',
+        'süt'
       ];
       const sweetItems = shuffle(
         availableItems.filter((i) =>
-          sweetKeywords.some((k) =>
-            i.name.toLocaleLowerCase("tr-TR").includes(k),
-          ),
-        ),
+          sweetKeywords.some((k) => i.name.toLocaleLowerCase('tr-TR').includes(k))
+        )
       );
 
       let currentTotal = 0;
@@ -267,12 +257,9 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        notifyPresetResult(
-          combo,
-          "Tatlı ve atıştırmalık tepsisi oluşturuldu.",
-        );
+        notifyPresetResult(combo, 'Tatlı ve atıştırmalık tepsisi oluşturuldu.');
       }
-    } else if (type === "random") {
+    } else if (type === 'random') {
       const shuffled = shuffle(availableItems);
       let currentTotal = 0;
       const combo = {};
@@ -284,7 +271,7 @@
       }
       if (Object.keys(combo).length > 0) {
         tray = combo;
-        notifyPresetResult(combo, "Rastgele tepsi oluşturuldu.");
+        notifyPresetResult(combo, 'Rastgele tepsi oluşturuldu.');
       }
     }
   }
@@ -293,13 +280,13 @@
   function getShareUrl() {
     const serialized = Object.entries(tray)
       .map(([id, qty]) => `${id}:${qty}`)
-      .join(",");
+      .join(',');
     const url = new URL(window.location.href);
-    url.searchParams.set("ogun", selectedMeal);
+    url.searchParams.set('ogun', selectedMeal);
     if (serialized) {
-      url.searchParams.set("sepet", serialized);
+      url.searchParams.set('sepet', serialized);
     } else {
-      url.searchParams.delete("sepet");
+      url.searchParams.delete('sepet');
     }
     return url.toString();
   }
@@ -309,18 +296,18 @@
     if (navigator.share) {
       try {
         await navigator.share({
-          url: url,
+          url: url
         });
         return;
       } catch (err) {
-        if (err.name !== "AbortError") {
-          console.warn("Share failed:", err);
+        if (err.name !== 'AbortError') {
+          console.warn('Share failed:', err);
         }
       }
     }
 
     navigator.clipboard.writeText(url).then(() => {
-      showToast("Tepsi bağlantısı panoya kopyalandı.", "success");
+      showToast('Tepsi bağlantısı panoya kopyalandı.', 'success');
     });
   }
 
@@ -328,28 +315,26 @@
   let availableCategories = $derived.by(() => {
     const set = new Set(
       pricingData.items
-        .filter((i) => i.mealType === "all" || i.mealType === selectedMeal)
+        .filter((i) => i.mealType === 'all' || i.mealType === selectedMeal)
         .map((i) => i.category)
-        .filter(Boolean),
+        .filter(Boolean)
     );
-    return ["all", ...Array.from(set)];
+    return ['all', ...Array.from(set)];
   });
 
   // Filtered items
   let filteredItems = $derived.by(() => {
-    const q = searchQuery.trim().toLocaleLowerCase("tr-TR");
+    const q = searchQuery.trim().toLocaleLowerCase('tr-TR');
     return pricingData.items.filter((item) => {
-      if (selectedCategory !== "all" && item.category !== selectedCategory) {
+      if (selectedCategory !== 'all' && item.category !== selectedCategory) {
         return false;
       }
-      if (item.mealType !== "all" && item.mealType !== selectedMeal) {
+      if (item.mealType !== 'all' && item.mealType !== selectedMeal) {
         if (!q) return false;
       }
       if (q) {
-        const matchName = item.name.toLocaleLowerCase("tr-TR").includes(q);
-        const matchPortion = item.portion
-          .toLocaleLowerCase("tr-TR")
-          .includes(q);
+        const matchName = item.name.toLocaleLowerCase('tr-TR').includes(q);
+        const matchPortion = item.portion.toLocaleLowerCase('tr-TR').includes(q);
         return matchName || matchPortion;
       }
       return true;
@@ -366,52 +351,34 @@
       .filter(Boolean);
   });
 
-  let totalTrayPrice = $derived(
-    trayItems.reduce((acc, curr) => acc + curr.itemTotal, 0),
-  );
+  let totalTrayPrice = $derived(trayItems.reduce((acc, curr) => acc + curr.itemTotal, 0));
 
   let difference = $derived(totalTrayPrice - allowanceInput);
   let isUnderQuota = $derived(difference <= 0);
-  let totalTrayCount = $derived(
-    Object.values(tray).reduce((acc, qty) => acc + qty, 0),
-  );
+  let totalTrayCount = $derived(Object.values(tray).reduce((acc, qty) => acc + qty, 0));
 
   let progressPercent = $derived(
-    allowanceInput > 0
-      ? Math.min(Math.round((totalTrayPrice / allowanceInput) * 100), 100)
-      : 0,
+    allowanceInput > 0 ? Math.min(Math.round((totalTrayPrice / allowanceInput) * 100), 100) : 0
   );
 
-  let personaResult = $derived(
-    evaluateTrayPersona(tray, pricingData.items, allowanceInput),
-  );
+  let personaResult = $derived(evaluateTrayPersona(tray, pricingData.items, allowanceInput));
   let activePersona = $derived(personaResult.activePersona);
 </script>
 
-<section
-  class="disclaimer-card pricing-calc-card"
-  aria-labelledby="pricing-calc-title"
->
+<section class="disclaimer-card pricing-calc-card" aria-labelledby="pricing-calc-title">
   <div class="pricing-calc__header">
     <h2 id="pricing-calc-title" class="pricing-calc__title">Tepsi Simülatörü</h2>
     <p class="pricing-calc__subtitle">
-      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi tavan fiyat
-      tarifesi baz alınmıştır.
+      {pricingData.cityName} KYK yurtları {pricingData.period} dönemi tavan fiyat tarifesi baz alınmıştır.
     </p>
   </div>
 
   <!-- Satır 1: SegmentedControl + Arama -->
   <div class="pricing-calc__top-bar">
-    <SegmentedControl
-      bind:value={selectedMeal}
-      options={mealOptions}
-      onChange={handleMealChange}
-    />
+    <SegmentedControl bind:value={selectedMeal} options={mealOptions} onChange={handleMealChange} />
 
     <div class="pricing-calc__search-wrap">
-      <label for="pricing-search-input" class="u-sr-only"
-        >Yemek veya içecek ara</label
-      >
+      <label for="pricing-search-input" class="u-sr-only">Yemek veya içecek ara</label>
       <input
         type="search"
         id="pricing-search-input"
@@ -428,7 +395,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--squish"
-      onclick={() => applyPreset("zero")}
+      onclick={() => applyPreset('zero')}
       title="Bütçeye tam denk kombinasyon"
     >
       Tam Denk
@@ -436,7 +403,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--squish"
-      onclick={() => applyPreset("protein")}
+      onclick={() => applyPreset('protein')}
       title="Protein ağırlıklı kombinasyon"
     >
       Protein
@@ -444,7 +411,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--squish"
-      onclick={() => applyPreset("classic")}
+      onclick={() => applyPreset('classic')}
       title="Büfe ürünlerinden kombinasyon"
     >
       Büfe Klasiği
@@ -452,7 +419,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--squish"
-      onclick={() => applyPreset("sweet")}
+      onclick={() => applyPreset('sweet')}
       title="Tatlı ve atıştırmalık kombinasyonu"
     >
       Tatlı
@@ -460,7 +427,7 @@
     <button
       type="button"
       class="btn btn--secondary btn--squish"
-      onclick={() => applyPreset("random")}
+      onclick={() => applyPreset('random')}
       title="Rastgele kombinasyon"
     >
       Rastgele
@@ -499,9 +466,7 @@
             <span class="pricing-calc__item-portion">{item.portion}</span>
           </div>
           <div class="pricing-calc__item-action">
-            <span class="pricing-calc__item-price"
-              >{item.price.toFixed(2)} TL</span
-            >
+            <span class="pricing-calc__item-price">{item.price.toFixed(2)} TL</span>
             <div class="pricing-calc__item-counter">
               {#if qty > 0}
                 <button
@@ -531,33 +496,23 @@
 
   {#if totalTrayCount > 0}
     <div class="pricing-calc__sticky-wrap">
-      <aside
-        class="disclaimer-card pricing-calc__sticky-bar"
-        aria-label="Seçim Özeti"
-      >
+      <aside class="disclaimer-card pricing-calc__sticky-bar" aria-label="Seçim Özeti">
         <!-- 3px İnce İlerleme Çizgisi -->
         <div class="pricing-calc__progress-line">
           <div
-            class="pricing-calc__progress-fill {isUnderQuota
-              ? 'is-ok'
-              : 'is-warn'}"
+            class="pricing-calc__progress-fill {isUnderQuota ? 'is-ok' : 'is-warn'}"
             style="--progress-width: {progressPercent}%;"
           ></div>
         </div>
 
         <div class="pricing-calc__sticky-content">
           <div class="pricing-calc__sticky-summary">
-            <span class="pricing-calc__sticky-count">{totalTrayCount} ürün</span
-            >
+            <span class="pricing-calc__sticky-count">{totalTrayCount} ürün</span>
             <span class="pricing-calc__sticky-dot">•</span>
-            <span class="pricing-calc__sticky-total"
-              >{totalTrayPrice.toFixed(0)} TL</span
-            >
+            <span class="pricing-calc__sticky-total">{totalTrayPrice.toFixed(0)} TL</span>
             {#if isUnderQuota}
               {#if difference === 0}
-                <span class="pricing-calc__sticky-tag is-ok"
-                  >Tam limittesin</span
-                >
+                <span class="pricing-calc__sticky-tag is-ok">Tam limittesin</span>
               {:else}
                 <span class="pricing-calc__sticky-tag is-ok"
                   >{Math.abs(difference).toFixed(0)} TL kaldı</span
@@ -569,11 +524,9 @@
               >
             {/if}
             {#if activePersona}
-              <span
-                class="pricing-calc__persona-badge"
-                title={activePersona.description}
-              >
-                {activePersona.emoji} {activePersona.title}
+              <span class="pricing-calc__persona-badge" title={activePersona.description}>
+                {activePersona.emoji}
+                {activePersona.title}
               </span>
             {/if}
           </div>
@@ -584,7 +537,7 @@
               class="btn btn--secondary btn--sm"
               onclick={() => (isDrawerOpen = !isDrawerOpen)}
             >
-              {isDrawerOpen ? "Kapat" : "Detay"}
+              {isDrawerOpen ? 'Kapat' : 'Detay'}
             </button>
             <button
               type="button"
@@ -649,14 +602,8 @@
                 <span class="pricing-calc__drawer-chip">
                   <span>{item.name}</span>
                   <strong>x{item.qty}</strong>
-                  <span class="chip-price"
-                    >({item.itemTotal.toFixed(0)} TL)</span
-                  >
-                  <button
-                    type="button"
-                    onclick={() => removeItem(item.id)}
-                    aria-label="Kaldır"
-                  >
+                  <span class="chip-price">({item.itemTotal.toFixed(0)} TL)</span>
+                  <button type="button" onclick={() => removeItem(item.id)} aria-label="Kaldır">
                     ✕
                   </button>
                 </span>

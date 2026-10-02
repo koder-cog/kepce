@@ -122,7 +122,7 @@ describe('resolveCityFromQuery', () => {
     expect(resolveCityFromQuery('musluk bozuldu kyk')).toBeNull();
     // "orduevi" Ordu ile eşleşmemeli
     expect(resolveCityFromQuery('orduevi kyk')).toBeNull();
-    
+
     // Fakat gerçek Van ve Muş eşleşmeli
     expect(resolveCityFromQuery('van kyk yemek')?.slug).toBe('van');
     expect(resolveCityFromQuery('vanda kyk yemek')?.slug).toBe('van');
@@ -150,4 +150,3 @@ describe('resolveCityFromQuery', () => {
     expect(resolveCityFromQuery('yurt izin talebi')).toBeNull();
   });
 });
-

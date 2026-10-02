@@ -1,22 +1,22 @@
 <script>
-  import "@/styles/pages/_auth.css";
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { api } from "@/api/index.js";
-  import { globalState, authActions } from "@/state.svelte.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import Seo from "@/components/ui/Seo.svelte";
+  import '@/styles/pages/_auth.css';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { api } from '@/api/index.js';
+  import { globalState, authActions } from '@/state.svelte.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import Seo from '@/components/ui/Seo.svelte';
 
-  let status = $state("loading"); // loading, success, error
-  let errorMsg = $state("");
+  let status = $state('loading'); // loading, success, error
+  let errorMsg = $state('');
 
   onMount(async () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
+    const token = urlParams.get('token');
 
     if (!token) {
-      status = "error";
-      errorMsg = "Geçersiz veya eksik doğrulama bağlantısı.";
+      status = 'error';
+      errorMsg = 'Geçersiz veya eksik doğrulama bağlantısı.';
       return;
     }
 
@@ -25,17 +25,15 @@
       await authActions.refreshUser();
 
       const name = globalState.user?.username;
-      showToast(name ? `Hoş geldin, @${name}!` : "Giriş yapıldı!", "success");
+      showToast(name ? `Hoş geldin, @${name}!` : 'Giriş yapıldı!', 'success');
 
-      status = "success";
+      status = 'success';
       setTimeout(() => {
-        goto("/");
+        goto('/');
       }, 1500);
     } catch (err) {
-      status = "error";
-      errorMsg =
-        err.message ||
-        "Giriş bağlantısının süresi dolmuş veya geçersiz olabilir.";
+      status = 'error';
+      errorMsg = err.message || 'Giriş bağlantısının süresi dolmuş veya geçersiz olabilir.';
     }
   });
 </script>
@@ -50,17 +48,15 @@
   <h1 class="auth-page__title u-mb-lg">Şifresiz Giriş</h1>
 
   <div class="c-card passwordless-card">
-    {#if status === "loading"}
-      <p class="u-color-muted u-mb-sm">
-        Bağlantı doğrulanıyor, lütfen bekleyin...
-      </p>
+    {#if status === 'loading'}
+      <p class="u-color-muted u-mb-sm">Bağlantı doğrulanıyor, lütfen bekleyin...</p>
       <div class="spinner"></div>
-    {:else if status === "success"}
+    {:else if status === 'success'}
       <div class="auth-success passwordless-success">
         <p class="u-font-bold u-mb-xs">Giriş Başarılı!</p>
         <p class="u-text-sm">Ana sayfaya yönlendiriliyorsunuz...</p>
       </div>
-    {:else if status === "error"}
+    {:else if status === 'error'}
       <div class="auth-error passwordless-error" role="alert">
         {errorMsg}
       </div>

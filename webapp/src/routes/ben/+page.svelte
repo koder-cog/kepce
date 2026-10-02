@@ -1,10 +1,10 @@
 <script>
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { globalState, authActions } from "@/state.svelte.js";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { globalState, authActions } from '@/state.svelte.js';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
   let checked = $state(false);
 

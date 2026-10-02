@@ -38,7 +38,10 @@ export async function request(path, options = {}) {
   let url = `${API_BASE}${path}`;
   const headers = { ...options.headers };
 
-  if (!(typeof FormData !== 'undefined' && options.body instanceof FormData) && !headers['Content-Type']) {
+  if (
+    !(typeof FormData !== 'undefined' && options.body instanceof FormData) &&
+    !headers['Content-Type']
+  ) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -48,10 +51,7 @@ export async function request(path, options = {}) {
   // mutasyon sonrası güncel veriye ihtiyaç duyulan rotalarda buster
   // ekliyoruz. Önceki davranış, `Cache-Control: no-store` ayarlansa bile
   // yine de her istekte 304/200 yarışı çıkarıyordu.
-  if (
-    (!options.method || options.method.toUpperCase() === 'GET') &&
-    options.noCache === true
-  ) {
+  if ((!options.method || options.method.toUpperCase() === 'GET') && options.noCache === true) {
     const separator = url.includes('?') ? '&' : '?';
     url += `${separator}_t=${Date.now()}`;
   }
@@ -77,9 +77,16 @@ export async function request(path, options = {}) {
     throw error;
   }
 
-  const hasLoggedInCookie = typeof document !== 'undefined' && document.cookie.includes('kepce_logged_in');
+  const hasLoggedInCookie =
+    typeof document !== 'undefined' && document.cookie.includes('kepce_logged_in');
 
-  if (res.status === 401 && hasLoggedInCookie && path !== '/auth/refresh' && path !== '/auth/login' && path !== '/auth/register') {
+  if (
+    res.status === 401 &&
+    hasLoggedInCookie &&
+    path !== '/auth/refresh' &&
+    path !== '/auth/login' &&
+    path !== '/auth/register'
+  ) {
     if (!isRefreshing) {
       isRefreshing = true;
       try {
@@ -90,8 +97,9 @@ export async function request(path, options = {}) {
         isRefreshing = false;
         onRefreshFailed(err);
         if (typeof document !== 'undefined') {
-          document.cookie = "kepce_logged_in=; Path=/; Max-Age=0; SameSite=Strict" +
-            (window.location.protocol === "https:" ? "; Secure" : "");
+          document.cookie =
+            'kepce_logged_in=; Path=/; Max-Age=0; SameSite=Strict' +
+            (window.location.protocol === 'https:' ? '; Secure' : '');
         }
         throw new Error('Oturumunuz sonlanmış, lütfen tekrar giriş yapın.');
       }
@@ -100,21 +108,23 @@ export async function request(path, options = {}) {
     return new Promise((resolve, reject) => {
       subscribeTokenRefresh((err) => {
         if (err) return reject(err);
-        request(path, options)
-          .then(resolve)
-          .catch(reject);
+        request(path, options).then(resolve).catch(reject);
       });
     });
   }
 
   if (!res.ok) {
-    const bodyText = await res.text().catch(() => "");
+    const bodyText = await res.text().catch(() => '');
     let body = {};
     try {
       body = JSON.parse(bodyText);
-    } catch (e) { }
+    } catch (e) {}
 
-    let detail = body.error || body.message || body.detail || (bodyText.length > 0 ? bodyText : `Hata oluştu (Durum: ${res.status})`);
+    let detail =
+      body.error ||
+      body.message ||
+      body.detail ||
+      (bodyText.length > 0 ? bodyText : `Hata oluştu (Durum: ${res.status})`);
     if (typeof detail === 'object') {
       detail = JSON.stringify(detail);
     }

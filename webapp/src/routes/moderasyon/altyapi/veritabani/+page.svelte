@@ -1,19 +1,19 @@
 <script>
-  import { onMount } from "svelte";
-  import { api } from "@/api/index.js";
-  import Loader from "@/components/ui/Loader.svelte";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Pagination from "@/components/ui/Pagination.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import { createModal } from "@/components/features/modal.js";
+  import { onMount } from 'svelte';
+  import { api } from '@/api/index.js';
+  import Loader from '@/components/ui/Loader.svelte';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import { createModal } from '@/components/features/modal.js';
 
-  let activeTab = $state("browser"); // 'browser' | 'sql'
+  let activeTab = $state('browser'); // 'browser' | 'sql'
 
   // ── Tablo Gezgini Durumları ──────────────────────────────
   let tables = $state([]);
   let isTablesLoading = $state(true);
-  let tableSearch = $state("");
+  let tableSearch = $state('');
   let selectedTable = $state(null);
 
   let tableData = $state(null);
@@ -35,7 +35,7 @@
         selectTable(tables[0].name);
       }
     } catch (err) {
-      showToast(err.message || "Tablo listesi yüklenemedi.", "error");
+      showToast(err.message || 'Tablo listesi yüklenemedi.', 'error');
     } finally {
       isTablesLoading = false;
     }
@@ -48,7 +48,7 @@
     try {
       tableData = await api.getTableData(tableName, { page, limit });
     } catch (err) {
-      showToast(err.message || "Tablo verileri yüklenemedi.", "error");
+      showToast(err.message || 'Tablo verileri yüklenemedi.', 'error');
     } finally {
       isDataLoading = false;
     }
@@ -62,7 +62,10 @@
 
   function openEditCellModal(row, column) {
     if (!tableData || tableData.primary_keys.length === 0) {
-      showToast("Tabloda birincil anahtar bulunmadığı için doğrudan düzenleme yapılamaz.", "warning");
+      showToast(
+        'Tabloda birincil anahtar bulunmadığı için doğrudan düzenleme yapılamaz.',
+        'warning'
+      );
       return;
     }
 
@@ -70,11 +73,16 @@
     const pkVal = row[pkCol];
     const currentVal = row[column.name];
 
-    let editVal = currentVal !== null && currentVal !== undefined ? (typeof currentVal === 'object' ? JSON.stringify(currentVal) : String(currentVal)) : "";
+    let editVal =
+      currentVal !== null && currentVal !== undefined
+        ? typeof currentVal === 'object'
+          ? JSON.stringify(currentVal)
+          : String(currentVal)
+        : '';
 
     createModal({
       title: `${tableData.table_name} Satır Düzenleme`,
-      iconHtml: icon("edit", 20),
+      iconHtml: icon('edit', 20),
       contentHtml: `
         <div class="u-mb-md">
           <p class="u-text-sm u-color-muted u-mb-xs">Birincil Anahtar (${pkCol}): <strong>${pkVal}</strong></p>
@@ -84,40 +92,44 @@
         </div>
       `,
       buttons: [
-        { label: "İptal", variant: "secondary" },
+        { label: 'İptal', variant: 'secondary' },
         {
-          label: "Kaydet",
-          variant: "primary",
+          label: 'Kaydet',
+          variant: 'primary',
           onClick: async (close) => {
-            const inputEl = document.getElementById("modal-edit-val");
-            const rawVal = inputEl ? inputEl.value : "";
+            const inputEl = document.getElementById('modal-edit-val');
+            const rawVal = inputEl ? inputEl.value : '';
             try {
               let parsedVal = rawVal;
-              if (column.data_type.includes("json")) {
-                try { parsedVal = JSON.parse(rawVal); } catch (_) { parsedVal = rawVal; }
-              } else if (column.data_type.includes("bool")) {
-                parsedVal = rawVal.toLowerCase() === "true";
-              } else if (column.data_type.includes("int") || column.data_type.includes("numeric")) {
+              if (column.data_type.includes('json')) {
+                try {
+                  parsedVal = JSON.parse(rawVal);
+                } catch (_) {
+                  parsedVal = rawVal;
+                }
+              } else if (column.data_type.includes('bool')) {
+                parsedVal = rawVal.toLowerCase() === 'true';
+              } else if (column.data_type.includes('int') || column.data_type.includes('numeric')) {
                 const num = Number(rawVal);
                 if (!isNaN(num)) parsedVal = num;
               }
 
               await api.updateTableRow(tableData.table_name, pkCol, pkVal, column.name, parsedVal);
-              showToast("Kayıt güncellendi.", "success");
+              showToast('Kayıt güncellendi.', 'success');
               close();
               selectTable(tableData.table_name, currentPage);
             } catch (err) {
-              showToast(err.message || "Güncelleme hatası.", "error");
+              showToast(err.message || 'Güncelleme hatası.', 'error');
             }
-          },
-        },
-      ],
+          }
+        }
+      ]
     });
   }
 
   function promptDeleteRow(row) {
     if (!tableData || tableData.primary_keys.length === 0) {
-      showToast("Tabloda birincil anahtar bulunmadığı için doğrudan satır silinemez.", "warning");
+      showToast('Tabloda birincil anahtar bulunmadığı için doğrudan satır silinemez.', 'warning');
       return;
     }
 
@@ -125,44 +137,60 @@
     const pkVal = row[pkCol];
 
     createModal({
-      title: "Satır Silinsin mi?",
-      iconHtml: icon("trash", 20),
-      iconColor: "danger",
+      title: 'Satır Silinsin mi?',
+      iconHtml: icon('trash', 20),
+      iconColor: 'danger',
       contentHtml: `
         <p><strong>${tableData.table_name}</strong> tablosundaki <code>${pkCol} = ${pkVal}</code> satırı kalıcı olarak silinecektir. Bu işlem geri alınamaz.</p>
       `,
       buttons: [
-        { label: "Vazgeç", variant: "secondary" },
+        { label: 'Vazgeç', variant: 'secondary' },
         {
-          label: "Evet, Sil",
-          variant: "danger",
+          label: 'Evet, Sil',
+          variant: 'danger',
           onClick: async (close) => {
             try {
               await api.deleteTableRow(tableData.table_name, pkCol, pkVal);
-              showToast("Satır silindi.", "danger");
+              showToast('Satır silindi.', 'danger');
               close();
               selectTable(tableData.table_name, currentPage);
             } catch (err) {
-              showToast(err.message || "Silme hatası.", "error");
+              showToast(err.message || 'Silme hatası.', 'error');
             }
-          },
-        },
-      ],
+          }
+        }
+      ]
     });
   }
 
   // ── SQL Konsolu Durumları ───────────────────────────────
-  let sqlQuery = $state("SELECT * FROM menus ORDER BY id DESC LIMIT 15;");
+  let sqlQuery = $state('SELECT * FROM menus ORDER BY id DESC LIMIT 15;');
   let writeMode = $state(false);
   let isExecuting = $state(false);
   let queryResult = $state(null);
   let queryError = $state(null);
 
   const QUICK_QUERIES = [
-    { label: "Son Menüler", query: "SELECT id, city_id, date, meal_type, is_approved, created_at FROM menus ORDER BY id DESC LIMIT 20;" },
-    { label: "Son Kullanıcılar", query: "SELECT id, username, email, role, is_banned, created_at FROM users ORDER BY created_at DESC LIMIT 20;" },
-    { label: "İletişim Mesajları", query: "SELECT id, email, category, subject, source, status, created_at FROM contact_messages ORDER BY id DESC LIMIT 20;" },
-    { label: "Tablo Canlı Satırları", query: "SELECT relname AS tablo, n_live_tup AS canli_satir FROM pg_stat_user_tables ORDER BY n_live_tup DESC;" },
+    {
+      label: 'Son Menüler',
+      query:
+        'SELECT id, city_id, date, meal_type, is_approved, created_at FROM menus ORDER BY id DESC LIMIT 20;'
+    },
+    {
+      label: 'Son Kullanıcılar',
+      query:
+        'SELECT id, username, email, role, is_banned, created_at FROM users ORDER BY created_at DESC LIMIT 20;'
+    },
+    {
+      label: 'İletişim Mesajları',
+      query:
+        'SELECT id, email, category, subject, source, status, created_at FROM contact_messages ORDER BY id DESC LIMIT 20;'
+    },
+    {
+      label: 'Tablo Canlı Satırları',
+      query:
+        'SELECT relname AS tablo, n_live_tup AS canli_satir FROM pg_stat_user_tables ORDER BY n_live_tup DESC;'
+    }
   ];
 
   async function runQuery() {
@@ -175,14 +203,14 @@
       const res = await api.executeDatabaseQuery(sqlQuery, writeMode);
       queryResult = res;
     } catch (err) {
-      queryError = err.message || "Sorgu yürütülemedi.";
+      queryError = err.message || 'Sorgu yürütülemedi.';
     } finally {
       isExecuting = false;
     }
   }
 
   function handleKeydown(e) {
-    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault();
       runQuery();
     }
@@ -200,34 +228,32 @@
 <div class="admin-header u-mb-lg">
   <div>
     <h2 class="admin-title">Veritabanı Konsolu</h2>
-    <p class="admin-subtitle">
-      PostgreSQL tablo gezgini ve kontrollü SQL yürütücü
-    </p>
+    <p class="admin-subtitle">PostgreSQL tablo gezgini ve kontrollü SQL yürütücü</p>
   </div>
 
   <div class="coverage-filters">
     <button
       class="btn btn--squish"
-      class:btn--primary={activeTab === "browser"}
-      class:btn--secondary={activeTab !== "browser"}
-      onclick={() => (activeTab = "browser")}
+      class:btn--primary={activeTab === 'browser'}
+      class:btn--secondary={activeTab !== 'browser'}
+      onclick={() => (activeTab = 'browser')}
     >
-      {@html icon("grid", 16)}
+      {@html icon('grid', 16)}
       Tablo Gezgini
     </button>
     <button
       class="btn btn--squish"
-      class:btn--primary={activeTab === "sql"}
-      class:btn--secondary={activeTab !== "sql"}
-      onclick={() => (activeTab = "sql")}
+      class:btn--primary={activeTab === 'sql'}
+      class:btn--secondary={activeTab !== 'sql'}
+      onclick={() => (activeTab = 'sql')}
     >
-      {@html icon("terminal", 16)}
+      {@html icon('terminal', 16)}
       SQL Konsolu
     </button>
   </div>
 </div>
 
-{#if activeTab === "browser"}
+{#if activeTab === 'browser'}
   <div class="db-console-layout">
     <!-- SOL TABLO LİSTESİ -->
     <aside class="db-table-list">
@@ -254,7 +280,7 @@
           >
             <span>{table.name}</span>
             <span class="u-color-muted u-text-xs">
-              {table.estimated_rows.toLocaleString("tr-TR")}
+              {table.estimated_rows.toLocaleString('tr-TR')}
             </span>
           </button>
         {/each}
@@ -274,7 +300,7 @@
               {tableData.table_name}
             </h3>
             <span class="badge badge--neutral">
-              Toplam: {tableData.total_rows.toLocaleString("tr-TR")} satır
+              Toplam: {tableData.total_rows.toLocaleString('tr-TR')} satır
             </span>
           </div>
 
@@ -283,12 +309,16 @@
             onclick={() => selectTable(tableData.table_name, currentPage)}
             title="Yenile"
           >
-            {@html icon("refresh", 14)}
+            {@html icon('refresh', 14)}
             Yenile
           </button>
         </div>
 
-        <div class="admin-table-wrapper" role="region" aria-label="{tableData.table_name} Veri Tablosu">
+        <div
+          class="admin-table-wrapper"
+          role="region"
+          aria-label="{tableData.table_name} Veri Tablosu"
+        >
           <table class="admin-table">
             <thead>
               <tr>
@@ -308,7 +338,10 @@
             <tbody>
               {#if tableData.rows.length === 0}
                 <tr>
-                  <td colspan={tableData.columns.length + 1} class="u-text-center u-p-lg u-color-muted">
+                  <td
+                    colspan={tableData.columns.length + 1}
+                    class="u-text-center u-p-lg u-color-muted"
+                  >
                     Bu tabloda henüz kayıt bulunmuyor.
                   </td>
                 </tr>
@@ -321,28 +354,28 @@
                         onclick={() => openEditCellModal(row, tableData.columns[0])}
                         title="Düzenle"
                       >
-                        {@html icon("edit", 12)}
+                        {@html icon('edit', 12)}
                       </button>
                       <button
                         class="btn btn--danger btn--sm btn--squish"
                         onclick={() => promptDeleteRow(row)}
                         title="Sil"
                       >
-                        {@html icon("trash", 12)}
+                        {@html icon('trash', 12)}
                       </button>
                     </td>
                     {#each tableData.columns as col}
                       {@const val = row[col.name]}
                       <td
                         class="db-cell-mono"
-                        title={val !== null && val !== undefined ? String(val) : "NULL"}
+                        title={val !== null && val !== undefined ? String(val) : 'NULL'}
                         ondblclick={() => openEditCellModal(row, col)}
                       >
                         {#if val === null || val === undefined}
                           <span class="u-color-muted">NULL</span>
-                        {:else if typeof val === "boolean"}
-                          <span class:u-color-primary={val}>{val ? "true" : "false"}</span>
-                        {:else if typeof val === "object"}
+                        {:else if typeof val === 'boolean'}
+                          <span class:u-color-primary={val}>{val ? 'true' : 'false'}</span>
+                        {:else if typeof val === 'object'}
                           <span>{JSON.stringify(val)}</span>
                         {:else}
                           <span>{String(val)}</span>
@@ -398,8 +431,7 @@
       class="db-sql-editor"
       bind:value={sqlQuery}
       onkeydown={handleKeydown}
-      spellcheck="false"
-    ></textarea>
+      spellcheck="false"></textarea>
 
     <div class="db-sql-toolbar">
       <div class="u-flex u-flex-align-center u-gap-md">
@@ -408,27 +440,29 @@
           <strong>Yazma İzni (Write Mode)</strong>
         </label>
         <span class="u-text-xs u-color-muted">
-          {writeMode ? "⚠️ Veri değiştiren sorgular çalıştırılabilir." : "🔒 Salt okunur mod devrede (SELECT)"}
+          {writeMode
+            ? '⚠️ Veri değiştiren sorgular çalıştırılabilir.'
+            : '🔒 Salt okunur mod devrede (SELECT)'}
         </span>
       </div>
 
       <div class="u-flex u-flex-align-center u-gap-sm">
         <button
           class="btn btn--secondary btn--squish"
-          onclick={() => { sqlQuery = ""; queryResult = null; queryError = null; }}
+          onclick={() => {
+            sqlQuery = '';
+            queryResult = null;
+            queryError = null;
+          }}
         >
           Temizle
         </button>
-        <button
-          class="btn btn--primary btn--squish"
-          disabled={isExecuting}
-          onclick={runQuery}
-        >
+        <button class="btn btn--primary btn--squish" disabled={isExecuting} onclick={runQuery}>
           {#if isExecuting}
             <Loader size={16} />
             Çalıştırılıyor...
           {:else}
-            {@html icon("play", 16)}
+            {@html icon('play', 16)}
             Çalıştır
           {/if}
         </button>
@@ -446,7 +480,8 @@
       <div class="u-mt-lg">
         <div class="u-flex u-flex-justify-between u-flex-align-center u-mb-sm">
           <span class="badge badge--neutral">
-            Süre: {queryResult.duration_ms} ms &middot; Etkilenen / Dönen: {queryResult.affected_rows} satır
+            Süre: {queryResult.duration_ms} ms &middot; Etkilenen / Dönen: {queryResult.affected_rows}
+            satır
           </span>
         </div>
 
@@ -462,7 +497,10 @@
             <tbody>
               {#if queryResult.rows.length === 0}
                 <tr>
-                  <td colspan={queryResult.columns.length || 1} class="u-text-center u-p-lg u-color-muted">
+                  <td
+                    colspan={queryResult.columns.length || 1}
+                    class="u-text-center u-p-lg u-color-muted"
+                  >
                     Sorgu başarıyla çalıştı, döndürülen satır yok.
                   </td>
                 </tr>
@@ -474,9 +512,9 @@
                       <td class="db-cell-mono">
                         {#if val === null || val === undefined}
                           <span class="u-color-muted">NULL</span>
-                        {:else if typeof val === "boolean"}
-                          <span class:u-color-primary={val}>{val ? "true" : "false"}</span>
-                        {:else if typeof val === "object"}
+                        {:else if typeof val === 'boolean'}
+                          <span class:u-color-primary={val}>{val ? 'true' : 'false'}</span>
+                        {:else if typeof val === 'object'}
                           <span>{JSON.stringify(val)}</span>
                         {:else}
                           <span>{String(val)}</span>

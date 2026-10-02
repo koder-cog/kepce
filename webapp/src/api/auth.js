@@ -1,29 +1,44 @@
 import { request, HOST_BASE, buildQuery } from './client.js';
 
 export const authApi = {
-  register: async (email, password, username = null, default_city_slug = null, diet_mode = null, email_security = false) => {
-    const cleanUsername = (username && typeof username === 'string' && username.trim()) ? username.trim() : null;
+  register: async (
+    email,
+    password,
+    username = null,
+    default_city_slug = null,
+    diet_mode = null,
+    email_security = false
+  ) => {
+    const cleanUsername =
+      username && typeof username === 'string' && username.trim() ? username.trim() : null;
     return await request('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ email, password, username: cleanUsername, default_city_slug, diet_mode, email_security }),
+      body: JSON.stringify({
+        email,
+        password,
+        username: cleanUsername,
+        default_city_slug,
+        diet_mode,
+        email_security
+      })
     });
   },
   login: async (username, password, remember = false) => {
     return await request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ identifier: username, password, remember }),
+      body: JSON.stringify({ identifier: username, password, remember })
     });
   },
   passwordless: async (email) => {
     return await request('/auth/passwordless', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email })
     });
   },
   passwordlessLogin: async (token) => {
     return await request('/auth/passwordless-login', {
       method: 'POST',
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token })
     });
   },
   logout: async () => {
@@ -32,21 +47,22 @@ export const authApi = {
   getMe: () => request('/auth/me'),
   getSessions: () => request('/auth/me/sessions'),
   revokeSession: (id) => request(`/auth/me/sessions/${id}`, { method: 'DELETE' }),
-  deleteAccount: (password) => request('/auth/me', { method: 'DELETE', body: JSON.stringify({ password }) }),
+  deleteAccount: (password) =>
+    request('/auth/me', { method: 'DELETE', body: JSON.stringify({ password }) }),
   verifyEmail: (token) => request(`/auth/verify${buildQuery({ token })}`),
   resendVerification: () => request('/auth/resend-verification', { method: 'POST' }),
   getProjects: () => request('/auth/projects'),
-  getApiUsage: (projectId = 'all', days = 28) => 
+  getApiUsage: (projectId = 'all', days = 28) =>
     request(`/auth/projects/usage${buildQuery({ project_id: projectId, days })}`),
   createProject: (name) =>
     request('/auth/projects', {
       method: 'POST',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name })
     }),
   updateProject: (id, name) =>
     request(`/auth/projects/${id}`, {
       method: 'PUT',
-      body: JSON.stringify({ name }),
+      body: JSON.stringify({ name })
     }),
   deleteProject: (id) => request(`/auth/projects/${id}`, { method: 'DELETE' }),
   blockUser: (blockedId) => request(`/profile/block/${blockedId}`, { method: 'POST' }),
@@ -55,19 +71,19 @@ export const authApi = {
   createApiKey: (projectId, name) =>
     request('/auth/apikeys', {
       method: 'POST',
-      body: JSON.stringify({ project_id: projectId, name }),
+      body: JSON.stringify({ project_id: projectId, name })
     }),
   revokeApiKey: (id) => request(`/auth/apikeys/${id}`, { method: 'DELETE' }),
   getPublicProfile: (nickname) => request(`/profile/${nickname}`),
   updatePinnedBadges: (pinned_badges) =>
     request('/profile/me/pinned-badges', {
       method: 'PUT',
-      body: JSON.stringify({ pinned_badges }),
+      body: JSON.stringify({ pinned_badges })
     }),
   updateProfile: (data) =>
     request('/auth/me', {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     }),
   uploadAvatar: async (formData) => {
     return await request('/auth/avatar', {
@@ -85,15 +101,15 @@ export const authApi = {
   forgotPassword: (email) =>
     request('/auth/forgot-password', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email })
     }),
   resetPassword: (token, new_password) =>
     request('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token, new_password }),
+      body: JSON.stringify({ token, new_password })
     }),
   giveCrossBorderConsent: () =>
     request('/auth/me/consent', {
-      method: 'POST',
-    }),
+      method: 'POST'
+    })
 };

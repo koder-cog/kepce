@@ -1,5 +1,4 @@
 @layer pages {
-
   /* ── Temel Animasyon Tanımları (Tokens ile Entegre) ──────────── */
   @keyframes pureFadeIn {
     from {
@@ -80,8 +79,6 @@
     font-size: var(--text-xl);
   }
 
-
-
   .stats-section-title--danger {
     color: var(--color-error);
     border-bottom-color: var(--color-error);
@@ -102,7 +99,7 @@
     font-weight: var(--font-weight-medium);
   }
 
-  .stats-filters>* {
+  .stats-filters > * {
     min-width: 140px;
   }
 
@@ -115,7 +112,7 @@
       width: 100%;
     }
 
-    .stats-filters>* {
+    .stats-filters > * {
       flex: 1;
       min-width: 0;
     }
@@ -132,7 +129,8 @@
     align-items: center;
     gap: var(--space-md);
     padding: var(--space-md);
-    transition: background-color var(--dur-fast) var(--ease-standard),
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
       transform var(--dur-fast) var(--ease-standard);
     cursor: default;
     border-radius: var(--radius-md);
@@ -142,7 +140,7 @@
     background-color: var(--color-surface-sunken);
   }
 
-  .stats-item:nth-child(n+3) .stats-item__rank {
+  .stats-item:nth-child(n + 3) .stats-item__rank {
     opacity: var(--opacity-gtk);
   }
 
@@ -520,7 +518,9 @@
   }
 
   .pie-chart-slice {
-    transition: stroke-width var(--dur-fast) var(--ease-standard), opacity var(--dur-fast) var(--ease-standard);
+    transition:
+      stroke-width var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard);
     cursor: pointer;
   }
 
@@ -578,7 +578,9 @@
     border: 1px solid transparent;
     width: 100%;
     cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+    transition:
+      background var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
     font-family: var(--font-body);
   }
 
@@ -700,5 +702,4 @@
     display: flex;
     flex-direction: column;
   }
-
 }

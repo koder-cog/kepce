@@ -1,24 +1,14 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
+  import { icon } from '@/components/ui/icons.js';
 
-  let {
-    lat = 0,
-    lon = 0,
-    zoom = 13,
-    isExpanded = $bindable(false),
-    title = "Harita",
-  } = $props();
+  let { lat = 0, lon = 0, zoom = 13, isExpanded = $bindable(false), title = 'Harita' } = $props();
 
   let googleEmbedUrl = $derived(
-    lat && lon
-      ? `https://maps.google.com/maps?q=${lat},${lon}&hl=tr&z=${zoom}&output=embed`
-      : ""
+    lat && lon ? `https://maps.google.com/maps?q=${lat},${lon}&hl=tr&z=${zoom}&output=embed` : ''
   );
 
   let googleMapsUrl = $derived(
-    lat && lon
-      ? `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
-      : ""
+    lat && lon ? `https://www.google.com/maps/search/?api=1&query=${lat},${lon}` : ''
   );
 
   function toggleExpand(e) {
@@ -50,15 +40,29 @@
       type="button"
       class="c-map-action-btn c-map-action-btn--expand"
       onclick={toggleExpand}
-      title={isExpanded ? "Haritayı Daralt" : "Haritayı Genişlet"}
-      aria-label={isExpanded ? "Haritayı Daralt" : "Haritayı Genişlet"}
+      title={isExpanded ? 'Haritayı Daralt' : 'Haritayı Genişlet'}
+      aria-label={isExpanded ? 'Haritayı Daralt' : 'Haritayı Genişlet'}
     >
       {#if isExpanded}
-        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg
+          viewBox="0 0 24 24"
+          width="15"
+          height="15"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+        >
           <path d="M4 14h6v6M20 10h-6V4M14 10l7-7M10 14L3 21" />
         </svg>
       {:else}
-        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2">
+        <svg
+          viewBox="0 0 24 24"
+          width="14"
+          height="14"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+        >
           <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" />
         </svg>
       {/if}
@@ -76,7 +80,7 @@
         title="Google Haritalar'da Aç"
         aria-label="Google Haritalar'da Aç"
       >
-        {@html icon("externalLink", 14)}
+        {@html icon('externalLink', 14)}
       </a>
     {/if}
   </div>

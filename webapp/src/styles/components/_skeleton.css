@@ -17,8 +17,12 @@
   }
 
   @keyframes skeleton-shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
   }
 
   /* Skeleton shapes */
@@ -131,14 +135,30 @@
   }
 
   /* ── Skeleton Utilities & Overrides ───────────────────────── */
-  .skeleton--w80 { width: 80% !important; }
-  .skeleton--w75 { width: 75% !important; }
-  .skeleton--w70 { width: 70% !important; }
-  .skeleton--w65 { width: 65% !important; }
-  .skeleton--w60 { width: 60% !important; }
-  .skeleton--w50 { width: 50% !important; }
-  .skeleton--w45 { width: 45% !important; }
-  .skeleton--time-w { width: 80px !important; }
+  .skeleton--w80 {
+    width: 80% !important;
+  }
+  .skeleton--w75 {
+    width: 75% !important;
+  }
+  .skeleton--w70 {
+    width: 70% !important;
+  }
+  .skeleton--w65 {
+    width: 65% !important;
+  }
+  .skeleton--w60 {
+    width: 60% !important;
+  }
+  .skeleton--w50 {
+    width: 50% !important;
+  }
+  .skeleton--w45 {
+    width: 45% !important;
+  }
+  .skeleton--time-w {
+    width: 80px !important;
+  }
 
   .skeleton--bot-card {
     opacity: 0.8;
@@ -169,7 +189,7 @@
     height: 42px;
     border-radius: 50%;
   }
-  
+
   .skeleton--timeline {
     opacity: 0.8;
   }

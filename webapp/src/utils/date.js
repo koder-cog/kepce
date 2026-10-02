@@ -4,8 +4,18 @@
 
 const DAYS_TR = ['Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt', 'Paz'];
 const MONTHS_TR = [
-  'Ocak', 'Şubat', 'Mart', 'Nisan', 'Mayıs', 'Haziran',
-  'Temmuz', 'Ağustos', 'Eylül', 'Ekim', 'Kasım', 'Aralık',
+  'Ocak',
+  'Şubat',
+  'Mart',
+  'Nisan',
+  'Mayıs',
+  'Haziran',
+  'Temmuz',
+  'Ağustos',
+  'Eylül',
+  'Ekim',
+  'Kasım',
+  'Aralık'
 ];
 
 export function getMonthName(month) {
@@ -29,7 +39,7 @@ export function timeAgo(dateStr) {
   } else {
     return '';
   }
-  
+
   if (isNaN(date.getTime())) return '';
 
   const now = new Date();
@@ -54,9 +64,24 @@ export function timeAgo(dateStr) {
 }
 
 const TURKISH_MONTHS_MAP = {
-  ocak: 1, subat: 2, şubat: 2, mart: 3, nisan: 4, mayis: 5, mayıs: 5,
-  haziran: 6, temmuz: 7, agustos: 8, ağustos: 8, eylul: 9, eylül: 9,
-  ekim: 10, kasim: 11, kasım: 11, aralik: 12, aralık: 12
+  ocak: 1,
+  subat: 2,
+  şubat: 2,
+  mart: 3,
+  nisan: 4,
+  mayis: 5,
+  mayıs: 5,
+  haziran: 6,
+  temmuz: 7,
+  agustos: 8,
+  ağustos: 8,
+  eylul: 9,
+  eylül: 9,
+  ekim: 10,
+  kasim: 11,
+  kasım: 11,
+  aralik: 12,
+  aralık: 12
 };
 
 function isValidYmd(year, month, day) {
@@ -64,11 +89,7 @@ function isValidYmd(year, month, day) {
   if (month < 1 || month > 12) return false;
   if (day < 1 || day > 31) return false;
   const d = new Date(Date.UTC(year, month - 1, day));
-  return (
-    d.getUTCFullYear() === year &&
-    d.getUTCMonth() === month - 1 &&
-    d.getUTCDate() === day
-  );
+  return d.getUTCFullYear() === year && d.getUTCMonth() === month - 1 && d.getUTCDate() === day;
 }
 
 function formatYmd(year, month, day) {
@@ -82,7 +103,7 @@ function formatYmd(year, month, day) {
  * - 30 haziran 2026, 30 haziran, 30 haziran'da, 30 hazirandaki
  * - 2026-06-30 (ISO)
  * - dün, dünkü, yarın, yarınki, bugün, bugünkü
- * 
+ *
  * @param {string} query Kullanıcı sorgusu
  * @param {string} referenceDateStr Varsayılan YYYY-MM-DD tarihi
  * @returns {string} Ayıklanan YYYY-MM-DD tarihi veya referenceDateStr
@@ -90,7 +111,9 @@ function formatYmd(year, month, day) {
 export function extractQueryDate(query, referenceDateStr) {
   if (!query || typeof query !== 'string') return referenceDateStr;
   const q = query.toLowerCase().trim();
-  const refYear = referenceDateStr ? parseInt(referenceDateStr.slice(0, 4), 10) : new Date().getFullYear();
+  const refYear = referenceDateStr
+    ? parseInt(referenceDateStr.slice(0, 4), 10)
+    : new Date().getFullYear();
 
   // Bağıl günler (dün, bugün, yarın)
   if (/(?:^|[^\p{L}\p{N}])(?:dün|dünkü)(?=[^\p{L}\p{N}]|$)/iu.test(q)) {
@@ -117,7 +140,8 @@ export function extractQueryDate(query, referenceDateStr) {
   }
 
   // Doğal Türkçe ay ve gün kalıpları (örn. "30 Haziran", "30 Haziran'daki")
-  const monthRegex = /(?:^|[^\p{L}\p{N}])(\d{1,2})\s*(?:nci|ncı|inci|ıncı|\.)?\s*(ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik)(?:['’]?(?:daki|deki|taki|teki|da|de|ta|te|nın|nin|nun|nün|ın|in|un|ün|e|a))?(?:\s+(20\d{2}|\d{2}))?(?=[^\p{L}\p{N}]|$)/iu;
+  const monthRegex =
+    /(?:^|[^\p{L}\p{N}])(\d{1,2})\s*(?:nci|ncı|inci|ıncı|\.)?\s*(ocak|şubat|subat|mart|nisan|mayıs|mayis|haziran|temmuz|ağustos|agustos|eylül|eylul|ekim|kasım|kasim|aralık|aralik)(?:['’]?(?:daki|deki|taki|teki|da|de|ta|te|nın|nin|nun|nün|ın|in|un|ün|e|a))?(?:\s+(20\d{2}|\d{2}))?(?=[^\p{L}\p{N}]|$)/iu;
   const textMonthMatch = q.match(monthRegex);
   if (textMonthMatch) {
     const day = parseInt(textMonthMatch[1], 10);
@@ -149,5 +173,3 @@ export function extractQueryDate(query, referenceDateStr) {
 
   return referenceDateStr;
 }
-
-

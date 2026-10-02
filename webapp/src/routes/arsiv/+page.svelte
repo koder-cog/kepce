@@ -1,49 +1,37 @@
 <script>
-  import "@/styles/pages/_archive.css";
-  import { api } from "@/api/index.js";
-  import {
-    getCurrentCity,
-    setCurrentCity,
-    getCitiesData,
-  } from "@/stores/city.svelte.js";
-  import { getMonthName } from "@/utils/date.js";
-  import ArchiveRow from "@/components/features/ArchiveRow.svelte";
-  import CitySelector from "@/components/features/CitySelector.svelte";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import Loader from "@/components/ui/Loader.svelte";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
-  import { onMount } from "svelte";
+  import '@/styles/pages/_archive.css';
+  import { api } from '@/api/index.js';
+  import { getCurrentCity, setCurrentCity, getCitiesData } from '@/stores/city.svelte.js';
+  import { getMonthName } from '@/utils/date.js';
+  import ArchiveRow from '@/components/features/ArchiveRow.svelte';
+  import CitySelector from '@/components/features/CitySelector.svelte';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
+  import { onMount } from 'svelte';
 
-  const WEEKDAYS = [
-    "Pazar",
-    "Pazartesi",
-    "Salı",
-    "Çarşamba",
-    "Perşembe",
-    "Cuma",
-    "Cumartesi",
-  ];
+  const WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
   const MONTHS = [
-    "Ocak",
-    "Şubat",
-    "Mart",
-    "Nisan",
-    "Mayıs",
-    "Haziran",
-    "Temmuz",
-    "Ağustos",
-    "Eylül",
-    "Ekim",
-    "Kasım",
-    "Aralık",
+    'Ocak',
+    'Şubat',
+    'Mart',
+    'Nisan',
+    'Mayıs',
+    'Haziran',
+    'Temmuz',
+    'Ağustos',
+    'Eylül',
+    'Ekim',
+    'Kasım',
+    'Aralık'
   ];
 
   let cities = $state([]);
   let selectedCity = $state(getCurrentCity());
-  let selectedYear = $state("");
-  let selectedMonth = $state("");
-  let lastLoadedKey = $state("");
+  let selectedYear = $state('');
+  let selectedMonth = $state('');
+  let lastLoadedKey = $state('');
   let yearOptions = $state([]);
 
   let groupedMenus = $state(null);
@@ -61,9 +49,7 @@
     return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}, ${WEEKDAYS[d.getDay()]}`;
   }
 
-  let isSearchValid = $derived(
-    !!(selectedCity && selectedYear && selectedMonth),
-  );
+  let isSearchValid = $derived(!!(selectedCity && selectedYear && selectedMonth));
   let currentKey = $derived(`${selectedCity}-${selectedYear}-${selectedMonth}`);
   let isButtonRefresh = $derived(isSearchValid && currentKey === lastLoadedKey);
 
@@ -71,7 +57,7 @@
     try {
       cities = await getCitiesData();
     } catch (err) {
-      console.error("Failed to fetch cities:", err);
+      console.error('Failed to fetch cities:', err);
     }
 
     try {
@@ -82,11 +68,11 @@
           cityName: h.city_name,
           year: String(h.year),
           month: String(h.month),
-          monthName: `${getMonthName(h.month)} ${h.year}`,
+          monthName: `${getMonthName(h.month)} ${h.year}`
         }));
       }
     } catch (err) {
-      console.error("Failed to fetch archive highlights:", err);
+      console.error('Failed to fetch archive highlights:', err);
     }
   });
 
@@ -99,20 +85,17 @@
           if (token !== yearsLoadToken) return;
           yearOptions = years.map((y) => ({
             value: String(y),
-            label: String(y),
+            label: String(y)
           }));
           // If selectedYear is not in yearOptions, clear it
-          if (
-            selectedYear &&
-            !yearOptions.some((opt) => opt.value === selectedYear)
-          ) {
-            selectedYear = "";
-            selectedMonth = "";
+          if (selectedYear && !yearOptions.some((opt) => opt.value === selectedYear)) {
+            selectedYear = '';
+            selectedMonth = '';
           }
         })
         .catch((err) => {
           if (token !== yearsLoadToken) return;
-          console.error("Failed to load archive years:", err);
+          console.error('Failed to load archive years:', err);
           yearOptions = [];
         });
     } else {
@@ -152,11 +135,7 @@
     }, 150);
 
     try {
-      const menus = await api.getMonthlyMenus(
-        selectedCity,
-        selectedYear,
-        selectedMonth,
-      );
+      const menus = await api.getMonthlyMenus(selectedCity, selectedYear, selectedMonth);
       // Bu noktada ya abort edilmiş olabilir ya da daha yeni bir istek başlamış olabilir;
       // her iki durumda da state'i bozmadan erken çık.
       if (abortController.signal.aborted || menusLoadToken !== token) {
@@ -175,8 +154,8 @@
         groupedMenus = byDate;
       }
     } catch (err) {
-      if (abortController.signal.aborted || err?.name === "AbortError") return;
-      errorMsg = err.message || "Bilinmeyen hata";
+      if (abortController.signal.aborted || err?.name === 'AbortError') return;
+      errorMsg = err.message || 'Bilinmeyen hata';
       errorCode = parseInt(err.message.match(/\d{3}/)?.[0]) || 500;
     } finally {
       clearTimeout(showLoadingTimeout);
@@ -209,7 +188,7 @@
       const isCurrentYear = parseInt(selectedYear) === now.getFullYear();
       const maxMonth = isCurrentYear ? now.getMonth() + 1 : 12;
       if (parseInt(selectedMonth) > maxMonth) {
-        selectedMonth = "";
+        selectedMonth = '';
       }
     }
   });
@@ -250,12 +229,8 @@
     placeholder="Ay"
     disabled={!selectedYear}
   />
-  <button
-    class="archive-controls__btn"
-    disabled={!isSearchValid}
-    onclick={handleLoad}
-  >
-    {isButtonRefresh ? "Yenile" : "Göster"}
+  <button class="archive-controls__btn" disabled={!isSearchValid} onclick={handleLoad}>
+    {isButtonRefresh ? 'Yenile' : 'Göster'}
   </button>
 </div>
 
@@ -273,8 +248,8 @@
       <div class="empty-state-container u-fade-in">
         <EmptyState
           statusCode={404}
-          title={"Yok böyle bişii."}
-          desc={"Seçtiğiniz tarih aralığı için arşivde herhangi bir menü kaydı bulunamadı."}
+          title={'Yok böyle bişii.'}
+          desc={'Seçtiğiniz tarih aralığı için arşivde herhangi bir menü kaydı bulunamadı.'}
         />
       </div>
     {:else}

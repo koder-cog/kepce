@@ -1,7 +1,7 @@
 <script>
-  import ContentPage from "@/components/layout/ContentPage.svelte";
-  import CurrentContent from "$lib/data/legal/kullanim-kosullari/20260927.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import ContentPage from '@/components/layout/ContentPage.svelte';
+  import CurrentContent from '$lib/data/legal/kullanim-kosullari/20260927.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 </script>
 
 <Seo

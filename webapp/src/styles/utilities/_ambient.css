@@ -1,5 +1,5 @@
 @layer utilities {
-.ambient-badge {
+  .ambient-badge {
     display: inline-flex;
     align-items: center;
     gap: var(--space-xs);
@@ -10,23 +10,23 @@
     background-color: var(--color-surface-sunken);
     color: var(--color-text-secondary);
     border: 1px solid var(--color-border);
-}
+  }
 
-.ambient-badge--local {
+  .ambient-badge--local {
     background-color: rgba(230, 81, 0, 0.08);
     color: var(--color-primary);
     border-color: rgba(230, 81, 0, 0.25);
-}
+  }
 
-.ambient-badge--mourning {
+  .ambient-badge--mourning {
     background-color: var(--color-surface-sunken);
     color: var(--color-text-primary);
     border-color: var(--color-border-strong, #555);
-}
+  }
 
-.ambient-badge--celebration {
+  .ambient-badge--celebration {
     background-color: rgba(211, 47, 47, 0.08);
     color: var(--color-error);
     border-color: rgba(211, 47, 47, 0.25);
-}
+  }
 }

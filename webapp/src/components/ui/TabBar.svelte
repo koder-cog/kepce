@@ -1,20 +1,18 @@
 <script>
-  import { onMount, tick } from "svelte";
-  import { dev, building } from "$app/environment";
+  import { onMount, tick } from 'svelte';
+  import { dev, building } from '$app/environment';
 
   let {
     tabs = [], // Array of { id, label, href?, icon?, badge? }
     activeId = $bindable(), // The id of the currently active tab
-    class: className = "",
-    onChange = null,
+    class: className = '',
+    onChange = null
   } = $props();
 
   const validateTabs = (tbs) => {
     for (const tab of tbs) {
       if (!tab.label || !tab.icon) {
-        console.warn(
-          `[Kepçe Uyarı] TabBar içinde "${tab.id}" sekmesi için ikon veya yazı eksik!`,
-        );
+        console.warn(`[Kepçe Uyarı] TabBar içinde "${tab.id}" sekmesi için ikon veya yazı eksik!`);
       }
     }
   };
@@ -39,16 +37,14 @@
     if (!containerNode || !activeId) return;
     requestAnimationFrame(() => {
       if (!containerNode) return;
-      const activeBtn = containerNode.querySelector(
-        `.c-tab[data-id="${activeId}"]`,
-      );
+      const activeBtn = containerNode.querySelector(`.c-tab[data-id="${activeId}"]`);
       if (activeBtn) {
         indicatorWidth = activeBtn.offsetWidth;
         indicatorLeft = activeBtn.offsetLeft;
         activeBtn.scrollIntoView({
-          behavior: "smooth",
-          block: "nearest",
-          inline: "nearest",
+          behavior: 'smooth',
+          block: 'nearest',
+          inline: 'nearest'
         });
       }
     });
@@ -71,17 +67,13 @@
       updateIndicator();
     });
 
-    const tabsRow = containerNode?.querySelector(".c-tabs");
+    const tabsRow = containerNode?.querySelector('.c-tabs');
     if (tabsRow) ro.observe(tabsRow);
     return () => ro.disconnect();
   });
 </script>
 
-<div
-  class="c-tabs-container {className}"
-  bind:this={containerNode}
-  class:is-ready={isReady}
->
+<div class="c-tabs-container {className}" bind:this={containerNode} class:is-ready={isReady}>
   <div class="c-tabs">
     <div
       class="c-tabs__indicator"
@@ -103,9 +95,7 @@
             >
           {/if}
           {#if tab.label}
-            <span class="c-tab__label" class:c-tab__label--responsive={tab.icon}
-              >{tab.label}</span
-            >
+            <span class="c-tab__label" class:c-tab__label--responsive={tab.icon}>{tab.label}</span>
           {/if}
         </a>
       {:else}
@@ -126,9 +116,7 @@
             >
           {/if}
           {#if tab.label}
-            <span class="c-tab__label" class:c-tab__label--responsive={tab.icon}
-              >{tab.label}</span
-            >
+            <span class="c-tab__label" class:c-tab__label--responsive={tab.icon}>{tab.label}</span>
           {/if}
           {#if tab.badge}
             <span class="notification-tab__badge">{tab.badge}</span>

@@ -1,51 +1,58 @@
 <script>
-  import { onMount } from "svelte";
-  import { api } from "@/api/index.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import { sanitizeText } from "@/utils/sanitize.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import { createModal } from "@/components/features/modal.js";
-  import { slide, fade } from "svelte/transition";
-  import { flip } from "svelte/animate";
-  import { getDuration } from "@/lib/dom/motion.js";
-  import { page } from "$app/stores";
-  import Dropdown from "@/components/features/Dropdown.svelte";
+  import { onMount } from 'svelte';
+  import { api } from '@/api/index.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import { sanitizeText } from '@/utils/sanitize.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import { createModal } from '@/components/features/modal.js';
+  import { slide, fade } from 'svelte/transition';
+  import { flip } from 'svelte/animate';
+  import { getDuration } from '@/lib/dom/motion.js';
+  import { page } from '$app/stores';
+  import Dropdown from '@/components/features/Dropdown.svelte';
 
   // Tab mapping:
   // "content": İçerik Şikayetleri (Comment, User)
   // "menu": Menü & Bot Hataları
   // "contact": İletişim Mesajları
   let complaintTab = $derived(
-    $page.url.searchParams.get("tip") === "hata" ? "menu" : 
-    ($page.url.searchParams.get("tip") === "iletisim" ? "contact" : "content")
+    $page.url.searchParams.get('tip') === 'hata'
+      ? 'menu'
+      : $page.url.searchParams.get('tip') === 'iletisim'
+        ? 'contact'
+        : 'content'
   );
 
-  let activeReportFilter = $state("pending"); // 'pending' | 'resolved' | 'dismissed'
-  let sourceFilter = $state("all"); // 'all' | 'kepce' | 'ara'
+  let activeReportFilter = $state('pending'); // 'pending' | 'resolved' | 'dismissed'
+  let sourceFilter = $state('all'); // 'all' | 'kepce' | 'ara'
 
   let isLoading = $state(true);
   let allReports = $state([]);
   let contactMessages = $state([]);
-  import Pagination from "@/components/ui/Pagination.svelte";
-  import { goto } from "$app/navigation";
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { goto } from '$app/navigation';
 
   let errorMsg = $state(null);
   let limit = 20;
-  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let urlPage = $derived(parseInt($page.url.searchParams.get('sayfa') || '1', 10) || 1);
   let currentPage = $state(1);
 
   // Filter lists based on tab, status and source
   let items = $derived.by(() => {
-    if (complaintTab === "content") {
-      return allReports.filter(r => (r.type === 'comment' || r.type === 'user') && r.status === activeReportFilter);
-    } else if (complaintTab === "menu") {
-      return allReports.filter(r => (r.type === 'menu' || r.type === 'bot') && r.status === activeReportFilter);
-    } else if (complaintTab === "contact") {
-      return contactMessages.filter(m => {
+    if (complaintTab === 'content') {
+      return allReports.filter(
+        (r) => (r.type === 'comment' || r.type === 'user') && r.status === activeReportFilter
+      );
+    } else if (complaintTab === 'menu') {
+      return allReports.filter(
+        (r) => (r.type === 'menu' || r.type === 'bot') && r.status === activeReportFilter
+      );
+    } else if (complaintTab === 'contact') {
+      return contactMessages.filter((m) => {
         const matchesStatus = m.status === activeReportFilter;
-        const matchesSource = sourceFilter === "all" || (m.source || "kepce") === sourceFilter;
+        const matchesSource = sourceFilter === 'all' || (m.source || 'kepce') === sourceFilter;
         return matchesStatus && matchesSource;
       });
     }
@@ -68,9 +75,9 @@
     currentPage = newPage;
     const url = new URL(window.location.href);
     if (newPage > 1) {
-      url.searchParams.set("sayfa", String(newPage));
+      url.searchParams.set('sayfa', String(newPage));
     } else {
-      url.searchParams.delete("sayfa");
+      url.searchParams.delete('sayfa');
     }
     goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
@@ -81,7 +88,7 @@
       isLoading = true;
       errorMsg = null;
       try {
-        if (complaintTab === "contact") {
+        if (complaintTab === 'contact') {
           let result = await api.getContactMessages();
           if (!ignore) contactMessages = result;
         } else {
@@ -89,13 +96,15 @@
           if (!ignore) allReports = result;
         }
       } catch (err) {
-        if (!ignore) errorMsg = err.message || "Bir hata oluştu.";
+        if (!ignore) errorMsg = err.message || 'Bir hata oluştu.';
       } finally {
         if (!ignore) isLoading = false;
       }
     }
     fetchData();
-    return () => { ignore = true; };
+    return () => {
+      ignore = true;
+    };
   });
 
   // Generic Update Status Action
@@ -103,41 +112,45 @@
     try {
       if (isContact) {
         await api.updateContactMessageStatus(id, newStatus);
-        contactMessages = contactMessages.map(m => m.id === id ? { ...m, status: newStatus } : m);
-        showToast("İletişim mesajı güncellendi.", "success");
+        contactMessages = contactMessages.map((m) =>
+          m.id === id ? { ...m, status: newStatus } : m
+        );
+        showToast('İletişim mesajı güncellendi.', 'success');
       } else {
         await api.updateReportStatus(id, newStatus);
-        allReports = allReports.map(r => r.id === id ? { ...r, status: newStatus } : r);
-        showToast("Durum güncellendi.", "success");
+        allReports = allReports.map((r) => (r.id === id ? { ...r, status: newStatus } : r));
+        showToast('Durum güncellendi.', 'success');
       }
-    } catch(err) {
-      showToast(err.message, "error");
+    } catch (err) {
+      showToast(err.message, 'error');
     }
   }
 
   function deleteReportPrompt(id, isContact = false) {
     createModal({
-      title: "Kalıcı silme",
-      iconHtml: icon("alert", 24),
-      iconColor: "danger",
-      contentHtml: "<p>Kalıcı olarak silmek üzeresin. Bu işlem geri alınamaz. Emin misin?</p>",
+      title: 'Kalıcı silme',
+      iconHtml: icon('alert', 24),
+      iconColor: 'danger',
+      contentHtml: '<p>Kalıcı olarak silmek üzeresin. Bu işlem geri alınamaz. Emin misin?</p>',
       buttons: [
-        { label: "İptal", variant: "secondary" },
+        { label: 'İptal', variant: 'secondary' },
         {
-          label: "Evet, Sil",
-          variant: "danger",
+          label: 'Evet, Sil',
+          variant: 'danger',
           onClick: async (close) => {
             try {
               if (isContact) {
                 await api.deleteContactMessage(id);
-                contactMessages = contactMessages.filter(m => m.id !== id);
+                contactMessages = contactMessages.filter((m) => m.id !== id);
               } else {
                 await api.deleteReport(id);
-                allReports = allReports.filter(r => r.id !== id);
+                allReports = allReports.filter((r) => r.id !== id);
               }
-              showToast("Kalıcı olarak silindi.", "danger");
+              showToast('Kalıcı olarak silindi.', 'danger');
               close();
-            } catch (err) { showToast(err.message, "error"); }
+            } catch (err) {
+              showToast(err.message, 'error');
+            }
           }
         }
       ]
@@ -160,7 +173,7 @@
       expandedReplies[id] = res;
       expandedReplies = { ...expandedReplies };
     } catch (err) {
-      showToast(err.message || "Yanıt geçmişi yüklenemedi.", "error");
+      showToast(err.message || 'Yanıt geçmişi yüklenemedi.', 'error');
     } finally {
       loadingReplies[id] = false;
     }
@@ -169,7 +182,7 @@
   function openReplyModal(item) {
     createModal({
       title: `${item.email} Yanıtla`,
-      iconHtml: icon("send", 20),
+      iconHtml: icon('send', 20),
       contentHtml: `
         <div class="u-mb-md">
           <p class="u-text-xs u-color-muted u-mb-sm">Konu: <strong>${sanitizeText(item.subject)}</strong></p>
@@ -183,24 +196,26 @@
         </div>
       `,
       buttons: [
-        { label: "Vazgeç", variant: "secondary" },
+        { label: 'Vazgeç', variant: 'secondary' },
         {
-          label: "Gönder ve Çözüldü İşaretle",
-          variant: "primary",
+          label: 'Gönder ve Çözüldü İşaretle',
+          variant: 'primary',
           onClick: async (close) => {
-            const inputEl = document.getElementById("reply-text-input");
-            const text = inputEl ? inputEl.value.trim() : "";
+            const inputEl = document.getElementById('reply-text-input');
+            const text = inputEl ? inputEl.value.trim() : '';
             if (!text) {
-              showToast("Lütfen bir yanıt metni yazınız.", "warning");
+              showToast('Lütfen bir yanıt metni yazınız.', 'warning');
               return;
             }
             try {
               await api.replyToContactMessage(item.id, text);
-              showToast("E-posta yanıtı gönderildi ve durum güncellendi.", "success");
-              contactMessages = contactMessages.map(m => m.id === item.id ? { ...m, status: "resolved" } : m);
+              showToast('E-posta yanıtı gönderildi ve durum güncellendi.', 'success');
+              contactMessages = contactMessages.map((m) =>
+                m.id === item.id ? { ...m, status: 'resolved' } : m
+              );
               close();
             } catch (err) {
-              showToast(err.message || "Yanıt gönderilemedi.", "error");
+              showToast(err.message || 'Yanıt gönderilemedi.', 'error');
             }
           }
         }
@@ -214,10 +229,10 @@
   }
 
   const typeLabels = {
-    comment: "Yorum Şikayeti",
-    user: "Kullanıcı Şikayeti",
-    menu: "Menü Hatası",
-    bot: "Yapay Zeka Hatası"
+    comment: 'Yorum Şikayeti',
+    user: 'Kullanıcı Şikayeti',
+    menu: 'Menü Hatası',
+    bot: 'Yapay Zeka Hatası'
   };
 </script>
 
@@ -229,9 +244,9 @@
   <div class="u-flex u-flex-align-center u-gap-sm u-flex-wrap">
     <Dropdown
       options={[
-        { label: "Bekleyenler", value: "pending" },
-        { label: "Çözülenler", value: "resolved" },
-        { label: "Göz Ardı Edilenler", value: "dismissed" },
+        { label: 'Bekleyenler', value: 'pending' },
+        { label: 'Çözülenler', value: 'resolved' },
+        { label: 'Göz Ardı Edilenler', value: 'dismissed' }
       ]}
       bind:value={activeReportFilter}
     />
@@ -239,9 +254,9 @@
     {#if complaintTab === 'contact'}
       <Dropdown
         options={[
-          { label: "Tüm Kaynaklar", value: "all" },
-          { label: "Kepçe (Ana Site)", value: "kepce" },
-          { label: "Kepçe Ara (ara.kepce.org)", value: "ara" },
+          { label: 'Tüm Kaynaklar', value: 'all' },
+          { label: 'Kepçe (Ana Site)', value: 'kepce' },
+          { label: 'Kepçe Ara (ara.kepce.org)', value: 'ara' }
         ]}
         bind:value={sourceFilter}
       />
@@ -268,21 +283,29 @@
     <EmptyState statusCode={500} desc={errorMsg} />
   {:else if items.length === 0}
     <EmptyState
-      iconName={"check"}
+      iconName={'check'}
       title="Liste Boş"
       desc="Bu kategoride şu an işlem bekleyen öğe bulunmuyor."
     />
   {:else}
     <div class="comment-list">
       {#each paginatedItems as item (item.id)}
-        <article class="comment-card" data-id={item.id} animate:flip={{ duration: getDuration(250) }} in:fade={{ duration: getDuration(200) }} out:slide={{ duration: getDuration(200) }}>
+        <article
+          class="comment-card"
+          data-id={item.id}
+          animate:flip={{ duration: getDuration(250) }}
+          in:fade={{ duration: getDuration(200) }}
+          out:slide={{ duration: getDuration(200) }}
+        >
           <header class="comment-card__header-group u-mb-md">
             <div class="comment-card__meta">
               <strong class="u-text-base u-color-text">
-                {complaintTab === 'contact' ? item.email : (item.reporter_id || "Anonim")}
+                {complaintTab === 'contact' ? item.email : item.reporter_id || 'Anonim'}
               </strong>
               <span class="u-color-muted u-text-sm">&middot;</span>
-              <span class="comment-card__date u-text-sm u-color-muted">{formatDate(item.created_at)}</span>
+              <span class="comment-card__date u-text-sm u-color-muted"
+                >{formatDate(item.created_at)}</span
+              >
             </div>
             <div class="comment-card__meta u-mt-xs u-flex u-flex-align-center u-gap-xs">
               <span class="u-text-sm u-color-muted">#{item.id.toString().substring(0, 8)}</span>
@@ -298,12 +321,18 @@
 
           <div class="comment-card__body u-mb-md">
             {#if complaintTab === 'contact'}
-              <div class="u-mb-xs"><strong>Kategori:</strong> <span class="u-color-text">{item.category}</span></div>
-              <div class="u-mb-xs"><strong>Konu:</strong> <span class="u-color-text">{item.subject}</span></div>
+              <div class="u-mb-xs">
+                <strong>Kategori:</strong> <span class="u-color-text">{item.category}</span>
+              </div>
+              <div class="u-mb-xs">
+                <strong>Konu:</strong> <span class="u-color-text">{item.subject}</span>
+              </div>
               {#if item.page_url}
                 <div class="u-mb-xs u-text-xs">
                   <strong>Sayfa:</strong>
-                  <a href={item.page_url} target="_blank" class="u-link u-color-primary">{item.page_url}</a>
+                  <a href={item.page_url} target="_blank" class="u-link u-color-primary"
+                    >{item.page_url}</a
+                  >
                 </div>
               {/if}
               <div class="u-mt-md">
@@ -313,7 +342,9 @@
 
               {#if expandedReplies[item.id]}
                 <div class="ticket-replies-box">
-                  <strong class="u-text-xs u-color-muted u-mb-xs u-display-block">GÖNDERİLEN YANITLAR</strong>
+                  <strong class="u-text-xs u-color-muted u-mb-xs u-display-block"
+                    >GÖNDERİLEN YANITLAR</strong
+                  >
                   {#if expandedReplies[item.id].length === 0}
                     <p class="u-text-xs u-color-muted">Henüz bu mesaja yanıt gönderilmemiş.</p>
                   {:else}
@@ -330,11 +361,18 @@
                 </div>
               {/if}
             {:else}
-              <div class="u-mb-xs"><strong>Tip:</strong> <span class="u-color-text">{typeLabels[item.type] || item.type}</span></div>
-              <div class="u-mb-xs"><strong>Hedef:</strong> 
-                {#if item.type === 'comment'}Yorum ID: {item.reported_comment_id}{:else if item.type === 'user'}Kullanıcı ID: {item.reported_user_id}{:else if item.type === 'menu'}Menü ID: {item.menu_id}{:else}Bilinmiyor{/if}
+              <div class="u-mb-xs">
+                <strong>Tip:</strong>
+                <span class="u-color-text">{typeLabels[item.type] || item.type}</span>
               </div>
-              <div class="u-mb-xs"><strong>Sebep:</strong> <span class="u-color-text">{item.reason}</span></div>
+              <div class="u-mb-xs">
+                <strong>Hedef:</strong>
+                {#if item.type === 'comment'}Yorum ID: {item.reported_comment_id}{:else if item.type === 'user'}Kullanıcı
+                  ID: {item.reported_user_id}{:else if item.type === 'menu'}Menü ID: {item.menu_id}{:else}Bilinmiyor{/if}
+              </div>
+              <div class="u-mb-xs">
+                <strong>Sebep:</strong> <span class="u-color-text">{item.reason}</span>
+              </div>
               {#if item.description}
                 <div class="u-mt-md">
                   <strong>Açıklama:</strong>
@@ -347,21 +385,40 @@
           <footer class="comment-card__footer u-flex u-flex-wrap u-gap-xs">
             {#if complaintTab === 'contact'}
               <button class="btn btn--primary btn--squish" onclick={() => openReplyModal(item)}>
-                {@html icon("send", 14)}
+                {@html icon('send', 14)}
                 E-posta ile Yanıtla
               </button>
               <button class="btn btn--secondary btn--squish" onclick={() => toggleReplies(item.id)}>
-                {expandedReplies[item.id] ? "Yanıtları Gizle" : (loadingReplies[item.id] ? "Yükleniyor..." : "Yanıt Geçmişi")}
+                {expandedReplies[item.id]
+                  ? 'Yanıtları Gizle'
+                  : loadingReplies[item.id]
+                    ? 'Yükleniyor...'
+                    : 'Yanıt Geçmişi'}
               </button>
             {/if}
 
             {#if activeReportFilter === 'pending'}
-              <button class="btn btn--secondary btn--squish" onclick={() => changeReportStatus(item.id, 'dismissed', complaintTab === 'contact')}>Göz ardı et</button>
-              <button class="btn btn--secondary btn--squish" onclick={() => changeReportStatus(item.id, 'resolved', complaintTab === 'contact')}>Çözüldü işaretle</button>
+              <button
+                class="btn btn--secondary btn--squish"
+                onclick={() => changeReportStatus(item.id, 'dismissed', complaintTab === 'contact')}
+                >Göz ardı et</button
+              >
+              <button
+                class="btn btn--secondary btn--squish"
+                onclick={() => changeReportStatus(item.id, 'resolved', complaintTab === 'contact')}
+                >Çözüldü işaretle</button
+              >
             {:else}
-              <button class="btn btn--secondary btn--squish" onclick={() => changeReportStatus(item.id, 'pending', complaintTab === 'contact')}>Geri al (inceleniyor)</button>
+              <button
+                class="btn btn--secondary btn--squish"
+                onclick={() => changeReportStatus(item.id, 'pending', complaintTab === 'contact')}
+                >Geri al (inceleniyor)</button
+              >
               {#if complaintTab !== 'contact'}
-                <button class="btn btn--danger btn--squish" onclick={() => deleteReportPrompt(item.id, false)}>Kalıcı sil</button>
+                <button
+                  class="btn btn--danger btn--squish"
+                  onclick={() => deleteReportPrompt(item.id, false)}>Kalıcı sil</button
+                >
               {/if}
             {/if}
           </footer>
@@ -370,12 +427,7 @@
     </div>
 
     {#if totalPages > 1}
-      <Pagination
-        page={currentPage}
-        {totalPages}
-        {totalItems}
-        onPageChange={handlePageChange}
-      />
+      <Pagination page={currentPage} {totalPages} {totalItems} onPageChange={handlePageChange} />
     {/if}
   {/if}
 </div>

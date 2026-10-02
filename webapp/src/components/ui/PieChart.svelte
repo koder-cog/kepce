@@ -6,7 +6,7 @@
    *  - title: Optional center title
    *  - size: number (default 180)
    */
-  let { data = [], title = "Toplam", size = 180 } = $props();
+  let { data = [], title = 'Toplam', size = 180 } = $props();
 
   let hoveredIdx = $state(null);
 
@@ -26,14 +26,12 @@
         ...item,
         idx,
         strokeDasharray,
-        strokeDashoffset,
+        strokeDashoffset
       };
     });
   });
 
-  let totalCount = $derived(
-    data.reduce((acc, curr) => acc + (curr.count || 0), 0),
-  );
+  let totalCount = $derived(data.reduce((acc, curr) => acc + (curr.count || 0), 0));
 
   let activeItem = $derived(hoveredIdx !== null ? slices[hoveredIdx] : null);
 </script>
@@ -66,7 +64,7 @@
             r={radius}
             fill="transparent"
             stroke={slice.color}
-            stroke-width={hoveredIdx === slice.idx ? "30" : "24"}
+            stroke-width={hoveredIdx === slice.idx ? '30' : '24'}
             stroke-dasharray={slice.strokeDasharray}
             stroke-dashoffset={slice.strokeDashoffset}
             class="pie-chart-slice"
@@ -85,9 +83,7 @@
         <span class="pie-center-value">%{activeItem.percentage}</span>
         <span class="pie-center-label">{activeItem.category}</span>
       {:else}
-        <span class="pie-center-value"
-          >{totalCount.toLocaleString("tr-TR")}</span
-        >
+        <span class="pie-center-value">{totalCount.toLocaleString('tr-TR')}</span>
         <span class="pie-center-label">{title}</span>
       {/if}
     </div>
@@ -103,8 +99,7 @@
         onmouseenter={() => (hoveredIdx = slice.idx)}
         onmouseleave={() => (hoveredIdx = null)}
       >
-        <span class="pie-legend-dot" style="--slice-color: {slice.color};"
-        ></span>
+        <span class="pie-legend-dot" style="--slice-color: {slice.color};"></span>
         <span class="pie-legend-name">{slice.category}</span>
         <span class="pie-legend-pct">%{slice.percentage}</span>
       </button>

@@ -1,16 +1,16 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
+  import { icon } from '@/components/ui/icons.js';
 
   let {
     isNavigating = false,
-    searchInput = "",
+    searchInput = '',
     searchInputEl = $bindable(null),
     suggestions = [],
     isSuggestionsOpen = false,
     selectedSuggestionIndex = -1,
     instantPreview = null,
     randomShortcuts = [],
-    basePath = "",
+    basePath = '',
     onSearch = () => {},
     onInput = () => {},
     onKeydown = () => {},
@@ -18,7 +18,7 @@
     onSelectSuggestion = () => {},
     onSelectBang = () => {},
     onOpenInfo = () => {},
-    onOpenSettings = () => {},
+    onOpenSettings = () => {}
   } = $props();
 </script>
 
@@ -31,7 +31,7 @@
       aria-label="Hakkında"
       title="Hakkında"
     >
-      {@html icon("info", 24)}
+      {@html icon('info', 24)}
     </button>
     <button
       type="button"
@@ -40,14 +40,14 @@
       aria-label="Ayarlar"
       title="Ayarlar"
     >
-      {@html icon("settings", 24)}
+      {@html icon('settings', 24)}
     </button>
   </header>
 
   <main class="c-search-home__center">
     <!-- Stabil Logo -->
     <div class="c-search-home__logo" aria-label="Kepçe">
-      {@html icon("logoExperimental", null, "", "Kepçe")}
+      {@html icon('logoExperimental', null, '', 'Kepçe')}
     </div>
 
     <form class="c-search-box" onsubmit={onSearch}>
@@ -63,13 +63,8 @@
         aria-label="Ara"
         autocomplete="off"
       />
-      <button
-        type="submit"
-        class="c-search-box__submit"
-        aria-label="Ara"
-        title="Ara"
-      >
-        {@html icon("search", 20)}
+      <button type="submit" class="c-search-box__submit" aria-label="Ara" title="Ara">
+        {@html icon('search', 20)}
       </button>
 
       {#if (isSuggestionsOpen && suggestions.length > 0) || instantPreview}
@@ -81,12 +76,8 @@
               role="option"
               aria-selected="false"
             >
-              <span class="c-search-autocomplete__preview-badge"
-                >{instantPreview.badge}</span
-              >
-              <strong class="c-search-autocomplete__preview-text"
-                >{instantPreview.text}</strong
-              >
+              <span class="c-search-autocomplete__preview-badge">{instantPreview.badge}</span>
+              <strong class="c-search-autocomplete__preview-text">{instantPreview.text}</strong>
             </li>
           {/if}
           {#each suggestions as item, idx}
@@ -98,12 +89,8 @@
                 role="option"
                 aria-selected={idx === selectedSuggestionIndex}
               >
-                <span class="c-search-autocomplete__bang-prefix"
-                  >{item.prefix}</span
-                >
-                <span class="c-search-autocomplete__bang-label"
-                  >{item.label}</span
-                >
+                <span class="c-search-autocomplete__bang-prefix">{item.prefix}</span>
+                <span class="c-search-autocomplete__bang-label">{item.label}</span>
               </li>
             {:else}
               <li
@@ -114,7 +101,7 @@
                 aria-selected={idx === selectedSuggestionIndex}
               >
                 <span class="c-search-autocomplete__icon">
-                  {@html icon("search", 16)}
+                  {@html icon('search', 16)}
                 </span>
                 <span>{item.displayText || item}</span>
               </li>
@@ -127,11 +114,7 @@
     <!-- Hızlı Kısayol İpuçları (Dinamik Rastgele Havuz) -->
     <div class="c-search-home__shortcuts">
       {#each randomShortcuts as s}
-        <button
-          type="button"
-          class="c-search-shortcut-pill"
-          onclick={() => onSelectBang(s.prefix)}
-        >
+        <button type="button" class="c-search-shortcut-pill" onclick={() => onSelectBang(s.prefix)}>
           <span class="pill-prefix">{s.prefix}</span>
           {s.label}
         </button>
@@ -142,20 +125,10 @@
   <!-- Minimalist Ana Sayfa Alt Şeridi -->
   <footer class="c-search-home-footer">
     <div class="c-search-home-footer__left">
-      <a href={`${basePath}/ayarlar`} class="c-search-home-footer__link"
-        >Ayarlar</a
-      >
-      <a
-        href={`${basePath}/gizlilik-politikasi`}
-        class="c-search-home-footer__link">Gizlilik</a
-      >
-      <a
-        href={`${basePath}/kullanim-kosullari`}
-        class="c-search-home-footer__link">Koşullar</a
-      >
-      <a href={`${basePath}/iletisim`} class="c-search-home-footer__link"
-        >İletişim</a
-      >
+      <a href={`${basePath}/ayarlar`} class="c-search-home-footer__link">Ayarlar</a>
+      <a href={`${basePath}/gizlilik-politikasi`} class="c-search-home-footer__link">Gizlilik</a>
+      <a href={`${basePath}/kullanim-kosullari`} class="c-search-home-footer__link">Koşullar</a>
+      <a href={`${basePath}/iletisim`} class="c-search-home-footer__link">İletişim</a>
     </div>
     <div class="c-search-home-footer__right">
       <a

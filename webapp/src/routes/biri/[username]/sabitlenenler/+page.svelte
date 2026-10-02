@@ -1,12 +1,12 @@
 <script>
-  import { globalState } from "@/state.svelte.js";
-  import { onMount } from "svelte";
-  import { api } from "@/api/index.js";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { showToast } from "@/components/ui/toast.js";
-  import { page } from "$app/stores";
+  import { globalState } from '@/state.svelte.js';
+  import { onMount } from 'svelte';
+  import { api } from '@/api/index.js';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { showToast } from '@/components/ui/toast.js';
+  import { page } from '$app/stores';
 
   let username = $derived($page.params.username);
   let contentLoading = $state(true);
@@ -21,7 +21,7 @@
     try {
       dashboardStats = await api.getProfileDashboardStats(username);
     } catch (err) {
-      console.error("Dashboard stats error:", err);
+      console.error('Dashboard stats error:', err);
     } finally {
       contentLoading = false;
     }
@@ -43,30 +43,25 @@
 
   async function handleUnpin(dishId) {
     try {
-      await Promise.allSettled([
-        api.togglePinned(dishId),
-        api.toggleFavorite(dishId),
-      ]);
+      await Promise.allSettled([api.togglePinned(dishId), api.toggleFavorite(dishId)]);
       if (dashboardStats) {
         if (dashboardStats.pinned_meals) {
           dashboardStats.pinned_meals = dashboardStats.pinned_meals.filter(
-            (d) => (d.dish_id || d.id) !== dishId,
+            (d) => (d.dish_id || d.id) !== dishId
           );
         }
         if (dashboardStats.favorite_meals) {
           dashboardStats.favorite_meals = dashboardStats.favorite_meals.filter(
-            (d) => (d.dish_id || d.id) !== dishId,
+            (d) => (d.dish_id || d.id) !== dishId
           );
         }
       }
       if (globalState.favorites) {
-        globalState.favorites = globalState.favorites.filter(
-          (id) => id !== dishId,
-        );
+        globalState.favorites = globalState.favorites.filter((id) => id !== dishId);
       }
-      showToast("Favorilerden kaldırıldı");
+      showToast('Favorilerden kaldırıldı');
     } catch (err) {
-      showToast(err.message, "error");
+      showToast(err.message, 'error');
     }
   }
 
@@ -83,7 +78,7 @@
       <div class="profile-dish-card">
         <div class="profile-dish-card__main">
           <div class="profile-dish-card__icon">
-            {@html icon("starFilled", 18)}
+            {@html icon('starFilled', 18)}
           </div>
           <span class="profile-dish-card__name">{dish.name}</span>
         </div>
@@ -93,7 +88,7 @@
             title="Kaldır"
             onclick={() => handleUnpin(dish.dish_id)}
           >
-            {@html icon("close", 14)}
+            {@html icon('close', 14)}
           </button>
         {/if}
       </div>

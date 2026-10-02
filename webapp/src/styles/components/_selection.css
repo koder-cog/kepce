@@ -64,8 +64,8 @@
     min-width: 0;
   }
 
-  .c-list-row__content>*,
-  .c-list-row__info>* {
+  .c-list-row__content > *,
+  .c-list-row__info > * {
     min-width: 0;
   }
 
@@ -154,7 +154,7 @@
   }
 
   /* Accessibility: Focus Visible Overlay */
-  .c-input-hidden:focus-visible~div {
+  .c-input-hidden:focus-visible ~ div {
     outline: 2px solid var(--color-accent-primary);
     outline-offset: 4px;
     border-radius: var(--radius-sm);
@@ -188,13 +188,13 @@
     transition: all var(--motion-expressive);
   }
 
-  .c-input-hidden:checked+.c-check {
+  .c-input-hidden:checked + .c-check {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
     transform: scale(1.15);
   }
 
-  .c-input-hidden:checked+.c-check svg {
+  .c-input-hidden:checked + .c-check svg {
     opacity: 1;
     transform: scale(1);
   }
@@ -223,20 +223,19 @@
     transition: all var(--motion-expressive);
   }
 
-  .c-input-hidden:checked+.c-radio {
+  .c-input-hidden:checked + .c-radio {
     background: var(--color-accent-primary);
     border-color: var(--color-accent-primary);
     transform: scale(1.15);
   }
 
-  .c-input-hidden:checked+.c-radio::after {
+  .c-input-hidden:checked + .c-radio::after {
     transform: scale(1);
   }
 
   /* ── Interactive Tactile States & Focus Indicators ── */
 
   @media (hover: hover) {
-
     .c-check:hover,
     .c-radio:hover {
       border-color: var(--color-accent-primary-hover);
@@ -249,8 +248,8 @@
     transform: scale(0.92) !important;
   }
 
-  .c-input-hidden:focus-visible+.c-check,
-  .c-input-hidden:focus-visible+.c-radio {
+  .c-input-hidden:focus-visible + .c-check,
+  .c-input-hidden:focus-visible + .c-radio {
     border-color: var(--color-accent-primary);
     box-shadow: 0 0 0 6px var(--color-accent-primary-light);
   }
@@ -270,7 +269,7 @@
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-2xs);
     cursor: pointer;
-    transition: 
+    transition:
       border-color var(--dur-fast) var(--ease-standard),
       background var(--dur-fast) var(--ease-standard),
       box-shadow var(--dur-fast) var(--ease-standard),

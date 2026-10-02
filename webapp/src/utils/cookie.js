@@ -8,6 +8,7 @@ export function getCookie(name) {
 
 export function clearLoggedCookie() {
   if (typeof document === 'undefined') return;
-  document.cookie = "kepce_logged_in=; Path=/; Max-Age=0; SameSite=Strict" + 
-    (window.location.protocol === "https:" ? "; Secure" : "");
+  document.cookie =
+    'kepce_logged_in=; Path=/; Max-Age=0; SameSite=Strict' +
+    (window.location.protocol === 'https:' ? '; Secure' : '');
 }

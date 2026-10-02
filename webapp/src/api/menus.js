@@ -16,7 +16,9 @@ export function normalizeMenu(raw) {
   const rawItemsText =
     raw.items_text ||
     raw.raw_items ||
-    (Array.isArray(raw.foods) && raw.foods.every(f => typeof f === 'string') ? raw.foods : null) ||
+    (Array.isArray(raw.foods) && raw.foods.every((f) => typeof f === 'string')
+      ? raw.foods
+      : null) ||
     null;
 
   let items = raw.items;
@@ -27,14 +29,16 @@ export function normalizeMenu(raw) {
         order_index: d.sort_order ?? idx,
         raw_name: d.name,
         is_alternative: !!d.is_alternative,
-        master_data: d.id ? {
-          dish_id: d.id,
-          name: d.name,
-          is_vegan: !!d.is_vegan,
-          is_vegetarian: !!d.is_vegetarian,
-          is_celiac: !!d.is_celiac,
-          estimated_calories: d.estimated_calories,
-        } : null,
+        master_data: d.id
+          ? {
+              dish_id: d.id,
+              name: d.name,
+              is_vegan: !!d.is_vegan,
+              is_vegetarian: !!d.is_vegetarian,
+              is_celiac: !!d.is_celiac,
+              estimated_calories: d.estimated_calories
+            }
+          : null
       }));
     } else if (Array.isArray(raw.foods) && raw.foods.length > 0) {
       // String listesi → `items` dönüşümü (kykyemek scrape)
@@ -42,7 +46,7 @@ export function normalizeMenu(raw) {
         order_index: idx,
         raw_name: name,
         is_alternative: false,
-        master_data: null,
+        master_data: null
       }));
     } else if (Array.isArray(rawItemsText) && rawItemsText.length > 0) {
       // Yedek: düz string listesi
@@ -50,14 +54,23 @@ export function normalizeMenu(raw) {
         order_index: idx,
         raw_name: name,
         is_alternative: false,
-        master_data: null,
+        master_data: null
       }));
     }
   }
 
   const seenSigs = new Set();
   const mainSig = Array.isArray(items)
-    ? items.map(i => (i.raw_name || '').trim().toLowerCase().replace(/[^a-z0-9ğüşıöç]/gi, '')).filter(Boolean).sort().join('|')
+    ? items
+        .map((i) =>
+          (i.raw_name || '')
+            .trim()
+            .toLowerCase()
+            .replace(/[^a-z0-9ğüşıöç]/gi, '')
+        )
+        .filter(Boolean)
+        .sort()
+        .join('|')
     : '';
   if (mainSig) seenSigs.add(mainSig);
 
@@ -65,10 +78,15 @@ export function normalizeMenu(raw) {
     ? raw.alternatives.map(normalizeMenu)
     : [];
 
-  const alternatives = rawAlternatives.filter(alt => {
+  const alternatives = rawAlternatives.filter((alt) => {
     if (!alt || !Array.isArray(alt.items) || alt.items.length === 0) return false;
     const sig = alt.items
-      .map(i => (i.raw_name || '').trim().toLowerCase().replace(/[^a-z0-9ğüşıöç]/gi, ''))
+      .map((i) =>
+        (i.raw_name || '')
+          .trim()
+          .toLowerCase()
+          .replace(/[^a-z0-9ğüşıöç]/gi, '')
+      )
       .filter(Boolean)
       .sort()
       .join('|');
@@ -82,7 +100,7 @@ export function normalizeMenu(raw) {
     ...raw,
     date: raw.date ?? raw.serve_date,
     items: items || [],
-    alternatives,
+    alternatives
   };
 }
 
@@ -94,13 +112,15 @@ function normalizeMenuList(payload) {
   return payload;
 }
 
-
 export const menusApi = {
   // Kanonik yol /public/cities (kökteki duplicate route 308 ile yönlendirir)
   getCities: () => request('/public/cities'),
   detectCity: () => request('/public/cities/detect'),
   getTodayMenu: async (city, dietary_type = 'standard', options = {}) => {
-    const data = await request(`/menus${buildQuery({ city, date: 'today', dietary_type })}`, options);
+    const data = await request(
+      `/menus${buildQuery({ city, date: 'today', dietary_type })}`,
+      options
+    );
     return Array.isArray(data) ? data.map(normalizeMenu) : normalizeMenu(data);
   },
   getMenusByDate: async (city, date, dietary_type = 'standard', options = {}) => {
@@ -111,8 +131,10 @@ export const menusApi = {
     const data = await request(`/menus${buildQuery({ city, year, month, dietary_type })}`, options);
     return normalizeMenuList(data);
   },
-  getArchiveYears: (city, options = {}) => request(`/menus/archive/years${buildQuery({ city })}`, options),
-  getArchiveHighlights: (limit = 4, options = {}) => request(`/menus/archive/highlights${buildQuery({ limit })}`, options),
+  getArchiveYears: (city, options = {}) =>
+    request(`/menus/archive/years${buildQuery({ city })}`, options),
+  getArchiveHighlights: (limit = 4, options = {}) =>
+    request(`/menus/archive/highlights${buildQuery({ limit })}`, options),
   getMenu: async (menuId, dietary_type = 'standard', options = {}) => {
     const data = await request(`/menus/${menuId}${buildQuery({ dietary_type })}`, options);
     return normalizeMenu(data);
@@ -126,5 +148,5 @@ export const menusApi = {
       method: 'POST',
       body: JSON.stringify({ sentiment })
     });
-  },
+  }
 };

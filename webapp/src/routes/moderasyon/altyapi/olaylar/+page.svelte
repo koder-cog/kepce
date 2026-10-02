@@ -18,13 +18,13 @@
   let incidentsData = $state([]);
   let incidentsError = $state(null);
   let currentLoadToken = 0;
-  
-  let activeIncidents = $derived(incidentsData.filter(i => (i.status || i.durum) !== 'resolved'));
-  let pastIncidents = $derived(incidentsData.filter(i => (i.status || i.durum) === 'resolved'));
+
+  let activeIncidents = $derived(incidentsData.filter((i) => (i.status || i.durum) !== 'resolved'));
+  let pastIncidents = $derived(incidentsData.filter((i) => (i.status || i.durum) === 'resolved'));
 
   // Pagination for past incidents
   let limit = 20;
-  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let urlPage = $derived(parseInt($page.url.searchParams.get('sayfa') || '1', 10) || 1);
   let currentPage = $state(1);
   let totalItems = $derived(pastIncidents.length);
   let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
@@ -42,9 +42,9 @@
     currentPage = newPage;
     const url = new URL(window.location.href);
     if (newPage > 1) {
-      url.searchParams.set("sayfa", String(newPage));
+      url.searchParams.set('sayfa', String(newPage));
     } else {
-      url.searchParams.delete("sayfa");
+      url.searchParams.delete('sayfa');
     }
     goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
@@ -102,7 +102,10 @@
 
   async function handleResolveIncident(incident) {
     try {
-      await api.updateIncident(incident.id, { status: 'resolved', resolved_at: new Date().toISOString() });
+      await api.updateIncident(incident.id, {
+        status: 'resolved',
+        resolved_at: new Date().toISOString()
+      });
       showToast('Olay çözüldü olarak işaretlendi.', {
         type: 'success',
         timeout: 5000,
@@ -140,7 +143,8 @@
       title: 'Olayı Sil',
       iconHtml: icon('trash', 24),
       iconColor: 'danger',
-      contentHtml: '<p class="u-mb-0">Bu olayı silmek istediğinize emin misiniz? Bu işlem <strong>geri alınamaz</strong>.</p>',
+      contentHtml:
+        '<p class="u-mb-0">Bu olayı silmek istediğinize emin misiniz? Bu işlem <strong>geri alınamaz</strong>.</p>',
       buttons: [
         { label: 'İptal', variant: 'secondary' },
         {
@@ -181,9 +185,12 @@
           Manuel kesinti ve yavaşlık bildirimlerini buradan yönetin.
         </p>
       </div>
-      <button class="btn btn--primary u-flex-shrink-0 btn-admin-top-action" onclick={() => handleIncidentModal()}>
+      <button
+        class="btn btn--primary u-flex-shrink-0 btn-admin-top-action"
+        onclick={() => handleIncidentModal()}
+      >
         <span class="u-hidden-mobile">Yeni Olay Bildir</span>
-        <span class="u-hidden-desktop">{@html icon("plus", 16)}</span>
+        <span class="u-hidden-desktop">{@html icon('plus', 16)}</span>
       </button>
     </div>
 
@@ -209,20 +216,40 @@
                   <div class="admin-table-cell--primary">{incident.component}</div>
                 </td>
                 <td data-label="Etki">
-                  {@html ui.createBadge({ label: ((incident.impact || '').toUpperCase()), variant: (incident.impact) === 'kesinti' ? 'danger' : 'warning', size: 'sm' })}
+                  {@html ui.createBadge({
+                    label: (incident.impact || '').toUpperCase(),
+                    variant: incident.impact === 'kesinti' ? 'danger' : 'warning',
+                    size: 'sm'
+                  })}
                 </td>
                 <td data-label="Başlık">
                   <div class="admin-table-cell--meta">{incident.title}</div>
                 </td>
                 <td data-label="Başlangıç">
-                  <div class="admin-table-cell--meta">{new Date(incident.created_at || incident.start_time || incident.started_at).toLocaleString('tr-TR')}</div>
+                  <div class="admin-table-cell--meta">
+                    {new Date(
+                      incident.created_at || incident.start_time || incident.started_at
+                    ).toLocaleString('tr-TR')}
+                  </div>
                 </td>
                 <td class="col-actions">
                   <div class="u-flex u-items-center u-gap-xs u-justify-end">
-                    <button type="button" class="btn-icon btn-icon--danger" aria-label="Sil" title="Sil" onclick={() => handleDeleteIncident(incident)}>
+                    <button
+                      type="button"
+                      class="btn-icon btn-icon--danger"
+                      aria-label="Sil"
+                      title="Sil"
+                      onclick={() => handleDeleteIncident(incident)}
+                    >
                       {@html icon('trash', 16)}
                     </button>
-                    <button type="button" class="btn-icon" aria-label="Çözüldü İşaretle" title="Çözüldü İşaretle" onclick={() => handleResolveIncident(incident)}>
+                    <button
+                      type="button"
+                      class="btn-icon"
+                      aria-label="Çözüldü İşaretle"
+                      title="Çözüldü İşaretle"
+                      onclick={() => handleResolveIncident(incident)}
+                    >
                       {@html icon('check', 16)}
                     </button>
                   </div>
@@ -270,18 +297,42 @@
                   <div class="admin-table-cell--meta">{incident.title}</div>
                 </td>
                 <td data-label="Başlangıç">
-                  <div class="admin-table-cell--meta">{new Date(incident.created_at || incident.start_time || incident.started_at).toLocaleString('tr-TR')}</div>
+                  <div class="admin-table-cell--meta">
+                    {new Date(
+                      incident.created_at || incident.start_time || incident.started_at
+                    ).toLocaleString('tr-TR')}
+                  </div>
                 </td>
                 <td data-label="Bitiş">
-                  <div class="admin-table-cell--meta">{incident.resolved_at || incident.end_time || incident.ended_at ? new Date(incident.resolved_at || incident.end_time || incident.ended_at).toLocaleString('tr-TR') : '-'}</div>
+                  <div class="admin-table-cell--meta">
+                    {incident.resolved_at || incident.end_time || incident.ended_at
+                      ? new Date(
+                          incident.resolved_at || incident.end_time || incident.ended_at
+                        ).toLocaleString('tr-TR')
+                      : '-'}
+                  </div>
                 </td>
                 <td class="col-actions">
                   <div class="u-flex u-items-center u-gap-xs u-justify-end">
-                    <button type="button" class="btn-icon btn-icon--danger" aria-label="Sil" title="Sil" onclick={() => handleDeleteIncident(incident)}>
+                    <button
+                      type="button"
+                      class="btn-icon btn-icon--danger"
+                      aria-label="Sil"
+                      title="Sil"
+                      onclick={() => handleDeleteIncident(incident)}
+                    >
                       {@html icon('trash', 16)}
                     </button>
-                    <button type="button" class="btn-icon" aria-label="Yeniden Aç" title="Yeniden Aç" onclick={() => handleReopenIncident(incident)}>
-                      {@html icon('refresh', 16) || icon('rotate-ccw', 16) || icon('arrow-left', 16)}
+                    <button
+                      type="button"
+                      class="btn-icon"
+                      aria-label="Yeniden Aç"
+                      title="Yeniden Aç"
+                      onclick={() => handleReopenIncident(incident)}
+                    >
+                      {@html icon('refresh', 16) ||
+                        icon('rotate-ccw', 16) ||
+                        icon('arrow-left', 16)}
                     </button>
                   </div>
                 </td>
@@ -292,53 +343,63 @@
       </div>
 
       {#if totalPages > 1}
-        <Pagination
-          page={currentPage}
-          {totalPages}
-          {totalItems}
-          onPageChange={handlePageChange}
-        />
+        <Pagination page={currentPage} {totalPages} {totalItems} onPageChange={handlePageChange} />
       {/if}
     {/if}
   {/if}
 </div>
 
 {#if isIncidentModalOpen}
-<Modal options={{ title: 'Yeni Olay (Incident) Bildir', iconHtml: icon('alert-triangle', 24) }} onClose={() => (isIncidentModalOpen = false)}>
-  {#snippet children()}
-    <div class="form-group u-mb-md">
-      <div class="u-display-block u-mb-xs u-text-sm u-color-muted">Etkilenen Bileşen</div>
-      <Dropdown
-        options={[
-          { value: 'API Sunucusu', label: 'API Sunucusu' },
-          { value: 'Veritabanı', label: 'Veritabanı' },
-          { value: 'Botlar', label: 'Botlar' }
-        ]}
-        bind:value={newIncidentState.component}
-      />
-    </div>
-    <div class="form-group form-group--floating u-mb-md">
-      <input id="incident-title" type="text" class="form-input" placeholder=" " bind:value={newIncidentState.title}>
-      <label for="incident-title" class="form-label">Başlık</label>
-    </div>
-    <div class="form-group form-group--floating u-mb-md">
-      <textarea id="incident-message" class="form-input" rows="3" placeholder=" " bind:value={newIncidentState.message}></textarea>
-      <label for="incident-message" class="form-label">Mesaj/Açıklama</label>
-    </div>
-    <div class="form-group u-mb-md">
-      <div class="u-display-block u-mb-xs u-text-sm u-color-muted">Etki Seviyesi</div>
-      <Dropdown
-        options={[
-          { value: 'yavas', label: 'Yavaş (Degraded)' },
-          { value: 'kesinti', label: 'Kesinti (Outage)' }
-        ]}
-        bind:value={newIncidentState.impact}
-      />
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isIncidentModalOpen = false}>İptal</button>
-    <button class="btn btn--primary" onclick={submitIncident}>Bildir</button>
-  {/snippet}
-</Modal>
+  <Modal
+    options={{ title: 'Yeni Olay (Incident) Bildir', iconHtml: icon('alert-triangle', 24) }}
+    onClose={() => (isIncidentModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="form-group u-mb-md">
+        <div class="u-display-block u-mb-xs u-text-sm u-color-muted">Etkilenen Bileşen</div>
+        <Dropdown
+          options={[
+            { value: 'API Sunucusu', label: 'API Sunucusu' },
+            { value: 'Veritabanı', label: 'Veritabanı' },
+            { value: 'Botlar', label: 'Botlar' }
+          ]}
+          bind:value={newIncidentState.component}
+        />
+      </div>
+      <div class="form-group form-group--floating u-mb-md">
+        <input
+          id="incident-title"
+          type="text"
+          class="form-input"
+          placeholder=" "
+          bind:value={newIncidentState.title}
+        />
+        <label for="incident-title" class="form-label">Başlık</label>
+      </div>
+      <div class="form-group form-group--floating u-mb-md">
+        <textarea
+          id="incident-message"
+          class="form-input"
+          rows="3"
+          placeholder=" "
+          bind:value={newIncidentState.message}></textarea>
+        <label for="incident-message" class="form-label">Mesaj/Açıklama</label>
+      </div>
+      <div class="form-group u-mb-md">
+        <div class="u-display-block u-mb-xs u-text-sm u-color-muted">Etki Seviyesi</div>
+        <Dropdown
+          options={[
+            { value: 'yavas', label: 'Yavaş (Degraded)' },
+            { value: 'kesinti', label: 'Kesinti (Outage)' }
+          ]}
+          bind:value={newIncidentState.impact}
+        />
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isIncidentModalOpen = false)}>İptal</button
+      >
+      <button class="btn btn--primary" onclick={submitIncident}>Bildir</button>
+    {/snippet}
+  </Modal>
 {/if}

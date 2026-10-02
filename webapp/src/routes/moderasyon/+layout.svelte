@@ -1,84 +1,81 @@
 <script>
-  import "@/styles/pages/_admin.css";
-  import { page } from "$app/stores";
-  import { globalState } from "@/state.svelte.js";
-  import { icon } from "@/components/ui/icons.js";
-  import { slide } from "svelte/transition";
-  import { backOut, sineIn } from "svelte/easing";
-  import Seo from "@/components/ui/Seo.svelte";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import { goto } from "$app/navigation";
+  import '@/styles/pages/_admin.css';
+  import { page } from '$app/stores';
+  import { globalState } from '@/state.svelte.js';
+  import { icon } from '@/components/ui/icons.js';
+  import { slide } from 'svelte/transition';
+  import { backOut, sineIn } from 'svelte/easing';
+  import Seo from '@/components/ui/Seo.svelte';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import { goto } from '$app/navigation';
 
   let { children } = $props();
 
   const navConfig = [
     {
-      id: "mutfak",
-      title: "Mutfak",
+      id: 'mutfak',
+      title: 'Mutfak',
       links: [
-        { href: "/moderasyon/mutfak/yemekler", label: "Yemekler" },
-        { href: "/moderasyon/mutfak/tabela", label: "Tabela" },
-        { href: "/moderasyon/mutfak/kapsama", label: "Kapsama matrisi" },
-        { href: "/moderasyon/mutfak/gonderimler", label: "Gönderimler" },
-        { href: "/moderasyon/mutfak/bot", label: "Kepçe Bot" },
-      ],
+        { href: '/moderasyon/mutfak/yemekler', label: 'Yemekler' },
+        { href: '/moderasyon/mutfak/tabela', label: 'Tabela' },
+        { href: '/moderasyon/mutfak/kapsama', label: 'Kapsama matrisi' },
+        { href: '/moderasyon/mutfak/gonderimler', label: 'Gönderimler' },
+        { href: '/moderasyon/mutfak/bot', label: 'Kepçe Bot' }
+      ]
     },
     {
-      id: "yorumlar",
-      title: "Yorumlar",
-      links: [{ href: "/moderasyon/yorumlar", label: "Tüm yorumlar" }],
+      id: 'yorumlar',
+      title: 'Yorumlar',
+      links: [{ href: '/moderasyon/yorumlar', label: 'Tüm yorumlar' }]
     },
     {
-      id: "denetim",
-      title: "Denetim",
+      id: 'denetim',
+      title: 'Denetim',
       links: [
         {
-          href: "/moderasyon/denetim/sikayetler?tip=icerik",
-          label: "İçerik şikayetleri",
+          href: '/moderasyon/denetim/sikayetler?tip=icerik',
+          label: 'İçerik şikayetleri',
           isActive: (path, url) =>
-            path.includes("/denetim/sikayetler") &&
-            url.searchParams.get("tip") === "icerik",
+            path.includes('/denetim/sikayetler') && url.searchParams.get('tip') === 'icerik'
         },
         {
-          href: "/moderasyon/denetim/sikayetler?tip=hata",
-          label: "Hata bildirimleri",
+          href: '/moderasyon/denetim/sikayetler?tip=hata',
+          label: 'Hata bildirimleri',
           isActive: (path, url) =>
-            path.includes("/denetim/sikayetler") &&
-            url.searchParams.get("tip") === "hata",
+            path.includes('/denetim/sikayetler') && url.searchParams.get('tip') === 'hata'
         },
         {
-          href: "/moderasyon/denetim/sikayetler?tip=iletisim",
-          label: "İletişim mesajları",
+          href: '/moderasyon/denetim/sikayetler?tip=iletisim',
+          label: 'İletişim mesajları',
           isActive: (path, url) =>
-            path.includes("/denetim/sikayetler") &&
-            url.searchParams.get("tip") === "iletisim",
+            path.includes('/denetim/sikayetler') && url.searchParams.get('tip') === 'iletisim'
         },
-        { href: "/moderasyon/denetim/kullanicilar", label: "Kullanıcılar" },
-      ],
+        { href: '/moderasyon/denetim/kullanicilar', label: 'Kullanıcılar' }
+      ]
     },
     {
-      id: "altyapi",
-      title: "Altyapı",
+      id: 'altyapi',
+      title: 'Altyapı',
       links: [
-        { href: "/moderasyon/altyapi/sistem-sagligi", label: "Sistem sağlığı" },
-        { href: "/moderasyon/altyapi/veritabani", label: "Veritabanı konsolu" },
-        { href: "/moderasyon/altyapi/olaylar", label: "Olaylar" },
-        { href: "/moderasyon/altyapi/etiketler", label: "Etiketler" },
-      ],
-    },
+        { href: '/moderasyon/altyapi/sistem-sagligi', label: 'Sistem sağlığı' },
+        { href: '/moderasyon/altyapi/veritabani', label: 'Veritabanı konsolu' },
+        { href: '/moderasyon/altyapi/olaylar', label: 'Olaylar' },
+        { href: '/moderasyon/altyapi/etiketler', label: 'Etiketler' }
+      ]
+    }
   ];
 
   let navState = $state({
     mutfak: true,
     yorumlar: true,
     denetim: true,
-    altyapi: true,
+    altyapi: true
   });
 
   let currentPath = $derived($page.url.pathname);
 
   function isActive(href) {
-    return currentPath === href || currentPath.startsWith(href + "/");
+    return currentPath === href || currentPath.startsWith(href + '/');
   }
 </script>
 
@@ -110,7 +107,7 @@
             >
               {group.title}
               <div class="sidebar-nav-group__chevron">
-                {@html icon("chevronDown")}
+                {@html icon('chevronDown')}
               </div>
             </button>
             {#if navState[group.id]}
@@ -125,7 +122,7 @@
                     class="sidebar-nav-link"
                     class:sidebar-nav-link--active={link.isActive
                       ? link.isActive(currentPath, $page.url)
-                      : isActive(link.href.split("?")[0])}
+                      : isActive(link.href.split('?')[0])}
                   >
                     {link.label}
                   </a>

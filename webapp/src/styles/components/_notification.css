@@ -1,195 +1,197 @@
 @layer components {
-/* 
+  /* 
   _notifications.css 
 */
 
-.notification-page__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-xl);
-}
-
-.notification-page__header-left {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-}
-
-.notification-page__title {
-  font-family: var(--font-display);
-  font-size: var(--text-3xl);
-  font-weight: var(--font-weight-black);
-  color: var(--color-text);
-  margin: 0;
-}
-
-/* Time Groups */
-.notification-group {
-  margin-bottom: var(--space-xl);
-}
-
-.notification-group__title {
-  font-size: var(--text-sm);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text-secondary);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin-bottom: var(--space-md);
-}
-
-.notification-list {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-}
-
-/* Cards - aligned with meal-card style */
-.notification-card {
-  display: flex;
-  gap: var(--space-md);
-  padding: var(--space-lg);
-  background: var(--color-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  position: relative;
-  transition:
-    background-color var(--dur-fast) var(--ease-standard),
-    border-color var(--dur-fast) var(--ease-standard);
-  align-items: flex-start;
-}
-
-.notification-card:hover {
-  border-color: var(--color-border);
-}
-
-.notification-card--unread {
-  background: var(--color-surface-sunken);
-  border-color: var(--color-border);
-}
-
-.notification-card--unread .notification-card__title {
-  font-weight: var(--font-weight-black);
-}
-
-.notification-card__icon {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border-radius: var(--radius-md);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-surface-variant);
-  color: var(--color-text-secondary);
-}
-
-.notification-card--unread .notification-card__icon {
-  background-color: var(--color-accent-primary-light);
-  color: var(--color-accent-text);
-}
-
-.notification-card__content {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  min-width: 0;
-}
-
-.notification-card__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-xs);
-  gap: var(--space-sm);
-}
-
-.notification-card__title {
-  font-size: var(--text-base);
-  font-weight: var(--font-weight-bold);
-  color: var(--color-text);
-  margin: 0;
-  line-height: var(--leading-comfortable);
-  padding-right: var(--space-md);
-}
-
-.notification-card__time {
-  font-size: var(--text-xs);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-}
-
-.notification-card__message {
-  font-size: var(--text-sm);
-  color: var(--color-text-secondary);
-  margin: 0;
-  line-height: var(--leading-relaxed);
-  max-width: 100%;
-  overflow-wrap: anywhere;
-  word-break: break-word;
-}
-
-.notification-card__actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  margin-top: var(--space-sm);
-}
-
-.notification-page__header-actions {
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-wrap: wrap;
-}
-
-.notification-card__delete-btn {
-  margin-left: auto;
-  color: var(--color-text-dim);
-  opacity: 0.7;
-  transition: opacity var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
-}
-
-.notification-card__delete-btn:hover {
-  color: var(--color-accent-negative);
-  opacity: 1;
-}
-
-/* Badge for tabs */
-.notification-tab__badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--color-accent-negative);
-  color: var(--color-text-on-dark);
-  font-size: var(--text-2xs);
-  font-weight: var(--font-weight-bold);
-  border-radius: var(--radius-full);
-  padding: 2px 6px;
-  margin-left: var(--space-xs);
-  min-width: 20px;
-}
-
-@media (max-width: 600px) {
-  .notification-page {
-    margin-top: var(--space-lg);
-  }
-
   .notification-page__header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: var(--space-md);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-xl);
   }
 
-  .notification-card {
-    padding: var(--space-md);
+  .notification-page__header-left {
+    display: flex;
+    align-items: center;
     gap: var(--space-sm);
   }
 
+  .notification-page__title {
+    font-family: var(--font-display);
+    font-size: var(--text-3xl);
+    font-weight: var(--font-weight-black);
+    color: var(--color-text);
+    margin: 0;
+  }
+
+  /* Time Groups */
+  .notification-group {
+    margin-bottom: var(--space-xl);
+  }
+
+  .notification-group__title {
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-md);
+  }
+
+  .notification-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  /* Cards - aligned with meal-card style */
+  .notification-card {
+    display: flex;
+    gap: var(--space-md);
+    padding: var(--space-lg);
+    background: var(--color-card);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-lg);
+    position: relative;
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
+    align-items: flex-start;
+  }
+
+  .notification-card:hover {
+    border-color: var(--color-border);
+  }
+
+  .notification-card--unread {
+    background: var(--color-surface-sunken);
+    border-color: var(--color-border);
+  }
+
+  .notification-card--unread .notification-card__title {
+    font-weight: var(--font-weight-black);
+  }
+
   .notification-card__icon {
+    flex-shrink: 0;
     width: 40px;
     height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-surface-variant);
+    color: var(--color-text-secondary);
   }
-}
+
+  .notification-card--unread .notification-card__icon {
+    background-color: var(--color-accent-primary-light);
+    color: var(--color-accent-text);
+  }
+
+  .notification-card__content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+  }
+
+  .notification-card__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--space-xs);
+    gap: var(--space-sm);
+  }
+
+  .notification-card__title {
+    font-size: var(--text-base);
+    font-weight: var(--font-weight-bold);
+    color: var(--color-text);
+    margin: 0;
+    line-height: var(--leading-comfortable);
+    padding-right: var(--space-md);
+  }
+
+  .notification-card__time {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    white-space: nowrap;
+  }
+
+  .notification-card__message {
+    font-size: var(--text-sm);
+    color: var(--color-text-secondary);
+    margin: 0;
+    line-height: var(--leading-relaxed);
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .notification-card__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+  }
+
+  .notification-page__header-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    flex-wrap: wrap;
+  }
+
+  .notification-card__delete-btn {
+    margin-left: auto;
+    color: var(--color-text-dim);
+    opacity: 0.7;
+    transition:
+      opacity var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard);
+  }
+
+  .notification-card__delete-btn:hover {
+    color: var(--color-accent-negative);
+    opacity: 1;
+  }
+
+  /* Badge for tabs */
+  .notification-tab__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--color-accent-negative);
+    color: var(--color-text-on-dark);
+    font-size: var(--text-2xs);
+    font-weight: var(--font-weight-bold);
+    border-radius: var(--radius-full);
+    padding: 2px 6px;
+    margin-left: var(--space-xs);
+    min-width: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .notification-page {
+      margin-top: var(--space-lg);
+    }
+
+    .notification-page__header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-md);
+    }
+
+    .notification-card {
+      padding: var(--space-md);
+      gap: var(--space-sm);
+    }
+
+    .notification-card__icon {
+      width: 40px;
+      height: 40px;
+    }
+  }
 }

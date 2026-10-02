@@ -2,116 +2,200 @@
 
 export const BANG_DEFINITIONS = [
   // Ansiklopedi & Bilgi
-  { prefix: "!w", name: "Vikipedi (TR)", url: "https://tr.wikipedia.org/wiki/Special:Search?search=" },
-  { prefix: "!wen", name: "Wikipedia (EN)", url: "https://en.wikipedia.org/wiki/Special:Search?search=" },
-  { prefix: "!tdk", name: "TDK Güncel Türkçe Sözlük", url: "https://sozluk.gov.tr/?ara=" },
-  { prefix: "!arch", name: "ArchWiki", url: "https://wiki.archlinux.org/index.php?search=" },
-  { prefix: "!wikt", name: "Vikisözlük", url: "https://tr.wiktionary.org/wiki/Special:Search?search=" },
+  {
+    prefix: '!w',
+    name: 'Vikipedi (TR)',
+    url: 'https://tr.wikipedia.org/wiki/Special:Search?search='
+  },
+  {
+    prefix: '!wen',
+    name: 'Wikipedia (EN)',
+    url: 'https://en.wikipedia.org/wiki/Special:Search?search='
+  },
+  { prefix: '!tdk', name: 'TDK Güncel Türkçe Sözlük', url: 'https://sozluk.gov.tr/?ara=' },
+  { prefix: '!arch', name: 'ArchWiki', url: 'https://wiki.archlinux.org/index.php?search=' },
+  {
+    prefix: '!wikt',
+    name: 'Vikisözlük',
+    url: 'https://tr.wiktionary.org/wiki/Special:Search?search='
+  },
 
   // Öğrenci & Akademi (TR)
-  { prefix: "!kyk", name: "GSB KYK Portal", url: "https://www.google.com/search?q=site%3Agsb.gov.tr+" },
-  { prefix: "!yok", name: "YÖK Atlas", url: "https://yokatlas.yok.gov.tr/search.php?q=" },
-  { prefix: "!osym", name: "ÖSYM", url: "https://www.osym.gov.tr/TR,0/arama.html?q=" },
-  { prefix: "!dergipark", name: "DergiPark Akademik", url: "https://dergipark.org.tr/tr/search?q=" },
-  { prefix: "!tubitak", name: "TÜBİTAK", url: "https://www.tubitak.gov.tr/tr/arama?search_api_views_fulltext=" },
-  { prefix: "!scholar", name: "Google Akademik", url: "https://scholar.google.com/scholar?q=" },
-  { prefix: "!arxiv", name: "arXiv", url: "https://arxiv.org/search/?query=" },
-  { prefix: "!scihub", name: "Sci-Hub", url: "https://sci-hub.se/" },
-  { prefix: "!kepce", name: "Kepçe Menü", url: "https://kepce.org/" },
+  {
+    prefix: '!kyk',
+    name: 'GSB KYK Portal',
+    url: 'https://www.google.com/search?q=site%3Agsb.gov.tr+'
+  },
+  { prefix: '!yok', name: 'YÖK Atlas', url: 'https://yokatlas.yok.gov.tr/search.php?q=' },
+  { prefix: '!osym', name: 'ÖSYM', url: 'https://www.osym.gov.tr/TR,0/arama.html?q=' },
+  {
+    prefix: '!dergipark',
+    name: 'DergiPark Akademik',
+    url: 'https://dergipark.org.tr/tr/search?q='
+  },
+  {
+    prefix: '!tubitak',
+    name: 'TÜBİTAK',
+    url: 'https://www.tubitak.gov.tr/tr/arama?search_api_views_fulltext='
+  },
+  { prefix: '!scholar', name: 'Google Akademik', url: 'https://scholar.google.com/scholar?q=' },
+  { prefix: '!arxiv', name: 'arXiv', url: 'https://arxiv.org/search/?query=' },
+  { prefix: '!scihub', name: 'Sci-Hub', url: 'https://sci-hub.se/' },
+  { prefix: '!kepce', name: 'Kepçe Menü', url: 'https://kepce.org/' },
 
   // Üniversiteler (TR)
-  { prefix: "!itu", name: "İstanbul Teknik Üniversitesi", url: "https://www.google.com/search?q=site%3Aitu.edu.tr+" },
-  { prefix: "!odtu", name: "Orta Doğu Teknik Üniversitesi", url: "https://www.google.com/search?q=site%3Ametu.edu.tr+" },
-  { prefix: "!boun", name: "Boğaziçi Üniversitesi", url: "https://www.google.com/search?q=site%3Aboun.edu.tr+" },
-  { prefix: "!hacettepe", name: "Hacettepe Üniversitesi", url: "https://www.google.com/search?q=site%3Ahacettepe.edu.tr+" },
-  { prefix: "!ege", name: "Ege Üniversitesi", url: "https://www.google.com/search?q=site%3Aege.edu.tr+" },
-  { prefix: "!deu", name: "Dokuz Eylül Üniversitesi", url: "https://www.google.com/search?q=site%3Adeu.edu.tr+" },
-  { prefix: "!ankara", name: "Ankara Üniversitesi", url: "https://www.google.com/search?q=site%3Aankara.edu.tr+" },
-  { prefix: "!marmara", name: "Marmara Üniversitesi", url: "https://www.google.com/search?q=site%3Amarmara.edu.tr+" },
-  { prefix: "!ytu", name: "Yıldız Teknik Üniversitesi", url: "https://www.google.com/search?q=site%3Aytu.edu.tr+" },
-  { prefix: "!iu", name: "İstanbul Üniversitesi", url: "https://www.google.com/search?q=site%3Aistanbul.edu.tr+" },
-  { prefix: "!gsu", name: "Galatasaray Üniversitesi", url: "https://www.google.com/search?q=site%3Agsu.edu.tr+" },
+  {
+    prefix: '!itu',
+    name: 'İstanbul Teknik Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Aitu.edu.tr+'
+  },
+  {
+    prefix: '!odtu',
+    name: 'Orta Doğu Teknik Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Ametu.edu.tr+'
+  },
+  {
+    prefix: '!boun',
+    name: 'Boğaziçi Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Aboun.edu.tr+'
+  },
+  {
+    prefix: '!hacettepe',
+    name: 'Hacettepe Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Ahacettepe.edu.tr+'
+  },
+  {
+    prefix: '!ege',
+    name: 'Ege Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Aege.edu.tr+'
+  },
+  {
+    prefix: '!deu',
+    name: 'Dokuz Eylül Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Adeu.edu.tr+'
+  },
+  {
+    prefix: '!ankara',
+    name: 'Ankara Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Aankara.edu.tr+'
+  },
+  {
+    prefix: '!marmara',
+    name: 'Marmara Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Amarmara.edu.tr+'
+  },
+  {
+    prefix: '!ytu',
+    name: 'Yıldız Teknik Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Aytu.edu.tr+'
+  },
+  {
+    prefix: '!iu',
+    name: 'İstanbul Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Aistanbul.edu.tr+'
+  },
+  {
+    prefix: '!gsu',
+    name: 'Galatasaray Üniversitesi',
+    url: 'https://www.google.com/search?q=site%3Agsu.edu.tr+'
+  },
 
   // Kamu & Resmi Hizmetler
-  { prefix: "!turkiye", name: "e-Devlet Kapısı", url: "https://www.turkiye.gov.tr/arama?aranan=" },
-  { prefix: "!edevlet", name: "e-Devlet Kapısı", url: "https://www.turkiye.gov.tr/arama?aranan=" },
-  { prefix: "!resmigazete", name: "T.C. Resmî Gazete", url: "https://www.resmigazete.gov.tr/arama?ara=" },
-  { prefix: "!meb", name: "Millî Eğitim Bakanlığı", url: "https://www.meb.gov.tr/arama.php?q=" },
-  { prefix: "!tuik", name: "TÜİK", url: "https://data.tuik.gov.tr/Search/Search?text=" },
+  { prefix: '!turkiye', name: 'e-Devlet Kapısı', url: 'https://www.turkiye.gov.tr/arama?aranan=' },
+  { prefix: '!edevlet', name: 'e-Devlet Kapısı', url: 'https://www.turkiye.gov.tr/arama?aranan=' },
+  {
+    prefix: '!resmigazete',
+    name: 'T.C. Resmî Gazete',
+    url: 'https://www.resmigazete.gov.tr/arama?ara='
+  },
+  { prefix: '!meb', name: 'Millî Eğitim Bakanlığı', url: 'https://www.meb.gov.tr/arama.php?q=' },
+  { prefix: '!tuik', name: 'TÜİK', url: 'https://data.tuik.gov.tr/Search/Search?text=' },
 
   // Geliştirici & Kod
-  { prefix: "!gh", name: "GitHub", url: "https://github.com/search?q=" },
-  { prefix: "!github", name: "GitHub", url: "https://github.com/search?q=" },
-  { prefix: "!gl", name: "GitLab", url: "https://gitlab.com/search?search=" },
-  { prefix: "!so", name: "Stack Overflow", url: "https://stackoverflow.com/search?q=" },
-  { prefix: "!npm", name: "npm Packages", url: "https://www.npmjs.com/search?q=" },
-  { prefix: "!crates", name: "Crates.io (Rust)", url: "https://crates.io/search?q=" },
-  { prefix: "!pypi", name: "PyPI (Python)", url: "https://pypi.org/search/?q=" },
-  { prefix: "!mdn", name: "MDN Web Docs", url: "https://developer.mozilla.org/search?q=" },
-  { prefix: "!hf", name: "Hugging Face", url: "https://huggingface.co/models?search=" },
-  { prefix: "!pkg", name: "Go Packages", url: "https://pkg.go.dev/search?q=" },
-  { prefix: "!docker", name: "Docker Hub", url: "https://hub.docker.com/search?q=" },
-  { prefix: "!deno", name: "Deno", url: "https://docs.deno.com/search?q=" },
-  { prefix: "!bun", name: "Bun", url: "https://bun.sh/docs#search=" },
-  { prefix: "!devdocs", name: "DevDocs", url: "https://devdocs.io/#q=" },
-  { prefix: "!caniuse", name: "Can I Use", url: "https://caniuse.com/?search=" },
+  { prefix: '!gh', name: 'GitHub', url: 'https://github.com/search?q=' },
+  { prefix: '!github', name: 'GitHub', url: 'https://github.com/search?q=' },
+  { prefix: '!gl', name: 'GitLab', url: 'https://gitlab.com/search?search=' },
+  { prefix: '!so', name: 'Stack Overflow', url: 'https://stackoverflow.com/search?q=' },
+  { prefix: '!npm', name: 'npm Packages', url: 'https://www.npmjs.com/search?q=' },
+  { prefix: '!crates', name: 'Crates.io (Rust)', url: 'https://crates.io/search?q=' },
+  { prefix: '!pypi', name: 'PyPI (Python)', url: 'https://pypi.org/search/?q=' },
+  { prefix: '!mdn', name: 'MDN Web Docs', url: 'https://developer.mozilla.org/search?q=' },
+  { prefix: '!hf', name: 'Hugging Face', url: 'https://huggingface.co/models?search=' },
+  { prefix: '!pkg', name: 'Go Packages', url: 'https://pkg.go.dev/search?q=' },
+  { prefix: '!docker', name: 'Docker Hub', url: 'https://hub.docker.com/search?q=' },
+  { prefix: '!deno', name: 'Deno', url: 'https://docs.deno.com/search?q=' },
+  { prefix: '!bun', name: 'Bun', url: 'https://bun.sh/docs#search=' },
+  { prefix: '!devdocs', name: 'DevDocs', url: 'https://devdocs.io/#q=' },
+  { prefix: '!caniuse', name: 'Can I Use', url: 'https://caniuse.com/?search=' },
 
   // Multimedya & Video & Müzik
-  { prefix: "!yt", name: "YouTube", url: "https://www.youtube.com/results?search_query=" },
-  { prefix: "!ytm", name: "YouTube Music", url: "https://music.youtube.com/search?q=" },
-  { prefix: "!sp", name: "Spotify", url: "https://open.spotify.com/search/" },
-  { prefix: "!genius", name: "Genius (Şarkı Sözleri)", url: "https://genius.com/search?q=" },
-  { prefix: "!sc", name: "SoundCloud", url: "https://soundcloud.com/search?q=" },
-  { prefix: "!twitch", name: "Twitch", url: "https://www.twitch.tv/search?term=" },
-  { prefix: "!steam", name: "Steam", url: "https://store.steampowered.com/search/?term=" },
-  { prefix: "!imdb", name: "IMDb", url: "https://www.imdb.com/find?q=" },
-  { prefix: "!lb", name: "Letterboxd", url: "https://letterboxd.com/search/" },
-  { prefix: "!goodreads", name: "Goodreads", url: "https://www.goodreads.com/search?q=" },
-  { prefix: "!unsplash", name: "Unsplash", url: "https://unsplash.com/s/photos/" },
-  { prefix: "!vimeo", name: "Vimeo", url: "https://vimeo.com/search?q=" },
-  { prefix: "!pin", name: "Pinterest", url: "https://www.pinterest.com/search/pins/?q=" },
+  { prefix: '!yt', name: 'YouTube', url: 'https://www.youtube.com/results?search_query=' },
+  { prefix: '!ytm', name: 'YouTube Music', url: 'https://music.youtube.com/search?q=' },
+  { prefix: '!sp', name: 'Spotify', url: 'https://open.spotify.com/search/' },
+  { prefix: '!genius', name: 'Genius (Şarkı Sözleri)', url: 'https://genius.com/search?q=' },
+  { prefix: '!sc', name: 'SoundCloud', url: 'https://soundcloud.com/search?q=' },
+  { prefix: '!twitch', name: 'Twitch', url: 'https://www.twitch.tv/search?term=' },
+  { prefix: '!steam', name: 'Steam', url: 'https://store.steampowered.com/search/?term=' },
+  { prefix: '!imdb', name: 'IMDb', url: 'https://www.imdb.com/find?q=' },
+  { prefix: '!lb', name: 'Letterboxd', url: 'https://letterboxd.com/search/' },
+  { prefix: '!goodreads', name: 'Goodreads', url: 'https://www.goodreads.com/search?q=' },
+  { prefix: '!unsplash', name: 'Unsplash', url: 'https://unsplash.com/s/photos/' },
+  { prefix: '!vimeo', name: 'Vimeo', url: 'https://vimeo.com/search?q=' },
+  { prefix: '!pin', name: 'Pinterest', url: 'https://www.pinterest.com/search/pins/?q=' },
 
   // Sosyal Medya & Topluluk
-  { prefix: "!r", name: "Reddit", url: "https://www.reddit.com/search/?q=" },
-  { prefix: "!eksi", name: "Ekşi Sözlük", url: "https://eksisozluk.com/?q=" },
-  { prefix: "!x", name: "X (Twitter)", url: "https://twitter.com/search?q=" },
-  { prefix: "!hn", name: "Hacker News", url: "https://hn.algolia.com/?q=" },
+  { prefix: '!r', name: 'Reddit', url: 'https://www.reddit.com/search/?q=' },
+  { prefix: '!eksi', name: 'Ekşi Sözlük', url: 'https://eksisozluk.com/?q=' },
+  { prefix: '!x', name: 'X (Twitter)', url: 'https://twitter.com/search?q=' },
+  { prefix: '!hn', name: 'Hacker News', url: 'https://hn.algolia.com/?q=' },
 
   // Arama Motorları & Yapay Zeka
-  { prefix: "!g", name: "Google", url: "https://www.google.com/search?q=" },
-  { prefix: "!ddg", name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
-  { prefix: "!brave", name: "Brave Search", url: "https://search.brave.com/search?q=" },
-  { prefix: "!bing", name: "Bing", url: "https://www.bing.com/search?q=" },
-  { prefix: "!yandex", name: "Yandex", url: "https://yandex.com.tr/search/?text=" },
-  { prefix: "!chatgpt", name: "ChatGPT", url: "https://chatgpt.com/?q=" },
-  { prefix: "!claude", name: "Claude", url: "https://claude.ai/new?q=" },
-  { prefix: "!gemini", name: "Google Gemini", url: "https://gemini.google.com/app" },
-  { prefix: "!perplex", name: "Perplexity AI", url: "https://www.perplexity.ai/search?q=" },
+  { prefix: '!g', name: 'Google', url: 'https://www.google.com/search?q=' },
+  { prefix: '!ddg', name: 'DuckDuckGo', url: 'https://duckduckgo.com/?q=' },
+  { prefix: '!brave', name: 'Brave Search', url: 'https://search.brave.com/search?q=' },
+  { prefix: '!bing', name: 'Bing', url: 'https://www.bing.com/search?q=' },
+  { prefix: '!yandex', name: 'Yandex', url: 'https://yandex.com.tr/search/?text=' },
+  { prefix: '!chatgpt', name: 'ChatGPT', url: 'https://chatgpt.com/?q=' },
+  { prefix: '!claude', name: 'Claude', url: 'https://claude.ai/new?q=' },
+  { prefix: '!gemini', name: 'Google Gemini', url: 'https://gemini.google.com/app' },
+  { prefix: '!perplex', name: 'Perplexity AI', url: 'https://www.perplexity.ai/search?q=' },
 
   // Haritalar & Coğrafya
-  { prefix: "!m", name: "OpenStreetMap", url: "https://www.openstreetmap.org/search?query=" },
-  { prefix: "!maps", name: "Google Haritalar", url: "https://www.google.com/maps/search/" },
-  { prefix: "!gmaps", name: "Google Haritalar", url: "https://www.google.com/maps/search/" },
+  { prefix: '!m', name: 'OpenStreetMap', url: 'https://www.openstreetmap.org/search?query=' },
+  { prefix: '!maps', name: 'Google Haritalar', url: 'https://www.google.com/maps/search/' },
+  { prefix: '!gmaps', name: 'Google Haritalar', url: 'https://www.google.com/maps/search/' },
 
   // Alışveriş
-  { prefix: "!trendyol", name: "Trendyol", url: "https://www.trendyol.com/sr?q=" },
-  { prefix: "!hepsiburada", name: "Hepsiburada", url: "https://www.hepsiburada.com/ara?q=" },
-  { prefix: "!amazon", name: "Amazon TR", url: "https://www.amazon.com.tr/s?k=" },
-  { prefix: "!sahibinden", name: "Sahibinden", url: "https://www.sahibinden.com/kelime-ile-arama?query_text=" },
+  { prefix: '!trendyol', name: 'Trendyol', url: 'https://www.trendyol.com/sr?q=' },
+  { prefix: '!hepsiburada', name: 'Hepsiburada', url: 'https://www.hepsiburada.com/ara?q=' },
+  { prefix: '!amazon', name: 'Amazon TR', url: 'https://www.amazon.com.tr/s?k=' },
+  {
+    prefix: '!sahibinden',
+    name: 'Sahibinden',
+    url: 'https://www.sahibinden.com/kelime-ile-arama?query_text='
+  },
 
   // Çeviri & Araçlar
-  { prefix: "!tr", name: "Google Çeviri (TR)", url: "https://translate.google.com/?sl=auto&tl=tr&text=" },
-  { prefix: "!tren", name: "Google Çeviri (EN)", url: "https://translate.google.com/?sl=auto&tl=en&text=" },
-  { prefix: "!wayback", name: "Wayback Machine", url: "https://web.archive.org/web/*/" }
+  {
+    prefix: '!tr',
+    name: 'Google Çeviri (TR)',
+    url: 'https://translate.google.com/?sl=auto&tl=tr&text='
+  },
+  {
+    prefix: '!tren',
+    name: 'Google Çeviri (EN)',
+    url: 'https://translate.google.com/?sl=auto&tl=en&text='
+  },
+  { prefix: '!wayback', name: 'Wayback Machine', url: 'https://web.archive.org/web/*/' }
 ];
 
 export function resolveBang(query) {
-  if (!query || !query.startsWith("!")) return null;
+  if (!query || !query.startsWith('!')) return null;
 
   const trimmed = query.trim();
   const parts = trimmed.split(/\s+/);
   const prefix = parts[0].toLowerCase();
-  const rawTerm = parts.slice(1).join(" ").trim();
+  const rawTerm = parts.slice(1).join(' ').trim();
 
   // 1. Yerel tanımlı hızlı bang'ler (0ms direkt yönlendirme)
   const match = BANG_DEFINITIONS.find((b) => b.prefix === prefix);

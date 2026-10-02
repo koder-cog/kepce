@@ -26,7 +26,7 @@
       globalState.user = {
         ...globalState.user,
         consent_cross_border: true,
-        consent_cross_border_at: updatedUser.consent_cross_border_at || new Date().toISOString(),
+        consent_cross_border_at: updatedUser.consent_cross_border_at || new Date().toISOString()
       };
       if (typeof window !== 'undefined') {
         localStorage.setItem('kepce_user_cache', JSON.stringify(globalState.user));
@@ -60,7 +60,7 @@
     title: 'Yurt Dışı Barındırma Onayı',
     disableEscape: isExpired,
     disableHistory: true,
-    footerClass: 'c-modal__footer--stack',
+    footerClass: 'c-modal__footer--stack'
   }}
   onClose={() => {
     if (!isExpired) {
@@ -70,39 +70,33 @@
 >
   {#snippet children()}
     <p>
-      Kepçe'nin sunucuları Fransa'da barınıyor. Sitedeki menüleri ve fiyatları incelemek için üyelik gerekmiyor ancak oy vermek ve yorum yapmak için açtığın hesabın verileri mevzuat gereği teknik olarak yurt dışına aktarılmış sayılıyor.
+      Kepçe'nin sunucuları Fransa'da barınıyor. Sitedeki menüleri ve fiyatları incelemek için üyelik
+      gerekmiyor ancak oy vermek ve yorum yapmak için açtığın hesabın verileri mevzuat gereği teknik
+      olarak yurt dışına aktarılmış sayılıyor.
     </p>
     <p class="u-mt-sm">
       {#if !isExpired}
-        KVKK Madde 9 uyarınca hesabını bu şekilde kullanabilmen için {remainingDays} gün içinde onay vermen gerekiyor. Verilerin kimseye satılmaz veya pazarlama için kullanılmaz. Ayrıntılara dilediğin zaman aydınlatma metninden bakabilirsin.
+        KVKK Madde 9 uyarınca hesabını bu şekilde kullanabilmen için {remainingDays} gün içinde onay vermen
+        gerekiyor. Verilerin kimseye satılmaz veya pazarlama için kullanılmaz. Ayrıntılara dilediğin zaman
+        aydınlatma metninden bakabilirsin.
       {:else}
-        KVKK Madde 9 uyarınca hesabını bu şekilde kullanabilmen için onay vermen gerekiyor. Verilerin kimseye satılmaz veya pazarlama için kullanılmaz. Ayrıntılara dilediğin zaman aydınlatma metninden bakabilirsin.
+        KVKK Madde 9 uyarınca hesabını bu şekilde kullanabilmen için onay vermen gerekiyor.
+        Verilerin kimseye satılmaz veya pazarlama için kullanılmaz. Ayrıntılara dilediğin zaman
+        aydınlatma metninden bakabilirsin.
       {/if}
     </p>
   {/snippet}
 
   {#snippet footer()}
-    <button
-      class="btn btn--primary btn--full"
-      onclick={handleAccept}
-      disabled={loading}
-    >
+    <button class="btn btn--primary btn--full" onclick={handleAccept} disabled={loading}>
       Onaylıyorum
     </button>
     {#if !isExpired}
-      <button
-        class="btn btn--secondary btn--full"
-        onclick={handlePostpone}
-        disabled={loading}
-      >
+      <button class="btn btn--secondary btn--full" onclick={handlePostpone} disabled={loading}>
         Sonra hatırlat
       </button>
     {/if}
-    <button
-      class="btn btn--danger btn--full"
-      onclick={handleDeleteAccount}
-      disabled={loading}
-    >
+    <button class="btn btn--danger btn--full" onclick={handleDeleteAccount} disabled={loading}>
       Hesabımı sil
     </button>
   {/snippet}

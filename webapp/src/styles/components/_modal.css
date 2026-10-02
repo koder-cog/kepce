@@ -1,5 +1,4 @@
 @layer components {
-
   /* ── 1. Modal Base & Layout ────────────────────────────────── */
   .c-modal {
     position: fixed;
@@ -227,7 +226,9 @@
     border-radius: 50%;
     cursor: pointer;
     line-height: 0;
-    transition: background-color var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
     z-index: 100;
   }
 
@@ -252,7 +253,9 @@
   }
 
   .c-rating-stars span {
-    transition: transform var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard);
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard);
   }
 
   .c-rating-stars span:hover {
@@ -305,8 +308,6 @@
     padding: var(--space-xl) 0;
     color: var(--color-muted);
   }
-
-
 
   .c-takeaway-modal__note {
     display: flex;

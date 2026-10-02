@@ -1,7 +1,7 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
-  import MapCard from "./MapCard.svelte";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+  import { icon } from '@/components/ui/icons.js';
+  import MapCard from './MapCard.svelte';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
 
   let { infobox } = $props();
 
@@ -15,40 +15,43 @@
 
   // Standart hava durumu GNOME ikon eşleştirmesi
   function getWeatherInfo(code) {
-    if (code === 0) return { label: "Açık", iconName: "sun" };
-    if ([1, 2, 3].includes(code)) return { label: "Parçalı Bulutlu", iconName: "cloudSun" };
-    if ([45, 48].includes(code)) return { label: "Sisli", iconName: "fog" };
-    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code)) return { label: "Yağmurlu", iconName: "rain" };
-    if ([71, 73, 75, 85, 86].includes(code)) return { label: "Karlı", iconName: "snow" };
-    if ([95, 96, 99].includes(code)) return { label: "Fırtına", iconName: "storm" };
-    return { label: "Açık", iconName: "sun" };
+    if (code === 0) return { label: 'Açık', iconName: 'sun' };
+    if ([1, 2, 3].includes(code)) return { label: 'Parçalı Bulutlu', iconName: 'cloudSun' };
+    if ([45, 48].includes(code)) return { label: 'Sisli', iconName: 'fog' };
+    if ([51, 53, 55, 61, 63, 65, 80, 81, 82].includes(code))
+      return { label: 'Yağmurlu', iconName: 'rain' };
+    if ([71, 73, 75, 85, 86].includes(code)) return { label: 'Karlı', iconName: 'snow' };
+    if ([95, 96, 99].includes(code)) return { label: 'Fırtına', iconName: 'storm' };
+    return { label: 'Açık', iconName: 'sun' };
   }
 
   function formatDayName(dateStr) {
     try {
       const d = new Date(dateStr);
-      return d.toLocaleDateString("tr-TR", { weekday: "short" });
+      return d.toLocaleDateString('tr-TR', { weekday: 'short' });
     } catch {
-      return "";
+      return '';
     }
   }
 
-  let entityType = $derived(infobox?.entityType || "thing");
+  let entityType = $derived(infobox?.entityType || 'thing');
   let place = $derived(infobox?.placeInfo);
   let weather = $derived(place?.weather);
-  let hasValidPlace = $derived(entityType === "place" && !!place?.lat && !!place?.lon);
-  let hasValidOrgMap = $derived(entityType === "organization" && !!place?.lat && !!place?.lon);
+  let hasValidPlace = $derived(entityType === 'place' && !!place?.lat && !!place?.lon);
+  let hasValidOrgMap = $derived(entityType === 'organization' && !!place?.lat && !!place?.lon);
   let hasImage = $derived(Boolean(infobox?.imgSrc) && !imgError);
 
   // Vikipedi bağlantısını bulma
   let wikiUrl = $derived.by(() => {
-    if (!infobox) return "";
+    if (!infobox) return '';
     const urls = infobox.urls || [];
-    const wikiItem = urls.find((u) => u.title === "Vikipedi" || (u.url && u.url.includes("wikipedia.org")));
+    const wikiItem = urls.find(
+      (u) => u.title === 'Vikipedi' || (u.url && u.url.includes('wikipedia.org'))
+    );
     if (wikiItem?.url) return wikiItem.url;
     if (urls.length > 0 && urls[0].url) return urls[0].url;
     if (infobox.id) return `https://tr.wikipedia.org/wiki/${encodeURIComponent(infobox.id)}`;
-    return "";
+    return '';
   });
 
   // Dinamik alt başlık / unvan (Wikidata etiket ve açıklaması öncelikli)
@@ -56,16 +59,16 @@
     if (infobox?.tagline) return infobox.tagline;
     if (infobox?.subtitle) return infobox.subtitle;
 
-    if (entityType === "place") {
+    if (entityType === 'place') {
       if (place?.country) return place.country;
-      const match = (infobox?.content || "").match(/^([^,.]+)/);
-      return match ? match[1].trim() : "";
+      const match = (infobox?.content || '').match(/^([^,.]+)/);
+      return match ? match[1].trim() : '';
     }
-    if (entityType === "person") {
-      const text = infobox?.content || "";
+    if (entityType === 'person') {
+      const text = infobox?.content || '';
       // Eğer infobox'ta açık meslek/unvan niteliği varsa onu tercih et
       const meslekAttr = (infobox?.attributes || []).find((a) =>
-        ["mesleği", "meslek", "unvanı", "unvan", "uğraş"].includes((a.label || "").toLowerCase())
+        ['mesleği', 'meslek', 'unvanı', 'unvan', 'uğraş'].includes((a.label || '').toLowerCase())
       );
       if (meslekAttr?.value) {
         return meslekAttr.value;
@@ -74,16 +77,16 @@
       const parts = text.split(/[,–-]/);
       if (parts.length > 1 && parts[1].trim().length > 3 && parts[1].trim().length < 60) {
         const candidate = parts[1].trim();
-        const firstSentence = text.split(".")[0] || "";
+        const firstSentence = text.split('.')[0] || '';
         // Eğer bu parça cümlenin içinde aynen yer alıyorsa alt başlığı boş geç, papağanlık yapma
         if (firstSentence.toLowerCase().includes(candidate.toLowerCase()) && text.length < 200) {
-          return "";
+          return '';
         }
         return candidate;
       }
-      return "";
+      return '';
     }
-    return "";
+    return '';
   });
 
   // En önemli özet nitelikler (Grid simetrisi için tam 6, 4 veya 2 eleman)
@@ -112,7 +115,11 @@
     <!-- ── 2. VİTRİN VE İÇERİK DÜZENİ ───────────────────────────── -->
     {#if hasValidPlace}
       <!-- 2A. Coğrafi Yer: Ferah Vitrin (Resim + Google Harita + Modern Hava Durumu) -->
-      <div class="c-knowledge-showcase" class:is-map-expanded={mapExpanded} class:has-weather={!!weather}>
+      <div
+        class="c-knowledge-showcase"
+        class:is-map-expanded={mapExpanded}
+        class:has-weather={!!weather}
+      >
         <!-- Fotoğraf -->
         <div class="c-knowledge-tile c-knowledge-tile--photo">
           {#if infobox.imgSrc && !imgError}
@@ -125,7 +132,7 @@
             />
           {:else}
             <div class="c-knowledge-tile__fallback">
-              {@html icon("image", 40)}
+              {@html icon('image', 40)}
             </div>
           {/if}
         </div>
@@ -187,7 +194,7 @@
             class="c-knowledge-more-link"
           >
             <span>Devamını Vikipedi'de oku</span>
-            <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+            <span class="c-knowledge-more-icon">{@html icon('externalLink', 12)}</span>
           </a>
         {/if}
 
@@ -202,8 +209,7 @@
           </div>
         {/if}
       </div>
-
-    {:else if entityType === "person"}
+    {:else if entityType === 'person'}
       <!-- 2B. Kişi / Biyografi: Sol Portre + Sağ Künye & Biyografi -->
       <div class="c-knowledge-person-layout" class:has-no-image={!hasImage}>
         {#if hasImage}
@@ -231,7 +237,7 @@
               class="c-knowledge-more-link"
             >
               <span>Devamını Vikipedi'de oku</span>
-              <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+              <span class="c-knowledge-more-icon">{@html icon('externalLink', 12)}</span>
             </a>
           {/if}
 
@@ -247,7 +253,6 @@
           {/if}
         </div>
       </div>
-
     {:else if hasValidOrgMap}
       <!-- 2C. Kurum: Medya + Yerleşke Google Haritası -->
       <div class="c-knowledge-org-showcase" class:is-map-expanded={orgMapExpanded}>
@@ -284,7 +289,7 @@
             class="c-knowledge-more-link"
           >
             <span>Devamını Vikipedi'de oku</span>
-            <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+            <span class="c-knowledge-more-icon">{@html icon('externalLink', 12)}</span>
           </a>
         {/if}
 
@@ -299,7 +304,6 @@
           </div>
         {/if}
       </div>
-
     {:else}
       <!-- 2D. Nesne / Kavram: Sol Medya + Sağ Tanım & Nitelikler -->
       <div class="c-knowledge-thing-layout" class:has-no-image={!hasImage}>
@@ -327,7 +331,7 @@
               class="c-knowledge-more-link"
             >
               <span>Devamını Vikipedi'de oku</span>
-              <span class="c-knowledge-more-icon">{@html icon("externalLink", 12)}</span>
+              <span class="c-knowledge-more-icon">{@html icon('externalLink', 12)}</span>
             </a>
           {/if}
 

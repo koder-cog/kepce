@@ -1,57 +1,53 @@
 // Pure search helper functions & constants for Kepçe Ara
-import {
-  solveWorldTime,
-  solveUnitConversion,
-  suggestUnitCorrection,
-} from "./instantSolvers.js";
+import { solveWorldTime, solveUnitConversion, suggestUnitCorrection } from './instantSolvers.js';
 
 export const CATEGORIES = [
-  { id: "general", label: "Web" },
-  { id: "images", label: "Görseller" },
-  { id: "videos", label: "Videolar" },
-  { id: "news", label: "Haberler" },
-  { id: "it", label: "Kod" },
-  { id: "science", label: "Akademi" },
-  { id: "map", label: "Haritalar" },
+  { id: 'general', label: 'Web' },
+  { id: 'images', label: 'Görseller' },
+  { id: 'videos', label: 'Videolar' },
+  { id: 'news', label: 'Haberler' },
+  { id: 'it', label: 'Kod' },
+  { id: 'science', label: 'Akademi' },
+  { id: 'map', label: 'Haritalar' }
 ];
 
 export const REGION_OPTIONS = [
-  { value: "all", label: "Tüm bölgeler" },
-  { value: "tr", label: "Türkiye" },
-  { value: "de-DE", label: "Almanya" },
-  { value: "en-US", label: "Amerika Birleşik Devletleri" },
-  { value: "az", label: "Azerbaycan" },
-  { value: "en-GB", label: "Birleşik Krallık" },
-  { value: "pt-BR", label: "Brezilya" },
-  { value: "zh-CN", label: "Çin" },
-  { value: "fr-FR", label: "Fransa" },
-  { value: "ko-KR", label: "Güney Kore" },
-  { value: "nl-NL", label: "Hollanda" },
-  { value: "es-ES", label: "İspanya" },
-  { value: "sv-SE", label: "İsveç" },
-  { value: "it-IT", label: "İtalya" },
-  { value: "ja-JP", label: "Japonya" },
-  { value: "en-CA", label: "Kanada" },
-  { value: "pl-PL", label: "Polonya" },
-  { value: "ru-RU", label: "Rusya" },
-  { value: "ar-SA", label: "Suudi Arabistan" },
-  { value: "el-GR", label: "Yunanistan" },
+  { value: 'all', label: 'Tüm bölgeler' },
+  { value: 'tr', label: 'Türkiye' },
+  { value: 'de-DE', label: 'Almanya' },
+  { value: 'en-US', label: 'Amerika Birleşik Devletleri' },
+  { value: 'az', label: 'Azerbaycan' },
+  { value: 'en-GB', label: 'Birleşik Krallık' },
+  { value: 'pt-BR', label: 'Brezilya' },
+  { value: 'zh-CN', label: 'Çin' },
+  { value: 'fr-FR', label: 'Fransa' },
+  { value: 'ko-KR', label: 'Güney Kore' },
+  { value: 'nl-NL', label: 'Hollanda' },
+  { value: 'es-ES', label: 'İspanya' },
+  { value: 'sv-SE', label: 'İsveç' },
+  { value: 'it-IT', label: 'İtalya' },
+  { value: 'ja-JP', label: 'Japonya' },
+  { value: 'en-CA', label: 'Kanada' },
+  { value: 'pl-PL', label: 'Polonya' },
+  { value: 'ru-RU', label: 'Rusya' },
+  { value: 'ar-SA', label: 'Suudi Arabistan' },
+  { value: 'el-GR', label: 'Yunanistan' }
 ];
 
 export function getDomain(rawUrl) {
   try {
     const u = new URL(rawUrl);
-    return u.hostname.replace(/^www\./, "");
+    return u.hostname.replace(/^www\./, '');
   } catch {
-    return "";
+    return '';
   }
 }
 
-export function getFaviconUrl(rawUrl, resolver = "google") {
-  if (resolver === "off" || resolver === "none") return null;
+export function getFaviconUrl(rawUrl, resolver = 'google') {
+  if (resolver === 'off' || resolver === 'none') return null;
   const domain = getDomain(rawUrl);
   if (!domain) return null;
-  if (resolver === "google") {
+  if (resolver === 'google') {
     return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
   }
   return `https://icons.duckduckgo.com/ip3/${domain}.ico`;
@@ -60,63 +56,59 @@ export function getFaviconUrl(rawUrl, resolver = "google") {
 export function formatUrlBreadcrumb(rawUrl) {
   try {
     const u = new URL(rawUrl);
-    const parts = u.pathname.split("/").filter(Boolean);
+    const parts = u.pathname.split('/').filter(Boolean);
     if (parts.length === 0) return u.origin;
-    return `${u.origin} › ${parts.join(" › ")}`;
+    return `${u.origin} › ${parts.join(' › ')}`;
   } catch {
     return rawUrl;
   }
 }
 
 export function formatDateSnippet(dateStr) {
-  if (!dateStr) return "";
+  if (!dateStr) return '';
   try {
     const d = new Date(dateStr);
-    if (isNaN(d.getTime())) return "";
-    return d.toLocaleDateString("tr-TR", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
     });
   } catch {
-    return "";
+    return '';
   }
 }
 
 export function escapeHtml(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+  return String(str || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
 }
 
 export function highlightQuery(text, query) {
-  if (!text) return "";
+  if (!text) return '';
   if (!query) return escapeHtml(text);
 
   const tokens = query
     .trim()
     .split(/\s+/)
-    .filter((t) => t.length > 1 && !t.startsWith("!"))
+    .filter((t) => t.length > 1 && !t.startsWith('!'))
     .slice(0, 10);
   if (tokens.length === 0) return escapeHtml(text);
 
-  const escapedTokens = tokens.map((t) =>
-    t.slice(0, 50).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
-  );
-  const regex = new RegExp(`(${escapedTokens.join("|")})`, "gi");
+  const escapedTokens = tokens.map((t) => t.slice(0, 50).replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escapedTokens.join('|')})`, 'gi');
 
   const safe = escapeHtml(text);
-  return safe.replace(regex, "<strong>$1</strong>");
+  return safe.replace(regex, '<strong>$1</strong>');
 }
 
 export function getYoutubeId(url) {
   if (!url) return null;
-  const m = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/,
-  );
+  const m = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
   return m ? m[1] : null;
 }
 
@@ -138,34 +130,31 @@ export function getYoutubeThumbnail(url) {
  * doğum/ölüm tarih parantezlerini temizleyerek akıcı bir başlangıç sunar.
  */
 export function cleanLeadParentheses(text) {
-  if (!text) return "";
+  if (!text) return '';
   let str = text.trim();
 
   // 1. Telaffuz ve IPA parantezleri (örn: (İngilizce telaffuz: [ˈpaɪθɑːn]), ([paʁi]))
-  str = str.replace(/\s*\((?:[A-Za-zÇĞİÖŞÜçğıöşü\s]+telaffuz:\s*)?\[[^\]]+\]\)/gi, "");
-  str = str.replace(/\s*\([A-Za-zÇĞİÖŞÜçğıöşü\s]+telaffuz:\s*[^)]+\)/gi, "");
+  str = str.replace(/\s*\((?:[A-Za-zÇĞİÖŞÜçğıöşü\s]+telaffuz:\s*)?\[[^\]]+\]\)/gi, '');
+  str = str.replace(/\s*\([A-Za-zÇĞİÖŞÜçğıöşü\s]+telaffuz:\s*[^)]+\)/gi, '');
 
   // 2. İlk cümledeki yabancı dil / orijinal ad parantezleri (örn: (İngilizce: London), (Japonca: 東京))
   str = str.replace(
     /^([^.!?\n]{1,80}?)\s*\((?:İngilizce|Fransızca|Almanca|Arapça|Farsça|Rusça|Yunanca|Latince|Japonca|Çince|Osmanlıca|İtalyanca|İspanyolca|Korece):\s*[^)]+\)/i,
-    "$1"
+    '$1'
   );
 
   // 3. İlk cümledeki doğum-ölüm tarih parantezleri (örn: (14 Mart 1879 – 18 Nisan 1955), (1881 – 1938))
   str = str.replace(
     /^([^.!?\n]{1,80}?)\s*\(\s*(?:d\.\s*|ö\.\s*)?(?:\d{1,2}\s+[A-Za-zÇĞİÖŞÜçğıöşü]+\s+)?\d{3,4}[^)]*(?:–|-)[^)]*\d{3,4}[^)]*\)/i,
-    "$1"
+    '$1'
   );
-  str = str.replace(
-    /^([^.!?\n]{1,80}?)\s*\(\s*(?:d\.\s*|ö\.\s*)\d{3,4}[^)]*\)/i,
-    "$1"
-  );
+  str = str.replace(/^([^.!?\n]{1,80}?)\s*\(\s*(?:d\.\s*|ö\.\s*)\d{3,4}[^)]*\)/i, '$1');
 
   // Noktalama ve boşluk düzeltmesi (örn: "Atatürk , Türk" -> "Atatürk, Türk")
   str = str
-    .replace(/\s+([,.:;!?])/g, "$1")
-    .replace(/([,.:;!?])\1+/g, "$1")
-    .replace(/\s{2,}/g, " ")
+    .replace(/\s+([,.:;!?])/g, '$1')
+    .replace(/([,.:;!?])\1+/g, '$1')
+    .replace(/\s{2,}/g, ' ')
     .trim();
 
   return str;
@@ -173,19 +162,19 @@ export function cleanLeadParentheses(text) {
 
 export function buildSearchUrl(params, isSubdomain = false) {
   const qs = params.toString();
-  const prefix = isSubdomain ? "" : "/ara";
-  return `${prefix}${qs ? `?${qs}` : ""}` || "/";
+  const prefix = isSubdomain ? '' : '/ara';
+  return `${prefix}${qs ? `?${qs}` : ''}` || '/';
 }
 
 export function checkInstantPreview(val, preferences = {}) {
-  const q = (val || "").trim().toLowerCase();
+  const q = (val || '').trim().toLowerCase();
   if (!q) return null;
 
   const mathNormalized = q
-    .replace(/=\s*$/, "")
-    .replace(/×/g, "*")
-    .replace(/÷/g, "/")
-    .replace(/(\d+)\s*[xX]\s*(\d+)/g, "$1 * $2");
+    .replace(/=\s*$/, '')
+    .replace(/×/g, '*')
+    .replace(/÷/g, '/')
+    .replace(/(\d+)\s*[xX]\s*(\d+)/g, '$1 * $2');
 
   if (
     preferences.pluginCalculator &&
@@ -193,24 +182,24 @@ export function checkInstantPreview(val, preferences = {}) {
     /[+\-*/^%]/.test(mathNormalized)
   ) {
     try {
-      const sanitized = mathNormalized.replace(/,/g, ".").replace(/\^/g, "**");
+      const sanitized = mathNormalized.replace(/,/g, '.').replace(/\^/g, '**');
       if (!/[a-zA-Z_$]/.test(sanitized)) {
         // eslint-disable-next-line no-new-func
         const result = Function(`'use strict'; return (${sanitized})`)();
-        if (typeof result === "number") {
-          let resText = "";
+        if (typeof result === 'number') {
+          let resText = '';
           if (isNaN(result)) {
-            resText = "Tanımsız (0/0 belirsizliği)";
+            resText = 'Tanımsız (0/0 belirsizliği)';
           } else if (!isFinite(result)) {
-            resText = "Tanımsız (Sıfıra bölünemez)";
+            resText = 'Tanımsız (Sıfıra bölünemez)';
           } else {
-            resText = result.toLocaleString("tr-TR", {
-              maximumFractionDigits: 6,
+            resText = result.toLocaleString('tr-TR', {
+              maximumFractionDigits: 6
             });
           }
           return {
-            badge: "Hesaplama",
-            text: `${q} = ${resText}`,
+            badge: 'Hesaplama',
+            text: `${q} = ${resText}`
           };
         }
       }
@@ -221,8 +210,8 @@ export function checkInstantPreview(val, preferences = {}) {
     const timeAnswer = solveWorldTime(q);
     if (timeAnswer) {
       return {
-        badge: "Saat",
-        text: `${timeAnswer.city}: ${timeAnswer.currentTime} (${timeAnswer.diffText})`,
+        badge: 'Saat',
+        text: `${timeAnswer.city}: ${timeAnswer.currentTime} (${timeAnswer.diffText})`
       };
     }
   }
@@ -231,16 +220,16 @@ export function checkInstantPreview(val, preferences = {}) {
     const unitAnswer = solveUnitConversion(q);
     if (unitAnswer) {
       return {
-        badge: "Birim",
-        text: `${unitAnswer.fromAmount} ${unitAnswer.fromUnitName} = ${unitAnswer.toAmount} ${unitAnswer.toUnitName}`,
+        badge: 'Birim',
+        text: `${unitAnswer.fromAmount} ${unitAnswer.fromUnitName} = ${unitAnswer.toAmount} ${unitAnswer.toUnitName}`
       };
     }
 
     const unitCorrection = suggestUnitCorrection(q);
     if (unitCorrection && unitCorrection.solved) {
       return {
-        badge: "Birim Önerisi",
-        text: `${unitCorrection.correctedQuery} (≈ ${unitCorrection.solved.toAmount} ${unitCorrection.solved.toUnitName})`,
+        badge: 'Birim Önerisi',
+        text: `${unitCorrection.correctedQuery} (≈ ${unitCorrection.solved.toAmount} ${unitCorrection.solved.toUnitName})`
       };
     }
   }
@@ -248,13 +237,13 @@ export function checkInstantPreview(val, preferences = {}) {
   if (preferences.pluginCalculator || preferences.pluginUnitConverter) {
     const mCur = q.match(/^(\d+(?:[.,]\d+)?)\s*(dolar|usd|\$|euro|eur|€)/i);
     if (mCur) {
-      const amt = parseFloat(mCur[1].replace(",", "."));
+      const amt = parseFloat(mCur[1].replace(',', '.'));
       const cur = mCur[2].toLowerCase();
-      const rate = cur.includes("e") || cur.includes("€") ? 52.5 : 48.27;
+      const rate = cur.includes('e') || cur.includes('€') ? 52.5 : 48.27;
       const total = amt * rate;
       return {
-        badge: "Döviz Tahmini",
-        text: `≈ ${total.toLocaleString("tr-TR", { maximumFractionDigits: 2 })} ₺`,
+        badge: 'Döviz Tahmini',
+        text: `≈ ${total.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ₺`
       };
     }
   }
@@ -264,8 +253,8 @@ export function checkInstantPreview(val, preferences = {}) {
 
 export function isAnswerPluginAllowed(ans, preferences = {}) {
   if (!ans) return false;
-  if (ans.type === "calculator" && !preferences.pluginCalculator) return false;
-  if (ans.type === "unit" && !preferences.pluginUnitConverter) return false;
-  if (ans.type === "time" && !preferences.pluginTimezones) return false;
+  if (ans.type === 'calculator' && !preferences.pluginCalculator) return false;
+  if (ans.type === 'unit' && !preferences.pluginUnitConverter) return false;
+  if (ans.type === 'time' && !preferences.pluginTimezones) return false;
   return true;
 }

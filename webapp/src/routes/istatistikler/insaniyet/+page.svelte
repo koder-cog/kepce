@@ -1,20 +1,20 @@
 <script>
-  import { api } from "@/api/index.js";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import { sanitizeText } from "@/utils/sanitize.js";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
-  import { onMount } from "svelte";
+  import { api } from '@/api/index.js';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import { sanitizeText } from '@/utils/sanitize.js';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
+  import { onMount } from 'svelte';
 
-  let selectedTimeframe = $state("");
+  let selectedTimeframe = $state('');
   let timeframes = [
-    { value: "", label: "Tümü" },
-    { value: "daily", label: "Dün" },
-    { value: "weekly", label: "Geçen Hafta" },
-    { value: "monthly", label: "Geçen Ay" },
-    { value: "yearly", label: "Geçen Yıl" },
+    { value: '', label: 'Tümü' },
+    { value: 'daily', label: 'Dün' },
+    { value: 'weekly', label: 'Geçen Hafta' },
+    { value: 'monthly', label: 'Geçen Ay' },
+    { value: 'yearly', label: 'Geçen Yıl' }
   ];
 
   let isLoading = $state(true);
@@ -39,7 +39,7 @@
       contentData = data;
     } catch (err) {
       if (token !== currentLoadToken) return;
-      errorMsg = err.message || "Bir hata oluştu.";
+      errorMsg = err.message || 'Bir hata oluştu.';
       errorCode = err.status || 500;
     } finally {
       if (token === currentLoadToken) {
@@ -53,19 +53,19 @@
   }
 
   function actionStagger(node, idx) {
-    node.style.setProperty("--stagger-idx", idx);
+    node.style.setProperty('--stagger-idx', idx);
   }
 
   function actionPulseBar(node, { width }) {
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
-        node.style.setProperty("--width", `${width}%`);
+        node.style.setProperty('--width', `${width}%`);
       });
     });
     return {
       update({ width: newWidth }) {
-        node.style.setProperty("--width", `${newWidth}%`);
-      },
+        node.style.setProperty('--width', `${newWidth}%`);
+      }
     };
   }
 </script>
@@ -99,9 +99,7 @@
     {@const totalReports = contentData?.total_reports || 0}
     {@const resolutionRate = contentData?.resolution_rate}
     {@const resolutionLabel =
-      resolutionRate === null || resolutionRate === undefined
-        ? "-"
-        : `%${resolutionRate}`}
+      resolutionRate === null || resolutionRate === undefined ? '-' : `%${resolutionRate}`}
     {@const contributors = contentData?.contributors || []}
 
     <div class="humanity-container">
@@ -110,33 +108,24 @@
         <div class="audit-metric-card" use:actionStagger={0}>
           <span class="audit-metric-card__label">Çözüm oranı</span>
           <span class="audit-metric-card__value">{resolutionLabel}</span>
-          <span class="audit-metric-card__desc"
-            >Çözümlenen / toplam rapor oranı</span
-          >
+          <span class="audit-metric-card__desc">Çözümlenen / toplam rapor oranı</span>
           {#if resolutionRate !== null}
             <div class="audit-progress-track">
-              <div
-                class="audit-progress-fill"
-                use:actionPulseBar={{ width: resolutionRate }}
-              ></div>
+              <div class="audit-progress-fill" use:actionPulseBar={{ width: resolutionRate }}></div>
             </div>
           {/if}
         </div>
         <!-- Metric 2 -->
         <div class="audit-metric-card" use:actionStagger={1}>
           <span class="audit-metric-card__label">Çözümlenen</span>
-          <span class="audit-metric-card__value"
-            >{resolvedCount.toLocaleString("tr-TR")}</span
-          >
+          <span class="audit-metric-card__value">{resolvedCount.toLocaleString('tr-TR')}</span>
           <span class="audit-metric-card__desc">Onaylanan hata bildirimi</span>
         </div>
         <!-- Metric 3 -->
         <div class="audit-metric-card" use:actionStagger={2}>
           <span class="audit-metric-card__label">İncelemede</span>
-          <span
-            class="audit-metric-card__value"
-            class:warning={pendingCount > 0}
-            >{pendingCount.toLocaleString("tr-TR")}</span
+          <span class="audit-metric-card__value" class:warning={pendingCount > 0}
+            >{pendingCount.toLocaleString('tr-TR')}</span
           >
           <span class="audit-metric-card__desc">Bekleyen hata bildirimi</span>
         </div>
@@ -144,9 +133,9 @@
 
       {#if contributors.length === 0}
         <EmptyState
-          iconName={"menuMissing"}
-          title={"Yok Bişii"}
-          desc={"Henüz bir açık bulan da çıkmadı."}
+          iconName={'menuMissing'}
+          title={'Yok Bişii'}
+          desc={'Henüz bir açık bulan da çıkmadı.'}
         />
       {:else}
         <section class="stat-card">
@@ -157,18 +146,13 @@
                 <div class="contributor-card__rank">{idx + 1}</div>
                 <div class="contributor-card__avatar">
                   {#if c.avatar_url}
-                    <img
-                      src={api.getAvatarUrl(c.avatar_url)}
-                      alt={sanitizeText(c.nickname)}
-                    />
+                    <img src={api.getAvatarUrl(c.avatar_url)} alt={sanitizeText(c.nickname)} />
                   {:else}
-                    {@html icon("user", 24)}
+                    {@html icon('user', 24)}
                   {/if}
                 </div>
                 <div class="contributor-card__info">
-                  <span class="contributor-card__name"
-                    >{sanitizeText(c.nickname)}</span
-                  >
+                  <span class="contributor-card__name">{sanitizeText(c.nickname)}</span>
                 </div>
                 <div class="contributor-card__value">
                   {c.resolved_count} kez

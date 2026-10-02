@@ -7,7 +7,8 @@
     margin-left: calc(var(--space-lg) * -1);
     margin-right: calc(var(--space-lg) * -1);
     margin-bottom: var(--space-2xl);
-    transition: height var(--dur-normal) var(--ease-spatial-default),
+    transition:
+      height var(--dur-normal) var(--ease-spatial-default),
       opacity var(--dur-fast) var(--ease-standard);
     overflow: hidden;
   }
@@ -42,8 +43,46 @@
     scroll-snap-type: x proximity;
     scroll-padding-inline: 40px;
     /* Smooth Apple HIG style easing mask computed by python */
-    -webkit-mask-image: linear-gradient(to right, transparent 0px, rgba(0,0,0,0.195) 5px, rgba(0,0,0,0.383) 10px, rgba(0,0,0,0.556) 15px, rgba(0,0,0,0.707) 20px, rgba(0,0,0,0.831) 25px, rgba(0,0,0,0.924) 30px, rgba(0,0,0,0.981) 35px, black calc(100% - 40px), rgba(0,0,0,0.981) calc(100% - 35px), rgba(0,0,0,0.924) calc(100% - 30px), rgba(0,0,0,0.831) calc(100% - 25px), rgba(0,0,0,0.707) calc(100% - 20px), rgba(0,0,0,0.556) calc(100% - 15px), rgba(0,0,0,0.383) calc(100% - 10px), rgba(0,0,0,0.195) calc(100% - 5px), transparent 100%);
-    mask-image: linear-gradient(to right, transparent 0px, rgba(0,0,0,0.195) 5px, rgba(0,0,0,0.383) 10px, rgba(0,0,0,0.556) 15px, rgba(0,0,0,0.707) 20px, rgba(0,0,0,0.831) 25px, rgba(0,0,0,0.924) 30px, rgba(0,0,0,0.981) 35px, black calc(100% - 40px), rgba(0,0,0,0.981) calc(100% - 35px), rgba(0,0,0,0.924) calc(100% - 30px), rgba(0,0,0,0.831) calc(100% - 25px), rgba(0,0,0,0.707) calc(100% - 20px), rgba(0,0,0,0.556) calc(100% - 15px), rgba(0,0,0,0.383) calc(100% - 10px), rgba(0,0,0,0.195) calc(100% - 5px), transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0px,
+      rgba(0, 0, 0, 0.195) 5px,
+      rgba(0, 0, 0, 0.383) 10px,
+      rgba(0, 0, 0, 0.556) 15px,
+      rgba(0, 0, 0, 0.707) 20px,
+      rgba(0, 0, 0, 0.831) 25px,
+      rgba(0, 0, 0, 0.924) 30px,
+      rgba(0, 0, 0, 0.981) 35px,
+      black calc(100% - 40px),
+      rgba(0, 0, 0, 0.981) calc(100% - 35px),
+      rgba(0, 0, 0, 0.924) calc(100% - 30px),
+      rgba(0, 0, 0, 0.831) calc(100% - 25px),
+      rgba(0, 0, 0, 0.707) calc(100% - 20px),
+      rgba(0, 0, 0, 0.556) calc(100% - 15px),
+      rgba(0, 0, 0, 0.383) calc(100% - 10px),
+      rgba(0, 0, 0, 0.195) calc(100% - 5px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0px,
+      rgba(0, 0, 0, 0.195) 5px,
+      rgba(0, 0, 0, 0.383) 10px,
+      rgba(0, 0, 0, 0.556) 15px,
+      rgba(0, 0, 0, 0.707) 20px,
+      rgba(0, 0, 0, 0.831) 25px,
+      rgba(0, 0, 0, 0.924) 30px,
+      rgba(0, 0, 0, 0.981) 35px,
+      black calc(100% - 40px),
+      rgba(0, 0, 0, 0.981) calc(100% - 35px),
+      rgba(0, 0, 0, 0.924) calc(100% - 30px),
+      rgba(0, 0, 0, 0.831) calc(100% - 25px),
+      rgba(0, 0, 0, 0.707) calc(100% - 20px),
+      rgba(0, 0, 0, 0.556) calc(100% - 15px),
+      rgba(0, 0, 0, 0.383) calc(100% - 10px),
+      rgba(0, 0, 0, 0.195) calc(100% - 5px),
+      transparent 100%
+    );
   }
 
   .day-selector--calendar {
@@ -90,7 +129,8 @@
     color: var(--color-text);
     text-decoration: none;
     position: relative;
-    transition: transform var(--dur-default) var(--ease-spatial-default),
+    transition:
+      transform var(--dur-default) var(--ease-spatial-default),
       background-color var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
       box-shadow var(--dur-fast) var(--ease-standard),
@@ -188,7 +228,8 @@
     color: var(--color-text);
     text-decoration: none;
     cursor: pointer;
-    transition: transform var(--dur-default) var(--ease-spatial-default),
+    transition:
+      transform var(--dur-default) var(--ease-spatial-default),
       background-color var(--dur-fast) var(--ease-standard),
       border-color var(--dur-fast) var(--ease-standard),
       box-shadow var(--dur-fast) var(--ease-standard),

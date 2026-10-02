@@ -22,20 +22,31 @@
 
   // Pagination states
   let limit = 20;
-  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let urlPage = $derived(parseInt($page.url.searchParams.get('sayfa') || '1', 10) || 1);
   let currentPage = $state(1);
 
-  let sortedUsers = $derived([...users].sort((a, b) => {
-    let valA, valB;
-    if (sortState.column === 'username') { valA = a.username.toLocaleLowerCase('tr-TR'); valB = b.username.toLocaleLowerCase('tr-TR'); }
-    else if (sortState.column === 'email') { valA = (a.email || '').toLocaleLowerCase('tr-TR'); valB = (b.email || '').toLocaleLowerCase('tr-TR'); }
-    else if (sortState.column === 'status') { valA = a.is_verified ? 1 : 0; valB = b.is_verified ? 1 : 0; }
-    else { valA = new Date(a.created_at).getTime(); valB = new Date(b.created_at).getTime(); }
+  let sortedUsers = $derived(
+    [...users].sort((a, b) => {
+      let valA, valB;
+      if (sortState.column === 'username') {
+        valA = a.username.toLocaleLowerCase('tr-TR');
+        valB = b.username.toLocaleLowerCase('tr-TR');
+      } else if (sortState.column === 'email') {
+        valA = (a.email || '').toLocaleLowerCase('tr-TR');
+        valB = (b.email || '').toLocaleLowerCase('tr-TR');
+      } else if (sortState.column === 'status') {
+        valA = a.is_verified ? 1 : 0;
+        valB = b.is_verified ? 1 : 0;
+      } else {
+        valA = new Date(a.created_at).getTime();
+        valB = new Date(b.created_at).getTime();
+      }
 
-    if (valA < valB) return sortState.asc ? -1 : 1;
-    if (valA > valB) return sortState.asc ? 1 : -1;
-    return 0;
-  }));
+      if (valA < valB) return sortState.asc ? -1 : 1;
+      if (valA > valB) return sortState.asc ? 1 : -1;
+      return 0;
+    })
+  );
 
   let totalItems = $derived(sortedUsers.length);
   let totalPages = $derived(Math.ceil(totalItems / limit) || 1);
@@ -53,9 +64,9 @@
     currentPage = newPage;
     const url = new URL(window.location.href);
     if (newPage > 1) {
-      url.searchParams.set("sayfa", String(newPage));
+      url.searchParams.set('sayfa', String(newPage));
     } else {
-      url.searchParams.delete("sayfa");
+      url.searchParams.delete('sayfa');
     }
     goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
@@ -112,7 +123,9 @@
       await api.updateUser(user.id, { is_verified: newVal });
       showToast(newVal ? 'Kullanıcı onaylandı.' : 'Kullanıcının onayı kaldırıldı.');
       fetchUsers(searchQuery.trim());
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function toggleAdmin(user) {
@@ -121,7 +134,9 @@
       await api.updateUser(user.id, { is_admin: newVal });
       showToast(newVal ? 'Kullanıcı admin yapıldı.' : 'Kullanıcının adminliği alındı.');
       fetchUsers(searchQuery.trim());
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function toggleBan(user) {
@@ -130,7 +145,9 @@
       await api.updateUser(user.id, { is_banned: newVal });
       showToast(newVal ? 'Kullanıcı yasaklandı.' : 'Kullanıcının yasağı kaldırıldı.');
       fetchUsers(searchQuery.trim());
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   function handleWarnUser(user) {
@@ -148,7 +165,9 @@
       buttons: [
         { label: 'İptal', variant: 'secondary' },
         {
-          label: 'Uyarıyı Gönder', variant: 'warning', onClick: async () => {
+          label: 'Uyarıyı Gönder',
+          variant: 'warning',
+          onClick: async () => {
             const message = document.getElementById('warning-message').value.trim();
             if (!message) {
               showToast('Lütfen bir uyarı mesajı yazın.', 'error');
@@ -157,7 +176,9 @@
             try {
               await api.warnUser(user.id, message);
               showToast('Uyarı başarıyla gönderildi.');
-            } catch (err) { showToast(err.message, 'error'); }
+            } catch (err) {
+              showToast(err.message, 'error');
+            }
           }
         }
       ]
@@ -169,30 +190,30 @@
   <title>Kullanıcılar - Moderasyon - Kepçe</title>
 </svelte:head>
 
-    <div class="u-flex u-flex-justify-between u-flex-align-center u-gap-md u-mb-md u-mt-md">
-      <div class="admin-search-bar u-flex-grow">
-        <span class="admin-search-bar__icon">
-          {@html icon('search', 16)}
-        </span>
-        <input 
-          type="text" 
-          class="admin-search-bar__input u-text-base" 
-          placeholder="Kullanıcı ara (Email veya Kullanıcı Adı)..." 
-          autocomplete="off"
-          value={searchQuery}
-          oninput={handleSearchInput}
-        >
-      </div>
-      {#if totalPages > 1}
-        <Pagination
-          compact={true}
-          page={currentPage}
-          {totalPages}
-          {totalItems}
-          onPageChange={handlePageChange}
-        />
-      {/if}
-    </div>
+<div class="u-flex u-flex-justify-between u-flex-align-center u-gap-md u-mb-md u-mt-md">
+  <div class="admin-search-bar u-flex-grow">
+    <span class="admin-search-bar__icon">
+      {@html icon('search', 16)}
+    </span>
+    <input
+      type="text"
+      class="admin-search-bar__input u-text-base"
+      placeholder="Kullanıcı ara (Email veya Kullanıcı Adı)..."
+      autocomplete="off"
+      value={searchQuery}
+      oninput={handleSearchInput}
+    />
+  </div>
+  {#if totalPages > 1}
+    <Pagination
+      compact={true}
+      page={currentPage}
+      {totalPages}
+      {totalItems}
+      onPageChange={handlePageChange}
+    />
+  {/if}
+</div>
 
 <div id="user-list-container" class="u-mt-md">
   {#if isLoading}
@@ -202,17 +223,49 @@
   {:else if errorMsg}
     <EmptyState statusCode={500} desc={errorMsg} />
   {:else if users.length === 0}
-    <EmptyState iconName={'users'} title={'Kullanıcı Bulunamadı'} desc={'Arama kriterlerine uygun kimse yok.'} />
+    <EmptyState
+      iconName={'users'}
+      title={'Kullanıcı Bulunamadı'}
+      desc={'Arama kriterlerine uygun kimse yok.'}
+    />
   {:else}
     <div class="admin-table-wrapper">
       <table class="admin-table admin-table--hybrid">
         <thead>
           <tr>
-            <th class="sortable {sortState.column === 'username' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort('username')}>Kullanıcı</th>
-            <th class="sortable {sortState.column === 'email' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort('email')}>Email</th>
-            <th class="sortable {sortState.column === 'status' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort('status')}>Durum</th>
+            <th
+              class="sortable {sortState.column === 'username'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('username')}>Kullanıcı</th
+            >
+            <th
+              class="sortable {sortState.column === 'email'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('email')}>Email</th
+            >
+            <th
+              class="sortable {sortState.column === 'status'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('status')}>Durum</th
+            >
             <th>Admin?</th>
-            <th class="sortable {sortState.column === 'date' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort('date')}>Kayıt</th>
+            <th
+              class="sortable {sortState.column === 'date'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('date')}>Kayıt</th
+            >
             <th class="col-actions">Aksiyonlar</th>
           </tr>
         </thead>
@@ -221,7 +274,11 @@
             <tr class={user.is_banned ? 'u-opacity-50' : ''}>
               <td>
                 <div class="u-flex u-items-center u-gap-sm">
-                  <div class="user-avatar-mini" style="--bg-image: url('{api.getAvatarUrl(user.avatar_url) || '/assets/img/default-avatar.png'}');"></div>
+                  <div
+                    class="user-avatar-mini"
+                    style="--bg-image: url('{api.getAvatarUrl(user.avatar_url) ||
+                      '/assets/img/default-avatar.png'}');"
+                  ></div>
                   <strong>{user.username}</strong>
                 </div>
               </td>
@@ -233,25 +290,49 @@
                 {/if}
               </td>
               <td>
-                {@html ui.createBadge({ label: user.is_verified ? 'Onaylı' : 'Bekliyor', variant: user.is_verified ? 'success' : 'warning', size: 'sm' })}
+                {@html ui.createBadge({
+                  label: user.is_verified ? 'Onaylı' : 'Bekliyor',
+                  variant: user.is_verified ? 'success' : 'warning',
+                  size: 'sm'
+                })}
                 {#if user.is_banned}
                   {@html ui.createBadge({ label: 'Yasaklı', variant: 'danger', size: 'sm' })}
                 {/if}
               </td>
-              <td>{@html user.is_admin ? ui.createBadge({ label: 'Evet', variant: 'primary', size: 'sm' }) : 'Hayır'}</td>
+              <td
+                >{@html user.is_admin
+                  ? ui.createBadge({ label: 'Evet', variant: 'primary', size: 'sm' })
+                  : 'Hayır'}</td
+              >
               <td>{new Date(user.created_at).toLocaleDateString('tr-TR')}</td>
               <td class="col-actions">
                 <div class="dish-actions">
-                  <button class="btn-icon toggle-verify" title={user.is_verified ? 'Onayı Kaldır' : 'Onayla'} onclick={() => toggleVerify(user)}>
+                  <button
+                    class="btn-icon toggle-verify"
+                    title={user.is_verified ? 'Onayı Kaldır' : 'Onayla'}
+                    onclick={() => toggleVerify(user)}
+                  >
                     {@html icon(user.is_verified ? 'close' : 'check', 14)}
                   </button>
-                  <button class="btn-icon toggle-admin" title={user.is_admin ? 'Adminliği Al' : 'Admin Yap'} onclick={() => toggleAdmin(user)}>
+                  <button
+                    class="btn-icon toggle-admin"
+                    title={user.is_admin ? 'Adminliği Al' : 'Admin Yap'}
+                    onclick={() => toggleAdmin(user)}
+                  >
                     {@html icon('user', 14)}
                   </button>
-                  <button class="btn-icon ban-user" title={user.is_banned ? 'Yasağı Kaldır' : 'Yasakla'} onclick={() => toggleBan(user)}>
+                  <button
+                    class="btn-icon ban-user"
+                    title={user.is_banned ? 'Yasağı Kaldır' : 'Yasakla'}
+                    onclick={() => toggleBan(user)}
+                  >
                     {@html icon('slash', 14)}
                   </button>
-                  <button class="btn-icon warn-user" title="Uyarı Ver" onclick={() => handleWarnUser(user)}>
+                  <button
+                    class="btn-icon warn-user"
+                    title="Uyarı Ver"
+                    onclick={() => handleWarnUser(user)}
+                  >
                     {@html icon('alert-triangle', 14)}
                   </button>
                 </div>
@@ -263,12 +344,7 @@
     </div>
 
     {#if totalPages > 1}
-      <Pagination
-        page={currentPage}
-        {totalPages}
-        {totalItems}
-        onPageChange={handlePageChange}
-      />
+      <Pagination page={currentPage} {totalPages} {totalItems} onPageChange={handlePageChange} />
     {/if}
   {/if}
 </div>

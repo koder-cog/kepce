@@ -1,5 +1,4 @@
 @layer components {
-
   @keyframes file-item-enter {
     0% {
       opacity: 0;

@@ -87,10 +87,11 @@
     white-space: nowrap;
     min-width: max-content;
     text-decoration: none;
-    transition: color var(--dur-fast) var(--ease-standard),
-                opacity var(--dur-fast) var(--ease-standard),
-                background-color var(--dur-fast) var(--ease-standard),
-                transform var(--dur-fast) var(--ease-standard);
+    transition:
+      color var(--dur-fast) var(--ease-standard),
+      opacity var(--dur-fast) var(--ease-standard),
+      background-color var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
   }
 
   .c-tab:not(.c-tab--active):hover {

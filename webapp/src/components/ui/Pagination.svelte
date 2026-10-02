@@ -1,12 +1,12 @@
 <script>
-  import { icon } from "./icons.js";
+  import { icon } from './icons.js';
 
   let {
     page = 1,
     totalPages = 1,
     totalItems = null,
     compact = false,
-    onPageChange = () => {},
+    onPageChange = () => {}
   } = $props();
 
   let currentPage = $derived(Math.max(1, Math.min(page, totalPages)));
@@ -18,30 +18,14 @@
     }
 
     if (currentPage <= 4) {
-      return [1, 2, 3, 4, 5, "...", totalPages];
+      return [1, 2, 3, 4, 5, '...', totalPages];
     }
 
     if (currentPage >= totalPages - 3) {
-      return [
-        1,
-        "...",
-        totalPages - 4,
-        totalPages - 3,
-        totalPages - 2,
-        totalPages - 1,
-        totalPages,
-      ];
+      return [1, '...', totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
     }
 
-    return [
-      1,
-      "...",
-      currentPage - 1,
-      currentPage,
-      currentPage + 1,
-      "...",
-      totalPages,
-    ];
+    return [1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages];
   });
 
   function goTo(target) {
@@ -63,7 +47,7 @@
         title="Önceki sayfaya git"
         aria-label="Önceki sayfaya git"
       >
-        {@html icon("chevronLeft", 16)}
+        {@html icon('chevronLeft', 16)}
       </button>
       <span class="pagination__info u-mx-xs">{currentPage} / {totalPages}</span>
       <button
@@ -73,7 +57,7 @@
         title="Sonraki sayfaya git"
         aria-label="Sonraki sayfaya git"
       >
-        {@html icon("chevronRight", 16)}
+        {@html icon('chevronRight', 16)}
       </button>
     </div>
   {:else}
@@ -85,7 +69,7 @@
         title="Önceki sayfaya git"
         aria-label="Önceki sayfaya git"
       >
-        {@html icon("chevronLeft", 18)}
+        {@html icon('chevronLeft', 18)}
         <span class="pagination__btn-text">Önceki</span>
       </button>
 
@@ -95,7 +79,7 @@
 
       <ul class="pagination__list">
         {#each pageNumbers as item, idx}
-          {#if item === "..."}
+          {#if item === '...'}
             <li class="pagination__item">
               <span class="pagination__ellipsis">…</span>
             </li>
@@ -103,7 +87,7 @@
             <li class="pagination__item">
               <button
                 class="pagination__btn {item === currentPage ? 'is-active' : ''}"
-                aria-current={item === currentPage ? "page" : undefined}
+                aria-current={item === currentPage ? 'page' : undefined}
                 aria-label={`Sayfa ${item}`}
                 onclick={() => goTo(item)}
               >
@@ -122,7 +106,7 @@
         aria-label="Sonraki sayfaya git"
       >
         <span class="pagination__btn-text">Sonraki</span>
-        {@html icon("chevronRight", 18)}
+        {@html icon('chevronRight', 18)}
       </button>
     </nav>
   {/if}

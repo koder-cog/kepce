@@ -1,5 +1,4 @@
 @layer components {
-
   /* ── 1. Navigation Bar (Base) ──────────────────────────────── */
   .nav-bar {
     position: fixed;
@@ -74,7 +73,9 @@
     margin-left: auto;
     /* Logodan sonraki tüm boşluğu iter */
     margin-right: var(--space-lg);
-    transition: margin var(--dur-slow) var(--ease-standard), gap var(--dur-slow) var(--ease-standard);
+    transition:
+      margin var(--dur-slow) var(--ease-standard),
+      gap var(--dur-slow) var(--ease-standard);
   }
 
   .nav-bar__link {
@@ -94,7 +95,6 @@
     overflow: hidden;
     outline: none;
     box-shadow: none;
-
   }
 
   .nav-bar__link--active {
@@ -147,7 +147,8 @@
     color: var(--color-muted);
     cursor: pointer;
     border-radius: var(--radius-md);
-    transition: transform var(--dur-default) var(--ease-spring-bounce),
+    transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       background-color var(--motion-effects-default),
       border-color var(--motion-effects-default),
       color var(--motion-effects-default);
@@ -155,7 +156,6 @@
   }
 
   @media (hover: hover) {
-
     .nav-bar__menu-btn:hover,
     .nav-bar__menu-btn.is-active {
       background-color: var(--color-border-light);
@@ -164,12 +164,11 @@
     }
   }
 
-  .nav-bar__menu-btn[aria-expanded="true"] {
+  .nav-bar__menu-btn[aria-expanded='true'] {
     background-color: var(--color-surface-elevated);
     border-color: var(--color-border);
     color: var(--color-text);
   }
-
 
   .nav-bar__menu-btn:active {
     background-color: var(--color-border);
@@ -208,7 +207,8 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     cursor: pointer;
-    transition: transform var(--dur-default) var(--ease-spring-bounce),
+    transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       background var(--motion-effects-fast);
     will-change: transform;
   }
@@ -384,7 +384,6 @@
 
   /* Mobil Ekranlar (600px ve altı) */
   @media (max-width: 600px) {
-
     /* Logo değişimi */
     .nav-bar__logo-large {
       display: none;
@@ -418,7 +417,7 @@
       padding: var(--space-xs);
     }
 
-    .nav-bar__user>span {
+    .nav-bar__user > span {
       display: none;
       /* Kullanıcı adını gizle */
     }

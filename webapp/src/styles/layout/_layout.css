@@ -194,7 +194,6 @@
     /* Açıkken aşağı bakar */
   }
 
-
   .sidebar-nav-group__links {
     display: block;
   }
@@ -302,7 +301,6 @@
       font-size: var(--text-h3);
     }
   }
-
 
   /* ── Utilities ───────────────────────────────────────────── */
 

@@ -1,69 +1,71 @@
 <script>
-  import { page } from "$app/stores";
+  import { page } from '$app/stores';
 
   let {
     title = "KYK Yemek Menüsü - Bugün KYK'da Ne Yemek Var? | Kepçe",
-    description = "Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il reklamsız, güncel tabldot listeleri, kalori ve beslenme yardımı detayları.",
-    image = "https://kepce.org/og_image.png",
-    type = "website",
+    description = 'Bugün KYK yurtlarında çıkan kahvaltı ve akşam yemeği menüsü. 81 il reklamsız, güncel tabldot listeleri, kalori ve beslenme yardımı detayları.',
+    image = 'https://kepce.org/og_image.png',
+    type = 'website',
     canonical = null,
     noindex = false,
     breadcrumbs = null,
-    schema = null,
+    schema = null
   } = $props();
 
-  const BASE_URL = "https://kepce.org";
+  const BASE_URL = 'https://kepce.org';
 
   let canonicalUrl = $derived.by(() => {
     if (canonical) {
-      return canonical.replace(/\/+$/, "") || BASE_URL;
+      return canonical.replace(/\/+$/, '') || BASE_URL;
     }
-    const path = ($page.url.pathname || "").replace(/\/+$/, "");
+    const path = ($page.url.pathname || '').replace(/\/+$/, '');
     return path ? `${BASE_URL}${path}` : BASE_URL;
   });
 
-  let isRoot = $derived(!($page.url?.pathname) || $page.url.pathname === "/" || $page.url.pathname === "");
+  let isRoot = $derived(
+    !$page.url?.pathname || $page.url.pathname === '/' || $page.url.pathname === ''
+  );
 
   let defaultSchema = $derived.by(() => {
     if (schema) return schema;
 
     const graphs = [
       {
-        "@type": "Organization",
-        "@id": `${BASE_URL}/#organization`,
-        name: "Kepçe",
+        '@type': 'Organization',
+        '@id': `${BASE_URL}/#organization`,
+        name: 'Kepçe',
         url: BASE_URL,
-        logo: `${BASE_URL}/icon-512.png`,
-      },
+        logo: `${BASE_URL}/icon-512.png`
+      }
     ];
 
     if (isRoot) {
       graphs.unshift({
-        "@type": "WebSite",
-        "@id": `${BASE_URL}/#website`,
+        '@type': 'WebSite',
+        '@id': `${BASE_URL}/#website`,
         url: BASE_URL,
-        name: "Kepçe",
-        alternateName: ["Kepçe KYK", "KYK Yemek Menüsü", "KYK Yemek Listesi"],
+        name: 'Kepçe',
+        alternateName: ['Kepçe KYK', 'KYK Yemek Menüsü', 'KYK Yemek Listesi'],
         description: "Bugün KYK'da Ne Yemek Var? Günlük KYK Yurt Menüleri",
-        inLanguage: "tr-TR",
+        inLanguage: 'tr-TR'
       });
     }
 
     if (breadcrumbs && breadcrumbs.length > 0) {
       graphs.push({
-        "@type": "BreadcrumbList",
+        '@type': 'BreadcrumbList',
         itemListElement: breadcrumbs.map((b, idx) => ({
-          "@type": "ListItem",
+          '@type': 'ListItem',
           position: idx + 1,
           name: b.name,
-          item: b.item,
-        })),
+          item: b.item
+        }))
       });
     }
 
     return {
-      "@context": "https://schema.org",
-      "@graph": graphs,
+      '@context': 'https://schema.org',
+      '@graph': graphs
     };
   });
 </script>
@@ -77,7 +79,10 @@
   {#if noindex}
     <meta name="robots" content="noindex, follow" />
   {:else}
-    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+    <meta
+      name="robots"
+      content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1"
+    />
   {/if}
 
   <!-- Open Graph / Facebook -->

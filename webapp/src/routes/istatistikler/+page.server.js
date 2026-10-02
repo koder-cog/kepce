@@ -5,5 +5,5 @@ import { redirect } from '@sveltejs/kit';
  * 301 kalıcı yönlendirmeyle aktarılır (arama motorları ve kullanıcılar için).
  */
 export function load() {
-	redirect(301, '/istatistikler/yemekler');
+  redirect(301, '/istatistikler/yemekler');
 }

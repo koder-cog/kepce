@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+# Sadece commit'e eklenen (staged) ve silinmemiş dosyaları al
+STAGED_RS=$(git diff --cached --name-only --diff-filter=ACM | grep '\.rs$' || true)
+STAGED_WEB=$(git diff --cached --name-only --diff-filter=ACM | grep -E '^webapp/src/.*\.(svelte|js|css|json)$' || true)
+
+# 1. Rust dosyaları
+if [ -n "$STAGED_RS" ]; then
+    echo "Rust dosyaları formatlanıyor..."
+    cargo fmt --all
+    echo "$STAGED_RS" | xargs git add
+fi
+
+# 2. Webapp dosyaları
+if [ -n "$STAGED_WEB" ]; then
+    echo "Webapp dosyaları formatlanıyor..."
+    RELATIVE_WEB=$(echo "$STAGED_WEB" | sed 's|^webapp/||')
+    (cd webapp && echo "$RELATIVE_WEB" | xargs npx prettier --write)
+    echo "$STAGED_WEB" | xargs git add
+fi
+
+exit 0

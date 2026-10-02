@@ -1,5 +1,4 @@
 @layer pages {
-
   /* ── Admin Tables ───────────────────────────────────── */
   .admin-table-wrapper {
     overflow-x: auto;
@@ -39,7 +38,7 @@
   }
 
   .admin-table th.sortable::after {
-    content: "";
+    content: '';
     display: inline-block;
     width: 12px;
     height: 12px;
@@ -411,7 +410,7 @@
   }
 
   input.admin-search-bar__input,
-  input[type="text"].admin-search-bar__input {
+  input[type='text'].admin-search-bar__input {
     width: 100%;
     height: var(--control-height) !important;
     padding: 0 var(--space-md) 0 44px !important;
@@ -427,19 +426,17 @@
   }
 
   input.admin-search-bar__input:focus,
-  input[type="text"].admin-search-bar__input:focus {
+  input[type='text'].admin-search-bar__input:focus {
     background: var(--color-card);
     border-color: var(--color-accent-primary);
     box-shadow: 0 0 0 1px var(--color-accent-primary);
   }
-
 
   /* ── Hybrid Table Concept ────────────────────────────── */
   /* Masaüstünde orijinal .admin-table miras alınacak */
 
   /* Mobil/Tablet kart görünümü (900px altı) */
   @media (max-width: 900px) {
-
     /* Hibrit tabloyu saran kutunun arka planını ve kenarlığını gizle */
     .admin-table-wrapper:has(.admin-table--hybrid) {
       background: transparent !important;
@@ -544,7 +541,7 @@
     }
 
     /* Svelte içindeki u-flex div'ini ezerek yayılmasını sağlıyoruz */
-    .admin-table--hybrid td.col-actions>div {
+    .admin-table--hybrid td.col-actions > div {
       width: 100%;
       justify-content: space-around !important;
       flex-wrap: wrap;
@@ -757,8 +754,6 @@
     opacity: var(--opacity-muted);
   }
 
-
-
   /* ── Step Badge (replaces kepce-bot .kepce-bot-step__number) ── */
   .admin-step-badge {
     display: flex;
@@ -804,11 +799,11 @@
     color: var(--color-text-on-dark);
   }
 
-  .admin-status-banner__badge[data-variant="success"] {
+  .admin-status-banner__badge[data-variant='success'] {
     background: var(--color-success);
   }
 
-  .admin-status-banner__badge[data-variant="error"] {
+  .admin-status-banner__badge[data-variant='error'] {
     background: var(--color-error);
   }
 
@@ -844,9 +839,11 @@
 
   /* ── Preview card overrides (uses global .admin-preview-card / .admin-preview-list) ── */
   .kepce-bot-preview-card {
-    background: linear-gradient(135deg,
-        var(--color-accent-primary) 0%,
-        var(--color-accent-primary-hover) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-accent-primary) 0%,
+      var(--color-accent-primary-hover) 100%
+    );
     border-radius: var(--radius-lg);
     padding: var(--space-xl);
     display: flex;
@@ -950,8 +947,6 @@
     gap: var(--space-md);
     padding-top: var(--space-xs);
   }
-
-
 
   /* ── System Health Page (Moderation) ── */
   .health-page {
@@ -1237,7 +1232,9 @@
     cursor: pointer;
     text-decoration: none;
     color: inherit;
-    transition: transform var(--dur-fast) var(--ease-standard), filter var(--dur-fast) var(--ease-standard);
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
+      filter var(--dur-fast) var(--ease-standard);
   }
 
   .coverage-cell:active {

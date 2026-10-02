@@ -1,30 +1,21 @@
 <script>
-	import { page } from "$app/stores";
-	import EmptyState from "@/components/ui/EmptyState.svelte";
-	import Seo from "@/components/ui/Seo.svelte";
+  import { page } from '$app/stores';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
-	let status = $derived($page.status);
-	let message = $derived($page.error?.message);
-	let customDesc = $derived(
-		message && message !== "Not Found" && message !== "Internal Error"
-			? message
-			: undefined
-	);
+  let status = $derived($page.status);
+  let message = $derived($page.error?.message);
+  let customDesc = $derived(
+    message && message !== 'Not Found' && message !== 'Internal Error' ? message : undefined
+  );
 </script>
 
-<Seo
-	title="{status} | Kepçe"
-	description="Kepçe'de bir hata oluştu."
-	noindex={true}
-/>
+<Seo title="{status} | Kepçe" description="Kepçe'de bir hata oluştu." noindex={true} />
 
 <div class="error-page">
-	<EmptyState statusCode={status} desc={customDesc}>
-		<button
-			class="btn btn--primary"
-			onclick={() => (window.location.href = "/")}
-		>
-			Ana sayfaya dön
-		</button>
-	</EmptyState>
+  <EmptyState statusCode={status} desc={customDesc}>
+    <button class="btn btn--primary" onclick={() => (window.location.href = '/')}>
+      Ana sayfaya dön
+    </button>
+  </EmptyState>
 </div>

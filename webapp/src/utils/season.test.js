@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  isOffSeasonDate,
-  isOrientationSeason,
-  getClosestMondayToSept15,
-} from './season.js';
+import { isOffSeasonDate, isOrientationSeason, getClosestMondayToSept15 } from './season.js';
 
 describe('season utilities', () => {
   it('July and August are always off-season', () => {

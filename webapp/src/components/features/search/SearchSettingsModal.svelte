@@ -1,29 +1,29 @@
 <script>
-  import Modal from "@/components/ui/Modal.svelte";
-  import SegmentedControl from "@/components/ui/SegmentedControl.svelte";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
-  import { onMount } from "svelte";
+  import Modal from '@/components/ui/Modal.svelte';
+  import SegmentedControl from '@/components/ui/SegmentedControl.svelte';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
+  import { onMount } from 'svelte';
 
   let { isOpen = $bindable(false) } = $props();
 
   const THEME_OPTIONS = [
-    { value: "sistem", label: "Sistem" },
-    { value: "acik", label: "Açık" },
-    { value: "koyu", label: "Koyu" },
+    { value: 'sistem', label: 'Sistem' },
+    { value: 'acik', label: 'Açık' },
+    { value: 'koyu', label: 'Koyu' }
   ];
 
   const LANG_OPTIONS = [
-    { value: "tr", label: "Türkçe" },
-    { value: "en", label: "English" },
-    { value: "all", label: "Tüm Diller" },
+    { value: 'tr', label: 'Türkçe' },
+    { value: 'en', label: 'English' },
+    { value: 'all', label: 'Tüm Diller' }
   ];
 
   const SAFE_OPTIONS = [
-    { value: "1", label: "Orta" },
-    { value: "2", label: "Katı" },
-    { value: "0", label: "Kapalı" },
+    { value: '1', label: 'Orta' },
+    { value: '2', label: 'Katı' },
+    { value: '0', label: 'Kapalı' }
   ];
 
   onMount(() => {
@@ -31,12 +31,12 @@
   });
 
   function resetSettings() {
-    searchPreferences.setTheme("sistem");
-    searchPreferences.setLanguage("tr");
-    searchPreferences.setSafeSearch("1");
+    searchPreferences.setTheme('sistem');
+    searchPreferences.setLanguage('tr');
+    searchPreferences.setSafeSearch('1');
     searchPreferences.setOpenInNewTab(false);
     searchPreferences.setCompactResults(false);
-    searchPreferences.setFaviconResolver("duckduckgo");
+    searchPreferences.setFaviconResolver('duckduckgo');
     searchPreferences.setInfiniteScroll(false);
   }
 </script>
@@ -44,8 +44,8 @@
 {#if isOpen}
   <Modal
     options={{
-      title: "Ayarlar",
-      iconHtml: icon("settings", 24),
+      title: 'Ayarlar',
+      iconHtml: icon('settings', 24)
     }}
     onClose={() => (isOpen = false)}
   >
@@ -86,8 +86,12 @@
               type="checkbox"
               id="search-favicons-switch"
               class="c-input-hidden"
-              checked={searchPreferences.faviconResolver !== "none" && searchPreferences.faviconResolver !== "off"}
-              onchange={(e) => searchPreferences.setFaviconResolver(e.currentTarget.checked ? "duckduckgo" : "off")}
+              checked={searchPreferences.faviconResolver !== 'none' &&
+                searchPreferences.faviconResolver !== 'off'}
+              onchange={(e) =>
+                searchPreferences.setFaviconResolver(
+                  e.currentTarget.checked ? 'duckduckgo' : 'off'
+                )}
             />
             <span class="c-switch" aria-hidden="true">
               <span class="c-switch__handle"></span>
@@ -127,9 +131,7 @@
 
           <!-- Bağlantıları Yeni Sekmede Aç (Yazı solda, Switch sağda) -->
           <label class="c-search-settings-row" for="search-new-tab-switch">
-            <span class="c-search-settings-label"
-              >Bağlantıları yeni sekmede aç</span
-            >
+            <span class="c-search-settings-label">Bağlantıları yeni sekmede aç</span>
             <input
               type="checkbox"
               id="search-new-tab-switch"
@@ -162,21 +164,15 @@
         <section class="c-search-settings-advanced-link">
           <a href="/ara/ayarlar" class="c-search-settings-all-link">
             <span>Gelişmiş Ayarlar</span>
-            {@html icon("externalLink", 14)}
+            {@html icon('externalLink', 14)}
           </a>
         </section>
       </div>
     {/snippet}
 
     {#snippet footer()}
-      <button type="button" class="btn btn--secondary" onclick={resetSettings}>
-        Sıfırla
-      </button>
-      <button
-        type="button"
-        class="btn btn--primary"
-        onclick={() => (isOpen = false)}
-      >
+      <button type="button" class="btn btn--secondary" onclick={resetSettings}> Sıfırla </button>
+      <button type="button" class="btn btn--primary" onclick={() => (isOpen = false)}>
         Kapat
       </button>
     {/snippet}

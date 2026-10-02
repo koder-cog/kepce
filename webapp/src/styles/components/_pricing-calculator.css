@@ -60,7 +60,7 @@
     min-width: 160px;
   }
 
-  .pricing-calc__search-wrap input[type="search"] {
+  .pricing-calc__search-wrap input[type='search'] {
     width: 100%;
     padding: var(--space-xs) var(--space-md);
     font-size: var(--text-xs);
@@ -119,7 +119,6 @@
   }
 
   @media (max-width: 600px) {
-
     .pricing-calc__presets-bar .btn,
     .pricing-calc__chips-scroll .btn {
       padding: var(--space-xs) var(--space-sm);
@@ -155,7 +154,9 @@
     border-radius: var(--radius-md);
     gap: var(--space-xs);
     min-width: 0;
-    transition: border-color var(--dur-fast) ease, background-color var(--dur-fast) ease;
+    transition:
+      border-color var(--dur-fast) ease,
+      background-color var(--dur-fast) ease;
   }
 
   @media (max-width: 600px) {
@@ -259,7 +260,9 @@
   .pricing-calc__progress-fill {
     height: 100%;
     width: var(--progress-width, 0%);
-    transition: width var(--dur-fast) ease, background-color var(--dur-fast) ease;
+    transition:
+      width var(--dur-fast) ease,
+      background-color var(--dur-fast) ease;
   }
 
   .pricing-calc__progress-fill.is-ok {

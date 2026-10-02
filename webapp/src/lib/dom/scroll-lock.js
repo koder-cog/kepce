@@ -9,22 +9,21 @@
 let lockCount = 0;
 
 export function lockScroll() {
-    if (typeof document === "undefined") return;
-    lockCount += 1;
-    document.documentElement.classList.add("overlay-open");
+  if (typeof document === 'undefined') return;
+  lockCount += 1;
+  document.documentElement.classList.add('overlay-open');
 }
 
 export function unlockScroll() {
-    if (typeof document === "undefined") return;
-    lockCount = Math.max(0, lockCount - 1);
-    if (lockCount === 0) {
-        document.documentElement.classList.remove("overlay-open");
-    }
+  if (typeof document === 'undefined') return;
+  lockCount = Math.max(0, lockCount - 1);
+  if (lockCount === 0) {
+    document.documentElement.classList.remove('overlay-open');
+  }
 }
 
 export function forceUnlockScroll() {
-    if (typeof document === "undefined") return;
-    lockCount = 0;
-    document.documentElement.classList.remove("overlay-open");
+  if (typeof document === 'undefined') return;
+  lockCount = 0;
+  document.documentElement.classList.remove('overlay-open');
 }
-

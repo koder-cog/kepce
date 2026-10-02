@@ -1,39 +1,39 @@
 <script>
-  import { onMount } from "svelte";
-  import { goto, preloadData } from "$app/navigation";
-  import { page, navigating } from "$app/stores";
-  import { icon } from "@/components/ui/icons.js";
-  import SearchInfoModal from "@/components/features/search/SearchInfoModal.svelte";
-  import SearchSettingsModal from "@/components/features/search/SearchSettingsModal.svelte";
-  import KnowledgeCard from "@/components/features/search/KnowledgeCard.svelte";
-  import AnswerCard from "@/components/features/search/AnswerCard.svelte";
-  import KepceDirectCard from "@/components/features/search/KepceDirectCard.svelte";
-  import SearchHome from "@/components/features/search/SearchHome.svelte";
-  import SearchTopBar from "@/components/features/search/SearchTopBar.svelte";
-  import SearchFilterBar from "@/components/features/search/SearchFilterBar.svelte";
-  import SearchImageGrid from "@/components/features/search/SearchImageGrid.svelte";
-  import SearchVideoGrid from "@/components/features/search/SearchVideoGrid.svelte";
-  import SearchStandardResults from "@/components/features/search/SearchStandardResults.svelte";
-  import SearchImageLightbox from "@/components/features/search/SearchImageLightbox.svelte";
-  import SearchFooter from "@/components/features/search/SearchFooter.svelte";
-  import { BANG_DEFINITIONS } from "$lib/search/bangs.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+  import { onMount } from 'svelte';
+  import { goto, preloadData } from '$app/navigation';
+  import { page, navigating } from '$app/stores';
+  import { icon } from '@/components/ui/icons.js';
+  import SearchInfoModal from '@/components/features/search/SearchInfoModal.svelte';
+  import SearchSettingsModal from '@/components/features/search/SearchSettingsModal.svelte';
+  import KnowledgeCard from '@/components/features/search/KnowledgeCard.svelte';
+  import AnswerCard from '@/components/features/search/AnswerCard.svelte';
+  import KepceDirectCard from '@/components/features/search/KepceDirectCard.svelte';
+  import SearchHome from '@/components/features/search/SearchHome.svelte';
+  import SearchTopBar from '@/components/features/search/SearchTopBar.svelte';
+  import SearchFilterBar from '@/components/features/search/SearchFilterBar.svelte';
+  import SearchImageGrid from '@/components/features/search/SearchImageGrid.svelte';
+  import SearchVideoGrid from '@/components/features/search/SearchVideoGrid.svelte';
+  import SearchStandardResults from '@/components/features/search/SearchStandardResults.svelte';
+  import SearchImageLightbox from '@/components/features/search/SearchImageLightbox.svelte';
+  import SearchFooter from '@/components/features/search/SearchFooter.svelte';
+  import { BANG_DEFINITIONS } from '$lib/search/bangs.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
   import {
     buildSearchUrl,
     checkInstantPreview,
-    isAnswerPluginAllowed,
-  } from "$lib/search/searchHelpers.js";
+    isAnswerPluginAllowed
+  } from '$lib/search/searchHelpers.js';
 
   let { data } = $props();
 
-  let searchInput = $state("");
+  let searchInput = $state('');
   let searchInputEl = $state(null);
   let isInfoOpen = $state(false);
   let isSettingsOpen = $state(false);
-  let activeCategory = $state("general");
+  let activeCategory = $state('general');
 
   $effect(() => {
-    activeCategory = data.category || "general";
+    activeCategory = data.category || 'general';
   });
 
   let isNavigatingToResults = $state(false);
@@ -47,8 +47,8 @@
   let randomShortcuts = $state(
     BANG_DEFINITIONS.slice(0, 4).map((b) => ({
       prefix: b.prefix,
-      label: b.name,
-    })),
+      label: b.name
+    }))
   );
 
   let searchHistory = $state([]);
@@ -59,7 +59,7 @@
 
   function loadHistory() {
     try {
-      const raw = localStorage.getItem("kepce_search_history");
+      const raw = localStorage.getItem('kepce_search_history');
       if (raw) {
         searchHistory = JSON.parse(raw);
       }
@@ -70,22 +70,20 @@
 
   function saveToHistory(q) {
     const term = q.trim();
-    if (!term || term.startsWith("!")) return;
+    if (!term || term.startsWith('!')) return;
     try {
-      let list = searchHistory.filter(
-        (item) => item.toLowerCase() !== term.toLowerCase(),
-      );
+      let list = searchHistory.filter((item) => item.toLowerCase() !== term.toLowerCase());
       list.unshift(term);
       list = list.slice(0, 8);
       searchHistory = list;
-      localStorage.setItem("kepce_search_history", JSON.stringify(list));
+      localStorage.setItem('kepce_search_history', JSON.stringify(list));
     } catch {}
   }
 
   function clearHistory() {
     searchHistory = [];
     try {
-      localStorage.removeItem("kepce_search_history");
+      localStorage.removeItem('kepce_search_history');
     } catch {}
   }
 
@@ -94,10 +92,7 @@
     e?.stopPropagation();
     searchHistory = searchHistory.filter((t) => t !== term);
     try {
-      localStorage.setItem(
-        "kepce_search_history",
-        JSON.stringify(searchHistory),
-      );
+      localStorage.setItem('kepce_search_history', JSON.stringify(searchHistory));
     } catch {}
     if (searchHistory.length === 0) {
       isHistoryOpen = false;
@@ -126,20 +121,19 @@
   });
 
   function selectBang(prefix) {
-    searchInput = prefix + " ";
+    searchInput = prefix + ' ';
     if (searchInputEl) {
       searchInputEl.focus();
     }
   }
 
   let isSubdomain = $derived(
-    $page.url.hostname.startsWith("ara.") ||
-      $page.url.hostname === "ara.localhost",
+    $page.url.hostname.startsWith('ara.') || $page.url.hostname === 'ara.localhost'
   );
-  let basePath = $derived(isSubdomain ? "" : "/ara");
+  let basePath = $derived(isSubdomain ? '' : '/ara');
 
   $effect(() => {
-    searchInput = data.query || "";
+    searchInput = data.query || '';
   });
 
   let selectedResultIndex = $state(-1);
@@ -148,11 +142,11 @@
     const activeEl = document.activeElement;
     const isInputActive =
       activeEl &&
-      (activeEl.tagName === "INPUT" ||
-        activeEl.tagName === "TEXTAREA" ||
+      (activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
         activeEl.isContentEditable);
 
-    if (e.key === "/" && !isInputActive) {
+    if (e.key === '/' && !isInputActive) {
       e.preventDefault();
       if (searchInputEl) {
         searchInputEl.focus();
@@ -162,7 +156,7 @@
     }
 
     if (isInputActive) {
-      if (e.key === "Escape") {
+      if (e.key === 'Escape') {
         isSuggestionsOpen = false;
         isHistoryOpen = false;
         instantPreview = null;
@@ -174,24 +168,24 @@
     const items = currentResults || [];
     if (items.length === 0) return;
 
-    if (e.key === "j" || e.key === "ArrowDown") {
+    if (e.key === 'j' || e.key === 'ArrowDown') {
       e.preventDefault();
       selectedResultIndex = Math.min(items.length - 1, selectedResultIndex + 1);
       scrollToSelectedResult();
-    } else if (e.key === "k" || e.key === "ArrowUp") {
+    } else if (e.key === 'k' || e.key === 'ArrowUp') {
       e.preventDefault();
       selectedResultIndex = Math.max(0, selectedResultIndex - 1);
       scrollToSelectedResult();
-    } else if (e.key === "Enter" && selectedResultIndex >= 0) {
+    } else if (e.key === 'Enter' && selectedResultIndex >= 0) {
       const selectedItem = items[selectedResultIndex];
       if (selectedItem?.url) {
         if (searchPreferences.openInNewTab) {
-          window.open(selectedItem.url, "_blank", "noopener,noreferrer");
+          window.open(selectedItem.url, '_blank', 'noopener,noreferrer');
         } else {
           window.location.href = selectedItem.url;
         }
       }
-    } else if (e.key === "Escape") {
+    } else if (e.key === 'Escape') {
       selectedResultIndex = -1;
     }
   }
@@ -200,7 +194,7 @@
     if (selectedResultIndex < 0) return;
     const el = document.getElementById(`search-result-${selectedResultIndex}`);
     if (el) {
-      el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
   }
 
@@ -210,7 +204,7 @@
   let debounceTimeout = null;
 
   async function fetchSuggestions(query) {
-    if (searchPreferences.autocomplete === "off") {
+    if (searchPreferences.autocomplete === 'off') {
       suggestions = [];
       isSuggestionsOpen = false;
       return;
@@ -223,19 +217,19 @@
       return;
     }
 
-    if (q.startsWith("!")) {
+    if (q.startsWith('!')) {
       const bangTerm = q.toLowerCase();
       const matchedBangs = BANG_DEFINITIONS.filter(
         (b) =>
           b.prefix.toLowerCase().startsWith(bangTerm) ||
-          b.name.toLowerCase().includes(bangTerm.replace(/^!/, "")),
+          b.name.toLowerCase().includes(bangTerm.replace(/^!/, ''))
       )
         .slice(0, 6)
         .map((b) => ({
           isBang: true,
           prefix: b.prefix,
           label: b.name,
-          displayText: `${b.prefix} ${b.name}`,
+          displayText: `${b.prefix} ${b.name}`
         }));
 
       if (matchedBangs.length > 0) {
@@ -255,17 +249,13 @@
     try {
       const motorParam = searchPreferences.autocomplete
         ? `&motor=${encodeURIComponent(searchPreferences.autocomplete)}`
-        : "";
-      const res = await fetch(
-        `${basePath}/autocompleter?q=${encodeURIComponent(q)}${motorParam}`,
-      );
+        : '';
+      const res = await fetch(`${basePath}/autocompleter?q=${encodeURIComponent(q)}${motorParam}`);
       if (res.ok) {
         const list = await res.json();
         if (Array.isArray(list) && list.length > 0) {
           suggestions = list.map((item) =>
-            typeof item === "string"
-              ? { isBang: false, displayText: item }
-              : item,
+            typeof item === 'string' ? { isBang: false, displayText: item } : item
           );
           isSuggestionsOpen = true;
           selectedSuggestionIndex = -1;
@@ -297,7 +287,7 @@
   }
 
   function handleKeydown(e) {
-    if (e.key === "Escape") {
+    if (e.key === 'Escape') {
       isSuggestionsOpen = false;
       isHistoryOpen = false;
       instantPreview = null;
@@ -307,34 +297,28 @@
     }
 
     if (isSuggestionsOpen && suggestions.length > 0) {
-      if (e.key === "ArrowDown") {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedSuggestionIndex = (selectedSuggestionIndex + 1) % suggestions.length;
+        const current = suggestions[selectedSuggestionIndex];
+        searchInput = current?.isBang ? current.prefix : current?.displayText || current || '';
+      } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         selectedSuggestionIndex =
-          (selectedSuggestionIndex + 1) % suggestions.length;
+          (selectedSuggestionIndex - 1 + suggestions.length) % suggestions.length;
         const current = suggestions[selectedSuggestionIndex];
-        searchInput = current?.isBang
-          ? current.prefix
-          : current?.displayText || current || "";
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        selectedSuggestionIndex =
-          (selectedSuggestionIndex - 1 + suggestions.length) %
-          suggestions.length;
-        const current = suggestions[selectedSuggestionIndex];
-        searchInput = current?.isBang
-          ? current.prefix
-          : current?.displayText || current || "";
+        searchInput = current?.isBang ? current.prefix : current?.displayText || current || '';
       }
     }
   }
 
   function selectSuggestion(item) {
-    if (typeof item === "object" && item?.isBang) {
+    if (typeof item === 'object' && item?.isBang) {
       selectBang(item.prefix);
       isSuggestionsOpen = false;
       return;
     }
-    const val = typeof item === "string" ? item : item?.displayText || "";
+    const val = typeof item === 'string' ? item : item?.displayText || '';
     searchInput = val;
     isSuggestionsOpen = false;
     isHistoryOpen = false;
@@ -354,9 +338,9 @@
     const target = e.target;
     if (
       target &&
-      !target.closest(".c-search-bar") &&
-      !target.closest(".c-search-home-form") &&
-      !target.closest(".c-search-box")
+      !target.closest('.c-search-bar') &&
+      !target.closest('.c-search-home-form') &&
+      !target.closest('.c-search-box')
     ) {
       isSuggestionsOpen = false;
       isHistoryOpen = false;
@@ -378,31 +362,31 @@
     saveToHistory(q);
 
     const params = new URLSearchParams();
-    params.set("q", q);
+    params.set('q', q);
 
     const targetCategory = data.isHome
       ? searchPreferences.defaultCategory
-      : data.category || searchPreferences.defaultCategory || "general";
-    if (targetCategory && targetCategory !== "general") {
-      params.set("kategori", targetCategory);
+      : data.category || searchPreferences.defaultCategory || 'general';
+    if (targetCategory && targetCategory !== 'general') {
+      params.set('kategori', targetCategory);
     }
 
     const targetLang = data.isHome
       ? searchPreferences.language
-      : data.language || searchPreferences.language || "tr";
-    if (targetLang && targetLang !== "tr") {
-      params.set("dil", targetLang);
+      : data.language || searchPreferences.language || 'tr';
+    if (targetLang && targetLang !== 'tr') {
+      params.set('dil', targetLang);
     }
 
     if (data.timeRange) {
-      params.set("zaman", data.timeRange);
+      params.set('zaman', data.timeRange);
     }
 
     const targetSafe = data.isHome
       ? searchPreferences.safeSearch
-      : data.safeSearch || searchPreferences.safeSearch || "1";
-    if (targetSafe && targetSafe !== "1") {
-      params.set("guvenli", targetSafe);
+      : data.safeSearch || searchPreferences.safeSearch || '1';
+    if (targetSafe && targetSafe !== '1') {
+      params.set('guvenli', targetSafe);
     }
 
     appendActiveCategoryFilters(params);
@@ -413,18 +397,18 @@
   function handleCategoryChange(catId) {
     activeCategory = catId;
     const params = new URLSearchParams();
-    params.set("q", data.query);
-    if (catId !== "general") {
-      params.set("kategori", catId);
+    params.set('q', data.query);
+    if (catId !== 'general') {
+      params.set('kategori', catId);
     }
-    if (data.language && data.language !== "tr") {
-      params.set("dil", data.language);
+    if (data.language && data.language !== 'tr') {
+      params.set('dil', data.language);
     }
     if (data.timeRange) {
-      params.set("zaman", data.timeRange);
+      params.set('zaman', data.timeRange);
     }
-    if (data.safeSearch && data.safeSearch !== "1") {
-      params.set("guvenli", data.safeSearch);
+    if (data.safeSearch && data.safeSearch !== '1') {
+      params.set('guvenli', data.safeSearch);
     }
     goto(buildSearchUrl(params, isSubdomain));
   }
@@ -432,88 +416,86 @@
   function handleCategoryHover(catId) {
     if (!data.query) return;
     const params = new URLSearchParams();
-    params.set("q", data.query);
-    if (catId !== "general") params.set("kategori", catId);
-    if (data.language && data.language !== "tr")
-      params.set("dil", data.language);
-    if (data.timeRange) params.set("zaman", data.timeRange);
-    if (data.safeSearch && data.safeSearch !== "1")
-      params.set("guvenli", data.safeSearch);
+    params.set('q', data.query);
+    if (catId !== 'general') params.set('kategori', catId);
+    if (data.language && data.language !== 'tr') params.set('dil', data.language);
+    if (data.timeRange) params.set('zaman', data.timeRange);
+    if (data.safeSearch && data.safeSearch !== '1') params.set('guvenli', data.safeSearch);
     preloadData(buildSearchUrl(params, isSubdomain));
   }
 
   let hasActiveFilters = $derived(
     Boolean(
-      (data.language && data.language !== "tr") ||
-        data.timeRange ||
-        (data.safeSearch && data.safeSearch !== "1") ||
-        data.fileType ||
-        data.siteFilter ||
-        data.verbatim ||
-        data.imgFormat ||
-        data.imgSize ||
-        data.imgColor ||
-        data.imgLicense ||
-        data.videoDuration ||
-        data.videoQuality ||
-        data.videoPlatform ||
-        data.newsSort ||
-        data.codeLang ||
-        data.codePlatform ||
-        data.scholarAccess ||
-        data.scholarYear,
-    ),
+      (data.language && data.language !== 'tr') ||
+      data.timeRange ||
+      (data.safeSearch && data.safeSearch !== '1') ||
+      data.fileType ||
+      data.siteFilter ||
+      data.verbatim ||
+      data.imgFormat ||
+      data.imgSize ||
+      data.imgColor ||
+      data.imgLicense ||
+      data.videoDuration ||
+      data.videoQuality ||
+      data.videoPlatform ||
+      data.newsSort ||
+      data.codeLang ||
+      data.codePlatform ||
+      data.scholarAccess ||
+      data.scholarYear
+    )
   );
 
   function appendActiveCategoryFilters(params) {
-    if (data.fileType) params.set("dosya", data.fileType);
-    if (data.siteFilter) params.set("site", data.siteFilter);
-    if (data.verbatim) params.set("tam", "1");
-    if (data.imgFormat) params.set("format", data.imgFormat);
-    if (data.imgSize) params.set("boyut", data.imgSize);
-    if (data.imgColor) params.set("renk", data.imgColor);
-    if (data.imgLicense) params.set("lisans", data.imgLicense);
-    if (data.videoDuration) params.set("sure", data.videoDuration);
-    if (data.videoQuality) params.set("kalite", data.videoQuality);
-    if (data.videoPlatform) params.set("platform", data.videoPlatform);
-    if (data.newsSort) params.set("sirala", data.newsSort);
-    if (data.codeLang) params.set("dil_prog", data.codeLang);
-    if (data.codePlatform) params.set("kaynak", data.codePlatform);
-    if (data.scholarAccess) params.set("erisim", data.scholarAccess);
-    if (data.scholarYear) params.set("yil", data.scholarYear);
+    if (data.fileType) params.set('dosya', data.fileType);
+    if (data.siteFilter) params.set('site', data.siteFilter);
+    if (data.verbatim) params.set('tam', '1');
+    if (data.imgFormat) params.set('format', data.imgFormat);
+    if (data.imgSize) params.set('boyut', data.imgSize);
+    if (data.imgColor) params.set('renk', data.imgColor);
+    if (data.imgLicense) params.set('lisans', data.imgLicense);
+    if (data.videoDuration) params.set('sure', data.videoDuration);
+    if (data.videoQuality) params.set('kalite', data.videoQuality);
+    if (data.videoPlatform) params.set('platform', data.videoPlatform);
+    if (data.newsSort) params.set('sirala', data.newsSort);
+    if (data.codeLang) params.set('dil_prog', data.codeLang);
+    if (data.codePlatform) params.set('kaynak', data.codePlatform);
+    if (data.scholarAccess) params.set('erisim', data.scholarAccess);
+    if (data.scholarYear) params.set('yil', data.scholarYear);
     return params;
   }
 
   function handleFilterChange(key, value) {
     const params = new URLSearchParams();
-    params.set("q", data.query);
-    if (data.category && data.category !== "general") {
-      params.set("kategori", data.category);
+    params.set('q', data.query);
+    if (data.category && data.category !== 'general') {
+      params.set('kategori', data.category);
     }
-    const currentLang = key === "dil" ? value : data.language;
-    const currentTime = key === "zaman" ? value : data.timeRange;
-    const currentSafe = key === "guvenli" ? value : data.safeSearch;
+    const currentLang = key === 'dil' ? value : data.language;
+    const currentTime = key === 'zaman' ? value : data.timeRange;
+    const currentSafe = key === 'guvenli' ? value : data.safeSearch;
 
-    if (currentLang && currentLang !== "tr") params.set("dil", currentLang);
-    if (currentTime) params.set("zaman", currentTime);
-    if (currentSafe && currentSafe !== "1") params.set("guvenli", currentSafe);
+    if (currentLang && currentLang !== 'tr') params.set('dil', currentLang);
+    if (currentTime) params.set('zaman', currentTime);
+    if (currentSafe && currentSafe !== '1') params.set('guvenli', currentSafe);
 
     const filters = {
-      dosya: key === "dosya" ? value : data.fileType,
-      site: key === "site" ? value : data.siteFilter,
-      tam: key === "tam" ? (value ? "1" : "") : data.verbatim ? "1" : "",
-      format: key === "format" ? value : data.imgFormat,
-      boyut: key === "boyut" ? value : data.imgSize,
-      renk: key === "renk" ? value : data.imgColor,
-      lisans: key === "lisans" ? value : data.imgLicense,
-      sure: key === "sure" ? value : data.videoDuration,
-      kalite: key === "kalite" ? value : data.videoQuality,
-      platform: key === "platform" ? value : data.videoPlatform,
-      sirala: key === "sirala" ? value : data.newsSort,
-      dil_prog: key === "dil_prog" ? value : data.codeLang,
-      kaynak: key === "kaynak" ? value : data.codePlatform,
-      erisim: key === "erisim" ? value : data.scholarAccess,
-      yil: key === "yil" ? value : data.scholarYear,
+      dosya: key === 'dosya' ? value : data.fileType,
+      site: key === 'site' ? value : data.siteFilter,
+      tam: key === 'tam' ? (value ? '1' : '') : data.verbatim ? '1' : '',
+      format: key === 'format' ? value : data.imgFormat,
+      boyut: key === 'boyut' ? value : data.imgSize,
+      renk: key === 'renk' ? value : data.imgColor,
+      lisans: key === 'lisans' ? value : data.imgLicense,
+      sure: key === 'sure' ? value : data.videoDuration,
+      kalite: key === 'kalite' ? value : data.videoQuality,
+      platform: key === 'platform' ? value : data.videoPlatform,
+      sirala: key === 'sirala' ? value : data.newsSort,
+      dil_prog: key === 'dil_prog' ? value : data.codeLang,
+      kaynak: key === 'kaynak' ? value : data.codePlatform,
+      erisim: key === 'erisim' ? value : data.scholarAccess,
+      yil: key === 'yil' ? value : data.scholarYear
     };
 
     for (const [k, v] of Object.entries(filters)) {
@@ -525,25 +507,22 @@
 
   function clearAllFilters() {
     const params = new URLSearchParams();
-    params.set("q", data.query);
-    if (data.category && data.category !== "general") {
-      params.set("kategori", data.category);
+    params.set('q', data.query);
+    if (data.category && data.category !== 'general') {
+      params.set('kategori', data.category);
     }
     goto(buildSearchUrl(params, isSubdomain));
   }
 
   function getPageUrl(pageNum) {
     const params = new URLSearchParams();
-    params.set("q", data.query);
-    if (data.category && data.category !== "general")
-      params.set("kategori", data.category);
-    if (data.language && data.language !== "tr")
-      params.set("dil", data.language);
-    if (data.timeRange) params.set("zaman", data.timeRange);
-    if (data.safeSearch && data.safeSearch !== "1")
-      params.set("guvenli", data.safeSearch);
+    params.set('q', data.query);
+    if (data.category && data.category !== 'general') params.set('kategori', data.category);
+    if (data.language && data.language !== 'tr') params.set('dil', data.language);
+    if (data.timeRange) params.set('zaman', data.timeRange);
+    if (data.safeSearch && data.safeSearch !== '1') params.set('guvenli', data.safeSearch);
     appendActiveCategoryFilters(params);
-    if (pageNum > 1) params.set("sayfa", String(pageNum));
+    if (pageNum > 1) params.set('sayfa', String(pageNum));
     return buildSearchUrl(params, isSubdomain);
   }
 
@@ -570,16 +549,9 @@
   <meta name="robots" content="noindex, follow" />
   {#if data.isHome}
     <title>Kepçe Ara</title>
-    <meta
-      name="description"
-      content="Gizlilik odaklı, açık kaynaklı meta arama motoru."
-    />
+    <meta name="description" content="Gizlilik odaklı, açık kaynaklı meta arama motoru." />
   {:else}
-    <title
-      >{searchPreferences.hideQueryInTitle
-        ? "Kepçe Ara"
-        : `${data.query} | Kepçe Ara`}</title
-    >
+    <title>{searchPreferences.hideQueryInTitle ? 'Kepçe Ara' : `${data.query} | Kepçe Ara`}</title>
     <meta name="description" content="{data.query} arama sonuçları." />
   {/if}
 </svelte:head>
@@ -652,19 +624,19 @@
     <!-- Sonuçlar Gövdesi -->
     <main class="c-search-body" class:is-loading={Boolean($navigating)}>
       <!-- 0. Kepçe Doğrudan Platform Sonucu (Menü / Araç / Arşiv) -->
-      {#if data.category === "general" || !data.category}
+      {#if data.category === 'general' || !data.category}
         <KepceDirectCard card={data.kepceCard} />
       {/if}
 
       <!-- 1. Hızlı Anlık Yanıt (Döviz, Hesap Makinesi - Yalnızca Web sekmesinde) -->
-      {#if data.answer && (data.category === "general" || !data.category) && isAnswerPluginAllowed(data.answer, searchPreferences)}
+      {#if data.answer && (data.category === 'general' || !data.category) && isAnswerPluginAllowed(data.answer, searchPreferences)}
         <div class="c-search-top-answer">
           <AnswerCard answer={data.answer} />
         </div>
       {/if}
 
       <!-- 2. Üst Bilgi Kartı (Yalnızca Web sekmesinde) -->
-      {#if currentInfoboxes && currentInfoboxes.length > 0 && (data.category === "general" || !data.category)}
+      {#if currentInfoboxes && currentInfoboxes.length > 0 && (data.category === 'general' || !data.category)}
         <div class="c-search-top-knowledge">
           <KnowledgeCard infobox={currentInfoboxes[0]} />
         </div>
@@ -679,9 +651,9 @@
               href={buildSearchUrl(
                 new URLSearchParams({
                   q: correction,
-                  kategori: data.category || "general",
+                  kategori: data.category || 'general'
                 }),
-                isSubdomain,
+                isSubdomain
               )}
               class="c-search-spelling-correction__link"
             >
@@ -714,34 +686,32 @@
         {:else if currentResults.length === 0 && !data.answer && !data.kepceCard && (!currentInfoboxes || currentInfoboxes.length === 0)}
           <div class="c-search-no-results">
             <div class="c-search-no-results__icon">
-              {@html icon("search", 32)}
+              {@html icon('search', 32)}
             </div>
             <h2 class="c-search-no-results__title">
               "{data.query}" ile ilgili hiçbir sonuç bulunamadı.
             </h2>
             <ul class="c-search-no-results__tips">
               <li>Tüm kelimelerin doğru yazıldığından emin olun.</li>
-              <li>
-                Daha genel veya farklı anahtar sözcükler kullanmayı deneyin.
-              </li>
-              {#if data.language && data.language !== "all"}
+              <li>Daha genel veya farklı anahtar sözcükler kullanmayı deneyin.</li>
+              {#if data.language && data.language !== 'all'}
                 <li>
                   Bölge filtresini genişletin:
                   <button
                     type="button"
                     class="c-search-inline-btn"
-                    onclick={() => handleFilterChange("dil", "all")}
+                    onclick={() => handleFilterChange('dil', 'all')}
                   >
                     Tüm Dillerde / Küresel Ara
                   </button>
                 </li>
               {/if}
-              {#if data.category && data.category !== "general"}
+              {#if data.category && data.category !== 'general'}
                 <li>
                   <button
                     type="button"
                     class="c-search-inline-btn"
-                    onclick={() => handleCategoryChange("general")}
+                    onclick={() => handleCategoryChange('general')}
                   >
                     Genel Web Sonuçlarına Dön
                   </button>
@@ -749,18 +719,12 @@
               {/if}
             </ul>
           </div>
-        {:else if data.category === "images"}
+        {:else if data.category === 'images'}
           <!-- Görsel Sonuçları Duvarı (Masonry Grid) -->
-          <SearchImageGrid
-            results={currentResults}
-            onSelectImage={openImageLightbox}
-          />
-        {:else if data.category === "videos"}
+          <SearchImageGrid results={currentResults} onSelectImage={openImageLightbox} />
+        {:else if data.category === 'videos'}
           <!-- Video Sonuçları ve Gömülü Oynatıcı -->
-          <SearchVideoGrid
-            results={currentResults}
-            bind:activeVideoEmbed
-          />
+          <SearchVideoGrid results={currentResults} bind:activeVideoEmbed />
         {:else}
           <!-- Standart Web / Haber / Kod / Akademi Sonuçları -->
           <SearchStandardResults
@@ -779,7 +743,7 @@
               class:is-disabled={(data.page || 1) <= 1}
               aria-disabled={(data.page || 1) <= 1}
             >
-              {@html icon("chevronLeft", 18)}
+              {@html icon('chevronLeft', 18)}
               <span class="pagination__btn-text">Önceki</span>
             </a>
 
@@ -787,15 +751,9 @@
               {#each searchPageNumbers as p}
                 <li class="pagination__item">
                   {#if p === data.page}
-                    <span class="pagination__btn is-active" aria-current="page"
-                      >{p}</span
-                    >
+                    <span class="pagination__btn is-active" aria-current="page">{p}</span>
                   {:else}
-                    <a
-                      href={getPageUrl(p)}
-                      class="pagination__btn"
-                      aria-label="Sayfa {p}">{p}</a
-                    >
+                    <a href={getPageUrl(p)} class="pagination__btn" aria-label="Sayfa {p}">{p}</a>
                   {/if}
                 </li>
               {/each}
@@ -806,7 +764,7 @@
               class="pagination__btn pagination__btn--next"
             >
               <span class="pagination__btn-text">Sonraki</span>
-              {@html icon("chevronRight", 18)}
+              {@html icon('chevronRight', 18)}
             </a>
           </nav>
         {/if}

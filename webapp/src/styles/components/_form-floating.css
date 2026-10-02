@@ -11,7 +11,9 @@
   .form-group--floating:focus-within {
     border-color: var(--color-accent-primary);
     background-color: var(--color-card);
-    box-shadow: 0 0 0 1px var(--color-accent-primary), var(--shadow-sm);
+    box-shadow:
+      0 0 0 1px var(--color-accent-primary),
+      var(--shadow-sm);
   }
 
   /* Autofill support: style the wrapper when the input inside is autofilled */
@@ -45,10 +47,10 @@
   }
 
   /* Float effect when focused or filled */
-  .form-group--floating input:focus+.form-label,
-  .form-group--floating input:not(:placeholder-shown)+.form-label,
-  .form-group--floating textarea:focus+.form-label,
-  .form-group--floating textarea:not(:placeholder-shown)+.form-label {
+  .form-group--floating input:focus + .form-label,
+  .form-group--floating input:not(:placeholder-shown) + .form-label,
+  .form-group--floating textarea:focus + .form-label,
+  .form-group--floating textarea:not(:placeholder-shown) + .form-label {
     top: 8px;
     font-size: var(--text-2xs);
     font-weight: var(--font-weight-black);
@@ -57,8 +59,8 @@
   }
 
   /* Focused state specific shadow/glow */
-  .form-group--floating input:focus+.form-label,
-  .form-group--floating textarea:focus+.form-label {
+  .form-group--floating input:focus + .form-label,
+  .form-group--floating textarea:focus + .form-label {
     color: var(--color-accent-text);
   }
 

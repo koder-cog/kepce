@@ -31,7 +31,6 @@
     margin-bottom: var(--space-xs);
   } */
 
-
   .settings-section__footer {
     display: block;
     font-size: 13px;
@@ -76,8 +75,6 @@
     padding: var(--space-md) var(--space-lg);
   }
 
-
-
   .settings-row__info {
     display: flex;
     flex-direction: column;
@@ -106,8 +103,6 @@
     align-items: center;
     gap: var(--space-sm);
   }
-
-
 
   .form-input--compact {
     width: auto;
@@ -138,9 +133,6 @@
     opacity: 1;
     margin-top: 2px;
   } */
-
-
-
 
   @media (max-width: 600px) {
     .settings-page {

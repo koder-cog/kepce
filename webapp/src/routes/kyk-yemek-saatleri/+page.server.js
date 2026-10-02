@@ -9,9 +9,9 @@
  */
 export function load() {
   return {
-    ogImage: "https://kepce.org/api/v1/public/og/page/rehber",
-    seoTitle: "KYK Yemek Saatleri | Kepçe",
+    ogImage: 'https://kepce.org/api/v1/public/og/page/rehber',
+    seoTitle: 'KYK Yemek Saatleri | Kepçe',
     seoDescription:
-      "KYK yurtlarında kahvaltı ve akşam yemeği saatleri, hafta sonu saatleri, Al Götür paketleri ve Ramazan ayı düzeni.",
+      'KYK yurtlarında kahvaltı ve akşam yemeği saatleri, hafta sonu saatleri, Al Götür paketleri ve Ramazan ayı düzeni.'
   };
 }

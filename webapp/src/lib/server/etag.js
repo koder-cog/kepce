@@ -13,22 +13,22 @@ import { createHash } from 'node:crypto';
  * @returns {Response} 200 (gövdeli) veya 304 (gövdesiz)
  */
 export function withEtag(request, body, headers) {
-	const hash = createHash('sha256').update(body).digest('hex');
-	const etag = `"${hash}"`;
+  const hash = createHash('sha256').update(body).digest('hex');
+  const etag = `"${hash}"`;
 
-	const allHeaders = { ...headers, ETag: etag };
+  const allHeaders = { ...headers, ETag: etag };
 
-	const ifNoneMatch = request.headers.get('if-none-match');
-	if (ifNoneMatch) {
-		const cleanMatch = ifNoneMatch
-			.trim()
-			.replace(/^W\//, '')
-			.replace(/"/g, '')
-			.replace(/-gzip$/, '');
-		if (cleanMatch === hash || ifNoneMatch.trim() === '*') {
-			return new Response(null, { status: 304, headers: allHeaders });
-		}
-	}
+  const ifNoneMatch = request.headers.get('if-none-match');
+  if (ifNoneMatch) {
+    const cleanMatch = ifNoneMatch
+      .trim()
+      .replace(/^W\//, '')
+      .replace(/"/g, '')
+      .replace(/-gzip$/, '');
+    if (cleanMatch === hash || ifNoneMatch.trim() === '*') {
+      return new Response(null, { status: 304, headers: allHeaders });
+    }
+  }
 
-	return new Response(body, { status: 200, headers: allHeaders });
+  return new Response(body, { status: 200, headers: allHeaders });
 }

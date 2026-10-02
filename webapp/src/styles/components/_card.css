@@ -21,8 +21,12 @@
     border-radius: var(--radius-lg);
     padding: var(--space-xl);
     position: relative;
-    transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default),
-      transform var(--dur-default) var(--ease-spring-bounce), box-shadow var(--dur-default) var(--ease-spring-bounce);
+    transition:
+      background-color var(--motion-effects-default),
+      color var(--motion-effects-default),
+      border-color var(--motion-effects-default),
+      transform var(--dur-default) var(--ease-spring-bounce),
+      box-shadow var(--dur-default) var(--ease-spring-bounce);
     display: flex;
     flex-direction: column;
     height: 100%;
@@ -102,7 +106,6 @@
     background-color: var(--color-border-light);
   }
 
-
   /* Tooltip Portal */
   .tooltip-portal {
     position: absolute;
@@ -139,7 +142,9 @@
     pointer-events: none;
     z-index: var(--z-max);
     opacity: 0;
-    transition: opacity var(--dur-fast) var(--ease-standard), transform var(--dur-fast) var(--ease-standard);
+    transition:
+      opacity var(--dur-fast) var(--ease-standard),
+      transform var(--dur-fast) var(--ease-standard);
     white-space: normal;
     word-break: normal;
     overflow-wrap: break-word;
@@ -181,7 +186,6 @@
   .tooltip-instance--expressive.tooltip-instance--visible {
     pointer-events: auto;
   }
-
 
   .c-badge-pill {
     font-size: var(--text-2xs);
@@ -395,7 +399,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: transform var(--dur-default) var(--ease-spring-bounce),
+    transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       color var(--dur-fast) var(--ease-standard),
       filter var(--dur-fast) var(--ease-standard);
   }
@@ -470,7 +475,8 @@
     background: none;
     cursor: pointer;
     border-radius: var(--radius-sm);
-    transition: transform var(--dur-default) var(--ease-spring-bounce),
+    transition:
+      transform var(--dur-default) var(--ease-spring-bounce),
       color var(--dur-fast) var(--ease-standard),
       background-color var(--dur-fast) var(--ease-standard);
     will-change: transform;
@@ -494,13 +500,13 @@
     fill: currentColor;
   }
 
-  .meal-card__vote-btn.is-active[data-vote="up"],
-  .meal-card__vote-btn.is-active[data-vote="up"]:hover {
+  .meal-card__vote-btn.is-active[data-vote='up'],
+  .meal-card__vote-btn.is-active[data-vote='up']:hover {
     color: var(--color-accent-positive);
   }
 
-  .meal-card__vote-btn.is-active[data-vote="down"],
-  .meal-card__vote-btn.is-active[data-vote="down"]:hover {
+  .meal-card__vote-btn.is-active[data-vote='down'],
+  .meal-card__vote-btn.is-active[data-vote='down']:hover {
     color: var(--color-accent-negative);
   }
 
@@ -603,7 +609,11 @@
   /* ── amk botu Köşesi Card ──────────────────────────────────── */
 
   .bot-card {
-    background: linear-gradient(135deg, var(--color-accent-primary) 0%, var(--color-accent-primary-hover) 100%);
+    background: linear-gradient(
+      135deg,
+      var(--color-accent-primary) 0%,
+      var(--color-accent-primary-hover) 100%
+    );
     border-radius: var(--radius-lg);
     padding: var(--space-xl);
     color: var(--color-text);
@@ -612,8 +622,12 @@
     height: 100%;
     position: relative;
     overflow: hidden;
-    transition: background-color var(--motion-effects-default), color var(--motion-effects-default), border-color var(--motion-effects-default),
-      transform var(--dur-default) var(--ease-spring-bounce), box-shadow var(--dur-default) var(--ease-spring-bounce);
+    transition:
+      background-color var(--motion-effects-default),
+      color var(--motion-effects-default),
+      border-color var(--motion-effects-default),
+      transform var(--dur-default) var(--ease-spring-bounce),
+      box-shadow var(--dur-default) var(--ease-spring-bounce);
     will-change: transform;
   }
 
@@ -786,7 +800,8 @@
     flex-direction: column;
     gap: var(--space-md);
     position: relative;
-    transition: background-color var(--motion-effects-default),
+    transition:
+      background-color var(--motion-effects-default),
       border-color var(--motion-effects-default),
       transform var(--dur-default) var(--ease-spring-bounce),
       box-shadow var(--dur-default) var(--ease-spring-bounce);

@@ -1,19 +1,15 @@
 <script>
-  import { formatUrlBreadcrumb } from "$lib/search/searchHelpers.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+  import { formatUrlBreadcrumb } from '$lib/search/searchHelpers.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
 
-  let {
-    isOpen = false,
-    image = null,
-    onClose = () => {},
-  } = $props();
+  let { isOpen = false, image = null, onClose = () => {} } = $props();
 </script>
 
 {#if isOpen && image}
   <div
     class="c-search-lightbox-backdrop"
     onclick={onClose}
-    onkeydown={(e) => e.key === "Escape" && onClose()}
+    onkeydown={(e) => e.key === 'Escape' && onClose()}
     role="presentation"
     tabindex="-1"
   >

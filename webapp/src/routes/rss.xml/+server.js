@@ -5,60 +5,60 @@ import { CITY_MAP } from '@/utils/turkish.js';
 const BASE_URL = 'https://kepce.org';
 
 function escapeXml(unsafe) {
-	if (!unsafe) return '';
-	return String(unsafe).replace(/[<>&'"]/g, (c) => {
-		switch (c) {
-			case '<':
-				return '&lt;';
-			case '>':
-				return '&gt;';
-			case '&':
-				return '&amp;';
-			case '\'':
-				return '&apos;';
-			case '"':
-				return '&quot;';
-			default:
-				return c;
-		}
-	});
+  if (!unsafe) return '';
+  return String(unsafe).replace(/[<>&'"]/g, (c) => {
+    switch (c) {
+      case '<':
+        return '&lt;';
+      case '>':
+        return '&gt;';
+      case '&':
+        return '&amp;';
+      case "'":
+        return '&apos;';
+      case '"':
+        return '&quot;';
+      default:
+        return c;
+    }
+  });
 }
 
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ request }) {
-	const today = istanbulToday();
+  const today = istanbulToday();
 
-	// Bugünün onaylı menülerini çek
-	const payload = await apiGet(`/api/v1/menus?date=${today}`, {
-		fallback: [],
-		timeout: 8000
-	});
+  // Bugünün onaylı menülerini çek
+  const payload = await apiGet(`/api/v1/menus?date=${today}`, {
+    fallback: [],
+    timeout: 8000
+  });
 
-	const menus = normalizeMenuList(payload);
-	const nowRfc822 = new Date().toUTCString();
+  const menus = normalizeMenuList(payload);
+  const nowRfc822 = new Date().toUTCString();
 
-	const items = (Array.isArray(menus) ? menus : []).map((m) => {
-		const citySlug = m.city_slug || 'istanbul';
-		const cityName = CITY_MAP[citySlug] || citySlug;
-		const mealTitle = m.meal_type === 'breakfast' ? 'Kahvaltı' : 'Akşam Yemeği';
-		const dishes = (m.items || m.dishes || [])
-			.map((d) => (typeof d === 'string' ? d : d.name ?? d.raw_name))
-			.filter(Boolean);
+  const items = (Array.isArray(menus) ? menus : []).map((m) => {
+    const citySlug = m.city_slug || 'istanbul';
+    const cityName = CITY_MAP[citySlug] || citySlug;
+    const mealTitle = m.meal_type === 'breakfast' ? 'Kahvaltı' : 'Akşam Yemeği';
+    const dishes = (m.items || m.dishes || [])
+      .map((d) => (typeof d === 'string' ? d : (d.name ?? d.raw_name)))
+      .filter(Boolean);
 
-		const title = `${cityName} - ${mealTitle} (${today})`;
-		const link = `${BASE_URL}/${citySlug}/${today}`;
-		const desc = dishes.length > 0 ? dishes.join(', ') : 'Menü içeriği';
+    const title = `${cityName} - ${mealTitle} (${today})`;
+    const link = `${BASE_URL}/${citySlug}/${today}`;
+    const desc = dishes.length > 0 ? dishes.join(', ') : 'Menü içeriği';
 
-		return `    <item>
+    return `    <item>
       <title>${escapeXml(title)}</title>
       <link>${link}</link>
       <guid isPermaLink="true">${link}#${m.id || m.meal_type}</guid>
       <pubDate>${nowRfc822}</pubDate>
       <description>${escapeXml(desc)}</description>
     </item>`;
-	});
+  });
 
-	const xml = `<?xml version="1.0" encoding="UTF-8"?>
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Kepçe - Günlük KYK Yemek Menüleri</title>
@@ -71,8 +71,8 @@ ${items.join('\n')}
   </channel>
 </rss>`;
 
-	return withEtag(request, xml, {
-		'Content-Type': 'application/xml; charset=utf-8',
-		'Cache-Control': 'public, max-age=0, s-maxage=1800'
-	});
+  return withEtag(request, xml, {
+    'Content-Type': 'application/xml; charset=utf-8',
+    'Cache-Control': 'public, max-age=0, s-maxage=1800'
+  });
 }

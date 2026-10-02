@@ -1,11 +1,11 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
+  import { icon } from '@/components/ui/icons.js';
 
   let {
-    basePath = "",
-    query = "",
-    category = "general",
-    searchInput = "",
+    basePath = '',
+    query = '',
+    category = 'general',
+    searchInput = '',
     searchInputEl = $bindable(null),
     isLoading = false,
     searchHistory = [],
@@ -23,19 +23,19 @@
     onClearHistory = () => {},
     onRemoveHistoryItem = () => {},
     onOpenInfo = () => {},
-    onOpenSettings = () => {},
+    onOpenSettings = () => {}
   } = $props();
 </script>
 
 <header class="c-search-results__topbar">
   <div class="c-search-results__topbar-inner">
     <a
-      href={basePath || "/"}
+      href={basePath || '/'}
       class="c-search-results__brand"
       aria-label="Kepçe Ara"
       title="Kepçe Ara"
     >
-      {@html icon("logoSmallExperimental", 36, "", "Kepçe Logosu")}
+      {@html icon('logoSmallExperimental', 36, '', 'Kepçe Logosu')}
     </a>
 
     <div class="c-search-results__search-wrap">
@@ -53,13 +53,8 @@
           aria-label="Ara"
           autocomplete="off"
         />
-        <button
-          type="submit"
-          class="c-search-box__submit"
-          aria-label="Ara"
-          title="Ara"
-        >
-          {@html icon("search", 20)}
+        <button type="submit" class="c-search-box__submit" aria-label="Ara" title="Ara">
+          {@html icon('search', 20)}
         </button>
 
         {#if isLoading}
@@ -68,17 +63,10 @@
 
         <!-- Yerel Arama Geçmişi (Arama çubuğu boş ve odaklıyken) -->
         {#if isHistoryOpen && searchHistory.length > 0 && !searchInput}
-          <ul
-            class="c-search-autocomplete c-search-history-panel"
-            role="listbox"
-          >
+          <ul class="c-search-autocomplete c-search-history-panel" role="listbox">
             <li class="c-search-history-header">
               <span>Son Aramalar</span>
-              <button
-                type="button"
-                class="c-search-history-clear"
-                onmousedown={onClearHistory}
-              >
+              <button type="button" class="c-search-history-clear" onmousedown={onClearHistory}>
                 Temizle
               </button>
             </li>
@@ -91,7 +79,7 @@
                 aria-selected="false"
               >
                 <span class="c-search-autocomplete__icon">
-                  {@html icon("clock", 16)}
+                  {@html icon('clock', 16)}
                 </span>
                 <span class="c-search-history__text">{item}</span>
                 <button
@@ -117,12 +105,8 @@
                 role="option"
                 aria-selected="false"
               >
-                <span class="c-search-autocomplete__preview-badge"
-                  >{instantPreview.badge}</span
-                >
-                <strong class="c-search-autocomplete__preview-text"
-                  >{instantPreview.text}</strong
-                >
+                <span class="c-search-autocomplete__preview-badge">{instantPreview.badge}</span>
+                <strong class="c-search-autocomplete__preview-text">{instantPreview.text}</strong>
               </li>
             {/if}
             {#each suggestions as item, idx}
@@ -134,12 +118,8 @@
                   role="option"
                   aria-selected={idx === selectedSuggestionIndex}
                 >
-                  <span class="c-search-autocomplete__bang-prefix"
-                    >{item.prefix}</span
-                  >
-                  <span class="c-search-autocomplete__bang-label"
-                    >{item.label}</span
-                  >
+                  <span class="c-search-autocomplete__bang-prefix">{item.prefix}</span>
+                  <span class="c-search-autocomplete__bang-label">{item.label}</span>
                 </li>
               {:else}
                 <li
@@ -150,7 +130,7 @@
                   aria-selected={idx === selectedSuggestionIndex}
                 >
                   <span class="c-search-autocomplete__icon">
-                    {@html icon("search", 16)}
+                    {@html icon('search', 16)}
                   </span>
                   <span>{item.displayText || item}</span>
                 </li>
@@ -164,15 +144,15 @@
     <div class="c-search-results__topbar-actions">
       <a
         href={basePath
-          ? `${basePath}/rss?q=${encodeURIComponent(query)}&kategori=${category || "general"}`
-          : `/ara/rss?q=${encodeURIComponent(query)}&kategori=${category || "general"}`}
+          ? `${basePath}/rss?q=${encodeURIComponent(query)}&kategori=${category || 'general'}`
+          : `/ara/rss?q=${encodeURIComponent(query)}&kategori=${category || 'general'}`}
         target="_blank"
         rel="noopener noreferrer"
         class="c-search-icon-btn"
         aria-label="RSS Linki"
         title="RSS Linki"
       >
-        {@html icon("rss", 20)}
+        {@html icon('rss', 20)}
       </a>
       <button
         type="button"
@@ -181,7 +161,7 @@
         aria-label="Hakkında"
         title="Hakkında"
       >
-        {@html icon("info", 22)}
+        {@html icon('info', 22)}
       </button>
       <button
         type="button"
@@ -190,7 +170,7 @@
         aria-label="Ayarlar"
         title="Ayarlar"
       >
-        {@html icon("settings", 22)}
+        {@html icon('settings', 22)}
       </button>
     </div>
   </div>

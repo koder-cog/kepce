@@ -22,5 +22,5 @@ export const api = {
   ...systemApi,
   ...reportsApi,
   ...contactApi,
-  ...notificationsApi,
+  ...notificationsApi
 };

@@ -6,8 +6,8 @@
  * No style rules or element selectors live here.
  */
 
-@import "_colors.css";
-@import "_typography.css";
-@import "_spacing.css";
-@import "_motion.css";
-@import "_shadows.css";
+@import '_colors.css';
+@import '_typography.css';
+@import '_spacing.css';
+@import '_motion.css';
+@import '_shadows.css';

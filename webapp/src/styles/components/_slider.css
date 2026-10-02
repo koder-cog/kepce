@@ -28,7 +28,8 @@
     border-radius: 50%;
     box-shadow: var(--shadow-sm);
     cursor: pointer;
-    transition: transform var(--dur-fast) var(--ease-standard),
+    transition:
+      transform var(--dur-fast) var(--ease-standard),
       background var(--dur-fast) var(--ease-standard);
   }
 

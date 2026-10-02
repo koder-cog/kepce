@@ -22,28 +22,27 @@
 
   async function fetchComments(query = '', isLoadMore = false) {
     if (!isLoadMore) {
-        isLoading = true;
-        offset = 0;
-        comments = [];
+      isLoading = true;
+      offset = 0;
+      comments = [];
     } else {
-        isLoadingMore = true;
+      isLoadingMore = true;
     }
     errorMsg = null;
-    
+
     try {
       let res = await api.getAllVotes(query, limit, offset);
-      let newVotes = Array.isArray(res) ? res : (res?.data || []);
-      newVotes = newVotes.filter(v => v.sentiment !== 'report');
-      
+      let newVotes = Array.isArray(res) ? res : res?.data || [];
+      newVotes = newVotes.filter((v) => v.sentiment !== 'report');
+
       if (isLoadMore) {
-          comments = [...comments, ...newVotes];
+        comments = [...comments, ...newVotes];
       } else {
-          comments = newVotes;
+        comments = newVotes;
       }
-      
+
       const total = res?.total !== undefined ? res.total : 0;
       hasMore = comments.length < total && newVotes.length > 0;
-      
     } catch (err) {
       errorMsg = err.message || 'Yorumlar yüklenirken bir hata oluştu.';
     } finally {
@@ -69,7 +68,9 @@
       await api.approveVote(id);
       showToast('Yorum yayına alındı.', 'success');
       fetchComments(searchQuery.trim());
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   async function rejectComment(id) {
@@ -77,7 +78,9 @@
       await api.rejectVote(id);
       showToast('Yorum yayından kaldırıldı.');
       fetchComments(searchQuery.trim());
-    } catch (err) { showToast(err.message, 'error'); }
+    } catch (err) {
+      showToast(err.message, 'error');
+    }
   }
 
   function purgeComment(id) {
@@ -97,7 +100,9 @@
               showToast('Yorum kalıcı olarak silindi.', 'danger');
               fetchComments(searchQuery.trim());
               close();
-            } catch (err) { showToast(err.message); }
+            } catch (err) {
+              showToast(err.message);
+            }
           }
         }
       ]
@@ -128,14 +133,14 @@
     <span class="admin-search-bar__icon">
       {@html icon('search', 16)}
     </span>
-    <input 
-      type="text" 
-      class="admin-search-bar__input u-text-base" 
-      placeholder="Yorum veya kullanıcı ara..." 
+    <input
+      type="text"
+      class="admin-search-bar__input u-text-base"
+      placeholder="Yorum veya kullanıcı ara..."
       autocomplete="off"
       value={searchQuery}
       oninput={handleSearchInput}
-    >
+    />
   </div>
 </div>
 
@@ -147,23 +152,36 @@
   {:else if errorMsg}
     <EmptyState statusCode={500} desc={errorMsg} />
   {:else if comments.length === 0}
-    <EmptyState iconName={'check'} title={'Hiç Yorum Yok'} desc={'Sistemde henüz bir yorum bulunamadı.'} />
+    <EmptyState
+      iconName={'check'}
+      title={'Hiç Yorum Yok'}
+      desc={'Sistemde henüz bir yorum bulunamadı.'}
+    />
   {:else}
     <div class="comment-list">
       {#each comments as comment (comment.id)}
         <article class="comment-card" data-id={comment.id}>
           <header class="comment-card__header-group">
             <div class="comment-card__meta">
-              <strong class="u-text-base u-color-text">{sanitizeText(comment.user?.username || 'Anonim')}</strong>
+              <strong class="u-text-base u-color-text"
+                >{sanitizeText(comment.user?.username || 'Anonim')}</strong
+              >
               <span class="u-color-muted u-text-sm">·</span>
-              <span class="comment-card__date u-text-sm u-color-muted">{new Date(comment.created_at).toLocaleString('tr-TR')}</span>
+              <span class="comment-card__date u-text-sm u-color-muted"
+                >{new Date(comment.created_at).toLocaleString('tr-TR')}</span
+              >
               <span class="u-color-muted u-text-sm">·</span>
-              <span class="u-text-sm u-color-muted">{comment.reaction_summary?.up || 0} beğeni</span>
+              <span class="u-text-sm u-color-muted">{comment.reaction_summary?.up || 0} beğeni</span
+              >
             </div>
             <div class="comment-card__meta">
-              <span class="comment-card__id c-link--subtle u-text-sm">#{comment.id.toString().substring(0, 8)}</span>
+              <span class="comment-card__id c-link--subtle u-text-sm"
+                >#{comment.id.toString().substring(0, 8)}</span
+              >
               <span class="u-color-muted u-text-sm">·</span>
-              <span class="u-text-sm u-color-muted">{translateStatus(comment.status, comment.is_deleted)}</span>
+              <span class="u-text-sm u-color-muted"
+                >{translateStatus(comment.status, comment.is_deleted)}</span
+              >
               <span class="u-color-muted u-text-sm">·</span>
               <span class="u-text-sm u-color-muted">{translateSentiment(comment.sentiment)}</span>
             </div>
@@ -177,20 +195,26 @@
 
           <footer class="comment-card__actions">
             {#if comment.is_deleted}
-              <button class="btn btn--sm btn--secondary" onclick={() => approveComment(comment.id)}>Yayına koy</button>
+              <button class="btn btn--sm btn--secondary" onclick={() => approveComment(comment.id)}
+                >Yayına koy</button
+              >
             {:else}
-              <button class="btn btn--sm btn--secondary" onclick={() => rejectComment(comment.id)}>Yayından kaldır</button>
+              <button class="btn btn--sm btn--secondary" onclick={() => rejectComment(comment.id)}
+                >Yayından kaldır</button
+              >
             {/if}
-            <button class="btn btn--sm btn--danger" onclick={() => purgeComment(comment.id)}>Kalıcı olarak sil</button>
+            <button class="btn btn--sm btn--danger" onclick={() => purgeComment(comment.id)}
+              >Kalıcı olarak sil</button
+            >
           </footer>
         </article>
       {/each}
     </div>
-    
+
     {#if hasMore}
       <div class="u-text-center u-mt-md u-mb-lg">
-        <button 
-          class="btn btn--secondary btn--lg" 
+        <button
+          class="btn btn--secondary btn--lg"
           disabled={isLoadingMore}
           onclick={() => {
             offset += limit;

@@ -4,22 +4,15 @@
     getFaviconUrl,
     formatUrlBreadcrumb,
     formatDateSnippet,
-    highlightQuery,
-  } from "$lib/search/searchHelpers.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+    highlightQuery
+  } from '$lib/search/searchHelpers.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
 
-  let {
-    results = [],
-    query = "",
-    selectedResultIndex = -1,
-  } = $props();
+  let { results = [], query = '', selectedResultIndex = -1 } = $props();
 </script>
 
 {#each results as item, idx}
-  {@const favicon = getFaviconUrl(
-    item.url,
-    searchPreferences.faviconResolver,
-  )}
+  {@const favicon = getFaviconUrl(item.url, searchPreferences.faviconResolver)}
   {@const dateBadge = formatDateSnippet(item.publishedDate)}
   <article
     id="search-result-{idx}"
@@ -35,17 +28,10 @@
       class="c-search-item__header"
     >
       {#if favicon}
-        <img
-          src={favicon}
-          alt=""
-          class="c-search-item__favicon"
-          loading="lazy"
-        />
+        <img src={favicon} alt="" class="c-search-item__favicon" loading="lazy" />
       {/if}
       <span class="c-search-item__domain">{getDomain(item.url)}</span>
-      <span class="c-search-item__breadcrumb"
-        >{formatUrlBreadcrumb(item.url)}</span
-      >
+      <span class="c-search-item__breadcrumb">{formatUrlBreadcrumb(item.url)}</span>
     </a>
     <a
       href={item.url}

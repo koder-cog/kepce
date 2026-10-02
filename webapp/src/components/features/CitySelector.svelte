@@ -1,193 +1,165 @@
 <script>
-    import { globalState, authActions } from "../../state.svelte.js";
+  import { globalState, authActions } from '../../state.svelte.js';
 
-    import {
-        detectCitySilent,
-        detectCityPrecise,
-        detectCityIP,
-    } from "../../utils/geo.js";
-    import { showToast } from "../../components/ui/toast.js";
-    import Dropdown from "./Dropdown.svelte";
-    import { createModal } from "./modal.js";
-    import { setCurrentCity } from "../../stores/city.svelte.js";
-    import { onMount } from "svelte";
-    import { goto } from "$app/navigation";
+  import { detectCitySilent, detectCityPrecise, detectCityIP } from '../../utils/geo.js';
+  import { showToast } from '../../components/ui/toast.js';
+  import Dropdown from './Dropdown.svelte';
+  import { createModal } from './modal.js';
+  import { setCurrentCity } from '../../stores/city.svelte.js';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
 
-    let {
-        cities = [],
-        value = $bindable(),
-        variant = "secondary",
-        onChange = () => {},
-        showSpecial = true,
-        localOnly = false,
-    } = $props();
+  let {
+    cities = [],
+    value = $bindable(),
+    variant = 'secondary',
+    onChange = () => {},
+    showSpecial = true,
+    localOnly = false
+  } = $props();
 
-    let options = $derived(
-        [...cities]
-            .sort((a, b) =>
-                new Intl.Collator("tr-TR", { sensitivity: "base" }).compare(
-                    a.name,
-                    b.name,
-                ),
-            )
-            .map((c) => ({ value: c.slug, label: c.name })),
-    );
+  let options = $derived(
+    [...cities]
+      .sort((a, b) => new Intl.Collator('tr-TR', { sensitivity: 'base' }).compare(a.name, b.name))
+      .map((c) => ({ value: c.slug, label: c.name }))
+  );
 
-    let slugs = $derived(cities.map((c) => c.slug));
+  let slugs = $derived(cities.map((c) => c.slug));
 
-    // Otomatik tespit ve kullanıcı seçiminde üst bileşene haber ver.
-    // `$bindable` + parent'ta tek yönlü `value={...}` kombinasyonunda,
-    // içeride yapılan atamalar üst bileşene OTOMATİK YAYILMAZ (Svelte 5'te
-    // store getter/setter'larına `bind:` güvenilir değildir). Bu yüzden
-    // her değişiklikte açık `onChange` callback'i çağırıyoruz; böylece
-    // timeline store gibi üst state'ler tetiklenip `loadMenus()` çalışıyor.
-    //
-    // ÖNEMLİ: `newCity === value` guard'ı eskiden Dropdown'un `bind:value`
-    // ile değeri zaten güncellemesinden sonra çağrıldığı için her zaman eşit
-    // düşüp `onChange` hiç tetiklenmiyordu; bu, üst bileşenlerdeki (timeline,
-    // /arşiv) state güncellemesini kırıyordu. Guard kaldırıldı; aynı değer
-    // tekrar seçildiğinde de parent'a haber veriliyor.
-    function commit(newCity) {
-        if (!newCity) return;
-        value = newCity;
-        onChange(newCity);
+  // Otomatik tespit ve kullanıcı seçiminde üst bileşene haber ver.
+  // `$bindable` + parent'ta tek yönlü `value={...}` kombinasyonunda,
+  // içeride yapılan atamalar üst bileşene OTOMATİK YAYILMAZ (Svelte 5'te
+  // store getter/setter'larına `bind:` güvenilir değildir). Bu yüzden
+  // her değişiklikte açık `onChange` callback'i çağırıyoruz; böylece
+  // timeline store gibi üst state'ler tetiklenip `loadMenus()` çalışıyor.
+  //
+  // ÖNEMLİ: `newCity === value` guard'ı eskiden Dropdown'un `bind:value`
+  // ile değeri zaten güncellemesinden sonra çağrıldığı için her zaman eşit
+  // düşüp `onChange` hiç tetiklenmiyordu; bu, üst bileşenlerdeki (timeline,
+  // /arşiv) state güncellemesini kırıyordu. Guard kaldırıldı; aynı değer
+  // tekrar seçildiğinde de parent'a haber veriliyor.
+  function commit(newCity) {
+    if (!newCity) return;
+    value = newCity;
+    onChange(newCity);
+  }
+
+  onMount(() => {
+    const profileCity = globalState?.user?.default_city_slug;
+
+    if (!value && !profileCity) {
+      detectCitySilent()
+        .then((detected) => {
+          if (detected && slugs.includes(detected) && detected !== value) {
+            commit(detected);
+            if (!localOnly) setCurrentCity(detected);
+          }
+        })
+        .catch(() => {});
     }
 
-    onMount(() => {
-        const profileCity = globalState?.user?.default_city_slug;
+    const finalCity = value || profileCity || 'istanbul';
 
-        if (!value && !profileCity) {
-            detectCitySilent()
-                .then((detected) => {
-                    if (
-                        detected &&
-                        slugs.includes(detected) &&
-                        detected !== value
-                    ) {
-                        commit(detected);
-                        if (!localOnly) setCurrentCity(detected);
-                    }
-                })
-                .catch(() => {});
+    if (finalCity !== value) {
+      value = finalCity;
+      // `localOnly` modda (örn. /arşiv) global şehir state'ini
+      // kirletmemek için sadece localStorage'a yazmıyoruz; ama
+      // localStorage'a yazmak kullanıcının profil bilgisi olmadan
+      // sonraki ziyaretlerinde hatırlatması için mantıklı. Bu
+      // yüzden sadece `setCurrentCity`'yi atlayıp localStorage'a
+      // yazmaya devam ediyoruz.
+      if (!localOnly) setCurrentCity(value);
+      onChange(value);
+    }
+
+    if (value && slugs.length > 0 && !slugs.includes(value)) {
+      value = 'istanbul';
+      if (!localOnly) setCurrentCity(value);
+      onChange(value);
+    }
+  });
+
+  async function handleActionClick() {
+    // Önce sessizce IP'den (Cloudflare headers) bulmayı dene
+    const detectedIP = await detectCityIP();
+    if (detectedIP && slugs.includes(detectedIP)) {
+      commit(detectedIP);
+      if (!localOnly) setCurrentCity(detectedIP);
+      showToast('Konumunuz güncellendi.', { timeout: 3000 });
+      return;
+    }
+
+    // Bulunamazsa direkt tarayıcı izni istemek yerine önce uyarı (toast) ile sor
+    showToast('Otomatik konum bulunamadı. Konum izni gerekiyor.', {
+      timeout: 8000,
+      action: {
+        text: 'İzin Ver',
+        callback: async () => {
+          const result = await detectCityPrecise(slugs);
+          if (result?.success && result.slug) {
+            commit(result.slug);
+            if (!localOnly) setCurrentCity(result.slug);
+            showToast('Konumunuz güncellendi.', {
+              timeout: 3000
+            });
+          } else if (result?.unsupported) {
+            showToast('Bulunduğunuz şehir için henüz menü bulunmuyor.', {
+              timeout: 8000,
+              action: {
+                text: 'Menü Gönder',
+                callback: () => {
+                  goto('/menu-gonder');
+                }
+              }
+            });
+          } else if (result?.error === 'permission_denied') {
+            showToast('Konum izni reddedildi. Tarayıcı ayarlarından izin verebilirsiniz.', {
+              type: 'error'
+            });
+          } else if (result?.error === 'position_unavailable') {
+            showToast('Cihazınızdan konum bilgisi alınamadı. Konum servislerini kontrol edin.', {
+              type: 'error'
+            });
+          } else if (result?.error === 'timeout') {
+            showToast('Konum tespiti zaman aşımına uğradı. Lütfen tekrar deneyin.', {
+              type: 'error'
+            });
+          } else if (result?.error === 'out_of_bounds') {
+            showToast('Türkiye sınırları içinde bir konum tespit edilemedi.', { type: 'error' });
+          } else if (result?.error === 'not_supported') {
+            showToast('Tarayıcınız konum özelliğini desteklemiyor.', { type: 'error' });
+          } else {
+            showToast('Konum tespit edilemedi. Lütfen tekrar deneyin.', { type: 'error' });
+          }
         }
-
-        const finalCity = value || profileCity || "istanbul";
-
-        if (finalCity !== value) {
-            value = finalCity;
-            // `localOnly` modda (örn. /arşiv) global şehir state'ini
-            // kirletmemek için sadece localStorage'a yazmıyoruz; ama
-            // localStorage'a yazmak kullanıcının profil bilgisi olmadan
-            // sonraki ziyaretlerinde hatırlatması için mantıklı. Bu
-            // yüzden sadece `setCurrentCity`'yi atlayıp localStorage'a
-            // yazmaya devam ediyoruz.
-            if (!localOnly) setCurrentCity(value);
-            onChange(value);
-        }
-
-        if (value && slugs.length > 0 && !slugs.includes(value)) {
-            value = "istanbul";
-            if (!localOnly) setCurrentCity(value);
-            onChange(value);
-        }
+      }
     });
+  }
 
-    async function handleActionClick() {
-        // Önce sessizce IP'den (Cloudflare headers) bulmayı dene
-        const detectedIP = await detectCityIP();
-        if (detectedIP && slugs.includes(detectedIP)) {
-            commit(detectedIP);
-            if (!localOnly) setCurrentCity(detectedIP);
-            showToast("Konumunuz güncellendi.", { timeout: 3000 });
-            return;
-        }
+  function handleSpecialClick() {
+    createModal({
+      title: 'Şehrinizi göremiyor musunuz?',
+      contentHtml:
+        '<p>"Bizim şehir niye yok" diye dertlenmeden önce o ayki menüyü <a href="/menu-gonder">şuradan</a> gönderiniz. Eğer menü yoksa bayinizden ısrarla isteyiniz.</p>',
+      buttons: [{ label: 'Anladım', variant: 'primary' }]
+    });
+  }
 
-        // Bulunamazsa direkt tarayıcı izni istemek yerine önce uyarı (toast) ile sor
-        showToast("Otomatik konum bulunamadı. Konum izni gerekiyor.", {
-            timeout: 8000,
-            action: {
-                text: "İzin Ver",
-                callback: async () => {
-                    const result = await detectCityPrecise(slugs);
-                    if (result?.success && result.slug) {
-                        commit(result.slug);
-                        if (!localOnly) setCurrentCity(result.slug);
-                        showToast("Konumunuz güncellendi.", {
-                            timeout: 3000,
-                        });
-                    } else if (result?.unsupported) {
-                        showToast(
-                            "Bulunduğunuz şehir için henüz menü bulunmuyor.",
-                            {
-                                timeout: 8000,
-                                action: {
-                                    text: "Menü Gönder",
-                                    callback: () => {
-                                        goto("/menu-gonder");
-                                    },
-                                },
-                            },
-                        );
-                    } else if (result?.error === "permission_denied") {
-                        showToast(
-                            "Konum izni reddedildi. Tarayıcı ayarlarından izin verebilirsiniz.",
-                            { type: "error" },
-                        );
-                    } else if (result?.error === "position_unavailable") {
-                        showToast(
-                            "Cihazınızdan konum bilgisi alınamadı. Konum servislerini kontrol edin.",
-                            { type: "error" },
-                        );
-                    } else if (result?.error === "timeout") {
-                        showToast(
-                            "Konum tespiti zaman aşımına uğradı. Lütfen tekrar deneyin.",
-                            { type: "error" },
-                        );
-                    } else if (result?.error === "out_of_bounds") {
-                        showToast(
-                            "Türkiye sınırları içinde bir konum tespit edilemedi.",
-                            { type: "error" },
-                        );
-                    } else if (result?.error === "not_supported") {
-                        showToast(
-                            "Tarayıcınız konum özelliğini desteklemiyor.",
-                            { type: "error" },
-                        );
-                    } else {
-                        showToast(
-                            "Konum tespit edilemedi. Lütfen tekrar deneyin.",
-                            { type: "error" },
-                        );
-                    }
-                },
-            },
-        });
-    }
-
-    function handleSpecialClick() {
-        createModal({
-            title: "Şehrinizi göremiyor musunuz?",
-            contentHtml:
-                '<p>"Bizim şehir niye yok" diye dertlenmeden önce o ayki menüyü <a href="/menu-gonder">şuradan</a> gönderiniz. Eğer menü yoksa bayinizden ısrarla isteyiniz.</p>',
-            buttons: [{ label: "Anladım", variant: "primary" }],
-        });
-    }
-
-    function handleChange(newCity) {
-        if (!localOnly) setCurrentCity(newCity);
-        commit(newCity);
-    }
+  function handleChange(newCity) {
+    if (!localOnly) setCurrentCity(newCity);
+    commit(newCity);
+  }
 </script>
 
 <Dropdown
-    {options}
-    bind:value
-    {variant}
-    placeholder="Şehir"
-    ariaLabel="Şehir seçiniz"
-    onChange={handleChange}
-    actionItem={{ label: "Konumumu bul" }}
-    onActionClick={handleActionClick}
-    specialItem={showSpecial ? { label: "Şehrinizi göremiyor musunuz?" } : null}
-    onSpecialClick={showSpecial ? handleSpecialClick : null}
+  {options}
+  bind:value
+  {variant}
+  placeholder="Şehir"
+  ariaLabel="Şehir seçiniz"
+  onChange={handleChange}
+  actionItem={{ label: 'Konumumu bul' }}
+  onActionClick={handleActionClick}
+  specialItem={showSpecial ? { label: 'Şehrinizi göremiyor musunuz?' } : null}
+  onSpecialClick={showSpecial ? handleSpecialClick : null}
 />

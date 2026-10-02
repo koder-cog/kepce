@@ -2,11 +2,17 @@ import { api } from './api/index.js';
 import { goto, invalidateAll } from '$app/navigation';
 import { getCookie, clearLoggedCookie } from './utils/cookie.js';
 
-const initialHasSession = typeof document !== 'undefined' ? getCookie('kepce_logged_in') === 'true' : false;
-const cachedUser = (typeof window !== 'undefined' && initialHasSession) ? JSON.parse(localStorage.getItem('kepce_user_cache') || 'null') : null;
+const initialHasSession =
+  typeof document !== 'undefined' ? getCookie('kepce_logged_in') === 'true' : false;
+const cachedUser =
+  typeof window !== 'undefined' && initialHasSession
+    ? JSON.parse(localStorage.getItem('kepce_user_cache') || 'null')
+    : null;
 
-const initialPaginationMode = typeof window !== 'undefined' ? (localStorage.getItem('sayfalamaModu') || 'sayfali') : 'sayfali';
-const initialIsApp = typeof navigator !== 'undefined' ? navigator.userAgent.includes('KepceMobileApp') : false;
+const initialPaginationMode =
+  typeof window !== 'undefined' ? localStorage.getItem('sayfalamaModu') || 'sayfali' : 'sayfali';
+const initialIsApp =
+  typeof navigator !== 'undefined' ? navigator.userAgent.includes('KepceMobileApp') : false;
 
 export const globalState = $state({
   user: cachedUser,
@@ -16,7 +22,7 @@ export const globalState = $state({
   hasSession: initialHasSession,
   devMode: false,
   paginationMode: initialPaginationMode,
-  isApp: initialIsApp,
+  isApp: initialIsApp
 });
 
 export function setPaginationMode(mode) {
@@ -64,8 +70,11 @@ export const authActions = {
     } catch (err) {
       console.warn('Auth check failed:', err);
       const msg = String(err?.message || '');
-      const isAuthError = err?.status === 401 || err?.status === 404 ||
-        msg.includes('401') || msg.includes('404') ||
+      const isAuthError =
+        err?.status === 401 ||
+        err?.status === 404 ||
+        msg.includes('401') ||
+        msg.includes('404') ||
         msg.includes('Invalid or expired token') ||
         msg.includes('oturum süresi dolmuş') ||
         msg.includes('açık anahtar eksik') ||
@@ -88,7 +97,9 @@ export const authActions = {
       }
       globalState.isReady = true;
       if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('auth-changed', { detail: { user: globalState.user } }));
+        window.dispatchEvent(
+          new CustomEvent('auth-changed', { detail: { user: globalState.user } })
+        );
       }
     }
   },

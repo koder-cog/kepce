@@ -68,7 +68,7 @@
   }
 
   .badge-item--unlocked .badge-circle {
-    box-shadow: 0 0 14px color-mix(in srgb, var(--tier-color, #C4C4C4) 25%, transparent);
+    box-shadow: 0 0 14px color-mix(in srgb, var(--tier-color, #c4c4c4) 25%, transparent);
   }
 
   .badge-item--unlocked .badge-item__karma {
@@ -84,8 +84,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--tier-color, #C4C4C4) 50%, transparent);
-    color: var(--tier-color, #C4C4C4);
+    background: color-mix(in srgb, var(--tier-color, #c4c4c4) 50%, transparent);
+    color: var(--tier-color, #c4c4c4);
     transition: transform var(--dur-fast) var(--ease-standard);
     flex-shrink: 0;
   }
@@ -97,19 +97,19 @@
 
   /* Figma 4 Kademe Renkleri */
   .badge--other {
-    --tier-color: #C4C4C4;
+    --tier-color: #c4c4c4;
   }
 
   .badge--silver {
-    --tier-color: #B2BEB5;
+    --tier-color: #b2beb5;
   }
 
   .badge--bronze {
-    --tier-color: #B67D5E;
+    --tier-color: #b67d5e;
   }
 
   .badge--gold {
-    --tier-color: #FFB400;
+    --tier-color: #ffb400;
   }
 
   /* ── Card Typography ───────────────────── */
@@ -151,7 +151,6 @@
     opacity: 0.45;
     margin: 0 1px;
   }
-
 
   /* ── Responsive ────────────────────────── */
   @media (max-width: 600px) {

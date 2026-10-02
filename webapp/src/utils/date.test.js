@@ -13,7 +13,7 @@ describe('getMonthName', () => {
 describe('timeAgo', () => {
   it('should format relative times in Turkish', () => {
     const now = new Date();
-    
+
     // Now
     expect(timeAgo(now)).toBe('şimdi');
 

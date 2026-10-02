@@ -11,32 +11,32 @@ import AuthGateModal from './AuthGateModal.svelte';
 let activeGate = null;
 
 export function openAuthGate(options = {}) {
-    // Zaten açıksa yeni bir tane açma
-    if (activeGate) return activeGate;
+  // Zaten açıksa yeni bir tane açma
+  if (activeGate) return activeGate;
 
-    const target = document.createElement('div');
-    document.body.appendChild(target);
+  const target = document.createElement('div');
+  document.body.appendChild(target);
 
-    const app = mount(AuthGateModal, {
-        target,
-        props: {
-            reason: options.reason || null,
-            onClose: () => {
-                unmount(app);
-                target.remove();
-                if (activeGate?.target === target) activeGate = null;
-            }
-        }
-    });
+  const app = mount(AuthGateModal, {
+    target,
+    props: {
+      reason: options.reason || null,
+      onClose: () => {
+        unmount(app);
+        target.remove();
+        if (activeGate?.target === target) activeGate = null;
+      }
+    }
+  });
 
-    activeGate = {
-        target,
-        close: () => {
-            // Bileşenin export ettiği close() çıkış animasyonunu oynatır;
-            // onClose zinciri unmount + temizliği halleder.
-            if (app && app.close) app.close();
-        }
-    };
+  activeGate = {
+    target,
+    close: () => {
+      // Bileşenin export ettiği close() çıkış animasyonunu oynatır;
+      // onClose zinciri unmount + temizliği halleder.
+      if (app && app.close) app.close();
+    }
+  };
 
-    return activeGate;
+  return activeGate;
 }

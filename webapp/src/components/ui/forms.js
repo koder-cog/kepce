@@ -27,11 +27,13 @@ export function createBoxedList(content) {
 export function createListRow({ title, desc, tooltip, control, id, isLabel = true }) {
   const tag = isLabel ? 'label' : 'div';
   const labelId = id ? `id="${id}"` : '';
-  const tooltipHtml = tooltip ? `
+  const tooltipHtml = tooltip
+    ? `
     <span class="c-list-row__info-icon" data-tooltip="${tooltip}">
       ${icon('info', 20)}
     </span>
-  ` : '';
+  `
+    : '';
 
   return `
     <${tag} class="c-list-row" ${labelId}>
@@ -63,18 +65,24 @@ export function createSwitch({ id, checked = false }) {
  * Creates a generic Segmented Control (Switcher).
  */
 export function createSegmentedControl({ id, options, activeValue, indicatorId, className = '' }) {
-  const indicatorHtml = indicatorId ? `<div class="c-segmented-control__indicator" id="${indicatorId}"></div>` : '';
-  
+  const indicatorHtml = indicatorId
+    ? `<div class="c-segmented-control__indicator" id="${indicatorId}"></div>`
+    : '';
+
   return `
     <div class="c-segmented-control c-segmented-control--responsive ${className}" id="${id}">
       ${indicatorHtml}
-      ${options.map(opt => `
+      ${options
+        .map(
+          (opt) => `
         <button class="c-segmented-control__btn ${activeValue === opt.value ? 'c-segmented-control__btn--active' : ''}" 
                 data-value="${opt.value}" ${opt.tooltip ? `data-tooltip="${opt.tooltip}"` : ''}>
           ${opt.icon ? icon(opt.icon, 18) : ''}
           ${opt.label ? `<span>${opt.label}</span>` : ''}
         </button>
-      `).join('')}
+      `
+        )
+        .join('')}
     </div>
   `;
 }

@@ -4,14 +4,15 @@ export const systemApi = {
   getSystemHealth: () => request('/system/health'),
   verifyTree: () => request('/system/verify'),
   getStatus: () => request('/system/status'),
-  getStatusHistory: (days = 90) => request(`/system/status/history${buildQuery({ days })}`).catch(() => []),
+  getStatusHistory: (days = 90) =>
+    request(`/system/status/history${buildQuery({ days })}`).catch(() => [])
 };
 
 export const reportsApi = {
   submitReport: (data) =>
     request('/reports', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify(data)
     }),
   getReports: (status = '') => {
     return request(`/reports${buildQuery({ status })}`);
@@ -20,29 +21,27 @@ export const reportsApi = {
   updateContactMessageStatus: (id, status) =>
     request(`/reports/contact/${id}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status })
     }),
-  deleteContactMessage: (id) =>
-    request(`/reports/contact/${id}`, { method: 'DELETE' }),
+  deleteContactMessage: (id) => request(`/reports/contact/${id}`, { method: 'DELETE' }),
   replyToContactMessage: (id, reply_body) =>
     request(`/reports/contact/${id}/reply`, {
       method: 'POST',
-      body: JSON.stringify({ reply_body }),
+      body: JSON.stringify({ reply_body })
     }),
-  getContactMessageReplies: (id) =>
-    request(`/reports/contact/${id}/replies`),
+  getContactMessageReplies: (id) => request(`/reports/contact/${id}/replies`),
   updateReportStatus: (reportId, status) =>
     request(`/reports/${reportId}`, {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ status })
     }),
-  deleteReport: (reportId) => request(`/reports/${reportId}`, { method: 'DELETE' }),
+  deleteReport: (reportId) => request(`/reports/${reportId}`, { method: 'DELETE' })
 };
 
 export const contactApi = {
   submitContactForm: (data) =>
     request('/public/contact', {
       method: 'POST',
-      body: JSON.stringify(data),
-    }),
+      body: JSON.stringify(data)
+    })
 };

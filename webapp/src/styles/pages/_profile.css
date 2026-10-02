@@ -1,5 +1,4 @@
 @layer pages {
-
   .comment-card-list {
     display: flex;
     flex-direction: column;
@@ -25,7 +24,9 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xs);
-    transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+    transition:
+      border-color var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard);
   }
 
   .profile-intro__header {
@@ -50,7 +51,9 @@
     --avatar-size: 110px;
     --ring-thickness: 4px;
     --ring-gap: 2px;
-    --avatar-inner-size: calc(var(--avatar-size) - (var(--ring-thickness) * 2) - (var(--ring-gap) * 2));
+    --avatar-inner-size: calc(
+      var(--avatar-size) - (var(--ring-thickness) * 2) - (var(--ring-gap) * 2)
+    );
 
     position: relative;
     width: var(--avatar-size);
@@ -108,7 +111,9 @@
     align-items: center;
     justify-content: center;
     padding: 0;
-    transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+    transition:
+      border-color var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard);
     cursor: default;
     z-index: 2;
   }
@@ -247,11 +252,11 @@
     width: 36px;
     height: 36px;
     border-radius: var(--radius-full);
-    background: color-mix(in srgb, var(--tier-color, #C4C4C4) 50%, transparent);
+    background: color-mix(in srgb, var(--tier-color, #c4c4c4) 50%, transparent);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--tier-color, #C4C4C4);
+    color: var(--tier-color, #c4c4c4);
     box-shadow: var(--shadow-xs);
     flex-shrink: 0;
     transition: transform var(--dur-fast) var(--ease-standard);
@@ -326,7 +331,8 @@
     border-radius: var(--radius-lg);
     border: 1px solid var(--color-border-subtle);
     background: var(--color-surface);
-    transition: background var(--dur-fast) var(--ease-standard),
+    transition:
+      background var(--dur-fast) var(--ease-standard),
       border-color var(--dur-fast) var(--ease-standard),
       opacity var(--dur-fast) var(--ease-standard);
     user-select: none;
@@ -399,7 +405,8 @@
     border: 1px solid var(--color-border-subtle);
     color: var(--color-text-muted);
     cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-standard),
+    transition:
+      background var(--dur-fast) var(--ease-standard),
       color var(--dur-fast) var(--ease-standard),
       transform var(--dur-fast) var(--ease-standard);
   }
@@ -577,7 +584,10 @@
     justify-content: center;
     cursor: pointer;
     font-size: 16px;
-    transition: background var(--dur-fast) var(--ease-standard), color var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+    transition:
+      background var(--dur-fast) var(--ease-standard),
+      color var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 
@@ -608,7 +618,9 @@
     border: 1px solid var(--color-border-light);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xs);
-    transition: border-color var(--dur-fast) var(--ease-standard), box-shadow var(--dur-fast) var(--ease-standard);
+    transition:
+      border-color var(--dur-fast) var(--ease-standard),
+      box-shadow var(--dur-fast) var(--ease-standard);
   }
 
   .contributor-card:hover {
@@ -777,7 +789,9 @@
     border-radius: var(--radius-lg);
     overflow: hidden;
     margin: 0 auto var(--space-lg);
-    box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, 0.1);
+    box-shadow:
+      var(--shadow-lg),
+      0 0 0 1px rgba(255, 255, 255, 0.1);
     cursor: grab;
   }
 
@@ -808,7 +822,9 @@
     transform: translate(-50%, -50%);
     border: 1.5px solid rgba(255, 255, 255, 0.4);
     border-radius: var(--radius-full);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), inset 0 0 10px rgba(0, 0, 0, 0.2);
+    box-shadow:
+      0 0 0 1px rgba(0, 0, 0, 0.2),
+      inset 0 0 10px rgba(0, 0, 0, 0.2);
   }
 
   .cropper-controls {
@@ -841,7 +857,9 @@
     background: var(--color-surface-sunken);
     color: var(--color-text);
     cursor: pointer;
-    transition: background var(--dur-fast) var(--ease-standard), border-color var(--dur-fast) var(--ease-standard);
+    transition:
+      background var(--dur-fast) var(--ease-standard),
+      border-color var(--dur-fast) var(--ease-standard);
     flex-shrink: 0;
   }
 

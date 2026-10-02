@@ -14,48 +14,48 @@
       title: 'Menü hata bildir',
       options: [
         { value: 'wrong_meal', label: 'Menü yanlış' },
-        { value: 'typo',       label: 'Yazım hatası' },
-        { value: 'other',      label: 'Diğer' },
+        { value: 'typo', label: 'Yazım hatası' },
+        { value: 'other', label: 'Diğer' }
       ],
-      otherValue: 'other',
+      otherValue: 'other'
     },
     bot: {
       title: 'Yapay zeka yanıtını bildir',
       options: [
-        { value: 'bot_incorrect',     label: 'Hatalı / yanlış bilgi' },
-        { value: 'bot_incoherent',    label: 'Tutarsız / anlamsız yanıt' },
+        { value: 'bot_incorrect', label: 'Hatalı / yanlış bilgi' },
+        { value: 'bot_incoherent', label: 'Tutarsız / anlamsız yanıt' },
         { value: 'bot_inappropriate', label: 'Uygunsuz veya kaba dil' },
-        { value: 'bot_other',         label: 'Diğer' },
+        { value: 'bot_other', label: 'Diğer' }
       ],
-      otherValue: 'bot_other',
+      otherValue: 'bot_other'
     },
     comment: {
       title: 'Yorum şikayet et',
       options: [
         { value: 'spam', label: 'Spam/Reklam' },
         { value: 'inappropriate', label: 'Uygunsuz veya hakaret içeriyor' },
-        { value: 'other', label: 'Diğer' },
+        { value: 'other', label: 'Diğer' }
       ],
-      otherValue: 'other',
+      otherValue: 'other'
     },
     user: {
       title: 'Kullanıcıyı şikayet et',
       options: [
         { value: 'abusive', label: 'Rahatsız edici davranış' },
         { value: 'fake_account', label: 'Sahte hesap' },
-        { value: 'other', label: 'Diğer' },
+        { value: 'other', label: 'Diğer' }
       ],
-      otherValue: 'other',
+      otherValue: 'other'
     }
   };
 
   let cfg = $derived(MODES[mode]);
 
   let selectedType = $state();
-  
+
   $effect(() => {
     if (cfg && !selectedType) {
-        selectedType = cfg.options[0].value;
+      selectedType = cfg.options[0].value;
     }
   });
   let description = $state('');
@@ -75,13 +75,11 @@
   });
 
   let isOther = $derived(selectedType === cfg.otherValue);
-  let placeholderText = $derived(isOther ? 'Lütfen sorunu burada açıklayınız...' : 'Neyin yanlış olduğunu kısaca belirt...');
-  
-  let submitDisabled = $derived(
-    isSubmitting || 
-    charOver || 
-    (isOther && !description.trim())
+  let placeholderText = $derived(
+    isOther ? 'Lütfen sorunu burada açıklayınız...' : 'Neyin yanlış olduğunu kısaca belirt...'
   );
+
+  let submitDisabled = $derived(isSubmitting || charOver || (isOther && !description.trim()));
 
   let modalOptions = $derived({
     title: cfg.title,
@@ -99,7 +97,7 @@
         target_type: mode,
         target_id: String(targetId),
         reason: selectedType,
-        description: desc || null,
+        description: desc || null
       });
 
       showToast('Bildirimin için teşekkürler.');
@@ -123,28 +121,33 @@
 
 {#if cfg}
   <Modal options={modalOptions} {onClose} {controller}>
-      <div class="form-group">
-        <div class="form-label">Sebep</div>
-        <Dropdown options={cfg.options} bind:value={selectedType} />
-      </div>
-      <div class="form-group">
-        <label class="form-label" for="report-desc">Açıklama</label>
-        <textarea
-          class="form-textarea form-textarea--resizable"
-          id="report-desc"
-          maxlength="512"
-          placeholder={placeholderText}
-          bind:value={description}
-          bind:this={textareaEl}
-        ></textarea>
-      </div>
+    <div class="form-group">
+      <div class="form-label">Sebep</div>
+      <Dropdown options={cfg.options} bind:value={selectedType} />
+    </div>
+    <div class="form-group">
+      <label class="form-label" for="report-desc">Açıklama</label>
+      <textarea
+        class="form-textarea form-textarea--resizable"
+        id="report-desc"
+        maxlength="512"
+        placeholder={placeholderText}
+        bind:value={description}
+        bind:this={textareaEl}></textarea>
+    </div>
 
     {#snippet footer()}
-      <button class="btn btn--secondary" onclick={() => controller?.close()} disabled={isSubmitting}>Vazgeç</button>
-      <button class="btn btn--primary" onclick={async () => {
-        const success = await submitReport();
-        if (success) controller?.close();
-      }} disabled={submitDisabled}>
+      <button class="btn btn--secondary" onclick={() => controller?.close()} disabled={isSubmitting}
+        >Vazgeç</button
+      >
+      <button
+        class="btn btn--primary"
+        onclick={async () => {
+          const success = await submitReport();
+          if (success) controller?.close();
+        }}
+        disabled={submitDisabled}
+      >
         {isSubmitting ? 'Gönderiliyor...' : 'Bildir'}
       </button>
     {/snippet}

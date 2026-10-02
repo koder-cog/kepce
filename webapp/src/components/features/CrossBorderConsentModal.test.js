@@ -1,17 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 vi.mock('$app/navigation', () => ({
-  goto: vi.fn(),
+  goto: vi.fn()
 }));
 
 vi.mock('@/api/index.js', () => ({
   api: {
-    giveCrossBorderConsent: vi.fn(),
-  },
+    giveCrossBorderConsent: vi.fn()
+  }
 }));
 
 vi.mock('@/components/ui/toast.js', () => ({
-  showToast: vi.fn(),
+  showToast: vi.fn()
 }));
 
 import { globalState } from '@/state.svelte.js';
@@ -30,7 +30,7 @@ describe('CrossBorderConsent Logic', () => {
       id: 'test-user-id',
       username: 'ogrenci',
       consent_cross_border: false,
-      consent_deadline_at: futureDate,
+      consent_deadline_at: futureDate
     };
 
     const deadline = new Date(globalState.user.consent_deadline_at);
@@ -48,7 +48,7 @@ describe('CrossBorderConsent Logic', () => {
       id: 'test-user-id',
       username: 'ogrenci',
       consent_cross_border: false,
-      consent_deadline_at: pastDate,
+      consent_deadline_at: pastDate
     };
 
     const deadline = new Date(globalState.user.consent_deadline_at);
@@ -64,7 +64,7 @@ describe('CrossBorderConsent Logic', () => {
   it('updates global user state upon successful consent call', async () => {
     const mockUpdated = {
       consent_cross_border: true,
-      consent_cross_border_at: new Date().toISOString(),
+      consent_cross_border_at: new Date().toISOString()
     };
     api.giveCrossBorderConsent.mockResolvedValue(mockUpdated);
 
@@ -72,14 +72,14 @@ describe('CrossBorderConsent Logic', () => {
       id: 'test-user-id',
       username: 'ogrenci',
       consent_cross_border: false,
-      consent_deadline_at: new Date().toISOString(),
+      consent_deadline_at: new Date().toISOString()
     };
 
     const res = await api.giveCrossBorderConsent();
     globalState.user = {
       ...globalState.user,
       consent_cross_border: true,
-      consent_cross_border_at: res.consent_cross_border_at,
+      consent_cross_border_at: res.consent_cross_border_at
     };
 
     expect(globalState.user.consent_cross_border).toBe(true);

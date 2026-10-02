@@ -1,35 +1,35 @@
 <script>
-  import ContentPage from "@/components/layout/ContentPage.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import ContentPage from '@/components/layout/ContentPage.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
   let { data } = $props();
 
   const breadcrumbs = [
-    { name: "Ana Sayfa", item: "https://kepce.org/" },
-    { name: "Şehirler", item: "https://kepce.org/sehirler" },
+    { name: 'Ana Sayfa', item: 'https://kepce.org/' },
+    { name: 'Şehirler', item: 'https://kepce.org/sehirler' }
   ];
 
   const citySchema = {
-    "@context": "https://schema.org",
-    "@graph": [
+    '@context': 'https://schema.org',
+    '@graph': [
       {
-        "@type": "CollectionPage",
-        "@id": "https://kepce.org/sehirler#webpage",
-        url: "https://kepce.org/sehirler",
-        name: "KYK Yemek Menüsü Çıkan Şehirler | Kepçe",
-        description: "Kepçe üzerinde KYK yurt yemek menüsü bulunan şehirler ve tabldot listeleri.",
-        inLanguage: "tr-TR",
+        '@type': 'CollectionPage',
+        '@id': 'https://kepce.org/sehirler#webpage',
+        url: 'https://kepce.org/sehirler',
+        name: 'KYK Yemek Menüsü Çıkan Şehirler | Kepçe',
+        description: 'Kepçe üzerinde KYK yurt yemek menüsü bulunan şehirler ve tabldot listeleri.',
+        inLanguage: 'tr-TR'
       },
       {
-        "@type": "BreadcrumbList",
+        '@type': 'BreadcrumbList',
         itemListElement: breadcrumbs.map((b, idx) => ({
-          "@type": "ListItem",
+          '@type': 'ListItem',
           position: idx + 1,
           name: b.name,
-          item: b.item,
-        })),
-      },
-    ],
+          item: b.item
+        }))
+      }
+    ]
   };
 </script>
 
@@ -43,7 +43,8 @@
 
 <ContentPage title="Menüsü Olan Şehirler">
   <p class="city-directory__intro">
-    Kepçe'de tabldot menü verisi bulunan şehirler, güncellik durumuna göre aşağıda listelenmiştir. Şehrinizi seçerek menüleri inceleyebilirsiniz.
+    Kepçe'de tabldot menü verisi bulunan şehirler, güncellik durumuna göre aşağıda listelenmiştir.
+    Şehrinizi seçerek menüleri inceleyebilirsiniz.
   </p>
 
   <div class="city-directory">

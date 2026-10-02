@@ -2,14 +2,11 @@
   import {
     getYoutubeEmbedUrl,
     getYoutubeThumbnail,
-    formatUrlBreadcrumb,
-  } from "$lib/search/searchHelpers.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+    formatUrlBreadcrumb
+  } from '$lib/search/searchHelpers.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
 
-  let {
-    results = [],
-    activeVideoEmbed = $bindable(null),
-  } = $props();
+  let { results = [], activeVideoEmbed = $bindable(null) } = $props();
 </script>
 
 <div class="c-search-videos-grid">
@@ -68,9 +65,7 @@
           {item.title}
         </a>
         <p class="c-search-video-desc">{item.content}</p>
-        <span class="c-search-video-source"
-          >{formatUrlBreadcrumb(item.url)}</span
-        >
+        <span class="c-search-video-source">{formatUrlBreadcrumb(item.url)}</span>
       </div>
     </article>
   {/each}

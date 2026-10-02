@@ -26,7 +26,7 @@ export function sanitize(dirty, config = {}) {
     return DOMPurify.sanitize(str, {
       ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'br', 'span'],
       ALLOWED_ATTR: ['class'],
-      ...config,
+      ...config
     });
   }
   // SSR Fallback: Tehlikeli script ve handler'ları temizle
@@ -51,4 +51,3 @@ export function sanitizeText(dirty) {
   // SSR Fallback: Tüm HTML etiketlerini temizle
   return str.replace(/<[^>]*>?/gm, '');
 }
-

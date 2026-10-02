@@ -1,405 +1,393 @@
 <script>
-    import "@/styles/pages/_comments.css";
-    import { api } from "@/api/index.js";
-    import { icon } from "@/components/ui/icons.js";
-    import MenuCard from "@/components/features/MenuCard.svelte";
-    import CommentInput from "@/components/features/CommentInput.svelte";
-    import Loader from "@/components/ui/Loader.svelte";
-    import EmptyState from "@/components/ui/EmptyState.svelte";
-    import { isMotionEnabled } from "@/lib/dom/motion.js";
-    import { getCurrentCity, setCurrentCity } from "@/stores/city.svelte.js";
-    import { CITY_MAP, formatFullTurkishDate } from "@/utils/turkish.js";
-    import { onMount, onDestroy, untrack } from "svelte";
-    import CommentList from "@/components/features/CommentList.svelte";
-    import Seo from "@/components/ui/Seo.svelte";
+  import '@/styles/pages/_comments.css';
+  import { api } from '@/api/index.js';
+  import { icon } from '@/components/ui/icons.js';
+  import MenuCard from '@/components/features/MenuCard.svelte';
+  import CommentInput from '@/components/features/CommentInput.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import { isMotionEnabled } from '@/lib/dom/motion.js';
+  import { getCurrentCity, setCurrentCity } from '@/stores/city.svelte.js';
+  import { CITY_MAP, formatFullTurkishDate } from '@/utils/turkish.js';
+  import { onMount, onDestroy, untrack } from 'svelte';
+  import CommentList from '@/components/features/CommentList.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
-    import { page } from "$app/state";
-    import { goto } from "$app/navigation";
-    let params = $derived(page.params);
-    let { data } = $props();
+  import { page } from '$app/state';
+  import { goto } from '$app/navigation';
+  let params = $derived(page.params);
+  let { data } = $props();
 
-    let menuId = $derived(params?.id);
-    let focusId = $derived(
-        params?.threadId || page.url.searchParams.get("thread"),
-    );
+  let menuId = $derived(params?.id);
+  let focusId = $derived(params?.threadId || page.url.searchParams.get('thread'));
 
-    let isLoading = $state(true);
-    let errorState = $state(null);
-    let menu = $state(null);
-    let allComments = $state([]);
-    let focalNode = $derived(focusId ? findNode(allComments, focusId) : null);
-    let finalComments = $derived(focalNode ? [focalNode] : allComments);
+  let isLoading = $state(true);
+  let errorState = $state(null);
+  let menu = $state(null);
+  let allComments = $state([]);
+  let focalNode = $derived(focusId ? findNode(allComments, focusId) : null);
+  let finalComments = $derived(focalNode ? [focalNode] : allComments);
 
-    // SSR: +page.js load()'un sunucuda çektiği menüyü hemen state'e aktar.
-    // Böylece yemek isimleri, title ve Menu JSON-LD ilk HTML'de hazır olur.
-    untrack(() => {
-        if (data?.menu) {
-            menu = data.menu;
-            isLoading = false;
+  // SSR: +page.js load()'un sunucuda çektiği menüyü hemen state'e aktar.
+  // Böylece yemek isimleri, title ve Menu JSON-LD ilk HTML'de hazır olur.
+  untrack(() => {
+    if (data?.menu) {
+      menu = data.menu;
+      isLoading = false;
+    }
+  });
+
+  $effect(() => {
+    if (focalNode && typeof document !== 'undefined') {
+      setTimeout(() => {
+        const target = document.querySelector(`#comment-${focalNode.id}`);
+        if (target) {
+          target.scrollIntoView({
+            behavior: isMotionEnabled() ? 'smooth' : 'auto',
+            block: 'start'
+          });
         }
-    });
+      }, 100);
+    }
+  });
 
-    $effect(() => {
-        if (focalNode && typeof document !== "undefined") {
-            setTimeout(() => {
-                const target = document.querySelector(
-                    `#comment-${focalNode.id}`,
-                );
-                if (target) {
-                    target.scrollIntoView({
-                        behavior: isMotionEnabled() ? "smooth" : "auto",
-                        block: "start",
-                    });
-                }
-            }, 100);
-        }
-    });
+  let targetCitySlug = $derived.by(() => {
+    if (menu?.city?.slug) return menu.city.slug;
+    if (menu?.city_slug) return menu.city_slug;
+    if (typeof menu?.city === 'string') return menu.city;
+    if (menu?.city?.name || menu?.city_name) {
+      const nameToMatch = menu.city?.name || menu.city_name;
+      const entry = Object.entries(CITY_MAP).find(([_, name]) => name === nameToMatch);
+      if (entry) return entry[0];
+    }
+    return getCurrentCity();
+  });
 
-    let targetCitySlug = $derived.by(() => {
-        if (menu?.city?.slug) return menu.city.slug;
-        if (menu?.city_slug) return menu.city_slug;
-        if (typeof menu?.city === "string") return menu.city;
-        if (menu?.city?.name || menu?.city_name) {
-            const nameToMatch = menu.city?.name || menu.city_name;
-            const entry = Object.entries(CITY_MAP).find(
-                ([_, name]) => name === nameToMatch,
-            );
-            if (entry) return entry[0];
-        }
-        return getCurrentCity();
-    });
+  let targetCityName = $derived.by(() => {
+    if (menu?.city?.name) return menu.city.name;
+    if (menu?.city_name) return menu.city_name;
+    if (targetCitySlug && CITY_MAP[targetCitySlug]) return CITY_MAP[targetCitySlug];
+    if (targetCitySlug) {
+      return targetCitySlug.charAt(0).toLocaleUpperCase('tr-TR') + targetCitySlug.slice(1);
+    }
+    return 'İstanbul';
+  });
 
-    let targetCityName = $derived.by(() => {
-        if (menu?.city?.name) return menu.city.name;
-        if (menu?.city_name) return menu.city_name;
-        if (targetCitySlug && CITY_MAP[targetCitySlug])
-            return CITY_MAP[targetCitySlug];
-        if (targetCitySlug) {
-            return (
-                targetCitySlug.charAt(0).toLocaleUpperCase("tr-TR") +
-                targetCitySlug.slice(1)
-            );
-        }
-        return "İstanbul";
-    });
+  function handleBack(e) {
+    e.preventDefault();
 
-    function handleBack(e) {
-        e.preventDefault();
-
-        if (targetCitySlug && targetCitySlug !== getCurrentCity()) {
-            setCurrentCity(targetCitySlug);
-        }
-
-        goto("/");
+    if (targetCitySlug && targetCitySlug !== getCurrentCity()) {
+      setCurrentCity(targetCitySlug);
     }
 
-    function findNode(nodes, id) {
-        for (const n of nodes) {
-            if (n.id === id || n.id.substring(0, 7) === id) return n;
-            if (n.children) {
-                const found = findNode(n.children, id);
-                if (found) return found;
-            }
-        }
-        return null;
+    goto('/');
+  }
+
+  function findNode(nodes, id) {
+    for (const n of nodes) {
+      if (n.id === id || n.id.substring(0, 7) === id) return n;
+      if (n.children) {
+        const found = findNode(n.children, id);
+        if (found) return found;
+      }
     }
+    return null;
+  }
 
-    async function loadData() {
-        if (!menuId) return;
-        // SSR'da menü zaten gömülüyse loader gösterme; sessizce tazele.
-        if (!menu) isLoading = true;
-        errorState = null;
+  async function loadData() {
+    if (!menuId) return;
+    // SSR'da menü zaten gömülüyse loader gösterme; sessizce tazele.
+    if (!menu) isLoading = true;
+    errorState = null;
 
+    try {
+      const [menuData, commentsData] = await Promise.all([
+        api.getMenu(menuId, 'standard', { noCache: true }),
+        api.getMenuComments(menuId).catch(() => [])
+      ]);
+
+      if (!menuData) {
+        errorState = {
+          statusCode: 404,
+          desc: 'Menü bulunamadı veya silinmiş.'
+        };
+        return;
+      }
+
+      menu = menuData;
+      allComments = Array.isArray(commentsData) ? commentsData : commentsData?.comments || [];
+    } catch (err) {
+      console.error('Menü yüklenirken hata oluştu:', err);
+      errorState = {
+        statusCode: err.status || 500,
+        desc: err.message || 'Menü verileri yüklenirken bir sorun oluştu.'
+      };
+    } finally {
+      isLoading = false;
+    }
+  }
+
+  onMount(() => {
+    loadData();
+
+    const handleCommentSubmitted = async (e) => {
+      if (e.detail?.menuId && String(e.detail.menuId) === String(menuId)) {
         try {
-            const [menuData, commentsData] = await Promise.all([
-                api.getMenu(menuId, "standard", { noCache: true }),
-                api.getMenuComments(menuId).catch(() => []),
-            ]);
-
-            if (!menuData) {
-                errorState = {
-                    statusCode: 404,
-                    desc: "Menü bulunamadı veya silinmiş.",
-                };
-                return;
-            }
-
-            menu = menuData;
-            allComments = Array.isArray(commentsData)
-                ? commentsData
-                : (commentsData?.comments || []);
+          const commentsData = await api.getMenuComments(menuId);
+          allComments = Array.isArray(commentsData) ? commentsData : commentsData?.comments || [];
         } catch (err) {
-            console.error("Menü yüklenirken hata oluştu:", err);
-            errorState = {
-                statusCode: err.status || 500,
-                desc: err.message || "Menü verileri yüklenirken bir sorun oluştu.",
-            };
-        } finally {
-            isLoading = false;
+          console.error('Yorumlar güncellenirken hata:', err);
         }
-    }
+      }
+    };
 
-    onMount(() => {
-        loadData();
+    const handleAuthChanged = (e) => {
+      if (e.detail?.user) {
+        api
+          .getMenu(menuId, 'standard', { noCache: true })
+          .then((fresh) => {
+            if (fresh) menu = fresh;
+          })
+          .catch(() => {});
+      } else if (menu) {
+        menu.my_vote = null;
+      }
+    };
 
-        const handleCommentSubmitted = async (e) => {
-            if (e.detail?.menuId && String(e.detail.menuId) === String(menuId)) {
-                try {
-                    const commentsData = await api.getMenuComments(menuId);
-                    allComments = Array.isArray(commentsData)
-                        ? commentsData
-                        : (commentsData?.comments || []);
-                } catch (err) {
-                    console.error("Yorumlar güncellenirken hata:", err);
-                }
-            }
-        };
+    window.addEventListener('comment-submitted', handleCommentSubmitted);
+    window.addEventListener('auth-changed', handleAuthChanged);
+    return () => {
+      window.removeEventListener('comment-submitted', handleCommentSubmitted);
+      window.removeEventListener('auth-changed', handleAuthChanged);
+    };
+  });
 
-        const handleAuthChanged = (e) => {
-            if (e.detail?.user) {
-                api.getMenu(menuId, "standard", { noCache: true }).then((fresh) => {
-                    if (fresh) menu = fresh;
-                }).catch(() => {});
-            } else if (menu) {
-                menu.my_vote = null;
-            }
-        };
+  let ogImageUrl = $derived(
+    focusId
+      ? `https://kepce.org/api/v1/public/og/thread/${focusId}`
+      : menuId
+        ? `https://kepce.org/api/v1/public/og/menu/${menuId}`
+        : 'https://kepce.org/og_image.png'
+  );
 
-        window.addEventListener("comment-submitted", handleCommentSubmitted);
-        window.addEventListener("auth-changed", handleAuthChanged);
-        return () => {
-            window.removeEventListener("comment-submitted", handleCommentSubmitted);
-            window.removeEventListener("auth-changed", handleAuthChanged);
-        };
-    });
+  // Haftanin gunu basligi kirletiyor; sade gun-ay-yil yeterli.
+  let formattedDate = $derived(menu?.date ? formatFullTurkishDate(menu.date) : '');
 
-    let ogImageUrl = $derived(
-        focusId
-            ? `https://kepce.org/api/v1/public/og/thread/${focusId}`
-            : menuId
-              ? `https://kepce.org/api/v1/public/og/menu/${menuId}`
-              : "https://kepce.org/og_image.png"
-    );
+  // Şehir iniş sayfası konsolidasyonu: canonical sinyalleri doğrudan /{sehir}'e gider.
+  let dayUrl = $derived(
+    data?.dayUrl || (targetCitySlug && menu?.date ? `/${targetCitySlug}?gun=${menu.date}` : null)
+  );
+  let canonicalUrl = $derived(
+    data?.canonicalUrl ||
+      (targetCitySlug ? `https://kepce.org/${targetCitySlug}` : `https://kepce.org/menu/${menuId}`)
+  );
 
-    // Haftanin gunu basligi kirletiyor; sade gun-ay-yil yeterli.
-    let formattedDate = $derived(
-        menu?.date ? formatFullTurkishDate(menu.date) : ""
-    );
+  let mealLabel = $derived(
+    menu?.meal_type === 'breakfast'
+      ? 'Kahvaltı'
+      : menu?.meal_type === 'dinner'
+        ? 'Akşam Yemeği'
+        : ''
+  );
 
-    // Şehir iniş sayfası konsolidasyonu: canonical sinyalleri doğrudan /{sehir}'e gider.
-    let dayUrl = $derived(
-        data?.dayUrl || (targetCitySlug && menu?.date ? `/${targetCitySlug}?gun=${menu.date}` : null),
-    );
-    let canonicalUrl = $derived(
-        data?.canonicalUrl || (targetCitySlug ? `https://kepce.org/${targetCitySlug}` : `https://kepce.org/menu/${menuId}`),
-    );
-
-    let mealLabel = $derived(
-        menu?.meal_type === "breakfast"
-            ? "Kahvaltı"
-            : menu?.meal_type === "dinner"
-              ? "Akşam Yemeği"
-              : "",
-    );
-
-    let menuSchema = $derived.by(() => {
-        if (!menu) return null;
-        const dishes = menu.items || menu.dishes || [];
-        const dishEntries = dishes
-            .map((d) => {
-                if (typeof d === "string") return { name: d, calories: null };
-                return {
-                    name: d.name ?? d.raw_name,
-                    calories: d.calories ?? d.master_data?.estimated_calories ?? null,
-                };
-            })
-            .filter((d) => d.name);
-        const cityName = CITY_MAP[targetCitySlug] || targetCitySlug || "KYK";
-        const dateLabel = formattedDate || menu.date || "";
-
-        const menuObj = {
-            "@type": "Menu",
-            name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü`,
-            description: `${dateLabel} tarihli ${cityName} KYK yurt menüsü: ${dishEntries.map((d) => d.name).join(", ")}`,
-            inLanguage: "tr-TR",
-            hasMenuItem: dishEntries.map((d) => ({
-                "@type": "MenuItem",
-                name: d.name,
-                ...(d.calories ? { description: `Yaklaşık ${d.calories} kcal` } : {}),
-            })),
-        };
-
+  let menuSchema = $derived.by(() => {
+    if (!menu) return null;
+    const dishes = menu.items || menu.dishes || [];
+    const dishEntries = dishes
+      .map((d) => {
+        if (typeof d === 'string') return { name: d, calories: null };
         return {
-            "@context": "https://schema.org",
-            "@graph": [
-                {
-                    "@type": "BreadcrumbList",
-                    itemListElement: [
-                        { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://kepce.org/" },
-                        ...(targetCitySlug
-                            ? [{ "@type": "ListItem", position: 2, name: cityName, item: `https://kepce.org/${targetCitySlug}` }]
-                            : []),
-                        { "@type": "ListItem", position: targetCitySlug ? 3 : 2, name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü` },
-                    ],
-                },
-                menuObj,
-            ],
+          name: d.name ?? d.raw_name,
+          calories: d.calories ?? d.master_data?.estimated_calories ?? null
         };
-    });
+      })
+      .filter((d) => d.name);
+    const cityName = CITY_MAP[targetCitySlug] || targetCitySlug || 'KYK';
+    const dateLabel = formattedDate || menu.date || '';
+
+    const menuObj = {
+      '@type': 'Menu',
+      name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü`,
+      description: `${dateLabel} tarihli ${cityName} KYK yurt menüsü: ${dishEntries.map((d) => d.name).join(', ')}`,
+      inLanguage: 'tr-TR',
+      hasMenuItem: dishEntries.map((d) => ({
+        '@type': 'MenuItem',
+        name: d.name,
+        ...(d.calories ? { description: `Yaklaşık ${d.calories} kcal` } : {})
+      }))
+    };
+
+    return {
+      '@context': 'https://schema.org',
+      '@graph': [
+        {
+          '@type': 'BreadcrumbList',
+          itemListElement: [
+            { '@type': 'ListItem', position: 1, name: 'Ana Sayfa', item: 'https://kepce.org/' },
+            ...(targetCitySlug
+              ? [
+                  {
+                    '@type': 'ListItem',
+                    position: 2,
+                    name: cityName,
+                    item: `https://kepce.org/${targetCitySlug}`
+                  }
+                ]
+              : []),
+            {
+              '@type': 'ListItem',
+              position: targetCitySlug ? 3 : 2,
+              name: `${dateLabel} ${cityName} KYK ${mealLabel} Menüsü`
+            }
+          ]
+        },
+        menuObj
+      ]
+    };
+  });
 </script>
 
 <h1 class="sr-only">
-    {menu
-        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK ${mealLabel} Menüsü Detayı`
-        : "KYK Yemek Menüsü Detayı ve Yorumları"}
+  {menu
+    ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ''} KYK ${mealLabel} Menüsü Detayı`
+    : 'KYK Yemek Menüsü Detayı ve Yorumları'}
 </h1>
 
 {#if isLoading}
-    <div class="comments-page">
-        <div id="menu-header-container">
-            <div class="comments-page__header">
-                <a
-                    href="/"
-                    onclick={handleBack}
-                    data-link
-                    class="comments-page__back-link"
-                >
-                    <span class="comments-page__back-icon">
-                        {@html icon("chevronLeft", 18)}
-                    </span>
-                    <span class="comments-page__back-text"
-                        >{targetCityName}</span
-                    >
-                </a>
-            </div>
-            <div class="stats-placeholder"><Loader size={48} /></div>
-        </div>
-
-        <div class="comments-section">
-            {#if !focusId}
-                <div class="comments-section-title">
-                    <h2>Yorumlar</h2>
-                </div>
-            {/if}
-            <div id="comments-list-container">
-                <div class="stats-placeholder"><Loader size={48} /></div>
-            </div>
-        </div>
+  <div class="comments-page">
+    <div id="menu-header-container">
+      <div class="comments-page__header">
+        <a href="/" onclick={handleBack} data-link class="comments-page__back-link">
+          <span class="comments-page__back-icon">
+            {@html icon('chevronLeft', 18)}
+          </span>
+          <span class="comments-page__back-text">{targetCityName}</span>
+        </a>
+      </div>
+      <div class="stats-placeholder"><Loader size={48} /></div>
     </div>
+
+    <div class="comments-section">
+      {#if !focusId}
+        <div class="comments-section-title">
+          <h2>Yorumlar</h2>
+        </div>
+      {/if}
+      <div id="comments-list-container">
+        <div class="stats-placeholder"><Loader size={48} /></div>
+      </div>
+    </div>
+  </div>
 {:else if errorState}
-    <div class="empty-state-container">
-        <EmptyState statusCode={errorState.statusCode} desc={errorState.desc}>
-            <a href="/" data-link class="btn btn--primary">Ana sayfaya dön</a>
-        </EmptyState>
-    </div>
+  <div class="empty-state-container">
+    <EmptyState statusCode={errorState.statusCode} desc={errorState.desc}>
+      <a href="/" data-link class="btn btn--primary">Ana sayfaya dön</a>
+    </EmptyState>
+  </div>
 {:else}
-    <div class="comments-page">
-        <div id="menu-header-container">
-            <header class="comments-page__header">
-                <div class="comments-page__header-top">
-                    <a
-                        href={dayUrl || "/"}
-                        onclick={handleBack}
-                        data-link
-                        class="comments-page__back-link"
-                    >
-                        <span class="comments-page__back-icon">
-                            {@html icon("chevronLeft", 18)}
-                        </span>
-                        <span class="comments-page__back-text">{targetCityName}</span>
-                    </a>
+  <div class="comments-page">
+    <div id="menu-header-container">
+      <header class="comments-page__header">
+        <div class="comments-page__header-top">
+          <a href={dayUrl || '/'} onclick={handleBack} data-link class="comments-page__back-link">
+            <span class="comments-page__back-icon">
+              {@html icon('chevronLeft', 18)}
+            </span>
+            <span class="comments-page__back-text">{targetCityName}</span>
+          </a>
 
-                    {#if menu && dayUrl}
-                        <nav class="day-nav" aria-label="Gün navigasyonu">
-                            {#if data?.prevDate && targetCitySlug}
-                                <a
-                                    href="/{targetCitySlug}/{data.prevDate}"
-                                    data-link
-                                    class="day-nav__btn"
-                                    title="Önceki güne git"
-                                    aria-label="Önceki güne git"
-                                >
-                                    {@html icon("chevronLeft", 14)}
-                                    <span class="day-nav__btn-text">Önceki gün</span>
-                                </a>
-                            {/if}
-                            <a href={dayUrl} data-link class="day-nav__btn" title="Günün tüm menüsünü gör" aria-label="Günün tüm menüsünü gör">
-                                {@html icon("cards", 14)}
-                                <span class="day-nav__btn-text">Tüm gün</span>
-                            </a>
-                            {#if data?.nextDate && targetCitySlug}
-                                <a
-                                    href="/{targetCitySlug}/{data.nextDate}"
-                                    data-link
-                                    class="day-nav__btn"
-                                    title="Sonraki güne git"
-                                    aria-label="Sonraki güne git"
-                                >
-                                    <span class="day-nav__btn-text">Sonraki gün</span>
-                                    {@html icon("chevronRight", 14)}
-                                </a>
-                            {/if}
-                        </nav>
-                    {/if}
-                </div>
-
-                <h2 class="comments-page__title">{formattedDate || menu?.date || ""}</h2>
-            </header>
-
-            <MenuCard bind:menu options={{ hideComment: true }} />
+          {#if menu && dayUrl}
+            <nav class="day-nav" aria-label="Gün navigasyonu">
+              {#if data?.prevDate && targetCitySlug}
+                <a
+                  href="/{targetCitySlug}/{data.prevDate}"
+                  data-link
+                  class="day-nav__btn"
+                  title="Önceki güne git"
+                  aria-label="Önceki güne git"
+                >
+                  {@html icon('chevronLeft', 14)}
+                  <span class="day-nav__btn-text">Önceki gün</span>
+                </a>
+              {/if}
+              <a
+                href={dayUrl}
+                data-link
+                class="day-nav__btn"
+                title="Günün tüm menüsünü gör"
+                aria-label="Günün tüm menüsünü gör"
+              >
+                {@html icon('cards', 14)}
+                <span class="day-nav__btn-text">Tüm gün</span>
+              </a>
+              {#if data?.nextDate && targetCitySlug}
+                <a
+                  href="/{targetCitySlug}/{data.nextDate}"
+                  data-link
+                  class="day-nav__btn"
+                  title="Sonraki güne git"
+                  aria-label="Sonraki güne git"
+                >
+                  <span class="day-nav__btn-text">Sonraki gün</span>
+                  {@html icon('chevronRight', 14)}
+                </a>
+              {/if}
+            </nav>
+          {/if}
         </div>
 
-        <div class="comments-section">
-            {#if !focusId}
-                <div class="comments-section-title">
-                    <h2>Yorumlar</h2>
-                </div>
-            {/if}
+        <h2 class="comments-page__title">{formattedDate || menu?.date || ''}</h2>
+      </header>
 
-            {#if !focusId && menu}
-                <CommentInput menuObj={menu} parentId={focusId} />
-            {/if}
-
-            <div id="comments-list-container">
-                {#if finalComments.length === 0}
-                    <EmptyState
-                        iconName={"info"}
-                        title={"Yorum Yok"}
-                        desc={"Burada biz haşlanmış yumurtalardan başka kimse yok."}
-                    />
-                {:else}
-                    {#if focusId}
-                        <div class="comments-page__focus-nav u-mb-md">
-                            <a
-                                href="/menu/{menu.id}"
-                                data-link
-                                class="btn btn--secondary btn--sm focus-return-btn"
-                            >
-                                {@html icon("arrowLeft", 16)} Tüm tartışmaya geri
-                                dön
-                            </a>
-                        </div>
-                    {/if}
-
-                    <CommentList
-                        comments={finalComments}
-                        menuId={menu.id}
-                        onloadData={loadData}
-                    />
-                {/if}
-            </div>
-        </div>
+      <MenuCard bind:menu options={{ hideComment: true }} />
     </div>
+
+    <div class="comments-section">
+      {#if !focusId}
+        <div class="comments-section-title">
+          <h2>Yorumlar</h2>
+        </div>
+      {/if}
+
+      {#if !focusId && menu}
+        <CommentInput menuObj={menu} parentId={focusId} />
+      {/if}
+
+      <div id="comments-list-container">
+        {#if finalComments.length === 0}
+          <EmptyState
+            iconName={'info'}
+            title={'Yorum Yok'}
+            desc={'Burada biz haşlanmış yumurtalardan başka kimse yok.'}
+          />
+        {:else}
+          {#if focusId}
+            <div class="comments-page__focus-nav u-mb-md">
+              <a
+                href="/menu/{menu.id}"
+                data-link
+                class="btn btn--secondary btn--sm focus-return-btn"
+              >
+                {@html icon('arrowLeft', 16)} Tüm tartışmaya geri dön
+              </a>
+            </div>
+          {/if}
+
+          <CommentList comments={finalComments} menuId={menu.id} onloadData={loadData} />
+        {/if}
+      </div>
+    </div>
+  </div>
 {/if}
 
 <Seo
-    title={menu
-        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ""} KYK ${mealLabel} Menüsü | Kepçe`
-        : "KYK Yemek Menüsü Detayı | Kepçe"}
-    description={menu
-        ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || "KYK"} ${mealLabel} menüsü detayları, besin değerleri ve öğrenci yorumları.`
-        : "KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri."}
-    image={ogImageUrl}
-    canonical={canonicalUrl}
-    schema={menuSchema}
+  title={menu
+    ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || ''} KYK ${mealLabel} Menüsü | Kepçe`
+    : 'KYK Yemek Menüsü Detayı | Kepçe'}
+  description={menu
+    ? `${formattedDate || menu.date} ${CITY_MAP[targetCitySlug] || targetCitySlug || 'KYK'} ${mealLabel} menüsü detayları, besin değerleri ve öğrenci yorumları.`
+    : 'KYK yurt yemek menüsü detayları ve öğrenci değerlendirmeleri.'}
+  image={ogImageUrl}
+  canonical={canonicalUrl}
+  schema={menuSchema}
 />

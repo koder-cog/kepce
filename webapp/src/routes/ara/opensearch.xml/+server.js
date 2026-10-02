@@ -13,8 +13,8 @@ export async function GET({ url }) {
 
   return new Response(xml, {
     headers: {
-      "Content-Type": "application/opensearchdescription+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=86400",
-    },
+      'Content-Type': 'application/opensearchdescription+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=86400'
+    }
   });
 }

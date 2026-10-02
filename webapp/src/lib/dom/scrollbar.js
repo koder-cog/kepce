@@ -7,7 +7,7 @@ import { isMotionEnabled } from './motion.js';
 export function initScrollbar() {
   // Do not initialize on touch devices to preserve native scroll momentum and performance
   if (window.matchMedia('(hover: none)').matches) {
-    return { update: () => { }, observer: null, bar: null };
+    return { update: () => {}, observer: null, bar: null };
   }
 
   const bar = document.createElement('div');
@@ -72,13 +72,16 @@ export function initScrollbar() {
     // Calculate available bar geometry purely from measured viewport & offsets (No forced reflow)
     const margin = 8; // Safety margin for the thumb only
     const availableHeight = Math.max(0, clientHeight - navOffset - bottomOffset);
-    const barHeight = Math.max(0, availableHeight - (margin * 2));
-    const scrollPercentage = Math.max(0, Math.min(1, scrollTop / Math.max(1, scrollHeight - clientHeight)));
+    const barHeight = Math.max(0, availableHeight - margin * 2);
+    const scrollPercentage = Math.max(
+      0,
+      Math.min(1, scrollTop / Math.max(1, scrollHeight - clientHeight))
+    );
 
     // Thumb height proportional to content
     const thumbHeight = Math.max(40, (clientHeight / scrollHeight) * barHeight);
     const maxThumbTop = Math.max(0, barHeight - thumbHeight);
-    const thumbTop = margin + (scrollPercentage * maxThumbTop);
+    const thumbTop = margin + scrollPercentage * maxThumbTop;
 
     // Apply all DOM styles in a single write batch
     bar.style.top = `${navOffset}px`;

@@ -5,28 +5,27 @@ export const adminApi = {
   mergeDishes: (sourceId, targetId) =>
     request('/admin/dishes/merge', {
       method: 'POST',
-      body: JSON.stringify({ source_dish_id: sourceId, target_dish_id: targetId }),
+      body: JSON.stringify({ source_dish_id: sourceId, target_dish_id: targetId })
     }),
   updateDish: (dishId, payload) =>
     request(`/admin/dishes/${dishId}`, {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payload)
     }),
   splitDish: (dishId, delimiter = '/') =>
     request('/admin/dishes/split', {
       method: 'POST',
-      body: JSON.stringify({ dish_id: dishId, delimiter }),
+      body: JSON.stringify({ dish_id: dishId, delimiter })
     }),
   detachDish: (aliasId) =>
     request('/admin/dishes/detach', {
       method: 'POST',
-      body: JSON.stringify({ alias_id: aliasId }),
+      body: JSON.stringify({ alias_id: aliasId })
     }),
-  deleteDish: (dishId) =>
-    request(`/admin/dishes/${dishId}`, { method: 'DELETE' }),
+  deleteDish: (dishId) => request(`/admin/dishes/${dishId}`, { method: 'DELETE' }),
   createDish: (payload) =>
     request('/admin/dishes', {
       method: 'POST',
-      body: JSON.stringify(payload),
-    }),
+      body: JSON.stringify(payload)
+    })
 };

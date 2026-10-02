@@ -2,15 +2,15 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock SvelteKit and API dependencies
 vi.mock('$app/navigation', () => ({
-  goto: vi.fn(),
+  goto: vi.fn()
 }));
 
 vi.mock('./api/index.js', () => ({
   api: {
     getMe: vi.fn(),
     getFavorites: vi.fn(),
-    logout: vi.fn(),
-  },
+    logout: vi.fn()
+  }
 }));
 
 // Mock browser APIs
@@ -21,9 +21,9 @@ if (typeof document === 'undefined') {
       classList: {
         add: vi.fn(),
         remove: vi.fn(),
-        toggle: vi.fn(),
-      },
-    },
+        toggle: vi.fn()
+      }
+    }
   };
 }
 

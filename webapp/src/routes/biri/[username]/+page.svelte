@@ -1,33 +1,31 @@
 <script>
-  import { globalState, authActions } from "@/state.svelte.js";
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { api } from "@/api/index.js";
-  import { icon } from "@/components/ui/icons.js";
-  import { timeAgo } from "@/utils/date.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import ActionMenu from "@/components/features/ActionMenu.svelte";
-  import { createModal } from "@/components/features/modal.js";
-  import { openCommentReportModal } from "@/components/features/report-modal.js";
-  import { showToast } from "@/components/ui/toast.js";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { getCommentContextHtml } from "@/utils/turkish.js";
-  import { sanitizeText } from "@/utils/sanitize.js";
-  import { initCharCounter } from "@/utils/char-counter.js";
-  import Pagination from "@/components/ui/Pagination.svelte";
-  import { page } from "$app/stores";
+  import { globalState, authActions } from '@/state.svelte.js';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { api } from '@/api/index.js';
+  import { icon } from '@/components/ui/icons.js';
+  import { timeAgo } from '@/utils/date.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import ActionMenu from '@/components/features/ActionMenu.svelte';
+  import { createModal } from '@/components/features/modal.js';
+  import { openCommentReportModal } from '@/components/features/report-modal.js';
+  import { showToast } from '@/components/ui/toast.js';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { getCommentContextHtml } from '@/utils/turkish.js';
+  import { sanitizeText } from '@/utils/sanitize.js';
+  import { initCharCounter } from '@/utils/char-counter.js';
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { page } from '$app/stores';
 
   let username = $derived($page.params.username);
-  let paginationMode = $derived(globalState.paginationMode || "sayfali");
-  let urlPage = $derived(
-    parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1,
-  );
+  let paginationMode = $derived(globalState.paginationMode || 'sayfali');
+  let urlPage = $derived(parseInt($page.url.searchParams.get('sayfa') || '1', 10) || 1);
 
   let contentLoading = $state(true);
   let contentError = $state(null);
   let commentsData = $state([]);
-  let commentsSort = $state("new");
+  let commentsSort = $state('new');
   let currentTabToken = 0;
 
   // Pagination
@@ -41,7 +39,7 @@
 
   $effect(() => {
     if (username) {
-      if (paginationMode === "sayfali") {
+      if (paginationMode === 'sayfali') {
         currentPage = urlPage;
         offset = (urlPage - 1) * limit;
       } else {
@@ -54,7 +52,7 @@
   async function loadTabContent(isLoadMore = false) {
     if (!isLoadMore) {
       contentLoading = true;
-      if (paginationMode !== "sayfali") {
+      if (paginationMode !== 'sayfali') {
         offset = 0;
       }
       commentsData = [];
@@ -65,17 +63,11 @@
     const token = ++currentTabToken;
 
     try {
-      const res = await api.getUserComments(
-        username,
-        commentsSort,
-        limit,
-        offset,
-      );
+      const res = await api.getUserComments(username, commentsSort, limit, offset);
       if (currentTabToken !== token) return;
 
       const newData = Array.isArray(res) ? res : res?.items || res?.data || [];
-      totalItems =
-        res?.total_items ?? res?.total ?? (Array.isArray(res) ? res.length : 0);
+      totalItems = res?.total_items ?? res?.total ?? (Array.isArray(res) ? res.length : 0);
       totalPages = res?.total_pages ?? (Math.ceil(totalItems / limit) || 1);
 
       if (isLoadMore) {
@@ -100,9 +92,9 @@
     currentPage = newPage;
     const url = new URL(window.location.href);
     if (newPage > 1) {
-      url.searchParams.set("sayfa", String(newPage));
+      url.searchParams.set('sayfa', String(newPage));
     } else {
-      url.searchParams.delete("sayfa");
+      url.searchParams.delete('sayfa');
     }
     goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
@@ -111,7 +103,7 @@
     offset = 0;
     currentPage = 1;
     const url = new URL(window.location.href);
-    url.searchParams.delete("sayfa");
+    url.searchParams.delete('sayfa');
     goto(url.pathname + url.search, { keepFocus: true });
     loadTabContent(false);
   }
@@ -128,15 +120,15 @@
       return;
     }
     if (globalState.user.id === commentObj.user?.id) {
-      showToast("Kendi yorumuna oy veremezsin.", "warning");
+      showToast('Kendi yorumuna oy veremezsin.', 'warning');
       return;
     }
     if (
       commentObj.is_blocked ||
-      commentObj.user?.nickname === "Engellenmiş" ||
-      commentObj.user?.nickname === "Engellemiş"
+      commentObj.user?.nickname === 'Engellenmiş' ||
+      commentObj.user?.nickname === 'Engellemiş'
     ) {
-      showToast("Engellenen içeriklere oy verilemez.", "warning");
+      showToast('Engellenen içeriklere oy verilemez.', 'warning');
       return;
     }
     try {
@@ -144,40 +136,37 @@
       if (!commentObj.reaction_summary) {
         commentObj.reaction_summary = { up: 0, down: 0 };
       }
-      if (type === "up") commentObj.reaction_summary.up++;
+      if (type === 'up') commentObj.reaction_summary.up++;
       else commentObj.reaction_summary.down++;
-      showToast("Reaksiyon kaydedildi.", "success");
+      showToast('Reaksiyon kaydedildi.', 'success');
     } catch (e) {
-      showToast(e.message, "error");
+      showToast(e.message, 'error');
     }
   }
 
   function handleCommentAction(action, comment) {
     const commentId = comment.id || comment.hash;
-    const menuId = comment.menu_id || comment.menu?.id || "";
-    const requiresLogin = ["reply", "delete"].includes(action);
+    const menuId = comment.menu_id || comment.menu?.id || '';
+    const requiresLogin = ['reply', 'delete'].includes(action);
     if (requiresLogin && !globalState?.user) {
       authActions.triggerLogin();
       return;
     }
 
-    const shortId =
-      typeof commentId === "string" ? commentId.substring(0, 7) : commentId;
+    const shortId = typeof commentId === 'string' ? commentId.substring(0, 7) : commentId;
 
-    if (action === "reply") {
+    if (action === 'reply') {
       goto(`/menu/${menuId}/${shortId}`);
-    } else if (action === "share") {
+    } else if (action === 'share') {
       const url = `${window.location.origin}/menu/${menuId}/${shortId}`;
-      navigator.clipboard
-        .writeText(url)
-        .then(() => showToast("Yorum linki kopyalandı!"));
-    } else if (action === "report") {
+      navigator.clipboard.writeText(url).then(() => showToast('Yorum linki kopyalandı!'));
+    } else if (action === 'report') {
       openCommentReportModal(comment);
-    } else if (action === "edit") {
-      const currentText = comment.comment || "";
+    } else if (action === 'edit') {
+      const currentText = comment.comment || '';
       const modalObj = createModal({
-        title: "Yorumu Düzenle",
-        iconHtml: icon("edit", 24),
+        title: 'Yorumu Düzenle',
+        iconHtml: icon('edit', 24),
         contentHtml: `
           <div class="c-modal__form-group">
             <div class="form-group">
@@ -186,63 +175,59 @@
           </div>
         `,
         buttons: [
-          { label: "Vazgeç", variant: "secondary" },
+          { label: 'Vazgeç', variant: 'secondary' },
           {
-            label: "Güncelle",
-            variant: "primary",
+            label: 'Güncelle',
+            variant: 'primary',
             onClick: async (modalEl) => {
-              const newText = modalEl
-                .querySelector("#profile-edit-comment-input")
-                .value.trim();
+              const newText = modalEl.querySelector('#profile-edit-comment-input').value.trim();
               if (!newText) {
-                showToast("Yorum boş bırakılamaz.", "warning");
+                showToast('Yorum boş bırakılamaz.', 'warning');
                 return false;
               }
               try {
                 const res = await api.updateComment(commentId, newText);
                 comment.comment = res.comment;
                 comment.is_edited = res.is_edited;
-                showToast("Yorumun güncellendi!", "success");
+                showToast('Yorumun güncellendi!', 'success');
                 return true;
               } catch (e) {
-                showToast(e.message || "Yorum güncellenemedi.", "error");
+                showToast(e.message || 'Yorum güncellenemedi.', 'error');
                 return false;
               }
-            },
-          },
-        ],
+            }
+          }
+        ]
       });
 
-      const textarea = modalObj.modal.querySelector(
-        "#profile-edit-comment-input",
-      );
-      const saveBtn = modalObj.modal.querySelector(".btn--primary");
+      const textarea = modalObj.modal.querySelector('#profile-edit-comment-input');
+      const saveBtn = modalObj.modal.querySelector('.btn--primary');
       initCharCounter(textarea, {
         onUpdate: (_count, _limit, isOver) => {
           saveBtn.disabled = isOver || textarea.value.trim().length === 0;
-        },
+        }
       });
       textarea.focus();
-    } else if (action === "delete") {
+    } else if (action === 'delete') {
       createModal({
-        title: "Yorumu Sil",
-        contentHtml: "<p>Bu yorumu silmek istediğine emin misin?</p>",
+        title: 'Yorumu Sil',
+        contentHtml: '<p>Bu yorumu silmek istediğine emin misin?</p>',
         buttons: [
-          { label: "Vazgeç", variant: "secondary" },
+          { label: 'Vazgeç', variant: 'secondary' },
           {
-            label: "Sil",
-            variant: "danger",
+            label: 'Sil',
+            variant: 'danger',
             onClick: async () => {
               try {
                 await api.deleteComment(commentId);
-                showToast("Yorum silindi.");
+                showToast('Yorum silindi.');
                 loadTabContent();
               } catch (e) {
-                showToast(e.message, "error");
+                showToast(e.message, 'error');
               }
-            },
-          },
-        ],
+            }
+          }
+        ]
       });
     }
   }
@@ -272,18 +257,16 @@
   </div>
 {:else}
   <div class="profile-comments-list">
-    <div
-      class="profile-comments-header u-mb-md u-flex u-flex-justify-between u-flex-align-center"
-    >
+    <div class="profile-comments-header u-mb-md u-flex u-flex-justify-between u-flex-align-center">
       <Dropdown
         bind:value={commentsSort}
         options={[
-          { value: "new", label: "En Yeni" },
-          { value: "top", label: "En Beğenilen" },
+          { value: 'new', label: 'En Yeni' },
+          { value: 'top', label: 'En Beğenilen' }
         ]}
         onchange={handleSortChange}
       />
-      {#if paginationMode === "sayfali" && totalPages > 1}
+      {#if paginationMode === 'sayfali' && totalPages > 1}
         <Pagination
           compact={true}
           page={currentPage}
@@ -297,28 +280,22 @@
     <div class="comment-card-list">
       {#each commentsData as c, idx}
         {@const commentKey = c.id || c.hash || `comment-${idx}`}
-        {@const menuId = c.menu_id || c.menu?.id || ""}
-        {@const threadTarget = c.id ? c.id.substring(0, 7) : c.hash || ""}
+        {@const menuId = c.menu_id || c.menu?.id || ''}
+        {@const threadTarget = c.id ? c.id.substring(0, 7) : c.hash || ''}
         {@const commentHref = menuId
           ? `/menu/${menuId}/${threadTarget}`
           : `/menu?thread=${threadTarget}`}
         {@const isOwnComment = globalState?.user?.id === c.user?.id}
         {@const isBlockedComment =
-          c.is_blocked ||
-          c.user?.nickname === "Engellenmiş" ||
-          c.user?.nickname === "Engellemiş"}
+          c.is_blocked || c.user?.nickname === 'Engellenmiş' || c.user?.nickname === 'Engellemiş'}
         {@const isVoteDisabled = isOwnComment || isBlockedComment}
-        {@const isAdmin = globalState?.user?.role === "admin"}
-        {@const score = c.reaction_summary
-          ? c.reaction_summary.up - c.reaction_summary.down
-          : 0}
+        {@const isAdmin = globalState?.user?.role === 'admin'}
+        {@const score = c.reaction_summary ? c.reaction_summary.up - c.reaction_summary.down : 0}
         <div class="comment-card" style="--stagger-idx: {idx}">
           <div class="comment-card__main-col">
             <div class="comment-card__header">
               <div class="comment-card__meta">
-                <span class="comment-card__action-text"
-                  >{@html getCommentContextHtml(c)}</span
-                >
+                <span class="comment-card__action-text">{@html getCommentContextHtml(c)}</span>
                 <span class="comment-card__dot">·</span>
                 <a href={commentHref} data-link class="comment-card__date"
                   >{timeAgo(c.created_at)}</a
@@ -341,26 +318,21 @@
                   data-vote="up"
                   disabled={isVoteDisabled}
                   title={isOwnComment
-                    ? "Kendi yorumuna oy veremezsin"
+                    ? 'Kendi yorumuna oy veremezsin'
                     : isBlockedComment
-                      ? "Engellenen içeriklere oy verilemez"
-                      : "Beğen"}
-                  onclick={() =>
-                    !isVoteDisabled && reactToComment(c.hash || c.id, "up", c)}
+                      ? 'Engellenen içeriklere oy verilemez'
+                      : 'Beğen'}
+                  onclick={() => !isVoteDisabled && reactToComment(c.hash || c.id, 'up', c)}
                 >
                   {@html icon(
-                    c.reaction_summary && c.reaction_summary.my_vote === "up"
-                      ? "voteUpFilled"
-                      : "voteUp",
-                    16,
+                    c.reaction_summary && c.reaction_summary.my_vote === 'up'
+                      ? 'voteUpFilled'
+                      : 'voteUp',
+                    16
                   )}
                 </button>
-                <span
-                  class="vote-count {score > 0
-                    ? 'positive'
-                    : score < 0
-                      ? 'negative'
-                      : ''}">{score}</span
+                <span class="vote-count {score > 0 ? 'positive' : score < 0 ? 'negative' : ''}"
+                  >{score}</span
                 >
                 <button
                   class="vote-btn btn--squish {c.reaction_summary &&
@@ -370,36 +342,34 @@
                   data-vote="down"
                   disabled={isVoteDisabled}
                   title={isOwnComment
-                    ? "Kendi yorumuna oy veremezsin"
+                    ? 'Kendi yorumuna oy veremezsin'
                     : isBlockedComment
-                      ? "Engellenen içeriklere oy verilemez"
-                      : "Beğenme"}
-                  onclick={() =>
-                    !isVoteDisabled &&
-                    reactToComment(c.hash || c.id, "down", c)}
+                      ? 'Engellenen içeriklere oy verilemez'
+                      : 'Beğenme'}
+                  onclick={() => !isVoteDisabled && reactToComment(c.hash || c.id, 'down', c)}
                 >
                   {@html icon(
-                    c.reaction_summary && c.reaction_summary.my_vote === "down"
-                      ? "voteDownFilled"
-                      : "voteDown",
-                    16,
+                    c.reaction_summary && c.reaction_summary.my_vote === 'down'
+                      ? 'voteDownFilled'
+                      : 'voteDown',
+                    16
                   )}
                 </button>
               </div>
               <button
                 class="action-btn btn--squish"
                 title="Yanıtla"
-                onclick={() => handleCommentAction("reply", c)}
+                onclick={() => handleCommentAction('reply', c)}
               >
-                {@html icon("chat", 14)}
+                {@html icon('chat', 14)}
                 <span class="action-btn__text">Yoruma git</span>
               </button>
               <button
                 class="action-btn btn--squish"
                 title="Paylaş"
-                onclick={() => handleCommentAction("share", c)}
+                onclick={() => handleCommentAction('share', c)}
               >
-                {@html icon("share", 14)}
+                {@html icon('share', 14)}
                 <span class="action-btn__text">Paylaş</span>
               </button>
 
@@ -410,49 +380,40 @@
                   ...(isOwnComment
                     ? [
                         {
-                          label: "Düzenle",
-                          onClick: () => handleCommentAction("edit", c),
-                        },
+                          label: 'Düzenle',
+                          onClick: () => handleCommentAction('edit', c)
+                        }
                       ]
                     : []),
                   ...(!isOwnComment
                     ? [
                         {
-                          label: "Şikayet et",
-                          onClick: () => handleCommentAction("report", c),
-                        },
+                          label: 'Şikayet et',
+                          onClick: () => handleCommentAction('report', c)
+                        }
                       ]
                     : []),
                   ...(isOwnComment || isAdmin
                     ? [
                         {
-                          label: "Sil",
-                          variant: "danger",
-                          onClick: () => handleCommentAction("delete", c),
-                        },
+                          label: 'Sil',
+                          variant: 'danger',
+                          onClick: () => handleCommentAction('delete', c)
+                        }
                       ]
-                    : []),
+                    : [])
                 ]}
               />
             </div>
           </div>
         </div>
       {/each}
-      {#if paginationMode === "sayfali"}
-        <Pagination
-          page={currentPage}
-          {totalPages}
-          {totalItems}
-          onPageChange={handlePageChange}
-        />
+      {#if paginationMode === 'sayfali'}
+        <Pagination page={currentPage} {totalPages} {totalItems} onPageChange={handlePageChange} />
       {:else if hasMore}
         <div class="u-text-center u-mt-md">
-          <button
-            class="c-btn c-btn--secondary"
-            onclick={loadMore}
-            disabled={isLoadingMore}
-          >
-            {isLoadingMore ? "Yükleniyor..." : "Daha Fazla Yükle"}
+          <button class="c-btn c-btn--secondary" onclick={loadMore} disabled={isLoadingMore}>
+            {isLoadingMore ? 'Yükleniyor...' : 'Daha Fazla Yükle'}
           </button>
         </div>
       {/if}

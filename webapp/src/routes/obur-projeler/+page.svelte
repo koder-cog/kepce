@@ -1,45 +1,45 @@
 <script>
-  import { icon } from "@/components/ui/icons.js";
-  import ContentPage from "@/components/layout/ContentPage.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import { icon } from '@/components/ui/icons.js';
+  import ContentPage from '@/components/layout/ContentPage.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
   const oburProjelerSchema = {
-    "@context": "https://schema.org",
-    "@graph": [
+    '@context': 'https://schema.org',
+    '@graph': [
       {
-        "@type": "BreadcrumbList",
+        '@type': 'BreadcrumbList',
         itemListElement: [
           {
-            "@type": "ListItem",
+            '@type': 'ListItem',
             position: 1,
-            name: "Ana Sayfa",
-            item: "https://kepce.org/",
+            name: 'Ana Sayfa',
+            item: 'https://kepce.org/'
           },
           {
-            "@type": "ListItem",
+            '@type': 'ListItem',
             position: 2,
-            name: "Öbür Projeler",
-            item: "https://kepce.org/obur-projeler",
-          },
-        ],
+            name: 'Öbür Projeler',
+            item: 'https://kepce.org/obur-projeler'
+          }
+        ]
       },
       {
-        "@type": "WebPage",
-        "@id": "https://kepce.org/obur-projeler#webpage",
-        url: "https://kepce.org/obur-projeler",
-        name: "Öbür Projeler | Kepçe",
+        '@type': 'WebPage',
+        '@id': 'https://kepce.org/obur-projeler#webpage',
+        url: 'https://kepce.org/obur-projeler',
+        name: 'Öbür Projeler | Kepçe',
         description:
-          "Kepçe ekosistemi ve geliştiricilerinin yürüttüğü bağımsız açık kaynak projeler.",
-        inLanguage: "tr-TR",
+          'Kepçe ekosistemi ve geliştiricilerinin yürüttüğü bağımsız açık kaynak projeler.',
+        inLanguage: 'tr-TR'
       },
       {
-        "@type": "Organization",
-        "@id": "https://kepce.org/#organization",
-        name: "Kepçe",
-        url: "https://kepce.org/",
-        logo: "https://kepce.org/icon-512.png",
-      },
-    ],
+        '@type': 'Organization',
+        '@id': 'https://kepce.org/#organization',
+        name: 'Kepçe',
+        url: 'https://kepce.org/',
+        logo: 'https://kepce.org/icon-512.png'
+      }
+    ]
   };
 </script>
 
@@ -52,10 +52,9 @@
 
 <ContentPage title="Öbür Projeler">
   <p>
-    Bunlar Kepçe ekibinin veya diğer geliştiricilerinin internetin başka
-    köşelerinde yürüttüğü bağımsız işlerdir. Kepçe'nin tabldot menüsüyle
-    doğrudan bir bağı bulunmaz. Bu sitelerin ve servislerin yol açacağı her
-    türlü sıkıntıyla ilgili kendi adreslerine başvurunuz.
+    Bunlar Kepçe ekibinin veya diğer geliştiricilerinin internetin başka köşelerinde yürüttüğü
+    bağımsız işlerdir. Kepçe'nin tabldot menüsüyle doğrudan bir bağı bulunmaz. Bu sitelerin ve
+    servislerin yol açacağı her türlü sıkıntıyla ilgili kendi adreslerine başvurunuz.
   </p>
 
   <div class="project-cards">
@@ -82,7 +81,7 @@
       <div class="project-card__footer">
         <a href="/ara" class="btn btn--secondary btn--squish" data-link>
           <span>Siteyi Aç</span>
-          {@html icon("externalLink", 14)}
+          {@html icon('externalLink', 14)}
         </a>
       </div>
     </article>

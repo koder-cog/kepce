@@ -1,20 +1,20 @@
 <script>
-  import { onMount } from "svelte";
+  import { onMount } from 'svelte';
   import { api } from '@/api/index.js';
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import * as ui from "@/components/ui/forms.js";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import ActionMenu from "@/components/features/ActionMenu.svelte";
-  import Modal from "@/components/ui/Modal.svelte";
-  import { sanitizeText } from "@/utils/sanitize.js";
-  import { showToast } from "@/components/ui/toast.js";
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import * as ui from '@/components/ui/forms.js';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import ActionMenu from '@/components/features/ActionMenu.svelte';
+  import Modal from '@/components/ui/Modal.svelte';
+  import { sanitizeText } from '@/utils/sanitize.js';
+  import { showToast } from '@/components/ui/toast.js';
 
-  let searchQuery = $state("");
+  let searchQuery = $state('');
   let isLoading = $state(true);
   let errorMsg = $state(null);
-  let sortState = $state({ column: "usage", asc: false });
+  let sortState = $state({ column: 'usage', asc: false });
   let dishes = $state([]);
   let searchTimeout;
   let currentLoadToken = 0;
@@ -31,25 +31,25 @@
 
   // Edit Modal Specific States
   let editDishState = $state({
-    name: "",
-    category: "",
+    name: '',
+    category: '',
     estimated_calories: null,
     is_celiac: false,
     is_vegan: false,
-    is_vegetarian: false,
+    is_vegetarian: false
   });
-  
+
   // Split & Merge Specific
-  let splitDelimiter = $state("/");
-  let mergeSearchQuery = $state("");
+  let splitDelimiter = $state('/');
+  let mergeSearchQuery = $state('');
   let targetDishId = $state(null);
-  let mergeTargetName = $state("");
+  let mergeTargetName = $state('');
   let mergeSearchResults = $state([]);
   let mergeSearchTimeout;
 
   function toggleConstraint(c) {
     if (editDishState.constraints.includes(c)) {
-      editDishState.constraints = editDishState.constraints.filter(x => x !== c);
+      editDishState.constraints = editDishState.constraints.filter((x) => x !== c);
     } else {
       editDishState.constraints.push(c);
     }
@@ -57,29 +57,29 @@
 
   function getConstraintStyle(constraint) {
     switch (constraint) {
-      case "Vegan":
-        return "--pill-bg: rgba(var(--color-accent-positive-rgb), 0.1); --pill-color: var(--color-accent-positive); --pill-border: rgba(var(--color-accent-positive-rgb), 0.2);";
-      case "Vejetaryen":
-        return "--pill-bg: rgba(var(--color-accent-primary-rgb), 0.1); --pill-color: var(--color-accent-primary); --pill-border: rgba(var(--color-accent-primary-rgb), 0.2);";
-      case "Gluten-free":
-        return "--pill-bg: rgba(var(--color-warning-rgb), 0.1); --pill-color: var(--color-warning); --pill-border: rgba(var(--color-warning-rgb), 0.2);";
-      case "Yüksek Protein":
-        return "--pill-bg: rgba(var(--color-accent-secondary-rgb), 0.1); --pill-color: var(--color-accent-secondary); --pill-border: rgba(var(--color-accent-secondary-rgb), 0.2);";
-      case "Çiğ":
-        return "--pill-bg: rgba(var(--color-accent-tertiary-rgb), 0.1); --pill-color: var(--color-accent-tertiary); --pill-border: rgba(var(--color-accent-tertiary-rgb), 0.2);";
+      case 'Vegan':
+        return '--pill-bg: rgba(var(--color-accent-positive-rgb), 0.1); --pill-color: var(--color-accent-positive); --pill-border: rgba(var(--color-accent-positive-rgb), 0.2);';
+      case 'Vejetaryen':
+        return '--pill-bg: rgba(var(--color-accent-primary-rgb), 0.1); --pill-color: var(--color-accent-primary); --pill-border: rgba(var(--color-accent-primary-rgb), 0.2);';
+      case 'Gluten-free':
+        return '--pill-bg: rgba(var(--color-warning-rgb), 0.1); --pill-color: var(--color-warning); --pill-border: rgba(var(--color-warning-rgb), 0.2);';
+      case 'Yüksek Protein':
+        return '--pill-bg: rgba(var(--color-accent-secondary-rgb), 0.1); --pill-color: var(--color-accent-secondary); --pill-border: rgba(var(--color-accent-secondary-rgb), 0.2);';
+      case 'Çiğ':
+        return '--pill-bg: rgba(var(--color-accent-tertiary-rgb), 0.1); --pill-color: var(--color-accent-tertiary); --pill-border: rgba(var(--color-accent-tertiary-rgb), 0.2);';
       default:
-        return "";
+        return '';
     }
   }
 
   const categoryConfig = {
-    'soup': { label: 'Çorba', color: 'var(--color-accent-tertiary)' },
-    'main': { label: 'Ana Yemek', color: 'var(--color-accent-primary)' },
-    'side': { label: 'Ara Sıcak / Garnitür', color: 'var(--color-accent-secondary)' },
-    'dessert': { label: 'Tatlı / Meyve', color: 'var(--color-warning)' },
-    'drink': { label: 'İçecek', color: 'var(--color-accent-positive)' },
-    'bread': { label: 'Unlu Mamül', color: 'var(--color-text-secondary)' },
-    'extra': { label: 'Ekstra', color: 'var(--color-text-muted)' },
+    soup: { label: 'Çorba', color: 'var(--color-accent-tertiary)' },
+    main: { label: 'Ana Yemek', color: 'var(--color-accent-primary)' },
+    side: { label: 'Ara Sıcak / Garnitür', color: 'var(--color-accent-secondary)' },
+    dessert: { label: 'Tatlı / Meyve', color: 'var(--color-warning)' },
+    drink: { label: 'İçecek', color: 'var(--color-accent-positive)' },
+    bread: { label: 'Unlu Mamül', color: 'var(--color-text-secondary)' },
+    extra: { label: 'Ekstra', color: 'var(--color-text-muted)' }
   };
 
   function getCategoryLabel(cat) {
@@ -92,22 +92,22 @@
 
   function getDishActions(dish) {
     const actions = [
-      { label: "Düzenle", onClick: () => handleEditDish(dish) },
-      { label: "Başka Yemekle Birleştir", onClick: () => handleMerge(dish) },
-      { label: "İsme göre böl", onClick: () => handleSplitString(dish) },
+      { label: 'Düzenle', onClick: () => handleEditDish(dish) },
+      { label: 'Başka Yemekle Birleştir', onClick: () => handleMerge(dish) },
+      { label: 'İsme göre böl', onClick: () => handleSplitString(dish) }
     ];
 
     if (dish.aliases && dish.aliases.length > 0) {
       actions.push({
-        label: "Bağlantıları Ayır",
-        onClick: () => handleDetachAliases(dish),
+        label: 'Bağlantıları Ayır',
+        onClick: () => handleDetachAliases(dish)
       });
     }
 
     actions.push({
-      label: "Sil",
-      variant: "danger",
-      onClick: () => handleDeleteDish(dish),
+      label: 'Sil',
+      variant: 'danger',
+      onClick: () => handleDeleteDish(dish)
     });
 
     return actions;
@@ -159,23 +159,23 @@
     }
   }
 
-  import Pagination from "@/components/ui/Pagination.svelte";
-  import { page } from "$app/stores";
-  import { goto } from "$app/navigation";
+  import Pagination from '@/components/ui/Pagination.svelte';
+  import { page } from '$app/stores';
+  import { goto } from '$app/navigation';
 
   let limit = 20;
-  let urlPage = $derived(parseInt($page.url.searchParams.get("sayfa") || "1", 10) || 1);
+  let urlPage = $derived(parseInt($page.url.searchParams.get('sayfa') || '1', 10) || 1);
   let currentPage = $state(1);
 
   let sortedDishes = $derived(
     [...dishes].sort((a, b) => {
       let valA, valB;
-      if (sortState.column === "name") {
-        valA = a.name.toLocaleLowerCase("tr-TR");
-        valB = b.name.toLocaleLowerCase("tr-TR");
-      } else if (sortState.column === "category") {
-        valA = a.category || "";
-        valB = b.category || "";
+      if (sortState.column === 'name') {
+        valA = a.name.toLocaleLowerCase('tr-TR');
+        valB = b.name.toLocaleLowerCase('tr-TR');
+      } else if (sortState.column === 'category') {
+        valA = a.category || '';
+        valB = b.category || '';
       } else {
         valA = a.usage_count;
         valB = b.usage_count;
@@ -184,7 +184,7 @@
       if (valA < valB) return sortState.asc ? -1 : 1;
       if (valA > valB) return sortState.asc ? 1 : -1;
       return 0;
-    }),
+    })
   );
 
   let totalItems = $derived(sortedDishes.length);
@@ -203,9 +203,9 @@
     currentPage = newPage;
     const url = new URL(window.location.href);
     if (newPage > 1) {
-      url.searchParams.set("sayfa", String(newPage));
+      url.searchParams.set('sayfa', String(newPage));
     } else {
-      url.searchParams.delete("sayfa");
+      url.searchParams.delete('sayfa');
     }
     goto(url.pathname + url.search, { keepFocus: true, noScroll: false });
   }
@@ -218,11 +218,11 @@
   function handleAddDish() {
     editDishState = {
       name: searchQuery,
-      category: "",
+      category: '',
       estimated_calories: null,
       is_celiac: false,
       is_vegan: false,
-      is_vegetarian: false,
+      is_vegetarian: false
     };
     isAddModalOpen = true;
   }
@@ -236,7 +236,7 @@
         estimated_calories: editDishState.estimated_calories || null,
         is_celiac: editDishState.is_celiac,
         is_vegan: editDishState.is_vegan,
-        is_vegetarian: editDishState.is_vegetarian,
+        is_vegetarian: editDishState.is_vegetarian
       });
       showToast('Yemek eklendi!');
       isAddModalOpen = false;
@@ -249,12 +249,12 @@
   function handleEditDish(dish) {
     selectedDish = dish;
     editDishState = {
-      name: dish.name || "",
-      category: dish.category || "",
+      name: dish.name || '',
+      category: dish.category || '',
       estimated_calories: dish.estimated_calories ?? null,
       is_celiac: dish.is_celiac ?? false,
       is_vegan: dish.is_vegan ?? false,
-      is_vegetarian: dish.is_vegetarian ?? false,
+      is_vegetarian: dish.is_vegetarian ?? false
     };
     isEditModalOpen = true;
   }
@@ -269,9 +269,12 @@
     if (editDishState.estimated_calories !== (selectedDish.estimated_calories ?? null)) {
       payload.estimated_calories = editDishState.estimated_calories || null;
     }
-    if (editDishState.is_celiac !== (selectedDish.is_celiac ?? false)) payload.is_celiac = editDishState.is_celiac;
-    if (editDishState.is_vegan !== (selectedDish.is_vegan ?? false)) payload.is_vegan = editDishState.is_vegan;
-    if (editDishState.is_vegetarian !== (selectedDish.is_vegetarian ?? false)) payload.is_vegetarian = editDishState.is_vegetarian;
+    if (editDishState.is_celiac !== (selectedDish.is_celiac ?? false))
+      payload.is_celiac = editDishState.is_celiac;
+    if (editDishState.is_vegan !== (selectedDish.is_vegan ?? false))
+      payload.is_vegan = editDishState.is_vegan;
+    if (editDishState.is_vegetarian !== (selectedDish.is_vegetarian ?? false))
+      payload.is_vegetarian = editDishState.is_vegetarian;
 
     if (Object.keys(payload).length === 0) return (isEditModalOpen = false);
 
@@ -295,9 +298,9 @@
 
   function handleMerge(dish) {
     selectedDish = dish;
-    mergeSearchQuery = "";
+    mergeSearchQuery = '';
     targetDishId = null;
-    mergeTargetName = "";
+    mergeTargetName = '';
     mergeSearchResults = [];
     isMergeModalOpen = true;
   }
@@ -307,24 +310,30 @@
     clearTimeout(mergeSearchTimeout);
     mergeSearchTimeout = setTimeout(async () => {
       const query = mergeSearchQuery.trim();
-      if (!query) { mergeSearchResults = []; return; }
+      if (!query) {
+        mergeSearchResults = [];
+        return;
+      }
       try {
         const results = await api.getDishStats(query);
-        mergeSearchResults = results.filter(d => d.id !== selectedDish.id);
-      } catch (err) { console.error(err); }
+        mergeSearchResults = results.filter((d) => d.id !== selectedDish.id);
+      } catch (err) {
+        console.error(err);
+      }
     }, 300);
   }
 
   function selectMergeTarget(id, name) {
     targetDishId = id;
     mergeTargetName = name;
-    mergeSearchQuery = "";
+    mergeSearchQuery = '';
     mergeSearchResults = [];
   }
 
   async function submitMerge() {
     if (!targetDishId) return showToast('Lütfen hedef yemeği seçin!', 'error');
-    if (targetDishId === selectedDish.id) return showToast('Bir yemeği kendisiyle birleştiremezsiniz.', 'error');
+    if (targetDishId === selectedDish.id)
+      return showToast('Bir yemeği kendisiyle birleştiremezsiniz.', 'error');
     try {
       await api.mergeDishes(selectedDish.id, targetDishId);
       showToast('Yemekler başarıyla birleştirildi!');
@@ -346,7 +355,7 @@
       try {
         await api.detachDish(aliasId);
         showToast('Yemek başarıyla ayrıldı!');
-        selectedDish.aliases = selectedDish.aliases.filter(a => a.id !== aliasId);
+        selectedDish.aliases = selectedDish.aliases.filter((a) => a.id !== aliasId);
         if (selectedDish.aliases.length === 0) isDetachModalOpen = false;
         fetchDishes(searchQuery.trim());
       } catch (err) {
@@ -357,13 +366,13 @@
 
   function handleSplitString(dish) {
     selectedDish = dish;
-    splitDelimiter = "/";
+    splitDelimiter = '/';
     isSplitModalOpen = true;
   }
 
   async function submitSplitString() {
     try {
-      await api.splitDish(selectedDish.id, splitDelimiter || "/");
+      await api.splitDish(selectedDish.id, splitDelimiter || '/');
       showToast('Yemek başarıyla bölündü!');
       isSplitModalOpen = false;
       fetchDishes(searchQuery.trim());
@@ -396,7 +405,7 @@
 <div class="u-flex u-items-center u-justify-between u-mb-md u-gap-md">
   <div class="admin-search-bar u-flex-grow">
     <span class="admin-search-bar__icon">
-      {@html icon("search", 16)}
+      {@html icon('search', 16)}
     </span>
     <input
       type="text"
@@ -416,12 +425,9 @@
       onPageChange={handlePageChange}
     />
   {/if}
-  <button
-    class="btn btn--primary u-flex-shrink-0 btn-admin-top-action"
-    onclick={handleAddDish}
-  >
+  <button class="btn btn--primary u-flex-shrink-0 btn-admin-top-action" onclick={handleAddDish}>
     <span class="u-hidden-mobile">Yemek ekle</span>
-    <span class="u-hidden-desktop">{@html icon("plus", 16)}</span>
+    <span class="u-hidden-desktop">{@html icon('plus', 16)}</span>
   </button>
 </div>
 
@@ -430,9 +436,9 @@
   <div class="u-flex-grow mobile-sort-dropdown">
     <Dropdown
       options={[
-        { label: "Yemek ismine Göre", value: "name" },
-        { label: "Kategoriye Göre", value: "category" },
-        { label: "Kullanıma Göre", value: "usage" },
+        { label: 'Yemek ismine Göre', value: 'name' },
+        { label: 'Kategoriye Göre', value: 'category' },
+        { label: 'Kullanıma Göre', value: 'usage' }
       ]}
       bind:value={sortState.column}
     />
@@ -443,7 +449,7 @@
       sortState.asc = !sortState.asc;
     }}
   >
-    {@html icon(sortState.asc ? "chevronUp" : "chevronDown", 16)}
+    {@html icon(sortState.asc ? 'chevronUp' : 'chevronDown', 16)}
   </button>
 </div>
 
@@ -456,19 +462,40 @@
     <EmptyState statusCode={500} desc={errorMsg} />
   {:else if dishes.length === 0}
     <EmptyState
-      iconName={"ghost"}
-      title={"Sonuç Yok"}
-      desc={"Böyle bir yemek bulamadık. Yanlış mı yazdın?"}
+      iconName={'ghost'}
+      title={'Sonuç Yok'}
+      desc={'Böyle bir yemek bulamadık. Yanlış mı yazdın?'}
     />
   {:else}
     <div class="admin-table-wrapper admin-table-wrapper--no-scroll">
       <table class="admin-table admin-table--hybrid" id="dish-table">
         <thead>
           <tr>
-            <th class="sortable {sortState.column === 'name' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort("name")}>Yemek ismi</th>
-            <th class="sortable {sortState.column === 'category' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort("category")}>Kategori</th>
+            <th
+              class="sortable {sortState.column === 'name'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('name')}>Yemek ismi</th
+            >
+            <th
+              class="sortable {sortState.column === 'category'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('category')}>Kategori</th
+            >
             <th>Kısıtlamalar</th>
-            <th class="sortable {sortState.column === 'usage' ? (sortState.asc ? 'sort-asc' : 'sort-desc') : ''}" onclick={() => handleSort("usage")}>Kullanım</th>
+            <th
+              class="sortable {sortState.column === 'usage'
+                ? sortState.asc
+                  ? 'sort-asc'
+                  : 'sort-desc'
+                : ''}"
+              onclick={() => handleSort('usage')}>Kullanım</th
+            >
             <th class="col-actions">Aksiyonlar</th>
           </tr>
         </thead>
@@ -479,15 +506,24 @@
                 <div class="admin-table-cell--primary">{dish.name}</div>
                 {#if dish.aliases?.length > 0}
                   {#if dish.aliases.length === 1}
-                    <div class="u-text-xs u-color-text-muted u-mt-xs">Bağlı: {dish.aliases[0].name}</div>
+                    <div class="u-text-xs u-color-text-muted u-mt-xs">
+                      Bağlı: {dish.aliases[0].name}
+                    </div>
                   {:else}
                     <!-- svelte-ignore a11y_click_events_have_key_events -->
                     <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-                    <details class="admin-aliases-expander u-mt-xs u-cursor-pointer" onclick={(e) => e.stopPropagation()}>
-                      <summary class="u-text-xs u-color-text-muted u-font-medium admin-aliases-summary">
+                    <details
+                      class="admin-aliases-expander u-mt-xs u-cursor-pointer"
+                      onclick={(e) => e.stopPropagation()}
+                    >
+                      <summary
+                        class="u-text-xs u-color-text-muted u-font-medium admin-aliases-summary"
+                      >
                         {dish.aliases.length} Bağlantı {@html icon('chevronDown', 12)}
                       </summary>
-                      <div class="u-pl-md u-mt-xs u-text-xs u-color-text-muted u-flex u-flex-col u-gap-xs admin-aliases-list">
+                      <div
+                        class="u-pl-md u-mt-xs u-text-xs u-color-text-muted u-flex u-flex-col u-gap-xs admin-aliases-list"
+                      >
                         {#each dish.aliases as a}
                           <div class="u-flex u-items-center u-justify-between">
                             <span>{a.name}</span>
@@ -506,7 +542,9 @@
                 {#if dish.constraints && dish.constraints.length > 0}
                   <span class="admin-table-cell--pill-group">
                     {#each dish.constraints as constraint}
-                      <span class="admin-table-cell--pill" style={getConstraintStyle(constraint)}>{constraint}</span>
+                      <span class="admin-table-cell--pill" style={getConstraintStyle(constraint)}
+                        >{constraint}</span
+                      >
                     {/each}
                   </span>
                 {:else}
@@ -516,7 +554,11 @@
               <td><span class="admin-table-cell--meta">{dish.usage_count} kez</span></td>
               <td class="col-actions">
                 <div class="u-flex u-items-center u-gap-xs u-justify-end">
-                  <button class="btn-icon" onclick={() => handleInfoModal(dish)} aria-label="Detayları Gör">
+                  <button
+                    class="btn-icon"
+                    onclick={() => handleInfoModal(dish)}
+                    aria-label="Detayları Gör"
+                  >
                     {@html icon('info', 16)}
                   </button>
                   <ActionMenu items={getDishActions(dish)} />
@@ -529,276 +571,363 @@
     </div>
 
     {#if totalPages > 1}
-      <Pagination
-        page={currentPage}
-        {totalPages}
-        {totalItems}
-        onPageChange={handlePageChange}
-      />
+      <Pagination page={currentPage} {totalPages} {totalItems} onPageChange={handlePageChange} />
     {/if}
   {/if}
 </div>
 
 <!-- MODALS -->
 {#if isInfoModalOpen}
-<Modal options={{ title: `${selectedDish?.name} Detayları`, iconHtml: icon('info', 24) }} onClose={() => (isInfoModalOpen = false)}>
-  {#snippet children()}
-    {#if selectedDish}
-      <div class="u-mb-lg">
-        <div>
-          <div class="u-text-xs u-color-muted u-font-bold">KATEGORİ</div>
-          <div class="u-mt-xs u-font-medium">{getCategoryLabel(selectedDish.category)}</div>
-        </div>
-        {#if selectedDish.constraints?.length > 0}
-          <div class="u-mt-md">
-            <div class="u-text-xs u-color-muted u-font-bold">KISITLAMALAR</div>
-            <div class="admin-table-cell--pill-group u-mt-xs">
-              {#each selectedDish.constraints as c}
-                <span class="admin-table-cell--pill" style={getConstraintStyle(c)}>{c}</span>
-              {/each}
-            </div>
+  <Modal
+    options={{ title: `${selectedDish?.name} Detayları`, iconHtml: icon('info', 24) }}
+    onClose={() => (isInfoModalOpen = false)}
+  >
+    {#snippet children()}
+      {#if selectedDish}
+        <div class="u-mb-lg">
+          <div>
+            <div class="u-text-xs u-color-muted u-font-bold">KATEGORİ</div>
+            <div class="u-mt-xs u-font-medium">{getCategoryLabel(selectedDish.category)}</div>
           </div>
-        {/if}
-      </div>
-      <div class="u-mb-lg">
-        <div class="u-text-xs u-color-muted u-font-bold u-mb-xs">METRİKLER</div>
-        <div class="c-boxed-list">
-          <div class="c-list-row u-flex u-justify-between u-items-center">
-            <span class="u-text-sm u-color-muted u-font-medium">Kullanım</span>
-            <span class="u-font-bold u-color-text">{selectedDish.usage_count} kez</span>
-          </div>
-          {#if selectedDish.weight}
-            <div class="c-list-row u-flex u-justify-between u-items-center">
-              <span class="u-text-sm u-color-muted u-font-medium">Porsiyon</span>
-              <span class="u-font-bold u-color-text">{selectedDish.weight}</span>
-            </div>
-          {/if}
-          {#if selectedDish.calories}
-            <div class="c-list-row u-flex u-justify-between u-items-center">
-              <span class="u-text-sm u-color-muted u-font-medium">Kalori</span>
-              <span class="u-font-bold u-color-text">{selectedDish.calories} kcal</span>
+          {#if selectedDish.constraints?.length > 0}
+            <div class="u-mt-md">
+              <div class="u-text-xs u-color-muted u-font-bold">KISITLAMALAR</div>
+              <div class="admin-table-cell--pill-group u-mt-xs">
+                {#each selectedDish.constraints as c}
+                  <span class="admin-table-cell--pill" style={getConstraintStyle(c)}>{c}</span>
+                {/each}
+              </div>
             </div>
           {/if}
         </div>
-      </div>
-    {/if}
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isInfoModalOpen = false}>Kapat</button>
-  {/snippet}
-</Modal>
+        <div class="u-mb-lg">
+          <div class="u-text-xs u-color-muted u-font-bold u-mb-xs">METRİKLER</div>
+          <div class="c-boxed-list">
+            <div class="c-list-row u-flex u-justify-between u-items-center">
+              <span class="u-text-sm u-color-muted u-font-medium">Kullanım</span>
+              <span class="u-font-bold u-color-text">{selectedDish.usage_count} kez</span>
+            </div>
+            {#if selectedDish.weight}
+              <div class="c-list-row u-flex u-justify-between u-items-center">
+                <span class="u-text-sm u-color-muted u-font-medium">Porsiyon</span>
+                <span class="u-font-bold u-color-text">{selectedDish.weight}</span>
+              </div>
+            {/if}
+            {#if selectedDish.calories}
+              <div class="c-list-row u-flex u-justify-between u-items-center">
+                <span class="u-text-sm u-color-muted u-font-medium">Kalori</span>
+                <span class="u-font-bold u-color-text">{selectedDish.calories} kcal</span>
+              </div>
+            {/if}
+          </div>
+        </div>
+      {/if}
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isInfoModalOpen = false)}>Kapat</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isAddModalOpen}
-<Modal options={{ title: "Yeni Yemek Ekle", iconHtml: icon('plus', 24) }} onClose={() => (isAddModalOpen = false)}>
-  {#snippet children()}
-    <div class="c-modal__form-group">
-      <label for="add-dish-name" class="c-modal__label">Yemek ismi</label>
-      <input id="add-dish-name" type="text" class="c-modal__input" bind:value={editDishState.name}>
-    </div>
-    <div class="c-modal__form-group">
-      <div class="c-modal__label">Kategori</div>
-      <Dropdown
-        options={[
-          { value: "", label: "Belirtilmemiş" },
-          ...Object.entries(categoryConfig).map(([k, v]) => ({ value: k, label: v.label }))
-        ]}
-        bind:value={editDishState.category}
-      />
-    </div>
-    <div class="c-modal__form-group">
-      <label for="add-dish-calories" class="c-modal__label">Tahmini Kalori (kcal)</label>
-      <input id="add-dish-calories" type="number" min="0" max="9999" class="c-modal__input" bind:value={editDishState.estimated_calories} placeholder="Bırakılabilir">
-    </div>
-    <div class="c-modal__form-group">
-      <div class="c-modal__label">Diyet Bayrakları</div>
-      <div class="u-mt-xs admin-grid-half u-gap-xs">
-        <label class="form-switch-row u-cursor-pointer u-py-xs">
-          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_celiac}>
-          <div class="c-switch"><div class="c-switch__handle"></div></div>
-          <span class="form-switch-row__text u-ml-sm">Çölyak uyumlu</span>
-        </label>
-        <label class="form-switch-row u-cursor-pointer u-py-xs">
-          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegan}>
-          <div class="c-switch"><div class="c-switch__handle"></div></div>
-          <span class="form-switch-row__text u-ml-sm">Vegan</span>
-        </label>
-        <label class="form-switch-row u-cursor-pointer u-py-xs">
-          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegetarian}>
-          <div class="c-switch"><div class="c-switch__handle"></div></div>
-          <span class="form-switch-row__text u-ml-sm">Vejetaryen</span>
-        </label>
+  <Modal
+    options={{ title: 'Yeni Yemek Ekle', iconHtml: icon('plus', 24) }}
+    onClose={() => (isAddModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="c-modal__form-group">
+        <label for="add-dish-name" class="c-modal__label">Yemek ismi</label>
+        <input
+          id="add-dish-name"
+          type="text"
+          class="c-modal__input"
+          bind:value={editDishState.name}
+        />
       </div>
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isAddModalOpen = false}>İptal</button>
-    <button class="btn btn--primary" onclick={submitAddDish}>Ekle</button>
-  {/snippet}
-</Modal>
+      <div class="c-modal__form-group">
+        <div class="c-modal__label">Kategori</div>
+        <Dropdown
+          options={[
+            { value: '', label: 'Belirtilmemiş' },
+            ...Object.entries(categoryConfig).map(([k, v]) => ({ value: k, label: v.label }))
+          ]}
+          bind:value={editDishState.category}
+        />
+      </div>
+      <div class="c-modal__form-group">
+        <label for="add-dish-calories" class="c-modal__label">Tahmini Kalori (kcal)</label>
+        <input
+          id="add-dish-calories"
+          type="number"
+          min="0"
+          max="9999"
+          class="c-modal__input"
+          bind:value={editDishState.estimated_calories}
+          placeholder="Bırakılabilir"
+        />
+      </div>
+      <div class="c-modal__form-group">
+        <div class="c-modal__label">Diyet Bayrakları</div>
+        <div class="u-mt-xs admin-grid-half u-gap-xs">
+          <label class="form-switch-row u-cursor-pointer u-py-xs">
+            <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_celiac} />
+            <div class="c-switch"><div class="c-switch__handle"></div></div>
+            <span class="form-switch-row__text u-ml-sm">Çölyak uyumlu</span>
+          </label>
+          <label class="form-switch-row u-cursor-pointer u-py-xs">
+            <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegan} />
+            <div class="c-switch"><div class="c-switch__handle"></div></div>
+            <span class="form-switch-row__text u-ml-sm">Vegan</span>
+          </label>
+          <label class="form-switch-row u-cursor-pointer u-py-xs">
+            <input
+              type="checkbox"
+              class="c-input-hidden"
+              bind:checked={editDishState.is_vegetarian}
+            />
+            <div class="c-switch"><div class="c-switch__handle"></div></div>
+            <span class="form-switch-row__text u-ml-sm">Vejetaryen</span>
+          </label>
+        </div>
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isAddModalOpen = false)}>İptal</button>
+      <button class="btn btn--primary" onclick={submitAddDish}>Ekle</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isEditModalOpen}
-<Modal options={{ title: "Yemek Düzenle" }} onClose={() => (isEditModalOpen = false)}>
-  {#snippet children()}
-    <div class="c-modal__form-group">
-      <label for="edit-dish-name" class="c-modal__label">Yemek ismi</label>
-      <input id="edit-dish-name" type="text" class="c-modal__input" bind:value={editDishState.name}>
-      <p class="c-modal__help">İsim değişirse eski isim otomatik olarak bir takma ad olarak kaydedilir.</p>
-    </div>
-    <div class="c-modal__form-group">
-      <div class="c-modal__label">Kategori</div>
-      <Dropdown
-        options={[
-          { value: "", label: "Belirtilmemiş" },
-          ...Object.entries(categoryConfig).map(([k, v]) => ({ value: k, label: v.label }))
-        ]}
-        bind:value={editDishState.category}
-      />
-    </div>
-    <div class="c-modal__form-group">
-      <label for="edit-dish-calories" class="c-modal__label">Tahmini Kalori (kcal)</label>
-      <input id="edit-dish-calories" type="number" min="0" max="9999" class="c-modal__input" bind:value={editDishState.estimated_calories} placeholder="Bırakılabilir">
-    </div>
-    <div class="c-modal__form-group">
-      <div class="c-modal__label">Diyet Bayrakları</div>
-      <div class="u-mt-xs admin-grid-half u-gap-xs">
-        <label class="form-switch-row u-cursor-pointer u-py-xs">
-          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_celiac}>
-          <div class="c-switch"><div class="c-switch__handle"></div></div>
-          <span class="form-switch-row__text u-ml-sm">Çölyak uyumlu</span>
-        </label>
-        <label class="form-switch-row u-cursor-pointer u-py-xs">
-          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegan}>
-          <div class="c-switch"><div class="c-switch__handle"></div></div>
-          <span class="form-switch-row__text u-ml-sm">Vegan</span>
-        </label>
-        <label class="form-switch-row u-cursor-pointer u-py-xs">
-          <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegetarian}>
-          <div class="c-switch"><div class="c-switch__handle"></div></div>
-          <span class="form-switch-row__text u-ml-sm">Vejetaryen</span>
-        </label>
+  <Modal options={{ title: 'Yemek Düzenle' }} onClose={() => (isEditModalOpen = false)}>
+    {#snippet children()}
+      <div class="c-modal__form-group">
+        <label for="edit-dish-name" class="c-modal__label">Yemek ismi</label>
+        <input
+          id="edit-dish-name"
+          type="text"
+          class="c-modal__input"
+          bind:value={editDishState.name}
+        />
+        <p class="c-modal__help">
+          İsim değişirse eski isim otomatik olarak bir takma ad olarak kaydedilir.
+        </p>
       </div>
-    </div>
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isEditModalOpen = false}>İptal</button>
-    <button class="btn btn--primary" onclick={submitEditDish}>Değişiklikleri kaydet</button>
-  {/snippet}
-</Modal>
+      <div class="c-modal__form-group">
+        <div class="c-modal__label">Kategori</div>
+        <Dropdown
+          options={[
+            { value: '', label: 'Belirtilmemiş' },
+            ...Object.entries(categoryConfig).map(([k, v]) => ({ value: k, label: v.label }))
+          ]}
+          bind:value={editDishState.category}
+        />
+      </div>
+      <div class="c-modal__form-group">
+        <label for="edit-dish-calories" class="c-modal__label">Tahmini Kalori (kcal)</label>
+        <input
+          id="edit-dish-calories"
+          type="number"
+          min="0"
+          max="9999"
+          class="c-modal__input"
+          bind:value={editDishState.estimated_calories}
+          placeholder="Bırakılabilir"
+        />
+      </div>
+      <div class="c-modal__form-group">
+        <div class="c-modal__label">Diyet Bayrakları</div>
+        <div class="u-mt-xs admin-grid-half u-gap-xs">
+          <label class="form-switch-row u-cursor-pointer u-py-xs">
+            <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_celiac} />
+            <div class="c-switch"><div class="c-switch__handle"></div></div>
+            <span class="form-switch-row__text u-ml-sm">Çölyak uyumlu</span>
+          </label>
+          <label class="form-switch-row u-cursor-pointer u-py-xs">
+            <input type="checkbox" class="c-input-hidden" bind:checked={editDishState.is_vegan} />
+            <div class="c-switch"><div class="c-switch__handle"></div></div>
+            <span class="form-switch-row__text u-ml-sm">Vegan</span>
+          </label>
+          <label class="form-switch-row u-cursor-pointer u-py-xs">
+            <input
+              type="checkbox"
+              class="c-input-hidden"
+              bind:checked={editDishState.is_vegetarian}
+            />
+            <div class="c-switch"><div class="c-switch__handle"></div></div>
+            <span class="form-switch-row__text u-ml-sm">Vejetaryen</span>
+          </label>
+        </div>
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isEditModalOpen = false)}>İptal</button>
+      <button class="btn btn--primary" onclick={submitEditDish}>Değişiklikleri kaydet</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isMergeModalOpen}
-<Modal options={{ title: "Yemek Birleştir" }} onClose={() => (isMergeModalOpen = false)}>
-  {#snippet children()}
-    {#if selectedDish}
-      <p class="u-mb-md u-text-sm"><strong>{selectedDish.name}</strong> yemeğini hedef yemeğe aktarıp birleştireceksiniz.</p>
-      
-      {#if !targetDishId}
-        <div class="c-modal__form-group" id="merge-search-group">
-          <label for="merge-search-input" class="c-modal__label">Hedef yemeği ara</label>
-          <div class="admin-search-wrapper">
-            <input id="merge-search-input" type="text" class="c-modal__input" bind:value={mergeSearchQuery} oninput={handleMergeSearchInput} placeholder="Hedef yemek ismi yaz...">
-          </div>
-          <div class="admin-modal-search-results">
-            {#each mergeSearchResults as d}
-              <div class="dish-item-select">
-                <div>
-                  <div class="u-text-sm u-font-bold">{d.name}</div>
-                  <div class="u-text-xs u-color-muted">ID: {d.id} | {getCategoryLabel(d.category)}</div>
+  <Modal options={{ title: 'Yemek Birleştir' }} onClose={() => (isMergeModalOpen = false)}>
+    {#snippet children()}
+      {#if selectedDish}
+        <p class="u-mb-md u-text-sm">
+          <strong>{selectedDish.name}</strong> yemeğini hedef yemeğe aktarıp birleştireceksiniz.
+        </p>
+
+        {#if !targetDishId}
+          <div class="c-modal__form-group" id="merge-search-group">
+            <label for="merge-search-input" class="c-modal__label">Hedef yemeği ara</label>
+            <div class="admin-search-wrapper">
+              <input
+                id="merge-search-input"
+                type="text"
+                class="c-modal__input"
+                bind:value={mergeSearchQuery}
+                oninput={handleMergeSearchInput}
+                placeholder="Hedef yemek ismi yaz..."
+              />
+            </div>
+            <div class="admin-modal-search-results">
+              {#each mergeSearchResults as d}
+                <div class="dish-item-select">
+                  <div>
+                    <div class="u-text-sm u-font-bold">{d.name}</div>
+                    <div class="u-text-xs u-color-muted">
+                      ID: {d.id} | {getCategoryLabel(d.category)}
+                    </div>
+                  </div>
+                  <button
+                    class="btn btn--xs btn--primary select-target-btn"
+                    onclick={() => selectMergeTarget(d.id, d.name)}>Seç</button
+                  >
                 </div>
-                <button class="btn btn--xs btn--primary select-target-btn" onclick={() => selectMergeTarget(d.id, d.name)}>Seç</button>
+              {/each}
+            </div>
+          </div>
+        {:else}
+          <div id="merge-target-selection" class="u-mt-md">
+            <div class="c-modal__label">Seçilen hedef yemek</div>
+            <div class="admin-selected-dishes-box">
+              <div class="chip active u-m-0">
+                <span>{mergeTargetName}</span>
+                <!-- svelte-ignore a11y_click_events_have_key_events -->
+                <!-- svelte-ignore a11y_no_static_element_interactions -->
+                <span
+                  class="remove-dish u-cursor-pointer u-ml-xs"
+                  onclick={() => {
+                    targetDishId = null;
+                    mergeTargetName = '';
+                  }}>×</span
+                >
+              </div>
+            </div>
+            <p class="u-mt-md u-text-xs u-color-negative">
+              DİKKAT: Bu işlem geri alınamaz. "<strong>{sanitizeText(selectedDish.name)}</strong>"
+              silinecek ve tüm kullanım istatistikleri hedef yemeğe aktarılacak.
+            </p>
+          </div>
+        {/if}
+      {/if}
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isMergeModalOpen = false)}>İptal</button>
+      <button class="btn btn--danger" disabled={!targetDishId} onclick={submitMerge}
+        >Birleştir</button
+      >
+    {/snippet}
+  </Modal>
+{/if}
+
+{#if isDetachModalOpen}
+  <Modal
+    options={{ title: 'Bağlantıları Ayır', iconHtml: icon('split', 24) }}
+    onClose={() => (isDetachModalOpen = false)}
+  >
+    {#snippet children()}
+      {#if selectedDish && selectedDish.aliases}
+        <div class="c-boxed-list u-mb-md">
+          <div class="u-p-md admin-list-section-header">
+            <p class="u-text-sm u-font-bold">Mevcut bağlantılar (takma adlar)</p>
+            <p class="u-text-xs u-opacity-80 u-mt-xs">
+              Bağlı takma adları bağımsız birer kayda dönüştürür.
+            </p>
+          </div>
+          <div class="u-flex u-flex-col">
+            {#each selectedDish.aliases as a}
+              <div class="c-list-row admin-list-row--flush u-flex u-items-center u-justify-between">
+                <div>
+                  <span class="u-font-medium">{a.name}</span>
+                  <span class="u-text-xs u-color-text-muted u-ml-xs">(ID: {a.id})</span>
+                </div>
+                <button
+                  class="btn btn--secondary btn--sm"
+                  onclick={() => submitDetachAlias(a.id, a.name)}>Ayır</button
+                >
               </div>
             {/each}
           </div>
         </div>
-      {:else}
-        <div id="merge-target-selection" class="u-mt-md">
-          <div class="c-modal__label">Seçilen hedef yemek</div>
-          <div class="admin-selected-dishes-box">
-            <div class="chip active u-m-0">
-              <span>{mergeTargetName}</span>
-              <!-- svelte-ignore a11y_click_events_have_key_events -->
-              <!-- svelte-ignore a11y_no_static_element_interactions -->
-              <span class="remove-dish u-cursor-pointer u-ml-xs" onclick={() => { targetDishId = null; mergeTargetName = ""; }}>×</span>
-            </div>
-          </div>
-          <p class="u-mt-md u-text-xs u-color-negative">DİKKAT: Bu işlem geri alınamaz. "<strong>{sanitizeText(selectedDish.name)}</strong>" silinecek ve tüm kullanım istatistikleri hedef yemeğe aktarılacak.</p>
-        </div>
       {/if}
-    {/if}
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isMergeModalOpen = false}>İptal</button>
-    <button class="btn btn--danger" disabled={!targetDishId} onclick={submitMerge}>Birleştir</button>
-  {/snippet}
-</Modal>
-{/if}
-
-{#if isDetachModalOpen}
-<Modal options={{ title: "Bağlantıları Ayır", iconHtml: icon('split', 24) }} onClose={() => (isDetachModalOpen = false)}>
-  {#snippet children()}
-    {#if selectedDish && selectedDish.aliases}
-      <div class="c-boxed-list u-mb-md">
-        <div class="u-p-md admin-list-section-header">
-          <p class="u-text-sm u-font-bold">Mevcut bağlantılar (takma adlar)</p>
-          <p class="u-text-xs u-opacity-80 u-mt-xs">Bağlı takma adları bağımsız birer kayda dönüştürür.</p>
-        </div>
-        <div class="u-flex u-flex-col">
-          {#each selectedDish.aliases as a}
-            <div class="c-list-row admin-list-row--flush u-flex u-items-center u-justify-between">
-              <div>
-                <span class="u-font-medium">{a.name}</span>
-                <span class="u-text-xs u-color-text-muted u-ml-xs">(ID: {a.id})</span>
-              </div>
-              <button class="btn btn--secondary btn--sm" onclick={() => submitDetachAlias(a.id, a.name)}>Ayır</button>
-            </div>
-          {/each}
-        </div>
-      </div>
-    {/if}
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isDetachModalOpen = false}>Kapat</button>
-  {/snippet}
-</Modal>
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isDetachModalOpen = false)}>Kapat</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isSplitModalOpen}
-<Modal options={{ title: "İsme göre böl", iconHtml: icon('split', 24) }} onClose={() => (isSplitModalOpen = false)}>
-  {#snippet children()}
-    {#if selectedDish}
-      <div class="c-boxed-list">
-        <div class="u-p-md admin-list-section-header">
-          <p class="u-text-sm u-font-bold">İsme göre böl</p>
-          <p class="u-text-xs u-opacity-80 u-mt-xs">Birleşik metinleri ayırarak yeni kayıtlar oluşturur.</p>
-        </div>
-        <div class="u-p-md">
-          <p class="u-text-sm u-mb-md"><strong>{selectedDish.name}</strong> kaydını hangi karaktere göre böleceksiniz?</p>
-          <div class="u-flex u-items-center u-gap-md">
-            <input type="text" class="c-modal__input admin-input--narrow" bind:value={splitDelimiter}>
-            <button class="btn btn--primary" onclick={submitSplitString}>İsme göre böl</button>
+  <Modal
+    options={{ title: 'İsme göre böl', iconHtml: icon('split', 24) }}
+    onClose={() => (isSplitModalOpen = false)}
+  >
+    {#snippet children()}
+      {#if selectedDish}
+        <div class="c-boxed-list">
+          <div class="u-p-md admin-list-section-header">
+            <p class="u-text-sm u-font-bold">İsme göre böl</p>
+            <p class="u-text-xs u-opacity-80 u-mt-xs">
+              Birleşik metinleri ayırarak yeni kayıtlar oluşturur.
+            </p>
+          </div>
+          <div class="u-p-md">
+            <p class="u-text-sm u-mb-md">
+              <strong>{selectedDish.name}</strong> kaydını hangi karaktere göre böleceksiniz?
+            </p>
+            <div class="u-flex u-items-center u-gap-md">
+              <input
+                type="text"
+                class="c-modal__input admin-input--narrow"
+                bind:value={splitDelimiter}
+              />
+              <button class="btn btn--primary" onclick={submitSplitString}>İsme göre böl</button>
+            </div>
           </div>
         </div>
-      </div>
-    {/if}
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isSplitModalOpen = false}>Kapat</button>
-  {/snippet}
-</Modal>
+      {/if}
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isSplitModalOpen = false)}>Kapat</button>
+    {/snippet}
+  </Modal>
 {/if}
 
 {#if isDeleteModalOpen}
-<Modal options={{ title: "Yemeği Sil", iconHtml: icon('trash', 24), iconColor: 'danger' }} onClose={() => (isDeleteModalOpen = false)}>
-  {#snippet children()}
-    {#if selectedDish}
-      <p><strong>{selectedDish.name}</strong> adlı yemeği kalıcı olarak silmek üzeresiniz. Bu işlem geri alınamaz.</p>
-    {/if}
-  {/snippet}
-  {#snippet footer()}
-    <button class="btn btn--secondary" onclick={() => isDeleteModalOpen = false}>İptal</button>
-    <button class="btn btn--danger" onclick={submitDeleteDish}>Kalıcı sil</button>
-  {/snippet}
-</Modal>
+  <Modal
+    options={{ title: 'Yemeği Sil', iconHtml: icon('trash', 24), iconColor: 'danger' }}
+    onClose={() => (isDeleteModalOpen = false)}
+  >
+    {#snippet children()}
+      {#if selectedDish}
+        <p>
+          <strong>{selectedDish.name}</strong> adlı yemeği kalıcı olarak silmek üzeresiniz. Bu işlem geri
+          alınamaz.
+        </p>
+      {/if}
+    {/snippet}
+    {#snippet footer()}
+      <button class="btn btn--secondary" onclick={() => (isDeleteModalOpen = false)}>İptal</button>
+      <button class="btn btn--danger" onclick={submitDeleteDish}>Kalıcı sil</button>
+    {/snippet}
+  </Modal>
 {/if}

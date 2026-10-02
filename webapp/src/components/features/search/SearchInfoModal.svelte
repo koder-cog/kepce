@@ -1,6 +1,6 @@
 <script>
-  import Modal from "@/components/ui/Modal.svelte";
-  import { icon } from "@/components/ui/icons.js";
+  import Modal from '@/components/ui/Modal.svelte';
+  import { icon } from '@/components/ui/icons.js';
 
   let { isOpen = $bindable(false) } = $props();
 </script>
@@ -8,8 +8,8 @@
 {#if isOpen}
   <Modal
     options={{
-      title: "Hakkında",
-      iconHtml: icon("info", 24),
+      title: 'Hakkında',
+      iconHtml: icon('info', 24)
     }}
     onClose={() => (isOpen = false)}
   >
@@ -20,7 +20,9 @@
         </p>
 
         <p class="u-text-sm u-leading-comfortable">
-          Aramalarınız profillenmez, takip edilmez ve arama geçmişiniz sunucularda saklanmaz. Arama yaptığınızda sorgunuz kimliğinizden arındırılarak onlarca farklı arama motoruna iletilir ve sonuçlar tarafsız bir şekilde listelenir.
+          Aramalarınız profillenmez, takip edilmez ve arama geçmişiniz sunucularda saklanmaz. Arama
+          yaptığınızda sorgunuz kimliğinizden arındırılarak onlarca farklı arama motoruna iletilir
+          ve sonuçlar tarafsız bir şekilde listelenir.
         </p>
 
         <div class="card card--flat u-p-md u-flex u-flex-col u-gap-xs">
@@ -35,11 +37,7 @@
     {/snippet}
 
     {#snippet footer()}
-      <button
-        type="button"
-        class="btn btn--primary"
-        onclick={() => (isOpen = false)}
-      >
+      <button type="button" class="btn btn--primary" onclick={() => (isOpen = false)}>
         Anladım
       </button>
     {/snippet}

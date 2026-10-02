@@ -1,21 +1,21 @@
 <script>
-  import { api } from "@/api/index.js";
-  import Loader from "@/components/ui/Loader.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import { sanitizeText } from "@/utils/sanitize.js";
-  import { getCommentContextHtml } from "@/utils/turkish.js";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
-  import { onMount } from "svelte";
+  import { api } from '@/api/index.js';
+  import Loader from '@/components/ui/Loader.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import { sanitizeText } from '@/utils/sanitize.js';
+  import { getCommentContextHtml } from '@/utils/turkish.js';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
+  import { onMount } from 'svelte';
 
-  let selectedTimeframe = $state("");
+  let selectedTimeframe = $state('');
   let timeframes = [
-    { value: "", label: "Tümü" },
-    { value: "daily", label: "Dün" },
-    { value: "weekly", label: "Geçen Hafta" },
-    { value: "monthly", label: "Geçen Ay" },
-    { value: "yearly", label: "Geçen Yıl" },
+    { value: '', label: 'Tümü' },
+    { value: 'daily', label: 'Dün' },
+    { value: 'weekly', label: 'Geçen Hafta' },
+    { value: 'monthly', label: 'Geçen Ay' },
+    { value: 'yearly', label: 'Geçen Yıl' }
   ];
 
   let isLoading = $state(true);
@@ -40,7 +40,7 @@
       contentData = data;
     } catch (err) {
       if (token !== currentLoadToken) return;
-      errorMsg = err.message || "Bir hata oluştu.";
+      errorMsg = err.message || 'Bir hata oluştu.';
       errorCode = err.status || 500;
     } finally {
       if (token === currentLoadToken) {
@@ -54,7 +54,7 @@
   }
 
   function actionStagger(node, idx) {
-    node.style.setProperty("--stagger-idx", idx);
+    node.style.setProperty('--stagger-idx', idx);
   }
 </script>
 
@@ -84,35 +84,32 @@
     </div>
     {#if contentData.length === 0}
       <EmptyState
-        iconName={"chat"}
-        title={"Yorum Bulunamadı"}
-        desc={"Henüz bu kategoride gösterilecek bir yorum bulunmuyor."}
+        iconName={'chat'}
+        title={'Yorum Bulunamadı'}
+        desc={'Henüz bu kategoride gösterilecek bir yorum bulunmuyor.'}
       />
     {:else}
       <div class="comments-stats-container">
         <div class="comments-grid">
           {#each contentData as c, idx}
             {@const dateStr = c.created_at
-              ? new Date(c.created_at).toLocaleDateString("tr-TR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
+              ? new Date(c.created_at).toLocaleDateString('tr-TR', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
                 })
-              : ""}
+              : ''}
             {@const netScore =
               c.net_score !== undefined
                 ? c.net_score
-                : (c.reaction_summary?.up || 0) -
-                  (c.reaction_summary?.down || 0)}
+                : (c.reaction_summary?.up || 0) - (c.reaction_summary?.down || 0)}
             <div class="comment-card" use:actionStagger={idx}>
               <div class="comment-card__main-col">
                 <div class="comment-card__header">
                   <div class="comment-card__meta">
-                    <span class="comment-card__action-text"
-                      >{@html getCommentContextHtml(c)}</span
-                    >
+                    <span class="comment-card__action-text">{@html getCommentContextHtml(c)}</span>
                     <span class="comment-card__dot">·</span>
                     <span class="comment-card__date">{dateStr}</span>
                   </div>
@@ -123,7 +120,7 @@
                 <div class="comment-node__actions">
                   <div class="comment-node__vote">
                     <button class="vote-btn" data-vote="up" title="Beğeni">
-                      {@html icon("voteUp", 16)}
+                      {@html icon('voteUp', 16)}
                     </button>
                     <span
                       class="vote-count"
@@ -133,42 +130,31 @@
                       {netScore}
                     </span>
                     <button class="vote-btn" data-vote="down" title="Beğenmeme">
-                      {@html icon("voteDown", 16)}
+                      {@html icon('voteDown', 16)}
                     </button>
                   </div>
-                  <a class="action-btn" href="/menu/{c.menu_id}/{c.id}"
-                    >Yanıtla</a
-                  >
+                  <a class="action-btn" href="/menu/{c.menu_id}/{c.id}">Yanıtla</a>
                   <button
                     class="action-btn"
                     onclick={() => {
                       navigator.clipboard.writeText(
-                        window.location.origin +
-                          "/menu/" +
-                          c.menu_id +
-                          "/" +
-                          c.id,
+                        window.location.origin + '/menu/' + c.menu_id + '/' + c.id
                       );
-                      window.showToast?.(
-                        "Yorum bağlantısı panoya kopyalandı.",
-                        "success",
-                      );
+                      window.showToast?.('Yorum bağlantısı panoya kopyalandı.', 'success');
                     }}>Paylaş</button
                   >
                   <button
                     class="action-btn"
                     onclick={() =>
                       window.showToast?.(
-                        "İstatistikler sayfasından şikayet işlemi yapılamaz.",
-                        "error",
+                        'İstatistikler sayfasından şikayet işlemi yapılamaz.',
+                        'error'
                       )}>Şikayet</button
                   >
                   <button
                     class="action-btn"
                     onclick={async () => {
-                      if (
-                        confirm("Bu yorumu silmek istediğinize emin misiniz?")
-                      ) {
+                      if (confirm('Bu yorumu silmek istediğinize emin misiniz?')) {
                         await api.deleteComment(c.id);
                         location.reload();
                       }

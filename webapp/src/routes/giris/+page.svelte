@@ -1,21 +1,21 @@
 <script>
-  import "@/styles/pages/_auth.css";
-  import { goto } from "$app/navigation";
-  import { globalState, authActions } from "@/state.svelte.js";
+  import '@/styles/pages/_auth.css';
+  import { goto } from '$app/navigation';
+  import { globalState, authActions } from '@/state.svelte.js';
 
-  import { api } from "@/api/index.js";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
+  import { api } from '@/api/index.js';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
 
-  let username = $state("");
-  let password = $state("");
+  let username = $state('');
+  let password = $state('');
   let remember = $state(false);
   let showPassword = $state(false);
-  let honeypot = $state("");
+  let honeypot = $state('');
 
   let isLoading = $state(false);
-  let errorMsg = $state("");
+  let errorMsg = $state('');
   let formError = $state(false);
 
   let isPasswordlessMode = $state(false);
@@ -25,16 +25,16 @@
   const user = $derived(globalState?.user);
 
   function getSafeRedirectUrl() {
-    if (typeof window === "undefined") return "/";
+    if (typeof window === 'undefined') return '/';
     const urlParams = new URLSearchParams(window.location.search);
-    const redirectParam = urlParams.get("redirect");
+    const redirectParam = urlParams.get('redirect');
 
     // Sadece güvenli iç yollara izin ver (// veya javascript: engelle)
     if (
       redirectParam &&
-      redirectParam.startsWith("/") &&
-      !redirectParam.startsWith("//") &&
-      !redirectParam.toLowerCase().startsWith("/\\")
+      redirectParam.startsWith('/') &&
+      !redirectParam.startsWith('//') &&
+      !redirectParam.toLowerCase().startsWith('/\\')
     ) {
       return redirectParam;
     }
@@ -45,22 +45,22 @@
         const refUrl = new URL(document.referrer);
         if (
           refUrl.origin === window.location.origin &&
-          !refUrl.pathname.startsWith("/giris") &&
-          !refUrl.pathname.startsWith("/kayit")
+          !refUrl.pathname.startsWith('/giris') &&
+          !refUrl.pathname.startsWith('/kayit')
         ) {
           return refUrl.pathname + refUrl.search + refUrl.hash;
         }
       } catch (e) {}
     }
 
-    return "/";
+    return '/';
   }
 
   function handleGoBack() {
-    if (typeof window !== "undefined" && window.history.length > 1) {
+    if (typeof window !== 'undefined' && window.history.length > 1) {
       window.history.back();
     } else {
-      goto("/");
+      goto('/');
     }
   }
 
@@ -74,10 +74,10 @@
       try {
         await api.passwordless(username);
         isPasswordlessSuccess = true;
-        errorMsg = "";
+        errorMsg = '';
         formError = false;
       } catch (err) {
-        errorMsg = err.message || "Bir hata oluştu.";
+        errorMsg = err.message || 'Bir hata oluştu.';
         formError = true;
       } finally {
         isLoading = false;
@@ -91,14 +91,13 @@
       await authActions.refreshUser();
 
       formError = false;
-      errorMsg = "";
+      errorMsg = '';
 
       const targetPath = getSafeRedirectUrl();
       goto(targetPath);
     } catch (err) {
       isRedirecting = false;
-      errorMsg =
-        err.message || "Bir şeyleri hatalı girdin, tekrar dene istersen?";
+      errorMsg = err.message || 'Bir şeyleri hatalı girdin, tekrar dene istersen?';
       formError = true;
       isLoading = false;
     }
@@ -118,19 +117,15 @@
   <div class="empty-state-container">
     <EmptyState
       statusCode={403}
-      title={"403: Zaten Buradasın"}
+      title={'403: Zaten Buradasın'}
       desc={`@${user.username} olarak zaten giriş yapmış durumdasın. Başka bir hesapla girmek istiyorsan önce çıkış yapmalısın.`}
     >
-      <button
-        type="button"
-        class="btn btn--secondary btn--squish"
-        onclick={handleGoBack}>Önceki sayfaya dön</button
+      <button type="button" class="btn btn--secondary btn--squish" onclick={handleGoBack}
+        >Önceki sayfaya dön</button
       >
       <a href="/" data-link class="btn btn--secondary btn--squish">Ana sayfa</a>
-      <button
-        type="button"
-        class="btn btn--primary btn--squish"
-        onclick={handleLogout}>Çıkış yap</button
+      <button type="button" class="btn btn--primary btn--squish" onclick={handleLogout}
+        >Çıkış yap</button
       >
     </EmptyState>
   </div>
@@ -142,7 +137,7 @@
       <button
         type="button"
         class="btn btn--secondary btn--large btn--squish"
-        onclick={() => (window.location.href = "/api/v1/auth/google/login")}
+        onclick={() => (window.location.href = '/api/v1/auth/google/login')}
       >
         Google Hesabı ile giriş yap
       </button>
@@ -172,12 +167,11 @@
       {#if isPasswordlessSuccess}
         <div class="passwordless-success u-mb-md">
           <div class="passwordless-success__icon">
-            {@html icon("send", 40) || icon("mail", 40) || icon("check", 40)}
+            {@html icon('send', 40) || icon('mail', 40) || icon('check', 40)}
           </div>
           <h3 class="passwordless-success__title">Bağlantı Yola Çıktı!</h3>
           <p class="passwordless-success__desc">
-            Eğer <strong>{username}</strong> sistemde kayıtlıysa giriş bağlantını
-            e-postana gönderdik.
+            Eğer <strong>{username}</strong> sistemde kayıtlıysa giriş bağlantını e-postana gönderdik.
           </p>
           <p class="passwordless-success__note">
             Lütfen gelen kutunu (ve ne olur ne olmaz spam klasörünü) kontrol et.
@@ -194,34 +188,26 @@
           Şifreyle Girişe Dön
         </button>
       {:else}
-        <div
-          class="form-group form-group--floating"
-          class:form-group--error={formError}
-        >
+        <div class="form-group form-group--floating" class:form-group--error={formError}>
           <input
             type="text"
             id="username"
             bind:value={username}
             required
-            autocomplete={isPasswordlessMode ? "email" : "username"}
+            autocomplete={isPasswordlessMode ? 'email' : 'username'}
             placeholder=" "
           />
           <label class="form-label" for="username"
-            >{isPasswordlessMode
-              ? "Kayıtlı E-posta Adresiniz"
-              : "E-posta veya kullanıcı adı"}<span class="form-required-mark"
-              >*</span
+            >{isPasswordlessMode ? 'Kayıtlı E-posta Adresiniz' : 'E-posta veya kullanıcı adı'}<span
+              class="form-required-mark">*</span
             ></label
           >
         </div>
 
         {#if !isPasswordlessMode}
-          <div
-            class="form-group form-group--floating"
-            class:form-group--error={formError}
-          >
+          <div class="form-group form-group--floating" class:form-group--error={formError}>
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               id="password"
               bind:value={password}
               required
@@ -234,19 +220,15 @@
             <button
               type="button"
               class="password-toggle"
-              aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+              aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
               onclick={() => (showPassword = !showPassword)}
             >
-              {@html icon(showPassword ? "eyeNotLooking" : "eyeLooking", 20)}
+              {@html icon(showPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
             </button>
           </div>
 
           <label class="auth-remember">
-            <input
-              type="checkbox"
-              class="c-input-hidden"
-              bind:checked={remember}
-            />
+            <input type="checkbox" class="c-input-hidden" bind:checked={remember} />
             <div class="c-switch">
               <div class="c-switch__handle"></div>
             </div>
@@ -254,17 +236,11 @@
           </label>
         {/if}
 
-        <button
-          type="submit"
-          class="btn btn--primary auth-submit"
-          disabled={isLoading}
-        >
+        <button type="submit" class="btn btn--primary auth-submit" disabled={isLoading}>
           {#if isLoading}
-            {isPasswordlessMode ? "Gönderiliyor..." : "Giriş yapılıyor..."}
+            {isPasswordlessMode ? 'Gönderiliyor...' : 'Giriş yapılıyor...'}
           {:else}
-            {isPasswordlessMode
-              ? "Giriş Bağlantısı Gönder"
-              : "Giriş yapmaya çabala"}
+            {isPasswordlessMode ? 'Giriş Bağlantısı Gönder' : 'Giriş yapmaya çabala'}
           {/if}
         </button>
 
@@ -274,11 +250,11 @@
           onclick={() => {
             isPasswordlessMode = !isPasswordlessMode;
             formError = false;
-            errorMsg = "";
+            errorMsg = '';
           }}
           disabled={isLoading}
         >
-          {isPasswordlessMode ? "Şifre ile giriş yap" : "Şifresiz giriş yap"}
+          {isPasswordlessMode ? 'Şifre ile giriş yap' : 'Şifresiz giriş yap'}
         </button>
       {/if}
     </form>
@@ -286,12 +262,8 @@
     <div class="auth-footer">
       <h2 class="auth-footer__title">Giremeyiş</h2>
       <div class="auth-footer__links">
-        <a href="/sifre-yenile" class="auth-footer__link" data-link
-          >Şifremi unuttum</a
-        >
-        <a href="/kayit" class="auth-footer__link" data-link
-          >Kayıtlı kullanıcı olunası</a
-        >
+        <a href="/sifre-yenile" class="auth-footer__link" data-link>Şifremi unuttum</a>
+        <a href="/kayit" class="auth-footer__link" data-link>Kayıtlı kullanıcı olunası</a>
       </div>
     </div>
   </div>

@@ -1,5 +1,5 @@
 <script>
-  let { basePath = "" } = $props();
+  let { basePath = '' } = $props();
 </script>
 
 <footer class="site-footer">
@@ -7,8 +7,8 @@
     <div class="site-footer__brand">
       <div class="site-footer__brand-title">Kepçe Ara</div>
       <p class="site-footer__brand-desc">
-        Arama geçmişinizi kaydetmeyen, profil çıkarmayan ve reklam satmayan açık
-        kaynaklı meta arama motoru. SearXNG altyapısıyla çalışır.
+        Arama geçmişinizi kaydetmeyen, profil çıkarmayan ve reklam satmayan açık kaynaklı meta arama
+        motoru. SearXNG altyapısıyla çalışır.
       </p>
     </div>
 
@@ -36,21 +36,15 @@
 
     <div class="site-footer__col">
       <div class="site-footer__col-title">Yasal</div>
-      <a href={`${basePath}/gizlilik-politikasi`} class="site-footer__link"
-        >Gizlilik Politikası</a
-      >
-      <a href={`${basePath}/kullanim-kosullari`} class="site-footer__link"
-        >Kullanım Koşulları</a
-      >
+      <a href={`${basePath}/gizlilik-politikasi`} class="site-footer__link">Gizlilik Politikası</a>
+      <a href={`${basePath}/kullanim-kosullari`} class="site-footer__link">Kullanım Koşulları</a>
       <a href={`${basePath}/iletisim`} class="site-footer__link">İletişim</a>
     </div>
 
     <div class="site-footer__col">
       <div class="site-footer__col-title">Kepçe</div>
       <a href="https://kepce.org/" class="site-footer__link">Yemekhane Menüleri</a>
-      <a href={`${basePath}/ayarlar`} class="site-footer__link"
-        >Arama Ayarları</a
-      >
+      <a href={`${basePath}/ayarlar`} class="site-footer__link">Arama Ayarları</a>
       <a
         href="https://reddit.com/r/kepce"
         target="_blank"

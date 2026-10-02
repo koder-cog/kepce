@@ -1,21 +1,21 @@
 <script>
-  import "@/styles/pages/_auth.css";
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { api } from "@/api/index.js";
-  import { globalState, authActions } from "@/state.svelte.js";
-  import Seo from "@/components/ui/Seo.svelte";
+  import '@/styles/pages/_auth.css';
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { api } from '@/api/index.js';
+  import { globalState, authActions } from '@/state.svelte.js';
+  import Seo from '@/components/ui/Seo.svelte';
 
-  let status = $state("loading"); // loading, success, already_verified, error
-  let errorMsg = $state("");
+  let status = $state('loading'); // loading, success, already_verified, error
+  let errorMsg = $state('');
 
   onMount(async () => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get("token");
+    const token = urlParams.get('token');
 
     if (!token) {
-      status = "error";
-      errorMsg = "Geçersiz veya eksik doğrulama bağlantısı.";
+      status = 'error';
+      errorMsg = 'Geçersiz veya eksik doğrulama bağlantısı.';
       return;
     }
 
@@ -23,16 +23,13 @@
       const result = await api.verifyEmail(token);
       await authActions.refreshUser();
 
-      status =
-        result?.status === "already_verified" ? "already_verified" : "success";
+      status = result?.status === 'already_verified' ? 'already_verified' : 'success';
       setTimeout(() => {
-        goto("/");
+        goto('/');
       }, 3000);
     } catch (err) {
-      status = "error";
-      errorMsg =
-        err.message ||
-        "Doğrulama bağlantısının süresi dolmuş veya geçersiz olabilir.";
+      status = 'error';
+      errorMsg = err.message || 'Doğrulama bağlantısının süresi dolmuş veya geçersiz olabilir.';
     }
   });
 </script>
@@ -43,27 +40,23 @@
   <h1 class="auth-page__title u-mb-lg">E-Posta Doğrulama</h1>
 
   <div class="c-card passwordless-card">
-    {#if status === "loading"}
-      <p class="u-color-muted u-mb-sm">
-        Bağlantı doğrulanıyor, lütfen bekleyin...
-      </p>
+    {#if status === 'loading'}
+      <p class="u-color-muted u-mb-sm">Bağlantı doğrulanıyor, lütfen bekleyin...</p>
       <div class="spinner"></div>
-    {:else if status === "success"}
+    {:else if status === 'success'}
       <div class="auth-success passwordless-success">
         <p class="u-font-bold u-mb-xs">Doğrulama Başarılı!</p>
-        <p class="u-text-sm">
-          E-posta adresiniz doğrulandı. Ana sayfaya yönlendiriliyorsunuz...
-        </p>
+        <p class="u-text-sm">E-posta adresiniz doğrulandı. Ana sayfaya yönlendiriliyorsunuz...</p>
       </div>
-    {:else if status === "already_verified"}
+    {:else if status === 'already_verified'}
       <div class="auth-info passwordless-success">
         <p class="u-font-bold u-mb-xs">Zaten Onaylısınız!</p>
         <p class="u-text-sm">
-          E-postanız zaten onaylı, harika! Hiçbir işlem yapmanıza gerek yok. Ana
-          sayfaya yönlendiriliyorsunuz...
+          E-postanız zaten onaylı, harika! Hiçbir işlem yapmanıza gerek yok. Ana sayfaya
+          yönlendiriliyorsunuz...
         </p>
       </div>
-    {:else if status === "error"}
+    {:else if status === 'error'}
       <div class="auth-error passwordless-error" role="alert">
         {errorMsg}
       </div>

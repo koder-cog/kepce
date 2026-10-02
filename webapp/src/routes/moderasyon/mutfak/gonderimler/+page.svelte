@@ -16,7 +16,7 @@
     { label: 'Onay Bekleyenler', value: 'pending' },
     { label: 'Onaylananlar', value: 'approved' },
     { label: 'Reddedilenler', value: 'rejected' },
-    { label: 'Tümü', value: '' },
+    { label: 'Tümü', value: '' }
   ];
 
   async function fetchSubmissions() {
@@ -74,11 +74,7 @@
   <div class="admin-filter-grid-4">
     <div class="dev-filter-group">
       <span class="admin-filter-label">Durum Filtresi</span>
-      <Dropdown
-        options={STATUS_OPTIONS}
-        bind:value={statusFilter}
-        onChange={handleFilterChange}
-      />
+      <Dropdown options={STATUS_OPTIONS} bind:value={statusFilter} onChange={handleFilterChange} />
     </div>
   </div>
 </div>

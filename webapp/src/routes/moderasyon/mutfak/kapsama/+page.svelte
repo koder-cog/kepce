@@ -1,28 +1,57 @@
 <script>
-  import { onMount } from "svelte";
-  import { goto } from "$app/navigation";
-  import { api } from "@/api/index.js";
-  import Loader from "@/components/ui/Loader.svelte";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import { icon } from "@/components/ui/icons.js";
-  import { showToast } from "@/components/ui/toast.js";
+  import { onMount } from 'svelte';
+  import { goto } from '$app/navigation';
+  import { api } from '@/api/index.js';
+  import Loader from '@/components/ui/Loader.svelte';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import { icon } from '@/components/ui/icons.js';
+  import { showToast } from '@/components/ui/toast.js';
 
   const PILOT_CITIES = new Set([
-    "istanbul", "ankara", "izmir", "konya", "eskisehir", "bursa", "antalya"
+    'istanbul',
+    'ankara',
+    'izmir',
+    'konya',
+    'eskisehir',
+    'bursa',
+    'antalya'
   ]);
 
   const ACTIVE_CITIES = new Set([
-    "istanbul", "ankara", "izmir", "antalya", "canakkale", "erzurum",
-    "eskisehir", "gaziantep", "isparta", "kahramanmaras", "karabuk",
-    "kirklareli", "konya", "sakarya", "sivas", "trabzon"
+    'istanbul',
+    'ankara',
+    'izmir',
+    'antalya',
+    'canakkale',
+    'erzurum',
+    'eskisehir',
+    'gaziantep',
+    'isparta',
+    'kahramanmaras',
+    'karabuk',
+    'kirklareli',
+    'konya',
+    'sakarya',
+    'sivas',
+    'trabzon'
   ]);
 
   const MONTH_NAMES = [
-    "Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran",
-    "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"
+    'Ocak',
+    'Şubat',
+    'Mart',
+    'Nisan',
+    'Mayıs',
+    'Haziran',
+    'Temmuz',
+    'Ağustos',
+    'Eylül',
+    'Ekim',
+    'Kasım',
+    'Aralık'
   ];
 
-  const DAY_NAMES = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+  const DAY_NAMES = ['Paz', 'Pzt', 'Sal', 'Çar', 'Per', 'Cum', 'Cmt'];
 
   let today = new Date();
   let selectedYear = $state(today.getFullYear());
@@ -32,8 +61,8 @@
   let currentMonth = today.getMonth() + 1;
   let currentDay = today.getDate();
 
-  let activeFilter = $state("all"); // 'all' | 'active' | 'pilot'
-  let searchQuery = $state("");
+  let activeFilter = $state('all'); // 'all' | 'active' | 'pilot'
+  let searchQuery = $state('');
 
   let isLoading = $state(true);
   let errorMsg = $state(null);
@@ -46,8 +75,8 @@
       const res = await api.getKitchenCoverage(selectedYear, selectedMonth);
       coverageData = res;
     } catch (err) {
-      errorMsg = err.message || "Kapsama verisi yüklenemedi.";
-      showToast(errorMsg, "error");
+      errorMsg = err.message || 'Kapsama verisi yüklenemedi.';
+      showToast(errorMsg, 'error');
     } finally {
       isLoading = false;
     }
@@ -82,17 +111,17 @@
     if (!coverageData || !coverageData.cities) return [];
     let list = coverageData.cities;
 
-    if (activeFilter === "pilot") {
+    if (activeFilter === 'pilot') {
       list = list.filter((c) => PILOT_CITIES.has(c.slug));
-    } else if (activeFilter === "active") {
+    } else if (activeFilter === 'active') {
       list = list.filter((c) => ACTIVE_CITIES.has(c.slug));
     }
 
     if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLocaleLowerCase("tr-TR");
+      const q = searchQuery.trim().toLocaleLowerCase('tr-TR');
       list = list.filter(
         (c) =>
-          c.name.toLocaleLowerCase("tr-TR").includes(q) ||
+          c.name.toLocaleLowerCase('tr-TR').includes(q) ||
           c.slug.includes(q) ||
           String(c.id).includes(q)
       );
@@ -113,9 +142,9 @@
   function getCellInfo(city, day) {
     if (!city.days || !city.days[day]) {
       return {
-        status: "empty",
-        label: "·",
-        title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Menü bulunamadı`,
+        status: 'empty',
+        label: '·',
+        title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Menü bulunamadı`
       };
     }
 
@@ -124,26 +153,26 @@
     const hasDinner = !!dayData.dinner;
 
     if (hasBreakfast && hasDinner) {
-      const bApp = dayData.breakfast.is_approved ? "Onaylı" : "Bekliyor";
-      const dApp = dayData.dinner.is_approved ? "Onaylı" : "Bekliyor";
+      const bApp = dayData.breakfast.is_approved ? 'Onaylı' : 'Bekliyor';
+      const dApp = dayData.dinner.is_approved ? 'Onaylı' : 'Bekliyor';
       return {
-        status: "full",
-        label: "✓",
-        title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Kahvaltı (${bApp}), Akşam (${dApp})`,
+        status: 'full',
+        label: '✓',
+        title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Kahvaltı (${bApp}), Akşam (${dApp})`
       };
     } else if (hasBreakfast || hasDinner) {
-      const meal = hasBreakfast ? "Kahvaltı" : "Akşam";
+      const meal = hasBreakfast ? 'Kahvaltı' : 'Akşam';
       return {
-        status: "partial",
-        label: "1",
-        title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Yalnızca ${meal} menüsü mevcut`,
+        status: 'partial',
+        label: '1',
+        title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Yalnızca ${meal} menüsü mevcut`
       };
     }
 
     return {
-      status: "empty",
-      label: "·",
-      title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Menü bulunamadı`,
+      status: 'empty',
+      label: '·',
+      title: `${city.name} - ${day} ${MONTH_NAMES[selectedMonth - 1]}: Menü bulunamadı`
     };
   }
 
@@ -160,9 +189,7 @@
 <div class="admin-header u-mb-lg">
   <div>
     <h2 class="admin-title">Kapsama Matrisi</h2>
-    <p class="admin-subtitle">
-      Türkiye genelindeki 81 ilin günlük menü doluluğu ve onay durumu
-    </p>
+    <p class="admin-subtitle">Türkiye genelindeki 81 ilin günlük menü doluluğu ve onay durumu</p>
   </div>
 
   <div class="u-flex u-flex-align-center u-gap-sm">
@@ -172,10 +199,11 @@
       title="Önceki Ay"
       aria-label="Önceki Ay"
     >
-      {@html icon("chevronLeft", 16)}
+      {@html icon('chevronLeft', 16)}
     </button>
     <strong class="u-text-sm u-px-sm">
-      {selectedYear} {MONTH_NAMES[selectedMonth - 1]}
+      {selectedYear}
+      {MONTH_NAMES[selectedMonth - 1]}
     </strong>
     <button
       class="btn btn--secondary btn--squish"
@@ -183,13 +211,10 @@
       title="Sonraki Ay"
       aria-label="Sonraki Ay"
     >
-      {@html icon("chevronRight", 16)}
+      {@html icon('chevronRight', 16)}
     </button>
     {#if selectedYear !== currentYear || selectedMonth !== currentMonth}
-      <button
-        class="btn btn--secondary btn--squish u-ml-xs"
-        onclick={goToCurrentMonth}
-      >
+      <button class="btn btn--secondary btn--squish u-ml-xs" onclick={goToCurrentMonth}>
         Bu Ay
       </button>
     {/if}
@@ -200,36 +225,31 @@
   <div class="coverage-filters">
     <button
       class="btn btn--squish"
-      class:btn--primary={activeFilter === "all"}
-      class:btn--secondary={activeFilter !== "all"}
-      onclick={() => (activeFilter = "all")}
+      class:btn--primary={activeFilter === 'all'}
+      class:btn--secondary={activeFilter !== 'all'}
+      onclick={() => (activeFilter = 'all')}
     >
       Tüm İller (81)
     </button>
     <button
       class="btn btn--squish"
-      class:btn--primary={activeFilter === "active"}
-      class:btn--secondary={activeFilter !== "active"}
-      onclick={() => (activeFilter = "active")}
+      class:btn--primary={activeFilter === 'active'}
+      class:btn--secondary={activeFilter !== 'active'}
+      onclick={() => (activeFilter = 'active')}
     >
       Aktif İller ({ACTIVE_CITIES.size})
     </button>
     <button
       class="btn btn--squish"
-      class:btn--primary={activeFilter === "pilot"}
-      class:btn--secondary={activeFilter !== "pilot"}
-      onclick={() => (activeFilter = "pilot")}
+      class:btn--primary={activeFilter === 'pilot'}
+      class:btn--secondary={activeFilter !== 'pilot'}
+      onclick={() => (activeFilter = 'pilot')}
     >
       Pilot İller ({PILOT_CITIES.size})
     </button>
 
     <div class="u-ml-sm">
-      <input
-        type="text"
-        class="input input--sm"
-        placeholder="İl ara..."
-        bind:value={searchQuery}
-      />
+      <input type="text" class="input input--sm" placeholder="İl ara..." bind:value={searchQuery} />
     </div>
   </div>
 
@@ -262,14 +282,11 @@
     desc="Arama kriterlerine uyan şehir kaydı bulunamadı."
   />
 {:else}
-  <div
-    class="coverage-matrix-container"
-    role="region"
-    aria-label="Aylık Menü Kapsama Matrisi"
-  >
+  <div class="coverage-matrix-container" role="region" aria-label="Aylık Menü Kapsama Matrisi">
     <table class="coverage-table">
       <caption class="sr-only">
-        {selectedYear} {MONTH_NAMES[selectedMonth - 1]} Ayı Menü Kapsama Tablosu
+        {selectedYear}
+        {MONTH_NAMES[selectedMonth - 1]} Ayı Menü Kapsama Tablosu
       </caption>
       <thead>
         <tr>
@@ -277,9 +294,7 @@
           {#each Array(coverageData.days_in_month) as _, i}
             {@const day = i + 1}
             {@const isToday =
-              selectedYear === currentYear &&
-              selectedMonth === currentMonth &&
-              day === currentDay}
+              selectedYear === currentYear && selectedMonth === currentMonth && day === currentDay}
             <th scope="col" class:coverage-cell--today={isToday}>
               <div>{day}</div>
               <div class="u-color-muted coverage-subtext">

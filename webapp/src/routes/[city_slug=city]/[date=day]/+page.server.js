@@ -8,11 +8,11 @@ import { CITY_MAP } from '@/utils/turkish.js';
  * kullanıcı doğrudan o gün seçili olarak şehir ana sayfasına düşer.
  */
 export function load({ params }) {
-	const { city_slug, date } = params;
+  const { city_slug, date } = params;
 
-	if (!CITY_MAP[city_slug]) {
-		error(404, 'Bu şehir için bir sayfa bulunamadı.');
-	}
+  if (!CITY_MAP[city_slug]) {
+    error(404, 'Bu şehir için bir sayfa bulunamadı.');
+  }
 
-	redirect(301, `/${city_slug}?gun=${date}`);
+  redirect(301, `/${city_slug}?gun=${date}`);
 }

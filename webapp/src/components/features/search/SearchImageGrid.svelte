@@ -1,17 +1,13 @@
 <script>
-  import { formatUrlBreadcrumb } from "$lib/search/searchHelpers.js";
-  import { searchPreferences } from "@/stores/searchPreferences.svelte.js";
+  import { formatUrlBreadcrumb } from '$lib/search/searchHelpers.js';
+  import { searchPreferences } from '@/stores/searchPreferences.svelte.js';
 
-  let {
-    results = [],
-    onSelectImage = () => {},
-  } = $props();
+  let { results = [], onSelectImage = () => {} } = $props();
 </script>
 
 <div class="c-search-images-grid">
   {#each results as item, idx}
-    {@const ratio =
-      item.width && item.height ? `${item.width} / ${item.height}` : "4 / 3"}
+    {@const ratio = item.width && item.height ? `${item.width} / ${item.height}` : '4 / 3'}
     <div class="c-search-image-item" style="--index: {idx}">
       <button
         type="button"
@@ -28,9 +24,7 @@
             loading="lazy"
             decoding="async"
             onerror={(e) => {
-              e.currentTarget
-                .closest(".c-search-image-item")
-                ?.classList.add("is-img-error");
+              e.currentTarget.closest('.c-search-image-item')?.classList.add('is-img-error');
             }}
           />
         {/if}

@@ -23,7 +23,12 @@ function areBuffersEqual(buf1, buf2) {
 }
 
 export function isPushSupported() {
-  return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  return (
+    typeof window !== 'undefined' &&
+    'serviceWorker' in navigator &&
+    'PushManager' in window &&
+    'Notification' in window
+  );
 }
 
 export async function registerServiceWorker() {
@@ -201,4 +206,3 @@ export async function sendTestPush() {
 
   return await res.json();
 }
-

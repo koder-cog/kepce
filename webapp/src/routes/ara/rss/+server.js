@@ -1,33 +1,33 @@
-import { env } from "$env/dynamic/private";
+import { env } from '$env/dynamic/private';
 
 function escapeXml(unsafe) {
-  return String(unsafe || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  return String(unsafe || '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;');
 }
 
 export async function GET({ url, fetch }) {
-  const q = (url.searchParams.get("q") || "").trim();
-  const category = url.searchParams.get("kategori") || "general";
+  const q = (url.searchParams.get('q') || '').trim();
+  const category = url.searchParams.get('kategori') || 'general';
 
   if (!q) {
-    return new Response("Missing search query ?q=", { status: 400 });
+    return new Response('Missing search query ?q=', { status: 400 });
   }
 
-  const searxUrl = env.SEARXNG_URL || "http://localhost:8080";
+  const searxUrl = env.SEARXNG_URL || 'http://localhost:8080';
   const searchParams = new URLSearchParams({
     q,
-    format: "json",
-    categories: category,
+    format: 'json',
+    categories: category
   });
 
   let items = [];
   try {
-    const res = await fetch(`${searxUrl.replace(/\/+$/, "")}/search?${searchParams.toString()}`, {
-      signal: AbortSignal.timeout(5000),
+    const res = await fetch(`${searxUrl.replace(/\/+$/, '')}/search?${searchParams.toString()}`, {
+      signal: AbortSignal.timeout(5000)
     });
     if (res.ok) {
       const data = await res.json();
@@ -50,21 +50,21 @@ export async function GET({ url, fetch }) {
       .map(
         (it) => `
     <item>
-      <title>${escapeXml(it.title || "")}</title>
-      <link>${escapeXml(it.url || "")}</link>
-      <guid isPermaLink="true">${escapeXml(it.url || "")}</guid>
-      <description>${escapeXml(it.content || "")}</description>
-      ${it.publishedDate ? `<pubDate>${new Date(it.publishedDate).toUTCString()}</pubDate>` : ""}
+      <title>${escapeXml(it.title || '')}</title>
+      <link>${escapeXml(it.url || '')}</link>
+      <guid isPermaLink="true">${escapeXml(it.url || '')}</guid>
+      <description>${escapeXml(it.content || '')}</description>
+      ${it.publishedDate ? `<pubDate>${new Date(it.publishedDate).toUTCString()}</pubDate>` : ''}
     </item>`
       )
-      .join("\n")}
+      .join('\n')}
   </channel>
 </rss>`;
 
   return new Response(rssXml, {
     headers: {
-      "Content-Type": "application/rss+xml; charset=utf-8",
-      "Cache-Control": "public, max-age=300",
-    },
+      'Content-Type': 'application/rss+xml; charset=utf-8',
+      'Cache-Control': 'public, max-age=300'
+    }
   });
 }

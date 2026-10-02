@@ -9,11 +9,11 @@ import { getSpecialDayInfo } from '@/utils/specialDates.js';
  * @type {import('./$types').LayoutServerLoad}
  */
 export async function load() {
-    const serverToday = istanbulToday();
-    const specialDay = getSpecialDayInfo(serverToday);
+  const serverToday = istanbulToday();
+  const specialDay = getSpecialDayInfo(serverToday);
 
-    return {
-        serverToday,
-        specialDay
-    };
+  return {
+    serverToday,
+    specialDay
+  };
 }

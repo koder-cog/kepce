@@ -18,7 +18,7 @@
  */
 export function initCharCounter(textarea, opts = {}) {
   const limit = opts.limit ?? parseInt(textarea.getAttribute('maxlength'), 10);
-  if (!limit || isNaN(limit)) return { destroy: () => { } };
+  if (!limit || isNaN(limit)) return { destroy: () => {} };
 
   // Inject sadece bir kez yapılır
   let counter = textarea.parentElement?.querySelector('[data-char-counter]');

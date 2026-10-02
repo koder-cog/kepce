@@ -314,7 +314,7 @@ export const icons = {
   'police-badge': policeBadge,
   stamp,
   stopwatch,
-  lightning,
+  lightning
 };
 
 /**
@@ -394,4 +394,3 @@ export function svgToDataUri(svg, base64 = false) {
   }
   return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
-

@@ -1,11 +1,11 @@
 <script>
-  import "@/styles/pages/_statistics.css";
-  import Seo from "@/components/ui/Seo.svelte";
-  import { goto } from "$app/navigation";
-  import { onMount } from "svelte";
+  import '@/styles/pages/_statistics.css';
+  import Seo from '@/components/ui/Seo.svelte';
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
 
   onMount(() => {
-    goto("/istatistikler/yemekler", { replaceState: true });
+    goto('/istatistikler/yemekler', { replaceState: true });
   });
 </script>
 

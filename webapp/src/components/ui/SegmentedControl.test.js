@@ -6,13 +6,13 @@ describe('SegmentedControl Component', () => {
   const options = [
     { value: 'tab1', label: 'Birinci' },
     { value: 'tab2', label: 'İkinci' },
-    { value: 'tab3', label: 'Üçüncü' },
+    { value: 'tab3', label: 'Üçüncü' }
   ];
 
   it('renders all options with appropriate accessibility roles', () => {
     const { container } = render(SegmentedControl, {
       value: 'tab1',
-      options,
+      options
     });
 
     const radiogroup = container.querySelector('[role="radiogroup"]');
@@ -31,7 +31,7 @@ describe('SegmentedControl Component', () => {
     render(SegmentedControl, {
       value: 'tab1',
       options,
-      onChange,
+      onChange
     });
 
     const secondBtn = screen.getByText('İkinci');
@@ -45,7 +45,7 @@ describe('SegmentedControl Component', () => {
     const { container } = render(SegmentedControl, {
       value: 'tab1',
       options,
-      onChange,
+      onChange
     });
 
     const radiogroup = container.querySelector('[role="radiogroup"]');
@@ -72,13 +72,13 @@ describe('SegmentedControl Component', () => {
     const responsiveOptions = [
       { value: 'both', label: 'İkisi Var', icon: '<svg data-testid="icon-both"></svg>' },
       { value: 'iconOnly', icon: '<svg data-testid="icon-only"></svg>' },
-      { value: 'labelOnly', label: 'Yazı Var' },
+      { value: 'labelOnly', label: 'Yazı Var' }
     ];
 
     const { container } = render(SegmentedControl, {
       value: 'both',
       options: responsiveOptions,
-      variant: 'responsive',
+      variant: 'responsive'
     });
 
     const buttons = container.querySelectorAll('.c-segmented-control__btn');
@@ -99,14 +99,18 @@ describe('SegmentedControl Component', () => {
 
   it('renders icons variant with proper attributes and elements', () => {
     const iconOptions = [
-      { value: 'timeline', label: 'Zaman Çizelgesi', icon: '<svg data-testid="icon-timeline"></svg>' },
-      { value: 'calendar', label: 'Takvim', icon: '<svg data-testid="icon-calendar"></svg>' },
+      {
+        value: 'timeline',
+        label: 'Zaman Çizelgesi',
+        icon: '<svg data-testid="icon-timeline"></svg>'
+      },
+      { value: 'calendar', label: 'Takvim', icon: '<svg data-testid="icon-calendar"></svg>' }
     ];
 
     const { container } = render(SegmentedControl, {
       value: 'timeline',
       options: iconOptions,
-      variant: 'icons',
+      variant: 'icons'
     });
 
     const radiogroup = container.querySelector('.c-segmented-control');

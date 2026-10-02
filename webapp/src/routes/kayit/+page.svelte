@@ -1,34 +1,34 @@
 <script>
-  import "@/styles/pages/_auth.css";
-  import { slide } from "svelte/transition";
-  import { goto } from "$app/navigation";
-  import { globalState, authActions } from "@/state.svelte.js";
+  import '@/styles/pages/_auth.css';
+  import { slide } from 'svelte/transition';
+  import { goto } from '$app/navigation';
+  import { globalState, authActions } from '@/state.svelte.js';
 
-  import { api } from "@/api/index.js";
+  import { api } from '@/api/index.js';
 
-  import { CITY_MAP } from "@/utils/turkish.js";
-  import { icon } from "@/components/ui/icons.js";
-  import EmptyState from "@/components/ui/EmptyState.svelte";
-  import Dropdown from "@/components/features/Dropdown.svelte";
-  import Seo from "@/components/ui/Seo.svelte";
-  import { subscribeToPush, isPushSupported } from "@/utils/push.js";
+  import { CITY_MAP } from '@/utils/turkish.js';
+  import { icon } from '@/components/ui/icons.js';
+  import EmptyState from '@/components/ui/EmptyState.svelte';
+  import Dropdown from '@/components/features/Dropdown.svelte';
+  import Seo from '@/components/ui/Seo.svelte';
+  import { subscribeToPush, isPushSupported } from '@/utils/push.js';
 
   const cityOptions = Object.entries(CITY_MAP)
     .map(([slug, name]) => ({ value: slug, label: name }))
-    .sort((a, b) => a.label.localeCompare(b.label, "tr"));
-  cityOptions.unshift({ value: "", label: "Belirtmek istemiyorum" });
+    .sort((a, b) => a.label.localeCompare(b.label, 'tr'));
+  cityOptions.unshift({ value: '', label: 'Belirtmek istemiyorum' });
 
   let user = $derived(globalState?.user);
 
-  let username = $state("");
-  let email = $state("");
-  let password = $state("");
-  let repeatPassword = $state("");
-  let selectedCity = $state("");
+  let username = $state('');
+  let email = $state('');
+  let password = $state('');
+  let repeatPassword = $state('');
+  let selectedCity = $state('');
 
   let showPassword = $state(false);
   let showRepeatPassword = $state(false);
-  let honeypot = $state("");
+  let honeypot = $state('');
 
   let isCeliac = $state(false);
 
@@ -41,17 +41,17 @@
   let consentCrossBorder = $state(false);
 
   let errors = $state({});
-  let errorMsg = $state("");
+  let errorMsg = $state('');
   let isLoading = $state(false);
 
   $effect(() => {
     if (username.length > 0) {
       if (username.length < 3) {
-        errors.username = "En az 3 karakter olmalıdır.";
+        errors.username = 'En az 3 karakter olmalıdır.';
       } else if (username.length > 30) {
-        errors.username = "En fazla 30 karakter olabilir.";
+        errors.username = 'En fazla 30 karakter olabilir.';
       } else if (!/^[a-z0-9_]+$/.test(username)) {
-        errors.username = "Sadece İngilizce küçük harf, rakam ve _ içerebilir.";
+        errors.username = 'Sadece İngilizce küçük harf, rakam ve _ içerebilir.';
       } else {
         errors.username = null;
       }
@@ -62,79 +62,77 @@
 
   function generateRandomUsername() {
     const adjectives = [
-      "aci",
-      "tuzlu",
-      "tatli",
-      "eksi",
-      "gurme",
-      "ac",
-      "doymus",
-      "obur",
-      "hizli",
-      "yavas",
-      "komik",
-      "sinirli",
-      "mutlu",
-      "uykulu",
-      "bayat",
-      "taze",
-      "sicak",
-      "soguk",
-      "pismis",
-      "cig",
-      "kizarmis",
-      "haslanmis",
-      "soslu",
-      "sade",
-      "karisik",
-      "kivrak",
-      "saskin",
+      'aci',
+      'tuzlu',
+      'tatli',
+      'eksi',
+      'gurme',
+      'ac',
+      'doymus',
+      'obur',
+      'hizli',
+      'yavas',
+      'komik',
+      'sinirli',
+      'mutlu',
+      'uykulu',
+      'bayat',
+      'taze',
+      'sicak',
+      'soguk',
+      'pismis',
+      'cig',
+      'kizarmis',
+      'haslanmis',
+      'soslu',
+      'sade',
+      'karisik',
+      'kivrak',
+      'saskin'
     ];
     const nouns = [
-      "kepce",
-      "tabldot",
-      "tepsi",
-      "kasik",
-      "catal",
-      "bicak",
-      "tuzluk",
-      "biber",
-      "domates",
-      "patates",
-      "pilav",
-      "makarna",
-      "fasulye",
-      "nohut",
-      "corba",
-      "ekmek",
-      "ayran",
-      "su",
-      "elma",
-      "armut",
-      "karpuz",
-      "kavun",
-      "tatli",
-      "kofte",
-      "tavuk",
-      "et",
+      'kepce',
+      'tabldot',
+      'tepsi',
+      'kasik',
+      'catal',
+      'bicak',
+      'tuzluk',
+      'biber',
+      'domates',
+      'patates',
+      'pilav',
+      'makarna',
+      'fasulye',
+      'nohut',
+      'corba',
+      'ekmek',
+      'ayran',
+      'su',
+      'elma',
+      'armut',
+      'karpuz',
+      'kavun',
+      'tatli',
+      'kofte',
+      'tavuk',
+      'et'
     ];
     const rndAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const rndNoun = nouns[Math.floor(Math.random() * nouns.length)];
     const rndNum = Math.floor(Math.random() * 10000)
       .toString()
-      .padStart(4, "0");
+      .padStart(4, '0');
     username = `${rndAdj}_${rndNoun}_${rndNum}`;
   }
 
   function scrollToFirstError() {
     setTimeout(() => {
-      const firstErrorElement = document.querySelector(
-        ".form-group--error, .auth-error",
-      );
+      const firstErrorElement = document.querySelector('.form-group--error, .auth-error');
       if (firstErrorElement) {
         firstErrorElement.scrollIntoView({
-          behavior: "smooth",
-          block: "center",
+          behavior: 'smooth',
+          block: 'center'
         });
       }
     }, 50);
@@ -145,15 +143,11 @@
     if (honeypot) return; // Spam protection
 
     let newErrors = {};
-    let newErrorMsg = "";
+    let newErrorMsg = '';
 
     if (username.length > 0) {
-      if (
-        username.length < 3 ||
-        username.length > 30 ||
-        !/^[a-z0-9_]+$/.test(username)
-      ) {
-        newErrors.username = "Kullanıcı adı kurallara uymuyor.";
+      if (username.length < 3 || username.length > 30 || !/^[a-z0-9_]+$/.test(username)) {
+        newErrors.username = 'Kullanıcı adı kurallara uymuyor.';
         errors = newErrors;
         scrollToFirstError();
         return;
@@ -161,14 +155,14 @@
     }
 
     if (password !== repeatPassword) {
-      newErrors.repeatPassword = "Şifreler eşleşmiyor.";
+      newErrors.repeatPassword = 'Şifreler eşleşmiyor.';
       errors = newErrors;
       scrollToFirstError();
       return;
     }
 
     if (password.length < 8 || password.length > 72) {
-      newErrors.password = "Şifre 8-72 karakter arasında olmalı.";
+      newErrors.password = 'Şifre 8-72 karakter arasında olmalı.';
       errors = newErrors;
       scrollToFirstError();
       return;
@@ -183,44 +177,44 @@
     isLoading = true;
 
     try {
-      let diet_mode = isCeliac ? "celiac" : null;
+      let diet_mode = isCeliac ? 'celiac' : null;
       await api.register(
         email,
         password,
         username.trim() || null,
         selectedCity || null,
         diet_mode,
-        emailSecurity,
+        emailSecurity
       );
       if (enablePushNotifications && isPushSupported()) {
         try {
           await subscribeToPush({
             cityId: null,
             breakfastEnabled: true,
-            breakfastTime: "07:30",
+            breakfastTime: '07:30',
             dinnerEnabled: true,
-            dinnerTime: "17:00",
+            dinnerTime: '17:00'
           });
         } catch (pushErr) {
-          console.warn("Kayıt anında bildirim izni alınamadı:", pushErr);
+          console.warn('Kayıt anında bildirim izni alınamadı:', pushErr);
         }
       }
 
-      const { showToast } = await import("@/components/ui/toast.js");
+      const { showToast } = await import('@/components/ui/toast.js');
       showToast(
-        "Kayıt başarılı! Doğrulama linki e-postana gönderildi (Lütfen gereksiz/spam klasörünü de kontrol et).",
-        { type: "success" },
+        'Kayıt başarılı! Doğrulama linki e-postana gönderildi (Lütfen gereksiz/spam klasörünü de kontrol et).',
+        { type: 'success' }
       );
-      goto("/giris");
+      goto('/giris');
     } catch (err) {
       const msg = err.message.toLowerCase();
       let failedErrors = {};
-      if (msg.includes("email") || msg.includes("e-posta")) {
+      if (msg.includes('email') || msg.includes('e-posta')) {
         failedErrors.email = err.message;
-      } else if (msg.includes("kullanıcı adı") || msg.includes("username")) {
+      } else if (msg.includes('kullanıcı adı') || msg.includes('username')) {
         failedErrors.username = err.message;
       } else {
-        errorMsg = err.message || "Bilinmeyen bir sorun oluştu.";
+        errorMsg = err.message || 'Bilinmeyen bir sorun oluştu.';
       }
       errors = failedErrors;
       scrollToFirstError();
@@ -243,13 +237,11 @@
   <div class="empty-state-container">
     <EmptyState
       statusCode={403}
-      title={"Zaten Aramızdasın!"}
+      title={'Zaten Aramızdasın!'}
       desc={`@${user.username} olarak zaten giriş yapmışsın. Yeni bir hesap açmak için önce çıkış yapmalısın.`}
     >
       <a href="/" data-link class="btn btn--secondary">Ana sayfaya dön</a>
-      <button type="button" class="btn btn--primary" onclick={handleLogout}
-        >Çıkış yap</button
-      >
+      <button type="button" class="btn btn--primary" onclick={handleLogout}>Çıkış yap</button>
     </EmptyState>
   </div>
 {:else}
@@ -260,7 +252,7 @@
       <button
         type="button"
         class="btn btn--secondary btn--large btn--squish"
-        onclick={() => (window.location.href = "/api/v1/auth/google/login")}
+        onclick={() => (window.location.href = '/api/v1/auth/google/login')}
       >
         Google Hesabı ile devam et
       </button>
@@ -268,9 +260,7 @@
 
     <div class="auth-divider">veya</div>
 
-    <div
-      class="form-footer-hint u-mb-xl u-text-sm u-weight-semibold u-color-secondary"
-    >
+    <div class="form-footer-hint u-mb-xl u-text-sm u-weight-semibold u-color-secondary">
       <span class="form-required-mark">*</span>: Zorunlu
     </div>
 
@@ -295,10 +285,7 @@
 
       <div class="auth-form-row">
         <div class="form-group">
-          <div
-            class="form-group--floating u-mb-0"
-            class:form-group--error={errors.username}
-          >
+          <div class="form-group--floating u-mb-0" class:form-group--error={errors.username}>
             <input
               type="text"
               id="username"
@@ -314,7 +301,7 @@
               onclick={generateRandomUsername}
               title="Rastgele üret"
             >
-              {@html icon("dice", 20)}
+              {@html icon('dice', 20)}
             </button>
           </div>
           <div
@@ -322,8 +309,8 @@
             class:u-color-negative={errors.username}
             class:u-color-secondary={!errors.username}
           >
-            Boş bırakılırsa e-postanızdan otomatik üretilir. 3-30 karakter arası
-            sadece İngilizce küçük harf, rakam ve _ içerebilir.
+            Boş bırakılırsa e-postanızdan otomatik üretilir. 3-30 karakter arası sadece İngilizce
+            küçük harf, rakam ve _ içerebilir.
           </div>
         </div>
 
@@ -354,7 +341,7 @@
             data-error={errors.password}
           >
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               id="password"
               bind:value={password}
               required
@@ -367,29 +354,22 @@
             <button
               type="button"
               class="password-toggle"
-              aria-label={showPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+              aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
               onclick={() => (showPassword = !showPassword)}
             >
-              {@html icon(showPassword ? "eyeNotLooking" : "eyeLooking", 20)}
+              {@html icon(showPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
             </button>
           </div>
           {#if password.length > 0}
-            <div
-              class="password-checklist u-mt-sm u-text-sm u-weight-semibold"
-              transition:slide
-            >
+            <div class="password-checklist u-mt-sm u-text-sm u-weight-semibold" transition:slide>
               <div
                 class="u-flex u-flex-gap-sm u-flex-align-center"
-                class:u-color-positive={password.length >= 8 &&
-                  password.length <= 72}
-                class:u-color-negative={password.length < 8 ||
-                  password.length > 72}
+                class:u-color-positive={password.length >= 8 && password.length <= 72}
+                class:u-color-negative={password.length < 8 || password.length > 72}
               >
                 {@html icon(
-                  password.length >= 8 && password.length <= 72
-                    ? "checkCircle"
-                    : "circle",
-                  16,
+                  password.length >= 8 && password.length <= 72 ? 'checkCircle' : 'circle',
+                  16
                 )} 8-72 karakter uzunluğunda
               </div>
               <div
@@ -397,17 +377,14 @@
                 class:u-color-positive={/[a-zA-Z]/.test(password)}
                 class:u-color-negative={!/[a-zA-Z]/.test(password)}
               >
-                {@html icon(
-                  /[a-zA-Z]/.test(password) ? "checkCircle" : "circle",
-                  16,
-                )} En az bir harf
+                {@html icon(/[a-zA-Z]/.test(password) ? 'checkCircle' : 'circle', 16)} En az bir harf
               </div>
               <div
                 class="u-flex u-flex-gap-sm u-flex-align-center u-mt-2xs"
                 class:u-color-positive={/\d/.test(password)}
                 class:u-color-negative={!/\d/.test(password)}
               >
-                {@html icon(/\d/.test(password) ? "checkCircle" : "circle", 16)}
+                {@html icon(/\d/.test(password) ? 'checkCircle' : 'circle', 16)}
                 En az bir rakam
               </div>
             </div>
@@ -420,7 +397,7 @@
           data-error={errors.repeatPassword}
         >
           <input
-            type={showRepeatPassword ? "text" : "password"}
+            type={showRepeatPassword ? 'text' : 'password'}
             id="password-repeat"
             bind:value={repeatPassword}
             required
@@ -433,13 +410,10 @@
           <button
             type="button"
             class="password-toggle"
-            aria-label={showRepeatPassword ? "Şifreyi gizle" : "Şifreyi göster"}
+            aria-label={showRepeatPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
             onclick={() => (showRepeatPassword = !showRepeatPassword)}
           >
-            {@html icon(
-              showRepeatPassword ? "eyeNotLooking" : "eyeLooking",
-              20,
-            )}
+            {@html icon(showRepeatPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
           </button>
         </div>
       </div>
@@ -450,9 +424,7 @@
         <div class="dropdown-form-control">
           <Dropdown options={cityOptions} bind:value={selectedCity} />
         </div>
-        <div class="form-help">
-          Seçilen şehir ana sayfada öncelikli olarak gösterilir.
-        </div>
+        <div class="form-help">Seçilen şehir ana sayfada öncelikli olarak gösterilir.</div>
       </div>
 
       <div class="form-group">
@@ -462,19 +434,11 @@
           <label class="c-list-row c-list-row--clickable">
             <div class="c-list-row__content">
               <span class="c-list-row__title">Çölyak modu</span>
-              <span class="c-list-row__desc"
-                >Glutensiz menüleri ve uyarıları önceliklendir</span
-              >
+              <span class="c-list-row__desc">Glutensiz menüleri ve uyarıları önceliklendir</span>
             </div>
             <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                class="c-input-hidden"
-                bind:checked={isCeliac}
-              />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
+              <input type="checkbox" class="c-input-hidden" bind:checked={isCeliac} />
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
             </div>
           </label>
         </div>
@@ -492,23 +456,15 @@
               >
             </div>
             <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                class="c-input-hidden"
-                bind:checked={emailSecurity}
-              />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
+              <input type="checkbox" class="c-input-hidden" bind:checked={emailSecurity} />
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
             </div>
           </label>
 
           <label class="c-list-row c-list-row--clickable">
             <div class="c-list-row__content">
               <span class="c-list-row__title">Öğün bildirimleri</span>
-              <span class="c-list-row__desc"
-                >Günün menüsü açıklandığında anlık bildirim al
-              </span>
+              <span class="c-list-row__desc">Günün menüsü açıklandığında anlık bildirim al </span>
             </div>
             <div class="c-list-row__control">
               <input
@@ -516,9 +472,7 @@
                 class="c-input-hidden"
                 bind:checked={enablePushNotifications}
               />
-              <span class="c-switch"
-                ><span class="c-switch__handle"></span></span
-              >
+              <span class="c-switch"><span class="c-switch__handle"></span></span>
             </div>
           </label>
         </div>
@@ -527,53 +481,37 @@
       <div class="register-submit-group">
         <div class="legal-consents">
           <label class="form-switch-row">
-            <input
-              type="checkbox"
-              class="c-input-hidden"
-              bind:checked={consentTerms}
-            />
+            <input type="checkbox" class="c-input-hidden" bind:checked={consentTerms} />
             <div class="c-switch">
               <div class="c-switch__handle"></div>
             </div>
             <span class="form-switch-row__text">
-              <a
-                href="/kullanim-kosullari"
-                target="_blank"
-                onclick={(e) => e.stopPropagation()}>Kullanım Koşulları</a
+              <a href="/kullanim-kosullari" target="_blank" onclick={(e) => e.stopPropagation()}
+                >Kullanım Koşulları</a
               > metnini okudum ve kabul ediyorum
             </span>
           </label>
 
           <label class="form-switch-row">
-            <input
-              type="checkbox"
-              class="c-input-hidden"
-              bind:checked={consentPrivacy}
-            />
+            <input type="checkbox" class="c-input-hidden" bind:checked={consentPrivacy} />
             <div class="c-switch">
               <div class="c-switch__handle"></div>
             </div>
             <span class="form-switch-row__text">
-              <a
-                href="/gizlilik-politikasi"
-                target="_blank"
-                onclick={(e) => e.stopPropagation()}>Gizlilik Politikası</a
+              <a href="/gizlilik-politikasi" target="_blank" onclick={(e) => e.stopPropagation()}
+                >Gizlilik Politikası</a
               > ve aydınlatma bildirimini okudum
             </span>
           </label>
 
           <label class="form-switch-row">
-            <input
-              type="checkbox"
-              class="c-input-hidden"
-              bind:checked={consentCrossBorder}
-            />
+            <input type="checkbox" class="c-input-hidden" bind:checked={consentCrossBorder} />
             <div class="c-switch">
               <div class="c-switch__handle"></div>
             </div>
             <span class="form-switch-row__text">
-              Kişisel verilerimin Fransa/Marsilya konumundaki sunucularda
-              barındırılmasına açık rıza veriyorum
+              Kişisel verilerimin Fransa/Marsilya konumundaki sunucularda barındırılmasına açık rıza
+              veriyorum
             </span>
           </label>
         </div>
@@ -581,12 +519,9 @@
         <button
           type="submit"
           class="btn btn--primary btn--large auth-submit u-w-full"
-          disabled={isLoading ||
-            !consentTerms ||
-            !consentPrivacy ||
-            !consentCrossBorder}
+          disabled={isLoading || !consentTerms || !consentPrivacy || !consentCrossBorder}
         >
-          {isLoading ? "Hesap oluşturuluyor..." : "Hesap oluştur"}
+          {isLoading ? 'Hesap oluşturuluyor...' : 'Hesap oluştur'}
         </button>
       </div>
     </form>

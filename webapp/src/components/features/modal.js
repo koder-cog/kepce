@@ -10,80 +10,77 @@ import { nativeBridge } from '../../lib/native/bridge.js';
 let activeModalController = null;
 
 export function createModal(options) {
-    if (activeModalController) closeModal(activeModalController.modalElement);
+  if (activeModalController) closeModal(activeModalController.modalElement);
 
-    const target = document.createElement('div');
-    document.body.appendChild(target);
+  const target = document.createElement('div');
+  document.body.appendChild(target);
 
-    if ((!options.buttons || options.buttons.length === 0) && !options.disableEscape) {
-        options.buttons = [{ label: 'Kapat', variant: 'secondary' }];
+  if ((!options.buttons || options.buttons.length === 0) && !options.disableEscape) {
+    options.buttons = [{ label: 'Kapat', variant: 'secondary' }];
+  }
+
+  // Wrap options in Svelte state proxy using our controller hack for state reactivity
+  // Or just rely on Svelte 5 runes passing object
+  // Wait, passing an object into $state from outside works if we mutate it later
+  const stateObj = { ...options };
+
+  const controller = {};
+
+  const modalApp = mount(ModalComponent, {
+    target,
+    props: {
+      options: stateObj,
+      controller,
+      onClose: () => {
+        unmount(modalApp);
+        target.remove();
+        if (activeModalController === controller) activeModalController = null;
+        nativeBridge.sendOverlayToggle(false);
+      }
     }
+  });
 
-    // Wrap options in Svelte state proxy using our controller hack for state reactivity
-    // Or just rely on Svelte 5 runes passing object
-    // Wait, passing an object into $state from outside works if we mutate it later
-    const stateObj = { ...options };
+  nativeBridge.sendOverlayToggle(true);
 
-    const controller = {};
+  activeModalController = controller;
 
-    const modalApp = mount(ModalComponent, {
-        target,
-        props: {
-            options: stateObj,
-            controller,
-            onClose: () => {
-                unmount(modalApp);
-                target.remove();
-                if (activeModalController === controller) activeModalController = null;
-                nativeBridge.sendOverlayToggle(false);
-            }
-        }
-    });
+  // Because mount is synchronous, target.firstChild is the actual modal DOM element
+  const modalElement = target.firstChild;
+  controller.modalElement = modalElement;
 
-    nativeBridge.sendOverlayToggle(true);
-
-    activeModalController = controller;
-
-    // Because mount is synchronous, target.firstChild is the actual modal DOM element
-    const modalElement = target.firstChild;
-    controller.modalElement = modalElement;
-
-    return {
-        modal: modalElement,
-        close: () => {
-            if (controller.close) controller.close();
-            else {
-                unmount(modalApp);
-                target.remove();
-            }
-        },
-        updateTitle: (newTitle) => {
-            stateObj.title = newTitle;
-            // Svelte reaktivitesine ek olarak dinamik DOM başlığını senkronize et.
-            const titleEl = modalElement.querySelector('.c-modal__title');
-            if (titleEl) titleEl.textContent = newTitle;
-        },
-        updateContent: (newHtml) => {
-            stateObj.contentHtml = newHtml;
-            const contentEl = modalElement.querySelector('.c-modal__content');
-            if (contentEl) contentEl.innerHTML = newHtml;
-        }
-    };
+  return {
+    modal: modalElement,
+    close: () => {
+      if (controller.close) controller.close();
+      else {
+        unmount(modalApp);
+        target.remove();
+      }
+    },
+    updateTitle: (newTitle) => {
+      stateObj.title = newTitle;
+      // Svelte reaktivitesine ek olarak dinamik DOM başlığını senkronize et.
+      const titleEl = modalElement.querySelector('.c-modal__title');
+      if (titleEl) titleEl.textContent = newTitle;
+    },
+    updateContent: (newHtml) => {
+      stateObj.contentHtml = newHtml;
+      const contentEl = modalElement.querySelector('.c-modal__content');
+      if (contentEl) contentEl.innerHTML = newHtml;
+    }
+  };
 }
 
 export function closeModal(modal) {
-    if (!modal) return;
-    if (activeModalController && activeModalController.modalElement === modal) {
-        if (activeModalController.close) activeModalController.close();
-    } else {
-        // Fallback for custom modals not created by active controller
-        modal.classList.remove('c-modal--open');
-        document.body.style.overflow = '';
-        setTimeout(() => {
-            if (modal.parentNode) modal.parentNode.removeChild(modal);
-        }, 350);
-    }
+  if (!modal) return;
+  if (activeModalController && activeModalController.modalElement === modal) {
+    if (activeModalController.close) activeModalController.close();
+  } else {
+    // Fallback for custom modals not created by active controller
+    modal.classList.remove('c-modal--open');
+    document.body.style.overflow = '';
+    setTimeout(() => {
+      if (modal.parentNode) modal.parentNode.removeChild(modal);
+    }, 350);
+  }
 }
-
-
-
