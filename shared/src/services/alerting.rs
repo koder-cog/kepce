@@ -36,6 +36,28 @@ impl AlertingService {
         telegram_ready || webhook_ready
     }
 
+    /// Test ortamında mıyız kontrol eder.
+    /// `cargo test`, test koşucusu ikilileri veya `KEPCE_TEST` aktif olduğunda
+    /// dış servislere (Telegram / Discord) bildirim gitmesini engeller.
+    pub fn is_test_env() -> bool {
+        if cfg!(test) {
+            return true;
+        }
+        if std::env::var("KEPCE_TEST")
+            .map(|v| v == "1" || v == "true")
+            .unwrap_or(false)
+        {
+            return true;
+        }
+        if let Ok(exe) = std::env::current_exe() {
+            let path_str = exe.to_string_lossy();
+            if path_str.contains("/deps/") {
+                return true;
+            }
+        }
+        false
+    }
+
     /// Birleşik alarm gönderir: Hem Telegram hem Discord yapılandırılmışsa ikisine de iletir.
     pub async fn send_alert(message: &str) -> anyhow::Result<()> {
         let _ = Self::send_webhook_alert(message).await;
@@ -48,6 +70,11 @@ impl AlertingService {
     /// `parse_mode` kullanılmaz: biçimlendirme hatası, mesajın Telegram tarafından
     /// tümden reddedilip operatöre hiç ulaşmamasına yol açabiliyor.
     pub async fn send_telegram_alert(message: &str) -> anyhow::Result<()> {
+        if Self::is_test_env() {
+            tracing::debug!("Test ortamı algılandı; Telegram alarmı gönderilmedi.");
+            return Ok(());
+        }
+
         let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
             Ok(token) if !token.trim().is_empty() => token,
             _ => return Ok(()),
@@ -109,6 +136,11 @@ impl AlertingService {
         file_path: &std::path::Path,
         inline_keyboard: serde_json::Value,
     ) -> anyhow::Result<()> {
+        if Self::is_test_env() {
+            tracing::debug!("Test ortamı algılandı; Telegram dokümanı gönderilmedi.");
+            return Ok(());
+        }
+
         let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
             Ok(token) if !token.trim().is_empty() => token,
             _ => return Ok(()),
@@ -169,6 +201,11 @@ impl AlertingService {
         text: &str,
         inline_keyboard: serde_json::Value,
     ) -> anyhow::Result<()> {
+        if Self::is_test_env() {
+            tracing::debug!("Test ortamı algılandı; Telegram butonlu mesaj gönderilmedi.");
+            return Ok(());
+        }
+
         let bot_token = match std::env::var("TELEGRAM_BOT_TOKEN") {
             Ok(token) if !token.trim().is_empty() => token,
             _ => return Ok(()),
@@ -211,6 +248,11 @@ impl AlertingService {
     /// Webhook uyarısı gönderir (Discord uyumlu JSON payload).
     /// Geriye dönük uyumluluk için, Telegram yapılandırılmışsa Telegram'a da iletir.
     pub async fn send_webhook_alert(message: &str) -> anyhow::Result<()> {
+        if Self::is_test_env() {
+            tracing::debug!("Test ortamı algılandı; Webhook alarmı gönderilmedi.");
+            return Ok(());
+        }
+
         if std::env::var("TELEGRAM_BOT_TOKEN").is_ok() {
             let _ = Self::send_telegram_alert(message).await;
         }
@@ -267,5 +309,10 @@ mod tests {
         }
         let res = AlertingService::send_alert("Test uyarısı").await;
         assert!(res.is_ok());
+    }
+
+    #[test]
+    fn test_is_test_env_in_tests() {
+        assert!(AlertingService::is_test_env());
     }
 }

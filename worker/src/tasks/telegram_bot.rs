@@ -27,19 +27,39 @@ async fn send_reply(client: &Client, bot_token: &str, chat_id: i64, text: &str) 
     }
 }
 
+/// Desteklenen Telegram bot komutları ve mobil (Apple HIG) standartlarında kısa açıklamaları.
+/// Açıklamalar dar mobil ekranlarda (iPhone SE / 13 mini vb.) tek satıra sığacak şekilde
+/// en fazla 22-25 karakter tutulur.
+pub const BOT_COMMANDS: &[(&str, &str)] = &[
+    ("durum", "Sistem durumu"),
+    ("karantina", "Karantina kuyruğu"),
+    ("onayla", "Karantinayı onayla"),
+    ("reddet", "Karantinayı reddet"),
+    ("ata", "Öğeye şehir ata"),
+    ("dosya", "Orijinal dosyayı al"),
+    ("tara", "Menü kazımayı başlat"),
+    ("son_menuler", "Son kayıtlı menüler"),
+    ("ban_kaldir", "Devre kesiciyi sıfırla"),
+    ("yorumlar_uret", "Eksik yorumları üret"),
+    ("yardim", "Komut kılavuzu"),
+];
+
 /// Telegram komut menüsünü (setMyCommands) Telegram API'sine kaydeder.
-/// Böylece kullanıcı '/' yazdığında desteklenen komutlar listelenir.
+/// Böylece kullanıcı '/' yazdığında desteklenen tüm komutlar listelenir.
 pub async fn register_bot_commands(client: &Client, bot_token: &str) {
     let url = format!("https://api.telegram.org/bot{}/setMyCommands", bot_token);
+    let commands_json: Vec<serde_json::Value> = BOT_COMMANDS
+        .iter()
+        .map(|(cmd, desc)| {
+            json!({
+                "command": cmd,
+                "description": desc
+            })
+        })
+        .collect();
+
     let payload = json!({
-        "commands": [
-            { "command": "durum", "description": "Sistem, veritabanı ve scraper sağlığı" },
-            { "command": "karantina", "description": "Karar bekleyen dosyaları listele" },
-            { "command": "tara", "description": "Menü kazımayı anlık tetikle" },
-            { "command": "son_menuler", "description": "Sisteme kaydedilen güncel menüler" },
-            { "command": "ban_kaldir", "description": "Kazıyıcı devre kesicisini sıfırla" },
-            { "command": "yardim", "description": "Kullanım kılavuzunu görüntüle" }
-        ]
+        "commands": commands_json
     });
 
     match client.post(&url).json(&payload).send().await {
@@ -488,16 +508,17 @@ async fn handle_command(
 [KEPÇE OPERATÖR BOTU]
 
 Kullanılabilir komutlar:
-• /durum - Sunucu, veritabanı ve devre kesici durumu
-• /karantina - Karar bekleyen karantina kuyruğunu listele
-• /karantina detay <id> - Öğenin teşhis ayrıntılarını göster
-• /dosya <id> - Dosyanın orijinalini sohbete gönder
-• /onayla <id> - Karantinadaki dosyayı kapsam içi tarihlerle onayla
-• /reddet <id> - Karantinadaki dosyayı hatali/ klasörüne taşı
-• /ata <id> <sehir> - Şehirsiz karantina öğesine şehir ata
+• /durum - Sistem durumu
+• /karantina - Karantina kuyruğu
+• /karantina detay <id> - Öğe teşhis ayrıntıları
+• /dosya <id> - Orijinal dosyayı sohbete gönder
+• /onayla <id> - Karantinadaki dosyayı onayla
+• /reddet <id> - Karantinadaki dosyayı reddet
+• /ata <id> <sehir> - Şehirsiz öğeye şehir ata
 • /tara [sehir] - Menü kazımayı anlık tetikle
-• /son_menuler - Sisteme kaydedilen en güncel menüler
-• /ban_kaldir - Kazıyıcı devre kesicisini sıfırla
+• /son_menuler - Son kaydedilen menüler
+• /ban_kaldir - Devre kesiciyi sıfırla
+• /yorumlar_uret - Eksik menü yorumlarını üret
 • /yardim - Bu kullanım kılavuzu";
             send_reply(client, bot_token, chat_id, help_msg).await;
         }
@@ -861,6 +882,7 @@ Kullanılabilir komutlar:
 
 #[cfg(test)]
 mod tests {
+    use super::*;
 
     #[test]
     fn test_callback_data_parsing() {
@@ -888,16 +910,17 @@ mod tests {
 [KEPÇE OPERATÖR BOTU]
 
 Kullanılabilir komutlar:
-• /durum - Sunucu, veritabanı ve devre kesici durumu
-• /karantina - Karar bekleyen karantina kuyruğunu listele
-• /karantina detay <id> - Öğenin teşhis ayrıntılarını göster
-• /dosya <id> - Dosyanın orijinalini sohbete gönder
-• /onayla <id> - Karantinadaki dosyayı kapsam içi tarihlerle onayla
-• /reddet <id> - Karantinadaki dosyayı hatali/ klasörüne taşı
-• /ata <id> <sehir> - Şehirsiz karantina öğesine şehir ata
+• /durum - Sistem durumu
+• /karantina - Karantina kuyruğu
+• /karantina detay <id> - Öğe teşhis ayrıntıları
+• /dosya <id> - Orijinal dosyayı sohbete gönder
+• /onayla <id> - Karantinadaki dosyayı onayla
+• /reddet <id> - Karantinadaki dosyayı reddet
+• /ata <id> <sehir> - Şehirsiz öğeye şehir ata
 • /tara [sehir] - Menü kazımayı anlık tetikle
-• /son_menuler - Sisteme kaydedilen en güncel menüler
-• /ban_kaldir - Kazıyıcı devre kesicisini sıfırla
+• /son_menuler - Son kaydedilen menüler
+• /ban_kaldir - Devre kesiciyi sıfırla
+• /yorumlar_uret - Eksik menü yorumlarını üret
 • /yardim - Bu kullanım kılavuzu";
 
         // Yaygın emoji aralıklarını kontrol et
@@ -908,6 +931,46 @@ Kullanılabilir komutlar:
                 || (0x2700..=0x27BF).contains(&code)
                 || (0x1FA70..=0x1FAFF).contains(&code);
             assert!(!is_emoji, "Yardım mesajında emoji bulundu: {}", c);
+        }
+    }
+
+    #[test]
+    fn test_bot_commands_apple_standards() {
+        for (cmd, desc) in BOT_COMMANDS {
+            // Telegram komut adı kuralları: 1-32 karakter, küçük harf, alt çizgi
+            assert!(!cmd.is_empty() && cmd.len() <= 32);
+            assert!(cmd.chars().all(|c| c.is_ascii_lowercase() || c == '_'));
+
+            // Apple standartları: dar ekranda kesilmemesi için kısa ve öz (en fazla 25 karakter)
+            assert!(
+                desc.chars().count() <= 25,
+                "Komut açıklaması mobil ekranlar için fazla uzun: {} -> {}",
+                cmd,
+                desc
+            );
+            assert!(!desc.is_empty());
+        }
+
+        // Tüm beklenen temel operatör komutları menüde olmalı
+        let cmd_names: Vec<&str> = BOT_COMMANDS.iter().map(|(c, _)| *c).collect();
+        for expected in &[
+            "durum",
+            "karantina",
+            "onayla",
+            "reddet",
+            "ata",
+            "dosya",
+            "tara",
+            "son_menuler",
+            "ban_kaldir",
+            "yorumlar_uret",
+            "yardim",
+        ] {
+            assert!(
+                cmd_names.contains(expected),
+                "Komut menüsünde eksik komut: {}",
+                expected
+            );
         }
     }
 }

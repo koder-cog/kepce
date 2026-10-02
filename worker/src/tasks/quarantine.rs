@@ -583,6 +583,18 @@ pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> S
 /// Uyarı kanalı tanımlı değilse ERROR loglar (plan 5.4: operatörsüz karantina
 /// sessiz kaybın yeni adı olur).
 pub async fn notify_item(item: &mut QueueItem, kind: NotifyKind) {
+    if shared::services::alerting::AlertingService::is_test_env() {
+        tracing::debug!(
+            "[KARANTİNA] Test ortamı: bildirim atlandı ({} - {})",
+            item.meta.id,
+            item.meta.file
+        );
+        item.meta.notify_count += 1;
+        item.meta.last_notified_at = Some(Utc::now().to_rfc3339());
+        let _ = write_meta(item).await;
+        return;
+    }
+
     let age = item.age_days().await;
     let message = format_item_alert(item, age, kind);
 
