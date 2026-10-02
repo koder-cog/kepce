@@ -5,6 +5,7 @@ use crate::error::AppError;
 use crate::extractors::validated::ValidatedJson;
 use crate::services::comment::{CommentError, CommentService};
 use crate::services::reaction::{ReactionError, ReactionService};
+use crate::services::user::UserService;
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
@@ -102,6 +103,7 @@ async fn create_comment(
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<CreateCommentDto>,
 ) -> Result<Json<CommentResponseDto>, AppError> {
+    UserService::ensure_cross_border_consent(&db, user.id).await?;
     let parent_id = payload.parent_id;
     let comment =
         CommentService::create_comment(&db, user.id, user.username, payload, parent_id).await?;
@@ -113,6 +115,7 @@ async fn toggle_reaction(
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<ReactionRequestDto>,
 ) -> Result<Json<()>, AppError> {
+    UserService::ensure_cross_border_consent(&db, user.id).await?;
     ReactionService::toggle_reaction(&db, user.id, payload.vote_id, payload.reaction).await?;
     Ok(Json(()))
 }
@@ -123,6 +126,7 @@ async fn update_comment(
     Path(hash): Path<Uuid>,
     ValidatedJson(payload): ValidatedJson<UpdateCommentDto>,
 ) -> Result<Json<CommentResponseDto>, AppError> {
+    UserService::ensure_cross_border_consent(&db, user.id).await?;
     let comment = CommentService::update_comment(&db, user.id, hash, payload.comment).await?;
     Ok(Json(comment))
 }

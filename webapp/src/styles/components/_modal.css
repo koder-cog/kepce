@@ -177,6 +177,10 @@
     padding: var(--space-md) var(--space-xl) var(--space-xl);
   }
 
+  .c-modal__footer--stack {
+    flex-direction: column;
+  }
+
   .c-modal__footer .btn {
     flex: 1;
   }

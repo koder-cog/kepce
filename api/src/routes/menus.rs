@@ -3,6 +3,7 @@ use crate::error::AppError;
 use crate::extractors::api_key::OptionalApiKey;
 use crate::extractors::auth::{AuthenticatedUser, OptionalUser};
 use crate::services::menu::{MenuError, MenuService};
+use crate::services::user::UserService;
 use crate::services::vote::{VoteError, VoteService};
 use axum::{
     Json, Router,
@@ -305,6 +306,7 @@ async fn vote_menu(
     Path(menu_id): Path<i32>,
     Json(payload): Json<VoteMenuDto>,
 ) -> Result<Json<()>, AppError> {
+    UserService::ensure_cross_border_consent(&db, user.id).await?;
     let sentiment =
         match payload.sentiment.to_lowercase().as_str() {
             "positive" => SentimentEnum::Positive,

@@ -259,6 +259,8 @@ impl AuthService {
             notif_dinner_time: Set("17:30".to_string()),
             email_newsletter: Set(false),
             email_updates: Set(false),
+            consent_cross_border: Set(true),
+            consent_cross_border_at: Set(Some(Utc::now().into())),
             ..Default::default()
         };
 
@@ -293,7 +295,7 @@ impl AuthService {
                 crate::services::user::UserError::DatabaseError(db_err) => {
                     AuthError::DatabaseError(db_err)
                 }
-                crate::services::user::UserError::NotFound => AuthError::InvalidCredentials,
+                _ => AuthError::InvalidCredentials,
             })?;
         Ok((access_token, refresh_token, user))
     }
@@ -413,6 +415,26 @@ impl AuthService {
             exp: (Utc::now() + chrono::Duration::minutes(15)).timestamp() as usize,
             iss: "kepce".to_string(),
             aud: "kepce-passwordless".to_string(),
+        };
+
+        encode(
+            &Header::default(),
+            &claims,
+            &EncodingKey::from_secret(jwt_secret.as_bytes()),
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))
+    }
+
+    /// KVKK Madde 9 yurt dışı barındırma onay token'ı (aud: kepce-consent - 30 gün geçerli)
+    pub fn generate_cross_border_consent_token(
+        user_id: Uuid,
+        jwt_secret: &str,
+    ) -> Result<String, AuthError> {
+        let claims = VerificationClaims {
+            sub: user_id,
+            exp: (Utc::now() + chrono::Duration::days(30)).timestamp() as usize,
+            iss: "kepce".to_string(),
+            aud: "kepce-consent".to_string(),
         };
 
         encode(
@@ -666,6 +688,60 @@ impl AuthService {
         Ok(updated_user)
     }
 
+    pub async fn verify_cross_border_consent_token(
+        db: &DatabaseConnection,
+        jwt_secret: &str,
+        token: &str,
+    ) -> Result<shared::entities::users::Model, AuthError> {
+        let mut validation = jsonwebtoken::Validation::default();
+        validation.set_issuer(&["kepce"]);
+        validation.set_audience(&["kepce-consent"]);
+
+        let token_data = jsonwebtoken::decode::<VerificationClaims>(
+            token,
+            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
+            &validation,
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))?;
+
+        let user = Users::find_by_id(token_data.claims.sub)
+            .one(db)
+            .await
+            .map_err(AuthError::DatabaseError)?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        if user.consent_cross_border {
+            return Ok(user);
+        }
+
+        if Self::is_token_used(db, token)
+            .await
+            .map_err(AuthError::DatabaseError)?
+        {
+            return Err(AuthError::TokenError(
+                "Bu onay bağlantısı geçersiz veya daha önce kullanılmış.".to_string(),
+            ));
+        }
+
+        Self::mark_token_used(
+            db,
+            token,
+            "consent",
+            user.id,
+            Utc::now() + chrono::Duration::days(30),
+        )
+        .await
+        .map_err(AuthError::DatabaseError)?;
+
+        let mut active: users::ActiveModel = user.into();
+        active.consent_cross_border = Set(true);
+        active.consent_cross_border_at = Set(Some(Utc::now().into()));
+        active.updated_at = Set(Some(Utc::now().into()));
+        let updated = active.update(db).await.map_err(AuthError::DatabaseError)?;
+
+        Ok(updated)
+    }
+
     /// OAuth Giriş veya Kayıt Akışı
     pub async fn register_or_login_oauth(
         db: &DatabaseConnection,
@@ -785,6 +861,8 @@ impl AuthService {
             notif_dinner_time: Set("17:30".to_string()),
             email_newsletter: Set(false),
             email_updates: Set(false),
+            consent_cross_border: Set(true),
+            consent_cross_border_at: Set(Some(Utc::now().into())),
             ..Default::default()
         };
 

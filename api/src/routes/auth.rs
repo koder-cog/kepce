@@ -46,6 +46,8 @@ pub fn router() -> Router<crate::config::AppState> {
             post(mark_all_notifications_read),
         )
         .route("/avatar", post(upload_avatar).delete(delete_avatar))
+        .route("/me/consent", post(give_consent))
+        .route("/consent-verify", get(verify_consent))
         .route("/verify", get(verify_email))
         .route("/resend-verification", post(resend_verification))
         .route("/forgot-password", post(forgot_password))
@@ -820,6 +822,28 @@ async fn resend_verification(
     Ok(Json(
         serde_json::json!({ "status": "success", "message": "Onay e-postası tekrar gönderildi." }),
     ))
+}
+
+async fn give_consent(
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+) -> Result<Json<UserProfileDto>, AppError> {
+    let profile = UserService::give_cross_border_consent(&db, user.id).await?;
+    Ok(Json(profile))
+}
+
+#[derive(serde::Deserialize)]
+pub struct VerifyConsentQuery {
+    pub token: String,
+}
+
+async fn verify_consent(
+    State(db): State<sea_orm::DatabaseConnection>,
+    State(config): State<std::sync::Arc<Config>>,
+    Query(query): Query<VerifyConsentQuery>,
+) -> Result<Redirect, AppError> {
+    AuthService::verify_cross_border_consent_token(&db, &config.jwt_secret, &query.token).await?;
+    Ok(Redirect::to("/?onay=tamamlandi"))
 }
 
 #[derive(serde::Deserialize, validator::Validate)]

@@ -279,6 +279,41 @@ async fn remove_empty_subdirectories(
     Ok(removed_count)
 }
 
+/// KVKK Madde 9 uyarınca, 30 günlük rıza süresi dolmuş ve yurt dışı aktarım onayı vermemiş
+/// hesapları `account_status = Suspended` olarak günceller.
+/// Veritabanındaki ilişkisel bütünlüğü (oylar, yorumlar) korumak için kullanıcı kaydı
+/// silinmez; yalnızca hesap durumu pasife alınır.
+pub async fn deactivate_expired_unconsented_accounts(
+    db: &sea_orm::DatabaseConnection,
+    dry_run: bool,
+) -> Result<usize> {
+    use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+    use shared::entities::{prelude::Users, sea_orm_active_enums::AccountStatusEnum, users};
+
+    let now = chrono::Utc::now();
+    let expired_users = Users::find()
+        .filter(users::Column::ConsentCrossBorder.eq(false))
+        .filter(users::Column::ConsentDeadlineAt.is_not_null())
+        .filter(users::Column::ConsentDeadlineAt.lt(now))
+        .filter(users::Column::AccountStatus.eq(AccountStatusEnum::Active))
+        .all(db)
+        .await?;
+
+    let count = expired_users.len();
+    if count == 0 || dry_run {
+        return Ok(count);
+    }
+
+    for user in expired_users {
+        let mut active: users::ActiveModel = user.into();
+        active.account_status = Set(AccountStatusEnum::Suspended);
+        active.updated_at = Set(Some(chrono::Utc::now().into()));
+        let _ = active.update(db).await;
+    }
+
+    Ok(count)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

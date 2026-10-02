@@ -17,6 +17,7 @@
 	import { initTooltipManager } from "@/lib/dom/tooltips.js";
 	import { openMenuReportModal } from "@/components/features/report-modal.js";
 	import ExternalLinkWarningModal from "@/components/features/ExternalLinkWarningModal.svelte";
+	import CrossBorderConsentModal from "@/components/features/CrossBorderConsentModal.svelte";
 	import OfflineBanner from "@/components/ui/OfflineBanner.svelte";
 
 	import { timelineState } from "@/stores/timeline.svelte.js";
@@ -42,6 +43,43 @@
 
 	let externalLinkModalOpen = $state(false);
 	let pendingExternalUrl = $state("");
+
+	let consentPostponed = $state(
+		typeof sessionStorage !== "undefined"
+			? sessionStorage.getItem("kepce_consent_postponed") === "true"
+			: false
+	);
+
+	// Sayfa geçişi + view transition animasyonu bitmeden modal açılmasını engeller.
+	// beforeNavigate kapıyı kapatır. View transition varsa transition.finished,
+	// yoksa afterNavigate kapıyı yeniden açar.
+	let navigationSettled = $state(true);
+	let viewTransitionActive = $state(false);
+
+	let showConsentModal = $derived.by(() => {
+		if (!navigationSettled) return false;
+		if (!globalState.isReady || !globalState.user) return false;
+		if (globalState.user.consent_cross_border !== false) return false;
+
+		const pathname = $page?.url?.pathname || "";
+		if (
+			pathname === "/giris" ||
+			pathname === "/kayit" ||
+			pathname === "/profili-tamamla" ||
+			pathname.startsWith("/oauth/") ||
+			pathname.startsWith("/auth/")
+		) {
+			return false;
+		}
+
+		const deadline = globalState.user.consent_deadline_at
+			? new Date(globalState.user.consent_deadline_at)
+			: null;
+		const isExpired = deadline ? new Date().getTime() > deadline.getTime() : true;
+
+		if (isExpired) return true;
+		return !consentPostponed;
+	});
 
 	function handleGlobalClick(e) {
 		// Arama motorunda dış bağlantı uyarısı gösterilmez, doğrudan hedefe gidilir
@@ -206,6 +244,9 @@
 
 	onNavigate((navigation) => {
 		if (typeof document.startViewTransition !== "function") return;
+		if (document.querySelector(".c-modal--open, dialog[open]")) return;
+
+		viewTransitionActive = true;
 
 		return new Promise((resolve) => {
 			try {
@@ -215,17 +256,27 @@
 				});
 				if (transition) {
 					if (transition.ready) transition.ready.catch(() => {});
-					if (transition.finished) transition.finished.catch(() => {});
+					const settle = () => {
+						viewTransitionActive = false;
+						navigationSettled = true;
+					};
+					transition.finished.then(settle).catch(settle);
 				}
 			} catch (err) {
-				// Eşzamanlı (hızlı) geçişlerde viewTransition hata fırlatabilir.
+				viewTransitionActive = false;
 				resolve();
 			}
 		});
 	});
 
+	beforeNavigate(() => {
+		navigationSettled = false;
+	});
+
 	afterNavigate(() => {
-		// Sayfa navigasyonunda arkada asılı kalan scroll kilitlerini temizle
+		if (!viewTransitionActive) {
+			navigationSettled = true;
+		}
 		if (typeof document !== "undefined" && !document.querySelector(".c-modal--open, dialog[open]")) {
 			forceUnlockScroll();
 		}
@@ -439,6 +490,20 @@
 		onContinue={() => {
 			window.open(pendingExternalUrl, "_blank", "noopener,noreferrer");
 			externalLinkModalOpen = false;
+		}}
+	/>
+{/if}
+
+{#if showConsentModal}
+	<CrossBorderConsentModal
+		onClose={() => {
+			consentPostponed = true;
+		}}
+		onPostpone={() => {
+			consentPostponed = true;
+			if (typeof sessionStorage !== "undefined") {
+				sessionStorage.setItem("kepce_consent_postponed", "true");
+			}
 		}}
 	/>
 {/if}

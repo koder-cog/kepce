@@ -59,8 +59,10 @@
                         lastBtn
                     )?.focus();
 
-                    history.pushState({ kepceModal: true }, "");
-                    pushedState = true;
+                    if (!options.disableHistory) {
+                        history.pushState({ kepceModal: true }, "");
+                        pushedState = true;
+                    }
                 }
             });
         });
@@ -75,7 +77,7 @@
         isClosing = true;
         releaseScroll();
 
-        if (!fromPopState && pushedState && history.state?.kepceModal) {
+        if (!options.disableHistory && !fromPopState && pushedState && history.state?.kepceModal) {
             history.back();
         }
         pushedState = false;
@@ -112,6 +114,7 @@
     }
 
     function handlePopState(e) {
+        if (options.disableHistory) return;
         if (isOpen && !isClosing) {
             close(true);
         }
@@ -169,7 +172,7 @@
         </div>
 
         {#if footer}
-            <div class="c-modal__footer">
+            <div class="c-modal__footer {options.footerClass || ''}">
                 {@render footer()}
             </div>
         {:else if options.buttons && options.buttons.length > 0}

@@ -41,6 +41,9 @@ pub struct Model {
     pub email_security: bool,
     pub email_updates: bool,
     pub pinned_badges: Option<Vec<String>>,
+    pub consent_cross_border: bool,
+    pub consent_cross_border_at: Option<DateTimeWithTimeZone>,
+    pub consent_deadline_at: Option<DateTimeWithTimeZone>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

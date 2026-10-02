@@ -164,6 +164,10 @@ pub struct UserProfileDto {
     pub is_blocked: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_blocked_by: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub consent_cross_border: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub consent_deadline_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize)]

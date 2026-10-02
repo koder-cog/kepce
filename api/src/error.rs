@@ -62,6 +62,9 @@ impl From<crate::services::user::UserError> for AppError {
             crate::services::user::UserError::NotFound => {
                 AppError::NotFound("User not found".to_string())
             }
+            crate::services::user::UserError::ConsentRequired => AppError::Forbidden(
+                "Yurt dışı barındırma onayını tamamlamanız gerekmektedir.".to_string(),
+            ),
             crate::services::user::UserError::DatabaseError(e) => {
                 tracing::error!("Database error in UserService: {}", e);
                 AppError::Internal("Database error".to_string())

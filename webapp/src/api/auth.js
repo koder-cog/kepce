@@ -92,4 +92,8 @@ export const authApi = {
       method: 'POST',
       body: JSON.stringify({ token, new_password }),
     }),
+  giveCrossBorderConsent: () =>
+    request('/auth/me/consent', {
+      method: 'POST',
+    }),
 };

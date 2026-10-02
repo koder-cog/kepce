@@ -62,6 +62,14 @@ async fn main() -> anyhow::Result<()> {
             e
         );
     }
+    if let Err(e) =
+        tasks::cleanup::deactivate_expired_unconsented_accounts(&db, retention_dry_run).await
+    {
+        tracing::error!(
+            "[RETENTION] Süresi dolmuş onaysız hesapları pasifleştirme hatası: {:?}",
+            e
+        );
+    }
     if std::env::var("WORKER_RETENTION_CLEANUP").is_ok() && std::env::var("WORKER_ONESHOT").is_ok()
     {
         tracing::info!("[RETENTION] Tek seferlik saklama temizliği tamamlandı. Çıkış yapılıyor.");
@@ -566,6 +574,15 @@ async fn main() -> anyhow::Result<()> {
                 );
                 if let Err(e) = tasks::cleanup::clean_expired_files(false).await {
                     tracing::error!("[RECONCILE] Gece dosya saklama temizleme hatası: {:?}", e);
+                }
+                if let Err(e) =
+                    tasks::cleanup::deactivate_expired_unconsented_accounts(&db_reconcile, false)
+                        .await
+                {
+                    tracing::error!(
+                        "[RECONCILE] Gece süresi dolmuş onaysız hesapları pasifleştirme hatası: {:?}",
+                        e
+                    );
                 }
             }
 

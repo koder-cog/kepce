@@ -15,6 +15,7 @@ use uuid::Uuid;
 #[derive(Debug)]
 pub enum UserError {
     NotFound,
+    ConsentRequired,
     DatabaseError(DbErr),
 }
 
@@ -523,6 +524,16 @@ impl UserService {
             },
             is_blocked: None,
             is_blocked_by: None,
+            consent_cross_border: if include_private {
+                Some(user.consent_cross_border)
+            } else {
+                None
+            },
+            consent_deadline_at: if include_private {
+                user.consent_deadline_at.map(|dt| dt.into())
+            } else {
+                None
+            },
         })
     }
 
@@ -1018,6 +1029,57 @@ impl UserService {
             active.insert(db).await.map_err(UserError::DatabaseError)?;
             Ok(true)
         }
+    }
+
+    /// KVKK Madde 9 yurt dışı sunucu barındırma rızasını kaydeder ve güncel profili döner.
+    pub async fn give_cross_border_consent(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<UserProfileDto, UserError> {
+        let user = Users::find_by_id(user_id)
+            .one(db)
+            .await
+            .map_err(UserError::DatabaseError)?
+            .ok_or(UserError::NotFound)?;
+
+        let mut active: users::ActiveModel = user.into();
+        active.consent_cross_border = Set(true);
+        active.consent_cross_border_at = Set(Some(Utc::now().into()));
+        active.updated_at = Set(Some(Utc::now().into()));
+        let updated = active.update(db).await.map_err(UserError::DatabaseError)?;
+
+        Self::build_profile(db, updated, true).await
+    }
+
+    /// KVKK Madde 9 yurt dışı barındırma onay durumunu kontrol eder.
+    /// Onay verilmemiş ve 30 günlük süre dolmuşsa `UserError::ConsentRequired` döner.
+    pub async fn ensure_cross_border_consent(
+        db: &DatabaseConnection,
+        user_id: Uuid,
+    ) -> Result<(), UserError> {
+        let user = Users::find_by_id(user_id)
+            .select_only()
+            .column(users::Column::ConsentCrossBorder)
+            .column(users::Column::ConsentDeadlineAt)
+            .into_tuple::<(bool, Option<sea_orm::entity::prelude::DateTimeWithTimeZone>)>()
+            .one(db)
+            .await
+            .map_err(UserError::DatabaseError)?
+            .ok_or(UserError::NotFound)?;
+
+        let (consent, deadline) = user;
+        if !consent {
+            match deadline {
+                Some(deadline_at) if Utc::now() <= deadline_at => {
+                    // 30 günlük geçiş penceresinde işlem yapmaya devam edebilir
+                }
+                _ => {
+                    return Err(UserError::ConsentRequired);
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
