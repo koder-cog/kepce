@@ -141,6 +141,9 @@ services:
       - TAKEAWAY_CACHE_FILE=/app/cache/takeaway.json
       # kykyemek.com proxy havuzu ve devre kesici ayarları.
       - KYKYEMEK_PROXY_TOOL=${KYKYEMEK_PROXY_TOOL:-}
+      # kykyemek.com bülten taraması artık GitHub Actions (remote_scraper) üzerinden
+      # yürütüldüğü için mükerrer bant genişliği tüketimini önlemek adına varsayılan kapalıdır.
+      - WORKER_ENABLE_KYKYEMEK_SCRAPER=${WORKER_ENABLE_KYKYEMEK_SCRAPER:-false}
       - KYKYEMEK_COM_BAN_COOLDOWN_SECS=${KYKYEMEK_COM_BAN_COOLDOWN_SECS:-${KYK_BAN_COOLDOWN_SECS:-172800}}
       - KYKYEMEK_COM_BAN_STATE_FILE=/app/cache/kykyemek_ban_until
       # kykyemek.com istekleri için asgari aralık (ms). Tüm uç noktaları kapsar.

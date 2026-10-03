@@ -2,8 +2,8 @@ name: KykYemek Remote Scraper
 
 on:
   schedule:
-    # Günde iki kez: Sabah 06:15 UTC (09:15 TSİ) ve Öğleden sonra 14:15 UTC (17:15 TSİ)
-    - cron: '15 6,14 * * *'
+    # Günde bir kez: Sabah 06:17 UTC (09:17 TSİ), asimetrik dakika kuyruk yığılmasını önler
+    - cron: '17 6 * * *'
   workflow_dispatch:
     inputs:
       dry_run:

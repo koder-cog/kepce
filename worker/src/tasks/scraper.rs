@@ -671,8 +671,8 @@ pub async fn scrape_today_menus(
             session.endpoint_label
         );
 
-        // Ayın ilk 10 gününde bir önceki ayın menülerini de çekerek ay geçişlerindeki boşlukları doldur
-        let shifts: Vec<&str> = if chrono::Utc::now().date_naive().day() <= 10 {
+        // Ayın ilk 2 gününde bir önceki ayın menülerini de çekerek ay geçişlerindeki boşlukları doldur
+        let shifts: Vec<&str> = if chrono::Utc::now().date_naive().day() <= 2 {
             vec!["-1", "0"]
         } else {
             vec!["0"]
@@ -785,10 +785,20 @@ pub async fn run_kykyemek_scraper(
 ) -> Result<()> {
     let mut total_fetched = 0;
 
-    // 1. Önce günün menülerini (aktif 16 ilin tüm ayın günlerini) hızlıca çek ve kaydet
-    if let Ok(today_count) = scrape_today_menus(db, client, shutdown_rx.clone()).await {
-        tracing::info!("Canlı günün menülerinden {} kayıt işlendi.", today_count);
-        total_fetched += today_count;
+    let kykyemek_enabled: bool = std::env::var("WORKER_ENABLE_KYKYEMEK_SCRAPER")
+        .map(|v| v != "0" && !v.eq_ignore_ascii_case("false"))
+        .unwrap_or(true);
+
+    if kykyemek_enabled {
+        // 1. Önce günün menülerini (aktif 16 ilin tüm ayın günlerini) hızlıca çek ve kaydet
+        if let Ok(today_count) = scrape_today_menus(db, client, shutdown_rx.clone()).await {
+            tracing::info!("Canlı günün menülerinden {} kayıt işlendi.", today_count);
+            total_fetched += today_count;
+        }
+    } else {
+        tracing::info!(
+            "[KYKYEMEK.COM-SCRAPER] Kykyemek bülten taraması devre dışı (WORKER_ENABLE_KYKYEMEK_SCRAPER=false). Yalnızca fallback ve gap-fill yürütülüyor."
+        );
     }
 
     // 1.5. Fallback zinciri: kykyemek'te eksik kalan şehir/günleri alternatif

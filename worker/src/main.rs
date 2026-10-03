@@ -436,36 +436,43 @@ async fn main() -> anyhow::Result<()> {
     let mut rx_scraper = shutdown_rx.clone();
 
     // Kykyemek Scraper döngüsü
-    let scraper_task = tokio::spawn(async move {
-        loop {
-            if *rx_scraper.borrow() {
-                tracing::info!("[WEB] Kapatma sinyali algılandı. Döngüden çıkılıyor.");
-                break;
-            }
-            tracing::info!("--- [WEB] KYKYEMEK SCRAPER DÖNGÜSÜ BAŞLIYOR ---");
-            if let Err(e) = tasks::scraper::run_kykyemek_scraper(
-                &db_scraper,
-                &client_scraper,
-                rx_scraper.clone(),
-            )
-            .await
-            {
-                tracing::error!("[WEB] Kykyemek taramasında hata: {:?}", e);
-            }
-            tracing::info!(
-                "--- [WEB] DÖNGÜ TAMAMLANDI. Bekleme: {}s ---",
-                scraper_interval_secs
-            );
-
-            tokio::select! {
-                _ = tokio::time::sleep(Duration::from_secs(scraper_interval_secs)) => {},
-                _ = rx_scraper.changed() => {
-                    tracing::info!("[WEB] Uyku sırasında kapatma sinyali alındı. Döngüden çıkılıyor.");
+    let scraper_task = if scraper_interval_secs == 0 {
+        tracing::info!(
+            "[WEB] Scraper döngüsü devre dışı bırakıldı (WORKER_SCRAPER_INTERVAL_SECS=0)."
+        );
+        tokio::spawn(async {})
+    } else {
+        tokio::spawn(async move {
+            loop {
+                if *rx_scraper.borrow() {
+                    tracing::info!("[WEB] Kapatma sinyali algılandı. Döngüden çıkılıyor.");
                     break;
                 }
+                tracing::info!("--- [WEB] KYKYEMEK SCRAPER DÖNGÜSÜ BAŞLIYOR ---");
+                if let Err(e) = tasks::scraper::run_kykyemek_scraper(
+                    &db_scraper,
+                    &client_scraper,
+                    rx_scraper.clone(),
+                )
+                .await
+                {
+                    tracing::error!("[WEB] Kykyemek taramasında hata: {:?}", e);
+                }
+                tracing::info!(
+                    "--- [WEB] DÖNGÜ TAMAMLANDI. Bekleme: {}s ---",
+                    scraper_interval_secs
+                );
+
+                tokio::select! {
+                    _ = tokio::time::sleep(Duration::from_secs(scraper_interval_secs)) => {},
+                    _ = rx_scraper.changed() => {
+                        tracing::info!("[WEB] Uyku sırasında kapatma sinyali alındı. Döngüden çıkılıyor.");
+                        break;
+                    }
+                }
             }
-        }
-    });
+        })
+    };
 
     let db_notifier = db.clone();
     let mut rx_notifier = shutdown_rx.clone();

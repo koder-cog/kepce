@@ -181,7 +181,7 @@ async fn main() -> anyhow::Result<()> {
     );
 
     let now_date = chrono::Utc::now().date_naive();
-    let shifts: Vec<&str> = if now_date.day() <= 10 {
+    let shifts: Vec<&str> = if now_date.day() <= 2 {
         vec!["-1", "0"]
     } else {
         vec!["0"]
@@ -198,7 +198,18 @@ async fn main() -> anyhow::Result<()> {
     let mut grand_total_skipped = 0;
     let mut all_errors = Vec::new();
 
+    let mut consecutive_failures = 0;
+    const MAX_CONSECUTIVE_FAILURES: usize = 3;
+
     for slug in &active_slugs {
+        if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+            tracing::error!(
+                "Hedef sunucu ardışık {} istekte hata verdi. Kota israfını önlemek için tarama erken sonlandırılıyor.",
+                consecutive_failures
+            );
+            break;
+        }
+
         // Her şehir başında torbadan sıradaki oturumu çek (yükü 10 proxy'ye homojen dağıt)
         if let Some(new_s) = obtain_ready_session(&pool, &mut session_cache).await {
             session = new_s;
@@ -214,7 +225,7 @@ async fn main() -> anyhow::Result<()> {
 
         for shift in &shifts {
             // 1. Kahvaltı
-            scrape_and_collect(
+            let ok_b = scrape_and_collect(
                 &pool,
                 &mut session,
                 &mut session_cache,
@@ -224,12 +235,24 @@ async fn main() -> anyhow::Result<()> {
                 &mut city_menus,
             )
             .await;
+            if ok_b {
+                consecutive_failures = 0;
+            } else {
+                consecutive_failures += 1;
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+                    tracing::error!(
+                        "Hedef sunucu ardışık {} istekte hata verdi. Kota israfını önlemek için tarama erken sonlandırılıyor.",
+                        consecutive_failures
+                    );
+                    break;
+                }
+            }
 
             let delay = rand::thread_rng().gen_range(1500..=3000);
             tokio::time::sleep(Duration::from_millis(delay)).await;
 
             // 2. Akşam Yemeği
-            scrape_and_collect(
+            let ok_d = scrape_and_collect(
                 &pool,
                 &mut session,
                 &mut session_cache,
@@ -239,9 +262,25 @@ async fn main() -> anyhow::Result<()> {
                 &mut city_menus,
             )
             .await;
+            if ok_d {
+                consecutive_failures = 0;
+            } else {
+                consecutive_failures += 1;
+                if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+                    tracing::error!(
+                        "Hedef sunucu ardışık {} istekte hata verdi. Kota israfını önlemek için tarama erken sonlandırılıyor.",
+                        consecutive_failures
+                    );
+                    break;
+                }
+            }
 
             let delay = rand::thread_rng().gen_range(1500..=3000);
             tokio::time::sleep(Duration::from_millis(delay)).await;
+        }
+
+        if consecutive_failures >= MAX_CONSECUTIVE_FAILURES {
+            break;
         }
 
         if city_menus.is_empty() {
@@ -404,7 +443,7 @@ async fn scrape_and_collect(
     meal_type: &str,
     shift: &str,
     collected_menus: &mut Vec<MenuDto>,
-) {
+) -> bool {
     let is_dinner = if meal_type == "dinner" {
         "true"
     } else {
@@ -413,7 +452,7 @@ async fn scrape_and_collect(
     let url = format!("https://kykyemek.com/Menu/GetDailyMenu/{}", slug);
 
     let mut attempt = 0;
-    let max_retries = 3;
+    let max_retries = 2;
 
     while attempt < max_retries {
         let mut req = with_xhr_headers(session.client.get(&url).query(&[
@@ -425,7 +464,7 @@ async fn scrape_and_collect(
         .header("X-Requested-With", "XMLHttpRequest")
         .header("Accept", "application/json, text/javascript, */*; q=0.01")
         .header("Referer", "https://kykyemek.com/")
-        .timeout(Duration::from_secs(30));
+        .timeout(Duration::from_secs(12));
 
         if let Some(ref tok) = session.token {
             req = req
@@ -447,7 +486,7 @@ async fn scrape_and_collect(
                                 meal_type,
                                 e
                             );
-                            return;
+                            return false;
                         }
                     };
 
@@ -481,7 +520,7 @@ async fn scrape_and_collect(
                         .header("Referer", "https://kykyemek.com/")
                         .header("Origin", "https://kykyemek.com")
                         .header("Accept", "text/html, */*; q=0.01")
-                        .timeout(Duration::from_secs(15));
+                        .timeout(Duration::from_secs(10));
 
                         if let Some(ref tok) = session.token {
                             fast_req = fast_req
@@ -555,10 +594,9 @@ async fn scrape_and_collect(
                         });
                     }
 
-                    return;
+                    return true;
                 } else if status == reqwest::StatusCode::FORBIDDEN
                     || status == reqwest::StatusCode::TOO_MANY_REQUESTS
-                    || status.is_server_error()
                 {
                     tracing::warn!(
                         "Sunucu veya engel hatası (HTTP {}): {} [{}]. Failover deneniyor...",
@@ -578,44 +616,48 @@ async fn scrape_and_collect(
                         *session = new_s;
                     } else {
                         tracing::error!("Havuzdaki tüm proxy oturumları tükendi.");
-                        return;
+                        return false;
                     }
+                } else if status.is_server_error() {
+                    // 5xx hatası hedef sunucu çöküşüdür; proxy ban'i sayılmaz.
+                    // Proxy değiştirilmez, böylece ek ana sayfa indirme maliyetine girilmez.
+                    tracing::warn!(
+                        "Hedef sunucu hatası (HTTP {}): {} [{}] (deneme {}/{})",
+                        status,
+                        slug,
+                        session.endpoint_label,
+                        attempt + 1,
+                        max_retries
+                    );
                 } else {
                     tracing::warn!(
-                        "HTTP {} ({} - {}), deneme {}",
+                        "HTTP {} ({} - {}), deneme {}/{}",
                         status,
                         slug,
                         meal_type,
-                        attempt + 1
+                        attempt + 1,
+                        max_retries
                     );
                 }
             }
             Err(e) => {
                 tracing::warn!(
-                    "Ağ/proxy bağlantı hatası ({:?}): {} [{}]. Failover deneniyor...",
+                    "Ağ/proxy bağlantı hatası ({:?}): {} [{}] (deneme {}/{})",
                     e,
                     slug,
-                    session.endpoint_label
+                    session.endpoint_label,
+                    attempt + 1,
+                    max_retries
                 );
-                session_cache.remove(&session.proxy_idx);
-                pool.trip_session_ban(session, &format!("Bağlantı hatası: {:?}", e))
-                    .await;
-                if let Some(new_s) = obtain_ready_session(pool, session_cache).await {
-                    tracing::info!(
-                        "Oturum devredildi: {} -> {}",
-                        session.endpoint_label,
-                        new_s.endpoint_label
-                    );
-                    *session = new_s;
-                } else {
-                    tracing::error!("Havuzdaki tüm proxy oturumları tükendi.");
-                    return;
-                }
             }
         }
 
         attempt += 1;
-        let backoff = 1 << attempt;
-        tokio::time::sleep(Duration::from_secs(backoff)).await;
+        if attempt < max_retries {
+            let backoff = 1 << attempt;
+            tokio::time::sleep(Duration::from_secs(backoff)).await;
+        }
     }
+
+    false
 }
