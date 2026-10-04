@@ -11,7 +11,7 @@ import { request, buildQuery } from './client.js';
 export function normalizeMenu(raw) {
   if (!raw || typeof raw !== 'object') return raw;
 
-  // Bazı response'larda öğeler doğrudan `foods` veya `meals` altında
+  // Bazı response'larda ögeler doğrudan `foods` veya `meals` altında
   // düz string listesi olarak gelebiliyor (kykyemek ham verisi gibi).
   const rawItemsText =
     raw.items_text ||

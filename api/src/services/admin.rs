@@ -280,7 +280,7 @@ pub async fn split_dish(
         .await?;
     let original_alias_ids: Vec<i32> = original_aliases.iter().map(|a| a.id).collect();
 
-    // 5. Bu alias'lara bağlı menü öğelerini bul ve çoğaltarak yeni alias'lara bağla
+    // 5. Bu alias'lara bağlı menü ögelerini bul ve çoğaltarak yeni alias'lara bağla
     let referenced_menus = shared::entities::menu_dishes::Entity::find()
         .filter(
             shared::entities::menu_dishes::Column::DishAliasId.is_in(original_alias_ids.clone()),

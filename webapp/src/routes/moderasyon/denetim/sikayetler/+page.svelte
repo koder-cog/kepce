@@ -285,7 +285,7 @@
     <EmptyState
       iconName={'check'}
       title="Liste Boş"
-      desc="Bu kategoride şu an işlem bekleyen öğe bulunmuyor."
+      desc="Bu kategoride şu an işlem bekleyen öge bulunmuyor."
     />
   {:else}
     <div class="comment-list">

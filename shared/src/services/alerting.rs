@@ -16,7 +16,7 @@ pub struct AlertingService;
 impl AlertingService {
     /// En az bir operatör uyarı kanalı (Telegram admin veya webhook) tanımlı mı?
     ///
-    /// Karantina akışı bu kontrole dayanır: kanal yoksa karantinaya düşen öğeler
+    /// Karantina akışı bu kontrole dayanır: kanal yoksa karantinaya düşen ögeler
     /// kimseye ulaşmaz ve sessiz kaybın yeni adı olur (plan 5.4).
     pub fn alert_channel_configured() -> bool {
         let telegram_ready = std::env::var("TELEGRAM_BOT_TOKEN")

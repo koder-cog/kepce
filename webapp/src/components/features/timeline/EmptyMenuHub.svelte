@@ -11,7 +11,7 @@
   let cityName = $derived(CITY_MAP[citySlug] || citySlug);
   let showGuides = $derived(isSummer || isOrientationSeason(date));
 
-  // Son menü öğelerini özetle
+  // Son menü ögelerini özetle
   let lastBreakfast = $derived.by(() => {
     if (!lastMenuDay?.menus) return null;
     const b = lastMenuDay.menus.find((m) => m.meal_type === 'breakfast');

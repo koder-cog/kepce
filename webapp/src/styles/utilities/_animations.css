@@ -1,6 +1,6 @@
 @layer utilities {
   /* ── Shake / Pulse Animations ─────────────────────────────── */
-  /* Tıklanan zaten-aktif UI öğeleri için sarsılma animasyonu.
+  /* Tıklanan zaten-aktif UI ögeleri için sarsılma animasyonu.
    Örn. Nav.svelte'de .anim-shake sınıfı ile kullanılır.
    (Eskiden _interactive.css içinde .disclaimer-card adıyla
    yanlış tanımlanmıştı - gerçek .disclaimer-card bileşeni

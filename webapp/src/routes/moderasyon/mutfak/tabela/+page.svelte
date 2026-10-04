@@ -877,7 +877,7 @@
                 class="btn btn--xs btn--ghost btn--squish"
                 disabled={isApplyingTemplate}
                 onclick={applyBreakfastTemplate}
-                title="Standart KYK kahvaltı öğelerini (Yumurta, Peynir, Zeytin, Reçel, Ekmek) otomatik doldurur"
+                title="Standart KYK kahvaltı ögelerini (Yumurta, Peynir, Zeytin, Reçel, Ekmek) otomatik doldurur"
               >
                 {isApplyingTemplate ? 'Yükleniyor...' : 'Kahvaltı Şablonu'}
               </button>

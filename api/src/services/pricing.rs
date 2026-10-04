@@ -66,7 +66,7 @@ pub async fn load_pricing_from_db(db: &DatabaseConnection) -> Result<(), anyhow:
                 _ => continue,
             };
 
-            // Büyük harfli isim kategorilere/öğelere eklenir
+            // Büyük harfli isim kategorilere/ögelere eklenir
             let key = p.category_name.to_uppercase();
             target_meal.categories.insert(key.clone(), info.clone());
             target_meal.items.insert(key, info);
