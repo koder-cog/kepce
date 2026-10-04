@@ -33,8 +33,13 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260927',
       version: '2026.09.27',
-      current: true,
       note: 'Doğal ve şeffaf dil revizyonu; özellik odaklı veri toplama açıklaması, kullanıcı menü yüklemeleri lisansı, 5651 silinen içerik saklama dengesi ve uyar-kaldır şikayet gizliliği eklendi.'
+    },
+    {
+      slug: '20261004',
+      version: '2026.10.04',
+      current: true,
+      note: '5651 ve KVKK çelişkisi giderildi; kamu menülerini inceleyen anonim ziyaretçiler için anlık bellek işlemesi ve sıfır log beyanı netleştirildi, 5651 yasal trafik kayıtları içerik üreten üyelere hasredildi.'
     }
   ],
   'kullanim-kosullari': [
@@ -61,8 +66,13 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260927',
       version: '2026.09.27',
-      current: true,
       note: 'Doğal dil revizyonu; kullanıcı menü yüklemeleri lisansı, FSEK Ek m. 8 alıntılama ve scraping sınırları, turnike/fiş fiyat önceliği ve uyar-kaldır şikayet gizliliği eklendi.'
+    },
+    {
+      slug: '20261004',
+      version: '2026.10.04',
+      current: true,
+      note: 'İçerik sağlayıcı ve yer sağlayıcı ayrımı netleştirildi; kamu menü okumalarında sıfır log, kullanıcı yorum/fotoğraf yüklemelerinde 5651 m. 5/3 yer sağlayıcı trafik kaydı esası bağlandı.'
     }
   ]
 };

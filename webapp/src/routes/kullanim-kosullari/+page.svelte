@@ -1,6 +1,6 @@
 <script>
   import ContentPage from '@/components/layout/ContentPage.svelte';
-  import CurrentContent from '$lib/data/legal/kullanim-kosullari/20260927.svelte';
+  import CurrentContent from '$lib/data/legal/kullanim-kosullari/20261004.svelte';
   import Seo from '@/components/ui/Seo.svelte';
 </script>
 
@@ -12,7 +12,7 @@
 
 <ContentPage
   title="Kepçe Kullanım Koşulları"
-  dateLabel="Son güncelleme: 27 Eylül 2026"
+  dateLabel="Son güncelleme: 4 Ekim 2026"
   archiveLink="/kullanim-kosullari/arsiv"
 >
   <CurrentContent />

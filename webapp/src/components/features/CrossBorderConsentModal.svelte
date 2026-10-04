@@ -71,18 +71,20 @@
   {#snippet children()}
     <p>
       Kepçe'nin sunucuları Fransa'da barınıyor. Sitedeki menüleri ve fiyatları incelemek için üyelik
-      gerekmiyor ancak oy vermek ve yorum yapmak için açtığın hesabın verileri mevzuat gereği teknik
-      olarak yurt dışına aktarılmış sayılıyor.
+      gerekmiyor ancak oy vermek, yorum yapmak veya fotoğraf yüklemek için açtığın hesabın verileri
+      ile yasal trafik kayıtları mevzuat gereği teknik olarak yurt dışına aktarılmış sayılıyor.
     </p>
     <p class="u-mt-sm">
       {#if !isExpired}
-        KVKK Madde 9 uyarınca hesabını bu şekilde kullanabilmen için {remainingDays} gün içinde onay vermen
-        gerekiyor. Verilerin kimseye satılmaz veya pazarlama için kullanılmaz. Ayrıntılara dilediğin zaman
-        aydınlatma metninden bakabilirsin.
+        KVKK Madde 9 uyarınca muhtemel riskler hakkında bilgilendirilerek hesabını bu şekilde
+        kullanabilmen için {remainingDays} gün içinde açık rıza vermen gerekiyor. Verilerin kimseye satılmaz
+        veya pazarlama için kullanılmaz. Ayrıntılara ve yasal haklarına dilediğin zaman aydınlatma metninden
+        bakabilirsin.
       {:else}
-        KVKK Madde 9 uyarınca hesabını bu şekilde kullanabilmen için onay vermen gerekiyor.
-        Verilerin kimseye satılmaz veya pazarlama için kullanılmaz. Ayrıntılara dilediğin zaman
-        aydınlatma metninden bakabilirsin.
+        KVKK Madde 9 uyarınca muhtemel riskler hakkında bilgilendirilerek hesabını bu şekilde
+        kullanabilmen için açık rıza vermen gerekiyor. Verilerin kimseye satılmaz veya pazarlama
+        için kullanılmaz. Ayrıntılara ve yasal haklarına dilediğin zaman aydınlatma metninden
+        bakabilirsin.
       {/if}
     </p>
   {/snippet}
