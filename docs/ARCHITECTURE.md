@@ -46,10 +46,3 @@ Origin sunucusu dışarıdan yalnızca SSH (22) kabul eder. Tüm genel trafik
 Cloudflare Tunnel üzerinden akar ve Caddy portları loopback adresine bağlıdır.
 Dahili ingest uç noktası Cloudflare Access service token ile bot korumasından
 muaf tutulur.
-
-Operasyon belgeleri:
-
-- [`operations/cloudflare-tunnel.md`](operations/cloudflare-tunnel.md): tünel kurulumu, doğrulama, sorun giderme ve geri alma.
-- [`operations/cloudflare-waf-bypass.md`](operations/cloudflare-waf-bypass.md): dahili ingest yolu için WAF muafiyeti.
-- [`operations/file-retention.md`](operations/file-retention.md): karantina ve reddedilen arşiv için saklama süreleri.
-- [`decisions/llm-reasoning-effort.md`](decisions/llm-reasoning-effort.md): LLM muhakeme eforu karar kaydı.
