@@ -4,7 +4,7 @@
 //! kalıplarının dosya sistemine uyarlanmış halidir:
 //! - Her şüpheli dosya önce `_karantina/` altına düşer, veritabanına HİÇBİR ŞEY
 //!   yazılmaz. Karar (onayla/reddet) operatör tarafından Telegram üzerinden verilir.
-//! - Kuyruk iki metrikle izlenir: bekleyen öğe sayısı ve EN ESKİ öğenin yaşı.
+//! - Kuyruk iki metrikle izlenir: bekleyen öge sayısı ve EN ESKİ ögenin yaşı.
 //! - Otomatik yeniden deneme YOKTUR; sonlu bir TTL ve gürültülü sonuç vardır.
 //!   TTL dolduğunda dosya `hatali/` altına taşınır ve kırmızı alarm üretilir.
 //!
@@ -62,6 +62,10 @@ pub enum ReasonCode {
     OfficialPricingDocument,
     /// Al Götür menü paketi / slot listesi.
     TakeawayDocument,
+    /// Şüpheli fiyat belgesi sınıflandırması (düşük kalem veya 0 TL; yan menü şüphesi).
+    SuspiciousPricingClassification,
+    /// Boş öğün anomalisi (0 yemekli veya boş gün/öğün çıkarımı).
+    EmptyMealAnomaly,
 }
 
 impl ReasonCode {
@@ -81,6 +85,8 @@ impl ReasonCode {
             ReasonCode::TtlExpired => "TTL_EXPIRED",
             ReasonCode::OfficialPricingDocument => "OFFICIAL_PRICING_DOCUMENT",
             ReasonCode::TakeawayDocument => "TAKEAWAY_DOCUMENT",
+            ReasonCode::SuspiciousPricingClassification => "SUSPICIOUS_PRICING_CLASSIFICATION",
+            ReasonCode::EmptyMealAnomaly => "EMPTY_MEAL_ANOMALY",
         }
     }
 }
@@ -131,7 +137,7 @@ pub struct QuarantineMeta {
     pub notify_count: u32,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_notified_at: Option<String>,
-    /// Öğenin nasıl sonuçlandığı: approved | rejected | ttl_expired | assigned.
+    /// Ögenin nasıl sonuçlandığı: approved | rejected | ttl_expired | assigned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resolution: Option<String>,
 }
@@ -154,7 +160,7 @@ pub struct QuarantineDetail {
     pub parsed_takeaway: Option<crate::parser::models::TakeawayData>,
 }
 
-/// Kuyruktaki bir öğe: meta + dosya ve yan dosya yolları.
+/// Kuyruktaki bir öge: meta + dosya ve yan dosya yolları.
 #[derive(Debug, Clone)]
 pub struct QueueItem {
     pub meta: QuarantineMeta,
@@ -163,7 +169,7 @@ pub struct QueueItem {
 }
 
 impl QueueItem {
-    /// Öğenin bekleme yaşı (gün). `first_seen_at` okunamazsa dosya mtime'ı.
+    /// Ögenin bekleme yaşı (gün). `first_seen_at` okunamazsa dosya mtime'ı.
     pub async fn age_days(&self) -> i64 {
         let now = Utc::now();
         if let Ok(first) = DateTime::parse_from_rfc3339(&self.meta.first_seen_at) {
@@ -421,7 +427,7 @@ pub async fn list_queue(base_dir: &str) -> Vec<QueueItem> {
     items
 }
 
-/// ID (tam veya önek) ile kuyruk öğesi bulur.
+/// ID (tam veya önek) ile kuyruk ögesi bulur.
 pub async fn find_item(base_dir: &str, id: &str) -> Option<QueueItem> {
     let clean_query = id
         .trim()
@@ -457,7 +463,7 @@ pub enum NotifyKind {
     TtlExpired,
 }
 
-/// Karantina öğesi için standart inline buton klavyesini üretir.
+/// Karantina ögesi için standart inline buton klavyesini üretir.
 pub fn item_inline_keyboard(id: &str) -> serde_json::Value {
     serde_json::json!({
         "inline_keyboard": [
@@ -480,7 +486,7 @@ pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> S
         NotifyKind::New => format!("KARANTİNA: {}", item.meta.id),
         NotifyKind::Reminder => format!("KARANTİNA HATIRLATMA: {}", item.meta.id),
         NotifyKind::Escalation => format!(
-            "KARANTİNA KRİTİK: {} (bu öğe {} gündür bekliyor, {} gün eşiği aşıldı)",
+            "KARANTİNA KRİTİK: {} (bu öge {} gündür bekliyor, {} gün eşiği aşıldı)",
             item.meta.id,
             age_days,
             escalate_days()
@@ -561,18 +567,29 @@ pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> S
         lines.push(format!("• {}", d));
     }
     if kind != NotifyKind::TtlExpired {
+        if item.meta.reason_code == ReasonCode::SuspiciousPricingClassification {
+            lines.push(format!(
+                "Karar: /yeniden_ayristir {} 90  veya  /onayla {} menu",
+                item.meta.id, item.meta.id
+            ));
+            lines.push(format!(
+                "(Orijinal belge kontrolü için: /dosya {})",
+                item.meta.id
+            ));
+        } else {
+            lines.push(format!(
+                "Karar: /onayla {}  veya  /reddet {}{}",
+                item.meta.id,
+                item.meta.id,
+                if item.meta.city.is_none() {
+                    format!("  (şehirsiz öge için önce /ata {} <sehir>)", item.meta.id)
+                } else {
+                    String::new()
+                }
+            ));
+        }
         lines.push(format!(
-            "Karar: /onayla {}  veya  /reddet {}{}",
-            item.meta.id,
-            item.meta.id,
-            if item.meta.city.is_none() {
-                format!("  (şehirsiz öğe için önce /ata {} <sehir>)", item.meta.id)
-            } else {
-                String::new()
-            }
-        ));
-        lines.push(format!(
-            "(TTL: {} gün · bu öğe {} gündür bekliyor)",
+            "(TTL: {} gün · bu öge {} gündür bekliyor)",
             ttl, age_days
         ));
     }
@@ -601,7 +618,7 @@ pub async fn notify_item(item: &mut QueueItem, kind: NotifyKind) {
     if !shared::services::alerting::AlertingService::alert_channel_configured() {
         tracing::error!(
             "[KARANTİNA] Uyarı kanalı TANIMLI DEĞİL (TELEGRAM_ADMIN_CHAT_ID / ALERT_WEBHOOK_URL yok). \
-             Karantinaya düşen öğe operatöre ULAŞMAYACAK: {} ({}) — {}",
+             Karantinaya düşen öge operatöre ULAŞMAYACAK: {} ({}) — {}",
             item.meta.id,
             item.meta.reason_code.as_str(),
             item.meta.file
@@ -746,7 +763,7 @@ pub async fn sweep(base_dir: &str) -> Result<SweepReport> {
         let critical = oldest_age >= escalate;
         let icon = if critical { "🔴" } else { "🟠" };
         let mut lines = vec![format!(
-            "{} KARANTİNA ÖZETİ: {} öğe karar bekliyor, en eskisi {} gündür bekliyor (TTL {} gün).",
+            "{} KARANTİNA ÖZETİ: {} öge karar bekliyor, en eskisi {} gündür bekliyor (TTL {} gün).",
             icon,
             remaining.len(),
             oldest_age,
@@ -768,7 +785,7 @@ pub async fn sweep(base_dir: &str) -> Result<SweepReport> {
             ));
         }
         if remaining.len() > 10 {
-            lines.push(format!("… ve {} öğe daha", remaining.len() - 10));
+            lines.push(format!("… ve {} öge daha", remaining.len() - 10));
         }
         let msg = lines.join("\n");
         if let Err(e) = shared::services::alerting::AlertingService::send_webhook_alert(&msg).await
@@ -824,7 +841,7 @@ pub async fn format_queue_listing(base_dir: &str) -> String {
         return "✅ Karantina kuyruğu boş. Karar bekleyen dosya yok.".to_string();
     }
     let mut lines = vec![format!(
-        "🟠 *Karantina Kuyruğu* ({} öğe · TTL {} gün):",
+        "🟠 *Karantina Kuyruğu* ({} öge · TTL {} gün):",
         items.len(),
         ttl_days()
     )];
@@ -1075,7 +1092,7 @@ mod tests {
         let _ = tokio::fs::remove_dir_all(&base).await;
     }
 
-    /// TTL'i dolan öğe `hatali/` altına taşınır ve meta `ttl_expired` işaretlenir.
+    /// TTL'i dolan öge `hatali/` altına taşınır ve meta `ttl_expired` işaretlenir.
     #[tokio::test]
     async fn test_sweep_moves_expired_to_hatali() {
         let base = std::env::temp_dir().join(format!("kepce_q_ttl_{}", uuid::Uuid::new_v4()));
@@ -1113,7 +1130,7 @@ mod tests {
         let _ = tokio::fs::remove_dir_all(&base).await;
     }
 
-    /// Taze öğe TTL taramasında yerinde kalır.
+    /// Taze öge TTL taramasında yerinde kalır.
     #[tokio::test]
     async fn test_sweep_keeps_fresh_items() {
         let base = std::env::temp_dir().join(format!("kepce_q_fresh_{}", uuid::Uuid::new_v4()));

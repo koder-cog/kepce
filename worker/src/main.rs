@@ -230,7 +230,7 @@ async fn main() -> anyhow::Result<()> {
 
     if std::env::var("WORKER_HISTORICAL_INGEST").is_ok() {
         let historical_file = std::env::var("WORKER_HISTORICAL_FILE").unwrap_or_else(|_| {
-            ".scratch/archive/historical_menus/unified/master_historical_menus.json".to_string()
+            "data/archive/historical_menus/unified/master_historical_menus.json".to_string()
         });
         tracing::info!(
             "[HISTORICAL] Tarihsel menü Worker ingest başlatılıyor: {}",

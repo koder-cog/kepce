@@ -5,7 +5,7 @@ use reqwest::Client;
 use serde_json::json;
 use std::path::Path;
 
-fn detect_mime_type(path: &Path, bytes: &[u8]) -> &'static str {
+pub fn detect_mime_type(path: &Path, bytes: &[u8]) -> &'static str {
     let ext = path
         .extension()
         .and_then(|e| e.to_str())
@@ -465,7 +465,7 @@ pub fn resolve_thinking_level() -> String {
         .ok()
         .map(|s| s.trim().to_lowercase())
         .filter(|s| !s.is_empty())
-        .unwrap_or_else(|| "high".to_string())
+        .unwrap_or_else(|| "low".to_string())
 }
 
 /// Kota/yoğunluk kaynaklı hatalarda modeli değiştirmek gerekir.
@@ -613,7 +613,8 @@ pub fn parse_and_finalize_polymorphic(
         .unwrap_or("");
 
     // 1. Resmi Fiyat Panosu
-    if doc_type == "official_pricing" || val.get("pricing_board").is_some() {
+    if doc_type == "official_pricing" || (doc_type.is_empty() && val.get("pricing_board").is_some())
+    {
         let pricing_val = val.get("pricing_board").unwrap_or(&val);
         let items_val = pricing_val.get("items").and_then(|i| i.as_array());
         if let Some(items_arr) = items_val
@@ -681,101 +682,43 @@ pub fn parse_and_finalize_polymorphic(
         }
     }
 
-    // 2. Al Götür Menü Paketi
-    if doc_type == "takeaway_package" || val.get("takeaway").is_some() {
-        let takeaway_val = val.get("takeaway").unwrap_or(&val);
-        let pkgs_val = takeaway_val.get("packages").and_then(|p| p.as_array());
-        if let Some(pkgs_arr) = pkgs_val
-            && !pkgs_arr.is_empty()
-        {
-            let mut packages = Vec::new();
-            for pkg in pkgs_arr {
-                let package_name = pkg
-                    .get("package_name")
-                    .and_then(|n| n.as_str())
-                    .unwrap_or("Al Götür")
-                    .trim()
-                    .to_string();
-                let mut slots = Vec::new();
-                if let Some(slots_arr) = pkg.get("slots").and_then(|s| s.as_array()) {
-                    for slot in slots_arr {
-                        let slot_index =
-                            slot.get("slot_index").and_then(|i| i.as_i64()).unwrap_or(1) as i32;
-                        let slot_title = slot
-                            .get("slot_title")
-                            .and_then(|t| t.as_str())
-                            .map(|s| s.trim().to_string());
-                        let is_required = slot
-                            .get("is_required")
-                            .and_then(|r| r.as_bool())
-                            .unwrap_or(true);
-                        let mut items = Vec::new();
-                        if let Some(items_arr) = slot.get("items").and_then(|i| i.as_array()) {
-                            for item in items_arr {
-                                let dish_name = item
-                                    .get("dish_name")
-                                    .or_else(|| item.get("name"))
-                                    .and_then(|n| n.as_str())
-                                    .unwrap_or("")
-                                    .trim()
-                                    .to_string();
-                                let portion = item
-                                    .get("portion")
-                                    .or_else(|| item.get("amount"))
-                                    .and_then(|p| p.as_str())
-                                    .map(|s| s.trim().to_string());
-                                if !dish_name.is_empty() {
-                                    items.push(crate::parser::models::TakeawayItemData {
-                                        dish_name,
-                                        portion,
-                                    });
-                                }
-                            }
-                        }
-                        slots.push(crate::parser::models::TakeawaySlotData {
-                            slot_index,
-                            slot_title,
-                            is_required,
-                            items,
-                        });
-                    }
-                }
-                packages.push(crate::parser::models::TakeawayPackageData {
-                    package_name,
-                    slots,
-                });
+    // 2. Çok Biçimli Menü / Al Götür / Compound Ayrıştırması
+    let takeaway_opt = parse_takeaway_from_value(&val);
+    let menu_opt = if let Ok((mut db, mismatches)) =
+        crate::parser::json::parse_json_str_with_diagnostics(cleaned, file_name_hint)
+    {
+        if !db.is_empty() {
+            for day_data in db.values_mut() {
+                crate::parser::validation::finalize_day_metadata(day_data);
             }
-
-            let academic_year = val
-                .get("academic_year")
-                .and_then(|s| s.as_str())
-                .map(|s| s.to_string());
-            let city_slug = val
-                .get("city")
-                .and_then(|s| s.as_str())
-                .map(|s| s.to_lowercase());
-
-            return Ok((
-                crate::parser::models::ParsedDocumentPayload::Takeaway(
-                    crate::parser::models::TakeawayData {
-                        city_slug,
-                        academic_year,
-                        packages,
-                    },
-                ),
-                Vec::new(),
-            ));
+            Some((db, mismatches))
+        } else {
+            None
         }
+    } else {
+        None
+    };
+
+    if doc_type == "compound" || (takeaway_opt.is_some() && menu_opt.is_some()) {
+        let (db, mismatches) = menu_opt.unwrap_or_default();
+        return Ok((
+            crate::parser::models::ParsedDocumentPayload::Compound {
+                menu: if db.is_empty() { None } else { Some(db) },
+                pricing: None,
+                takeaway: takeaway_opt,
+            },
+            mismatches,
+        ));
     }
 
-    // 3. Günlük Tabldot Menü (varsayılan veya doc_type == "daily_menu")
-    if let Ok((mut db, mismatches)) =
-        crate::parser::json::parse_json_str_with_diagnostics(cleaned, file_name_hint)
-        && !db.is_empty()
-    {
-        for day_data in db.values_mut() {
-            crate::parser::validation::finalize_day_metadata(day_data);
-        }
+    if let Some(takeaway_data) = takeaway_opt {
+        return Ok((
+            crate::parser::models::ParsedDocumentPayload::Takeaway(takeaway_data),
+            Vec::new(),
+        ));
+    }
+
+    if let Some((db, mismatches)) = menu_opt {
         return Ok((
             crate::parser::models::ParsedDocumentPayload::DailyMenu(db),
             mismatches,
@@ -788,14 +731,98 @@ pub fn parse_and_finalize_polymorphic(
     );
 }
 
+fn parse_takeaway_from_value(
+    val: &serde_json::Value,
+) -> Option<crate::parser::models::TakeawayData> {
+    let takeaway_val = val.get("takeaway").unwrap_or(val);
+    let pkgs_val = takeaway_val.get("packages").and_then(|p| p.as_array())?;
+    if pkgs_val.is_empty() {
+        return None;
+    }
+
+    let mut packages = Vec::new();
+    for pkg in pkgs_val {
+        let package_name = pkg
+            .get("package_name")
+            .and_then(|n| n.as_str())
+            .unwrap_or("Al Götür")
+            .trim()
+            .to_string();
+        let mut slots = Vec::new();
+        if let Some(slots_arr) = pkg.get("slots").and_then(|s| s.as_array()) {
+            for slot in slots_arr {
+                let slot_index =
+                    slot.get("slot_index").and_then(|i| i.as_i64()).unwrap_or(1) as i32;
+                let slot_title = slot
+                    .get("slot_title")
+                    .and_then(|t| t.as_str())
+                    .map(|s| s.trim().to_string());
+                let is_required = slot
+                    .get("is_required")
+                    .and_then(|r| r.as_bool())
+                    .unwrap_or(true);
+                let mut items = Vec::new();
+                if let Some(items_arr) = slot.get("items").and_then(|i| i.as_array()) {
+                    for item in items_arr {
+                        let dish_name = item
+                            .get("dish_name")
+                            .or_else(|| item.get("name"))
+                            .and_then(|n| n.as_str())
+                            .unwrap_or("")
+                            .trim()
+                            .to_string();
+                        let portion = item
+                            .get("portion")
+                            .or_else(|| item.get("amount"))
+                            .and_then(|p| p.as_str())
+                            .map(|s| s.trim().to_string());
+                        if !dish_name.is_empty() {
+                            items.push(crate::parser::models::TakeawayItemData {
+                                dish_name,
+                                portion,
+                            });
+                        }
+                    }
+                }
+                slots.push(crate::parser::models::TakeawaySlotData {
+                    slot_index,
+                    slot_title,
+                    is_required,
+                    items,
+                });
+            }
+        }
+        packages.push(crate::parser::models::TakeawayPackageData {
+            package_name,
+            slots,
+        });
+    }
+
+    let academic_year = val
+        .get("academic_year")
+        .and_then(|s| s.as_str())
+        .map(|s| s.to_string());
+    let city_slug = val
+        .get("city")
+        .and_then(|s| s.as_str())
+        .map(|s| s.to_lowercase());
+
+    Some(crate::parser::models::TakeawayData {
+        city_slug,
+        academic_year,
+        packages,
+    })
+}
+
 /// Sağlayıcıdan bağımsız istek verisi (istem metni + belge + şema).
-struct LlmRequest<'a> {
-    prompt: &'a str,
-    mime_type: &'a str,
-    base64_data: &'a str,
+pub struct LlmRequest<'a> {
+    pub prompt: &'a str,
+    pub mime_type: &'a str,
+    pub base64_data: &'a str,
     /// Gemini Interactions API için `document` | `image`.
-    input_type: &'a str,
-    schema: &'a serde_json::Value,
+    pub input_type: &'a str,
+    /// İsteğe bağlı yanıt şeması (`None` ise modelden ham düz metin istenir).
+    pub schema: Option<&'a serde_json::Value>,
 }
 
 /// OpenRouter `/chat/completions` çağrısı (OpenAI uyumlu şema).
@@ -823,30 +850,38 @@ async fn call_openrouter(
         .and_then(|v| v.trim().parse().ok())
         .unwrap_or(32000);
 
+    let mut content = Vec::new();
+    if !req.base64_data.is_empty() {
+        // OpenAI / OpenRouter vision standardı: taranmış tablolarda düşük çözünürlüğe
+        // düşmemesi için detail="high" zorunlu; görsel parça talimattan önce gelir.
+        content.push(json!({
+            "type": "image_url",
+            "image_url": {
+                "url": format!("data:{};base64,{}", req.mime_type, req.base64_data),
+                "detail": "high"
+            }
+        }));
+    }
+    content.push(json!({
+        "type": "text",
+        "text": req.prompt
+    }));
+
     let mut payload = json!({
         "model": model,
         "messages": [{
             "role": "user",
-            "content": [
-                { "type": "text", "text": req.prompt },
-                {
-                    "type": "image_url",
-                    "image_url": { "url": format!("data:{};base64,{}", req.mime_type, req.base64_data) }
-                }
-            ]
+            "content": content
         }],
-        "response_format": {
-            "type": "json_schema",
-            "json_schema": { "name": "document", "strict": true, "schema": req.schema }
-        },
-        // NOT: `provider.require_parameters: true` BİLİNÇLİ OLARAK KULLANILMAZ.
-        // Canlıda doğrulandı: bu bayrak, akışı 502 "provider_unavailable" ile
-        // bozan bir uç noktaya yönlendiriyor ve KESİK JSON döndürüyor
-        // (menu_bursa.pdf -> 1 gün / 0 kayıt). Bayrak kaldırıldığında aynı dosya
-        // 28-31 gün olarak eksiksiz ayrıştırılıyor.
-        // Muhakeme token'ları bu bütçeden düşer; cömert tutulur.
         "max_tokens": max_tokens
     });
+
+    if let Some(schema) = req.schema {
+        payload["response_format"] = json!({
+            "type": "json_schema",
+            "json_schema": { "name": "document", "strict": true, "schema": schema }
+        });
+    }
 
     if !effort.is_empty()
         && let Some(obj) = payload.as_object_mut()
@@ -858,6 +893,8 @@ async fn call_openrouter(
         .post(&url)
         .header("Authorization", format!("Bearer {}", api_key))
         .header("Content-Type", "application/json")
+        .header("HTTP-Referer", "https://kepce.org")
+        .header("X-Title", "Kepce Menu Worker")
         .json(&payload)
         .send()
         .await
@@ -919,29 +956,47 @@ async fn call_gemini(
 ) -> Result<String> {
     let url = "https://generativelanguage.googleapis.com/v1beta/interactions";
 
+    let mut input = Vec::new();
+    if !req.base64_data.is_empty() {
+        input.push(json!({
+            "type": req.input_type,
+            "mime_type": req.mime_type,
+            "data": req.base64_data,
+            "media_resolution": "high",
+        }));
+    }
+    input.push(json!({
+        "type": "text",
+        "text": req.prompt
+    }));
+
+    let response_format = if let Some(schema) = req.schema {
+        json!({
+            "type": "text",
+            "mime_type": "application/json",
+            "schema": schema
+        })
+    } else {
+        json!({
+            "type": "text",
+            "mime_type": "text/plain"
+        })
+    };
+
     let mut payload = json!({
         "model": model,
         "store": false,
-        "input": [
-            { "type": "text", "text": req.prompt },
-            { "type": req.input_type, "mime_type": req.mime_type, "data": req.base64_data }
-        ],
-        "response_format": {
-            "type": "text",
-            "mime_type": "application/json",
-            "schema": req.schema
-        }
+        "input": input,
+        "response_format": response_format
     });
 
-    // Yüksek muhakeme. Alan adı canlıda doğrulandı:
-    // generation_config.thinking_level = "high" -> HTTP 200 + thought token.
-    if !thinking_level.is_empty()
-        && let Some(obj) = payload.as_object_mut()
-    {
-        obj.insert(
-            "generation_config".to_string(),
-            json!({ "thinking_level": thinking_level }),
-        );
+    if !thinking_level.is_empty() {
+        let gen_config = json!({
+            "thinking_level": thinking_level
+        });
+        if let Some(obj) = payload.as_object_mut() {
+            obj.insert("generation_config".to_string(), gen_config);
+        }
     }
 
     let res = client
@@ -988,72 +1043,498 @@ Examine the provided image or document carefully and determine its 'document_typ
 - 'takeaway_package': Takeaway meal packages (Al Götür Menü 1, 2, 3...) with customizable selection slots (Sandviç, İçecek, Meyve/Tatlı, Su vb.).
 - 'compound': Contains multiple distinct data types (e.g. daily menus alongside takeaway slots or price lists).
 
+Important classification rules:
+- If a document contains a table/grid of meals across days or weeks with portion amounts (e.g. 250g, 200g, 100g) but without explicit monetary prices in TL, it is a 'daily_menu', NOT 'official_pricing'.
+- Official pricing boards must specify monetary prices (Ücret, Fiyat, TL). An item with 0 TL is not a valid pricing item unless explicitly labeled as free.
+- If the document is rotated sideways or upside down, first observe the orientation and attempt to read the content in its correct reading direction. If the table layout contains dates or days of the week, extract it as 'daily_menu'.
+
 Extract all details strictly into the corresponding fields of the JSON schema:
 1. If official_pricing: Extract every single row into 'pricing_board.items' with meal_type ('breakfast' for Kahvalti, 'dinner' for Aksam/Yemek, 'lunch' for Ogle), category_name (item name in uppercase), portion_amount, and numeric price in TL. If dates or academic year are stated (e.g. 2026-2027), extract period_start and period_end.
 2. If takeaway_package: Extract each package into 'takeaway.packages', including slots (index, title, is_required) and alternative item names and portions.
 3. If daily_menu: Extract all days into 'days' with ISO dates (YYYY-MM-DD), date_raw, meal_type, food items, amounts, calories, and alternatives.
 Output strictly conforming to the requested JSON schema.";
 
-pub async fn parse_document_with_llm_polymorphic(
-    client: &Client,
-    gemini_api_key: Option<&str>,
-    file_path: &Path,
-) -> Result<(
-    crate::parser::models::ParsedDocumentPayload,
-    crate::parser::core::ParseDiagnostics,
-)> {
-    tracing::info!(
-        "Belge LLM (çok biçimli) ile ayrıştırılıyor: {:?}",
-        file_path
-    );
+pub const TABLE_GRID_EXTRACTION_PROMPT: &str = "Bu menü tablosunu CSV formatına dönüştür.
+Sütunlar: Tarih,Gün,Yemek / Ürün,Gramaj,Enerji
+Kurallar:
+1. Her yemek kalemini kendi satırında göster.
+2. Tablodaki tüm günleri (1'den 31'e kadar) eksiksiz aktar.
+3. Varsa tablonun altındaki dipnot ve idari kuralları en sona ekle.
+4. Sadece CSV tablosunu sun.";
 
-    let metadata = tokio::fs::metadata(file_path)
-        .await
-        .context(format!("Dosya metadata'sı okunamadı: {:?}", file_path))?;
-    if metadata.len() > 50 * 1024 * 1024 {
-        anyhow::bail!("Dosya boyutu limitini aşıyor (max 50MB): {:?}", file_path);
+pub const TAGGED_GRID_EXTRACTION_PROMPT: &str = r#"Bu sayfadaki menü, paket veya fiyat tablosunu yapılandırılmış etiketli metin blokları olarak aktar.
+
+1. Sayfanın en başına belge türünü belirten tek satırlık başlık koy:
+   [BELGE_TURU: AKŞAM] veya [BELGE_TURU: KAHVALTI] veya [BELGE_TURU: AL_GÖTÜR] veya [BELGE_TURU: FIYAT_LISTESI]
+
+2. Standart menü tablosu varsa [TABLO] bloğu altına CSV formatında yaz:
+   [TABLO]
+   Tarih,Gün,Öğün,Yemek / Ürün,Gramaj,Kalori / Enerji,Günlük Toplam Kalori
+   - Tablodaki her bir yemek/ürün satırını ayrı satır olarak yaz.
+   - Alternatifli yemekleri varsa '/' ile veya 'veya' ile ayrıldığı gibi yaz.
+   - Yemeklerin kendi gramaj ve kalorisi varsa Gramaj ve Kalori sütununa yaz.
+   - Günlük toplam kalori belirtilmişse (ör. 1178 kcal) Günlük Toplam Kalori sütununa yaz.
+
+3. Al götür / paket menü tanımları (Paket reçeteleri / Menü 1-4 vb.) varsa [PAKETLER] bloğu altına yaz:
+   [PAKETLER]
+   Paket No / Adı: ...
+   İçerik / Yuvalar:
+   - 1. Ürün / Seçenekler: ... (Gramaj)
+   - 2. Ürün / Seçenekler: ... (Gramaj)
+
+4. Paket menünün takvim dağılımı (hangi gün hangi paket verilecek) varsa [TAKVİM] bloğu altına CSV olarak yaz:
+   [TAKVİM]
+   Tarih,Gün,Paket Adı / No,Ekstralar / Notlar
+
+5. Sayfada yer alan dipnotlar, idari kurallar, piknik paket veya diyet notları varsa [DIPNOTLAR] bloğu altına yaz:
+   [DIPNOTLAR]
+   - ...
+
+Kurallar:
+- Sadece bu etiketli blokları ([BELGE_TURU], [TABLO], [PAKETLER], [TAKVİM], [DIPNOTLAR]) kullan.
+- Sohbet veya açıklama metni ekleme."#;
+
+pub fn build_csv_to_menu_prompt(csv_content: &str) -> String {
+    format!(
+        r#"Aşağıdaki menü CSV tablosunu belirtilen JSON şemasına dönüştür.
+
+CSV Verisi:
+```csv
+{}
+```
+
+Kurallar:
+1. Her günü 'days' dizisinde ISO formatında (YYYY-MM-DD) tarih, date_raw, meal_type ve o güne ait yemek kalemleri ('items': name, amount, calories, alternatives) ile listele.
+2. Belge kahvaltı menüsü ise meal_type='breakfast', akşam yemeği ise meal_type='dinner' yap.
+3. Varsa dipnotlardaki alternatif kurallarını (örn. tulum peynirine alternatif beyaz peynir) ilgili günün yemek kalemlerine alternatif olarak ekle.
+4. Sadece JSON çıktısı ver."#,
+        csv_content
+    )
+}
+
+pub fn build_tagged_grid_to_payload_prompt(grid_content: &str) -> String {
+    format!(
+        r#"Aşağıdaki yapılandırılmış etiketli menü/fiyat verisini belirtilen JSON şemasına dönüştür.
+
+Girdi Verisi:
+```text
+{}
+```
+
+Kurallar:
+1. Belge Türü Tespiti (document_type):
+   - Eğer sadece günlük menü tablosu varsa 'daily_menu'.
+   - Eğer sadece paket/al götür reçeteleri varsa 'takeaway_package'.
+   - Eğer hem günlük menü hem paket reçeteleri/takvimi varsa 'compound'.
+   - Eğer fiyat listesi / gramaj panosu ise 'official_pricing'.
+
+2. Günlük Menü (days dizisi):
+   - Her günü ISO 8601 YYYY-MM-DD formatında 'date', kaynak metindeki haliyle 'date_raw' ve 'meal_type' ('breakfast' / 'dinner' / 'lunch') ile aktar.
+   - Tabloda veya dipnotta o güne ait günlük toplam kalori varsa 'calories' alanına yaz (ör. '1178 kcal').
+   - Her yemek kalemini 'items' dizisinde: 'name', 'amount' (gramaj), 'calories' (yemek kalorisi) olarak ayıkla.
+   - Alternatif seçenekler varsa (örn. Çorba alternatifi veya Meyve/Tatlı alternatifi) 'alternatives' dizisine ekle.
+
+3. Al Götür Paketleri (takeaway.packages):
+   - Her paketi ('Al Götür Menü 1', 'Al Götür Menü 2' vb.) 'packages' içine yerleştir.
+   - Her yuva/slot için 'slot_index', 'slot_title' ve sunulan alternatif ürünleri 'items' (dish_name, portion) olarak listele.
+
+4. Sadece JSON formatında çıktı ver."#,
+        grid_content
+    )
+}
+
+pub fn daily_menu_table_response_schema() -> serde_json::Value {
+    let item_schema = json!({
+        "type": "object",
+        "properties": {
+            "name": {
+                "type": "string",
+                "description": "Standardized Turkish name of the food item."
+            },
+            "amount": {
+                "type": "string",
+                "description": "Portion size or grammage if explicitly present in table (e.g. '250 g', '1 Adet')."
+            },
+            "calories": {
+                "type": "string",
+                "description": "Calories if explicitly present in table (e.g. '350 kcal', '120-160')."
+            },
+            "alternatives": {
+                "type": "array",
+                "description": "List of alternative options if this dish offers choices (e.g. 'Tavuk Sote / Kuru Fasulye').",
+                "items": { "type": "string" }
+            }
+        },
+        "required": ["name"]
+    });
+
+    let day_schema = json!({
+        "type": "object",
+        "properties": {
+            "date": {
+                "type": "string",
+                "description": "Strict ISO 8601 date string (YYYY-MM-DD)."
+            },
+            "date_raw": {
+                "type": "string",
+                "description": "Verbatim date text as written in the source table (e.g. '01.09.2026')."
+            },
+            "meal_type": {
+                "type": "string",
+                "enum": ["breakfast", "dinner", "lunch"],
+                "description": "'breakfast' for Kahvalti, 'dinner' for Aksam/Yemek, 'lunch' for Ogle."
+            },
+            "items": {
+                "type": "array",
+                "description": "Dishes served on this day.",
+                "items": item_schema
+            }
+        },
+        "required": ["date", "items"]
+    });
+
+    json!({
+        "type": "object",
+        "description": "Schema for daily menu table extraction.",
+        "properties": {
+            "document_type": {
+                "type": "string",
+                "enum": ["daily_menu"]
+            },
+            "period": {
+                "type": "string",
+                "description": "Period or month name if present (e.g. 'Eylül 2026')."
+            },
+            "is_colyak": {
+                "type": "boolean",
+                "description": "True only if this is specifically a Celiac/Glutensiz menu."
+            },
+            "days": {
+                "type": "array",
+                "description": "Every single row of daily meals extracted from the CSV table.",
+                "items": day_schema
+            }
+        },
+        "required": ["document_type", "days"]
+    })
+}
+
+fn is_chatter_line(line: &str) -> bool {
+    let lower = line.to_lowercase();
+    let trimmed = lower.trim();
+    if trimmed.is_empty() {
+        return true;
+    }
+    trimmed.starts_with("//")
+        || trimmed.starts_with("/*")
+        || trimmed.contains("umarım")
+        || trimmed.contains("yardımcı")
+        || trimmed.contains("rica ederim")
+        || trimmed.contains("iyi çalışmalar")
+        || trimmed.contains("kolay gelsin")
+        || trimmed.contains("afiyet olsun")
+        || trimmed.contains("başka bir sorunuz")
+        || trimmed.contains("herhangi bir sorunuz")
+        || trimmed.contains("lütfen iletin")
+        || trimmed.contains("sorunuz olursa")
+        || trimmed.contains("tablo aşağıda")
+        || trimmed.contains("işte tablonun")
+        || trimmed.contains("işte menü")
+        || trimmed.contains("aşağıdaki tablo")
+        || trimmed.contains("tabloyu inceledim")
+        || trimmed.contains("aktarılmıştır")
+        || trimmed.contains("dönüştürülmüştür")
+        || trimmed.contains("hope this helps")
+        || trimmed.contains("let me know")
+        || trimmed.contains("feel free")
+        || trimmed.contains("here is the")
+        || trimmed.contains("certainly")
+        || trimmed.contains("as requested")
+}
+
+fn is_table_header_or_first_row(line: &str) -> bool {
+    let t = line.trim();
+    if t.is_empty() || is_chatter_line(t) {
+        return false;
     }
 
-    let file_bytes = tokio::fs::read(file_path)
-        .await
-        .context(format!("Dosya okunamadı: {:?}", file_path))?;
-    let original_mime = detect_mime_type(file_path, &file_bytes);
+    let has_delim = t.contains(',') || t.contains(';') || t.contains('\t') || t.contains('|');
+    if !has_delim {
+        return false;
+    }
 
-    let corrected = crate::parser::orientation::correct_document(&file_bytes, original_mime);
-    if corrected.corrected_pages > 0 {
-        tracing::info!(
-            "Yön düzeltmesi uygulandı: {} sayfa, {} düzeltildi ({:?}).",
-            corrected.pages,
-            corrected.corrected_pages,
-            file_path
+    let lower = t.to_lowercase();
+    lower.contains("tarih")
+        || lower.contains("gün")
+        || lower.contains("gun")
+        || lower.contains("yemek")
+        || lower.contains("ürün")
+        || lower.contains("urun")
+        || lower.contains("kahvalt")
+        || lower.contains("akşam")
+        || lower.contains("aksam")
+        || lower.contains("öğle")
+        || lower.contains("ogle")
+        || lower.contains("menü")
+        || lower.contains("menu")
+        || lower.contains("kalori")
+        || lower.contains("enerji")
+        || lower.contains("gramaj")
+        || lower.contains("miktar")
+        || lower.contains("porsiyon")
+        || lower.contains("fiyat")
+        || lower.contains("pazartesi")
+        || lower.contains("perşembe")
+        || lower.contains("cuma")
+        || t.contains(".202")
+        || t.contains("-202")
+        || t.contains("/202")
+}
+
+fn is_table_row_or_footnote(line: &str) -> bool {
+    let t = line.trim();
+    if t.is_empty() || is_chatter_line(t) {
+        return false;
+    }
+
+    if t.starts_with("---")
+        || t.starts_with('*')
+        || t.starts_with('•')
+        || t.starts_with("- ")
+        || t.to_lowercase().starts_with("not:")
+        || t.to_lowercase().starts_with("not :")
+        || t.to_lowercase().starts_with("dipnot:")
+        || t.to_lowercase().starts_with("dipnot :")
+    {
+        return true;
+    }
+
+    let comma_count = t.chars().filter(|&c| c == ',').count();
+    let semi_count = t.chars().filter(|&c| c == ';').count();
+    let tab_count = t.chars().filter(|&c| c == '\t').count();
+    let pipe_count = t.chars().filter(|&c| c == '|').count();
+
+    if comma_count >= 2 || semi_count >= 2 || tab_count >= 2 || pipe_count >= 3 {
+        return true;
+    }
+
+    let has_date = t.contains(".202") || t.contains("-202") || t.contains("/202");
+    if has_date && (comma_count >= 1 || semi_count >= 1 || tab_count >= 1) {
+        return true;
+    }
+
+    false
+}
+
+pub fn clean_csv_markdown(raw: &str) -> &str {
+    let trimmed = raw.trim();
+
+    // 1. Kod bloğu ayıklama: Çıktıda ``` bloğu varsa, bloğun içindeki metni aday olarak seç.
+    let candidate = if let Some(start_pos) = trimmed.find("```") {
+        let after_fence = &trimmed[start_pos + 3..];
+        let content_start = if let Some(nl) = after_fence.find('\n') {
+            let tag = after_fence[..nl].trim().to_lowercase();
+            if tag.is_empty() || tag == "csv" || tag == "tsv" || tag == "text" || tag == "markdown"
+            {
+                nl + 1
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+        let inner = &after_fence[content_start..];
+        if let Some(end_pos) = inner.find("```") {
+            inner[..end_pos].trim()
+        } else {
+            inner.trim()
+        }
+    } else {
+        trimmed
+    };
+
+    // 2. Tablo sınırlarını bul: Başlangıç başlık/veri satırı ile son geçerli veri/dipnot satırı arasındaki bloğu kes.
+    let lines: Vec<&str> = candidate.lines().collect();
+    if let Some(first_idx) = lines.iter().position(|l| is_table_header_or_first_row(l)) {
+        let table_slice = &lines[first_idx..];
+        if let Some(last_offset) = table_slice
+            .iter()
+            .rposition(|l| is_table_row_or_footnote(l))
+        {
+            let start_byte = lines[first_idx].as_ptr() as usize - candidate.as_ptr() as usize;
+            let end_line = table_slice[last_offset];
+            let end_byte =
+                (end_line.as_ptr() as usize + end_line.len()) - candidate.as_ptr() as usize;
+            if start_byte <= end_byte && end_byte <= candidate.len() {
+                return candidate[start_byte..end_byte].trim();
+            }
+        }
+    }
+
+    candidate
+}
+
+/// Çıkarılan ham CSV ızgarasının geçerli bir tablo olup olmadığını doğrular.
+pub fn validate_table_grid(csv_content: &str) -> Result<()> {
+    let table_part = csv_content
+        .split("---DIPNOTLAR---")
+        .next()
+        .unwrap_or(csv_content);
+
+    let lines: Vec<&str> = table_part
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .collect();
+
+    if lines.len() < 2 {
+        anyhow::bail!(
+            "Tablo ızgarası yetersiz (en az 2 satır bekleniyordu, {} satır bulundu)",
+            lines.len()
         );
     }
 
-    let base64_data = BASE64.encode(&corrected.bytes);
-    let mime_type = corrected.mime_type.as_str();
+    let has_date_or_keyword = lines.iter().any(|line| {
+        let lower = line.to_lowercase();
+        lower.contains("kahvalt")
+            || lower.contains("akşam")
+            || lower.contains("aksam")
+            || lower.contains("öğle")
+            || lower.contains("ogle")
+            || lower.contains("menü")
+            || lower.contains("menu")
+            || lower.contains("tarih")
+            || lower.contains("pazartesi")
+            || lower.contains("salı")
+            || lower.contains("çarşamba")
+            || lower.contains("perşembe")
+            || lower.contains("cuma")
+            || lower.contains("cumartesi")
+            || lower.contains("pazar")
+            || lower.contains("fiyat")
+            || lower.contains("ücret")
+            || lower.contains("çorba")
+            || lower.contains("corba")
+            || lower.contains("paket")
+            || line.contains(".202")
+            || line.contains("-202")
+            || line.contains("/202")
+    });
 
-    let prompt = UNIFIED_EXTRACTION_PROMPT;
-    let schema = unified_document_response_schema();
+    if !has_date_or_keyword {
+        anyhow::bail!(
+            "Tablo ızgarasında geçerli bir menü, tarih veya öğün anahtar kelimesi tespit edilemedi"
+        );
+    }
 
-    let input_type = if mime_type == "application/pdf" {
-        "document"
+    Ok(())
+}
+
+/// Etiketli ızgara (tagged grid) içeriğinden markdown çitlerini ve gereksiz kalıntıları temizler.
+pub fn clean_tagged_grid(raw: &str) -> &str {
+    let trimmed = raw.trim();
+
+    if let Some(start_pos) = trimmed.find("```") {
+        let after_fence = &trimmed[start_pos + 3..];
+        let content_start = if let Some(nl) = after_fence.find('\n') {
+            let tag = after_fence[..nl].trim().to_lowercase();
+            if tag.is_empty() || tag == "text" || tag == "csv" || tag == "tsv" || tag == "markdown"
+            {
+                nl + 1
+            } else {
+                0
+            }
+        } else {
+            0
+        };
+        let inner = &after_fence[content_start..];
+        if let Some(end_pos) = inner.find("```") {
+            inner[..end_pos].trim()
+        } else {
+            inner.trim()
+        }
     } else {
-        "image"
-    };
+        trimmed
+    }
+}
 
-    let file_name_hint = file_path
-        .file_name()
-        .and_then(|n| n.to_str())
-        .unwrap_or("document_llm");
+/// Etiketli ızgara içeriğinin geçerli bloklar veya menü satırları içerip içermediğini doğrular.
+pub fn validate_tagged_grid(content: &str) -> Result<()> {
+    let trimmed = content.trim();
+    if trimmed.len() < 10 {
+        anyhow::bail!("Etiketli ızgara içeriği çok kısa veya boş");
+    }
 
-    let llm_req = LlmRequest {
-        prompt,
-        mime_type,
-        base64_data: &base64_data,
-        input_type,
-        schema: &schema,
-    };
+    let lines: Vec<&str> = trimmed
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !is_chatter_line(l))
+        .collect();
 
+    if lines.len() < 2 {
+        anyhow::bail!(
+            "Izgara satır sayısı yetersiz (en az 2 satır bekleniyordu, {} satır bulundu)",
+            lines.len()
+        );
+    }
+
+    let has_tagged_block = lines.iter().any(|line| {
+        line.starts_with("[BELGE_TURU")
+            || line.starts_with("[TABLO")
+            || line.starts_with("[PAKETLER")
+            || line.starts_with("[TAKVİM")
+            || line.starts_with("[TAKVIM")
+            || line.starts_with("[DIPNOTLAR")
+            || line.starts_with("[DİPNOTLAR")
+    });
+
+    let has_date_or_keyword = lines.iter().any(|line| {
+        let lower = line.to_lowercase();
+        lower.contains("kahvalt")
+            || lower.contains("akşam")
+            || lower.contains("aksam")
+            || lower.contains("öğle")
+            || lower.contains("ogle")
+            || lower.contains("menü")
+            || lower.contains("menu")
+            || lower.contains("tarih")
+            || lower.contains("pazartesi")
+            || lower.contains("salı")
+            || lower.contains("sali")
+            || lower.contains("çarşamba")
+            || lower.contains("carsamba")
+            || lower.contains("perşembe")
+            || lower.contains("persembe")
+            || lower.contains("cuma")
+            || lower.contains("cumartesi")
+            || lower.contains("pazar")
+            || lower.contains("fiyat")
+            || lower.contains("ücret")
+            || lower.contains("çorba")
+            || lower.contains("corba")
+            || lower.contains("paket")
+            || lower.contains("sandviç")
+            || lower.contains("sandvic")
+            || line.contains(".202")
+            || line.contains("-202")
+            || line.contains("/202")
+    });
+
+    if !has_tagged_block && !has_date_or_keyword {
+        anyhow::bail!(
+            "Izgara içeriğinde geçerli bir etiket bloğu veya menü anahtar kelimesi bulunamadı"
+        );
+    }
+
+    Ok(())
+}
+
+/// Sağlayıcı zincirini (OpenRouter -> Gemini) çalıştırır ve modelden gelen ham metni döner.
+pub async fn call_llm_chain_raw(
+    client: &Client,
+    req: &LlmRequest<'_>,
+    gemini_api_key: Option<&str>,
+) -> Result<String> {
     let providers = resolve_provider_order();
     let openrouter_key = openrouter_api_key();
     let openrouter_model = openrouter_model();
@@ -1108,34 +1589,10 @@ pub async fn parse_document_with_llm_polymorphic(
                         openrouter_effort
                     );
 
-                    match call_openrouter(
-                        client,
-                        key,
-                        &openrouter_model,
-                        &openrouter_effort,
-                        &llm_req,
-                    )
-                    .await
+                    match call_openrouter(client, key, &openrouter_model, &openrouter_effort, req)
+                        .await
                     {
-                        Ok(text) => match parse_and_finalize_polymorphic(&text, file_name_hint) {
-                            Ok((payload, mismatches)) => {
-                                tracing::info!(
-                                    "  Başarıyla çok biçimli ayrıştırıldı (sağlayıcı: openrouter, model: {}).",
-                                    openrouter_model
-                                );
-                                return Ok((
-                                    payload,
-                                    crate::parser::core::ParseDiagnostics {
-                                        date_raw_mismatches: mismatches,
-                                        ..Default::default()
-                                    },
-                                ));
-                            }
-                            Err(e) => {
-                                tracing::warn!("  Ayrıştırma hatası (deneme {}): {}", attempt, e);
-                                last_error = format!("{}", e);
-                            }
-                        },
+                        Ok(text) => return Ok(text),
                         Err(e) => {
                             let msg = format!("{:?}", e);
                             tracing::warn!("  Hata: {}", msg);
@@ -1166,33 +1623,8 @@ pub async fn parse_document_with_llm_polymorphic(
                             thinking_level
                         );
 
-                        match call_gemini(client, key, model_name, &thinking_level, &llm_req).await
-                        {
-                            Ok(text) => {
-                                match parse_and_finalize_polymorphic(&text, file_name_hint) {
-                                    Ok((payload, mismatches)) => {
-                                        tracing::info!(
-                                            "  Başarıyla çok biçimli ayrıştırıldı (sağlayıcı: gemini, model: {}).",
-                                            model_name
-                                        );
-                                        return Ok((
-                                            payload,
-                                            crate::parser::core::ParseDiagnostics {
-                                                date_raw_mismatches: mismatches,
-                                                ..Default::default()
-                                            },
-                                        ));
-                                    }
-                                    Err(e) => {
-                                        tracing::warn!(
-                                            "  Ayrıştırma hatası (deneme {}): {}",
-                                            attempt,
-                                            e
-                                        );
-                                        last_error = format!("{}", e);
-                                    }
-                                }
-                            }
+                        match call_gemini(client, key, model_name, &thinking_level, req).await {
+                            Ok(text) => return Ok(text),
                             Err(e) => {
                                 let msg = format!("{:?}", e);
                                 tracing::warn!("  Hata: {}", msg);
@@ -1230,9 +1662,472 @@ pub async fn parse_document_with_llm_polymorphic(
         );
     }
 
-    Err(anyhow::anyhow!(
-        "Tüm LLM denemeleri başarısız oldu. Son hata: {}",
+    anyhow::bail!(
+        "Tüm LLM sağlayıcıları başarısız oldu ({} tur). Son hata: {}",
+        passes,
         last_error
+    );
+}
+
+/// Görsel veya PDF belgeden saf CSV ızgarasını çıkarır (Aşama 1).
+pub async fn extract_table_grid_csv(
+    client: &Client,
+    file_bytes: &[u8],
+    mime_type: &str,
+    gemini_api_key: Option<&str>,
+) -> Result<String> {
+    let base64_data = BASE64.encode(file_bytes);
+    let input_type = if mime_type == "application/pdf" {
+        "document"
+    } else {
+        "image"
+    };
+
+    let req = LlmRequest {
+        prompt: TABLE_GRID_EXTRACTION_PROMPT,
+        mime_type,
+        base64_data: &base64_data,
+        input_type,
+        schema: None,
+    };
+
+    let raw = call_llm_chain_raw(client, &req, gemini_api_key).await?;
+    let cleaned = clean_csv_markdown(&raw);
+    Ok(cleaned.to_string())
+}
+
+/// Doğrulanmış CSV metnini tipli çok biçimli JSON veri yüküne dönüştürür (Aşama 2).
+pub async fn parse_csv_to_polymorphic(
+    client: &Client,
+    csv_content: &str,
+    file_name_hint: &str,
+    gemini_api_key: Option<&str>,
+) -> Result<(crate::parser::models::ParsedDocumentPayload, Vec<String>)> {
+    let prompt = build_csv_to_menu_prompt(csv_content);
+    let schema = daily_menu_table_response_schema();
+
+    let req = LlmRequest {
+        prompt: &prompt,
+        mime_type: "text/plain",
+        base64_data: "",
+        input_type: "text",
+        schema: Some(&schema),
+    };
+
+    let raw_json = call_llm_chain_raw(client, &req, gemini_api_key).await?;
+    tracing::info!(
+        "Aşama 2 LLM ham yanıtı ({} karakter): {}",
+        raw_json.len(),
+        raw_json.chars().take(200).collect::<String>()
+    );
+    parse_and_finalize_polymorphic(&raw_json, file_name_hint)
+}
+
+/// Görsel veya PDF sayfadan etiketli ızgarayı çıkarır (Aşama 1).
+pub async fn extract_page_tagged_grid(
+    client: &Client,
+    page_bytes: &[u8],
+    mime_type: &str,
+    gemini_api_key: Option<&str>,
+) -> Result<String> {
+    let base64_data = BASE64.encode(page_bytes);
+    let input_type = if mime_type == "application/pdf" {
+        "document"
+    } else {
+        "image"
+    };
+
+    let req = LlmRequest {
+        prompt: TAGGED_GRID_EXTRACTION_PROMPT,
+        mime_type,
+        base64_data: &base64_data,
+        input_type,
+        schema: None,
+    };
+
+    let raw = call_llm_chain_raw(client, &req, gemini_api_key).await?;
+    let cleaned = clean_tagged_grid(&raw);
+    Ok(cleaned.to_string())
+}
+
+/// Doğrulanmış etiketli ızgara metnini tipli çok biçimli JSON veri yüküne dönüştürür (Aşama 2).
+pub async fn parse_tagged_grid_to_payload(
+    client: &Client,
+    grid_content: &str,
+    file_name_hint: &str,
+    gemini_api_key: Option<&str>,
+) -> Result<(crate::parser::models::ParsedDocumentPayload, Vec<String>)> {
+    let prompt = build_tagged_grid_to_payload_prompt(grid_content);
+    let schema = unified_document_response_schema();
+
+    let req = LlmRequest {
+        prompt: &prompt,
+        mime_type: "text/plain",
+        base64_data: "",
+        input_type: "text",
+        schema: Some(&schema),
+    };
+
+    let raw_json = call_llm_chain_raw(client, &req, gemini_api_key).await?;
+    tracing::info!(
+        "Aşama 2 LLM ham yanıtı ({} karakter): {}",
+        raw_json.len(),
+        raw_json.chars().take(200).collect::<String>()
+    );
+    parse_and_finalize_polymorphic(&raw_json, file_name_hint)
+}
+
+fn merge_into_menu_database(
+    target: &mut crate::parser::models::MenuDatabase,
+    incoming: crate::parser::models::MenuDatabase,
+) {
+    for (date_str, incoming_day) in incoming {
+        match target.get_mut(&date_str) {
+            Some(existing_day) => {
+                merge_daily_menu(&mut existing_day.normal, incoming_day.normal);
+                merge_daily_menu(&mut existing_day.colyak, incoming_day.colyak);
+            }
+            None => {
+                target.insert(date_str, incoming_day);
+            }
+        }
+    }
+}
+
+fn merge_daily_menu(
+    target: &mut crate::parser::models::DailyMenu,
+    incoming: crate::parser::models::DailyMenu,
+) {
+    if !incoming.breakfast.is_empty() {
+        if target.breakfast.is_empty() {
+            target.breakfast = incoming.breakfast;
+        } else {
+            target.breakfast.extend(incoming.breakfast);
+        }
+    }
+    if incoming.breakfast_kcal.is_some() {
+        target.breakfast_kcal = incoming.breakfast_kcal;
+    }
+
+    if !incoming.lunch.is_empty() {
+        if target.lunch.is_empty() {
+            target.lunch = incoming.lunch;
+        } else {
+            target.lunch.extend(incoming.lunch);
+        }
+    }
+    if incoming.lunch_kcal.is_some() {
+        target.lunch_kcal = incoming.lunch_kcal;
+    }
+
+    if !incoming.dinner.is_empty() {
+        if target.dinner.is_empty() {
+            target.dinner = incoming.dinner;
+        } else {
+            target.dinner.extend(incoming.dinner);
+        }
+    }
+    if incoming.dinner_kcal.is_some() {
+        target.dinner_kcal = incoming.dinner_kcal;
+    }
+}
+
+/// Çok sayfalı veya tek sayfalı belgelerden elde edilen sayfa yüklerini deterministik olarak birleştirir.
+pub fn merge_page_payloads(
+    pages_results: Vec<(
+        crate::parser::models::ParsedDocumentPayload,
+        crate::parser::core::ParseDiagnostics,
+    )>,
+) -> Result<(
+    crate::parser::models::ParsedDocumentPayload,
+    crate::parser::core::ParseDiagnostics,
+)> {
+    if pages_results.is_empty() {
+        anyhow::bail!("Birleştirilecek sayfa sonucu yok.");
+    }
+
+    if pages_results.len() == 1 {
+        let (payload, diag) = pages_results.into_iter().next().unwrap();
+        return Ok((payload, diag));
+    }
+
+    let mut merged_menu: Option<crate::parser::models::MenuDatabase> = None;
+    let mut merged_pricing: Option<crate::parser::models::OfficialPricingData> = None;
+    let mut merged_takeaway: Option<crate::parser::models::TakeawayData> = None;
+
+    let mut combined_mismatches = Vec::new();
+    let mut combined_grid_csv = String::new();
+    let mut any_orientation_uncertain = false;
+
+    for (page_idx, (payload, diag)) in pages_results.into_iter().enumerate() {
+        let page_num = page_idx + 1;
+        combined_mismatches.extend(diag.date_raw_mismatches);
+        if diag.orientation_uncertain {
+            any_orientation_uncertain = true;
+        }
+        if let Some(grid) = diag.table_grid_csv {
+            if !combined_grid_csv.is_empty() {
+                combined_grid_csv.push_str("\n\n");
+            }
+            combined_grid_csv.push_str(&format!("--- SAYFA {} ---\n{}", page_num, grid));
+        }
+
+        match payload {
+            crate::parser::models::ParsedDocumentPayload::DailyMenu(db) => {
+                merge_into_menu_database(
+                    merged_menu.get_or_insert_with(std::collections::HashMap::new),
+                    db,
+                );
+            }
+            crate::parser::models::ParsedDocumentPayload::OfficialPricing(pricing) => {
+                if let Some(existing) = &mut merged_pricing {
+                    existing.items.extend(pricing.items);
+                    if existing.period_start.is_none() {
+                        existing.period_start = pricing.period_start;
+                    }
+                    if existing.period_end.is_none() {
+                        existing.period_end = pricing.period_end;
+                    }
+                    if existing.academic_year.is_none() {
+                        existing.academic_year = pricing.academic_year;
+                    }
+                } else {
+                    merged_pricing = Some(pricing);
+                }
+            }
+            crate::parser::models::ParsedDocumentPayload::Takeaway(takeaway) => {
+                if let Some(existing) = &mut merged_takeaway {
+                    existing.packages.extend(takeaway.packages);
+                    if existing.academic_year.is_none() {
+                        existing.academic_year = takeaway.academic_year;
+                    }
+                } else {
+                    merged_takeaway = Some(takeaway);
+                }
+            }
+            crate::parser::models::ParsedDocumentPayload::Compound {
+                menu,
+                pricing,
+                takeaway,
+            } => {
+                if let Some(m) = menu {
+                    merge_into_menu_database(
+                        merged_menu.get_or_insert_with(std::collections::HashMap::new),
+                        m,
+                    );
+                }
+                if let Some(p) = pricing {
+                    if let Some(existing) = &mut merged_pricing {
+                        existing.items.extend(p.items);
+                    } else {
+                        merged_pricing = Some(p);
+                    }
+                }
+                if let Some(t) = takeaway {
+                    if let Some(existing) = &mut merged_takeaway {
+                        existing.packages.extend(t.packages);
+                    } else {
+                        merged_takeaway = Some(t);
+                    }
+                }
+            }
+        }
+    }
+
+    let final_diag = crate::parser::core::ParseDiagnostics {
+        date_raw_mismatches: combined_mismatches,
+        table_grid_csv: if combined_grid_csv.is_empty() {
+            None
+        } else {
+            Some(combined_grid_csv)
+        },
+        orientation_uncertain: any_orientation_uncertain,
+        ..Default::default()
+    };
+
+    let payload = match (merged_menu, merged_pricing, merged_takeaway) {
+        (Some(menu), None, None) => crate::parser::models::ParsedDocumentPayload::DailyMenu(menu),
+        (None, Some(pricing), None) => {
+            crate::parser::models::ParsedDocumentPayload::OfficialPricing(pricing)
+        }
+        (None, None, Some(takeaway)) => {
+            crate::parser::models::ParsedDocumentPayload::Takeaway(takeaway)
+        }
+        (menu, pricing, takeaway) => crate::parser::models::ParsedDocumentPayload::Compound {
+            menu,
+            pricing,
+            takeaway,
+        },
+    };
+
+    Ok((payload, final_diag))
+}
+
+/// İki aşamalı sayfa bazlı tablo çıkarım hattı:
+/// 1. Aşama: Sayfa Görseli -> Etiketli Izgara / CSV (extract_page_tagged_grid)
+/// 2. Aşama: Rust deterministik ızgara denetimi (validate_tagged_grid)
+/// 3. Aşama: Doğrulanmış Izgara -> Tipli çok biçimli JSON (parse_tagged_grid_to_payload)
+/// 4. Aşama: Sayfalar arası deterministik birleştirme (merge_page_payloads)
+pub async fn parse_document_two_stage(
+    client: &Client,
+    file_bytes: &[u8],
+    mime_type: &str,
+    file_name_hint: &str,
+    gemini_api_key: Option<&str>,
+) -> Result<(
+    crate::parser::models::ParsedDocumentPayload,
+    crate::parser::core::ParseDiagnostics,
+)> {
+    tracing::info!("İki aşamalı sayfa bazlı tablo çıkarımı başlatılıyor...");
+
+    // Belgeyi sayfa bazında ayrıştır ve dik (0° upright) konuma getir
+    let pages = crate::parser::orientation::prepare_pages_for_extraction(file_bytes, mime_type);
+    let total_pages = pages.len();
+    tracing::info!(
+        "Belge {} sayfa olarak ayrıştırıldı, sayfa sayfa etiketli ızgara çıkarımı yapılacak.",
+        total_pages
+    );
+
+    let mut page_results = Vec::with_capacity(total_pages);
+
+    for page in pages {
+        tracing::info!(
+            "Sayfa {}/{} işleniyor (Aşama 1: Etiketli Izgara Çıkarımı)...",
+            page.page_number,
+            total_pages
+        );
+
+        let grid_content =
+            extract_page_tagged_grid(client, &page.bytes, &page.mime_type, gemini_api_key).await?;
+
+        tracing::info!(
+            "Sayfa {}/{} ızgarası başarıyla çıkarıldı ({} karakter), denetim yapılıyor...",
+            page.page_number,
+            total_pages,
+            grid_content.len()
+        );
+        validate_tagged_grid(&grid_content)?;
+
+        tracing::info!(
+            "Sayfa {}/{} ızgarası doğrulandı, Aşama 2 (tipli çok biçimli JSON) başlatılıyor...",
+            page.page_number,
+            total_pages
+        );
+        let (payload, mismatches) =
+            parse_tagged_grid_to_payload(client, &grid_content, file_name_hint, gemini_api_key)
+                .await?;
+
+        page_results.push((
+            payload,
+            crate::parser::core::ParseDiagnostics {
+                date_raw_mismatches: mismatches,
+                table_grid_csv: Some(grid_content),
+                ..Default::default()
+            },
+        ));
+    }
+
+    tracing::info!(
+        "Tüm sayfalar ({}) başarıyla ayrıştırıldı, yükler birleştiriliyor...",
+        total_pages
+    );
+    merge_page_payloads(page_results)
+}
+
+pub async fn parse_document_with_llm_polymorphic(
+    client: &Client,
+    gemini_api_key: Option<&str>,
+    file_path: &Path,
+) -> Result<(
+    crate::parser::models::ParsedDocumentPayload,
+    crate::parser::core::ParseDiagnostics,
+)> {
+    tracing::info!(
+        "Belge LLM (çok biçimli) ile ayrıştırılıyor: {:?}",
+        file_path
+    );
+
+    let metadata = tokio::fs::metadata(file_path)
+        .await
+        .context(format!("Dosya metadata'sı okunamadı: {:?}", file_path))?;
+    if metadata.len() > 50 * 1024 * 1024 {
+        anyhow::bail!("Dosya boyutu limitini aşıyor (max 50MB): {:?}", file_path);
+    }
+
+    let file_bytes = tokio::fs::read(file_path)
+        .await
+        .context(format!("Dosya okunamadı: {:?}", file_path))?;
+    let original_mime = detect_mime_type(file_path, &file_bytes);
+
+    let corrected = crate::parser::orientation::correct_document(&file_bytes, original_mime);
+    let orientation_uncertain = !corrected.attempted_correction;
+    if corrected.corrected_pages > 0 {
+        tracing::info!(
+            "Yön düzeltmesi uygulandı: {} sayfa, {} düzeltildi ({:?}).",
+            corrected.pages,
+            corrected.corrected_pages,
+            file_path
+        );
+    }
+
+    let mime_type = corrected.mime_type.as_str();
+    let file_name_hint = file_path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("document_llm");
+
+    // Öncelikli olarak Google Developer Knowledge ilkelerine dayalı iki aşamalı
+    // tablo çıkarım hattı denenir. Eğer belge tablo içermiyorsa veya ızgara
+    // denetiminden geçemezse tek aşamalı genel ayrıştırıcıya güvenle düşülür.
+    match parse_document_two_stage(
+        client,
+        &corrected.bytes,
+        mime_type,
+        file_name_hint,
+        gemini_api_key,
+    )
+    .await
+    {
+        Ok((payload, mut diag)) => {
+            diag.orientation_uncertain = orientation_uncertain;
+            tracing::info!("İki aşamalı tablo çıkarımı başarıyla tamamlandı.");
+            return Ok((payload, diag));
+        }
+        Err(e) => {
+            tracing::warn!(
+                "İki aşamalı tablo çıkarımı uygulanamadı veya başarısız ({}), tek aşamalı ayrıştırıcıya geçiliyor.",
+                e
+            );
+        }
+    }
+
+    let base64_data = BASE64.encode(&corrected.bytes);
+    let prompt = UNIFIED_EXTRACTION_PROMPT;
+    let schema = unified_document_response_schema();
+
+    let input_type = if mime_type == "application/pdf" {
+        "document"
+    } else {
+        "image"
+    };
+
+    let llm_req = LlmRequest {
+        prompt,
+        mime_type,
+        base64_data: &base64_data,
+        input_type,
+        schema: Some(&schema),
+    };
+
+    let text = call_llm_chain_raw(client, &llm_req, gemini_api_key).await?;
+    let (payload, mismatches) = parse_and_finalize_polymorphic(&text, file_name_hint)?;
+    Ok((
+        payload,
+        crate::parser::core::ParseDiagnostics {
+            date_raw_mismatches: mismatches,
+            orientation_uncertain,
+            ..Default::default()
+        },
     ))
 }
 
@@ -1624,6 +2519,232 @@ mod tests {
                 );
             }
             _ => panic!("DailyMenu bekleniyordu, başka tip döndü"),
+        }
+    }
+
+    #[test]
+    fn test_clean_csv_markdown_strips_codeblocks() {
+        let raw = "```csv\nTarih,Yemek\n01.10.2026,Mercimek Çorbası\n```";
+        assert_eq!(
+            clean_csv_markdown(raw),
+            "Tarih,Yemek\n01.10.2026,Mercimek Çorbası"
+        );
+
+        let raw_no_block = "Tarih,Yemek\n01.10.2026,Mercimek Çorbası";
+        assert_eq!(clean_csv_markdown(raw_no_block), raw_no_block);
+
+        // Modelin kod bloğu öncesi ve sonrası konuşması
+        let chatter_with_fence = "İşte talep ettiğiniz menü CSV tablosu:\n\n```csv\nTarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\n```\n\nBaşka bir sorunuz var mı?";
+        assert_eq!(
+            clean_csv_markdown(chatter_with_fence),
+            "Tarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal"
+        );
+
+        // Kod bloğu olmadan sohbet satırları ve virgül içeren veda cümlesi
+        let chatter_no_fence = "Tablo aşağıda sunulmuştur:\nTarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\n2.10.2026,Cuma,Menemen,150 g,106 kcal\n---DIPNOTLAR---\n*Zeytin çeşitleri mevcuttur.\nUmarım bu tablo işinize yarar, iyi çalışmalar dilerim.";
+        assert_eq!(
+            clean_csv_markdown(chatter_no_fence),
+            "Tarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\n2.10.2026,Cuma,Menemen,150 g,106 kcal\n---DIPNOTLAR---\n*Zeytin çeşitleri mevcuttur."
+        );
+
+        // Kod bloğu İÇİNDE gevezelik ve selamlama
+        let chatter_inside_fence = "```csv\n// Ekim 2026 Menü Tablosu\nTarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\nNot: Kahvaltı 07:30'da başlar.\nHerhangi bir sorunuz olursa lütfen iletin.\n```";
+        assert_eq!(
+            clean_csv_markdown(chatter_inside_fence),
+            "Tarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\nNot: Kahvaltı 07:30'da başlar."
+        );
+
+        // Kapanmamış kod bloğu
+        let unclosed_fence = "İşte CSV:\n```csv\nTarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\n2.10.2026,Cuma,Menemen,150 g,106 kcal";
+        assert_eq!(
+            clean_csv_markdown(unclosed_fence),
+            "Tarih,Gün,Yemek / Ürün,Gramaj,Enerji\n1.10.2026,Perşembe,Haşlanmış Yumurta,1 adet L boy,77 kcal\n2.10.2026,Cuma,Menemen,150 g,106 kcal"
+        );
+    }
+
+    #[test]
+    fn test_validate_table_grid_accepts_valid_calendar() {
+        let valid_csv = "Tarih,Öğün,Çorba,Ana Yemek\n01.10.2026,Akşam Yemeği,Mercimek Çorbası,Orman Kebabı\n02.10.2026,Akşam Yemeği,Ezogelin,Tavuk Sote";
+        assert!(validate_table_grid(valid_csv).is_ok());
+
+        let days_csv = "Pazartesi,Salı,Çarşamba\nEzogelin,Mercimek,Tarhana";
+        assert!(validate_table_grid(days_csv).is_ok());
+    }
+
+    #[test]
+    fn test_validate_table_grid_rejects_empty_or_non_table() {
+        assert!(validate_table_grid("").is_err());
+        assert!(validate_table_grid("tek satır").is_err());
+        assert!(
+            validate_table_grid("Lorem ipsum dolor sit amet\nconsectetur adipiscing elit").is_err()
+        );
+    }
+
+    #[test]
+    fn test_build_csv_to_menu_prompt_contains_csv() {
+        let csv = "01.10.2026,Mercimek Çorbası";
+        let prompt = build_csv_to_menu_prompt(csv);
+        assert!(prompt.contains(csv));
+        assert!(prompt.contains("ISO formatında"));
+    }
+
+    #[test]
+    fn test_validate_tagged_grid_accepts_blocks_and_keywords() {
+        let grid_with_tag =
+            "[BELGE_TURU: AKŞAM]\n[TABLO]\nTarih,Yemek\n17.09.2026,Mercimek Çorbası";
+        assert!(validate_tagged_grid(grid_with_tag).is_ok());
+
+        let grid_takeaway = "[BELGE_TURU: AL_GÖTÜR]\n[PAKETLER]\nAl Götür Menü 1\n- Sandviç";
+        assert!(validate_tagged_grid(grid_takeaway).is_ok());
+
+        let grid_no_tag_but_valid =
+            "Tarih,Öğün,Yemek,Gramaj\n01.10.2026,Akşam Yemeği,Etli Kuru Fasulye,250 g";
+        assert!(validate_tagged_grid(grid_no_tag_but_valid).is_ok());
+    }
+
+    #[test]
+    fn test_validate_tagged_grid_rejects_empty_or_chatter() {
+        assert!(validate_tagged_grid("").is_err());
+        assert!(validate_tagged_grid("kısa").is_err());
+        assert!(
+            validate_tagged_grid("Merhaba ben bir yapay zekayım.\nSize nasıl yardımcı olabilirim?")
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn test_clean_tagged_grid_strips_fences() {
+        let text_with_fence = "```text\n[BELGE_TURU: AKŞAM]\n[TABLO]\n17.09.2026,Tavuk Sote\n```";
+        assert_eq!(
+            clean_tagged_grid(text_with_fence),
+            "[BELGE_TURU: AKŞAM]\n[TABLO]\n17.09.2026,Tavuk Sote"
+        );
+    }
+
+    #[test]
+    fn test_merge_page_payloads_merges_breakfast_and_dinner_same_day() {
+        use crate::parser::core::ParseDiagnostics;
+        use crate::parser::models::{
+            DailyMenu, DayData, MenuComponent, MenuItem, ParsedDocumentPayload,
+        };
+        use std::collections::HashMap;
+
+        let mut menu1 = HashMap::new();
+        menu1.insert(
+            "2026-09-17".to_string(),
+            DayData {
+                normal: DailyMenu {
+                    dinner: vec![MenuItem {
+                        takeaway_id: None,
+                        alternatives: vec![MenuComponent::from("Orman Kebabı")],
+                    }],
+                    dinner_kcal: Some("1178 kcal".to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        );
+
+        let mut menu2 = HashMap::new();
+        menu2.insert(
+            "2026-09-17".to_string(),
+            DayData {
+                normal: DailyMenu {
+                    breakfast: vec![MenuItem {
+                        takeaway_id: None,
+                        alternatives: vec![MenuComponent::from("Haşlanmış Yumurta")],
+                    }],
+                    breakfast_kcal: Some("450 kcal".to_string()),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        );
+
+        let pages = vec![
+            (
+                ParsedDocumentPayload::DailyMenu(menu1),
+                ParseDiagnostics::default(),
+            ),
+            (
+                ParsedDocumentPayload::DailyMenu(menu2),
+                ParseDiagnostics::default(),
+            ),
+        ];
+
+        let (merged, _diag) = merge_page_payloads(pages).expect("birleştirme başarılı olmalı");
+        match merged {
+            ParsedDocumentPayload::DailyMenu(db) => {
+                assert_eq!(db.len(), 1);
+                let day = db.get("2026-09-17").expect("gün mevcut olmalı");
+                assert_eq!(day.normal.dinner.len(), 1);
+                assert_eq!(day.normal.dinner[0].alternatives[0].name, "Orman Kebabı");
+                assert_eq!(day.normal.dinner_kcal.as_deref(), Some("1178 kcal"));
+
+                assert_eq!(day.normal.breakfast.len(), 1);
+                assert_eq!(
+                    day.normal.breakfast[0].alternatives[0].name,
+                    "Haşlanmış Yumurta"
+                );
+                assert_eq!(day.normal.breakfast_kcal.as_deref(), Some("450 kcal"));
+            }
+            _ => panic!("DailyMenu bekleniyordu"),
+        }
+    }
+
+    #[test]
+    fn test_merge_page_payloads_merges_daily_and_takeaway_into_compound() {
+        use crate::parser::core::ParseDiagnostics;
+        use crate::parser::models::{
+            DailyMenu, DayData, MenuComponent, MenuItem, ParsedDocumentPayload, TakeawayData,
+            TakeawayPackageData,
+        };
+        use std::collections::HashMap;
+
+        let mut menu = HashMap::new();
+        menu.insert(
+            "2026-09-18".to_string(),
+            DayData {
+                normal: DailyMenu {
+                    dinner: vec![MenuItem {
+                        takeaway_id: None,
+                        alternatives: vec![MenuComponent::from("Kuru Fasulye")],
+                    }],
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        );
+
+        let takeaway = TakeawayData {
+            city_slug: Some("bursa".to_string()),
+            packages: vec![TakeawayPackageData {
+                package_name: "Al Götür Menü 1".to_string(),
+                slots: vec![],
+            }],
+            ..Default::default()
+        };
+
+        let pages = vec![
+            (
+                ParsedDocumentPayload::DailyMenu(menu),
+                ParseDiagnostics::default(),
+            ),
+            (
+                ParsedDocumentPayload::Takeaway(takeaway),
+                ParseDiagnostics::default(),
+            ),
+        ];
+
+        let (merged, _diag) = merge_page_payloads(pages).expect("birleştirme başarılı olmalı");
+        match merged {
+            ParsedDocumentPayload::Compound { menu, takeaway, .. } => {
+                assert!(menu.is_some());
+                assert_eq!(menu.unwrap().len(), 1);
+                assert!(takeaway.is_some());
+                assert_eq!(takeaway.unwrap().packages.len(), 1);
+            }
+            _ => panic!("Compound bekleniyordu"),
         }
     }
 }

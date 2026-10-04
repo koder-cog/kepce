@@ -502,7 +502,7 @@ async fn scrape_and_collect(
                         body_text
                     };
 
-                    // Al Götür öğelerini tespit et ve çek
+                    // Al Götür ögelerini tespit et ve çek
                     let fastmenu_items = extract_fastmenu_items(&html_content);
                     for (fast_id, fast_name) in fastmenu_items {
                         if get_cached_fastmenu(&fast_id).is_some() {

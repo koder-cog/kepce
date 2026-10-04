@@ -72,7 +72,7 @@ pub struct IngestDayJson {
     pub date_raw: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub meal_type: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "total_calories", skip_serializing_if = "Option::is_none")]
     pub calories: Option<String>,
     #[serde(default)]
     pub items: Vec<IngestItemJson>,

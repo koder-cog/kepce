@@ -561,7 +561,7 @@ mod tests {
         assert!(cached_slots.is_some());
         assert_eq!(cached_slots.unwrap()[0][0].name, "Özel Sandviç");
 
-        // 2. Detaylı öğe okuması (isim + zaman)
+        // 2. Detaylı öge okuması (isim + zaman)
         let cached_item = crate::parser::takeaway::get_cached_fastmenu_item(test_uuid);
         assert!(cached_item.is_some());
         let item = cached_item.unwrap();

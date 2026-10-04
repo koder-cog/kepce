@@ -34,8 +34,9 @@ pub const BOT_COMMANDS: &[(&str, &str)] = &[
     ("durum", "Sistem durumu"),
     ("karantina", "Karantina kuyruğu"),
     ("onayla", "Karantinayı onayla"),
+    ("yeniden_ayristir", "Yönü düzeltip ayrıştır"),
     ("reddet", "Karantinayı reddet"),
-    ("ata", "Öğeye şehir ata"),
+    ("ata", "Ögeye şehir ata"),
     ("dosya", "Orijinal dosyayı al"),
     ("tara", "Menü kazımayı başlat"),
     ("son_menuler", "Son kayıtlı menüler"),
@@ -333,6 +334,7 @@ async fn handle_callback_query_event(
                     &client_clone,
                     gemini_key.as_deref(),
                     &id_owned,
+                    crate::tasks::file_ingest::ApproveTarget::Auto,
                 )
                 .await;
 
@@ -432,7 +434,7 @@ async fn handle_callback_query_event(
                         client,
                         bot_token,
                         chat_id,
-                        &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
+                        &format!("[BİLGİ] '{}' kimlikli karantina ögesi bulunamadı.", id),
                     )
                     .await;
                 }
@@ -477,7 +479,7 @@ async fn handle_callback_query_event(
                         client,
                         bot_token,
                         chat_id,
-                        &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
+                        &format!("[BİLGİ] '{}' kimlikli karantina ögesi bulunamadı.", id),
                     )
                     .await;
                 }
@@ -510,11 +512,12 @@ async fn handle_command(
 Kullanılabilir komutlar:
 • /durum - Sistem durumu
 • /karantina - Karantina kuyruğu
-• /karantina detay <id> - Öğe teşhis ayrıntıları
+• /karantina detay <id> - Öge teşhis ayrıntıları
 • /dosya <id> - Orijinal dosyayı sohbete gönder
-• /onayla <id> - Karantinadaki dosyayı onayla
+• /onayla <id> [menu|fiyat] - Karantinadaki dosyayı onayla
+• /yeniden_ayristir <id> [açı] - Dosyayı döndürüp tekrar ayrıştır
 • /reddet <id> - Karantinadaki dosyayı reddet
-• /ata <id> <sehir> - Şehirsiz öğeye şehir ata
+• /ata <id> <sehir> - Şehirsiz ögeye şehir ata
 • /tara [sehir] - Menü kazımayı anlık tetikle
 • /son_menuler - Son kaydedilen menüler
 • /ban_kaldir - Devre kesiciyi sıfırla
@@ -564,7 +567,7 @@ Kullanılabilir komutlar:
                         client,
                         bot_token,
                         chat_id,
-                        &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
+                        &format!("[BİLGİ] '{}' kimlikli karantina ögesi bulunamadı.", id),
                     )
                     .await;
                 }
@@ -585,7 +588,7 @@ Kullanılabilir komutlar:
                                 client,
                                 bot_token,
                                 chat_id,
-                                &format!("[BİLGİ] '{}' kimlikli karantina öğesi bulunamadı.", id),
+                                &format!("[BİLGİ] '{}' kimlikli karantina ögesi bulunamadı.", id),
                             )
                             .await;
                         }
@@ -608,17 +611,25 @@ Kullanılabilir komutlar:
 
         "/onayla" | "onayla" => {
             let Some(id) = parts.get(1).copied() else {
-                send_reply(client, bot_token, chat_id, "Kullanım: /onayla <id>").await;
+                send_reply(
+                    client,
+                    bot_token,
+                    chat_id,
+                    "Kullanım: /onayla <id> [menu|fiyat|al_gotur]",
+                )
+                .await;
                 return;
             };
+            let target = parts
+                .get(2)
+                .and_then(|s| crate::tasks::file_ingest::ApproveTarget::parse(s))
+                .unwrap_or_default();
+
             send_reply(
                 client,
                 bot_token,
                 chat_id,
-                &format!(
-                    "[İŞLEM] '{}' onaylanıyor, dosya yeniden ayrıştırılıyor...",
-                    id
-                ),
+                &format!("[İŞLEM] '{}' onaylanıyor, dosya işleniyor...", id),
             )
             .await;
 
@@ -633,6 +644,7 @@ Kullanılabilir komutlar:
                     &client_clone,
                     gemini_key.as_deref(),
                     &id_owned,
+                    target,
                 )
                 .await;
                 let msg = match res {
@@ -642,15 +654,61 @@ Kullanılabilir komutlar:
                         let hint = if crate::tasks::file_ingest::is_transient_error(
                             &raw.to_lowercase(),
                         ) {
-                            "Sağlayıcı geçici olarak yanıt vermedi (503/429). Öğe karantinada kaldı; birkaç dakika sonra /onayla komutunu tekrar deneyin."
+                            "Sağlayıcı geçici olarak yanıt vermedi (503/429). Öge karantinada kaldı; birkaç dakika sonra /onayla komutunu tekrar deneyin."
                         } else {
-                            "Öğe karantinada kaldı (/karantina detay ile inceleyin). Sorun kalıcıysa /reddet ile hatali/ altına alın."
+                            "Öge karantinada kaldı (/karantina detay ile inceleyin). Sorun kalıcıysa /reddet ile hatali/ altına alın."
                         };
                         format!(
                             "[HATA] Onaylama başarısız ({}):\n{}\n\n{}",
                             id_owned, hint, raw
                         )
                     }
+                };
+                send_reply(&client_clone, &bot_token_clone, chat_id, &msg).await;
+            });
+        }
+
+        "/yeniden_ayristir" | "yeniden_ayristir" => {
+            let Some(id) = parts.get(1).copied() else {
+                send_reply(
+                    client,
+                    bot_token,
+                    chat_id,
+                    "Kullanım: /yeniden_ayristir <id> [açı (90, 180, 270)]",
+                )
+                .await;
+                return;
+            };
+            let angle = parts.get(2).and_then(|s| s.parse::<u16>().ok());
+            send_reply(
+                client,
+                bot_token,
+                chat_id,
+                &format!(
+                    "[İŞLEM] '{}' {} yeniden ayrıştırılıyor...",
+                    id,
+                    angle
+                        .map(|a| format!("{}° döndürülerek", a))
+                        .unwrap_or_else(|| "farklı yönler denenerek".to_string())
+                ),
+            )
+            .await;
+
+            let client_clone = client.clone();
+            let bot_token_clone = bot_token.to_string();
+            let id_owned = id.to_string();
+            let gemini_key = std::env::var("GEMINI_API_KEY").ok();
+            tokio::spawn(async move {
+                let res = crate::tasks::file_ingest::reparse_quarantine_item(
+                    &client_clone,
+                    gemini_key.as_deref(),
+                    &id_owned,
+                    angle,
+                )
+                .await;
+                let msg = match res {
+                    Ok(m) => m,
+                    Err(e) => format!("[HATA] Yeniden ayrıştırma başarısız ({}):\n{}", id_owned, e),
                 };
                 send_reply(&client_clone, &bot_token_clone, chat_id, &msg).await;
             });
@@ -912,11 +970,12 @@ mod tests {
 Kullanılabilir komutlar:
 • /durum - Sistem durumu
 • /karantina - Karantina kuyruğu
-• /karantina detay <id> - Öğe teşhis ayrıntıları
+• /karantina detay <id> - Öge teşhis ayrıntıları
 • /dosya <id> - Orijinal dosyayı sohbete gönder
-• /onayla <id> - Karantinadaki dosyayı onayla
+• /onayla <id> [menu|fiyat] - Karantinadaki dosyayı onayla
+• /yeniden_ayristir <id> [açı] - Dosyayı döndürüp tekrar ayrıştır
 • /reddet <id> - Karantinadaki dosyayı reddet
-• /ata <id> <sehir> - Şehirsiz öğeye şehir ata
+• /ata <id> <sehir> - Şehirsiz ögeye şehir ata
 • /tara [sehir] - Menü kazımayı anlık tetikle
 • /son_menuler - Son kaydedilen menüler
 • /ban_kaldir - Devre kesiciyi sıfırla

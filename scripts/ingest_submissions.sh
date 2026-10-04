@@ -15,7 +15,7 @@ cd "$REPO_ROOT"
 
 # Note: Rust binary loads .env automatically via dotenvy
 
-SOURCE_DIR="${1:-.scratch/archive/historical_menus/sources/kepce_submits_202609}"
+SOURCE_DIR="${1:-${SUBMISSIONS_DIR:-data/submissions}}"
 DATA_DIR="${WORKER_MENU_DIR:-data/menuler}"
 
 echo "================================================================="

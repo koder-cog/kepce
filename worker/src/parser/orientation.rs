@@ -67,6 +67,15 @@ pub struct CorrectedDocument {
     pub mime_type: String,
     pub pages: usize,
     pub corrected_pages: usize,
+    pub attempted_correction: bool,
+}
+
+/// Ayrıştırılmış ve yönü düzeltilmiş tekil belge sayfası.
+#[derive(Debug, Clone)]
+pub struct DocumentPage {
+    pub page_number: usize,
+    pub bytes: Vec<u8>,
+    pub mime_type: String,
 }
 
 /// Sayfa yönü düzeltmesi etkin mi? (`ORIENTATION_CORRECTION=0` ile kapatılabilir.)
@@ -90,6 +99,7 @@ pub fn correct_document(bytes: &[u8], mime_type: &str) -> CorrectedDocument {
         mime_type: mime_type.to_string(),
         pages,
         corrected_pages: 0,
+        attempted_correction: false,
     };
 
     if !is_enabled() {
@@ -97,6 +107,25 @@ pub fn correct_document(bytes: &[u8], mime_type: &str) -> CorrectedDocument {
     }
 
     if mime_type == "application/pdf" {
+        // Taranmış tek sayfalı PDF belgelerinde gömülü yüksek çözünürlüklü raster
+        // görsel doğrudan çıkarılır ve görsel yön düzeltmesine yönlendirilir.
+        // Bu işlem harici libpdfium.so kütüphanesine bağımlı değildir ve orijinal netliği korur.
+        if let Some((img_bytes, img_mime)) = extract_single_image_from_pdf(bytes) {
+            match correct_image(&img_bytes, img_mime) {
+                Ok(c) => return c,
+                Err(e) => {
+                    tracing::warn!("PDF içinden çıkarılan görsel yönü düzeltilemedi: {e:#}");
+                    return CorrectedDocument {
+                        bytes: img_bytes,
+                        mime_type: img_mime.to_string(),
+                        pages: 1,
+                        corrected_pages: 0,
+                        attempted_correction: false,
+                    };
+                }
+            }
+        }
+
         match correct_pdf(bytes) {
             Ok(c) => c,
             Err(e) => {
@@ -116,6 +145,44 @@ pub fn correct_document(bytes: &[u8], mime_type: &str) -> CorrectedDocument {
                 fallback(1)
             }
         }
+    }
+}
+
+/// Belgeyi sayfa bazında ayrıştırıp her sayfanın yönünü dik (0° upright) hale getirir.
+/// - Taranmış PDF ise: lopdf ile her sayfanın gömülü raster görseli çıkarılır ve düzeltilir.
+/// - Görsel veya vektörel PDF ise: tek/mevcut sayfa olarak yön düzeltmesinden geçirilir.
+pub fn prepare_pages_for_extraction(bytes: &[u8], mime_type: &str) -> Vec<DocumentPage> {
+    if mime_type == "application/pdf" {
+        let extracted_images = extract_page_images_from_pdf(bytes);
+        if !extracted_images.is_empty() {
+            let mut pages = Vec::with_capacity(extracted_images.len());
+            for (page_num, img_bytes, img_mime) in extracted_images {
+                let corrected = match correct_image(&img_bytes, img_mime) {
+                    Ok(c) => c.bytes,
+                    Err(_) => img_bytes,
+                };
+                pages.push(DocumentPage {
+                    page_number: page_num,
+                    bytes: corrected,
+                    mime_type: "image/jpeg".to_string(),
+                });
+            }
+            return pages;
+        }
+
+        let corrected = correct_document(bytes, mime_type);
+        vec![DocumentPage {
+            page_number: 1,
+            bytes: corrected.bytes,
+            mime_type: corrected.mime_type,
+        }]
+    } else {
+        let corrected = correct_document(bytes, mime_type);
+        vec![DocumentPage {
+            page_number: 1,
+            bytes: corrected.bytes,
+            mime_type: corrected.mime_type,
+        }]
     }
 }
 
@@ -146,13 +213,19 @@ const CLASS_ROTATIONS: [Rotation; 4] = [
     Rotation::Cw90,
 ];
 
-/// Sınıflandırıcı kararının uygulanması için en düşük top-1 olasılığı ve
-/// top-1 ile top-2 arasındaki en düşük fark (marj).
+/// Sınıflandırıcı kararının uygulanması için standart ve çapraz doğrulamalı eşikler.
 ///
-/// `PP-LCNet_x1_0_doc_ori` olasılıkları yayvandır (doğru sınıf ~0.40, diğerleri
-/// ~0.20); bu yüzden mutlak eşik yerine **marj** esaslı karar daha güvenilirdir.
+/// PP-LCNet_x1_0_doc_ori olasılıkları yayvandır (doğru sınıf ~0.35-0.40, diğerleri ~0.20);
+/// bu yüzden mutlak eşik yerine marj esaslı karar daha güvenilirdir.
 const CLASSIFIER_MIN_PROB: f32 = 0.35;
 const CLASSIFIER_MIN_MARGIN: f32 = 0.15;
+
+/// Projeksiyon profili ekseniyle (yatay/dikey) bağımsız olarak teyit edildiğinde kullanılan esnek eşikler.
+const CLASSIFIER_AGREED_MIN_PROB: f32 = 0.30;
+const CLASSIFIER_AGREED_MIN_MARGIN: f32 = 0.10;
+
+/// Uzun kenar boyunca alınan kırpma sayısı (başlangıç, orta, bitiş).
+const NUM_CROPS: usize = 3;
 
 static ORIENTATION_SESSION: OnceLock<Option<Mutex<Session>>> = OnceLock::new();
 
@@ -215,19 +288,27 @@ struct Classification {
 /// yalnızca güvenilir olduğunda bir döndürme döner; aksi halde `Rotation::None`.
 fn decide_orientation(img: &DynamicImage) -> PageOrientation {
     let gray = img.to_luma8();
+    let axis = detect_axis(&gray);
 
     if let Some(c) = classify(img) {
-        let trusted = c.prob >= CLASSIFIER_MIN_PROB && c.margin >= CLASSIFIER_MIN_MARGIN;
-        if trusted && axis_agrees(&gray, c.rotation) {
+        let agrees = axis_agrees(axis, c.rotation);
+        let trusted = if agrees && axis != PageAxis::Unknown {
+            c.prob >= CLASSIFIER_AGREED_MIN_PROB && c.margin >= CLASSIFIER_AGREED_MIN_MARGIN
+        } else {
+            c.prob >= CLASSIFIER_MIN_PROB && c.margin >= CLASSIFIER_MIN_MARGIN
+        };
+
+        if trusted && agrees {
             return PageOrientation {
                 rotation: c.rotation,
                 confidence: c.prob,
             };
         }
         tracing::debug!(
-            "ONNX yön kararı güvenilmez (olasılık={:.2}, marj={:.2}), projeksiyona düşülüyor",
+            "ONNX yön kararı güvenilmez (olasılık={:.2}, marj={:.2}, eksen={:?}), projeksiyona düşülüyor",
             c.prob,
-            c.margin
+            c.margin,
+            axis
         );
     }
 
@@ -235,6 +316,18 @@ fn decide_orientation(img: &DynamicImage) -> PageOrientation {
     let projection = detect_orientation(&gray);
     if projection.confidence >= MIN_CONFIDENCE {
         projection
+    } else if axis == PageAxis::Vertical {
+        // Eksen dikey olduğunda metin satırları kesinlikle 90° veya 270° yatıktır.
+        // Tablo ızgarası içeren taranmış belgelerde hücre çizgileri descender ağırlık merkezini
+        // baskılasa dahi yatay okuma eksenine geçiş için projeksiyon kararı uygulanır.
+        let rotation = match projection.rotation {
+            Rotation::Cw90 | Rotation::Cw270 => projection.rotation,
+            _ => Rotation::Cw270,
+        };
+        PageOrientation {
+            rotation,
+            confidence: 0.8,
+        }
     } else {
         PageOrientation {
             rotation: Rotation::None,
@@ -244,9 +337,9 @@ fn decide_orientation(img: &DynamicImage) -> PageOrientation {
 }
 
 /// Sınıflandırıcının ekseni projeksiyon ekseniyle uyuşuyor mu? (eksen belirsizse evet)
-fn axis_agrees(gray: &GrayImage, rotation: Rotation) -> bool {
+fn axis_agrees(axis: PageAxis, rotation: Rotation) -> bool {
     let classifier_horizontal = matches!(rotation, Rotation::None | Rotation::Cw180);
-    match detect_axis(gray) {
+    match axis {
         PageAxis::Horizontal => classifier_horizontal,
         PageAxis::Vertical => !classifier_horizontal,
         PageAxis::Unknown => true,
@@ -306,7 +399,9 @@ fn classify_orientation(img: &DynamicImage) -> Option<PageOrientation> {
     })
 }
 
-/// 4 sınıfın softmax olasılıklarını döndürür (kalibrasyon testi de kullanır).
+/// 4 sınıfın birleşik softmax olasılıklarını döndürür.
+/// Çoklu kırpma (başlangıç, orta, bitiş) ile dokümanın farklı alanları taranır
+/// ve olasılıkların ortalaması alınır.
 fn classify_probs(img: &DynamicImage) -> Option<Vec<f32>> {
     let session = orientation_session()?;
     let input = ort::value::Value::from_array(model_input_array(img)).ok()?;
@@ -315,44 +410,60 @@ fn classify_probs(img: &DynamicImage) -> Option<Vec<f32>> {
     let input_name = guard.inputs().first()?.name().to_string();
     let outputs = guard.run(ort::inputs![input_name.as_str() => input]).ok()?;
     let (_, logits) = outputs[0].try_extract_tensor::<f32>().ok()?;
-    if logits.len() < CLASS_ROTATIONS.len() {
+    let num_classes = CLASS_ROTATIONS.len();
+    if logits.len() < NUM_CROPS * num_classes {
         return None;
     }
-    Some(softmax(&logits[..CLASS_ROTATIONS.len()]))
+
+    let mut avg_probs = vec![0.0f32; num_classes];
+    for b in 0..NUM_CROPS {
+        let crop_logits = &logits[b * num_classes..(b + 1) * num_classes];
+        let crop_probs = softmax(crop_logits);
+        for c in 0..num_classes {
+            avg_probs[c] += crop_probs[c] / (NUM_CROPS as f32);
+        }
+    }
+    Some(avg_probs)
 }
 
-/// `PP-LCNet_x1_0_doc_ori` girdisi: kısa kenarı 256'ya ölçekle → ortadan 224
-/// kırp → ImageNet normalize → CHW `[1,3,224,224]`.
+/// `PP-LCNet_x1_0_doc_ori` çoklu kırpma girdisi:
+/// Kısa kenar 256'ya ölçeklenir, uzun kenar boyunca 3 kırpma (başlangıç, orta, bitiş)
+/// çıkarılır. Her biri ImageNet normalizasyonu ile `[3, 3, 224, 224]` tensörüne yerleştirilir.
 fn model_input_array(img: &DynamicImage) -> ndarray::Array4<f32> {
     let rgb = img.to_rgb8();
     let (w, h) = (rgb.width().max(1), rgb.height().max(1));
 
-    // 1) resize_short=256 (en-boy oranı korunur; kısa kenar 256 olur).
     let scale = MODEL_RESIZE_SHORT as f32 / w.min(h) as f32;
     let nw = ((w as f32 * scale).round() as u32).max(1);
     let nh = ((h as f32 * scale).round() as u32).max(1);
     let resized = image::imageops::resize(&rgb, nw, nh, image::imageops::FilterType::Triangle);
 
-    // 2) center crop 224 (kısa kenar 256 olduğundan crop her zaman 224'tür).
     let side_u32 = MODEL_INPUT_SIZE.min(nw).min(nh);
-    let left = (nw - side_u32) / 2;
-    let top = (nh - side_u32) / 2;
-    let cropped = image::imageops::crop_imm(&resized, left, top, side_u32, side_u32).to_image();
-
-    // 3) ImageNet normalize + 4) CHW.
     let side = side_u32 as usize;
     let plane = side * side;
-    let mut data = vec![0f32; 3 * plane];
-    for (x, y, px) in cropped.enumerate_pixels() {
-        let idx = y as usize * side + x as usize;
-        for c in 0..3 {
-            let v = px.0[c] as f32 / 255.0;
-            data[c * plane + idx] = (v - MODEL_MEAN[c]) / MODEL_STD[c];
+
+    let crop_coords: [(u32, u32); NUM_CROPS] = if nw >= nh {
+        let y = (nh - side_u32) / 2;
+        [(0, y), ((nw - side_u32) / 2, y), (nw - side_u32, y)]
+    } else {
+        let x = (nw - side_u32) / 2;
+        [(x, 0), (x, (nh - side_u32) / 2), (x, nh - side_u32)]
+    };
+
+    let mut batch_data = vec![0f32; NUM_CROPS * 3 * plane];
+    for (b, &(left, top)) in crop_coords.iter().enumerate() {
+        let cropped = image::imageops::crop_imm(&resized, left, top, side_u32, side_u32).to_image();
+        let batch_offset = b * 3 * plane;
+        for (x, y, px) in cropped.enumerate_pixels() {
+            let idx = y as usize * side + x as usize;
+            for c in 0..3 {
+                let v = px.0[c] as f32 / 255.0;
+                batch_data[batch_offset + c * plane + idx] = (v - MODEL_MEAN[c]) / MODEL_STD[c];
+            }
         }
     }
 
-    // Şekil ve veri uzunluğu inşaat gereği tutarlıdır.
-    ndarray::Array4::from_shape_vec((1, 3, side, side), data)
+    ndarray::Array4::from_shape_vec((NUM_CROPS, 3, side, side), batch_data)
         .expect("ONNX girdi tensörü şekli veriyle tutarlı olmalı")
 }
 
@@ -393,12 +504,14 @@ fn correct_image(bytes: &[u8], mime_type: &str) -> Result<CorrectedDocument> {
     }
 
     // Ne yön düzeltmesi ne EXIF normalizasyonu gerekiyorsa orijinal baytlar döner.
+    let upright_confirmed = applied == Rotation::None && decision.confidence > 0.0;
     if applied == Rotation::None && !exif_needed {
         return Ok(CorrectedDocument {
             bytes: bytes.to_vec(),
             mime_type: mime_type.to_string(),
             pages: 1,
             corrected_pages: 0,
+            attempted_correction: upright_confirmed,
         });
     }
 
@@ -426,6 +539,7 @@ fn correct_image(bytes: &[u8], mime_type: &str) -> Result<CorrectedDocument> {
         mime_type: out_mime.1.to_string(),
         pages: 1,
         corrected_pages: 1,
+        attempted_correction: true,
     })
 }
 
@@ -467,12 +581,14 @@ fn correct_pdf(bytes: &[u8]) -> Result<CorrectedDocument> {
         .iter()
         .filter(|r| r.rotation != Rotation::None)
         .count();
+    let any_confident = rotations.iter().any(|r| r.confidence > 0.0);
     if corrected_pages == 0 {
         return Ok(CorrectedDocument {
             bytes: bytes.to_vec(),
             mime_type: "application/pdf".to_string(),
             pages: rotations.len(),
             corrected_pages: 0,
+            attempted_correction: any_confident,
         });
     }
 
@@ -482,6 +598,7 @@ fn correct_pdf(bytes: &[u8]) -> Result<CorrectedDocument> {
         mime_type: "application/pdf".to_string(),
         pages: rotations.len(),
         corrected_pages,
+        attempted_correction: true,
     })
 }
 
@@ -528,6 +645,148 @@ fn detect_pdf_page_rotations(bytes: &[u8]) -> Result<Vec<PageOrientation>> {
     Ok(out)
 }
 
+fn find_images_in_dict(
+    doc: &lopdf::Document,
+    dict: &lopdf::Dictionary,
+    visited: &mut Vec<lopdf::ObjectId>,
+) -> Vec<(Vec<u8>, usize)> {
+    let mut images = Vec::new();
+    let resources = dict.get(b"Resources").ok().and_then(|r| match r {
+        lopdf::Object::Dictionary(d) => Some(d),
+        lopdf::Object::Reference(id) => doc.get_dictionary(*id).ok(),
+        _ => None,
+    });
+
+    let Some(resources) = resources else {
+        return images;
+    };
+
+    let xobjects = resources.get(b"XObject").ok().and_then(|x| match x {
+        lopdf::Object::Dictionary(d) => Some(d),
+        lopdf::Object::Reference(id) => doc.get_dictionary(*id).ok(),
+        _ => None,
+    });
+
+    let Some(xobjects) = xobjects else {
+        return images;
+    };
+
+    for (_name, obj_ref) in xobjects.iter() {
+        let stream = match obj_ref {
+            lopdf::Object::Reference(id) => {
+                if visited.contains(id) {
+                    continue;
+                }
+                visited.push(*id);
+                match doc.get_object(*id) {
+                    Ok(lopdf::Object::Stream(s)) => s,
+                    _ => continue,
+                }
+            }
+            lopdf::Object::Stream(s) => s,
+            _ => continue,
+        };
+
+        let subtype = stream
+            .dict
+            .get(b"Subtype")
+            .ok()
+            .and_then(|s| s.as_name().ok());
+        if subtype == Some(b"Image".as_slice()) {
+            let filter = stream
+                .dict
+                .get(b"Filter")
+                .ok()
+                .and_then(|f| f.as_name().ok());
+            if filter == Some(b"DCTDecode".as_slice()) {
+                images.push((stream.content.clone(), stream.content.len()));
+            }
+        } else if subtype == Some(b"Form".as_slice()) {
+            images.extend(find_images_in_dict(doc, &stream.dict, visited));
+        }
+    }
+
+    images
+}
+
+/// Taranmış PDF belgelerinden her sayfanın gömülü raster görselini (JPEG) çıkarır.
+/// Çok sayfalı veya tek sayfalı PDF'lerde harici libpdfium.so olmadan saf Rust (lopdf)
+/// ile 300 DPI ham tarama kalitesini korur.
+pub fn extract_page_images_from_pdf(bytes: &[u8]) -> Vec<(usize, Vec<u8>, &'static str)> {
+    let Ok(doc) = lopdf::Document::load_mem(bytes) else {
+        return Vec::new();
+    };
+
+    let pages = doc.get_pages();
+    if pages.is_empty() {
+        return Vec::new();
+    }
+
+    let mut result = Vec::new();
+    let mut visited = Vec::new();
+
+    for (&page_num, &page_id) in &pages {
+        let Ok(page_dict) = doc.get_dictionary(page_id) else {
+            continue;
+        };
+
+        let page_images = find_images_in_dict(&doc, page_dict, &mut visited);
+        if let Some((best_data, _)) = page_images.into_iter().max_by_key(|(_, len)| *len) {
+            result.push((page_num as usize, best_data, "image/jpeg"));
+        }
+    }
+
+    // Eğer sayfa sözlükleri üzerinden bulunamadıysa ama tek sayfalıysa, nesne tablosu taranır (fallback).
+    if result.is_empty() && pages.len() == 1 {
+        result.extend(extract_single_image_from_pdf(bytes).map(|(data, mime)| (1, data, mime)));
+    }
+
+    result
+}
+
+/// Tek sayfalı taranmış PDF belgelerinden gömülü raster görseli (JPEG/PNG) çıkarır.
+/// Bu işlem harici libpdfium.so kütüphanesine ihtiyaç duymaz ve tarayıcının
+/// ürettiği orijinal 300 DPI ham çözünürlüğü tam olarak korur.
+pub fn extract_single_image_from_pdf(bytes: &[u8]) -> Option<(Vec<u8>, &'static str)> {
+    let doc = lopdf::Document::load_mem(bytes).ok()?;
+    let pages = doc.get_pages();
+    if pages.len() != 1 {
+        return None;
+    }
+
+    // Taranmış tek sayfalı belgelerde doğrudan nesne tablosu taranır.
+    // Subtype == "Image" ve Filter == "DCTDecode" olan en büyük görsel akışı (ana tarama) seçilir.
+    let mut best_image: Option<(Vec<u8>, usize)> = None;
+
+    for obj in doc.objects.values() {
+        if let Ok(stream) = obj.as_stream() {
+            let subtype = stream
+                .dict
+                .get(b"Subtype")
+                .ok()
+                .and_then(|s| s.as_name().ok());
+            if subtype == Some(b"Image".as_slice()) {
+                let filter = stream
+                    .dict
+                    .get(b"Filter")
+                    .ok()
+                    .and_then(|f| f.as_name().ok());
+                if filter == Some(b"DCTDecode".as_slice()) {
+                    let len = stream.content.len();
+                    if best_image
+                        .as_ref()
+                        .is_none_or(|(_, best_len)| len > *best_len)
+                    {
+                        best_image = Some((stream.content.clone(), len));
+                    }
+                }
+            }
+        }
+    }
+
+    best_image.map(|(data, _)| (data, "image/jpeg"))
+}
+
 /// lopdf ile sayfa `/Rotate` değerlerini ayarlar (belge tek parça kalır).
 fn apply_pdf_rotations(bytes: &[u8], rotations: &[PageOrientation]) -> Result<Vec<u8>> {
     let mut doc = lopdf::Document::load_mem(bytes).context("PDF lopdf ile açılamadı")?;
@@ -563,6 +822,44 @@ fn apply_pdf_rotations(bytes: &[u8], rotations: &[PageOrientation]) -> Result<Ve
     doc.save_to(&mut out)
         .context("Düzeltilmiş PDF yazılamadı")?;
     Ok(out)
+}
+
+/// Belgeyi (PDF veya görsel) belirtilen açıda (saat yönünde 90, 180 veya 270 derece) zorla döndürür.
+pub fn force_rotate_document(bytes: &[u8], mime_type: &str, degrees: u16) -> Result<Vec<u8>> {
+    let normalized_deg = (degrees % 360) / 90 * 90;
+    if normalized_deg == 0 {
+        return Ok(bytes.to_vec());
+    }
+
+    if mime_type == "application/pdf" {
+        let mut doc = lopdf::Document::load_mem(bytes).context("PDF lopdf ile açılamadı")?;
+        let pages = doc.get_pages();
+        for page_id in pages.values() {
+            if let Ok(dict) = doc.get_object_mut(*page_id).and_then(|o| o.as_dict_mut()) {
+                let current = dict
+                    .get(b"Rotate")
+                    .ok()
+                    .and_then(|o| o.as_i64().ok())
+                    .unwrap_or(0);
+                let next = (current + normalized_deg as i64).rem_euclid(360);
+                dict.set("Rotate", next);
+            }
+        }
+        let mut out = Vec::new();
+        doc.save_to(&mut out)
+            .context("Döndürülmüş PDF kaydedilemedi")?;
+        Ok(out)
+    } else {
+        let img = image::load_from_memory(bytes).context("Görsel yüklenemedi")?;
+        let rotated = match normalized_deg {
+            90 => img.rotate90(),
+            180 => img.rotate180(),
+            270 => img.rotate270(),
+            _ => img,
+        };
+        let (out, _) = encode_image(&rotated, mime_type)?;
+        Ok(out)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -953,5 +1250,67 @@ mod tests {
             result.bytes.len()
         );
         assert!(result.pages > 0, "en az bir sayfa bulunmalı");
+    }
+
+    #[test]
+    fn test_extract_single_image_from_pdf() {
+        let env_path = std::env::var("TEST_ERZINCAN_PDF").unwrap_or_default();
+        let paths = [
+            env_path.as_str(),
+            "data/samples/erzincan_ccf_000290.pdf",
+            "../data/samples/erzincan_ccf_000290.pdf",
+        ];
+        let bytes = paths
+            .iter()
+            .filter(|p| !p.is_empty())
+            .find_map(|p| std::fs::read(p).ok());
+        if let Some(bytes) = bytes {
+            let extracted = extract_single_image_from_pdf(&bytes);
+            assert!(
+                extracted.is_some(),
+                "Tek sayfalı taranmış PDF'ten görsel çıkarılabilmeli"
+            );
+            let (img_bytes, mime) = extracted.unwrap();
+            assert_eq!(mime, "image/jpeg");
+            assert_eq!(img_bytes.len(), 894924, "Gömülü JPEG boyutu tam tutmalı");
+
+            let res = correct_document(&bytes, "application/pdf");
+            assert_eq!(res.mime_type, "image/jpeg");
+            assert_eq!(res.pages, 1);
+            assert_eq!(
+                res.corrected_pages, 1,
+                "Yatık taranmış görsel dik yöne döndürülmeli"
+            );
+            assert!(res.bytes.len() > 100_000);
+        }
+    }
+
+    #[test]
+    fn test_extract_page_images_from_bursa_pdf() {
+        let env_path = std::env::var("TEST_BURSA_PDF").unwrap_or_default();
+        let paths = [
+            env_path.as_str(),
+            "data/samples/menu_bursa.pdf",
+            "../data/samples/menu_bursa.pdf",
+        ];
+        let bytes = paths
+            .iter()
+            .filter(|p| !p.is_empty())
+            .find_map(|p| std::fs::read(p).ok());
+        if let Some(bytes) = bytes {
+            let pages = extract_page_images_from_pdf(&bytes);
+            assert_eq!(
+                pages.len(),
+                3,
+                "Bursa PDF'inden 3 sayfa görseli çıkarılmalı"
+            );
+            assert_eq!(pages[0].0, 1);
+            assert_eq!(pages[1].0, 2);
+            assert_eq!(pages[2].0, 3);
+            for (_, img_data, mime) in &pages {
+                assert_eq!(*mime, "image/jpeg");
+                assert!(img_data.len() > 50_000, "Her sayfa görseli dolu olmalı");
+            }
+        }
     }
 }

@@ -57,6 +57,10 @@ pub struct ParseDiagnostics {
     pub weekday_mismatches: Vec<String>,
     /// LLM'in ISO tarihi ile ham yazılı tarihin (`date_raw`) deterministik uyuşmazlıkları.
     pub date_raw_mismatches: Vec<String>,
+    /// Sayfa yönü tespiti kesinleştirilemediğinde true olur.
+    pub orientation_uncertain: bool,
+    /// İki aşamalı çıkarımda Aşama 1 ile elde edilen saf CSV tablo ızgarası izi.
+    pub table_grid_csv: Option<String>,
 }
 
 /// Dosya adı/sayfa adı gibi metinlerden çıkarılan beyan edilen ay.
