@@ -2,161 +2,175 @@
 # vardir, ancak origin seviyesinde de tanimli olmasi o kuralin kaybolmasina karsi
 # korur ve www uzerinden kopya icerik servis edilmesini engeller.
 www.kepce.org {
-    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
-    redir https://kepce.org{uri} permanent
+	tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+	redir https://kepce.org{uri} permanent
 }
 
 kepce.org {
-    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
-    encode zstd gzip
+	tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+	encode zstd gzip
 
-    # 5651 Sayılı Kanun Uyumlu Erişim Logları
-    log {
-        output file /var/log/caddy/access.log {
-            roll_size 50mb
-            roll_keep 365
-            roll_keep_for 8760h
-        }
-        format json
-    }
+	# 5651 Sayılı Kanun Uyumlu Erişim Logları
+	# Anonim kamu menü okuma ve statik varlık istekleri Fransa sunucusuna loglanmaz (drop edilir).
+	# Yalnızca içerik üreten, kayıt olan veya veri ileten etkileşimli istekler 5651 kapsamında loglanır.
+	@skip_public_logs {
+		method GET HEAD
+		not path /api/v1/auth/* /moderasyon/* /api/v1/admin/* /api/v1/moderation/*
+	}
+	log_skip @skip_public_logs
 
-    # Güvenlik Başlıkları (Security Headers)
-    header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-        Cross-Origin-Opener-Policy "same-origin"
-        Cross-Origin-Resource-Policy "same-origin"
-        ?Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'strict-dynamic' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
-    }
+	log {
+		output file /var/log/caddy/access.log {
+			roll_size 50mb
+			roll_keep 365
+			roll_keep_for 8760h
+		}
+		format json
+	}
 
-    # SEO: Arama motorları JSON API'yi indekslemesin
-    @api_paths path /api/*
-    header @api_paths X-Robots-Tag "noindex, nofollow"
+	# Güvenlik Başlıkları (Security Headers)
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		?Content-Security-Policy "default-src 'self'; base-uri 'self'; object-src 'none'; font-src 'self' data:; img-src 'self' data: blob: https:; script-src 'self' 'strict-dynamic' https://static.cloudflareinsights.com https://analitik.kepce.org; style-src 'self' 'unsafe-inline'; connect-src 'self' https://cloudflareinsights.com https://analitik.kepce.org; frame-ancestors 'none';"
+	}
 
-    # SEO: Trailing-slash normalizasyonu (/ankara/ -> /ankara)
-    # NOT: path * / matcher'i "her sey OR /" anlamina geldigi icin tum istekleri
-    # //path seklinde protocol-relative URL'ye yonlendiriyordu; regexp kullanilir.
-    @trailing_slash path_regexp trailing ^/(.+)/$
-    redir @trailing_slash /{re.trailing.1} 308
+	# SEO: Arama motorları JSON API'yi indekslemesin
+	@api_paths path /api/*
+	header @api_paths X-Robots-Tag "noindex, nofollow"
 
-    # Kullanıcıya özel sayfalar asla edge/cache'lenmez (güvenlik)
-    @private_pages {
-        path /ben /ben/* /ayarlar /ayarlar/* /bildirimler /bildirimler/* /moderasyon /moderasyon/* /giris /kayit /oauth /oauth/* /auth /auth/* /sifre-yenile /profili-tamamla /gelistirici /gelistirici/*
-    }
-    header @private_pages Cache-Control "private, no-store"
+	# SEO: Trailing-slash normalizasyonu (/ankara/ -> /ankara)
+	# NOT: path * / matcher'i "her sey OR /" anlamina geldigi icin tum istekleri
+	# //path seklinde protocol-relative URL'ye yonlendiriyordu; regexp kullanilir.
+	@trailing_slash path_regexp trailing ^/(.+)/$
+	redir @trailing_slash /{re.trailing.1} 308
 
-    # Statik fontlar ve kalıcı varlıklar için 1 yıl (immutable) önbellekleme
-    @immutable_assets {
-        path /fonts/* *.woff2 *.woff *.ttf /internal/immutable/* /agpl-v3.svg /og_image.png
-    }
-    header @immutable_assets >Cache-Control "public, max-age=31536000, immutable"
+	# Kullanıcıya özel sayfalar asla edge/cache'lenmez (güvenlik)
+	@private_pages {
+		path /ben /ben/* /ayarlar /ayarlar/* /bildirimler /bildirimler/* /moderasyon /moderasyon/* /giris /kayit /oauth /oauth/* /auth /auth/* /sifre-yenile /profili-tamamla /gelistirici /gelistirici/*
+	}
+	header @private_pages Cache-Control "private, no-store"
 
-    # Statik meta ve simge dosyaları için önbellek kuralları (manifest.json, favicon vb.)
-    @static_meta {
-        path /manifest.json /favicon.ico /favicon.svg /favicon-ara.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png
-    }
-    header @static_meta Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
+	# Statik fontlar ve kalıcı varlıklar için 1 yıl (immutable) önbellekleme
+	@immutable_assets {
+		path /fonts/* *.woff2 *.woff *.ttf /internal/immutable/* /agpl-v3.svg /og_image.png
+	}
+	header @immutable_assets >Cache-Control "public, max-age=31536000, immutable"
 
-    # Statik bakım dosyası servisi
-    root * /srv/static
+	# Statik meta ve simge dosyaları için önbellek kuralları (manifest.json, favicon vb.)
+	@static_meta {
+		path /manifest.json /favicon.ico /favicon.svg /favicon-ara.svg /favicon-48x48.png /apple-touch-icon.png /icon-*.png
+	}
+	header @static_meta Cache-Control "public, max-age=604800, stale-while-revalidate=86400"
 
-    # /ara isteklerini ara.kepce.org'a yönlendir
-    redir /ara https://ara.kepce.org 302
-    redir /ara/* https://ara.kepce.org/{path} 302
+	# Statik bakım dosyası servisi
+	root * /srv/static
 
-    # 1. API istekleri -> Rust API container'ı (api:8000)
-    handle /api/* {
-        reverse_proxy api:8000
-    }
+	# /ara isteklerini ara.kepce.org'a yönlendir
+	redir /ara https://ara.kepce.org 302
+	redir /ara/* https://ara.kepce.org/{path} 302
 
-    # 2. Statik yüklemeler (avatarlar vb.) -> Rust API container'ı (api:8000)
-    handle /static/* {
-        reverse_proxy api:8000
-    }
+	# 1. API istekleri -> Rust API container'ı (api:8000)
+	handle /api/* {
+		reverse_proxy api:8000
+	}
 
-    # 3. Ön yüz (SvelteKit SSR) -> Node container'ı (webapp:3000)
-    handle {
-        reverse_proxy webapp:3000
-    }
+	# 2. Statik yüklemeler (avatarlar vb.) -> Rust API container'ı (api:8000)
+	handle /static/* {
+		reverse_proxy api:8000
+	}
 
-    # 4. 502 / 503 hatasında Özel Bakım Sayfası
-    handle_errors {
-        @maintenance expression `{err.status_code} in [502, 503]`
-        rewrite @maintenance /maintenance.html
-        file_server
-    }
+	# 3. Ön yüz (SvelteKit SSR) -> Node container'ı (webapp:3000)
+	handle {
+		reverse_proxy webapp:3000
+	}
+
+	# 4. 502 / 503 hatasında Özel Bakım Sayfası
+	handle_errors {
+		@maintenance expression `{err.status_code} in [502, 503]`
+		rewrite @maintenance /maintenance.html
+		file_server
+	}
 }
 
 ara.kepce.org {
-    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
-    encode zstd gzip
+	tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+	encode zstd gzip
 
-    header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "DENY"
-        Referrer-Policy "no-referrer"
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-        Cross-Origin-Opener-Policy "same-origin"
-        Cross-Origin-Resource-Policy "same-origin"
-    }
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "no-referrer"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+	}
 
-    # Arama motorlarının dinamik arama sorgu sayfalarını indekslemesini engelle
-    @search_results query q=*
-    header @search_results X-Robots-Tag "noindex, nofollow, noarchive"
+	# Arama motorlarının dinamik arama sorgu sayfalarını indekslemesini engelle
+	@search_results query q=*
+	header @search_results X-Robots-Tag "noindex, nofollow, noarchive"
 
-    # Favicon yönlendirmesi
-    rewrite /favicon.ico /favicon-ara.svg
-    rewrite /favicon.svg /favicon-ara.svg
+	# Favicon yönlendirmesi
+	rewrite /favicon.ico /favicon-ara.svg
+	rewrite /favicon.svg /favicon-ara.svg
 
-    log {
-        output file /var/log/caddy/ara_access.log {
-            roll_size 50mb
-            roll_keep 365
-            roll_keep_for 8760h
-        }
-        format json
-    }
+	# Anonim arama sorguları ve kamu gezintisi loglanmaz (drop edilir)
+	@skip_public_search {
+		method GET HEAD
+	}
+	log_skip @skip_public_search
 
-    # 1. API istekleri -> Rust API container'ı (api:8000)
-    handle /api/* {
-        reverse_proxy api:8000
-    }
+	log {
+		output file /var/log/caddy/ara_access.log {
+			roll_size 50mb
+			roll_keep 365
+			roll_keep_for 8760h
+		}
+		format json
+	}
 
-    # 2. Statik yüklemeler (avatarlar vb.) -> Rust API container'ı (api:8000)
-    handle /static/* {
-        reverse_proxy api:8000
-    }
+	# 1. API istekleri -> Rust API container'ı (api:8000)
+	handle /api/* {
+		reverse_proxy api:8000
+	}
 
-    # 3. Ön yüz (SvelteKit SSR) -> Node container'ı (webapp:3000)
-    handle {
-        reverse_proxy webapp:3000
-    }
+	# 2. Statik yüklemeler (avatarlar vb.) -> Rust API container'ı (api:8000)
+	handle /static/* {
+		reverse_proxy api:8000
+	}
+
+	# 3. Ön yüz (SvelteKit SSR) -> Node container'ı (webapp:3000)
+	handle {
+		reverse_proxy webapp:3000
+	}
 }
 
 analitik.kepce.org {
-    tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
-    encode zstd gzip
+	tls /etc/caddy/certs/origin.crt /etc/caddy/certs/origin.key
+	encode zstd gzip
 
-    header {
-        X-Content-Type-Options "nosniff"
-        X-Frame-Options "SAMEORIGIN"
-        Referrer-Policy "strict-origin-when-cross-origin"
-        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
-        Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
-    }
+	header {
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
+	}
 
-    log {
-        output file /var/log/caddy/analitik_access.log {
-            roll_size 50mb
-            roll_keep 365
-            roll_keep_for 8760h
-        }
-        format json
-    }
+	log {
+		output file /var/log/caddy/analitik_access.log {
+			roll_size 50mb
+			roll_keep 365
+			roll_keep_for 8760h
+		}
+		format json
+	}
 
-    reverse_proxy umami:3000
+	reverse_proxy umami:3000
 }
