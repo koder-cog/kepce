@@ -56,7 +56,7 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260913',
       version: '2026.09.13',
-      note: 'Kepçe\'nin yer sağlayıcı rolü açıklandı. Menü verilerinin bilgilendirme amaçlı niteliği ve içerik şikayet şartları detaylandırıldı.'
+      note: "Kepçe'nin yer sağlayıcı rolü açıklandı. Menü verilerinin bilgilendirme amaçlı niteliği ve içerik şikayet şartları detaylandırıldı."
     },
     {
       slug: '20260920',
