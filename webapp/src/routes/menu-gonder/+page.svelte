@@ -438,7 +438,9 @@
 
       {#if isAdmin}
         <div class="form-group">
-          <label class="form-label" for="on-behalf-of-input">Kullanıcı Adına Gönder (Yönetici)</label>
+          <label class="form-label" for="on-behalf-of-input"
+            >Kullanıcı Adına Gönder (Yönetici)</label
+          >
           <input
             type="text"
             id="on-behalf-of-input"
@@ -447,7 +449,8 @@
             bind:value={onBehalfOf}
           />
           <div class="form-help">
-            Kullanıcı adı veya ID (örn: faik). Girilirse menü bu öğrencinin hesabına kaydedilir ve denetim izi notlara eklenir.
+            Kullanıcı adı veya ID (örn: faik). Girilirse menü bu öğrencinin hesabına kaydedilir ve
+            denetim izi notlara eklenir.
           </div>
         </div>
       {/if}

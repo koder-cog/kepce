@@ -249,7 +249,10 @@ mod tests {
 
     #[test]
     fn test_verify_file_signature() {
-        assert!(verify_file_signature(&[137, 80, 78, 71, 13, 10, 26, 10, 0, 1], "png"));
+        assert!(verify_file_signature(
+            &[137, 80, 78, 71, 13, 10, 26, 10, 0, 1],
+            "png"
+        ));
         assert!(!verify_file_signature(&[0, 1, 2, 3], "png"));
 
         assert!(verify_file_signature(&[0xFF, 0xD8, 0xFF, 0xE0], "jpg"));
@@ -259,13 +262,22 @@ mod tests {
         assert!(verify_file_signature(b"%PDF-1.4...", "pdf"));
         assert!(!verify_file_signature(b"NOTPDF", "pdf"));
 
-        assert!(verify_file_signature(&[0x50, 0x4B, 0x03, 0x04, 0, 0], "xlsx"));
-        assert!(verify_file_signature(&[0xD0, 0xCF, 17, 224, 161, 177, 26, 225], "xls"));
+        assert!(verify_file_signature(
+            &[0x50, 0x4B, 0x03, 0x04, 0, 0],
+            "xlsx"
+        ));
+        assert!(verify_file_signature(
+            &[0xD0, 0xCF, 17, 224, 161, 177, 26, 225],
+            "xls"
+        ));
 
         // WebP: RIFF + 4 bytes size + WEBP
         let webp_header = b"RIFF\x20\x00\x00\x00WEBPVP8 ";
         assert!(verify_file_signature(webp_header, "webp"));
-        assert!(!verify_file_signature(b"RIFF\x20\x00\x00\x00AVIFVP8 ", "webp"));
+        assert!(!verify_file_signature(
+            b"RIFF\x20\x00\x00\x00AVIFVP8 ",
+            "webp"
+        ));
     }
 
     #[test]
@@ -276,4 +288,3 @@ mod tests {
         assert!(ALLOWED_MIME_TYPES.contains(&"application/octet-stream"));
     }
 }
-
