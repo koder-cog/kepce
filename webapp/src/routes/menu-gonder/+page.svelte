@@ -449,8 +449,8 @@
             bind:value={onBehalfOf}
           />
           <div class="form-help">
-            Kullanıcı adı veya ID (örn: faik). Girilirse menü bu öğrencinin hesabına kaydedilir ve
-            denetim izi notlara eklenir.
+            Kullanıcı adı veya ID (örn: faik ya da 123e4567-e89b-12d3-a456-426614174000). Girilirse
+            menü bu öğrencinin hesabına kaydedilir ve denetim izi notlara eklenir.
           </div>
         </div>
       {/if}
