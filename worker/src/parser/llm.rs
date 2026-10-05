@@ -140,7 +140,7 @@ pub fn unified_document_response_schema() -> serde_json::Value {
 
     let pricing_board_schema = json!({
         "type": "object",
-        "description": "Official ceiling price and grammage board data.",
+        "description": "Official ceiling price and grammage board data. Include ONLY if official ceiling prices in TL are explicitly present in the source document. Do NOT include if source is a dining menu without monetary prices.",
         "properties": {
             "period_start": {
                 "type": "string",
@@ -216,7 +216,7 @@ pub fn unified_document_response_schema() -> serde_json::Value {
 
     let takeaway_schema = json!({
         "type": "object",
-        "description": "Al Götür packages and choice slots.",
+        "description": "Al Götür packages and choice slots. Include ONLY if takeaway packages are explicitly present in the source document. Do NOT include if source is a dining menu without takeaway packages.",
         "properties": {
             "packages": {
                 "type": "array",
@@ -254,7 +254,7 @@ pub fn unified_document_response_schema() -> serde_json::Value {
             },
             "days": {
                 "type": "array",
-                "description": "List of daily menus extracted if this is a daily menu document.",
+                "description": "MANDATORY when document_type is 'daily_menu' or 'compound'. Must contain all calendar dates and meal rows found in the table. Must never be empty if a menu table is present.",
                 "items": day_schema
             },
             "pricing_board": pricing_board_schema,
@@ -1048,10 +1048,11 @@ Important classification rules:
 - Official pricing boards must specify monetary prices (Ücret, Fiyat, TL). An item with 0 TL is not a valid pricing item unless explicitly labeled as free.
 - If the document is rotated sideways or upside down, first observe the orientation and attempt to read the content in its correct reading direction. If the table layout contains dates or days of the week, extract it as 'daily_menu'.
 
-Extract all details strictly into the corresponding fields of the JSON schema:
-1. If official_pricing: Extract every single row into 'pricing_board.items' with meal_type ('breakfast' for Kahvalti, 'dinner' for Aksam/Yemek, 'lunch' for Ogle), category_name (item name in uppercase), portion_amount, and numeric price in TL. If dates or academic year are stated (e.g. 2026-2027), extract period_start and period_end.
-2. If takeaway_package: Extract each package into 'takeaway.packages', including slots (index, title, is_required) and alternative item names and portions.
-3. If daily_menu: Extract all days into 'days' with ISO dates (YYYY-MM-DD), date_raw, meal_type, food items, amounts, calories, and alternatives.
+MANDATORY EXTRACTION CONSTRAINTS:
+1. If daily_menu: You MUST extract EVERY SINGLE DAY from the table into the 'days' array with ISO dates (YYYY-MM-DD), date_raw, meal_type, food items, amounts, calories, and alternatives. You must NEVER omit or return an empty 'days' array when a meal table is visible. Do NOT include 'takeaway' or 'pricing_board' keys if the document does not contain them.
+2. If official_pricing: Extract every single row into 'pricing_board.items' with meal_type ('breakfast' for Kahvalti, 'dinner' for Aksam/Yemek, 'lunch' for Ogle), category_name (item name in uppercase), portion_amount, and numeric price in TL. If dates or academic year are stated (e.g. 2026-2027), extract period_start and period_end. Do NOT include 'days' or 'takeaway'.
+3. If takeaway_package: Extract each package into 'takeaway.packages', including slots (index, title, is_required) and alternative item names and portions. Do NOT include 'days' or 'pricing_board'.
+4. If compound: Extract both 'days' and 'takeaway' / 'pricing_board' as present.
 Output strictly conforming to the requested JSON schema.";
 
 pub const TABLE_GRID_EXTRACTION_PROMPT: &str = "Bu menü tablosunu CSV formatına dönüştür.
@@ -1104,7 +1105,7 @@ CSV Verisi:
 ```
 
 Kurallar:
-1. Her günü 'days' dizisinde ISO formatında (YYYY-MM-DD) tarih, date_raw, meal_type ve o güne ait yemek kalemleri ('items': name, amount, calories, alternatives) ile listele.
+1. Her günü 'days' dizisinde ISO formatında (YYYY-MM-DD) tarih, date_raw, meal_type ve o güne ait yemek kalemleri ('items': name, amount, calories, alternatives) ile listele. Tablodaki tüm günleri eksiksiz aktar, hiçbir günü atlama.
 2. Belge kahvaltı menüsü ise meal_type='breakfast', akşam yemeği ise meal_type='dinner' yap.
 3. Varsa dipnotlardaki alternatif kurallarını (örn. tulum peynirine alternatif beyaz peynir) ilgili günün yemek kalemlerine alternatif olarak ekle.
 4. Sadece JSON çıktısı ver."#,
@@ -1123,20 +1124,21 @@ Girdi Verisi:
 
 Kurallar:
 1. Belge Türü Tespiti (document_type):
-   - Eğer sadece günlük menü tablosu varsa 'daily_menu'.
+   - Girdide [TABLO] bloğu varsa ve parasal fiyat içermeyen yemek listesi ise document_type KESİNLİKLE 'daily_menu' (veya paketler de varsa 'compound') olmalıdır.
    - Eğer sadece paket/al götür reçeteleri varsa 'takeaway_package'.
-   - Eğer hem günlük menü hem paket reçeteleri/takvimi varsa 'compound'.
    - Eğer fiyat listesi / gramaj panosu ise 'official_pricing'.
 
-2. Günlük Menü (days dizisi):
+2. Günlük Menü Zorunluluğu (days dizisi - KRİTİK):
+   - document_type 'daily_menu' veya 'compound' ise 'days' dizisi KESİNLİKLE ZORUNLUDUR. ASLA boş dizi [] veya null bırakılamaz.
+   - Tablodaki TÜM günleri (1. günden son güne kadar, 30/31 gün) eksiksiz olarak 'days' dizisine aktaracaksın. Herhangi bir günü veya satırı atlamak kesinlikle yasaktır.
    - Her günü ISO 8601 YYYY-MM-DD formatında 'date', kaynak metindeki haliyle 'date_raw' ve 'meal_type' ('breakfast' / 'dinner' / 'lunch') ile aktar.
    - Tabloda veya dipnotta o güne ait günlük toplam kalori varsa 'calories' alanına yaz (ör. '1178 kcal').
    - Her yemek kalemini 'items' dizisinde: 'name', 'amount' (gramaj), 'calories' (yemek kalorisi) olarak ayıkla.
    - Alternatif seçenekler varsa (örn. Çorba alternatifi veya Meyve/Tatlı alternatifi) 'alternatives' dizisine ekle.
 
-3. Al Götür Paketleri (takeaway.packages):
-   - Her paketi ('Al Götür Menü 1', 'Al Götür Menü 2' vb.) 'packages' içine yerleştir.
-   - Her yuva/slot için 'slot_index', 'slot_title' ve sunulan alternatif ürünleri 'items' (dish_name, portion) olarak listele.
+3. Olmayan Alanları Dahil Etmeme (Negatif Kısıt):
+   - Girdide al götür / paket reçetesi yoksa 'takeaway' alanını JSON çıktısına HİÇ EKLEME (boş nesne veya boş dizi olarak dahi koyma).
+   - Girdide parasal tavan fiyat listesi yoksa 'pricing_board' alanını JSON çıktısına HİÇ EKLEME.
 
 4. Sadece JSON formatında çıktı ver."#,
         grid_content
