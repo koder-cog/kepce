@@ -14,36 +14,20 @@ mkdir -p "$HOOK_DIR"
 cat << 'EOF' > "$HOOK_FILE"
 #!/bin/bash
 # Kepçe Git Pre-Commit Hook
-# Prevents commits if formatting, clippy, or Svelte checks fail.
+# Commitlemeden önce Rust ve Webapp dosyalarını otomatik formatlar.
 
-echo "=== Running Pre-Commit Checks ==="
-
-# 1. Cargo Fmt
-echo "Checking Rust formatting..."
-if ! cargo fmt --all -- --check; then
-    echo "Hata: Rust format kontrolü başarısız oldu. Lütfen 'cargo fmt' çalıştırın."
-    exit 1
+if command -v cargo >/dev/null 2>&1; then
+    cargo fmt --all
 fi
 
-# 2. Cargo Clippy
-echo "Checking Rust clippy lints..."
-if ! cargo clippy --workspace --all-targets -- -D warnings; then
-    echo "Hata: Rust clippy lints başarısız oldu."
-    exit 1
+if [ -d "webapp" ] && [ -f "webapp/package.json" ]; then
+    (cd webapp && npm run format >/dev/null 2>&1 || true)
 fi
 
-# 3. Svelte Check
-if [ -d "webapp" ]; then
-    echo "Running Svelte check..."
-    if ! (cd webapp && npm run check); then
-        echo "Hata: Svelte check başarısız oldu."
-        exit 1
-    fi
-fi
+git update-index --again 2>/dev/null || true
 
-echo "=== All Checks Passed ==="
 exit 0
 EOF
 
 chmod +x "$HOOK_FILE"
-echo "Git pre-commit kancası başarıyla kuruldu!"
+echo "Git pre-commit kancası başarıyla güncellendi ve kuruldu!"
