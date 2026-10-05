@@ -7,14 +7,21 @@ use chrono::{Datelike, Utc};
 
 const MAX_FILE_SIZE: usize = 20 * 1024 * 1024; // 20MB
 const MAX_FILES: usize = 5;
-const ALLOWED_EXTENSIONS: &[&str] = &["xlsx", "xls", "pdf", "png", "jpg", "jpeg"];
+const ALLOWED_EXTENSIONS: &[&str] = &["xlsx", "xls", "pdf", "png", "jpg", "jpeg", "webp"];
 const ALLOWED_MIME_TYPES: &[&str] = &[
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
+    "application/x-excel",
+    "application/x-msexcel",
     "application/pdf",
+    "application/x-pdf",
     "image/png",
     "image/jpeg",
     "image/pjpeg",
+    "image/jpg",
+    "image/webp",
+    "application/zip",
+    "application/octet-stream",
 ];
 
 #[derive(Debug)]
@@ -62,6 +69,7 @@ fn verify_file_signature(data: &[u8], ext: &str) -> bool {
         "pdf" => data.starts_with(&[0x25, 0x50, 0x44, 0x46]),
         "xlsx" => data.starts_with(&[0x50, 0x4B, 0x03, 0x04]),
         "xls" => data.starts_with(&[0xD0, 0xCF, 17, 224, 161, 177, 26, 225]),
+        "webp" => data.starts_with(b"RIFF") && data.len() >= 12 && &data[8..12] == b"WEBP",
         _ => false,
     }
 }
@@ -123,19 +131,16 @@ impl IngestionService {
                 return Err(IngestionError::InvalidFileType(file.name.clone()));
             }
 
-            // MIME Type Check
+            // MIME Type Check: İstemcinin ilettiği MIME tipi varsa ve parametrelerinden arındırılmışsa denetlenir
             if let Some(ref ct) = file.content_type {
-                if !ALLOWED_MIME_TYPES.contains(&ct.as_str()) {
+                let ct_lower = ct.to_lowercase();
+                let base_ct = ct_lower.split(';').next().unwrap_or("").trim();
+                if !base_ct.is_empty() && !ALLOWED_MIME_TYPES.contains(&base_ct) {
                     return Err(IngestionError::InvalidFileType(format!(
                         "{}: Geçersiz MIME tipi ({})",
                         file.name, ct
                     )));
                 }
-            } else {
-                return Err(IngestionError::InvalidFileType(format!(
-                    "{}: MIME tipi eksik",
-                    file.name
-                )));
             }
 
             // Magic Bytes verification
@@ -237,3 +242,38 @@ impl IngestionService {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_verify_file_signature() {
+        assert!(verify_file_signature(&[137, 80, 78, 71, 13, 10, 26, 10, 0, 1], "png"));
+        assert!(!verify_file_signature(&[0, 1, 2, 3], "png"));
+
+        assert!(verify_file_signature(&[0xFF, 0xD8, 0xFF, 0xE0], "jpg"));
+        assert!(verify_file_signature(&[0xFF, 0xD8, 0xFF, 0xE1], "jpeg"));
+        assert!(!verify_file_signature(&[0xFF, 0x00], "jpg"));
+
+        assert!(verify_file_signature(b"%PDF-1.4...", "pdf"));
+        assert!(!verify_file_signature(b"NOTPDF", "pdf"));
+
+        assert!(verify_file_signature(&[0x50, 0x4B, 0x03, 0x04, 0, 0], "xlsx"));
+        assert!(verify_file_signature(&[0xD0, 0xCF, 17, 224, 161, 177, 26, 225], "xls"));
+
+        // WebP: RIFF + 4 bytes size + WEBP
+        let webp_header = b"RIFF\x20\x00\x00\x00WEBPVP8 ";
+        assert!(verify_file_signature(webp_header, "webp"));
+        assert!(!verify_file_signature(b"RIFF\x20\x00\x00\x00AVIFVP8 ", "webp"));
+    }
+
+    #[test]
+    fn test_allowed_extensions_and_mimes() {
+        assert!(ALLOWED_EXTENSIONS.contains(&"webp"));
+        assert!(ALLOWED_EXTENSIONS.contains(&"xlsx"));
+        assert!(ALLOWED_MIME_TYPES.contains(&"image/webp"));
+        assert!(ALLOWED_MIME_TYPES.contains(&"application/octet-stream"));
+    }
+}
+

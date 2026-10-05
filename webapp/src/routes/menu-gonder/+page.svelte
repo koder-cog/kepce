@@ -35,7 +35,7 @@
   ];
 
   const MAX_FILES = 5;
-  const ALLOWED_EXTENSIONS = ['xlsx', 'xls', 'pdf', 'png', 'jpg', 'jpeg'];
+  const ALLOWED_EXTENSIONS = ['xlsx', 'xls', 'pdf', 'png', 'jpg', 'jpeg', 'webp'];
   const FILE_HINT = `${ALLOWED_EXTENSIONS.map((e) => `.${e}`).join(', ')} (Dosya başı maks 10MB)`;
   const ACCEPT_ATTRIBUTE = `${ALLOWED_EXTENSIONS.map((e) => `.${e}`).join(',')},image/*`;
 
@@ -260,11 +260,12 @@
 
       if (!res.ok) {
         const body = await res.text().catch(() => '');
-        let detail;
+        let errMsg;
         try {
-          detail = JSON.parse(body)?.detail;
+          const parsed = JSON.parse(body);
+          errMsg = parsed.error || parsed.detail || parsed.message;
         } catch (_) {}
-        throw new Error(detail || body || `Hata oluştu (Durum: ${res.status})`);
+        throw new Error(errMsg || body || `Hata oluştu (Durum: ${res.status})`);
       }
 
       isSuccess = true;

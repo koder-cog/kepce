@@ -6,12 +6,14 @@ use crate::services::ingestion::{
 };
 use axum::{
     Json, Router,
-    extract::{Multipart, State},
+    extract::{DefaultBodyLimit, Multipart, State},
     routing::post,
 };
 
 pub fn router() -> Router<crate::config::AppState> {
-    Router::new().route("/submit", post(submit_menu))
+    Router::new()
+        .route("/submit", post(submit_menu))
+        .layer(DefaultBodyLimit::max(50 * 1024 * 1024))
 }
 
 impl From<IngestionError> for AppError {
