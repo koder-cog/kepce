@@ -92,6 +92,7 @@
   });
 
   let user = $derived(globalState?.user);
+  let isAdmin = $derived(globalState?.isModerator || user?.role === 'admin' || user?.is_admin);
   let now = new Date();
 
   // ── Tarih mantığı: güncel ay + 1 ──
@@ -104,6 +105,7 @@
   let selectedMonth = $state(String(now.getMonth() + 1));
   let selectedFiles = $state([]);
   let notes = $state('');
+  let onBehalfOf = $state('');
 
   let isSubmitting = $state(false);
   let isSuccess = $state(false);
@@ -247,6 +249,10 @@
             : 'Aylık Menü';
       const finalNotes = notes.trim() ? `[${typeLabel}] ${notes.trim()}` : `[${typeLabel}]`;
       formData.append('notes', finalNotes);
+
+      if (isAdmin && onBehalfOf.trim()) {
+        formData.append('on_behalf_of', onBehalfOf.trim());
+      }
 
       for (const file of selectedFiles) {
         formData.append('files', file);
@@ -429,6 +435,22 @@
           maxlength="1024"
           class="contribution-notes-area"></textarea>
       </div>
+
+      {#if isAdmin}
+        <div class="form-group">
+          <label class="form-label" for="on-behalf-of-input">Kullanıcı Adına Gönder (Yönetici)</label>
+          <input
+            type="text"
+            id="on-behalf-of-input"
+            name="on_behalf_of"
+            placeholder=" "
+            bind:value={onBehalfOf}
+          />
+          <div class="form-help">
+            Kullanıcı adı veya ID (örn: faik). Girilirse menü bu öğrencinin hesabına kaydedilir ve denetim izi notlara eklenir.
+          </div>
+        </div>
+      {/if}
 
       {#if submitError}
         <div class="auth-error u-block">{submitError}</div>
