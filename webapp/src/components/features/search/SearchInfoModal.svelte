@@ -16,7 +16,7 @@
     {#snippet children()}
       <div class="u-flex u-flex-col u-gap-md">
         <p class="u-text-sm u-leading-comfortable">
-          Kepçe Ara, bağımsız SearXNG altyapısını kullanan açık kaynaklı bir meta arama motorudur.
+          Kepçe Ara, SearXNG altyapısını kullanan açık kaynaklı bir meta arama motorudur.
         </p>
 
         <p class="u-text-sm u-leading-comfortable">

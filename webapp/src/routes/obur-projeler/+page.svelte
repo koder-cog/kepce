@@ -29,7 +29,7 @@
         url: 'https://kepce.org/obur-projeler',
         name: 'Öbür Projeler | Kepçe',
         description:
-          'Kepçe ekosistemi ve geliştiricilerinin yürüttüğü bağımsız açık kaynak projeler.',
+          'Kepçe ekosistemi ve diğer geliştiricilerin yürüttüğü bağımsız açık kaynak projeler.',
         inLanguage: 'tr-TR'
       },
       {
@@ -45,14 +45,14 @@
 
 <Seo
   title="Öbür Projeler | Kepçe"
-  description="Kepçe ekosistemi ve geliştiricilerinin yürüttüğü bağımsız açık kaynak projeler."
+  description="Kepçe ekosistemi ve diğer geliştiricilerinin yürüttüğü bağımsız açık kaynak projeler."
   image="https://kepce.org/api/v1/public/og/page/obur-projeler"
   schema={oburProjelerSchema}
 />
 
 <ContentPage title="Öbür Projeler">
   <p>
-    Bunlar Kepçe ekibinin veya diğer geliştiricilerinin internetin başka köşelerinde yürüttüğü
+    Bunlar Kepçe ekibinin veya diğer geliştiricilerin internetin başka köşelerinde yürüttüğü
     bağımsız işlerdir. Kepçe'nin tabldot menüsüyle doğrudan bir bağı bulunmaz. Bu sitelerin ve
     servislerin yol açacağı her türlü sıkıntıyla ilgili kendi adreslerine başvurunuz.
   </p>

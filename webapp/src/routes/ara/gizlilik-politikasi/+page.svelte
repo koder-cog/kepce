@@ -35,9 +35,9 @@
       <section class="u-mb-lg">
         <h2 class="u-text-lg u-font-bold u-mb-xs">1. Hizmetin Niteliği</h2>
         <p class="u-leading-comfortable">
-          Kepçe Ara, açık kaynaklı SearXNG altyapısı üzerinde çalışan bağımsız bir meta arama
-          aracıdır. Aramalarınızı doğrudan arama motorlarına iletmek yerine vekil sunucu üzerinden
-          arındırarak iletir ve gelen sonuçları tarafsız şekilde listeler.
+          Kepçe Ara, açık kaynaklı SearXNG altyapısı üzerinde çalışan bir meta arama aracıdır.
+          Aramalarınızı doğrudan arama motorlarına iletmek yerine vekil sunucu üzerinden arındırarak
+          iletir ve gelen sonuçları tarafsız şekilde listeler.
         </p>
       </section>
 

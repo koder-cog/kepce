@@ -19,7 +19,7 @@
         url: 'https://kepce.org/hakkinda',
         name: 'Hakkında | Kepçe',
         description:
-          'Kepçe, KYK yurtlarında çıkan yemekleri öğrencilerin kolayca takip edebilmesi için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur.',
+          'Kepçe, KYK yurtlarında çıkan yemekleri öğrencilerin kolayca takip edebilmesi için geliştirilmiş açık kaynaklı bir platformdur.',
         inLanguage: 'tr-TR'
       },
       {
@@ -35,7 +35,7 @@
 
 <Seo
   title="Hakkında | Kepçe"
-  description="Kepçe, KYK yurtlarında çıkan yemekleri öğrencilerin kolayca takip edebilmesi için geliştirilmiş açık kaynaklı ve bağımsız bir platformdur."
+  description="Kepçe, KYK yurtlarında çıkan yemekleri öğrencilerin kolayca takip edebilmesi için geliştirilmiş açık kaynaklı bir platformdur."
   image="https://kepce.org/api/v1/public/og/page/hakkinda"
   schema={aboutSchema}
 />
