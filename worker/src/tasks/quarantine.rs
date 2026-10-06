@@ -66,6 +66,8 @@ pub enum ReasonCode {
     SuspiciousPricingClassification,
     /// Boş öğün anomalisi (0 yemekli veya boş gün/öğün çıkarımı).
     EmptyMealAnomaly,
+    /// Menü tarihleri arasında delikler/eksik günler (OCR/sayfa kaybı şüphesi).
+    InternalDateGaps,
 }
 
 impl ReasonCode {
@@ -87,6 +89,7 @@ impl ReasonCode {
             ReasonCode::TakeawayDocument => "TAKEAWAY_DOCUMENT",
             ReasonCode::SuspiciousPricingClassification => "SUSPICIOUS_PRICING_CLASSIFICATION",
             ReasonCode::EmptyMealAnomaly => "EMPTY_MEAL_ANOMALY",
+            ReasonCode::InternalDateGaps => "INTERNAL_DATE_GAPS",
         }
     }
 }
@@ -116,6 +119,8 @@ pub struct QuarantineMeta {
     pub colyak_day_count: usize,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub stray_dates: Vec<String>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub internal_gaps: Vec<String>,
     /// Ek teşhis ayrıntıları (çelişen tarihler, çözülemeyen hücreler vb.).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub details: Vec<String>,
@@ -152,6 +157,7 @@ pub struct QuarantineDetail {
     pub has_colyak: bool,
     pub colyak_day_count: usize,
     pub stray_dates: Vec<String>,
+    pub internal_gaps: Vec<String>,
     pub details: Vec<String>,
     /// Karar anındaki çıkarım. Onay sırasında yeniden ayrıştırmayı (ve dolayısıyla
     /// LLM bağımlılığını) ortadan kaldırır.
@@ -311,6 +317,7 @@ pub async fn quarantine_file(
         has_colyak: detail.has_colyak,
         colyak_day_count: detail.colyak_day_count,
         stray_dates: detail.stray_dates,
+        internal_gaps: detail.internal_gaps,
         details: detail.details,
         sha256: sha,
         parsed_days,
@@ -468,12 +475,12 @@ pub fn item_inline_keyboard(id: &str) -> serde_json::Value {
     serde_json::json!({
         "inline_keyboard": [
             [
-                { "text": "Onayla", "callback_data": format!("q:approve:{}", id) },
+                { "text": "Onayla ve Kaydet", "callback_data": format!("q:approve:{}", id) },
                 { "text": "Reddet", "callback_data": format!("q:reject_confirm:{}", id) }
             ],
             [
                 { "text": "Detay", "callback_data": format!("q:detail:{}", id) },
-                { "text": "Dosyayı Gönder", "callback_data": format!("q:file:{}", id) }
+                { "text": "Belgeyi Göster", "callback_data": format!("q:file:{}", id) }
             ]
         ]
     })
@@ -530,6 +537,103 @@ pub fn format_item_alert(item: &QueueItem, age_days: i64, kind: NotifyKind) -> S
             "Çölyak Menüsü: Var ({} gün)",
             item.meta.colyak_day_count
         ));
+    }
+    if let Some(ref db) = item.meta.parsed_days {
+        let mut dates: Vec<chrono::NaiveDate> = db
+            .keys()
+            .filter_map(|s| chrono::NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
+            .collect();
+        dates.sort();
+
+        if let (Some(min_d), Some(max_d)) = (dates.first(), dates.last()) {
+            lines.push(format!(
+                "Çıkarılan aralık: {} - {} ({} gün)",
+                min_d.format("%d.%m.%Y"),
+                max_d.format("%d.%m.%Y"),
+                dates.len()
+            ));
+        }
+
+        let mut has_b = false;
+        let mut has_l = false;
+        let mut has_d = false;
+        for day in db.values() {
+            if !day.normal.breakfast.is_empty() || !day.colyak.breakfast.is_empty() {
+                has_b = true;
+            }
+            if !day.normal.lunch.is_empty() || !day.colyak.lunch.is_empty() {
+                has_l = true;
+            }
+            if !day.normal.dinner.is_empty() || !day.colyak.dinner.is_empty() {
+                has_d = true;
+            }
+        }
+        let mut meal_types = Vec::new();
+        if has_b {
+            meal_types.push("Kahvaltı");
+        }
+        if has_l {
+            meal_types.push("Öğle");
+        }
+        if has_d {
+            meal_types.push("Akşam");
+        }
+        if !meal_types.is_empty() {
+            lines.push(format!("Öğün türü: {}", meal_types.join(", ")));
+        }
+
+        if !item.meta.internal_gaps.is_empty() {
+            let gap_strs: Vec<String> = item
+                .meta
+                .internal_gaps
+                .iter()
+                .map(|d| {
+                    if let Ok(nd) = chrono::NaiveDate::parse_from_str(d, "%Y-%m-%d") {
+                        nd.format("%d.%m").to_string()
+                    } else {
+                        d.clone()
+                    }
+                })
+                .collect();
+            lines.push(format!(
+                "Aksaklık / Delik: Eksik tarihler: {} ({} gün kayıp)",
+                gap_strs.join(", "),
+                gap_strs.len()
+            ));
+        }
+
+        lines.push("Örnek Menü (İlk 2 Gün):".to_string());
+        for d in dates.iter().take(2) {
+            let d_str = d.format("%Y-%m-%d").to_string();
+            if let Some(day_data) = db.get(&d_str) {
+                let mut dish_names = Vec::new();
+                for it in day_data
+                    .normal
+                    .breakfast
+                    .iter()
+                    .chain(&day_data.normal.lunch)
+                    .chain(&day_data.normal.dinner)
+                {
+                    for comp in &it.alternatives {
+                        dish_names.push(comp.name.clone());
+                    }
+                }
+                let sample = dish_names
+                    .into_iter()
+                    .take(4)
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                lines.push(format!(
+                    "• {}: {}",
+                    d.format("%d.%m"),
+                    if sample.is_empty() {
+                        "Veri yok".to_string()
+                    } else {
+                        format!("{}...", sample)
+                    }
+                ));
+            }
+        }
     }
     if let Some(ref pricing) = item.meta.parsed_pricing {
         let kahvalti = pricing
@@ -943,6 +1047,7 @@ mod tests {
             has_colyak: false,
             colyak_day_count: 0,
             stray_dates: vec!["2026-05-04".into()],
+            internal_gaps: vec![],
             details: vec![],
             sha256: "abc".to_string(),
             parsed_days: None,
@@ -1064,6 +1169,7 @@ mod tests {
                 has_colyak: false,
                 colyak_day_count: 0,
                 stray_dates: vec!["2026-05-04".into()],
+                internal_gaps: vec![],
                 details: vec![],
                 parsed_days: None,
                 parsed_pricing: None,
@@ -1213,13 +1319,74 @@ mod tests {
             .and_then(|r| r.as_array())
             .unwrap();
         assert_eq!(rows.len(), 2);
-        assert_eq!(rows[0][0]["text"], "Onayla");
+        assert_eq!(rows[0][0]["text"], "Onayla ve Kaydet");
         assert_eq!(rows[0][0]["callback_data"], "q:approve:k_TEST1");
         assert_eq!(rows[0][1]["text"], "Reddet");
         assert_eq!(rows[0][1]["callback_data"], "q:reject_confirm:k_TEST1");
         assert_eq!(rows[1][0]["text"], "Detay");
         assert_eq!(rows[1][0]["callback_data"], "q:detail:k_TEST1");
-        assert_eq!(rows[1][1]["text"], "Dosyayı Gönder");
+        assert_eq!(rows[1][1]["text"], "Belgeyi Göster");
         assert_eq!(rows[1][1]["callback_data"], "q:file:k_TEST1");
+    }
+
+    #[test]
+    fn test_format_item_alert_daily_menu_preview() {
+        let mut meta = test_meta("k_MENU1", &Utc::now().to_rfc3339());
+        meta.reason_code = ReasonCode::InternalDateGaps;
+        meta.reason_tr = "Menü tarihleri arasında delikler/eksik günler tespit edildi".to_string();
+        meta.internal_gaps = vec!["2026-09-18".to_string(), "2026-09-23".to_string()];
+
+        let mut db = MenuDatabase::new();
+        let mut day1 = crate::parser::models::DayData::default();
+        day1.normal.breakfast.push(crate::parser::models::MenuItem {
+            takeaway_id: None,
+            alternatives: vec![
+                crate::parser::models::MenuComponent {
+                    name: "Sade Omlet".to_string(),
+                    amount: Some("1 adet".to_string()),
+                    calories: Some("115".to_string()),
+                    category: None,
+                },
+                crate::parser::models::MenuComponent {
+                    name: "Patates Kızartması".to_string(),
+                    amount: Some("150 g".to_string()),
+                    calories: Some("470".to_string()),
+                    category: None,
+                },
+            ],
+        });
+        db.insert("2026-09-14".to_string(), day1);
+
+        let mut day2 = crate::parser::models::DayData::default();
+        day2.normal.breakfast.push(crate::parser::models::MenuItem {
+            takeaway_id: None,
+            alternatives: vec![crate::parser::models::MenuComponent {
+                name: "Haşlanmış Yumurta".to_string(),
+                amount: Some("1 adet".to_string()),
+                calories: Some("87".to_string()),
+                category: None,
+            }],
+        });
+        db.insert("2026-09-15".to_string(), day2);
+        db.insert(
+            "2026-09-30".to_string(),
+            crate::parser::models::DayData::default(),
+        );
+
+        meta.parsed_days = Some(db);
+
+        let item = QueueItem {
+            meta,
+            file_path: PathBuf::from("/tmp/menu.pdf"),
+            meta_path: PathBuf::from("/tmp/menu.pdf.karantina.json"),
+        };
+
+        let alert = format_item_alert(&item, 1, NotifyKind::New);
+        assert!(alert.contains("Çıkarılan aralık: 14.09.2026 - 30.09.2026 (3 gün)"));
+        assert!(alert.contains("Öğün türü: Kahvaltı"));
+        assert!(alert.contains("Aksaklık / Delik: Eksik tarihler: 18.09, 23.09 (2 gün kayıp)"));
+        assert!(alert.contains("Örnek Menü (İlk 2 Gün):"));
+        assert!(alert.contains("• 14.09: Sade Omlet, Patates Kızartması..."));
+        assert!(alert.contains("• 15.09: Haşlanmış Yumurta..."));
     }
 }

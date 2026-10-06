@@ -1,5 +1,6 @@
 pub mod anomaly;
 pub mod core;
+pub mod csv_grid;
 pub mod dictionary;
 pub mod excel;
 pub mod json;

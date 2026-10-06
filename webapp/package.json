@@ -31,5 +31,8 @@
   "dependencies": {
     "dompurify": "^3.3.3",
     "svelte": "^5.56.3"
+  },
+  "overrides": {
+    "source-map-js": "^1.2.2"
   }
 }

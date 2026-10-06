@@ -168,6 +168,52 @@ pub enum IngestOutcome {
     Transient { reason: ReasonCode },
 }
 
+/// Çıkarılan tarih aralığının süreklilik ve iç delik analizi.
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct DateSpanAnalysis {
+    pub min_date: NaiveDate,
+    pub max_date: NaiveDate,
+    /// min_date ile max_date arasındaki toplam gün sayısı
+    pub span_days: u32,
+    /// Gerçekte çıkarılan tekil gün sayısı
+    pub detected_days: usize,
+    /// Aralık içinde atlanan eksik tarihler (iç delikler)
+    pub internal_gaps: Vec<NaiveDate>,
+    /// Aralık kesintisiz mi? (internal_gaps.is_empty())
+    pub is_contiguous: bool,
+}
+
+/// Tarih kümesini analiz edip min/max tarih, gün sayısı ve iç delikleri çıkarır.
+pub fn analyze_date_span(dates: &BTreeSet<NaiveDate>) -> Option<DateSpanAnalysis> {
+    if dates.is_empty() {
+        return None;
+    }
+    let min_date = *dates.first()?;
+    let max_date = *dates.last()?;
+    let span_days = (max_date.signed_duration_since(min_date)).num_days().max(0) as u32 + 1;
+    let detected_days = dates.len();
+    let mut internal_gaps = Vec::new();
+    let mut curr = min_date;
+    while curr <= max_date {
+        if !dates.contains(&curr) {
+            internal_gaps.push(curr);
+        }
+        curr = match curr.succ_opt() {
+            Some(next) => next,
+            None => break,
+        };
+    }
+    let is_contiguous = internal_gaps.is_empty();
+    Some(DateSpanAnalysis {
+        min_date,
+        max_date,
+        span_days,
+        detected_days,
+        internal_gaps,
+        is_contiguous,
+    })
+}
+
 /// Ay kapsamı ve tamlık denetiminin ara sonucu.
 #[derive(Debug, Clone, Default, PartialEq)]
 pub struct ScopeDecision {
@@ -181,6 +227,8 @@ pub struct ScopeDecision {
     pub expected_days: Option<u32>,
     /// Kapsam ayına düşen çıkarılmış gün sayısı.
     pub in_scope_days: usize,
+    /// Kapsam içi tarih aralığının süreklilik ve iç delik analizi.
+    pub span_analysis: Option<DateSpanAnalysis>,
 }
 
 /// `MenuDatabase` + dosya adı + tanılama sinyallerinden karar girdisini kurar.
@@ -519,6 +567,42 @@ pub fn classify_ingest(parsed: &ParsedFile, cfg: &GateConfig) -> (IngestOutcome,
         );
     }
 
+    // Kapsam içi tarihlerin süreklilik ve iç delik analizi (Adım 1)
+    let in_scope_dates: BTreeSet<NaiveDate> = parsed
+        .dates
+        .iter()
+        .filter(|d| Some(month_key(**d)) == scope.scope_month)
+        .copied()
+        .collect();
+    let span_analysis = analyze_date_span(&in_scope_dates);
+    scope.span_analysis = span_analysis.clone();
+
+    if let Some(analysis) = &span_analysis {
+        // Satır 7a: Aralık içinde eksik günler (iç delikler, örn. 1, 2, 4 Eylül)
+        if !analysis.internal_gaps.is_empty() {
+            return (
+                IngestOutcome::Suspect {
+                    reason: ReasonCode::InternalDateGaps,
+                },
+                scope,
+            );
+        }
+
+        // Satır 7b: Sezon Açılış Bloğu (ayın sonuna kadar uzanan kesintisiz blok, ör. 14-30 Eylül)
+        // veya Sezon Kapanış Bloğu (ayın 1'inden başlayan kesintisiz blok, ör. 1-18 Haziran)
+        let sm = scope.scope_month.unwrap_or((0, 0));
+        let expected = scope.expected_days.unwrap_or(0);
+        let is_season_opening = (sm.1 == 9 || sm.1 == 10 || sm.1 == 2 || sm.1 == 3)
+            && expected > 0
+            && analysis.max_date.day() == expected;
+        let is_season_closing =
+            (sm.1 == 6 || sm.1 == 7 || sm.1 == 1) && analysis.min_date.day() == 1;
+
+        if (is_season_opening || is_season_closing) && analysis.detected_days >= 5 {
+            return (IngestOutcome::Complete, scope);
+        }
+    }
+
     // Satır 7-9: tamlık (4.3). Eski `span` sezgisi KULLANILMAZ; kapsam ve
     // tamlık ayrık iki adımdır (D-3b'nin arka kapısı kapalı).
     let expected = scope.expected_days.unwrap_or(0);
@@ -642,6 +726,23 @@ pub fn reason_message(reason: ReasonCode, parsed: &ParsedFile, scope: &ScopeDeci
             "Menüde 0 yemekli veya boş gün tespit edildi (ızgara kayması veya ayrıştırma hatası)."
                 .to_string()
         }
+        ReasonCode::InternalDateGaps => {
+            let gaps = scope
+                .span_analysis
+                .as_ref()
+                .map(|a| {
+                    a.internal_gaps
+                        .iter()
+                        .map(|d| d.format("%d.%m").to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                })
+                .unwrap_or_else(|| "bilinmiyor".to_string());
+            format!(
+                "Menü tarihleri arasında delikler/eksik günler tespit edildi (sayfa atlaması veya OCR kayması şüphesi): {}",
+                gaps
+            )
+        }
     }
 }
 
@@ -672,6 +773,22 @@ fn detail_from(parsed: &ParsedFile, scope: &ScopeDecision) -> QuarantineDetail {
     if parsed.diagnostics.orientation_uncertain {
         details.push("Yön tespiti kesinleştirilemedi. Belge eğik veya yan ise /yeniden_ayristir <id> 90 ile yönü düzeltebilirsiniz.".to_string());
     }
+    let internal_gaps: Vec<String> = scope
+        .span_analysis
+        .as_ref()
+        .map(|a| {
+            a.internal_gaps
+                .iter()
+                .map(|d| d.format("%Y-%m-%d").to_string())
+                .collect()
+        })
+        .unwrap_or_default();
+    if !internal_gaps.is_empty() {
+        details.push(format!(
+            "Aralık içinde eksik tarihler (iç delikler): {}",
+            internal_gaps.join(", ")
+        ));
+    }
     QuarantineDetail {
         detected_months: scope
             .detected_months
@@ -688,6 +805,7 @@ fn detail_from(parsed: &ParsedFile, scope: &ScopeDecision) -> QuarantineDetail {
             .iter()
             .map(|d| d.format("%Y-%m-%d").to_string())
             .collect(),
+        internal_gaps,
         details,
         // Çağıran taraf, karar anındaki çıkarımı (karantina anlık görüntüsü) buraya koyar.
         parsed_days: None,
@@ -2390,6 +2508,7 @@ mod tests {
                 has_colyak: false,
                 colyak_day_count: 0,
                 stray_dates: vec![],
+                internal_gaps: vec![],
                 details: vec![],
                 sha256: sha,
                 parsed_days: Some(snapshot),
@@ -2449,6 +2568,7 @@ mod tests {
                 has_colyak: false,
                 colyak_day_count: 0,
                 stray_dates: vec![],
+                internal_gaps: vec![],
                 details: vec![],
                 sha256: "deadbeef".to_string(),
                 parsed_days: Some(snapshot),
@@ -3074,5 +3194,86 @@ mod tests {
             }
             other => panic!("beklenen Suspect (TakeawayDocument), alınan {:?}", other),
         }
+    }
+
+    #[test]
+    fn test_date_span_analysis_helper() {
+        let mut dates = BTreeSet::new();
+        assert!(analyze_date_span(&dates).is_none());
+
+        // Kesintisiz 5 gün: 2026-09-14 .. 2026-09-18
+        for d in 14..=18 {
+            dates.insert(NaiveDate::from_ymd_opt(2026, 9, d).unwrap());
+        }
+        let a1 = analyze_date_span(&dates).expect("analiz üretilmeli");
+        assert_eq!(a1.span_days, 5);
+        assert_eq!(a1.detected_days, 5);
+        assert!(a1.is_contiguous);
+        assert!(a1.internal_gaps.is_empty());
+
+        // İç delikli: 2026-09-20 eklendi (19 atlandı)
+        dates.insert(NaiveDate::from_ymd_opt(2026, 9, 20).unwrap());
+        let a2 = analyze_date_span(&dates).expect("analiz üretilmeli");
+        assert_eq!(a2.span_days, 7);
+        assert_eq!(a2.detected_days, 6);
+        assert!(!a2.is_contiguous);
+        assert_eq!(
+            a2.internal_gaps,
+            vec![NaiveDate::from_ymd_opt(2026, 9, 19).unwrap()]
+        );
+    }
+
+    /// Kesintisiz 17 günlük (14-30 Eylül) blok STP (Straight-Through Processing) ile doğrudan onaylanmalı.
+    #[test]
+    fn test_continuous_span_without_gaps_auto_approves() {
+        let mut db = MenuDatabase::new();
+        for day in 14..=30 {
+            let mut day_data = DayData::default();
+            day_data.normal.breakfast.push(item("Sade Omlet"));
+            db.insert(format!("2026-09-{:02}", day), day_data);
+        }
+
+        let p = build_parsed_file("Eylul_Kahvalti.pdf", &db, ParseDiagnostics::default());
+        let cfg = GateConfig::default(); // allow_missing_days: 0, min_days_ratio: 0.6
+        let (outcome, scope) = classify_ingest(&p, &cfg);
+
+        assert_eq!(
+            outcome,
+            IngestOutcome::Complete,
+            "Kesintisiz 17 günlük Eylül bloğu STP ile Complete dönmeli"
+        );
+        let span = scope.span_analysis.expect("span_analysis olmalı");
+        assert!(span.is_contiguous);
+        assert_eq!(span.detected_days, 17);
+        assert_eq!(span.span_days, 17);
+    }
+
+    /// Arada gün eksiği olan (1, 2, 4 Eylül) menü InternalDateGaps ile karantinaya alınmalı.
+    #[test]
+    fn test_internal_date_gaps_triggers_quarantine() {
+        let mut db = MenuDatabase::new();
+        for day in [1, 2, 4] {
+            let mut day_data = DayData::default();
+            day_data.normal.dinner.push(item("Ezogelin Çorbası"));
+            db.insert(format!("2026-09-{:02}", day), day_data);
+        }
+
+        let p = build_parsed_file("Eylul_Menu.pdf", &db, ParseDiagnostics::default());
+        let cfg = GateConfig::default();
+        let (outcome, scope) = classify_ingest(&p, &cfg);
+
+        match outcome {
+            IngestOutcome::Suspect { reason } => {
+                assert_eq!(reason, ReasonCode::InternalDateGaps);
+            }
+            other => panic!("beklenen Suspect(InternalDateGaps), alınan {:?}", other),
+        }
+
+        let span = scope.span_analysis.expect("span_analysis olmalı");
+        assert!(!span.is_contiguous);
+        assert_eq!(
+            span.internal_gaps,
+            vec![NaiveDate::from_ymd_opt(2026, 9, 3).unwrap()]
+        );
     }
 }

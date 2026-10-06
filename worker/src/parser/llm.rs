@@ -395,7 +395,8 @@ pub const DEFAULT_GEMINI_MODEL: &str = "gemini-flash-latest";
 /// `gemini-flash-lite-latest` ve türevleri menü verisini **uydurma/hatalı**
 /// üretiyor (canlı gözlem). Bu modeller fallback olarak bile kullanılmamalıdır;
 /// hatalı veri üretmektense dosyayı kuyrukta bekletmek yeğdir.
-const FORBIDDEN_GEMINI_MODEL_MARKERS: [&str; 2] = ["flash-lite", "flash_lite"];
+const FORBIDDEN_GEMINI_MODEL_MARKERS: [&str; 4] =
+    ["flash-lite", "flash_lite", "2.5-flash", "2.5_flash"];
 
 /// Model adı yasaklı mı? (lite ve türevleri)
 fn is_forbidden_gemini_model(model: &str) -> bool {
@@ -1705,6 +1706,14 @@ pub async fn parse_csv_to_polymorphic(
     file_name_hint: &str,
     gemini_api_key: Option<&str>,
 ) -> Result<(crate::parser::models::ParsedDocumentPayload, Vec<String>)> {
+    // Önce deterministik Rust CSV ayrıştırıcısını dene (LLM çağrısı, gecikme ve halüsinasyon yok)
+    if let Ok(payload) =
+        crate::parser::csv_grid::parse_csv_grid_to_payload(csv_content, file_name_hint)
+    {
+        tracing::info!("CSV tablosu saf Rust (csv_grid) ile deterministik olarak ayrıştırıldı.");
+        return Ok((payload, Vec::new()));
+    }
+
     let prompt = build_csv_to_menu_prompt(csv_content);
     let schema = daily_menu_table_response_schema();
 
@@ -1759,6 +1768,16 @@ pub async fn parse_tagged_grid_to_payload(
     file_name_hint: &str,
     gemini_api_key: Option<&str>,
 ) -> Result<(crate::parser::models::ParsedDocumentPayload, Vec<String>)> {
+    // Önce deterministik Rust CSV ayrıştırıcısını dene (LLM çağrısı, gecikme ve halüsinasyon yok)
+    if let Ok(payload) =
+        crate::parser::csv_grid::parse_csv_grid_to_payload(grid_content, file_name_hint)
+    {
+        tracing::info!(
+            "Etiketli ızgara saf Rust (csv_grid) ile deterministik olarak ayrıştırıldı."
+        );
+        return Ok((payload, Vec::new()));
+    }
+
     let prompt = build_tagged_grid_to_payload_prompt(grid_content);
     let schema = unified_document_response_schema();
 
@@ -2251,21 +2270,22 @@ mod tests {
             "gemini-flash-lite-latest".to_string(),
             "gemini-3.5-flash-lite".to_string(),
             "gemini-2.5-flash".to_string(),
+            "gemini-pro-latest".to_string(),
         ];
         let out = sanitize_gemini_models(input);
         assert_eq!(
             out,
             vec![
                 "gemini-flash-latest".to_string(),
-                "gemini-2.5-flash".to_string()
+                "gemini-pro-latest".to_string()
             ]
         );
 
         assert!(is_forbidden_gemini_model("gemini-flash-lite-latest"));
         assert!(is_forbidden_gemini_model("GEMINI-FLASH-LITE-LATEST"));
         assert!(is_forbidden_gemini_model("gemini-3.5-flash-lite"));
+        assert!(is_forbidden_gemini_model("gemini-2.5-flash"));
         assert!(!is_forbidden_gemini_model("gemini-flash-latest"));
-        assert!(!is_forbidden_gemini_model("gemini-2.5-flash"));
     }
 
     /// Çoklu-tablo talimatı prompt'ta bulunmalı (sessiz veri kaybı regresyon kalkanı).
