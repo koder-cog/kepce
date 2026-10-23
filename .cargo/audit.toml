@@ -1,10 +1,10 @@
 # .cargo/audit.toml
 [advisories]
 ignore = [
-    "RUSTSEC-2023-0071", # rsa crate: sistemde RSA kullanılmıyor (X25519 + HMAC-SHA256 aktif)
-    "RUSTSEC-2026-0235", # rkyv: rust_decimal altından gelen kullanılmayan opsiyonel bağımlılık
-    "RUSTSEC-2026-0367", # zip: calamine altından gelen extract güvenliği (sadece yerel xlsx okunuyor)
-    "RUSTSEC-2026-0368", # zip: symlink extraction
-    "RUSTSEC-2026-0369", # zip: permissions symlink
-    "RUSTSEC-2024-0436", # ust kutuphaneler pastey veya yerel makrolara gecene kadar gecisli bagimlilik
+    "RUSTSEC-2023-0071", # rsa: sistemde RSA yerine X25519 ve HMAC-SHA256 devrede
+    "RUSTSEC-2026-0235", # rkyv: rust_decimal paketinden gelen ve cagrilmayan opsiyonel bagimlilik
+    "RUSTSEC-2026-0367", # zip: calamine ile sadece yerel dosya hucreleri okunuyor, diske extract cagrilmiyor
+    "RUSTSEC-2026-0368", # zip: sembolik bag acigi calamine icinde calistirilmiyor
+    "RUSTSEC-2026-0369", # zip: izin ve sembolik bag islemleri kullanilmiyor
+    "RUSTSEC-2024-0436", # paste: ust kutuphaneler pastey veya yerel makrolara gecene kadar gecisli bagimlilik
 ]
