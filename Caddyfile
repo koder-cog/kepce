@@ -21,7 +21,7 @@ kepce.org {
 	# Yalnızca içerik üreten, kayıt olan veya veri ileten etkileşimli istekler 5651 kapsamında loglanır.
 	@skip_public_logs {
 		method GET HEAD POST PUT DELETE
-		not path /api/v1/auth/* /moderasyon/* /api/v1/admin/* /api/v1/moderation/*
+		not path /moderasyon/* /api/v1/admin/* /api/v1/moderation/*
 	}
 	log_skip @skip_public_logs
 

@@ -198,12 +198,20 @@ impl AuthService {
             }
             None => {
                 // Elle girmediyse e-postadan üret
-                let base_name = dto.email.split('@').next().unwrap_or("user").to_lowercase();
+                let email_lower = dto.email.to_lowercase();
+                let raw_prefix = email_lower.split('@').next().unwrap_or("user");
+                let sanitized_base: String = raw_prefix
+                    .chars()
+                    .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+                    .take(18)
+                    .collect();
+                let base_name = if sanitized_base.chars().count() >= 3 {
+                    sanitized_base
+                } else {
+                    "tabldotcu".to_string()
+                };
 
-                // Profesyonel yaklaşım: 'Ya tutarsa' yerine benzersizlik sağlanana kadar döngü kur.
                 let mut final_username = base_name.clone();
-
-                // Race condition koruması: Maksimum 5 deneme
                 let max_retries = 5;
                 let mut attempt = 0;
 
