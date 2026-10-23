@@ -89,7 +89,13 @@ export function showToast(message, typeOrOptions = null, legacyAction = null) {
     priority = 'high';
   }
 
-  const item = { id: Date.now() + Math.random(), message, timeout, priority, action };
+  const item = {
+    id: Date.now() + Math.random(),
+    message,
+    timeout,
+    priority,
+    action
+  };
 
   if (priority === 'high' && activeToast && !activeToast.isClosing) {
     clearTimeout(activeToast.timeoutId);

@@ -5,7 +5,10 @@ export const adminApi = {
   mergeDishes: (sourceId, targetId) =>
     request('/admin/dishes/merge', {
       method: 'POST',
-      body: JSON.stringify({ source_dish_id: sourceId, target_dish_id: targetId })
+      body: JSON.stringify({
+        source_dish_id: sourceId,
+        target_dish_id: targetId
+      })
     }),
   updateDish: (dishId, payload) =>
     request(`/admin/dishes/${dishId}`, {

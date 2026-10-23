@@ -12,8 +12,12 @@ fn get_font_db() -> Arc<fontdb::Database> {
             let mut db = fontdb::Database::new();
             db.load_system_fonts();
             // Gömülü yazı tiplerini yükle
-            db.load_font_data(include_bytes!("../../../assets/fonts/PaytoneOne-Regular.ttf").to_vec());
-            db.load_font_data(include_bytes!("../../../assets/fonts/PublicSans-Regular.ttf").to_vec());
+            db.load_font_data(
+                include_bytes!("../../../assets/fonts/PaytoneOne-Regular.ttf").to_vec(),
+            );
+            db.load_font_data(
+                include_bytes!("../../../assets/fonts/PublicSans-Regular.ttf").to_vec(),
+            );
             db.load_font_data(
                 include_bytes!("../../../assets/fonts/PublicSans-SemiBold.ttf").to_vec(),
             );

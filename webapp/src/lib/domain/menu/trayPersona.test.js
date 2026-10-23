@@ -6,20 +6,50 @@ const mockItems = [
   { id: 'cacik', name: 'Cacık', price: 15, category: 'yan_yemek' },
   { id: 'ayran', name: 'Ayran', price: 10, category: 'icecek' },
   { id: 'sut', name: 'Kutu Süt', price: 15, category: 'icecek' },
-  { id: 'kofte', name: 'Ekmek Arası Köfte', price: 94, category: 'tost_sandvic' },
+  {
+    id: 'kofte',
+    name: 'Ekmek Arası Köfte',
+    price: 94,
+    category: 'tost_sandvic'
+  },
   { id: 'tavuk', name: 'Tavuk Sote', price: 65, category: 'ana_yemek_tavuk' },
-  { id: 'kavurma', name: 'Dana Kavurma', price: 85, category: 'ana_yemek_etli' },
-  { id: 'haslanmis-yumurta', name: 'Haşlanmış Yumurta', price: 11, category: 'kahvaltilik' },
+  {
+    id: 'kavurma',
+    name: 'Dana Kavurma',
+    price: 85,
+    category: 'ana_yemek_etli'
+  },
+  {
+    id: 'haslanmis-yumurta',
+    name: 'Haşlanmış Yumurta',
+    price: 11,
+    category: 'kahvaltilik'
+  },
   { id: 'omlet', name: 'Kaşarlı Omlet', price: 24, category: 'kahvaltilik' },
-  { id: 'mercimek-kofte', name: 'Mercimekli Köfte', price: 40, category: 'salata_meze' },
-  { id: 'etsiz-dolma', name: 'Zeytinyağlı Dolma', price: 40, category: 'salata_meze' },
+  {
+    id: 'mercimek-kofte',
+    name: 'Mercimekli Köfte',
+    price: 40,
+    category: 'salata_meze'
+  },
+  {
+    id: 'etsiz-dolma',
+    name: 'Zeytinyağlı Dolma',
+    price: 40,
+    category: 'salata_meze'
+  },
   { id: 'su', name: 'Su (Pet Şişe)', price: 5, category: 'icecek' },
   { id: 'cay', name: 'Çay', price: 5, category: 'icecek' },
   { id: 'corba', name: 'Mercimek Çorbası', price: 20, category: 'corba' },
   { id: 'borek', name: 'Ispanaklı Börek', price: 35, category: 'pide_hamur' },
   { id: 'pide', name: 'Kaşarlı Pide', price: 80, category: 'pide_hamur' },
   { id: 'pilav', name: 'Pirinç Pilavı', price: 25, category: 'pilav_makarna' },
-  { id: 'makarna', name: 'Fırın Makarna', price: 30, category: 'pilav_makarna' },
+  {
+    id: 'makarna',
+    name: 'Fırın Makarna',
+    price: 30,
+    category: 'pilav_makarna'
+  },
   { id: 'baklava', name: 'Fıstıklı Baklava', price: 50, category: 'tatli' },
   { id: 'sutlac', name: 'Fırın Sütlaç', price: 35, category: 'tatli' },
   { id: 'tost', name: 'Kaşarlı Tost', price: 36, category: 'tost_sandvic' },

@@ -179,7 +179,12 @@ export function detectCityPrecise(availableSlugs) {
         if (isSupported) {
           resolve({ success: true, slug: nearestSlug });
         } else {
-          resolve({ success: false, unsupported: true, error: 'unsupported', slug: nearestSlug });
+          resolve({
+            success: false,
+            unsupported: true,
+            error: 'unsupported',
+            slug: nearestSlug
+          });
         }
       },
       (err) => {

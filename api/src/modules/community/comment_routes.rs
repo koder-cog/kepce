@@ -5,7 +5,6 @@ use crate::error::AppError;
 use crate::extractors::validated::ValidatedJson;
 use crate::services::comment::{CommentError, CommentService};
 use crate::services::reaction::{ReactionError, ReactionService};
-use crate::services::user::UserService;
 use axum::{
     Json, Router,
     extract::{Path, Query, State},
@@ -122,7 +121,8 @@ async fn create_comment(
 
     let parent_id = payload.parent_id;
     let comment =
-        CommentService::create_comment(&db, user.id, user.username, payload.clone(), parent_id).await?;
+        CommentService::create_comment(&db, user.id, user.username, payload.clone(), parent_id)
+            .await?;
 
     // 2. 5651 Sayılı Kanun gereği RAM'de X25519 ile mühürlenen trafik kaydı
     if let Some(ref pk_hex) = config.traffic_log_public_key {
@@ -150,11 +150,15 @@ async fn create_comment(
             "timestamp": chrono::Utc::now().to_rfc3339(),
         });
 
-        if let Ok(sealed_hex) = crate::core::zero_knowledge::seal_traffic_log(pk_hex, &traffic_payload.to_string()) {
+        if let Ok(sealed_hex) =
+            crate::core::zero_knowledge::seal_traffic_log(pk_hex, &traffic_payload.to_string())
+        {
             use sea_orm::{ActiveModelTrait, Set};
             let log_entry = shared::entities::traffic_logs::ActiveModel {
                 id: Set(Uuid::new_v4()),
                 key_id: Set(config.traffic_log_key_id),
+                service_type: Set("comment".to_string()),
+                reference_id: Set(Some(comment.id)),
                 encrypted_payload: Set(sealed_hex),
                 created_at: Set(Some(chrono::Utc::now().into())),
             };
@@ -170,19 +174,66 @@ async fn toggle_reaction(
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<ReactionRequestDto>,
 ) -> Result<Json<()>, AppError> {
-    UserService::ensure_cross_border_consent(&db, user.id).await?;
     ReactionService::toggle_reaction(&db, user.id, payload.vote_id, payload.reaction).await?;
     Ok(Json(()))
 }
 
 async fn update_comment(
     State(db): State<sea_orm::DatabaseConnection>,
+    State(config): State<Arc<Config>>,
+    headers: HeaderMap,
     user: AuthenticatedUser,
     Path(hash): Path<Uuid>,
-    ValidatedJson(payload): ValidatedJson<UpdateCommentDto>,
+    ValidatedJson(mut payload): ValidatedJson<UpdateCommentDto>,
 ) -> Result<Json<CommentResponseDto>, AppError> {
-    UserService::ensure_cross_border_consent(&db, user.id).await?;
+    let validated_text = ContentGuard::validate_comment_text(&payload.comment)
+        .map_err(|msg| AppError::BadRequest(msg.to_string()))?;
+    let payload_bytes = validated_text.len();
+    payload.comment = validated_text;
+
     let comment = CommentService::update_comment(&db, user.id, hash, payload.comment).await?;
+
+    if let Some(ref pk_hex) = config.traffic_log_public_key {
+        let client_ip = headers
+            .get("cf-connecting-ip")
+            .or_else(|| headers.get("x-real-ip"))
+            .or_else(|| headers.get("x-forwarded-for"))
+            .and_then(|v| v.to_str().ok())
+            .map(|s| s.split(',').next().unwrap_or("").trim().to_string())
+            .unwrap_or_else(|| "127.0.0.1".to_string());
+
+        let client_port = headers
+            .get("x-real-port")
+            .and_then(|v| v.to_str().ok())
+            .and_then(|s| s.parse::<u16>().ok())
+            .unwrap_or(0);
+
+        let traffic_payload = serde_json::json!({
+            "ip": client_ip,
+            "port": client_port,
+            "user_id": user.id,
+            "reference_id": comment.id,
+            "service_type": "comment_update",
+            "payload_bytes": payload_bytes,
+            "timestamp": chrono::Utc::now().to_rfc3339(),
+        });
+
+        if let Ok(sealed_hex) =
+            crate::core::zero_knowledge::seal_traffic_log(pk_hex, &traffic_payload.to_string())
+        {
+            use sea_orm::{ActiveModelTrait, Set};
+            let log_entry = shared::entities::traffic_logs::ActiveModel {
+                id: Set(Uuid::new_v4()),
+                key_id: Set(config.traffic_log_key_id),
+                service_type: Set("comment_update".to_string()),
+                reference_id: Set(Some(comment.id)),
+                encrypted_payload: Set(sealed_hex),
+                created_at: Set(Some(chrono::Utc::now().into())),
+            };
+            let _ = log_entry.insert(&db).await;
+        }
+    }
+
     Ok(Json(comment))
 }
 

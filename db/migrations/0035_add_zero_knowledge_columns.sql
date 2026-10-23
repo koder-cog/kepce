@@ -27,9 +27,18 @@ ALTER TABLE user_sessions
 CREATE TABLE IF NOT EXISTS traffic_logs (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     key_id INTEGER NOT NULL DEFAULT 1,
+    service_type VARCHAR(32) NOT NULL DEFAULT 'comment',
+    reference_id UUID NULL,
     encrypted_payload TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+ALTER TABLE traffic_logs
+    ADD COLUMN IF NOT EXISTS service_type VARCHAR(32) NOT NULL DEFAULT 'comment',
+    ADD COLUMN IF NOT EXISTS reference_id UUID NULL;
+
 CREATE INDEX IF NOT EXISTS idx_traffic_logs_created_at
     ON traffic_logs (created_at);
+
+CREATE INDEX IF NOT EXISTS idx_traffic_logs_reference_id
+    ON traffic_logs (reference_id);

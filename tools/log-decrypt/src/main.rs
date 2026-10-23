@@ -17,11 +17,17 @@ fn generate_keypair() {
 
     println!("=== KEPÇE 5651 SIFIR BİLGİ ANAHTAR ÇİFTİ ===");
     println!("\n1. FRANSA SUNUCUSU .env İÇİN AÇIK ANAHTAR:");
-    println!("TRAFFIC_LOG_PUBLIC_KEY=\"{}\"", hex::encode(public_key.as_bytes()));
+    println!(
+        "TRAFFIC_LOG_PUBLIC_KEY=\"{}\"",
+        hex::encode(public_key.as_bytes())
+    );
 
     println!("\n2. TÜRKİYE ÇEVRİMDİŞİ USB / SOĞUK DEPOLAMA İÇİN ÖZEL ANAHTAR:");
     println!("(DİKKAT: Bu anahtarı ASLA Fransa sunucusuna veya git reposuna yüklemeyin!)");
-    println!("TRAFFIC_LOG_PRIVATE_KEY=\"{}\"", hex::encode(secret_key.to_bytes()));
+    println!(
+        "TRAFFIC_LOG_PRIVATE_KEY=\"{}\"",
+        hex::encode(secret_key.to_bytes())
+    );
 }
 
 fn decrypt_log(encrypted_hex: &str, private_key_hex: &str) {
@@ -51,21 +57,19 @@ fn decrypt_log(encrypted_hex: &str, private_key_hex: &str) {
 
     let secret_key = SecretKey::from(sk_bytes);
     match secret_key.unseal(&ciphertext) {
-        Ok(plaintext) => {
-            match String::from_utf8(plaintext) {
-                Ok(json_str) => {
-                    if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&json_str) {
-                        println!("{}", serde_json::to_string_pretty(&parsed).unwrap());
-                    } else {
-                        println!("{}", json_str);
-                    }
-                }
-                Err(_) => {
-                    eprintln!("Hata: Çözülen veri geçerli UTF-8 metni değil.");
-                    process::exit(1);
+        Ok(plaintext) => match String::from_utf8(plaintext) {
+            Ok(json_str) => {
+                if let Ok(parsed) = serde_json::from_str::<serde_json::Value>(&json_str) {
+                    println!("{}", serde_json::to_string_pretty(&parsed).unwrap());
+                } else {
+                    println!("{}", json_str);
                 }
             }
-        }
+            Err(_) => {
+                eprintln!("Hata: Çözülen veri geçerli UTF-8 metni değil.");
+                process::exit(1);
+            }
+        },
         Err(_) => {
             eprintln!("Hata: Mühür çözülemedi. Veri bozuk veya yanlış özel anahtar kullanıldı.");
             process::exit(1);
@@ -89,7 +93,9 @@ fn test_roundtrip() {
     });
 
     let plaintext = serde_json::to_vec(&sample_payload).unwrap();
-    let ciphertext = public_key.seal(&mut OsRng, &plaintext).expect("Şifreleme başarısız");
+    let ciphertext = public_key
+        .seal(&mut OsRng, &plaintext)
+        .expect("Şifreleme başarısız");
 
     let unsealed = secret_key.unseal(&ciphertext).expect("Deşifre başarısız");
     assert_eq!(plaintext, unsealed);

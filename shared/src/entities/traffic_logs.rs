@@ -8,6 +8,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub key_id: i32,
+    pub service_type: String,
+    pub reference_id: Option<Uuid>,
     #[sea_orm(column_type = "Text")]
     pub encrypted_payload: String,
     pub created_at: Option<DateTimeWithTimeZone>,

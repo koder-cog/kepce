@@ -70,8 +70,16 @@ describe('normalizeMenu', () => {
           id: 101,
           source_type: 'kykyemek',
           items: [
-            { order_index: 0, raw_name: 'Ezogelin Çorbası', is_alternative: false },
-            { order_index: 1, raw_name: 'Pirinç Pilavı', is_alternative: false }
+            {
+              order_index: 0,
+              raw_name: 'Ezogelin Çorbası',
+              is_alternative: false
+            },
+            {
+              order_index: 1,
+              raw_name: 'Pirinç Pilavı',
+              is_alternative: false
+            }
           ]
         },
         // Farklı alternatif kabul edilmeli
@@ -79,8 +87,16 @@ describe('normalizeMenu', () => {
           id: 102,
           source_type: 'kykmenum.com',
           items: [
-            { order_index: 0, raw_name: 'Mercimek Çorbası', is_alternative: false },
-            { order_index: 1, raw_name: 'Bulgur Pilavı', is_alternative: false }
+            {
+              order_index: 0,
+              raw_name: 'Mercimek Çorbası',
+              is_alternative: false
+            },
+            {
+              order_index: 1,
+              raw_name: 'Bulgur Pilavı',
+              is_alternative: false
+            }
           ]
         },
         // Yukarıdaki alternatifle aynı olan mükerrer kopya elenmeli
@@ -88,8 +104,16 @@ describe('normalizeMenu', () => {
           id: 103,
           source_type: 'kykmenu.com.tr',
           items: [
-            { order_index: 0, raw_name: 'Mercimek Çorbası', is_alternative: false },
-            { order_index: 1, raw_name: 'Bulgur Pilavı', is_alternative: false }
+            {
+              order_index: 0,
+              raw_name: 'Mercimek Çorbası',
+              is_alternative: false
+            },
+            {
+              order_index: 1,
+              raw_name: 'Bulgur Pilavı',
+              is_alternative: false
+            }
           ]
         }
       ]

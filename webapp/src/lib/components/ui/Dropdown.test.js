@@ -296,7 +296,10 @@ describe('Dropdown Race Condition and Synthetic Click Simulation', () => {
     searchInput.focus();
 
     // User navigates down with ArrowDown
-    await fireEvent.keyDown(searchInput, { key: 'ArrowDown', code: 'ArrowDown' });
+    await fireEvent.keyDown(searchInput, {
+      key: 'ArrowDown',
+      code: 'ArrowDown'
+    });
 
     // Now Enter commits the selection
     await fireEvent.keyDown(searchInput, { key: 'Enter', code: 'Enter' });
@@ -434,7 +437,11 @@ describe('Dropdown Race Condition and Synthetic Click Simulation', () => {
       button: 0,
       clientY: 500
     });
-    await fireEvent.pointerUp(handle, { pointerId: 1, pointerType: 'mouse', clientY: 500 });
+    await fireEvent.pointerUp(handle, {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientY: 500
+    });
     await fireEvent.click(handle);
 
     expect(menuEl.classList.contains('c-menu--expanded')).toBe(true);
@@ -446,7 +453,11 @@ describe('Dropdown Race Condition and Synthetic Click Simulation', () => {
       button: 0,
       clientY: 500
     });
-    await fireEvent.pointerUp(handle, { pointerId: 1, pointerType: 'mouse', clientY: 500 });
+    await fireEvent.pointerUp(handle, {
+      pointerId: 1,
+      pointerType: 'mouse',
+      clientY: 500
+    });
     await fireEvent.click(handle);
 
     expect(menuEl.classList.contains('c-menu--expanded')).toBe(false);

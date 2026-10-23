@@ -970,30 +970,29 @@ pub async fn save_menu_database(
             Vec<Vec<MenuComponent>>,
             Vec<(String, Vec<Vec<MenuComponent>>)>,
         );
-        let process_list =
-            |list: &Vec<MenuItem>, is_breakfast: bool| -> ProcessListResult {
-                let mut out = Vec::new();
-                let mut t_out: Vec<(String, Vec<Vec<MenuComponent>>)> = Vec::new();
+        let process_list = |list: &Vec<MenuItem>, is_breakfast: bool| -> ProcessListResult {
+            let mut out = Vec::new();
+            let mut t_out: Vec<(String, Vec<Vec<MenuComponent>>)> = Vec::new();
 
-                for item in list {
-                    if let Some(ref num) = item.takeaway_id {
-                        let meal_str = if is_breakfast { "breakfast" } else { "dinner" };
-                        if let Some(parsed_packages) = crate::quality::takeaway::parse_takeaway_menu(
-                            &format!("Al Götür {}", num),
-                            city_slug,
-                            meal_str,
-                        ) {
-                            t_out.extend(parsed_packages);
-                        }
-                    } else {
-                        let alts = item.alternatives.clone();
-                        if !alts.is_empty() {
-                            out.push(alts);
-                        }
+            for item in list {
+                if let Some(ref num) = item.takeaway_id {
+                    let meal_str = if is_breakfast { "breakfast" } else { "dinner" };
+                    if let Some(parsed_packages) = crate::quality::takeaway::parse_takeaway_menu(
+                        &format!("Al Götür {}", num),
+                        city_slug,
+                        meal_str,
+                    ) {
+                        t_out.extend(parsed_packages);
+                    }
+                } else {
+                    let alts = item.alternatives.clone();
+                    if !alts.is_empty() {
+                        out.push(alts);
                     }
                 }
-                (out, t_out)
-            };
+            }
+            (out, t_out)
+        };
 
         let (b_out, b_take) = process_list(&day_data.normal.breakfast, true);
         normal_breakfast.extend(b_out);
@@ -1108,4 +1107,3 @@ pub async fn save_menu_database(
 
     Ok(())
 }
-

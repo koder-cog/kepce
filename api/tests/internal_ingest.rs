@@ -11,7 +11,9 @@ use axum::{
 use sea_orm::{ColumnTrait, Database, EntityTrait, ModelTrait, QueryFilter};
 use tower::util::ServiceExt;
 
-async fn setup_test_app(secret: Option<&str>) -> Option<(axum::Router, sea_orm::DatabaseConnection)> {
+async fn setup_test_app(
+    secret: Option<&str>,
+) -> Option<(axum::Router, sea_orm::DatabaseConnection)> {
     dotenvy::dotenv().ok();
     if std::env::var("DATABASE_URL").is_err() {
         return None;

@@ -26,7 +26,10 @@ describe('icon() component helper', () => {
   });
 
   it('supports options object signature', () => {
-    const markup = icon('logoSmallExperimental', { size: 36, ariaLabel: 'Kepçe Logosu' });
+    const markup = icon('logoSmallExperimental', {
+      size: 36,
+      ariaLabel: 'Kepçe Logosu'
+    });
     expect(markup).toContain('width="36"');
     expect(markup).toContain('height="36"');
     expect(markup).toContain('role="img"');

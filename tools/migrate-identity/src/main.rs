@@ -44,28 +44,33 @@ async fn main() -> Result<()> {
 
     println!("=== KEPÇE SIFIR BİLGİ KİMLİK GÖÇ ARACI ===");
 
-    let database_url = env::var("DATABASE_URL")
-        .context("DATABASE_URL ortam değişkeni ayarlanmalıdır")?;
+    let database_url =
+        env::var("DATABASE_URL").context("DATABASE_URL ortam değişkeni ayarlanmalıdır")?;
     let email_blind_key = env::var("EMAIL_BLIND_KEY")
         .context("EMAIL_BLIND_KEY ortam değişkeni ayarlanmalıdır (64 hex)")?;
-    let auth_pepper = env::var("AUTH_PEPPER")
-        .context("AUTH_PEPPER ortam değişkeni ayarlanmalıdır (64 hex)")?;
+    let auth_pepper =
+        env::var("AUTH_PEPPER").context("AUTH_PEPPER ortam değişkeni ayarlanmalıdır (64 hex)")?;
 
     if email_blind_key.len() != 64 || auth_pepper.len() != 64 {
-        anyhow::bail!("EMAIL_BLIND_KEY ve AUTH_PEPPER tam olarak 64 karakter (32 bayt) hex olmalıdır!");
+        anyhow::bail!(
+            "EMAIL_BLIND_KEY ve AUTH_PEPPER tam olarak 64 karakter (32 bayt) hex olmalıdır!"
+        );
     }
 
     println!("Veritabanına bağlanılıyor...");
-    let db = Database::connect(&database_url).await
+    let db = Database::connect(&database_url)
+        .await
         .context("Veritabanı bağlantısı kurulamadı")?;
 
     // 1. Göç edilmemiş kayıtları tespit et
     let select_stmt = Statement::from_string(
         DatabaseBackend::Postgres,
-        "SELECT id, email FROM users WHERE email IS NOT NULL AND (email_hash IS NULL OR email_hash = '');"
+        "SELECT id, email FROM users WHERE email IS NOT NULL AND (email_hash IS NULL OR email_hash = '');",
     );
 
-    let rows = db.query_all(select_stmt).await
+    let rows = db
+        .query_all(select_stmt)
+        .await
         .context("Kullanıcılar sorgulanamadı (0035 migration çalıştırıldı mı?)")?;
 
     println!("Göç edilecek kullanıcı sayısı: {}", rows.len());
@@ -85,7 +90,8 @@ async fn main() -> Result<()> {
             vec![email_hash.into(), auth_hash.into(), user_id.into()],
         );
 
-        db.execute(update_stmt).await
+        db.execute(update_stmt)
+            .await
             .context(format!("Kullanıcı güncellenemedi: {}", user_id))?;
 
         migrated_count += 1;
@@ -96,16 +102,21 @@ async fn main() -> Result<()> {
     // 2. Doğrulama: Kalan açık e-posta kontrolü
     let verify_stmt = Statement::from_string(
         DatabaseBackend::Postgres,
-        "SELECT count(*) as unmigrated_count FROM users WHERE email IS NOT NULL AND (email_hash IS NULL OR email_hash = '');"
+        "SELECT count(*) as unmigrated_count FROM users WHERE email IS NOT NULL AND (email_hash IS NULL OR email_hash = '');",
     );
 
-    let verify_row = db.query_one(verify_stmt).await?
+    let verify_row = db
+        .query_one(verify_stmt)
+        .await?
         .context("Doğrulama sorgusu yanıt vermedi")?;
 
     let unmigrated_count: i64 = verify_row.try_get("", "unmigrated_count")?;
 
     if unmigrated_count != 0 {
-        anyhow::bail!("KRİTİK HATA: Göç tamamlanamadı! {} kullanıcı hala kör indekslenmedi.", unmigrated_count);
+        anyhow::bail!(
+            "KRİTİK HATA: Göç tamamlanamadı! {} kullanıcı hala kör indekslenmedi.",
+            unmigrated_count
+        );
     }
 
     println!("Teyit: Göç edilmemiş kullanıcı sayısı KESİNLİKLE 0.");

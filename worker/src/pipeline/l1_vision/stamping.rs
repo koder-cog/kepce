@@ -104,7 +104,11 @@ pub fn resolve_source(label: &str) -> SourceMetadata {
         }
     } else {
         SourceMetadata {
-            label: if label.is_empty() { "anonymous".to_string() } else { label.to_string() },
+            label: if label.is_empty() {
+                "anonymous".to_string()
+            } else {
+                label.to_string()
+            },
             family: SourceFamily::Unknown,
             tier: TrustTier::Untrusted,
             priority: 10,

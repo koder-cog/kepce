@@ -804,7 +804,13 @@ pub async fn run_kykyemek_scraper(
     // 1.5. Fallback zinciri: kykyemek'te eksik kalan şehir/günleri alternatif
     // kaynaklardan (kykmenum.com > yurtmenu.net > kykmenu.com.tr) doldur.
     // Sadece DB'de kayıt olmayan kombinasyonlar için istek atar.
-    match crate::jobs::ingestion::fallback_scraper::run_fallback_scrape(db, client, shutdown_rx.clone()).await {
+    match crate::jobs::ingestion::fallback_scraper::run_fallback_scrape(
+        db,
+        client,
+        shutdown_rx.clone(),
+    )
+    .await
+    {
         Ok(fallback_count) => {
             if fallback_count > 0 {
                 tracing::info!(

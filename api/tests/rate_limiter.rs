@@ -29,8 +29,10 @@ async fn setup_app() -> axum::Router {
         smtp_password: None,
         internal_ingest_secret: None,
         auth_pepper: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff".to_string(),
-        email_blind_key: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff".to_string(),
-        subnet_blind_key: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff".to_string(),
+        email_blind_key: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+            .to_string(),
+        subnet_blind_key: "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+            .to_string(),
         traffic_log_public_key: None,
         traffic_log_key_id: 1,
     };

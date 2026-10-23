@@ -259,7 +259,9 @@ async function fetchPlaceDetails(query, customFetch = fetch) {
 
     // Open-Meteo ile güncel ve 3 günlük hava tahmini
     const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=3`;
-    const wRes = await customFetch(weatherUrl, { signal: AbortSignal.timeout(2000) });
+    const wRes = await customFetch(weatherUrl, {
+      signal: AbortSignal.timeout(2000)
+    });
 
     let weather = null;
     if (wRes.ok) {
@@ -780,7 +782,9 @@ async function solveInstantQuery(query, customFetch = fetch) {
           } else if (!isFinite(result)) {
             displayResult = 'Tanımsız (Sıfıra bölünemez)';
           } else {
-            displayResult = result.toLocaleString('tr-TR', { maximumFractionDigits: 6 });
+            displayResult = result.toLocaleString('tr-TR', {
+              maximumFractionDigits: 6
+            });
           }
           return {
             type: 'calculator',
@@ -1233,7 +1237,11 @@ async function fetchSearxData({
       );
       const isExplicitTimeQuery = /saat|time|tarih|date|bugün|gun|gün/.test(q.toLowerCase());
       if (ansContent && (!isDateOrTimeAnswer || isExplicitTimeQuery)) {
-        resolvedAnswer = { type: ansType, title: ansTitle, content: ansContent };
+        resolvedAnswer = {
+          type: ansType,
+          title: ansTitle,
+          content: ansContent
+        };
       }
     }
 

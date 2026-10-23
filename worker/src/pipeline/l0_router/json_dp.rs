@@ -4,7 +4,9 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::Path;
 
-use crate::domain::models::{DailyMenu, DayData, DayMetadata, MenuComponent, MenuDatabase, MenuItem};
+use crate::domain::models::{
+    DailyMenu, DayData, DayMetadata, MenuComponent, MenuDatabase, MenuItem,
+};
 use crate::quality::normalizer;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

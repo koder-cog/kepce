@@ -160,8 +160,9 @@ impl AuthService {
         subnet_hash: Option<String>,
     ) -> Result<(String, String, UserProfileDto), AuthError> {
         // 0. E-posta kör indeksi ve parola biberleme
-        let email_hash = crate::core::zero_knowledge::compute_email_hash(&dto.email, email_blind_key)
-            .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
+        let email_hash =
+            crate::core::zero_knowledge::compute_email_hash(&dto.email, email_blind_key)
+                .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
         let auth_hash = crate::core::zero_knowledge::compute_auth_hash(&dto.email, auth_pepper)
             .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
 
@@ -290,14 +291,9 @@ impl AuthService {
         let role = UserRole::User;
         let access_token =
             Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
-        let refresh_token = Self::generate_refresh_token(
-            db,
-            inserted_user.id,
-            jwt_secret,
-            false,
-            subnet_hash,
-        )
-        .await?;
+        let refresh_token =
+            Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, subnet_hash)
+                .await?;
 
         let user = crate::services::user::UserService::build_profile(db, inserted_user, true)
             .await
@@ -321,8 +317,9 @@ impl AuthService {
         // 1. E-posta mı yoksa Kullanıcı adı mı? (Her halükarda küçük harfle ara)
         let identifier_lower = dto.identifier.trim().to_lowercase();
         let condition = if identifier_lower.contains('@') {
-            let email_hash = crate::core::zero_knowledge::compute_email_hash(&identifier_lower, email_blind_key)
-                .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
+            let email_hash =
+                crate::core::zero_knowledge::compute_email_hash(&identifier_lower, email_blind_key)
+                    .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
             users::Column::EmailHash.eq(Some(email_hash))
         } else {
             users::Column::Username.eq(&identifier_lower)
@@ -565,8 +562,7 @@ impl AuthService {
         let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
         // Magic link ile giriş yapan kullanıcıların oturumu kalıcı (remember: true) olarak açılır.
         let refresh_token =
-            Self::generate_refresh_token(db, user_id, jwt_secret, true, subnet_hash)
-                .await?;
+            Self::generate_refresh_token(db, user_id, jwt_secret, true, subnet_hash).await?;
 
         Ok((access_token, refresh_token, profile))
     }
@@ -723,6 +719,7 @@ impl AuthService {
     }
 
     /// OAuth Giriş veya Kayıt Akışı
+    #[allow(clippy::too_many_arguments)]
     pub async fn register_or_login_oauth(
         db: &DatabaseConnection,
         jwt_secret: &str,
@@ -762,10 +759,8 @@ impl AuthService {
             };
 
             let access_token = Self::generate_token(user.id, &user.username, &role, jwt_secret)?;
-            let refresh_token = Self::generate_refresh_token(
-                db, user.id, jwt_secret, false, subnet_hash,
-            )
-            .await?;
+            let refresh_token =
+                Self::generate_refresh_token(db, user.id, jwt_secret, false, subnet_hash).await?;
 
             return Ok((access_token, refresh_token, false));
         }
@@ -855,14 +850,9 @@ impl AuthService {
         let role = UserRole::User;
         let access_token =
             Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
-        let refresh_token = Self::generate_refresh_token(
-            db,
-            inserted_user.id,
-            jwt_secret,
-            false,
-            subnet_hash,
-        )
-        .await?;
+        let refresh_token =
+            Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, subnet_hash)
+                .await?;
 
         Ok((access_token, refresh_token, true))
     }

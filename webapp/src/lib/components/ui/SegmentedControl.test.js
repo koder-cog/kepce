@@ -70,7 +70,11 @@ describe('SegmentedControl Component', () => {
 
   it('renders responsive variant with paired and standalone options correctly', () => {
     const responsiveOptions = [
-      { value: 'both', label: 'İkisi Var', icon: '<svg data-testid="icon-both"></svg>' },
+      {
+        value: 'both',
+        label: 'İkisi Var',
+        icon: '<svg data-testid="icon-both"></svg>'
+      },
       { value: 'iconOnly', icon: '<svg data-testid="icon-only"></svg>' },
       { value: 'labelOnly', label: 'Yazı Var' }
     ];
@@ -104,7 +108,11 @@ describe('SegmentedControl Component', () => {
         label: 'Zaman Çizelgesi',
         icon: '<svg data-testid="icon-timeline"></svg>'
       },
-      { value: 'calendar', label: 'Takvim', icon: '<svg data-testid="icon-calendar"></svg>' }
+      {
+        value: 'calendar',
+        label: 'Takvim',
+        icon: '<svg data-testid="icon-calendar"></svg>'
+      }
     ];
 
     const { container } = render(SegmentedControl, {

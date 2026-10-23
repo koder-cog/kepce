@@ -1,1 +1,1 @@
-export * from "./scrollLock.js";
+export * from './scrollLock.js';

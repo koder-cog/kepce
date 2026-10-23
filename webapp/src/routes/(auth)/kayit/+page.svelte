@@ -509,7 +509,6 @@
               > ve aydınlatma bildirimini okudum
             </span>
           </label>
-
         </div>
 
         <div class="u-text-xs u-color-muted u-mt-sm u-mb-md">

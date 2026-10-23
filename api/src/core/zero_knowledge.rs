@@ -57,21 +57,22 @@ pub fn compute_subnet_hash(subnet_prefix: &str, blind_key_hex: &str) -> Result<S
 }
 
 /// E-posta maskeleme (istemciye ipucu olarak döndürmek için: o***r@g***l.com)
+fn mask_segment_utf8(segment: &str) -> String {
+    let chars: Vec<char> = segment.chars().collect();
+    match chars.len() {
+        0 => "***".to_string(),
+        1 | 2 => format!("{}***", chars[0]),
+        n => format!("{}***{}", chars[0], chars[n - 1]),
+    }
+}
+
+/// E-posta maskeleme (UTF-8 çok baytlı karakterlerde panik üretmez)
 pub fn mask_email(email: &str) -> String {
     let trimmed = email.trim();
     if let Some((user, domain)) = trimmed.split_once('@') {
-        let masked_user = if user.len() <= 2 {
-            format!("{}***", &user[..1.min(user.len())])
-        } else {
-            format!("{}***{}", &user[..1], &user[user.len() - 1..])
-        };
-
+        let masked_user = mask_segment_utf8(user);
         if let Some((d_name, d_ext)) = domain.split_once('.') {
-            let masked_domain = if d_name.len() <= 2 {
-                format!("{}***", &d_name[..1.min(d_name.len())])
-            } else {
-                format!("{}***{}", &d_name[..1], &d_name[d_name.len() - 1..])
-            };
+            let masked_domain = mask_segment_utf8(d_name);
             format!("{}@{}.{}", masked_user, masked_domain, d_ext)
         } else {
             format!("{}@{}", masked_user, domain)
@@ -84,7 +85,8 @@ pub fn mask_email(email: &str) -> String {
 /// 5651 Sayılı Kanun gereği RAM'de tutulan trafik bilgisini
 /// Fransa sunucusunda özel anahtarı bulunmayan X25519 açık anahtarıyla mühürler.
 pub fn seal_traffic_log(public_key_hex: &str, payload_json: &str) -> Result<String> {
-    let pk_bytes_vec = hex::decode(public_key_hex.trim()).context("Açık anahtar hex formatında değil")?;
+    let pk_bytes_vec =
+        hex::decode(public_key_hex.trim()).context("Açık anahtar hex formatında değil")?;
     let pk_bytes: [u8; 32] = pk_bytes_vec
         .try_into()
         .map_err(|_| anyhow::anyhow!("Açık anahtar tam 32 bayt (64 hex) olmalıdır"))?;
@@ -116,6 +118,7 @@ mod tests {
     #[test]
     fn test_mask_email() {
         assert_eq!(mask_email("omer@gmail.com"), "o***r@g***l.com");
+        assert_eq!(mask_email("ömer@çağrı.com"), "ö***r@ç***ı.com");
         assert_eq!(mask_email("ab@cd.com"), "a***@c***.com");
     }
 

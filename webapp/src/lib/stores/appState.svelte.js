@@ -98,7 +98,9 @@ export const authActions = {
       globalState.isReady = true;
       if (typeof window !== 'undefined') {
         window.dispatchEvent(
-          new CustomEvent('auth-changed', { detail: { user: globalState.user } })
+          new CustomEvent('auth-changed', {
+            detail: { user: globalState.user }
+          })
         );
       }
     }

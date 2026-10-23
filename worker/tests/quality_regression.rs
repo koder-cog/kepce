@@ -1,6 +1,8 @@
 #[cfg(test)]
 #[allow(clippy::module_inception)]
 mod tests {
+    use chrono::NaiveDate;
+    use std::collections::HashMap;
     use worker::parser::core::{
         DateOrderResolution, DateTokenOrder, SheetGrid, parse_date_with_order, parse_grid,
         resolve_file_date_order,
@@ -9,8 +11,6 @@ mod tests {
     use worker::parser::models::MenuComponent;
     use worker::parser::models::MenuDatabase;
     use worker::parser::takeaway::{TAKEAWAY_CACHE, parse_takeaway_menu};
-    use chrono::NaiveDate;
-    use std::collections::HashMap;
 
     #[test]
     fn test_resolve_file_date_order_anchors() {
@@ -535,7 +535,8 @@ mod tests {
         "#;
 
         // "yozgat" için statik config yok, önbellek de yok -> uydurma veri üretilmemeli
-        let parsed = worker::parser::kykyemek::parse_kykyemek_html(card_html, "yozgat", "breakfast");
+        let parsed =
+            worker::parser::kykyemek::parse_kykyemek_html(card_html, "yozgat", "breakfast");
         assert_eq!(parsed.len(), 1);
         assert_eq!(parsed[0].takeaways.len(), 0);
     }

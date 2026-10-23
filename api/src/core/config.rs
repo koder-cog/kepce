@@ -63,12 +63,15 @@ impl Config {
             smtp_username: env::var("SMTP_USERNAME").ok(),
             smtp_password: env::var("SMTP_PASSWORD").ok(),
             internal_ingest_secret: env::var("INTERNAL_INGEST_SECRET").ok(),
-            auth_pepper: env::var("AUTH_PEPPER")
-                .unwrap_or_else(|_| "0000000000000000000000000000000000000000000000000000000000000001".to_string()),
-            email_blind_key: env::var("EMAIL_BLIND_KEY")
-                .unwrap_or_else(|_| "0000000000000000000000000000000000000000000000000000000000000002".to_string()),
-            subnet_blind_key: env::var("SUBNET_BLIND_KEY")
-                .unwrap_or_else(|_| "0000000000000000000000000000000000000000000000000000000000000003".to_string()),
+            auth_pepper: env::var("AUTH_PEPPER").unwrap_or_else(|_| {
+                "0000000000000000000000000000000000000000000000000000000000000001".to_string()
+            }),
+            email_blind_key: env::var("EMAIL_BLIND_KEY").unwrap_or_else(|_| {
+                "0000000000000000000000000000000000000000000000000000000000000002".to_string()
+            }),
+            subnet_blind_key: env::var("SUBNET_BLIND_KEY").unwrap_or_else(|_| {
+                "0000000000000000000000000000000000000000000000000000000000000003".to_string()
+            }),
             traffic_log_public_key: env::var("TRAFFIC_LOG_PUBLIC_KEY").ok(),
             traffic_log_key_id: env::var("TRAFFIC_LOG_KEY_ID")
                 .ok()

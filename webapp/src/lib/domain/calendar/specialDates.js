@@ -12,7 +12,12 @@ export function parseDateKey(date) {
     if (parts.length === 3 && !parts.some(isNaN)) {
       const mm = String(parts[1]).padStart(2, '0');
       const dd = String(parts[2]).padStart(2, '0');
-      return { mmdd: `${mm}-${dd}`, year: parts[0], month: parts[1], day: parts[2] };
+      return {
+        mmdd: `${mm}-${dd}`,
+        year: parts[0],
+        month: parts[1],
+        day: parts[2]
+      };
     }
   }
   const dt = date instanceof Date && !isNaN(date) ? date : new Date();

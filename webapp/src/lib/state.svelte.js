@@ -1,1 +1,1 @@
-export * from "./stores/appState.svelte.js";
+export * from './stores/appState.svelte.js';

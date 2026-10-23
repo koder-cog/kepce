@@ -7,18 +7,46 @@ const UNIT_CATEGORIES = {
     name: 'Uzunluk',
     base: 'm',
     units: {
-      km: { name: 'Kilometre', factor: 1000, aliases: ['km', 'kilometre', 'kilometres'] },
-      m: { name: 'Metre', factor: 1, aliases: ['m', 'metre', 'meter', 'meters'] },
+      km: {
+        name: 'Kilometre',
+        factor: 1000,
+        aliases: ['km', 'kilometre', 'kilometres']
+      },
+      m: {
+        name: 'Metre',
+        factor: 1,
+        aliases: ['m', 'metre', 'meter', 'meters']
+      },
       cm: {
         name: 'Santimetre',
         factor: 0.01,
         aliases: ['cm', 'santimetre', 'centimeter', 'santim', 'sm']
       },
-      mm: { name: 'Milimetre', factor: 0.001, aliases: ['mm', 'milimetre', 'millimeter', 'milim'] },
-      mi: { name: 'Mil', factor: 1609.344, aliases: ['mil', 'mile', 'miles', 'mi'] },
-      in: { name: 'İnç', factor: 0.0254, aliases: ['inç', 'inc', 'inch', 'inches', 'in'] },
-      ft: { name: 'Fit', factor: 0.3048, aliases: ['fit', 'foot', 'feet', 'ft'] },
-      yd: { name: 'Yarda', factor: 0.9144, aliases: ['yarda', 'yard', 'yards', 'yd'] }
+      mm: {
+        name: 'Milimetre',
+        factor: 0.001,
+        aliases: ['mm', 'milimetre', 'millimeter', 'milim']
+      },
+      mi: {
+        name: 'Mil',
+        factor: 1609.344,
+        aliases: ['mil', 'mile', 'miles', 'mi']
+      },
+      in: {
+        name: 'İnç',
+        factor: 0.0254,
+        aliases: ['inç', 'inc', 'inch', 'inches', 'in']
+      },
+      ft: {
+        name: 'Fit',
+        factor: 0.3048,
+        aliases: ['fit', 'foot', 'feet', 'ft']
+      },
+      yd: {
+        name: 'Yarda',
+        factor: 0.9144,
+        aliases: ['yarda', 'yard', 'yards', 'yd']
+      }
     }
   },
   mass: {
@@ -26,11 +54,27 @@ const UNIT_CATEGORIES = {
     base: 'kg',
     units: {
       ton: { name: 'Metrik Ton', factor: 1000, aliases: ['ton', 'tonnes'] },
-      kg: { name: 'Kilogram', factor: 1, aliases: ['kg', 'kilogram', 'kilo', 'kilograms'] },
+      kg: {
+        name: 'Kilogram',
+        factor: 1,
+        aliases: ['kg', 'kilogram', 'kilo', 'kilograms']
+      },
       g: { name: 'Gram', factor: 0.001, aliases: ['g', 'gram', 'grams', 'gr'] },
-      mg: { name: 'Miligram', factor: 0.000001, aliases: ['mg', 'miligram', 'milligram'] },
-      lb: { name: 'Pound (Libre)', factor: 0.45359237, aliases: ['pound', 'libre', 'lb', 'lbs'] },
-      oz: { name: 'Ons', factor: 0.028349523, aliases: ['ons', 'oz', 'ounce', 'ounces'] }
+      mg: {
+        name: 'Miligram',
+        factor: 0.000001,
+        aliases: ['mg', 'miligram', 'milligram']
+      },
+      lb: {
+        name: 'Pound (Libre)',
+        factor: 0.45359237,
+        aliases: ['pound', 'libre', 'lb', 'lbs']
+      },
+      oz: {
+        name: 'Ons',
+        factor: 0.028349523,
+        aliases: ['ons', 'oz', 'ounce', 'ounces']
+      }
     }
   },
   digital: {
@@ -39,9 +83,21 @@ const UNIT_CATEGORIES = {
     units: {
       b: { name: 'Byte', factor: 1, aliases: ['b', 'byte', 'bayt'] },
       kb: { name: 'Kilobyte', factor: 1024, aliases: ['kb', 'kilobyte'] },
-      mb: { name: 'Megabyte', factor: 1024 * 1024, aliases: ['mb', 'megabyte'] },
-      gb: { name: 'Gigabyte', factor: 1024 * 1024 * 1024, aliases: ['gb', 'gigabyte'] },
-      tb: { name: 'Terabyte', factor: 1024 * 1024 * 1024 * 1024, aliases: ['tb', 'terabyte'] }
+      mb: {
+        name: 'Megabyte',
+        factor: 1024 * 1024,
+        aliases: ['mb', 'megabyte']
+      },
+      gb: {
+        name: 'Gigabyte',
+        factor: 1024 * 1024 * 1024,
+        aliases: ['gb', 'gigabyte']
+      },
+      tb: {
+        name: 'Terabyte',
+        factor: 1024 * 1024 * 1024 * 1024,
+        aliases: ['tb', 'terabyte']
+      }
     }
   }
 };
@@ -152,7 +208,11 @@ export function solveUnitConversion(query) {
     else if (toCode === 'f') res = inC * (9 / 5) + 32;
     else if (toCode === 'k') res = inC + 273.15;
 
-    const names = { c: 'Santigrat (°C)', f: 'Fahrenheit (°F)', k: 'Kelvin (K)' };
+    const names = {
+      c: 'Santigrat (°C)',
+      f: 'Fahrenheit (°F)',
+      k: 'Kelvin (K)'
+    };
 
     return {
       type: 'unit',
@@ -288,7 +348,11 @@ const TURKISH_WORLD_ALIASES = {
   bakü: { tz: 'Asia/Baku', city: 'Bakü', country: 'Azerbaycan' },
   baku: { tz: 'Asia/Baku', city: 'Bakü', country: 'Azerbaycan' },
   tiflis: { tz: 'Asia/Tbilisi', city: 'Tiflis', country: 'Gürcistan' },
-  saraybosna: { tz: 'Europe/Sarajevo', city: 'Saraybosna', country: 'Bosna-Hersek' },
+  saraybosna: {
+    tz: 'Europe/Sarajevo',
+    city: 'Saraybosna',
+    country: 'Bosna-Hersek'
+  },
   üsküp: { tz: 'Europe/Skopje', city: 'Üsküp', country: 'Kuzey Makedonya' },
   uskup: { tz: 'Europe/Skopje', city: 'Üsküp', country: 'Kuzey Makedonya' },
   belgrad: { tz: 'Europe/Belgrade', city: 'Belgrad', country: 'Sırbistan' },
@@ -306,7 +370,11 @@ const TURKISH_WORLD_ALIASES = {
   amsterdam: { tz: 'Europe/Amsterdam', city: 'Amsterdam', country: 'Hollanda' },
   'new york': { tz: 'America/New_York', city: 'New York', country: 'ABD' },
   newyork: { tz: 'America/New_York', city: 'New York', country: 'ABD' },
-  'los angeles': { tz: 'America/Los_Angeles', city: 'Los Angeles', country: 'ABD' },
+  'los angeles': {
+    tz: 'America/Los_Angeles',
+    city: 'Los Angeles',
+    country: 'ABD'
+  },
   toronto: { tz: 'America/Toronto', city: 'Toronto', country: 'Kanada' },
   dubai: { tz: 'Asia/Dubai', city: 'Dubai', country: 'BAE' },
   şanghay: { tz: 'Asia/Shanghai', city: 'Şanghay', country: 'Çin' },
@@ -316,7 +384,11 @@ const TURKISH_WORLD_ALIASES = {
   türkiye: { tz: 'Europe/Istanbul', city: 'İstanbul', country: 'Türkiye' },
   turkiye: { tz: 'Europe/Istanbul', city: 'İstanbul', country: 'Türkiye' },
   almanya: { tz: 'Europe/Berlin', city: 'Berlin', country: 'Almanya' },
-  ingiltere: { tz: 'Europe/London', city: 'Londra', country: 'Birleşik Krallık' },
+  ingiltere: {
+    tz: 'Europe/London',
+    city: 'Londra',
+    country: 'Birleşik Krallık'
+  },
   fransa: { tz: 'Europe/Paris', city: 'Paris', country: 'Fransa' },
   italya: { tz: 'Europe/Rome', city: 'Roma', country: 'İtalya' },
   ispanya: { tz: 'Europe/Madrid', city: 'Madrid', country: 'İspanya' },
@@ -345,10 +417,18 @@ export function resolveTimezoneInfo(placeStr) {
 
   // 1. Türkiye genel veya 81 il kontrolü (CITY_MAP)
   if (pNorm === 'türkiye' || pNorm === 'turkiye') {
-    return { city: 'İstanbul', country: 'Türkiye', timezone: 'Europe/Istanbul' };
+    return {
+      city: 'İstanbul',
+      country: 'Türkiye',
+      timezone: 'Europe/Istanbul'
+    };
   }
   if (CITY_MAP[pNorm]) {
-    return { city: CITY_MAP[pNorm], country: 'Türkiye', timezone: 'Europe/Istanbul' };
+    return {
+      city: CITY_MAP[pNorm],
+      country: 'Türkiye',
+      timezone: 'Europe/Istanbul'
+    };
   }
 
   // 2. Türkçe şehir/ülke alias haritası
@@ -439,7 +519,11 @@ export function solveWorldTime(query) {
   // 1. Genel saat sorgusu (Şehir veya ülke belirtilmemişse Türkiye yerel saati gösterilir)
   // "saat kaç", "saat kac", "şu an saat kaç", "suan saat kac", "saat"
   if (/^(?:(?:şu\s*an\s*)?saat\s*ka[cç]|şu\s*an\s*saat|saat)$/i.test(q)) {
-    return formatTimeAnswer({ city: 'İstanbul', country: 'Türkiye', timezone: 'Europe/Istanbul' });
+    return formatTimeAnswer({
+      city: 'İstanbul',
+      country: 'Türkiye',
+      timezone: 'Europe/Istanbul'
+    });
   }
 
   // 2. Şehir / ülke saati: "tokyo saati", "tokyo'da saat kaç", "londra saat", "ankara saati", "trabzon saati"

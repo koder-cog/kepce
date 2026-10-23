@@ -297,7 +297,9 @@ export function initTooltipManager() {
   );
 
   // Continuously monitor active tooltip validity on mouse/pointer movement to prevent orphans
-  document.addEventListener('pointermove', validateActiveTooltip, { passive: true });
+  document.addEventListener('pointermove', validateActiveTooltip, {
+    passive: true
+  });
 
   // Clean up and remove tooltips instantly on any SPA route changes
   window.addEventListener(

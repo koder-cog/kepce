@@ -52,7 +52,9 @@ describe('agentRepresentation - RFC 9110 Content Negotiation', () => {
   });
 
   it('Sınır durum: Başlık yoksa veya boşsa varsayılan olarak text/html dönmelidir', () => {
-    const reqEmpty = new Request('https://kepce.org/', { headers: { Accept: '' } });
+    const reqEmpty = new Request('https://kepce.org/', {
+      headers: { Accept: '' }
+    });
     const reqNone = new Request('https://kepce.org/');
     expect(negotiateMediaType(reqEmpty, ROOT_MEDIA_TYPES)).toBe('text/html');
     expect(negotiateMediaType(reqNone, ROOT_MEDIA_TYPES)).toBe('text/html');

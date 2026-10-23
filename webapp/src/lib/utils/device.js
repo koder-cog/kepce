@@ -1,5 +1,10 @@
 export function parseUserAgent(uaString) {
-  if (!uaString) return { os: 'Bilinmeyen Cihaz', browser: 'Bilinmeyen Tarayıcı', icon: 'monitor' };
+  if (!uaString)
+    return {
+      os: 'Bilinmeyen Cihaz',
+      browser: 'Bilinmeyen Tarayıcı',
+      icon: 'monitor'
+    };
 
   let os = 'Bilinmeyen OS';
   let browser = 'Bilinmeyen Tarayıcı';

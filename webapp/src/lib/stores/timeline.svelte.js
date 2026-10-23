@@ -1,5 +1,10 @@
 import { api } from '$lib/api/index.js';
-import { getCurrentCity, setCurrentCity, getCitiesData, getCities } from '$lib/stores/city.svelte.js';
+import {
+  getCurrentCity,
+  setCurrentCity,
+  getCitiesData,
+  getCities
+} from '$lib/stores/city.svelte.js';
 import { wait, getDuration, runNextTick, isMotionEnabled } from '$lib/dom/motion.js';
 
 export function createTimelineStore() {
@@ -308,7 +313,9 @@ export function createTimelineStore() {
     runNextTick(() => {
       setTimeout(() => {
         window.dispatchEvent(
-          new CustomEvent('timeline-scroll-to-active', { detail: { forceCenter } })
+          new CustomEvent('timeline-scroll-to-active', {
+            detail: { forceCenter }
+          })
         );
       }, getDuration(50));
     });

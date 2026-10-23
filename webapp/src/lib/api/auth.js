@@ -48,7 +48,10 @@ export const authApi = {
   getSessions: () => request('/auth/me/sessions'),
   revokeSession: (id) => request(`/auth/me/sessions/${id}`, { method: 'DELETE' }),
   deleteAccount: (password) =>
-    request('/auth/me', { method: 'DELETE', body: JSON.stringify({ password }) }),
+    request('/auth/me', {
+      method: 'DELETE',
+      body: JSON.stringify({ password })
+    }),
   verifyEmail: (token) => request(`/auth/verify${buildQuery({ token })}`),
   resendVerification: () => request('/auth/resend-verification', { method: 'POST' }),
   getProjects: () => request('/auth/projects'),

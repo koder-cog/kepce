@@ -25,11 +25,11 @@
     "prettier": "^3.9.9",
     "prettier-plugin-svelte": "^4.1.1",
     "svelte-check": "^4.7.2",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.10"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   },
   "dependencies": {
-    "dompurify": "^3.3.3",
+    "dompurify": "^3.4.17",
     "negotiator": "^1.1.0",
     "svelte": "^5.56.3"
   },

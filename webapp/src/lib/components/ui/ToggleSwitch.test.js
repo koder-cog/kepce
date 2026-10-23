@@ -11,7 +11,10 @@ describe('ToggleSwitch Component', () => {
   });
 
   it('should render checked and unchecked states', () => {
-    const { container } = render(ToggleSwitch, { checked: true, label: 'Test Label' });
+    const { container } = render(ToggleSwitch, {
+      checked: true,
+      label: 'Test Label'
+    });
     const checkbox = container.querySelector('input[type="checkbox"]');
     expect(checkbox.checked).toBe(true);
   });

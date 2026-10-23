@@ -86,7 +86,9 @@ async fn test_full_auth_flow() {
     assert_eq!(status, StatusCode::OK);
 
     // Verify user created but not verified in DB
-    let email_hash = api::core::zero_knowledge::compute_email_hash(&test_email, &state.config.email_blind_key).unwrap();
+    let email_hash =
+        api::core::zero_knowledge::compute_email_hash(&test_email, &state.config.email_blind_key)
+            .unwrap();
     let user_db = Users::find()
         .filter(users::Column::EmailHash.eq(&email_hash))
         .one(&state.db)

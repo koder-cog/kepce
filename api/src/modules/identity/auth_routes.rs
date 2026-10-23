@@ -505,17 +505,17 @@ async fn update_me(
         &config.email_blind_key,
         &config.auth_pepper,
     )
-        .await
-        .map_err(|e| match e {
-            crate::services::auth::AuthError::UserAlreadyExists => {
-                AppError::BadRequest("Bu kullanıcı adı veya e-posta zaten kullanılıyor".to_string())
-            }
-            crate::services::auth::AuthError::InvalidCredentials => {
-                AppError::BadRequest("Mevcut şifre hatalı".to_string())
-            }
-            crate::services::auth::AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
-            _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
-        })?;
+    .await
+    .map_err(|e| match e {
+        crate::services::auth::AuthError::UserAlreadyExists => {
+            AppError::BadRequest("Bu kullanıcı adı veya e-posta zaten kullanılıyor".to_string())
+        }
+        crate::services::auth::AuthError::InvalidCredentials => {
+            AppError::BadRequest("Mevcut şifre hatalı".to_string())
+        }
+        crate::services::auth::AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
+        _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
+    })?;
 
     // Şifre değiştiyse ve güvenlik e-postaları tercihi açıksa e-posta bildirimi gönder
     if password_changed
@@ -650,7 +650,8 @@ async fn upload_avatar(
     mut _multipart: Multipart,
 ) -> Result<Json<serde_json::Value>, AppError> {
     Err(AppError::BadRequest(
-        "Profil fotoğrafları Sıfır Bilgi Gizlilik Mimarisi kapsamında sunucuda saklanmamaktadır.".to_string(),
+        "Profil fotoğrafları Sıfır Bilgi Gizlilik Mimarisi kapsamında sunucuda saklanmamaktadır."
+            .to_string(),
     ))
 }
 
@@ -712,11 +713,14 @@ async fn resend_verification(
         AppError::BadRequest("Sıfır bilgi gizlilik mimarisi gereği e-posta adresiniz sunucuda saklanmamaktadır. Doğrulama bağlantısı almak için lütfen e-posta adresinizi belirtin.".to_string())
     })?;
 
-    let email_hash = crate::core::zero_knowledge::compute_email_hash(&email, &config.email_blind_key)
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let email_hash =
+        crate::core::zero_knowledge::compute_email_hash(&email, &config.email_blind_key)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
     if db_user.email_hash.as_deref() != Some(&email_hash) {
-        return Err(AppError::BadRequest("Girilen e-posta bu hesapla eşleşmiyor.".to_string()));
+        return Err(AppError::BadRequest(
+            "Girilen e-posta bu hesapla eşleşmiyor.".to_string(),
+        ));
     }
 
     // Check cooldown (24 hours)
@@ -801,8 +805,9 @@ async fn forgot_password(
     State(config): State<std::sync::Arc<Config>>,
     ValidatedJson(payload): ValidatedJson<ForgotPasswordDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let email_hash = crate::core::zero_knowledge::compute_email_hash(&payload.email, &config.email_blind_key)
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let email_hash =
+        crate::core::zero_knowledge::compute_email_hash(&payload.email, &config.email_blind_key)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let user_opt = Users::find()
         .filter(users::Column::EmailHash.eq(&email_hash))
@@ -1415,8 +1420,9 @@ async fn request_passwordless(
     ValidatedJson(payload): ValidatedJson<PasswordlessRequestDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     // E-postaya sahip kullanıcıyı bul
-    let email_hash = crate::core::zero_knowledge::compute_email_hash(&payload.email, &config.email_blind_key)
-        .map_err(|e| AppError::Internal(e.to_string()))?;
+    let email_hash =
+        crate::core::zero_knowledge::compute_email_hash(&payload.email, &config.email_blind_key)
+            .map_err(|e| AppError::Internal(e.to_string()))?;
 
     let user = Users::find()
         .filter(users::Column::EmailHash.eq(&email_hash))
@@ -1468,13 +1474,9 @@ async fn passwordless_login(
         crate::core::zero_knowledge::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
     });
 
-    let (access_token, refresh_token, user) = AuthService::passwordless_login(
-        &db,
-        &config.jwt_secret,
-        &payload.token,
-        subnet_hash,
-    )
-    .await?;
+    let (access_token, refresh_token, user) =
+        AuthService::passwordless_login(&db, &config.jwt_secret, &payload.token, subnet_hash)
+            .await?;
 
     let secure = config.cookie_secure;
     let mut headers = HeaderMap::new();

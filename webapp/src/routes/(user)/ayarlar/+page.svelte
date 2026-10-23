@@ -774,7 +774,8 @@
               {#if maskedEmail}
                 {maskedEmail}
               {:else}
-                <span class="u-color-muted u-text-xs">Sıfır Bilgi Korumalı (Sunucuda Tutulmaz)</span>
+                <span class="u-color-muted u-text-xs">Sıfır Bilgi Korumalı (Sunucuda Tutulmaz)</span
+                >
               {/if}
               {#if !user.is_verified}
                 &middot;

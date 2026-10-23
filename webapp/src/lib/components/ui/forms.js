@@ -97,7 +97,12 @@ export function createThemeSwitcher(currentTheme) {
     indicatorId: 'settings-theme-indicator',
     activeValue: currentTheme,
     options: [
-      { value: 'sistem', label: 'Sistem', icon: 'system', tooltip: 'Sistem Teması' },
+      {
+        value: 'sistem',
+        label: 'Sistem',
+        icon: 'system',
+        tooltip: 'Sistem Teması'
+      },
       { value: 'acik', label: 'Açık', icon: 'sun', tooltip: 'Açık Tema' },
       { value: 'koyu', label: 'Koyu', icon: 'moon', tooltip: 'Koyu Tema' }
     ]

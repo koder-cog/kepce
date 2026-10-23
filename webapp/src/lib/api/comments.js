@@ -9,7 +9,12 @@ export const commentsApi = {
   postComment: (menuId, comment, parentId = null) =>
     request('/comments', {
       method: 'POST',
-      body: JSON.stringify({ menu_id: menuId, comment, parent_id: parentId, sentiment: 'neutral' })
+      body: JSON.stringify({
+        menu_id: menuId,
+        comment,
+        parent_id: parentId,
+        sentiment: 'neutral'
+      })
     }),
   reportComment: (commentId, description = 'Yorum şikayet edildi') =>
     request('/reports', {

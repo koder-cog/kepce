@@ -1,1 +1,1 @@
-export * from "./charCounter.js";
+export * from './charCounter.js';

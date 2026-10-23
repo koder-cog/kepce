@@ -784,8 +784,9 @@ impl UserService {
 
         if let Some(ref email) = dto.email {
             let norm = crate::core::zero_knowledge::normalize_email(email);
-            let email_hash = crate::core::zero_knowledge::compute_email_hash(&norm, email_blind_key)
-                .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
+            let email_hash =
+                crate::core::zero_knowledge::compute_email_hash(&norm, email_blind_key)
+                    .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
             let auth_hash = crate::core::zero_knowledge::compute_auth_hash(&norm, auth_pepper)
                 .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
 

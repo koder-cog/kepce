@@ -42,8 +42,8 @@ pub mod tasks {
     pub use crate::jobs::engagement::telegram_bot;
     pub use crate::jobs::ingestion::backup_export;
     pub use crate::jobs::ingestion::backup_ingest;
+    pub use crate::jobs::ingestion::fallback_scraper;
     pub use crate::jobs::ingestion::file_ingest;
     pub use crate::jobs::ingestion::historical as historical_ingest;
-    pub use crate::jobs::ingestion::fallback_scraper;
     pub use crate::jobs::ingestion::scraper;
 }

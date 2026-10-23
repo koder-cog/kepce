@@ -6,7 +6,10 @@
   import { groupItems, normalizeItems } from '$lib/domain/menu/menu.js';
   import { api } from '$lib/api/index.js';
   import { showToast } from '$lib/components/ui/toast.js';
-  import { openReportModal, openMenuReportModal } from '$lib/components/features/moderation/report-modal.js';
+  import {
+    openReportModal,
+    openMenuReportModal
+  } from '$lib/components/features/moderation/report-modal.js';
   import { openTakeawayModal } from '$lib/dom/takeaway-modal.js';
   import { getCurrentCity } from '$lib/stores/city.svelte.js';
   import { formatFullTurkishDate, CITY_MAP } from '$lib/utils/turkish.js';

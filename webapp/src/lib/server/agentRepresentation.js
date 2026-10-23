@@ -1,12 +1,7 @@
 import Negotiator from 'negotiator';
 import { apiGet, normalizeMenuList, istanbulToday } from './api.js';
 
-export const ROOT_MEDIA_TYPES = [
-  'text/html',
-  'text/markdown',
-  'text/plain',
-  'application/json'
-];
+export const ROOT_MEDIA_TYPES = ['text/html', 'text/markdown', 'text/plain', 'application/json'];
 
 export const ERROR_MEDIA_TYPES = ['text/html', 'application/json'];
 

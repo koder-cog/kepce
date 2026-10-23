@@ -25,8 +25,10 @@ pub async fn bootstrap_admin(
         (&config.initial_admin_email, &config.initial_admin_password)
     {
         let norm_email = crate::core::zero_knowledge::normalize_email(email);
-        let email_hash = crate::core::zero_knowledge::compute_email_hash(&norm_email, &config.email_blind_key)?;
-        let auth_hash = crate::core::zero_knowledge::compute_auth_hash(&norm_email, &config.auth_pepper)?;
+        let email_hash =
+            crate::core::zero_knowledge::compute_email_hash(&norm_email, &config.email_blind_key)?;
+        let auth_hash =
+            crate::core::zero_knowledge::compute_auth_hash(&norm_email, &config.auth_pepper)?;
 
         let admin_exists = users::Entity::find()
             .filter(users::Column::EmailHash.eq(&email_hash))

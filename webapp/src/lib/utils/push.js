@@ -34,7 +34,9 @@ export function isPushSupported() {
 export async function registerServiceWorker() {
   if (!isPushSupported()) return null;
   try {
-    const reg = await navigator.serviceWorker.register('/sw.js', { scope: '/' });
+    const reg = await navigator.serviceWorker.register('/sw.js', {
+      scope: '/'
+    });
     return reg;
   } catch (err) {
     console.error('Service worker kayıt hatası:', err);

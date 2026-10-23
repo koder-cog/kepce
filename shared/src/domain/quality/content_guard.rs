@@ -1,7 +1,8 @@
 use ammonia;
 use std::sync::OnceLock;
 
-const EMBEDDED_SHORTENERS_JSON: &str = include_str!("../../../../config/security/url_shorteners.json");
+const EMBEDDED_SHORTENERS_JSON: &str =
+    include_str!("../../../../config/security/url_shorteners.json");
 static BLOCKED_URLS: OnceLock<BlockedUrlConfig> = OnceLock::new();
 
 #[derive(Debug, serde::Deserialize)]
@@ -22,6 +23,18 @@ fn get_blocked_urls() -> &'static BlockedUrlConfig {
             }
         })
     })
+}
+
+fn strip_invisible_chars(input: &str) -> String {
+    input
+        .chars()
+        .filter(|&c| {
+            !matches!(
+                c,
+                '\0' | '\u{200B}' | '\u{200C}' | '\u{200D}' | '\u{FEFF}' | '\u{00AD}'
+            )
+        })
+        .collect()
 }
 
 fn contains_domain(text: &str, domain: &str) -> bool {
@@ -114,22 +127,17 @@ pub struct ContentGuard;
 
 impl ContentGuard {
     /// Gelen metindeki zararlı HTML etiketlerini temizler (XSS koruması)
-    /// Ammonia kütüphanesi güvenli bir whitelist stratejisi kullanır.
     pub fn sanitize_html(input: &str) -> String {
-        ammonia::clean(input)
+        let cleaned = strip_invisible_chars(input);
+        ammonia::clean(&cleaned)
     }
 
-    /// Gelişmiş spam kontrolü:
-    /// 1. Kısaltıcılar (bit.ly, tinyurl vb.) ve sohbet davetleri (t.me, wa.me) tek bir tane dahi olsa engellenir.
-    /// 2. Kötü şöhretli TLD'ler (.xyz, .top, .buzz vb.) tek bağlantıda dahi engellenir.
-    /// 3. İç linkler (kepce.org) spam sayımından düşülür.
-    /// 4. Dış bağlantı sayısı 2 veya daha fazlaysa (veya 1 dış bağlantı varken metin < 50 karakterse) spam sayılır.
-    /// 5. 10'dan fazla aynı harf tekrarı engellenir.
+    /// Gelişmiş spam kontrolü
     pub fn is_spam(input: &str) -> bool {
-        let normalized = input.to_lowercase();
+        let cleaned = strip_invisible_chars(input);
+        let normalized = cleaned.to_lowercase();
         let config = get_blocked_urls();
 
-        // 1. Kısaltıcılar veya sohbet davetleri doğrudan spam
         for domain in &config.shortener_domains {
             if contains_domain(&normalized, domain) {
                 return true;
@@ -140,31 +148,27 @@ impl ContentGuard {
                 return true;
             }
         }
-
-        // 2. Şüpheli TLD'ler (.xyz, .top, .buzz vb.) doğrudan spam
         for tld in &config.suspicious_tlds {
             if contains_suspicious_tld(&normalized, tld) {
                 return true;
             }
         }
 
-        // 3. Linkleri çıkar ve iç bağlantıları (kepce.org) muaf tut
         let all_links = extract_links(&normalized);
         let external_links: Vec<&String> = all_links
             .iter()
             .filter(|link| !link.contains("kepce.org") && !link.contains("localhost"))
             .collect();
 
-        if external_links.len() >= 2 || (external_links.len() == 1 && input.len() < 50) {
+        if external_links.len() >= 2 || (external_links.len() == 1 && cleaned.len() < 50) {
             return true;
         }
 
-        // 4. Anlamsız karakter tekrarı kontrolü (10'dan fazla aynı harf)
         let mut max_repeat = 0;
         let mut current_repeat = 1;
         let mut prev_char = '\0';
 
-        for c in input.chars() {
+        for c in cleaned.chars() {
             if c.is_alphabetic() {
                 if c == prev_char {
                     current_repeat += 1;
@@ -178,11 +182,7 @@ impl ContentGuard {
             }
         }
 
-        if max_repeat > 10 {
-            return true;
-        }
-
-        false
+        max_repeat > 10
     }
 
     /// Menü ve yemek isimlerindeki bürokrat isimleri, duyurular, kalori bilgileri
@@ -193,24 +193,19 @@ impl ContentGuard {
             return true;
         }
 
-        // Türkçe karakter normalizasyonu ile küçük harfe çevirme
-        let mut normalized = text_trimmed.to_string();
-        normalized = normalized
+        let normalized = text_trimmed
             .replace(['İ', 'I', 'ı'], "i")
             .replace(['ş', 'Ş'], "s")
             .replace(['ğ', 'Ğ'], "g")
             .replace(['ü', 'Ü'], "u")
             .replace(['ö', 'Ö'], "o")
-            .replace(['ç', 'Ç'], "c");
-        let normalized = normalized.to_lowercase();
+            .replace(['ç', 'Ç'], "c")
+            .to_lowercase();
 
-        // Site navigasyon/başlık kalıntıları: ok karakteriyle başlayan satırlar
-        // (örn. "←İstanbul KYK Menüsü") yemek değildir.
         if text_trimmed.starts_with(['←', '→', '«', '»', '‹', '›']) {
             return true;
         }
 
-        // Engellenecek kara liste kalıpları
         let blocked_keywords = [
             "il muduru",
             "sube muduru",
@@ -243,24 +238,17 @@ impl ContentGuard {
             "kullanim kosullari",
             "fiyat listesi",
             "tabldot ucreti",
-            // Kaynak sitelerdeki "menü yok" placeholder mesajları
-            // (örn. "Veri yok. Menüye sahipseniz ... mail atabilirsiniz")
-            // yemek satırı sanılıp veritabanına yutulmasın.
             "veri yok",
             "menuye sahipseniz",
             "sahipseniz",
             "mail atabilirsiniz",
             "eposta",
             "e-posta",
-            // Sayfa başlığı/navigasyon kalıntıları (kykmenu.com.tr scrape'ında
-            // yemek sanılıp DB'ye yutulmuştu): "Kahvaltı Yemek Listesi",
-            // "Gün Menüsü", "←İstanbul KYK Menüsü" vb.
             "yemek listesi",
             "gun menusu",
             "kyk menu",
             "kykmenusu",
             "menu listesi",
-            // Reklam, sponsorluk ve site şablonu kalıntıları
             "reklam alani",
             "reklam",
             "sponsor",
@@ -271,18 +259,14 @@ impl ContentGuard {
             "gunun corbasi:",
             "gunun tatlisi:",
             "alternatif menuler",
-            // Birleşik öğün adları: parser'a boşlukları yutulmuş başlık
-            // kalıntıları ("KahvaltıAkşam" vb.) yemek olarak girmesin.
             "kahvaltiaksam",
             "kahvaltiogle",
             "ogleaksam",
-            // Sezon/dönem başı duyuruları (örn. "14 Eylül itibarıyla yeni dönem listeleri...")
             "yeni donem",
             "girilmeye baslanacak",
             "basarilar dileriz",
             "itibariyla",
             "itibariyle",
-            // Scraper kaynak sitelerindeki (kykyemek.com vb.) liste yok placeholder duyuruları
             "elimize ulasir",
             "siteye eklenecektir",
             "elinizde liste",
@@ -297,8 +281,6 @@ impl ContentGuard {
             }
         }
 
-        // Yalnızca öğün/başlık kelimelerinden oluşan satırlar (örn.
-        // "Kahvaltı Öğle", "Akşam Yemeği") yemek değil, başlık kalıntısıdır.
         let meal_header_words = [
             "kahvalti", "ogle", "aksam", "yemegi", "yemek", "listesi", "menu", "gun",
         ];
@@ -307,7 +289,6 @@ impl ContentGuard {
             return true;
         }
 
-        // Harf içermeyen (sadece sayı veya sembol) metinler
         if !text_trimmed.chars().any(|c| c.is_alphabetic()) {
             return true;
         }
@@ -315,18 +296,13 @@ impl ContentGuard {
         false
     }
 
-    /// T.C. Kimlik Numarası algoritma doğrulaması:
-    /// 1. 11 basamaklı olmalı, ilk hane 0 olamaz, 11. hane çift olmalı.
-    /// 2. İlk 9 hanede (payload) tekdüze diziler (11111111110) ve ardışık klavye
-    ///    dizileri (12345678950, 98765432102) elenir.
-    /// 3. i32 cast ile negatif fark taşması (wrapping_sub) engellenir.
+    /// T.C. Kimlik Numarası algoritma doğrulaması
     pub fn is_valid_tckn(digits_str: &str) -> bool {
         let d: Vec<u32> = digits_str.chars().filter_map(|c| c.to_digit(10)).collect();
-        if d.len() != 11 || d[0] == 0 || d[10] % 2 != 0 {
+        if d.len() != 11 || d[0] == 0 || !d[10].is_multiple_of(2) {
             return false;
         }
 
-        // 1. İlk 9 hanede tekdüzelik ve ardışıklık kontrolü
         let payload = &d[0..9];
         let all_same = payload.windows(2).all(|w| w[0] == w[1]);
         let asc_seq = payload.windows(2).all(|w| w[0] + 1 == w[1]);
@@ -336,7 +312,6 @@ impl ContentGuard {
             return false;
         }
 
-        // 2. Modüler sağlama (i32 ile negatif fark taşması engellenir)
         let odd_sum: i32 = (d[0] + d[2] + d[4] + d[6] + d[8]) as i32;
         let even_sum: i32 = (d[1] + d[3] + d[5] + d[7]) as i32;
 
@@ -347,49 +322,65 @@ impl ContentGuard {
         d[9] == tenth_check && d[10] == eleventh_check
     }
 
-    /// Metin içinde geçerli bir TCKN tespiti yapar.
+    /// Metin içinde düz, boşluklu veya tireli TCKN tespiti yapar.
+    /// Yorumun başka yerinde başka sayılar ("2026 yılında...") bulunsa dahi yakalar.
     pub fn contains_tckn(text: &str) -> bool {
-        let chars: Vec<char> = text.chars().collect();
+        let cleaned_text = strip_invisible_chars(text);
+        let chars: Vec<char> = cleaned_text.chars().collect();
         let len = chars.len();
         if len < 11 {
             return false;
         }
 
-        // 1. Doğrudan 11 haneli ardışık rakam pencereleri
-        for i in 0..=len - 11 {
-            let slice: String = chars[i..i + 11].iter().collect();
-            if slice.chars().all(|c| c.is_ascii_digit()) {
-                let prefix_ok = i == 0 || !chars[i - 1].is_ascii_digit();
-                let suffix_ok = i + 11 == len || !chars[i + 11].is_ascii_digit();
-                if prefix_ok && suffix_ok && Self::is_valid_tckn(&slice) {
+        for start in 0..len {
+            if !chars[start].is_ascii_digit() || chars[start] == '0' {
+                continue;
+            }
+            if start > 0 && chars[start - 1].is_ascii_digit() {
+                continue;
+            }
+
+            let mut candidate = String::with_capacity(11);
+            let mut end_idx = start;
+
+            for (offset, &c) in chars[start..].iter().enumerate() {
+                if c.is_ascii_digit() {
+                    candidate.push(c);
+                    end_idx = start + offset;
+                    if candidate.len() == 11 {
+                        break;
+                    }
+                } else if matches!(c, ' ' | '-' | '.' | '_') {
+                    continue;
+                } else {
+                    break;
+                }
+            }
+
+            if candidate.len() == 11 {
+                let next_is_digit = end_idx + 1 < len && chars[end_idx + 1].is_ascii_digit();
+                if !next_is_digit && Self::is_valid_tckn(&candidate) {
                     return true;
                 }
             }
         }
 
-        // 2. Yalnızca rakamlardan oluşan temizlenmiş dizgi (boşluk / tire içeren TCKN'ler)
-        let cleaned: String = text.chars().filter(|c| c.is_ascii_digit()).collect();
-        if cleaned.len() == 11 && Self::is_valid_tckn(&cleaned) {
-            return true;
-        }
-
         false
     }
 
-    /// Fonotaktik kural ve alfabe kümesi izolasyonu ile telefon numarası tespiti:
-    /// - Normal telefonlar (05xx, 5xx) ve boşluk/tire ile gizlenmiş halleri yakalanır.
-    /// - Leetspeak (o->0, i/ı->1, z->2, e->3, a->4, s->5, b->8, t->7, g->9) ile gizlenmiş
-    ///   numaralar taranırken, aday blokta S_turkce_eksik kümesinden harf geçip geçmediği kontrol edilir.
-    /// - "Soslu bezelye" gibi doğal Türkçe kelimeler (içinde l, u, y, d vb. geçtiğinden) korunur.
+    /// Fonotaktik kural, gerçek rakam yoğunluğu ve alfabe kümesi izolasyonu ile telefon tespiti.
+    /// - "sosis bitti", "tost bitti", "soslu bezelye" gibi içinde rakam olmayan doğal Türkçe
+    ///   kelimeleri ASLA engellemez.
+    /// - "555x562xx7xt12x3", "sss a0e as 72", "555ı234567" gibi gizlenmiş numaraları yakalar.
     pub fn contains_phone_number(text: &str) -> bool {
-        let lower = turkish_to_lower(text);
+        let cleaned_text = strip_invisible_chars(text);
+        let lower = turkish_to_lower(&cleaned_text);
         let chars: Vec<char> = lower.chars().collect();
         let len = chars.len();
         if len < 10 {
             return false;
         }
 
-        // Kayan pencere ile mobil başlangıcı arama
         for start in 0..len {
             let start_char = chars[start];
             let mapped_start = map_leetspeak_digit(start_char);
@@ -397,22 +388,37 @@ impl ContentGuard {
                 continue;
             }
 
+            // Kelime ortasından başlamayı engelle (örn. "patates" içindeki son 's' harfi)
+            if start > 0 && chars[start - 1].is_alphabetic() && !start_char.is_ascii_digit() {
+                continue;
+            }
+
             let mut digits = String::with_capacity(11);
-            let mut turkce_eksik_count = 0;
-            let mut consecutive_same_cons = 1;
-            let mut max_consecutive_cons = 1;
+            let mut real_digit_count = 0usize;
+            let mut turkce_eksik_count = 0usize;
+            let mut noise_alpha_count = 0usize;
+            let mut consecutive_same_cons = 1usize;
+            let mut max_consecutive_cons = 1usize;
+            let mut consecutive_vowels = 0usize;
+            let mut max_consecutive_vowels = 0usize;
             let mut prev_char = '\0';
 
-            for i in start..len {
-                let c = chars[i];
-
-                if c.is_whitespace() || matches!(c, '-' | '.' | '_' | '/' | '(' | ')' | '+' | ':') {
+            for &c in &chars[start..] {
+                if c.is_whitespace()
+                    || matches!(c, '-' | '.' | '_' | '/' | '(' | ')' | '+' | ':' | 'x')
+                {
                     prev_char = '\0';
+                    consecutive_vowels = 0;
                     continue;
                 }
 
-                if is_turkce_eksik(c) {
-                    turkce_eksik_count += 1;
+                if is_vowel(c) {
+                    consecutive_vowels += 1;
+                    if consecutive_vowels > max_consecutive_vowels {
+                        max_consecutive_vowels = consecutive_vowels;
+                    }
+                } else if c.is_alphabetic() {
+                    consecutive_vowels = 0;
                 }
 
                 if c == prev_char && !is_vowel(c) && c.is_alphabetic() {
@@ -427,24 +433,48 @@ impl ContentGuard {
 
                 if let Some(digit) = map_leetspeak_digit(c) {
                     digits.push(digit);
+                    if c.is_ascii_digit() {
+                        real_digit_count += 1;
+                    }
 
                     let is_mobile_10 = digits.len() == 10
                         && digits.starts_with('5')
-                        && matches!(digits.chars().nth(1), Some('0' | '3' | '4' | '5' | '6' | '7' | '8' | '9'));
+                        && matches!(
+                            digits.chars().nth(1),
+                            Some('0' | '3' | '4' | '5' | '6' | '7' | '8' | '9')
+                        );
 
                     let is_mobile_11 = digits.len() == 11
                         && digits.starts_with("05")
-                        && matches!(digits.chars().nth(2), Some('0' | '3' | '4' | '5' | '6' | '7' | '8' | '9'));
+                        && matches!(
+                            digits.chars().nth(2),
+                            Some('0' | '3' | '4' | '5' | '6' | '7' | '8' | '9')
+                        );
 
-                    if (is_mobile_10 || is_mobile_11) && (turkce_eksik_count == 0 || max_consecutive_cons >= 3) {
-                        return true;
+                    if is_mobile_10 || is_mobile_11 {
+                        let phonotactic_violation =
+                            max_consecutive_cons >= 3 || max_consecutive_vowels >= 3;
+                        let high_digit_density = real_digit_count >= 5 && noise_alpha_count <= 3;
+                        let pure_leetspeak_obfuscation = turkce_eksik_count == 0
+                            && (phonotactic_violation || real_digit_count >= 2);
+
+                        if high_digit_density || pure_leetspeak_obfuscation {
+                            return true;
+                        }
                     }
 
                     if digits.len() >= 11 {
                         break;
                     }
-                } else if !c.is_whitespace() && is_turkce_eksik(c) {
-                    // Türkçe ayırt edici harfe ulaşıldıysa bu pencere doğal metindir
+                } else if is_turkce_eksik(c) {
+                    turkce_eksik_count += 1;
+                    noise_alpha_count += 1;
+                    // Eğer halihazırda gerçek rakamlardan oluşan bir numara dizisi (555k123...)
+                    // değilse veya çok fazla harf girdiyse pencereyi sonlandır.
+                    if real_digit_count < 2 || noise_alpha_count > 3 {
+                        break;
+                    }
+                } else {
                     break;
                 }
             }
@@ -453,9 +483,7 @@ impl ContentGuard {
         false
     }
 
-    /// IP adresini KYK WiFi / CGNAT mahremiyet standartlarına uygun alt ağa maskeler:
-    /// - IPv4: /24 (ilk 3 oktet korunur, örn: 192.168.1.0/24)
-    /// - IPv6: /64 (ilk 4 blok korunur, örn: 2001:db8:85a3:8d3::/64)
+    /// IP adresini KYK WiFi / CGNAT mahremiyet standartlarına uygun alt ağa maskeler
     pub fn extract_subnet_prefix(ip: &str) -> String {
         let trimmed = ip.trim();
         if let Ok(addr) = trimmed.parse::<std::net::IpAddr>() {
@@ -476,11 +504,12 @@ impl ContentGuard {
 
     /// Yorum metnini Sıfır Bilgi güvenlik ilkelerine göre doğrular ve temizler.
     pub fn validate_comment_text(input: &str) -> Result<String, &'static str> {
-        let trimmed = input.trim();
+        let cleaned_input = strip_invisible_chars(input);
+        let trimmed = cleaned_input.trim();
         if trimmed.is_empty() {
             return Err("Yorum metni boş olamaz.");
         }
-        if trimmed.len() > 1000 {
+        if trimmed.chars().count() > 1000 {
             return Err("Yorum en fazla 1000 karakter olabilir.");
         }
         if Self::contains_tckn(trimmed) {
@@ -585,7 +614,6 @@ mod tests {
         ));
         assert!(!ContentGuard::is_spam("Çooook lezzetliiiii bir yemekti."));
 
-        // İç linkler (kepce.org) spam sayılmaz, birden fazla olsa dahi izin verilir
         assert!(!ContentGuard::is_spam(
             "Dünkü menü https://kepce.org/istanbul/2026-09-14 ile bugünkü https://www.kepce.org/istanbul/2026-09-15 menüsü çok farklıydı."
         ));
@@ -593,7 +621,6 @@ mod tests {
             "Menü linki: https://kepce.org/istanbul"
         ));
 
-        // URL kısaltıcılar tek başına dahi olsa anında engellenir
         assert!(ContentGuard::is_spam(
             "Burs çekilişi için şu bağlantıya tıklayın: bit.ly/kyk-burs"
         ));
@@ -601,7 +628,6 @@ mod tests {
             "Öğrenci indirimleri için tinyurl.com/ogrenci adresini ziyaret edebilirsiniz arkadaslar"
         ));
 
-        // Telegram ve WhatsApp sohbet davetleri engellenir
         assert!(ContentGuard::is_spam(
             "Kyk yemekhane grubumuz açıldı katılın: t.me/kykyemekhane"
         ));
@@ -609,7 +635,6 @@ mod tests {
             "Sorular için wa.me/905551234567 numarasından yazabilirsiniz"
         ));
 
-        // Şüpheli TLD'ler (.xyz, .top vb.) engellenir
         assert!(ContentGuard::is_spam(
             "Yeni bir platform açılmış arkadaşlar: https://kykmenu.xyz/giris"
         ));
@@ -620,7 +645,6 @@ mod tests {
 
     #[test]
     fn test_is_junk_dish_text() {
-        // Bureaucrat names and announcements
         assert!(ContentGuard::is_junk_dish_text(
             "Afyon Gençlik ve Spor İl Müdürü Muhittin BALKANLIOĞLU"
         ));
@@ -643,8 +667,6 @@ mod tests {
         assert!(ContentGuard::is_junk_dish_text(
             "Menüye sahipseniz bize bildirin"
         ));
-
-        // Site navigasyon/başlık kalıntıları (kykmenu.com.tr scrape kazıntısı)
         assert!(ContentGuard::is_junk_dish_text("←İstanbul KYK Menüsü"));
         assert!(ContentGuard::is_junk_dish_text("←adana Kyk Menüsü"));
         assert!(ContentGuard::is_junk_dish_text("Kahvaltıakşam"));
@@ -661,7 +683,6 @@ mod tests {
             "Listeler Elimize Ulaşır Ulaşmaz Siteye Eklenecektir. Elinizde Liste Mevcutsa Üye Olarak Bize İletebilir, Ödüllerden Yararlanabilirsiniz"
         ));
 
-        // Valid dishes
         assert!(!ContentGuard::is_junk_dish_text(
             "Pideli Soslu Izgara Köfte"
         ));
@@ -672,57 +693,78 @@ mod tests {
 
     #[test]
     fn test_tckn_validation() {
-        // Geçerli TCKN'ler
         assert!(ContentGuard::is_valid_tckn("10000000146"));
-        // Negatif modüler fark testi (odd_sum*7 < even_sum)
         assert!(ContentGuard::is_valid_tckn("19090909018"));
 
-        // Hileli ve ardışık klavye dizileri (ilk 9 hane payload kontrolü ile elenmeli)
         assert!(!ContentGuard::is_valid_tckn("11111111110"));
         assert!(!ContentGuard::is_valid_tckn("12345678950"));
         assert!(!ContentGuard::is_valid_tckn("98765432102"));
 
-        // Geçersiz uzunluk / 0 ile başlama / tek son hane
         assert!(!ContentGuard::is_valid_tckn("00000000000"));
         assert!(!ContentGuard::is_valid_tckn("1234567890"));
         assert!(!ContentGuard::is_valid_tckn("10000000147"));
 
-        // Metin içinde TCKN tespiti
-        assert!(ContentGuard::contains_tckn("Benim numaram 10000000146 lütfen"));
+        assert!(ContentGuard::contains_tckn(
+            "Benim numaram 10000000146 lütfen"
+        ));
+        assert!(ContentGuard::contains_tckn(
+            "2026 yılında adamın tc'si 100 000 001 46 imiş"
+        ));
+        assert!(ContentGuard::contains_tckn("1. öğün: 100-000-001-46"));
         assert!(ContentGuard::contains_tckn("19090909018"));
-        assert!(!ContentGuard::contains_tckn("Bu yemek 10000000145 lira etmez"));
+        assert!(!ContentGuard::contains_tckn(
+            "Bu yemek 10000000145 lira etmez"
+        ));
     }
 
     #[test]
     fn test_phone_obfuscation_and_leetspeak() {
-        // Normal telefonlar
         assert!(ContentGuard::contains_phone_number("0555 123 45 67"));
         assert!(ContentGuard::contains_phone_number("5551234567"));
         assert!(ContentGuard::contains_phone_number("+90 532 123 45 67"));
 
-        // Türkçe noktasız 'ı' ve leetspeak içeren gizlenmiş telefonlar
         assert!(ContentGuard::contains_phone_number("555ı234567"));
         assert!(ContentGuard::contains_phone_number("o532 123 45 67"));
         assert!(ContentGuard::contains_phone_number("sss a0e as 72"));
+        assert!(ContentGuard::contains_phone_number("SSSAOEAS72"));
+        assert!(ContentGuard::contains_phone_number("555x562xx7xt12x3\0"));
+        assert!(ContentGuard::contains_phone_number("0532k123m45n67"));
 
-        // Cümle içi telefon tespiti
-        assert!(ContentGuard::contains_phone_number("ulaş bana 0555 123 45 67 bekliyorum"));
-        assert!(ContentGuard::contains_phone_number("numaram 555ı234567 yaz"));
+        assert!(ContentGuard::contains_phone_number(
+            "ulaş bana 0555 123 45 67 bekliyorum"
+        ));
+        assert!(ContentGuard::contains_phone_number(
+            "numaram 555ı234567 yaz"
+        ));
     }
 
     #[test]
     fn test_scunthorpe_preservation() {
-        // Fonotaktik Türkçe koruma: S_turkce_eksik harflerini barındıran doğal yemek yorumları ASLA engellenmez
         assert!(!ContentGuard::contains_phone_number("soslu bezelye"));
-        assert!(!ContentGuard::contains_phone_number("saat 5'te çıkan kakaolu puding"));
-        assert!(!ContentGuard::contains_phone_number("bugünkü mercimek çorbası çok lezzetliydi"));
+        assert!(!ContentGuard::contains_phone_number(
+            "yemekhanede yine sosis bitti"
+        ));
+        assert!(!ContentGuard::contains_phone_number("tost bitti"));
+        assert!(!ContentGuard::contains_phone_number("patates sote bitti"));
+        assert!(!ContentGuard::contains_phone_number(
+            "saat 5'te çıkan kakaolu puding"
+        ));
+        assert!(!ContentGuard::contains_phone_number(
+            "bugünkü mercimek çorbası çok lezzetliydi"
+        ));
         assert!(!ContentGuard::contains_phone_number("fiyat listesi"));
     }
 
     #[test]
     fn test_extract_subnet_prefix() {
-        assert_eq!(ContentGuard::extract_subnet_prefix("192.168.1.42"), "192.168.1.0/24");
-        assert_eq!(ContentGuard::extract_subnet_prefix("10.0.5.99"), "10.0.5.0/24");
+        assert_eq!(
+            ContentGuard::extract_subnet_prefix("192.168.1.42"),
+            "192.168.1.0/24"
+        );
+        assert_eq!(
+            ContentGuard::extract_subnet_prefix("10.0.5.99"),
+            "10.0.5.0/24"
+        );
         assert_eq!(
             ContentGuard::extract_subnet_prefix("2001:0db8:85a3:08d3:1319:8a2e:0370:7348"),
             "2001:db8:85a3:8d3::/64"
@@ -732,10 +774,10 @@ mod tests {
     #[test]
     fn test_validate_comment_text() {
         assert!(ContentGuard::validate_comment_text("Çok güzel bir mercimek çorbasıydı.").is_ok());
+        assert!(ContentGuard::validate_comment_text("Yemekhanede yine sosis bitti.").is_ok());
         assert!(ContentGuard::validate_comment_text("").is_err());
         assert!(ContentGuard::validate_comment_text("numaram 10000000146").is_err());
         assert!(ContentGuard::validate_comment_text("bana yaz 555ı234567").is_err());
         assert!(ContentGuard::validate_comment_text("sitemize gelin bit.ly/kyk-burs").is_err());
     }
 }
-
