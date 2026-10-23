@@ -314,32 +314,38 @@ impl AuthService {
         email_blind_key: &str,
         subnet_hash: Option<String>,
     ) -> Result<(String, String, UserProfileDto), AuthError> {
-        // 1. E-posta mı yoksa Kullanıcı adı mı? (Her halükarda küçük harfle ara)
         let identifier_lower = dto.identifier.trim().to_lowercase();
-        let condition = if identifier_lower.contains('@') {
+        let is_email_login = identifier_lower.contains('@');
+
+        let user = if is_email_login {
             let email_hash =
                 crate::core::zero_knowledge::compute_email_hash(&identifier_lower, email_blind_key)
                     .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-            users::Column::EmailHash.eq(Some(email_hash))
+            Users::find()
+                .filter(users::Column::EmailHash.eq(Some(email_hash)))
+                .one(db)
+                .await
+                .map_err(AuthError::DatabaseError)?
+                .ok_or(AuthError::InvalidCredentials)?
         } else {
-            users::Column::Username.eq(&identifier_lower)
+            Users::find()
+                .filter(
+                    sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                        sea_orm::sea_query::Expr::col(users::Column::Username),
+                    ))
+                    .eq(&identifier_lower),
+                )
+                .one(db)
+                .await
+                .map_err(AuthError::DatabaseError)?
+                .ok_or(AuthError::InvalidCredentials)?
         };
 
-        // 2. Kullanıcıyı bul
-        let user = Users::find()
-            .filter(condition)
-            .one(db)
-            .await
-            .map_err(AuthError::DatabaseError)?
-            .ok_or(AuthError::InvalidCredentials)?;
-
-        // 2b. Hesap durumu kontrolü (ban/suspend enforce - SA-3)
         if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
         {
             return Err(AuthError::AccountDisabled);
         }
 
-        // 3. Şifreyi doğrula
         let password_clone = dto.password.clone();
         let hash_clone = user.password_hash.clone();
         let is_valid = tokio::task::spawn_blocking(move || verify(&password_clone, &hash_clone))
@@ -353,15 +359,17 @@ impl AuthService {
             return Err(AuthError::InvalidCredentials);
         }
 
-        // 4. Profil verisini çekmeden önce rolü modelden al
         let role = crate::services::user::UserService::map_role(&user.role);
         let user_id = user.id;
 
-        let profile = crate::services::user::UserService::build_profile(db, user, true)
+        let mut profile = crate::services::user::UserService::build_profile(db, user, true)
             .await
             .map_err(|_| AuthError::InvalidCredentials)?;
 
-        // 5. JWT Token üret
+        if is_email_login {
+            profile.email = Some(crate::core::zero_knowledge::mask_email(&dto.identifier));
+        }
+
         let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
         let refresh_token = Self::generate_refresh_token(
             db,
@@ -735,7 +743,6 @@ impl AuthService {
         let auth_hash = crate::core::zero_knowledge::compute_auth_hash(email, auth_pepper)
             .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
 
-        // 1. E-posta kör indeksiyle kullanıcı var mı bak
         let existing_user = Users::find()
             .filter(users::Column::EmailHash.eq(&email_hash))
             .one(db)
@@ -743,7 +750,6 @@ impl AuthService {
             .map_err(AuthError::DatabaseError)?;
 
         if let Some(user) = existing_user {
-            // Kullanıcı hesabı aktif mi?
             if user.account_status
                 != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
             {
@@ -765,26 +771,37 @@ impl AuthService {
             return Ok((access_token, refresh_token, false));
         }
 
-        // 2. Kullanıcı yoksa oluştur
         let email_lower = email.to_lowercase();
-        let base_name = email_lower
-            .split('@')
-            .next()
-            .unwrap_or("user")
-            .to_lowercase();
-        let mut final_username = base_name.clone();
+        let raw_prefix = email_lower.split('@').next().unwrap_or("user");
+        let sanitized_base: String = raw_prefix
+            .chars()
+            .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
+            .take(18)
+            .collect();
+        let base_name = if sanitized_base.chars().count() >= 3 {
+            sanitized_base
+        } else {
+            "tabldotcu".to_string()
+        };
 
+        let mut final_username = base_name.clone();
         let max_retries = 5;
         let mut attempt = 0;
 
         let final_username = loop {
+            let lower = final_username.to_lowercase();
             let exists = Users::find()
-                .filter(users::Column::Username.eq(&final_username))
+                .filter(
+                    sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                        sea_orm::sea_query::Expr::col(users::Column::Username),
+                    ))
+                    .eq(&lower),
+                )
                 .one(db)
                 .await
                 .map_err(AuthError::DatabaseError)?;
 
-            if exists.is_none() {
+            if exists.is_none() && !Self::is_reserved_username(&final_username) {
                 break final_username;
             }
 
@@ -793,7 +810,7 @@ impl AuthService {
                 final_username = format!(
                     "{}_{}",
                     base_name,
-                    Uuid::new_v4().to_string()[..5].to_lowercase()
+                    Uuid::new_v4().simple().to_string()[..5].to_lowercase()
                 );
                 break final_username;
             }
@@ -806,7 +823,6 @@ impl AuthService {
             final_username = format!("{}_{}", base_name, random_suffix.to_lowercase());
         };
 
-        // Şifresiz girişler için rastgele geçici bir bcrypt parola hash'i üret
         let dummy_pass = Uuid::new_v4().to_string();
         let hashed_password = tokio::task::spawn_blocking(move || hash(&dummy_pass, DEFAULT_COST))
             .await
@@ -823,7 +839,7 @@ impl AuthService {
             password_hash: Set(hashed_password),
             role: Set(shared::entities::sea_orm_active_enums::UserRoleEnum::User),
             karma_score: Set(0),
-            is_verified: Set(true), // Google doğruladığı için true
+            is_verified: Set(true),
             email_security: Set(false),
             notif_replies: Set(false),
             notif_interactions: Set(false),

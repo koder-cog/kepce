@@ -8,9 +8,17 @@
 
   async function handleResend() {
     if (isResending) return;
+    const inputEmail =
+      typeof window !== 'undefined'
+        ? window.prompt(
+            'Sıfır bilgi mimarisi gereği e-posta adresiniz sunucuda saklanmaz. Doğrulama bağlantısı için lütfen kayıtlı e-posta adresinizi girin:'
+          )
+        : null;
+    if (!inputEmail || !inputEmail.trim()) return;
+
     isResending = true;
     try {
-      await api.resendVerification();
+      await api.resendVerification({ email: inputEmail.trim() });
       showToast('Doğrulama bağlantısı e-posta adresinize gönderildi.', { type: 'success' });
     } catch (e) {
       if (e.status === 429) {

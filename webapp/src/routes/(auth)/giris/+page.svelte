@@ -88,11 +88,12 @@
     try {
       await api.login(username, password, remember);
       if (typeof localStorage !== 'undefined' && username.includes('@')) {
-        const atIdx = username.indexOf('@');
-        const u = username.slice(0, atIdx);
-        const d = username.slice(atIdx + 1);
-        const masked = `${u[0]}***@${d}`;
-        localStorage.setItem('masked_email', masked);
+        const [u, d] = username.split('@');
+        const maskPart = (s) => (s.length <= 2 ? `${s[0]}***` : `${s[0]}***${s[s.length - 1]}`);
+        const dParts = d.split('.');
+        const maskedDomain =
+          dParts.length >= 2 ? `${maskPart(dParts[0])}.${dParts.slice(1).join('.')}` : maskPart(d);
+        localStorage.setItem('masked_email', `${maskPart(u)}@${maskedDomain}`);
       }
       isRedirecting = true;
       await authActions.refreshUser();

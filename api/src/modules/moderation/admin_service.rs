@@ -64,12 +64,9 @@ pub async fn bootstrap_admin(
             };
 
             admin.insert(db).await?;
-            tracing::info!("Admin hesabı ({}) başarıyla oluşturuldu.", email);
+            tracing::info!("Admin hesabı başarıyla oluşturuldu.");
         } else {
-            tracing::info!(
-                "Admin hesabı ({}) veritabanında zaten mevcut, bootstrap işlemi atlandı.",
-                email
-            );
+            tracing::info!("Admin hesabı veritabanında zaten mevcut, bootstrap işlemi atlandı.");
         }
     } else {
         tracing::warn!(

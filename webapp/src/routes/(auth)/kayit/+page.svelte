@@ -47,8 +47,8 @@
     if (username.length > 0) {
       if (username.length < 3) {
         errors.username = 'En az 3 karakter olmalıdır.';
-      } else if (username.length > 30) {
-        errors.username = 'En fazla 30 karakter olabilir.';
+      } else if (username.length > 25) {
+        errors.username = 'En fazla 25 karakter olabilir.';
       } else if (!/^[a-z0-9_]+$/.test(username)) {
         errors.username = 'Sadece İngilizce küçük harf, rakam ve _ içerebilir.';
       } else {
@@ -145,7 +145,7 @@
     let newErrorMsg = '';
 
     if (username.length > 0) {
-      if (username.length < 3 || username.length > 30 || !/^[a-z0-9_]+$/.test(username)) {
+      if (username.length < 3 || username.length > 25 || !/^[a-z0-9_]+$/.test(username)) {
         newErrors.username = 'Kullanıcı adı kurallara uymuyor.';
         errors = newErrors;
         scrollToFirstError();
@@ -186,11 +186,12 @@
         emailSecurity
       );
       if (typeof localStorage !== 'undefined' && email && email.includes('@')) {
-        const atIdx = email.indexOf('@');
-        const u = email.slice(0, atIdx);
-        const d = email.slice(atIdx + 1);
-        const masked = `${u[0]}***@${d}`;
-        localStorage.setItem('masked_email', masked);
+        const [u, d] = email.split('@');
+        const maskPart = (s) => (s.length <= 2 ? `${s[0]}***` : `${s[0]}***${s[s.length - 1]}`);
+        const dParts = d.split('.');
+        const maskedDomain =
+          dParts.length >= 2 ? `${maskPart(dParts[0])}.${dParts.slice(1).join('.')}` : maskPart(d);
+        localStorage.setItem('masked_email', `${maskPart(u)}@${maskedDomain}`);
       }
       if (enablePushNotifications && isPushSupported()) {
         try {
@@ -315,7 +316,7 @@
             class:u-color-negative={errors.username}
             class:u-color-secondary={!errors.username}
           >
-            Boş bırakılırsa e-postanızdan otomatik üretilir. 3-30 karakter arası sadece İngilizce
+            Boş bırakılırsa e-postanızdan otomatik üretilir. 3-25 karakter arası sadece İngilizce
             küçük harf, rakam ve _ içerebilir.
           </div>
         </div>

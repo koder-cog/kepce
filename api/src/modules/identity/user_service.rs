@@ -820,6 +820,10 @@ impl UserService {
 
             // SA-4: Şifre değişiminde tüm mevcut oturumları (refresh token'ları) geçersiz kıl
             user_model.token_version = Set(user.token_version + 1);
+            let _ = shared::entities::prelude::UserSessions::delete_many()
+                .filter(shared::entities::user_sessions::Column::UserId.eq(user_id))
+                .exec(db)
+                .await;
         }
 
         if let Some(default_city_slug) = dto.default_city_slug {

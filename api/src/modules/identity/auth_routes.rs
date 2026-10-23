@@ -134,6 +134,7 @@ async fn register(
     {
         let email_service = crate::services::email::EmailService::from_config(&config);
 
+        let user_id = user.id;
         // E-posta gönderimini bloklamaması için arka planda çalıştır
         tokio::spawn(async move {
             if let Err(e) = email_service
@@ -141,12 +142,12 @@ async fn register(
                 .await
             {
                 tracing::error!(
-                    "Failed to send verification email to {}: {:?}",
-                    email_clone,
+                    "Failed to send verification email for user {}: {:?}",
+                    user_id,
                     e
                 );
             } else {
-                tracing::info!("Verification email sent successfully to {}", email_clone);
+                tracing::info!("Verification email sent successfully for user {}", user_id);
             }
         });
     }
@@ -752,18 +753,22 @@ async fn resend_verification(
     let email_service = crate::services::email::EmailService::from_config(&config);
     let email_clone = email.clone();
 
+    let user_id = user.id;
     tokio::spawn(async move {
         if let Err(e) = email_service
             .send_verification_email(&email_clone, &verify_token)
             .await
         {
             tracing::error!(
-                "Failed to resend verification email to {}: {:?}",
-                email_clone,
+                "Failed to resend verification email for user {}: {:?}",
+                user_id,
                 e
             );
         } else {
-            tracing::info!("Verification email resent successfully to {}", email_clone);
+            tracing::info!(
+                "Verification email resent successfully for user {}",
+                user_id
+            );
         }
     });
 
@@ -824,6 +829,7 @@ async fn forgot_password(
         let email_service = crate::services::email::EmailService::from_config(&config);
         let email_clone = payload.email.clone();
 
+        let user_id = user.id;
         // E-posta gönderimini bloklamaması için arka planda çalıştır
         tokio::spawn(async move {
             if let Err(e) = email_service
@@ -831,21 +837,21 @@ async fn forgot_password(
                 .await
             {
                 tracing::error!(
-                    "Failed to send password reset email to {}: {:?}",
-                    email_clone,
+                    "Failed to send password reset email for user {}: {:?}",
+                    user_id,
                     e
                 );
             } else {
-                tracing::info!("Password reset email sent successfully to {}", email_clone);
+                tracing::info!(
+                    "Password reset email sent successfully for user {}",
+                    user_id
+                );
             }
         });
 
         tracing::info!("Password reset requested for user_id {}", user.id);
     } else {
-        tracing::info!(
-            "Password reset requested for non-existent email {}",
-            payload.email
-        );
+        tokio::time::sleep(std::time::Duration::from_millis(120)).await;
     }
 
     Ok(Json(serde_json::json!({ "status": "success" })))
@@ -893,7 +899,7 @@ async fn google_login(
     let state_token: String = random_bytes.iter().map(|b| format!("{:02x}", b)).collect();
 
     let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={}&redirect_uri={}&scope=openid%20email%20profile&state={}",
+        "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={}&redirect_uri={}&scope=openid%20email&state={}",
         client_id, redirect_uri, state_token
     );
 

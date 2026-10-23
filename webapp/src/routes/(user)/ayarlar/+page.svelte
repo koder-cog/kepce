@@ -33,9 +33,17 @@
 
   async function handleResendVerification() {
     if (isResending) return;
+    const inputEmail =
+      typeof window !== 'undefined'
+        ? window.prompt(
+            'Sıfır bilgi mimarisi gereği e-posta adresiniz sunucuda saklanmaz. Doğrulama bağlantısı için lütfen kayıtlı e-posta adresinizi girin:'
+          )
+        : null;
+    if (!inputEmail || !inputEmail.trim()) return;
+
     isResending = true;
     try {
-      await api.resendVerification();
+      await api.resendVerification({ email: inputEmail.trim() });
       showToast('Doğrulama bağlantısı e-posta adresinize gönderildi.', {
         type: 'success'
       });
@@ -463,14 +471,13 @@
         email,
         current_password: emailPasswordInput
       });
-      if (typeof localStorage !== 'undefined') {
-        const atIdx = email.indexOf('@');
-        if (atIdx > 0) {
-          const u = email.slice(0, atIdx);
-          const d = email.slice(atIdx + 1);
-          const masked = `${u[0]}***@${d}`;
-          localStorage.setItem('masked_email', masked);
-        }
+      if (typeof localStorage !== 'undefined' && email.includes('@')) {
+        const [u, d] = email.split('@');
+        const maskPart = (s) => (s.length <= 2 ? `${s[0]}***` : `${s[0]}***${s[s.length - 1]}`);
+        const dParts = d.split('.');
+        const maskedDomain =
+          dParts.length >= 2 ? `${maskPart(dParts[0])}.${dParts.slice(1).join('.')}` : maskPart(d);
+        localStorage.setItem('masked_email', `${maskPart(u)}@${maskedDomain}`);
       }
       showToast('E-posta adresin başarıyla güncellendi!', 'success');
       await authActions.refreshUser();

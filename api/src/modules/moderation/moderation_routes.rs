@@ -1103,6 +1103,7 @@ async fn get_users(
             username: u.username,
             email: u
                 .email_hash
+                .filter(|h| h.len() >= 10)
                 .map(|h| format!("{}...{}", &h[..6], &h[h.len() - 4..]))
                 .unwrap_or_else(|| "kör-indeks".to_string()),
             role: match u.role {

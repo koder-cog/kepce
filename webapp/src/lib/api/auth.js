@@ -53,7 +53,11 @@ export const authApi = {
       body: JSON.stringify({ password })
     }),
   verifyEmail: (token) => request(`/auth/verify${buildQuery({ token })}`),
-  resendVerification: () => request('/auth/resend-verification', { method: 'POST' }),
+  resendVerification: (data = {}) =>
+    request('/auth/resend-verification', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
   getProjects: () => request('/auth/projects'),
   getApiUsage: (projectId = 'all', days = 28) =>
     request(`/auth/projects/usage${buildQuery({ project_id: projectId, days })}`),
