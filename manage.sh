@@ -1,5 +1,20 @@
 #!/bin/bash
 
+# Load environment variables if .env exists
+if [ -f ".env" ]; then
+    set -a
+    source .env
+    set +a
+elif [ -f "../.env" ]; then
+    set -a
+    source ../.env
+    set +a
+fi
+
+# Fallback defaults for local development
+export DATABASE_URL="${DATABASE_URL:-postgresql://${POSTGRES_USER:-kepce_admin}:${POSTGRES_PASSWORD:-SIFRE}@127.0.0.1:5432/${POSTGRES_DB:-kepce}}"
+export KEPCE_SECRET_KEY="${KEPCE_SECRET_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}"
+
 # Configuration
 API_DIR="api"
 WEB_DIR="webapp"
@@ -375,8 +390,10 @@ status() {
     # Web
     if [ -f "$WEB_DIR/$WEB_PID_FILE" ] && kill -0 $(cat "$WEB_DIR/$WEB_PID_FILE") 2>/dev/null; then
         echo -e "Web:    ${GREEN}RUNNING${NC} (PID: $(cat "$WEB_DIR/$WEB_PID_FILE"))"
+    elif systemctl is-active --quiet nginx 2>/dev/null && [ -f "$WEB_DIR/build/index.js" ]; then
+        echo -e "Web:    ${GREEN}RUNNING${NC} (Nginx Production)"
     else
-        echo -e "Web:    ${RED}STOPPED${NC}"
+        echo -e "Web:    ${RED}STOPPED${NC} (dev için: ./manage.sh start web-dev)"
     fi
 
     # Worker
