@@ -1,219 +1,253 @@
+<section class="giris-kutusu">
+  <h2>0. Başlamadan Önce</h2>
+  <p>
+    Kepçe, KYK yurtlarındaki tabldot menülerini her gün oradan oraya aramadan
+    tek bir yerden görebilmek için geliştirdiğim bir projedir.
+  </p>
+  <p>
+    Bu sitede kimsenin kişisel verisini toplamıyorum çünkü verinizi toplasam
+    benim ne işime yarayacak? Bunu geçtim, bugünün internetinde çoğu sitenin
+    kullanıcıyı sağılacak birer inek olarak görmesinden bıktım çünkü ben de aynı
+    yemekhane sırasını bekleyen ve özgürce otlanmak isteyen bir ineğim.
+  </p>
+  <p>
+    Üstelik bir yanda 6698 sayılı KVKK diğer yanda 5651 sayılı İnternet Kanunu
+    yan yana konulunca Kafkaesk bir paradoks oluşturuyor. Öğrenci bütçesiyle
+    sunucuyu yurt dışında tutmak zorunda olduğumdan, bu iki kanunun arasında
+    ezilmemek ve kimsenin verisinin yükünü taşımamak için sistemi Fransa'da
+    hiçbir kişisel veri depolamayacak şekilde kurdum. Veri sandığı da o sandığı
+    açacak anahtar da Türkiye'de internete kapalı bir ortamda duruyor.
+  </p>
+</section>
+
 <p>
-  Kepçe'yi tasarlarken temel ilkemiz <strong>"veri minimizasyonu ve sıfır bilgi"</strong>
-  oldu: İhtiyacımız olmayan hiçbir kimlik verisini (açık e-posta adresi, gerçek ad-soyad, telefon numarası
-  vb.) veri tabanımıza kaydetmiyoruz. Bu metin, teknik gizlilik mimarimizi ve 6698 sayılı Kişisel Verilerin
-  Korunması Kanunu (KVKK) kapsamındaki aydınlatma bildirimimizi içerir.
+  Sitede iki farklı kullanım durumu var ve sistem ikisinde de olabildiğince az
+  veriyle çalışıyor. Bu metin aynı zamanda KVKK kapsamındaki resmi aydınlatma
+  bildirimidir.
 </p>
 
 <section>
-  <h2>1. Veri Sorumlusu ve Tanıtıcı Bilgiler</h2>
+  <h3>Sadece Menüye Bakıp Çıkanlar</h3>
   <p>
-    5651 sayılı Kanun m. 3 uyarınca tanıtıcı bilgi ve KVKK kapsamında muhatap, <strong
-      >Kazım Geleş</strong
+    Sırf kahvaltıyı veya akşam yemeğini öğrenmek isteyen birinin hiçbir kişisel
+    verisini toplamıyorum.
+  </p>
+  <p>
+    Sadece seni doğrudan bulunduğun şehrin menüsüne yönlendirebilmek için IP
+    adresinden yaklaşık şehir tespitini anlık olarak yapıyorum. Bu bilgi diske
+    yazılmıyor, erişim kaydı tutulmuyor ve cihazına takip çerezi bırakılmıyor.
+  </p>
+</section>
+
+<section>
+  <h3>Hesap Açanlar ve İçerik Üretenler</h3>
+  <p>
+    Yemekleri oylamak, yorum yazmak veya fotoğraf yüklemek istersen bir hesap
+    gerekiyor. Bu durumda bile senden e-posta adresi, telefon numarası veya
+    gerçek adını istemiyorum.
+  </p>
+  <p>
+    Yalnızca kendi belirleyeceğin bir rumuz ve şifreyle hesap açabilirsin. Kayıt
+    olduğunda sistem sana tek seferlik rastgele bir kurtarma kodu üretir.
+    Şifreni unutursan hesabını bu kodla kurtarabilirsin. Veri tabanında yalnızca
+    şifrenin ve kurtarma kodunun kriptografik özetleri saklanır. Bu kodlar saf
+    matematiksel entropi olduğundan hiçbir gerçek kişiyle eşleştirilemez ve
+    tamamen anonimdir.
+  </p>
+</section>
+
+<section>
+  <h2>1. Veri Sorumlusu</h2>
+  <p>
+    6698 sayılı Kişisel Verilerin Korunması Kanunu uyarınca bu projenin yasal
+    muhatabı ve veri sorumlusu, Kepçe projesini bireysel olarak geliştiren Kazım
+    Geleş'tir. Resmi tebligat, Uyar-Kaldır bildirimleri veya hak taleplerin için <a
+      href="/iletisim"
+      data-link>iletişim sayfası</a
     >
-    tarafından bireysel ve kâr amacı gütmeyen açık kaynak projesi olarak geliştirilen
-    <strong>kepce.org</strong> platformudur. Yasal bildirimler ve hak talepleri için
-    <a href="/iletisim" data-link>iletişim sayfamız</a> veya
-    <a href="mailto:yasal@kepce.org">yasal@kepce.org</a> e-posta adresimiz üzerinden bizimle bağlantı
-    kurabilirsin.
+    üzerinden ya da doğrudan
+    <a href="mailto:yasal@kepce.org">yasal@kepce.org</a> adresinden bana ulaşabilirsin.
   </p>
 </section>
 
 <section>
-  <h2>2. Hangi Özellik İçin Hangi Teknik Süreci İşletiyoruz?</h2>
+  <h2>2. İşlenen Veriler ve Toplanma Yöntemi</h2>
   <p>
-    Kepçe'de veri satışı, davranışsal reklam hedeflemesi veya kullanıcı profilleme faaliyetleri
-    yürütülmez. Özellikleri sunarken açık kişisel veri tutmamak adına şu teknik mimariyi
-    uyguluyoruz:
+    Platformun çalışabilmesi için tamamen otomatik yollarla asgari düzeyde
+    teknik veri işlenir.
   </p>
   <ul>
     <li>
-      <strong>Şehir Yönlendirmesi (Anonim Ziyaretçiler):</strong> Seni doğrudan bulunduğun şehrin menüsüne
-      yönlendirmek için IP adresinden yaklaşık şehir bilgini sunucu belleğinde (RAM) anlık olarak tespit
-      ederiz. Bu bilgi diske yazılmaz ve loglanmaz. Kamuya açık menüleri okuyan anonim ziyaretçilerden
-      hiçbir kişisel veri toplanmaz ve erişim kaydı tutulmaz.
+      Sitede yalnızca kamuya açık yemek listelerini inceleyen <strong
+        >menü okuyucuları</strong
+      > için hiçbir kimlik veya trafik verisi kaydedilmez, sunucuda erişim kaydı tutulmaz
+      ve yurt dışında kalıcı olarak hiçbir veri barındırılmaz veya üçüncü taraflara aktarılmaz.
     </li>
     <li>
-      <strong>Sıfır Bilgi Hesap, Google Girişi ve Şifre Sıfırlama:</strong> Oylama yapmak, yorum
-      yazmak veya fotoğraf paylaşmak için Google ile tek tıkla ya da e-posta doğrulamasıyla giriş
-      yapabilirsin. Ancak Kepçe;
-      <strong
-        >e-posta adresini, gerçek adını, soyadını, Google kimliğini veya profil fotoğrafını veri
-        tabanına açık metin olarak kaydetmez</strong
-      >. E-posta adresin ve Google tanımlayıcın, sunucu belleğinde tek yönlü kriptografik özetleme
-      (HMAC-SHA256 Blind Index) işleminden geçirilerek geri döndürülemez bir doğrulama koduna
-      dönüştürülür. Doğrulama bağlantısı veya şifre sıfırlama kodu talep ettiğinde, girdiğin e-posta
-      adresi yalnızca o anki doğrulama iletisini göndermek için bellekte işlenir ve işlem
-      tamamlandığında RAM'den silinir. Sitede yalnızca kendi seçtiğin anonim rumuz görünür.
+      Sisteme kaydolan <strong>hesap sahipleri</strong> için e-posta, telefon veya
+      kimlik bilgisi istenmez ve tutulmaz. Veri tabanında yalnızca anonim rumuz ile
+      şifre ve kurtarma kodunun özetleri saklanır.
     </li>
     <li>
-      <strong>Oylama ve Reaksiyonlar:</strong> Yemek oylamalarında IP adresi diske kaydedilmez. Mükerrer
-      oyları engellemek için yalnızca sunucu belleğinde tutulan ve her gece otomatik olarak sıfırlanan
-      geçici kriptografik özetler kullanılır.
+      Yorumlara eklenen <strong>yemek fotoğrafları</strong> üzerindeki GPS konum
+      verileri ile cihaz ayrıntıları sunucuya ulaştığı anda temizlenir ve yalnızca
+      tabldot görseli yayında kalır. Arşive katkı amacıyla gönderilen menü panosu
+      fotoğrafları ise listeler metne döküldükten sonra kalıcı olarak silinir.
     </li>
     <li>
-      <strong>Yorum ve Fotoğraf Paylaşımı (5651 Trafik Kayıtları):</strong> Sitede yorum yazdığında
-      veya fotoğraf yüklediğinde, 5651 sayılı Kanun m. 2/1-j ve m. 5/3 uyarınca yalnızca içerik
-      üretilen bu işlemlere münhasır olmak üzere kanuni trafik bilgilerini (IP adresi, port bilgisi,
-      işlem zamanı, hizmet türü ve aktarılan veri miktarı) tutmakla yükümlüyüz. Kanunun m. 2/1-j
-      hükmündeki
-      <em>"varsa abone kimlik bilgileri"</em> ibaresi doğrultusunda sistemimizde gerçek kimlik veya açık
-      e-posta tutulmadığından, bu kayıtlar yalnızca anonim kullanıcı UUID'si ile eşleştirilir.
+      5651 sayılı Kanun m. 5/3 gereğince yorum yazan veya görsel yükleyen
+      kullanıcılara ait işlem zamanı, IP adresi ve port bilgisi gibi <strong
+        >yasal trafik kayıtları</strong
+      > tutulmak zorundadır. Bu kayıtlar Fransa'daki sunucu diskine yazılmaz.
+      Bellekte üretildiği salise asimetrik şifreleme ile mühürlenerek doğrudan
+      Türkiye'deki yerel arşive aktarılır ve Fransa belleğinden silinir.
     </li>
     <li>
-      <strong>Fotoğraflarda EXIF ve GPS Temizliği:</strong> Yorumlara yemek fotoğrafı veya sisteme menü
-      panosu görseli yüklediğinde, dosyanın içindeki tüm gizli meta verileri (EXIF, GPS konum koordinatları,
-      cihaz bilgisi) sunucu belleğinde otomatik olarak sileriz. Menü doğrulama amacıyla gönderilen pano
-      fotoğrafları sitede yayımlanmaz; yemek isimleri metne aktarıldıktan sonra görsel dosyası imha edilir.
+      Yemeklere ve yorumlara bırakılan <strong>oylar ve tepkiler</strong> mükerrer
+      kullanımı engellemek için veri tabanında anonim kullanıcı koduyla tekil olarak
+      eşleştirilir. Tablolarda IP adresi tutulmaz ve aynı butona tekrar basıldığında
+      verilen oy geri alınır.
     </li>
   </ul>
 </section>
 
 <section>
-  <h2>3. Hukuki Sebepler ve Kanuni İstisnalar</h2>
+  <h2>3. İşleme Amaçları</h2>
   <p>
-    Sınırlı düzeydeki teknik veriler, KVKK m. 5 ve m. 28'de belirtilen şu hukuki dayanaklarla
-    işlenir:
+    Sınırlı düzeydeki teknik veriler, 6698 sayılı Kanun'un 5. ve 6. maddeleri
+    kapsamındaki hukuki sebeplere dayanılarak işlenir.
   </p>
   <ul>
     <li>
-      <strong
-        >Kanunlarda açıkça öngörülmesi ve hukuki yükümlülük (KVKK m. 5/2-a ve m. 5/2-ç):</strong
+      Kanunlarda açıkça öngörülen <strong>hukuki yükümlülükler</strong> gereğince
+      5651 sayılı Kanun m. 5/3 uyarınca yalnızca içerik üreten kullanıcıların yasal
+      trafik kayıtları tutulur ve yetkili adli mercilerin usulüne uygun talepleri
+      karşılanır.
+    </li>
+    <li>
+      Kullanım Koşulları çerçevesinde hesabın açılması, oturumun doğrulanması ve
+      paylaşım özelliklerinin sunulabilmesi için <strong
+        >sözleşmenin ifası</strong
       >
-      5651 sayılı Kanun uyarınca yalnızca içerik üreten kullanıcılara ait yasal trafik bilgilerini tutma
-      zorunluluğumuz ve yetkili adli mercilerden gelebilecek resmî müzekkerelerin karşılanması.
+      esastır.
     </li>
     <li>
-      <strong>Suç işlenmesinin önlenmesi istisnası (KVKK m. 28/2-a):</strong> 5651 sayılı Kanun uyarınca
-      suç işlenmesinin önlenmesi veya suç soruşturması için tutulması zorunlu olan şifreli trafik kayıtları
-      bakımından KVKK m. 28/2-a kapsamındaki istisna hükümleri uygulanır.
-    </li>
-    <li>
-      <strong>Hakkın tesisi ve meşru menfaat (KVKK m. 5/2-e ve m. 5/2-f):</strong> Temel hak ve özgürlüklere
-      zarar vermemek kaydıyla platform güvenliğini sağlamak, bot saldırılarını ve oylama manipülasyonunu
-      önlemek.
-    </li>
-    <li>
-      <strong>Özel nitelikli kişisel verilerin işlenmemesi (KVKK m. 6):</strong> Kepçe; sağlık,
-      alerji, çölyak, dini inanç veya özel diyet tercihlerine ilişkin sunucu tarafında hiçbir veri
-      toplamaz. Alerjen ve diyet filtreleri yalnızca kullanıcının kendi tarayıcısında (<code
-        >localStorage</code
-      >) çalışır. Kullanıcıların yorumlarda kendilerine veya üçüncü kişilere ait sağlık verisi
-      paylaşmaması zorunludur.
+      Temel hak ve özgürlüklere zarar vermemek kaydıyla sitenin kararlı
+      çalışması, bot akınlarının önlenmesi, istek sınırlandırması uygulanması ve
+      oylama manipülasyonunun engellenmesi amacıyla <strong
+        >meşru menfaat</strong
+      > kapsamında güvenlik önlemleri işletilir.
     </li>
   </ul>
-</section>
-
-<section>
-  <h2>4. Altyapı Güvenliği, Sıfır Bilgi Şifrelemesi ve Veri Paylaşımı</h2>
   <p>
-    Kepçe'de hiçbir veri üçüncü şahıslara, veri simsarlarına veya reklamcılara satılmaz ve
-    aktarılmaz.
-  </p>
-  <p>
-    Veri tabanımızda gerçek ad, soyadı, açık e-posta adresi veya harici profil kimliği
-    tutulmadığından, sunucu altyapımıza aktarılan herhangi bir açık kimlik verisi bulunmamaktadır.
-    Teknik doğrulama ve iletişim iletilerinin gönderimi sırasında üçüncü parti e-posta iletim
-    sağlayıcısının (SMTP) zorunlu geçici kuyruk ve teslimat günlükleri hariç tutulur.
-  </p>
-  <p>
-    5651 sayılı Kanun uyarınca içerik üretilen işlemlerde tutulması zorunlu olan trafik kayıtları
-    ise veri tabanında açık metin (plaintext) olarak <strong>tutulmaz</strong>; sunucu belleğinde
-    anlık olarak asimetrik açık anahtar algoritmasıyla (X25519 SealedBox) şifrelenir. Bu şifreyi
-    çözebilecek özel anahtar (Private Key) sunucuda bulunmaz; yalnızca Türkiye Cumhuriyeti sınırları
-    içinde çevrimdışı olarak muhafaza edilir. Sunucu sağlayıcısı dahil hiçbir üçüncü tarafın bu
-    kayıtlara erişimi teknik olarak mümkün değildir. Kayıtlar yalnızca Türkiye Cumhuriyeti
-    mahkemeleri veya Cumhuriyet başsavcılıkları tarafından usulüne uygun resmî bir talep geldiğinde
-    çözülerek ilgili adli makamla paylaşılır.
+    Sağlık durumu, gıda alerjisi, çölyak veya inanç tercihleri kesinlikle
+    toplanmaz ve işlenmez. Sitedeki alerjen ve diyet filtreleri yalnızca kendi
+    tarayıcında yerel olarak çalışır, sunucuya gönderilmez. Yorum alanlarında
+    kendine veya başkalarına ait sağlık verilerini paylaşmaman gerekir.
   </p>
 </section>
 
 <section>
-  <h2>5. Saklama Süreleri ve İmha Politikası</h2>
+  <h2>
+    4. Saklama, Güvenlik ve "Sandık da Anahtar da Türkiye'de" Mimarisi
+  </h2>
+  <p>
+    Kepçe'deki hiçbir bilgi ticari şirketlere, veri simsarlarına veya reklam
+    ağlarına satılmaz. Zaten sistemde satılabilecek nitelikte bir kullanıcı
+    profili de tutulmaz.
+  </p>
+  <p>
+    5651 sayılı Kanun gereği tutulması zorunlu olan trafik kayıtları, Fransa sunucusunun
+    belleğinde oluştuğu anda açık anahtarlı şifreleme ile mühürlenir. Fransa'daki sunucu
+    diskine hiçbir zaman trafik logu yazılmaz. Şifrelenmiş paketler doğrudan Türkiye
+    sınırları içindeki yerel arşive aktarılır ve Fransa'daki bellekten derhal silinir.
+    O sandığı açabilecek özel anahtar da Türkiye'de, internete kapalı fiziksel bir ortamda saklanır.
+  </p>
+  <p>
+    Bu mimari sayesinde Fransa'daki sunucu sağlayıcısı dahil hiç kimse bu şifreli
+    kayıtları açıp okuyamaz ve Fransa'da hiçbir kişisel veri depolanmaz. Kayıtlar yalnızca
+    Türkiye Cumhuriyeti mahkemeleri veya cumhuriyet savcılıkları tarafından iletilen usulüne
+    uygun resmi bir adli talep olduğunda Türkiye'deki anahtarla çözülerek yetkili makamlara
+    sunulur.
+  </p>
+  <p>
+    Şifreli trafik kayıtları yasal süresi olan en az bir ve en fazla iki yılın
+    sonunda anahtara bile gerek kalmadan kalıcı olarak imha edilir. Kendi
+    paylaştığın yorumları, fotoğrafları veya hesabını profil ayarlarından
+    dilediğin an tek dokunuşla silebilirsin. Sildiğin içerikler siteden anında
+    kaldırılır.
+  </p>
+</section>
+
+<section>
+  <h2>5. Çerezler ve Güvenlik Araçları</h2>
+  <p>
+    Sitenin temel işlevlerini yürütebilmek için tarayıcında ve ağ katmanında
+    yalnızca zorunlu teknik araçlar kullanılır.
+  </p>
   <ul>
     <li>
-      <strong>Anonim ziyaretçiler:</strong> Kamuya açık menüleri okuyan ziyaretçilere ait hiçbir trafik
-      kaydı oluşturulmaz ve saklanmaz.
+      Giriş yaptığında oturumunun açık kalabilmesi için yalnızca takip veya
+      reklam amacı taşımayan teknik bir <strong>oturum çerezi</strong> kullanılır.
     </li>
     <li>
-      <strong>Zorunlu 5651 trafik kayıtları:</strong> İçerik üretilen işlemlere ait şifreli trafik
-      kayıtları, 5651 sayılı Kanun m. 5/3 uyarınca
-      <strong>bir yıldan az ve iki yıldan fazla olmamak üzere</strong> saklanır ve sürenin sonunda otomatik
-      olarak kalıcı biçimde yok edilir.
+      Seçtiğin şehir, açık veya koyu tema modu, bot görünürlüğü ve alerjen
+      filtreleri gibi <strong>yerel tercihler</strong> kimliğinle eşleştirilmeden
+      yalnızca kendi tarayıcının yerel hafızasında tutulur.
     </li>
     <li>
-      <strong>Menü panosu fotoğrafları:</strong> Menü listesini doğrulamak için gönderilen pano fotoğrafları,
-      liste metne aktarıldığı anda veya incelenmemesi hâlinde en geç otuz gün içinde otomatik olarak silinir.
+      Hangi menülerin ne kadar ziyaret edildiğini anlamak için çerez bırakmayan,
+      IP kaydetmeyen ve ziyaretçi davranışı izlemeyen açık kaynaklı Umami <strong
+        >anonim sayacı</strong
+      > çalışır.
     </li>
     <li>
-      <strong>Hesap ve içerik silme:</strong> Hesabını veya içeriğini sildiğinde rumuzun, kriptografik
-      oturum özetin ve paylaştığın içerik kamuya açık sistemden derhal kaldırılır.
+      Sunucuları kötü niyetli botlardan ve aşırı istek saldırılarından korumak
+      amacıyla Cloudflare <strong>ağ güvenliği</strong> katmanından yararlanılır.
     </li>
   </ul>
 </section>
 
 <section>
-  <h2>6. Hesabını ve İçeriklerini Nasıl Silebilirsin?</h2>
+  <h2>6. Yasal Hakların ve Başvuru Usulü</h2>
+  <p>
+    6698 sayılı Kanun madde 11 uyarınca veri sahibi olarak şu haklara sahipsin.
+  </p>
   <ul>
     <li>
-      <strong>Profil ve yorum ayarlarından silme:</strong> Giriş yapmış durumdayken kendi yazdığın yorumları,
-      yüklediğin fotoğrafları veya profil ayarlarından hesabını tek dokunuşla kalıcı olarak silebilirsin.
+      Kişisel verilerinin işlenip işlenmediğini öğrenme ve işlenmişse bilgi
+      talep etme,
     </li>
     <li>
-      <strong>İletişim kanalıyla talep etme:</strong> Hesabına erişemiyorsan veya herhangi bir
-      içerikle ilgili silme talebin varsa <a href="mailto:yasal@kepce.org">yasal@kepce.org</a> adresine
-      yazarak işlem yapılmasını talep edebilirsin.
-    </li>
-  </ul>
-</section>
-
-<section>
-  <h2>7. Çerezler, Yerel Depolama ve Güvenlik Servisleri</h2>
-  <ul>
-    <li>
-      <strong>Oturum çerezi:</strong> Giriş yaptığında oturumunu doğrulamak için kullanılan teknik
-      çerez, tarayıcı betiklerinin erişemediği <code>HttpOnly</code> ve <code>SameSite</code> korumalıdır;
-      takip amacıyla kullanılmaz.
+      İşlenme amacını ve bunların amacına uygun kullanılıp kullanılmadığını
+      öğrenme,
     </li>
     <li>
-      <strong>Yerel tercih verileri (LocalStorage):</strong> Seçtiğin şehir, tema modu, maskelenmiş hesap
-      ipucu ve alerjen/diyet filtrelerin yalnızca kendi tarayıcının yerel hafızasında tutulur; sunucuya
-      gönderilmez.
+      Yurt içinde veya yurt dışında verilerin aktarıldığı üçüncü kişileri bilme,
     </li>
     <li>
-      <strong>Umami:</strong> Çerez kullanmayan, IP kaydetmeyen ve kişisel veri toplamayan açık kaynaklı
-      anonim sayfa sayacıdır.
+      Eksik veya yanlış işlenmiş olması hâlinde bunların düzeltilmesini isteme,
     </li>
     <li>
-      <strong>Cloudflare ve Turnstile:</strong> DDoS saldırılarını ve otomatik botları filtrelemek için
-      kullanılan ağ güvenlik katmanıdır.
-    </li>
-  </ul>
-</section>
-
-<section>
-  <h2>8. Kanuni Hakların ve Başvuru Usulü</h2>
-  <p>KVKK m. 11 uyarınca herkes veri sorumlusuna başvurarak kendisiyle ilgili:</p>
-  <ul>
-    <li>Kişisel veri işlenip işlenmediğini öğrenme ve işlenmişse bilgi talep etme,</li>
-    <li>İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme,</li>
-    <li>Yurt içinde veya yurt dışında verilerin aktarıldığı üçüncü kişileri bilme,</li>
-    <li>Eksik veya yanlış işlenmişse düzeltilmesini isteme,</li>
-    <li>KVKK m. 7 şartları çerçevesinde silinmesini veya yok edilmesini isteme,</li>
-    <li>Düzeltme ve silme işlemlerinin aktarıldığı üçüncü kişilere bildirilmesini isteme,</li>
-    <li>
-      Münhasıran otomatik sistemlerle analiz edilmesi suretiyle aleyhine bir sonucun ortaya
-      çıkmasına itiraz etme,
+      Kanun'un 7. maddesinde öngörülen şartlar çerçevesinde silinmesini veya yok
+      edilmesini isteme ve bu işlemlerin verilerin aktarıldığı üçüncü kişilere
+      bildirilmesini talep etme,
     </li>
     <li>
-      Kanuna aykırı işleme sebebiyle zarara uğrama durumunda zararın giderilmesini talep etme
-      haklarına sahiptir.
+      İşlenen verilerin münhasıran otomatik sistemler vasıtasıyla analiz
+      edilmesi suretiyle aleyhine bir sonucun ortaya çıkmasına itiraz etme.
+      Kepçe bünyesinde kullanıcılar hakkında davranışsal profil çıkarma veya
+      otomatik karar alma mekanizması işletilmez.
+    </li>
+    <li>
+      Kanuna aykırı olarak işlenmesi sebebiyle zarara uğraman hâlinde zararın
+      giderilmesini talep etme.
     </li>
   </ul>
   <p>
-    KVKK m. 13 uyarınca taleplerini <a href="mailto:yasal@kepce.org">yasal@kepce.org</a> adresine
-    veya
-    <a href="/iletisim" data-link>iletişim sayfamızdaki</a> kanallara iletebilirsin. Başvurular en kısa
-    sürede ve en geç otuz gün içinde ücretsiz olarak sonuçlandırılır.
+    Bu haklarınla ilgili taleplerini veya Uyar-Kaldır bildirimlerini <a
+      href="mailto:yasal@kepce.org">yasal@kepce.org</a
+    > adresine iletebilirsin. Başvuruları en kısa sürede ve kanuni süre olan otuz
+    günü aşmadan ücretsiz olarak yanıtlarım.
   </p>
 </section>

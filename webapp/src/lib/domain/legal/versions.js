@@ -13,76 +13,76 @@ export const LEGAL_VERSIONS = {
     {
       slug: '20260805',
       version: '2026.08.05',
-      note: 'İlk yayımlanan sürüm.'
+      note: 'İlk yayımlanan gizlilik politikam.'
     },
     {
       slug: '20260902',
       version: '2026.09.02',
-      note: 'Yurt dışına veri aktarımı ve içerik kaldırma süreçlerine ilişkin yasal açıklamalar güncellendi.'
+      note: 'Yurt dışına veri aktarımı ve içerik kaldırma süreçlerine ilişkin açıklamaları güncelledim.'
     },
     {
       slug: '20260913',
       version: '2026.09.13',
-      note: 'Otomatik karar alma sistemlerinin kullanılmadığı açıklandı. Hizmetin sunulması için zorunlu veriler ve içerik şikayet süreçleri netleştirildi.'
+      note: 'Otomatik profil çıkarma yapmadığımı, hizmet için gereken asgari verileri ve şikayet süreçlerini netleştirdim.'
     },
     {
       slug: '20260920',
       version: '2026.09.20',
-      note: 'Sunucuların Fransa/Marsilya veri merkezinde barındırıldığı ve yurt dışı veri güvenliği standartları açıklandı.'
+      note: 'Sunucularımın Fransa veri merkezindeki barınma koşullarını ve güvenlik standartlarını paylaştım.'
     },
     {
       slug: '20260927',
       version: '2026.09.27',
-      note: 'Kullanıcıların yüklediği menü verilerinin kapsamı, silinen içeriklerin saklanma koşulları ve şikayetlerdeki gizlilik ilkeleri detaylandırıldı.'
+      note: 'Kullanıcıların yüklediği menü verilerinin kapsamını ve silinen içeriklerin saklanma şartlarını detaylandırdım.'
     },
     {
       slug: '20261004',
       version: '2026.10.04',
-      note: 'Menüleri inceleyen anonim ziyaretçilerin hiçbir verisinin kaydedilmediği vurgulandı. Yasal trafik kayıtlarının yalnızca içerik yükleyen veya yorum yapan kullanıcılar için tutulduğu belirtildi.'
+      note: 'Yalnızca menü okuyan anonim ziyaretçilerden hiçbir veri kaydetmediğimi, yasal kayıtların sadece yorum ve fotoğraf paylaşanları kapsadığını belirttim.'
     },
     {
       slug: '20261023',
       version: '2026.10.23',
       current: true,
-      note: 'Sıfır bilgi mimarisi devreye alındı. Açık e-posta ve kimlik tutulması kaldırıldı; 5651 logları asimetrik X25519 ile mühürlendi.'
+      note: 'Açık e-posta ve kimlik tutmayı tamamen bıraktım, hesapları anonimleştirdim. Kanunen tutulması gereken trafik kayıtlarını ise şifreleyerek yalnızca yetkili adli merciler için erişilebilir kıldım.'
     }
   ],
   'kullanim-kosullari': [
     {
       slug: '20260805',
       version: '2026.08.05',
-      note: 'İlk yayımlanan sürüm.'
+      note: 'İlk yayımlanan kullanım koşullarım.'
     },
     {
       slug: '20260902',
       version: '2026.09.02',
-      note: 'Mevzuata veya telife aykırı içeriklere yönelik uyar-kaldır (içerik şikayet) süreci güncellendi.'
+      note: 'Telif veya mevzuat ihlali bildiren içerikler için uyar-kaldır sürecini güncelledim.'
     },
     {
       slug: '20260913',
       version: '2026.09.13',
-      note: "Kepçe'nin yer sağlayıcı rolü açıklandı. Menü verilerinin bilgilendirme amaçlı niteliği ve içerik şikayet şartları detaylandırıldı."
+      note: "Kepçe'nin yer sağlayıcı rolünü ve menü verilerinin bilgilendirme amaçlı niteliğini açıkladım."
     },
     {
       slug: '20260920',
       version: '2026.09.20',
-      note: 'Veri tabanının kullanım sınırları, alerjen ve diyet bilgilerindeki kullanıcı sorumluluğu ile altyapı konumu açıklandı.'
+      note: 'Veri tabanımın kullanım sınırlarını ve yemeklerdeki alerjen bilgilerinde kullanıcı sorumluluğunu netleştirdim.'
     },
     {
       slug: '20260927',
       version: '2026.09.27',
-      note: 'Kullanıcı menü yüklemelerinin kullanım hakları, otomatik veri çekme sınırları ve turnike/fiş fiyatlarının önceliği netleştirildi.'
+      note: 'Kullanıcıların paylaştığı menülerin kullanım haklarını ve yemekhane turnike fiyatlarının önceliğini belirttim.'
     },
     {
       slug: '20261004',
       version: '2026.10.04',
-      note: 'Yalnızca menü inceleyen ziyaretçilerden hiçbir kayıt tutulmadığı, yasal kayıt tutma yükümlülüğünün sadece yorum ve fotoğraf yükleyen kullanıcıları kapsadığı belirtildi.'
+      note: 'Yalnızca menü inceleyen ziyaretçilerden kayıt tutulmadığını, içerik sorumluluğunun yorum ve fotoğraf paylaşan kullanıcıya ait olduğunu belirttim.'
     },
     {
       slug: '20261023',
       version: '2026.10.23',
       current: true,
-      note: 'Hukuki statü içerik derleyici ve aracı platform olarak güncellendi. FSEK veritabanı hakkı ve TBK alerjen sorumluluk sınırları eklendi.'
+      note: 'Yemekhane bağımsızlığını, menülerdeki alerjen tahminlerinin bağlayıcı olmadığını ve mutfak teyidi sorumluluğunu en başa taşıdım.'
     }
   ]
 };

@@ -1,7 +1,7 @@
 <script>
-  import ContentPage from '$lib/components/layout/ContentPage.svelte';
-  import CurrentContent from '$lib/domain/legal/gizlilik-politikasi/20261023.svelte';
-  import Seo from '$lib/components/ui/Seo.svelte';
+  import ContentPage from "$lib/components/layout/ContentPage.svelte";
+  import CurrentContent from "$lib/domain/legal/gizlilik-politikasi/20261023.svelte";
+  import Seo from "$lib/components/ui/Seo.svelte";
 </script>
 
 <Seo
@@ -11,7 +11,7 @@
 />
 
 <ContentPage
-  title="Gizlilik Politikası ve Aydınlatma Metni"
+  title="Aydınlatma Metni"
   dateLabel="Son güncelleme: 23 Ekim 2026"
   archiveLink="/gizlilik-politikasi/arsiv"
 >
