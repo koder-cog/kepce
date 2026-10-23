@@ -13,6 +13,9 @@ use std::sync::Arc;
 use tower::util::ServiceExt; // the correct oneshot trait
 
 async fn setup_app() -> Option<(axum::Router, AppState)> {
+    if std::env::var("DATABASE_URL").is_err() {
+        return None;
+    }
     let mut config = Config::from_env();
     config.resend_api_key = "mock_key".to_string(); // Test ortamında gerçek e-posta gönderimini engelle
     config.smtp_host = None;
@@ -83,8 +86,9 @@ async fn test_full_auth_flow() {
     assert_eq!(status, StatusCode::OK);
 
     // Verify user created but not verified in DB
+    let email_hash = api::core::zero_knowledge::compute_email_hash(&test_email, &state.config.email_blind_key).unwrap();
     let user_db = Users::find()
-        .filter(users::Column::Email.eq(&test_email))
+        .filter(users::Column::EmailHash.eq(&email_hash))
         .one(&state.db)
         .await
         .unwrap()
@@ -105,7 +109,7 @@ async fn test_full_auth_flow() {
 
     // Check DB that user is now verified
     let user_db_verified = Users::find()
-        .filter(users::Column::Email.eq(&test_email))
+        .filter(users::Column::EmailHash.eq(&email_hash))
         .one(&state.db)
         .await
         .unwrap()

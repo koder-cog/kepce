@@ -1,0 +1,18 @@
+[package]
+name = "migrate-identity"
+version = "0.1.0"
+edition = "2024"
+description = "Kepçe Açık E-posta -> HMAC-SHA256 Kör İndeks Göç Aracı"
+
+[dependencies]
+shared = { path = "../../shared" }
+tokio = { workspace = true }
+dotenvy = { workspace = true }
+sea-orm = { workspace = true }
+hmac = "0.12"
+sha2 = { workspace = true }
+uuid = { workspace = true }
+hex = "0.4"
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }

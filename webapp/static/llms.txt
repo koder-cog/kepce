@@ -17,13 +17,13 @@
 
 Kepçe, AI ajanlarının ve asistanların doğrudan sorgu atabilmesi için açık JSON API uç noktaları sağlar:
 
-- **Günün Menüsü:** `GET https://kepce.org/api/v1/menus?city={sehir_slug}&date={YYYY-MM-DD}`
+- Günün menüsü: `GET https://kepce.org/api/v1/menus?city={sehir_slug}&date={YYYY-MM-DD}`
   - Parametreler:
-    - `city` (zorunlu): İl adı veya plaka slug'ı (örn: `istanbul`, `ankara`, `izmir`)
+    - `city` (zorunlu): İl adı veya plaka slug'ı (örnek: `istanbul`, `ankara`, `izmir`)
     - `date` (isteğe bağlı, varsayılan bugün): `YYYY-MM-DD` formatında tarih
   - Yanıt: Kahvaltı ve akşam yemeği menüsü, yemek adları, kalori ve diyet kategorileri.
-- **Bugünün Menüsü (Kısa Yol):** `GET https://kepce.org/api/v1/public/menus/today/{sehir_slug}`
-- **Aktif Şehirler:** `GET https://kepce.org/api/v1/public/cities`
+- Bugünün menüsü (kısa yol): `GET https://kepce.org/api/v1/public/menus/today/{sehir_slug}`
+- Aktif şehirler: `GET https://kepce.org/api/v1/public/cities`
 
 ## İsteğe Bağlı Kaynaklar
 

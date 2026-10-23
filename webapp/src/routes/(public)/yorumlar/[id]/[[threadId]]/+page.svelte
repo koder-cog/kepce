@@ -1,0 +1,24 @@
+<script>
+  import { page } from '$app/state';
+  import { goto } from '$app/navigation';
+  import { onMount } from 'svelte';
+  import Loader from '$lib/components/ui/Loader.svelte';
+  import Seo from '$lib/components/ui/Seo.svelte';
+
+  let params = $derived(page.params);
+
+  onMount(() => {
+    const id = params?.id;
+    const threadId = params?.threadId || page.url.searchParams.get('thread');
+    const target = threadId ? `/menu/${id}/${threadId}` : `/menu/${id}`;
+    goto(target, { replaceState: true });
+  });
+</script>
+
+<Seo title="Yönlendiriliyorsunuz... | Kepçe" noindex={true} />
+
+<h1 class="sr-only">Yönlendiriliyorsunuz</h1>
+
+<div class="u-flex u-justify-center u-items-center u-min-h-40dvh">
+  <Loader size={48} />
+</div>

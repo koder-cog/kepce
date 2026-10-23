@@ -1,7 +1,7 @@
 [package]
 name = "worker"
-version = "0.6.0"
-edition = "2024"
+version.workspace = true
+edition.workspace = true
 
 [dependencies]
 shared = { path = "../shared" }
@@ -39,20 +39,36 @@ http = "1.4.2"
 web-push-native = "0.4"
 
 # Görsel işleme & sayfa bazlı yön (orientation) düzeltme
-# image: EXIF okuma, gri tonlama, döndürme, yeniden kodlama
 image = { version = "0.25", default-features = false, features = [
     "jpeg",
     "png",
     "webp",
 ] }
-# lopdf: PDF sayfalarının /Rotate değerini ayarlamak için (rasterizasyon gerekmez)
 lopdf = "0.45"
-# pdfium-render: PDF sayfalarını rasterize edip yön algılamak için.
-# libpdfium.so çalışma zamanında dinamik yüklenir (worker/Dockerfile'a eklenir).
 pdfium-render = "0.9"
-# ort: 4-sınıf (0/90/180/270) sayfa yönü ONNX sınıflandırıcısı. fastembed ile aynı
-# sürüme sabitlendi; varsayılan özellikler (std + ndarray + download-binaries +
-# tls-native) ONNX Runtime ikilisini imaja indirir — ek .so yönetimi gerekmez.
 ort = "=2.0.0-rc.13"
-# ndarray: ONNX girdi tensörünü (NCHW [1,3,512,512]) oluşturmak için (ort ile aynı sürüm).
 ndarray = "0.17"
+
+[lib]
+name = "worker"
+path = "src/lib.rs"
+
+[[bin]]
+name = "worker"
+path = "src/main.rs"
+
+[[bin]]
+name = "remote_scraper"
+path = "src/bin/remote_scraper.rs"
+
+[[bin]]
+name = "stage_hub"
+path = "src/bin/stage_hub.rs"
+
+[[bin]]
+name = "audit_bekleyen"
+path = "src/bin/audit_bekleyen.rs"
+
+[[bin]]
+name = "month_cleanup"
+path = "src/bin/month_cleanup.rs"

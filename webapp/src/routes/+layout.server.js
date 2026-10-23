@@ -1,5 +1,5 @@
-import { istanbulToday } from '@/lib/server/api.js';
-import { getSpecialDayInfo } from '@/utils/specialDates.js';
+import { istanbulToday } from '$lib/server/api.js';
+import { getSpecialDayInfo } from '$lib/domain/calendar/specialDates.js';
 
 /**
  * Sunucu tarafında Türkiye saat dilimi (Europe/Istanbul - UTC+3) ile bugünün tarihini

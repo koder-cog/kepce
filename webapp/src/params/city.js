@@ -1,4 +1,4 @@
-import { CITY_MAP } from '../utils/turkish.js';
+import { CITY_MAP } from '$lib/utils/turkish.js';
 
 /**
  * Validates if the route parameter is a valid Turkish city slug.

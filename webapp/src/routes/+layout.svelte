@@ -5,22 +5,21 @@
   import { beforeNavigate, afterNavigate, onNavigate, goto } from '$app/navigation';
   import { page, updated } from '$app/stores';
   import { dev } from '$app/environment';
-  import { globalState, authActions } from '@/state.svelte.js';
-  import { forceUnlockScroll } from '@/lib/dom/scroll-lock.js';
-  import Nav from '@/components/layout/Nav.svelte';
-  import Footer from '@/components/layout/Footer.svelte';
-  import ToastContainer from '@/components/ui/ToastContainer.svelte';
-  import AnnouncementBanner from '@/components/ui/AnnouncementBanner.svelte';
-  import VerificationBanner from '@/components/ui/VerificationBanner.svelte';
-  import holidays from '$lib/data/holidays.json';
-  import { initScrollbar } from '@/lib/dom/scrollbar.js';
-  import { initTooltipManager } from '@/lib/dom/tooltips.js';
-  import { openMenuReportModal } from '@/components/features/report-modal.js';
-  import ExternalLinkWarningModal from '@/components/features/ExternalLinkWarningModal.svelte';
-  import CrossBorderConsentModal from '@/components/features/CrossBorderConsentModal.svelte';
-  import OfflineBanner from '@/components/ui/OfflineBanner.svelte';
+  import { globalState, authActions } from '$lib/stores/appState.svelte.js';
+  import { forceUnlockScroll } from '$lib/dom/scrollLock.js';
+  import Nav from '$lib/components/layout/Nav.svelte';
+  import Footer from '$lib/components/layout/Footer.svelte';
+  import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
+  import AnnouncementBanner from '$lib/components/ui/AnnouncementBanner.svelte';
+  import VerificationBanner from '$lib/components/ui/VerificationBanner.svelte';
+  import holidays from '$lib/domain/calendar/holidays.json';
+  import { initScrollbar } from '$lib/dom/scrollbar.js';
+  import { initTooltipManager } from '$lib/dom/tooltips.js';
+  import { openMenuReportModal } from '$lib/components/features/moderation/report-modal.js';
+  import ExternalLinkWarningModal from '$lib/components/features/auth/ExternalLinkWarningModal.svelte';
+  import OfflineBanner from '$lib/components/ui/OfflineBanner.svelte';
 
-  import { timelineState } from '@/stores/timeline.svelte.js';
+  import { timelineState } from '$lib/stores/timeline.svelte.js';
 
   let { data, children } = $props();
 
@@ -44,42 +43,11 @@
   let externalLinkModalOpen = $state(false);
   let pendingExternalUrl = $state('');
 
-  let consentPostponed = $state(
-    typeof sessionStorage !== 'undefined'
-      ? sessionStorage.getItem('kepce_consent_postponed') === 'true'
-      : false
-  );
-
   // Sayfa geçişi + view transition animasyonu bitmeden modal açılmasını engeller.
   // beforeNavigate kapıyı kapatır. View transition varsa transition.finished,
   // yoksa afterNavigate kapıyı yeniden açar.
   let navigationSettled = $state(true);
   let viewTransitionActive = $state(false);
-
-  let showConsentModal = $derived.by(() => {
-    if (!navigationSettled) return false;
-    if (!globalState.isReady || !globalState.user) return false;
-    if (globalState.user.consent_cross_border !== false) return false;
-
-    const pathname = $page?.url?.pathname || '';
-    if (
-      pathname === '/giris' ||
-      pathname === '/kayit' ||
-      pathname === '/profili-tamamla' ||
-      pathname.startsWith('/oauth/') ||
-      pathname.startsWith('/auth/')
-    ) {
-      return false;
-    }
-
-    const deadline = globalState.user.consent_deadline_at
-      ? new Date(globalState.user.consent_deadline_at)
-      : null;
-    const isExpired = deadline ? new Date().getTime() > deadline.getTime() : true;
-
-    if (isExpired) return true;
-    return !consentPostponed;
-  });
 
   function handleGlobalClick(e) {
     // Arama motorunda dış bağlantı uyarısı gösterilmez, doğrudan hedefe gidilir
@@ -509,19 +477,6 @@
   />
 {/if}
 
-{#if showConsentModal}
-  <CrossBorderConsentModal
-    onClose={() => {
-      consentPostponed = true;
-    }}
-    onPostpone={() => {
-      consentPostponed = true;
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('kepce_consent_postponed', 'true');
-      }
-    }}
-  />
-{/if}
 
 <ToastContainer />
 

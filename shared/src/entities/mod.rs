@@ -30,6 +30,7 @@ pub mod tags;
 pub mod takeaway_packages;
 pub mod takeaway_slot_items;
 pub mod takeaway_slots;
+pub mod traffic_logs;
 pub mod user_badges;
 pub mod user_blocks;
 pub mod user_favorites;

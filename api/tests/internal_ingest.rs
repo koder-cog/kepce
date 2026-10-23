@@ -11,8 +11,11 @@ use axum::{
 use sea_orm::{ColumnTrait, Database, EntityTrait, ModelTrait, QueryFilter};
 use tower::util::ServiceExt;
 
-async fn setup_test_app(secret: Option<&str>) -> (axum::Router, sea_orm::DatabaseConnection) {
+async fn setup_test_app(secret: Option<&str>) -> Option<(axum::Router, sea_orm::DatabaseConnection)> {
     dotenvy::dotenv().ok();
+    if std::env::var("DATABASE_URL").is_err() {
+        return None;
+    }
     let mut config = Config::from_env();
     config.internal_ingest_secret = secret.map(|s| s.to_string());
     let mut opt = sea_orm::ConnectOptions::new(&config.database_url);
@@ -30,12 +33,15 @@ async fn setup_test_app(secret: Option<&str>) -> (axum::Router, sea_orm::Databas
         rate_limiter,
         usage_tracker,
     };
-    (build_router(state, cors), db)
+    Some((build_router(state, cors), db))
 }
 
 #[tokio::test]
 async fn test_internal_ingest_auth_guards() {
-    let (app_without_secret, _) = setup_test_app(None).await;
+    let Some((app_without_secret, _)) = setup_test_app(None).await else {
+        println!("DATABASE_URL tanımlı olmadığı için test atlandı.");
+        return;
+    };
 
     // 1. Sunucuda secret ayarlı değilse 403 Forbidden dönmeli
     let req = Request::builder()
@@ -49,7 +55,9 @@ async fn test_internal_ingest_auth_guards() {
     let resp = app_without_secret.oneshot(req).await.unwrap();
     assert_eq!(resp.status(), StatusCode::FORBIDDEN);
 
-    let (app_with_secret, _) = setup_test_app(Some("gizli_test_anahtari_12345")).await;
+    let Some((app_with_secret, _)) = setup_test_app(Some("gizli_test_anahtari_12345")).await else {
+        return;
+    };
 
     // 2. Token başlığı yoksa 401 Unauthorized dönmeli
     let req = Request::builder()
@@ -78,7 +86,9 @@ async fn test_internal_ingest_auth_guards() {
 #[tokio::test]
 async fn test_internal_ingest_success_and_idempotency() {
     let test_secret = "test_ingest_token_super_secret_987";
-    let (app, db) = setup_test_app(Some(test_secret)).await;
+    let Some((app, db)) = setup_test_app(Some(test_secret)).await else {
+        return;
+    };
     if matches!(db, sea_orm::DatabaseConnection::Disconnected) {
         return;
     }
@@ -167,7 +177,9 @@ async fn test_internal_ingest_success_and_idempotency() {
 #[tokio::test]
 async fn test_internal_ingest_junk_menu_rejected() {
     let test_secret = "test_ingest_junk_secret_333";
-    let (app, db) = setup_test_app(Some(test_secret)).await;
+    let Some((app, db)) = setup_test_app(Some(test_secret)).await else {
+        return;
+    };
     if matches!(db, sea_orm::DatabaseConnection::Disconnected) {
         return;
     }

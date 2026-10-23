@@ -1,4 +1,11 @@
 import { redirect } from '@sveltejs/kit';
+import {
+  negotiateMediaType,
+  handleRootNegotiatedResponse,
+  formatJson404,
+  ERROR_MEDIA_TYPES,
+  ROOT_MEDIA_TYPES
+} from '$lib/server/agentRepresentation.js';
 
 export function reroute({ url }) {
   const hostname = url.hostname.toLowerCase();
@@ -23,6 +30,14 @@ export function reroute({ url }) {
 
 export async function handle({ event, resolve }) {
   const { pathname, search } = event.url;
+
+  // Kök dizinde yapay zeka ajanları ve araçlar için RFC 9110 içerik pazarlığı
+  if (pathname === '/' && event.request.method === 'GET') {
+    const preferredType = negotiateMediaType(event.request, ROOT_MEDIA_TYPES);
+    if (preferredType !== 'text/html') {
+      return await handleRootNegotiatedResponse(preferredType);
+    }
+  }
 
   // Standalone Node / Preview ortamında /api ve /static isteklerini backend API'ye proxy'le
   if (pathname.startsWith('/api/') || pathname.startsWith('/static/')) {
@@ -75,7 +90,7 @@ export async function handle({ event, resolve }) {
     throw redirect(302, `https://ara.kepce.org${cleanPath}${event.url.search}`);
   }
 
-  return resolve(event, {
+  const response = await resolve(event, {
     transformPageChunk: ({ html }) => {
       if (isAraRoute) {
         return html
@@ -89,4 +104,14 @@ export async function handle({ event, resolve }) {
       return html;
     }
   });
+
+  // Ajanlar için yapılandırılmış JSON 404 yanıtı (Content Negotiation)
+  if (response.status === 404) {
+    const errorType = negotiateMediaType(event.request, ERROR_MEDIA_TYPES);
+    if (errorType === 'application/json') {
+      return formatJson404(pathname);
+    }
+  }
+
+  return response;
 }

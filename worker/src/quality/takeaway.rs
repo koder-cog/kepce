@@ -1,0 +1,473 @@
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::fs;
+use std::sync::{OnceLock, RwLock};
+
+#[derive(Debug, Clone)]
+pub struct TakeawayParsedPackage {
+    pub name: String,
+    pub slots: Vec<Vec<crate::parser::models::MenuComponent>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FastMenuCachedItem {
+    #[serde(default)]
+    pub name: Option<String>,
+    pub slots: Vec<Vec<crate::parser::models::MenuComponent>>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(untagged)]
+enum RawFastMenuEntry {
+    Detailed(FastMenuCachedItem),
+    SimpleSlots(Vec<Vec<crate::parser::models::MenuComponent>>),
+}
+
+type TakeawayCacheMap = HashMap<String, HashMap<u32, TakeawayParsedPackage>>;
+type DynamicFastMenuMap = HashMap<String, FastMenuCachedItem>;
+
+lazy_static::lazy_static! {
+    pub static ref TAKEAWAY_CACHE: RwLock<TakeawayCacheMap> = RwLock::new(HashMap::new());
+    pub(crate) static ref FASTMENU_DYNAMIC_CACHE: RwLock<DynamicFastMenuMap> = RwLock::new(HashMap::new());
+}
+
+/// Kalıcı Al Götür önbellek dosyası.
+///
+/// Önbellek yalnızca süreç belleğinde tutulduğunda her yeniden başlatmada boşalır ve
+/// ilk tarama turu tüm paketleri toplu olarak ister (burst). Bu dosya ile önbellek
+/// diskte kalır, dolayısıyla yeniden başlatma sonrası istek yükü düşük kalır.
+const CACHE_FILE_ENV: &str = "TAKEAWAY_CACHE_FILE";
+const DEFAULT_CACHE_FILE: &str = "/app/cache/takeaway.json";
+
+fn cache_file_path() -> String {
+    if let Ok(p) = std::env::var(CACHE_FILE_ENV) {
+        return p;
+    }
+    if std::path::Path::new("data").exists() {
+        "data/takeaway_cache.json".to_string()
+    } else {
+        DEFAULT_CACHE_FILE.to_string()
+    }
+}
+
+/// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür yemek slotlarını önbellekten okur.
+/// Kilit (RwLock) mikrosaniyelik RAM okumasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
+pub fn get_cached_fastmenu(id: &str) -> Option<Vec<Vec<crate::parser::models::MenuComponent>>> {
+    ensure_fastmenu_cache_loaded();
+    FASTMENU_DYNAMIC_CACHE
+        .read()
+        .ok()?
+        .get(id)
+        .map(|item| item.slots.clone())
+}
+
+/// Dinamik olarak önbelleğe alınmış Al Götür paketini detaylı kaydıyla (isim ve zaman dahil) okur.
+pub fn get_cached_fastmenu_item(id: &str) -> Option<FastMenuCachedItem> {
+    ensure_fastmenu_cache_loaded();
+    FASTMENU_DYNAMIC_CACHE.read().ok()?.get(id).cloned()
+}
+
+/// Dinamik olarak kykyemek.com üzerinden çekilmiş Al Götür paketini önbelleğe yazar.
+/// Kilit (RwLock) mikrosaniyelik RAM yazmasıyla açılıp anında bırakılır; hiçbir await sınırından geçmez.
+pub fn insert_cached_fastmenu(
+    id: String,
+    name: Option<String>,
+    slots: Vec<Vec<crate::parser::models::MenuComponent>>,
+) {
+    let now = chrono::Utc::now().to_rfc3339();
+    let item = FastMenuCachedItem {
+        name,
+        slots,
+        updated_at: Some(now),
+    };
+    if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
+        cache.insert(id, item);
+    }
+    // Yazma kilidi burada bırakılmıştır, kalıcı yazma kendi okuma kilidini alır.
+    persist_fastmenu_cache();
+}
+
+/// Diskten yüklemeyi süreç başına yalnızca bir kez yapar (en iyi çaba).
+fn ensure_fastmenu_cache_loaded() {
+    static LOADED: OnceLock<()> = OnceLock::new();
+    LOADED.get_or_init(|| {
+        let path = cache_file_path();
+        let Ok(content) = fs::read_to_string(&path) else {
+            return;
+        };
+        match serde_json::from_str::<HashMap<String, RawFastMenuEntry>>(&content) {
+            Ok(raw_map) => {
+                let count = raw_map.len();
+                let mut map = HashMap::new();
+                for (k, v) in raw_map {
+                    match v {
+                        RawFastMenuEntry::Detailed(item) => {
+                            map.insert(k, item);
+                        }
+                        RawFastMenuEntry::SimpleSlots(slots) => {
+                            map.insert(
+                                k,
+                                FastMenuCachedItem {
+                                    name: None,
+                                    slots,
+                                    updated_at: None,
+                                },
+                            );
+                        }
+                    }
+                }
+                if let Ok(mut cache) = FASTMENU_DYNAMIC_CACHE.write() {
+                    *cache = map;
+                    tracing::info!("Al Götür önbelleği diskten yüklendi: {} kayıt", count);
+                }
+            }
+            Err(e) => tracing::warn!("Al Götür önbelleği okunamadı, sıfırdan başlanıyor: {}", e),
+        }
+    });
+}
+
+/// Önbelleği diske atomik olarak yazar (önce `.tmp`, sonra `rename`). En iyi çaba.
+fn persist_fastmenu_cache() {
+    let path = cache_file_path();
+    let Some(parent) = std::path::Path::new(&path).parent() else {
+        return;
+    };
+    if fs::create_dir_all(parent).is_err() {
+        return;
+    }
+    let Ok(cache) = FASTMENU_DYNAMIC_CACHE.read() else {
+        return;
+    };
+    let Ok(json) = serde_json::to_string_pretty(&*cache) else {
+        return;
+    };
+    let tmp = format!("{path}.tmp");
+    if fs::write(&tmp, json).is_err() {
+        return;
+    }
+    if fs::rename(&tmp, &path).is_err() {
+        let _ = fs::remove_file(&tmp);
+    }
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct MenuItem {
+    name: String,
+    #[serde(default)]
+    gramaj: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct MenuSlot {
+    alternatives: Vec<MenuItem>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+struct TakeawayPackageConfig {
+    id: u32,
+    #[serde(default)]
+    title: Option<String>,
+    #[serde(default)]
+    items: Vec<MenuSlot>,
+}
+
+#[derive(Debug, Deserialize, Clone)]
+#[allow(dead_code)]
+struct TakeawayConfigFile {
+    #[serde(default)]
+    city: Option<String>,
+    #[serde(default)]
+    meal_type: Option<String>,
+    #[serde(default)]
+    valid_from: Option<String>,
+    #[serde(default)]
+    valid_to: Option<String>,
+    #[serde(default)]
+    packages: Vec<TakeawayPackageConfig>,
+}
+
+fn load_config_file(file_path: &str) -> Option<HashMap<u32, TakeawayParsedPackage>> {
+    let content = fs::read_to_string(file_path)
+        .or_else(|_| fs::read_to_string(format!("../{}", file_path)))
+        .ok()?;
+    let mut converted: HashMap<u32, TakeawayParsedPackage> = HashMap::new();
+
+    // 1. Yeni format (TakeawayConfigFile) dene
+    if let Ok(parsed_file) = serde_json::from_str::<TakeawayConfigFile>(&content) {
+        if !parsed_file.packages.is_empty() {
+            for pkg in parsed_file.packages {
+                let mut dish_slots = Vec::new();
+                for slot in pkg.items {
+                    let mut alts = Vec::new();
+                    for alt in slot.alternatives {
+                        alts.push(crate::parser::models::MenuComponent {
+                            name: alt.name,
+                            amount: alt.gramaj,
+                            calories: None,
+                            category: None,
+                        });
+                    }
+                    dish_slots.push(alts);
+                }
+
+                let pkg_name = if let Some(ref t) = pkg.title {
+                    if !t.trim().is_empty() {
+                        format!("{}. {}", pkg.id, t.trim())
+                    } else {
+                        format!("Al Götür {}", pkg.id)
+                    }
+                } else {
+                    format!("Al Götür {}", pkg.id)
+                };
+
+                converted.insert(
+                    pkg.id,
+                    TakeawayParsedPackage {
+                        name: pkg_name,
+                        slots: dish_slots,
+                    },
+                );
+            }
+        }
+    } else if let Ok(legacy_map) = serde_json::from_str::<HashMap<u32, Vec<MenuSlot>>>(&content) {
+        // 2. Eski format (HashMap<u32, Vec<MenuSlot>>) fallback
+        for (id, slots) in legacy_map {
+            let mut dish_slots = Vec::new();
+            for slot in slots {
+                let mut alts = Vec::new();
+                for alt in slot.alternatives {
+                    alts.push(crate::parser::models::MenuComponent {
+                        name: alt.name,
+                        amount: alt.gramaj,
+                        calories: None,
+                        category: None,
+                    });
+                }
+                dish_slots.push(alts);
+            }
+            converted.insert(
+                id,
+                TakeawayParsedPackage {
+                    name: format!("Al Götür {}", id),
+                    slots: dish_slots,
+                },
+            );
+        }
+    }
+
+    if !converted.is_empty() {
+        Some(converted)
+    } else {
+        None
+    }
+}
+
+fn get_candidate_periods() -> Vec<String> {
+    let now = chrono::Utc::now();
+    let year = now.format("%Y").to_string().parse::<i32>().unwrap_or(2026);
+    let month = now.format("%m").to_string().parse::<u32>().unwrap_or(8);
+
+    let (base_year_start, base_year_end) = if month >= 9 {
+        (year, year + 1)
+    } else {
+        (year - 1, year)
+    };
+
+    vec![
+        format!("{}-{}", base_year_start, base_year_end),
+        format!("{}-{}", base_year_start - 1, base_year_end - 1),
+        format!("{}-{}", base_year_start - 2, base_year_end - 2),
+    ]
+}
+
+pub fn get_takeaway_config(
+    city_slug: &str,
+    mapped_meal_type: &str,
+) -> Option<HashMap<u32, TakeawayParsedPackage>> {
+    let key = format!("{}_{}", city_slug, mapped_meal_type);
+
+    if let Ok(cache) = TAKEAWAY_CACHE.read()
+        && let Some(cached) = cache.get(&key)
+    {
+        return Some(cached.clone());
+    }
+
+    let turkish_meal_type = match mapped_meal_type {
+        "breakfast" => "kahvalti",
+        "dinner" => "aksam",
+        other => other,
+    };
+
+    let periods = get_candidate_periods();
+    let mut candidates = Vec::new();
+
+    for period in &periods {
+        candidates.push(format!(
+            "config/takeaway/{}/{}/{}.json",
+            city_slug, period, mapped_meal_type
+        ));
+        candidates.push(format!(
+            "config/takeaway/{}/{}/{}.json",
+            city_slug, period, turkish_meal_type
+        ));
+    }
+
+    for path in candidates {
+        if let Some(loaded) = load_config_file(&path) {
+            if let Ok(mut cache) = TAKEAWAY_CACHE.write() {
+                cache.insert(key.clone(), loaded.clone());
+            }
+            return Some(loaded);
+        }
+    }
+
+    None
+}
+
+pub fn parse_takeaway_menu(
+    text: &str,
+    city_slug: &str,
+    meal_type: &str,
+) -> Option<Vec<(String, Vec<Vec<crate::parser::models::MenuComponent>>)>> {
+    let text_upper = text.to_uppercase();
+    if !text_upper.contains("AL GÖTÜR")
+        && !text_upper.contains("AL-GÖTÜR")
+        && !text_upper.contains("ALGÖTÜR")
+        && !text_upper.contains("FAST")
+    {
+        return None;
+    }
+
+    let mapped_meal_type = match meal_type {
+        "breakfast" | "kahvalti" | "kahvaltı" => "breakfast",
+        "lunch" | "ogle" | "öğle" => "lunch",
+        "dinner" | "aksam" | "akşam" => "dinner",
+        other => other,
+    };
+
+    // Sadece bu şehre ait tanımlı bir şablon varsa paketleri yükle
+    let config = get_takeaway_config(city_slug, mapped_meal_type)?;
+
+    let mut menu_ids = Vec::new();
+    let mut current_num = String::new();
+    for c in text.chars() {
+        if c.is_ascii_digit() {
+            current_num.push(c);
+        } else if !current_num.is_empty() {
+            if let Ok(num) = current_num.parse::<u32>() {
+                menu_ids.push(num);
+            }
+            current_num.clear();
+        }
+    }
+    if !current_num.is_empty()
+        && let Ok(num) = current_num.parse::<u32>()
+    {
+        menu_ids.push(num);
+    }
+
+    // Eğer numara bulunamadıysa ama metin config'deki başlıklardan birini içeriyorsa
+    if menu_ids.is_empty() {
+        for (id, pkg) in config.iter() {
+            let pkg_name_upper = pkg.name.to_uppercase();
+            if text_upper.contains(&pkg_name_upper) {
+                menu_ids.push(*id);
+            }
+        }
+    }
+
+    // Eğer numara veya başlık bulunamadıysa boş kalır, kafasına göre paket 1 eklenmez.
+
+    let mut packages = Vec::new();
+
+    for id in menu_ids {
+        if let Some(parsed_pkg) = config.get(&id) {
+            packages.push((parsed_pkg.name.clone(), parsed_pkg.slots.clone()));
+        }
+    }
+
+    if packages.is_empty() {
+        None
+    } else {
+        Some(packages)
+    }
+}
+
+pub fn parse_fast_menu_foods_html(
+    html_str: &str,
+) -> Vec<Vec<crate::parser::models::MenuComponent>> {
+    use scraper::{Html, Selector};
+    let fragment = Html::parse_fragment(html_str);
+    let div_selector = Selector::parse("div").unwrap();
+    let mut slots = Vec::new();
+
+    static RE_SPLIT: OnceLock<regex::Regex> = OnceLock::new();
+    let re_split = RE_SPLIT.get_or_init(|| regex::Regex::new(r"(?i)\s*veya\s*").unwrap());
+
+    static RE_GRAMAJ: OnceLock<regex::Regex> = OnceLock::new();
+    let re_gramaj = RE_GRAMAJ.get_or_init(|| regex::Regex::new(r"\(([^)]+)\)$").unwrap());
+
+    for div in fragment.select(&div_selector) {
+        let raw_text: String = div.text().collect();
+        let decoded = decode_html_entities(&raw_text).trim().to_string();
+        if decoded.is_empty() {
+            continue;
+        }
+
+        let parts: Vec<&str> = re_split.split(&decoded).collect();
+        let mut slot_alts = Vec::new();
+
+        for part in parts {
+            let part_trimmed = part.trim();
+            if part_trimmed.is_empty() {
+                continue;
+            }
+
+            let (name, amount) = if let Some(caps) = re_gramaj.captures(part_trimmed) {
+                let gramaj = caps.get(1).map(|m| m.as_str().trim().to_string());
+                let match_start = caps.get(0).unwrap().start();
+                let clean_name = part_trimmed[..match_start].trim().to_string();
+                (clean_name, gramaj)
+            } else {
+                (part_trimmed.to_string(), None)
+            };
+
+            slot_alts.push(crate::parser::models::MenuComponent {
+                name,
+                amount,
+                calories: None,
+                category: None,
+            });
+        }
+
+        if !slot_alts.is_empty() {
+            slots.push(slot_alts);
+        }
+    }
+
+    slots
+}
+
+fn decode_html_entities(s: &str) -> String {
+    s.replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">")
+        .replace("&quot;", "\"")
+        .replace("&#x15F;", "ş")
+        .replace("&#x15E;", "Ş")
+        .replace("&#x131;", "ı")
+        .replace("&#x130;", "İ")
+        .replace("&#x11F;", "ğ")
+        .replace("&#x11E;", "Ğ")
+        .replace("&#xE7;", "ç")
+        .replace("&#xC7;", "Ç")
+        .replace("&#xFC;", "ü")
+        .replace("&#xDC;", "Ü")
+        .replace("&#xF6;", "ö")
+        .replace("&#xD6;", "Ö")
+        .replace("&#x2B;", "+")
+        .replace("&#39;", "'")
+        .replace("&apos;", "'")
+}

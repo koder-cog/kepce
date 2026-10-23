@@ -500,15 +500,15 @@ case "$COMMAND" in
         ;;
     backup)
         shift
-        ./scripts/backup_db.sh "$@"
+        ./ops/scripts/db/backup_db.sh "$@"
         ;;
     ingest-backup)
         shift
-        ./scripts/backup_ingest.sh "$@"
+        ./ops/scripts/ingest/backup_ingest.sh "$@"
         ;;
     deploy)
         shift
-        ./scripts/deploy.sh "$@"
+        ./ops/scripts/deploy/deploy.sh "$@"
         ;;
     *)
         echo "Usage: $0 {start|stop|restart|status|logs|build-arm64|backup|ingest-backup|deploy} [api|worker|web|web-dev|web-preview|llama|db|all]"

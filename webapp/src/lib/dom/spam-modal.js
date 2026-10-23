@@ -1,5 +1,5 @@
 import { mount, unmount } from 'svelte';
-import SpamInfoModalComponent from '../../components/features/SpamInfoModal.svelte';
+import SpamInfoModalComponent from '$lib/components/features/moderation/SpamInfoModal.svelte';
 
 export function openSpamInfoModal() {
   const target = document.createElement('div');

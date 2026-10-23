@@ -27,6 +27,7 @@ pub use super::tags::Entity as Tags;
 pub use super::takeaway_packages::Entity as TakeawayPackages;
 pub use super::takeaway_slot_items::Entity as TakeawaySlotItems;
 pub use super::takeaway_slots::Entity as TakeawaySlots;
+pub use super::traffic_logs::Entity as TrafficLogs;
 pub use super::user_badges::Entity as UserBadges;
 pub use super::user_blocks::Entity as UserBlocks;
 pub use super::user_favorites::Entity as UserFavorites;

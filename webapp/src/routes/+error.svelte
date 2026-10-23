@@ -1,7 +1,7 @@
 <script>
   import { page } from '$app/stores';
-  import EmptyState from '@/components/ui/EmptyState.svelte';
-  import Seo from '@/components/ui/Seo.svelte';
+  import EmptyState from '$lib/components/ui/EmptyState.svelte';
+  import Seo from '$lib/components/ui/Seo.svelte';
 
   let status = $derived($page.status);
   let message = $derived($page.error?.message);

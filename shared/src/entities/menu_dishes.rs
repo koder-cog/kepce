@@ -17,6 +17,7 @@ pub struct Model {
     pub package_name: String,
     pub amount: Option<String>,
     pub calories: Option<i32>,
+    pub price: Option<Decimal>,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

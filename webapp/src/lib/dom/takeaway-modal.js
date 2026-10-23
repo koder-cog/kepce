@@ -1,5 +1,5 @@
 import { mount, unmount } from 'svelte';
-import TakeawayModalComponent from '../../components/features/TakeawayModal.svelte';
+import TakeawayModalComponent from '$lib/components/features/takeaway/TakeawayModal.svelte';
 
 export function openTakeawayModal({ takeawayMenu, takeawayId, takeawayLabel, currentCity }) {
   const target = document.createElement('div');
