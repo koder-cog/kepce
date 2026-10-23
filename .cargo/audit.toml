@@ -6,5 +6,5 @@ ignore = [
     "RUSTSEC-2026-0367", # zip: calamine altından gelen extract güvenliği (sadece yerel xlsx okunuyor)
     "RUSTSEC-2026-0368", # zip: symlink extraction
     "RUSTSEC-2026-0369", # zip: permissions symlink
-    "RUSTSEC-2024-0436", # paste warning
+    "RUSTSEC-2024-0436", # ust kutuphaneler pastey veya yerel makrolara gecene kadar gecisli bagimlilik
 ]
