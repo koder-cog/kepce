@@ -14,7 +14,7 @@ export async function load({ params }) {
   // Dinamik komponent yükleme (Svelte komponenti)
   try {
     const module = await import(
-      `../../../../../lib/data/legal/gizlilik-politikasi/${version}.svelte`
+      `../../../../../lib/domain/legal/gizlilik-politikasi/${version}.svelte`
     );
     return {
       versionData: vData,

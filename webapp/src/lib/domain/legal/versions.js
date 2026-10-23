@@ -5,7 +5,7 @@
  * yayımlandığı tarihte yürürlüğe girer:
  *   1. Mevcut girdiden `current: true` bayrağını kaldır.
  *   2. Yeni tarihli girdiyi `current: true` ile listenin SONUNA ekle.
- *   3. Eski sürümün tam metni lib/data/legal/ altında tarihli bir modülde
+ *   3. Eski sürümün tam metni lib/domain/legal/ altında tarihli bir modülde
  *      saklanır (tam metin arşivi buradan servis edilir).
  */
 export const LEGAL_VERSIONS = {
