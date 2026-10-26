@@ -267,7 +267,7 @@ impl CommentService {
                 .one(db)
                 .await
             {
-                Some(parent_user.username)
+                Some(parent_user.nickname)
             } else {
                 None
             }
@@ -417,8 +417,8 @@ impl CommentService {
             is_tabldot: updated_comment.is_tabldot,
             user: crate::dto::comment::UserSummaryDto {
                 id: user.id,
-                nickname: user.username,
-                avatar_url: None,
+                nickname: user.nickname,
+                avatar_url: user.avatar_url,
             },
             reaction_summary: crate::dto::comment::ReactionSummaryDto {
                 up: reaction_summary.upvotes,
@@ -491,7 +491,7 @@ impl CommentService {
         {
             for (pc, pu) in parent_comments {
                 if let Some(u) = pu {
-                    parent_user_map.insert(pc.id, u.username);
+                    parent_user_map.insert(pc.id, u.nickname);
                 }
             }
         }
@@ -517,9 +517,9 @@ impl CommentService {
             let _author_id = comment.user_id;
             let author_username = user_opt
                 .as_ref()
-                .map(|u| u.username.clone())
+                .map(|u| u.nickname.clone())
                 .unwrap_or_else(|| "Bilinmeyen Kullanıcı".to_string());
-            let mut avatar_url: Option<String> = None;
+            let mut avatar_url: Option<String> = user_opt.as_ref().and_then(|u| u.avatar_url.clone());
 
             // Silinen veya maskelenen içerik kontrolü
             let is_deleted = comment.is_deleted || author_username == "silinmiş";

@@ -3,34 +3,19 @@ use crate::extractors::auth::Claims;
 use bcrypt::{DEFAULT_COST, hash, verify};
 use chrono::Utc;
 use jsonwebtoken::{EncodingKey, Header, encode};
-use rand::{Rng, distributions::Alphanumeric};
 use sea_orm::*;
-use sha2::{Digest, Sha256};
 use shared::entities::{prelude::*, users};
-use std::collections::HashMap;
-use std::sync::{Mutex, OnceLock};
-use std::time::Instant;
 use uuid::Uuid;
 
-fn hash_token(token: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(token.as_bytes());
-    let result = hasher.finalize();
-    result.iter().map(|b| format!("{:02x}", b)).collect()
-}
-
-pub fn get_resend_cooldowns() -> &'static Mutex<HashMap<Uuid, Instant>> {
-    static RESEND_COOLDOWNS: OnceLock<Mutex<HashMap<Uuid, Instant>>> = OnceLock::new();
-    RESEND_COOLDOWNS.get_or_init(|| Mutex::new(HashMap::new()))
-}
-
-/// AuthService için özel Hata Tipleri (Strongly Typed Errors)
+/// AuthService için özel Hata Tipleri
 #[derive(Debug)]
 pub enum AuthError {
     UserAlreadyExists,
     InvalidCredentials,
+    EmailInputNotSupported,
+    InvalidRecoveryKey,
+    InvalidRecallBlock,
     InvalidUsername(String),
-    /// Hesap yasaklanmış veya askıya alınmış (account_status != Active)
     AccountDisabled,
     DatabaseError(DbErr),
     HashError(bcrypt::BcryptError),
@@ -62,7 +47,7 @@ impl AuthService {
         )
     }
 
-    pub fn validate_username(name: &str) -> Result<(), AuthError> {
+    pub fn validate_nickname(name: &str) -> Result<(), AuthError> {
         let trimmed = name.trim();
         let char_count = trimmed.chars().count();
         if !(3..=25).contains(&char_count) {
@@ -72,31 +57,37 @@ impl AuthService {
         }
         if Self::is_reserved_username(trimmed) {
             return Err(AuthError::InvalidUsername(
-                "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz."
+                "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.".to_string(),
+            ));
+        }
+        // Sadece küçük harf, rakam ve alt çizgi (/^[a-z0-9_]+$/)
+        let is_valid = trimmed
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
+        if !is_valid {
+            return Err(AuthError::InvalidUsername(
+                "Kullanıcı adı yalnızca İngilizce küçük harf, rakam ve alt çizgi (_) içerebilir."
                     .to_string(),
             ));
         }
-        let is_valid_char = trimmed
-            .chars()
-            .all(|c| c.is_alphanumeric() || c == '_' || c == '-');
-        if !is_valid_char {
+        if trimmed.starts_with("05") || trimmed.starts_with("5") && trimmed.len() >= 10 {
             return Err(AuthError::InvalidUsername(
-                "Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.".to_string(),
+                "Kullanıcı adı telefon numarası içeremez.".to_string(),
             ));
         }
         Ok(())
     }
 
-    /// JWT Token Üretici
+    /// JWT Erişim Token'ı Üretici (15 dakika)
     pub fn generate_token(
         user_id: Uuid,
-        username: &str,
+        nickname: &str,
         role: &UserRole,
         jwt_secret: &str,
     ) -> Result<String, AuthError> {
         let claims = Claims {
             sub: user_id,
-            username: username.to_string(),
+            username: nickname.to_string(),
             role: role.clone(),
             exp: (Utc::now() + chrono::Duration::minutes(15)).timestamp() as usize,
             iss: "kepce".to_string(),
@@ -111,6 +102,7 @@ impl AuthService {
         .map_err(|e| AuthError::TokenError(e.to_string()))
     }
 
+    /// Uzun süreli Oturum Yenileme (Refresh) Token'ı
     pub async fn generate_refresh_token(
         db: &DatabaseConnection,
         user_id: Uuid,
@@ -119,7 +111,8 @@ impl AuthService {
         subnet_hash: Option<String>,
     ) -> Result<String, AuthError> {
         let jti = Uuid::new_v4();
-        let expires_at = Utc::now() + chrono::Duration::days(30);
+        let days = if remember { 90 } else { 30 };
+        let expires_at = Utc::now() + chrono::Duration::days(days);
 
         let claims = crate::extractors::auth::RefreshClaims {
             sub: user_id,
@@ -150,107 +143,41 @@ impl AuthService {
         Ok(token)
     }
 
-    /// Kullanıcı Kaydı (Register)
+    /// Kullanıcı Kaydı (Register - Sıfır Bilgi)
+    /// 130-bit Base32 kurtarma anahtarı üretir, hash'ler ve açık kodu yanıtta döner.
     pub async fn register(
         db: &DatabaseConnection,
         jwt_secret: &str,
         dto: RegisterRequestDto,
-        email_blind_key: &str,
-        auth_pepper: &str,
         subnet_hash: Option<String>,
-    ) -> Result<(String, String, UserProfileDto), AuthError> {
-        // 0. E-posta kör indeksi ve parola biberleme
-        let email_hash =
-            crate::core::zero_knowledge::compute_email_hash(&dto.email, email_blind_key)
-                .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-        let auth_hash = crate::core::zero_knowledge::compute_auth_hash(&dto.email, auth_pepper)
-            .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
+    ) -> Result<(String, String, UserProfileDto, String), AuthError> {
+        let clean_nickname = dto.nickname.trim().to_lowercase();
+        Self::validate_nickname(&clean_nickname)?;
 
-        let email_exists = Users::find()
-            .filter(users::Column::EmailHash.eq(&email_hash))
+        // Rumuz benzersizlik kontrolü
+        let exists = Users::find()
+            .filter(
+                sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Expr::col(users::Column::Nickname),
+                ))
+                .eq(&clean_nickname),
+            )
             .one(db)
             .await
             .map_err(AuthError::DatabaseError)?;
-        if email_exists.is_some() {
+
+        if exists.is_some() {
             return Err(AuthError::UserAlreadyExists);
         }
 
-        // 1. Username türetme mantığı
-        let final_username = match dto.username {
-            Some(u) => {
-                let trimmed = u.trim().to_string();
-                Self::validate_username(&trimmed)?;
-                let lower = trimmed.to_lowercase();
-                let exists = Users::find()
-                    .filter(
-                        sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
-                            sea_orm::sea_query::Expr::col(users::Column::Username),
-                        ))
-                        .eq(&lower),
-                    )
-                    .one(db)
-                    .await
-                    .map_err(AuthError::DatabaseError)?;
-                if exists.is_some() {
-                    return Err(AuthError::UserAlreadyExists);
-                }
-                trimmed
-            }
-            None => {
-                // Elle girmediyse e-postadan üret
-                let email_lower = dto.email.to_lowercase();
-                let raw_prefix = email_lower.split('@').next().unwrap_or("user");
-                let sanitized_base: String = raw_prefix
-                    .chars()
-                    .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
-                    .take(18)
-                    .collect();
-                let base_name = if sanitized_base.chars().count() >= 3 {
-                    sanitized_base
-                } else {
-                    "tabldotcu".to_string()
-                };
+        // 125-bit tek seferlik kurtarma anahtarı üretimi ve BLAKE3 keyed hashing
+        let recovery_key = crate::core::crypto::generate_secure_recovery_key();
+        let full_hash = crate::core::crypto::hash_recovery_key(&recovery_key);
+        let last_block = crate::core::crypto::extract_last_block(&recovery_key).unwrap_or("");
+        let recall_hash = crate::core::crypto::hash_recall_block(last_block);
+        let recovery_key_hash = format!("{}:{}", full_hash, recall_hash);
 
-                let mut final_username = base_name.clone();
-                let max_retries = 5;
-                let mut attempt = 0;
-
-                loop {
-                    let lower = final_username.to_lowercase();
-                    let exists = Users::find()
-                        .filter(
-                            sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
-                                sea_orm::sea_query::Expr::col(users::Column::Username),
-                            ))
-                            .eq(&lower),
-                        )
-                        .one(db)
-                        .await
-                        .map_err(AuthError::DatabaseError)?;
-
-                    if exists.is_none() && !Self::is_reserved_username(&final_username) {
-                        // Veritabanında yok ve rezerve değil, güvenle kullanabiliriz.
-                        break final_username;
-                    }
-
-                    attempt += 1;
-                    if attempt >= max_retries {
-                        return Err(AuthError::UserAlreadyExists);
-                    }
-
-                    // İsim alınmışsa sonuna 5 haneli rastgele küçük harf/rakam ekleyip tekrar dene.
-                    let random_suffix: String = rand::thread_rng()
-                        .sample_iter(&Alphanumeric)
-                        .take(5)
-                        .map(char::from)
-                        .collect();
-
-                    final_username = format!("{}_{}", base_name, random_suffix.to_lowercase());
-                }
-            }
-        };
-
-        // 2. Şifreyi Hashle (Bcrypt ile gerçek güvenlik)
+        // Şifreyi hash'le (Bcrypt)
         let password_clone = dto.password.clone();
         let hashed_password =
             tokio::task::spawn_blocking(move || hash(&password_clone, DEFAULT_COST))
@@ -260,18 +187,20 @@ impl AuthService {
                 })?
                 .map_err(AuthError::HashError)?;
 
-        // 3. Veritabanı Modeline (ActiveModel) dönüştür
         let new_user = users::ActiveModel {
             id: Set(Uuid::new_v4()),
-            username: Set(final_username),
-            email_hash: Set(Some(email_hash)),
-            auth_hash: Set(Some(auth_hash)),
+            nickname: Set(clean_nickname),
             password_hash: Set(hashed_password),
+            recovery_key_hash: Set(Some(recovery_key_hash)),
             role: Set(shared::entities::sea_orm_active_enums::UserRoleEnum::User),
+            account_status: Set(shared::entities::sea_orm_active_enums::AccountStatusEnum::Active),
             karma_score: Set(0),
             is_verified: Set(false),
+            avatar_url: Set(None),
             default_city_slug: Set(dto.default_city_slug),
-            email_security: Set(dto.email_security.unwrap_or(false)),
+            level: Set(1),
+            level_progress: Set(0),
+            opt_out_statistics: Set(false),
             notif_replies: Set(false),
             notif_interactions: Set(false),
             notif_system: Set(false),
@@ -279,12 +208,13 @@ impl AuthService {
             notif_breakfast_time: Set("07:30".to_string()),
             notif_dinner_enabled: Set(false),
             notif_dinner_time: Set("17:30".to_string()),
-            email_newsletter: Set(false),
-            email_updates: Set(false),
-            ..Default::default()
+            pinned_badges: Set(None),
+            report_trust: Set(sea_orm::entity::prelude::Decimal::from(1)),
+            token_version: Set(0),
+            created_at: Set(Some(Utc::now().into())),
+            updated_at: Set(Some(Utc::now().into())),
         };
 
-        // 4. Veritabanına kaydet (Race Condition Önlemli Insert)
         let inserted_user = match new_user.insert(db).await {
             Ok(u) => u,
             Err(e) => {
@@ -295,15 +225,14 @@ impl AuthService {
             }
         };
 
-        // 5. Dışarıya güvenli DTO dön (Şifre vb. gizli)
         let role = UserRole::User;
         let access_token =
-            Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
+            Self::generate_token(inserted_user.id, &inserted_user.nickname, &role, jwt_secret)?;
         let refresh_token =
             Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, subnet_hash)
                 .await?;
 
-        let user = crate::services::user::UserService::build_profile(db, inserted_user, true)
+        let user_profile = crate::services::user::UserService::build_profile(db, inserted_user, true)
             .await
             .map_err(|e| match e {
                 crate::services::user::UserError::DatabaseError(db_err) => {
@@ -311,46 +240,39 @@ impl AuthService {
                 }
                 _ => AuthError::InvalidCredentials,
             })?;
-        Ok((access_token, refresh_token, user))
+
+        Ok((access_token, refresh_token, user_profile, recovery_key))
     }
 
     /// Kullanıcı Girişi (Login)
+    /// Kullanıcı e-posta girmeye çalışırsa özel bilgilendirme hatası döner.
     pub async fn login(
         db: &DatabaseConnection,
         jwt_secret: &str,
         dto: LoginRequestDto,
-        email_blind_key: &str,
         subnet_hash: Option<String>,
     ) -> Result<(String, String, UserProfileDto), AuthError> {
-        let identifier_lower = dto.identifier.trim().to_lowercase();
-        let is_email_login = identifier_lower.contains('@');
+        let identifier_trimmed = dto.identifier.trim();
 
-        let user = if is_email_login {
-            let email_hash =
-                crate::core::zero_knowledge::compute_email_hash(&identifier_lower, email_blind_key)
-                    .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-            Users::find()
-                .filter(users::Column::EmailHash.eq(Some(email_hash)))
-                .one(db)
-                .await
-                .map_err(AuthError::DatabaseError)?
-                .ok_or(AuthError::InvalidCredentials)?
-        } else {
-            Users::find()
-                .filter(
-                    sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
-                        sea_orm::sea_query::Expr::col(users::Column::Username),
-                    ))
-                    .eq(&identifier_lower),
-                )
-                .one(db)
-                .await
-                .map_err(AuthError::DatabaseError)?
-                .ok_or(AuthError::InvalidCredentials)?
-        };
+        // E-posta girildiyse kullanıcıya açıklayıcı mesaj ver
+        if identifier_trimmed.contains('@') {
+            return Err(AuthError::EmailInputNotSupported);
+        }
 
-        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
-        {
+        let lower = identifier_trimmed.to_lowercase();
+        let user = Users::find()
+            .filter(
+                sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Expr::col(users::Column::Nickname),
+                ))
+                .eq(&lower),
+            )
+            .one(db)
+            .await
+            .map_err(AuthError::DatabaseError)?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
             return Err(AuthError::AccountDisabled);
         }
 
@@ -370,15 +292,11 @@ impl AuthService {
         let role = crate::services::user::UserService::map_role(&user.role);
         let user_id = user.id;
 
-        let mut profile = crate::services::user::UserService::build_profile(db, user, true)
+        let profile = crate::services::user::UserService::build_profile(db, user, true)
             .await
             .map_err(|_| AuthError::InvalidCredentials)?;
 
-        if is_email_login {
-            profile.email = Some(crate::core::zero_knowledge::mask_email(&dto.identifier));
-        }
-
-        let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
+        let access_token = Self::generate_token(user_id, &profile.nickname, &role, jwt_secret)?;
         let refresh_token = Self::generate_refresh_token(
             db,
             user_id,
@@ -391,501 +309,223 @@ impl AuthService {
         Ok((access_token, refresh_token, profile))
     }
 
-    /// E-posta doğrulama token'ı (aud: kepce-verify - SA-5 token-type ayrımı)
-    pub fn generate_verification_token(
-        user_id: Uuid,
-        jwt_secret: &str,
-    ) -> Result<String, AuthError> {
-        let claims = VerificationClaims {
-            sub: user_id,
-            exp: (Utc::now() + chrono::Duration::hours(24)).timestamp() as usize,
-            iss: "kepce".to_string(),
-            aud: "kepce-verify".to_string(),
-        };
-
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))
-    }
-
-    /// Şifre sıfırlama token'ı (aud: kepce-reset - doğrulama token'ından farklı tür)
-    pub fn generate_reset_token(user_id: Uuid, jwt_secret: &str) -> Result<String, AuthError> {
-        let claims = VerificationClaims {
-            sub: user_id,
-            exp: (Utc::now() + chrono::Duration::hours(1)).timestamp() as usize,
-            iss: "kepce".to_string(),
-            aud: "kepce-reset".to_string(),
-        };
-
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))
-    }
-
-    /// Şifresiz giriş token'ı (aud: kepce-passwordless - 15 dakika geçerli)
-    pub fn generate_passwordless_token(
-        user_id: Uuid,
-        jwt_secret: &str,
-    ) -> Result<String, AuthError> {
-        let claims = VerificationClaims {
-            sub: user_id,
-            exp: (Utc::now() + chrono::Duration::minutes(15)).timestamp() as usize,
-            iss: "kepce".to_string(),
-            aud: "kepce-passwordless".to_string(),
-        };
-
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))
-    }
-
-    /// KVKK Madde 9 yurt dışı barındırma onay token'ı (aud: kepce-consent - 30 gün geçerli)
-    pub fn generate_cross_border_consent_token(
-        user_id: Uuid,
-        jwt_secret: &str,
-    ) -> Result<String, AuthError> {
-        let claims = VerificationClaims {
-            sub: user_id,
-            exp: (Utc::now() + chrono::Duration::days(30)).timestamp() as usize,
-            iss: "kepce".to_string(),
-            aud: "kepce-consent".to_string(),
-        };
-
-        encode(
-            &Header::default(),
-            &claims,
-            &EncodingKey::from_secret(jwt_secret.as_bytes()),
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))
-    }
-
-    /// Token'ın daha önce kullanılıp kullanılmadığını veritabanından sorgular
-    pub async fn is_token_used(db: &DatabaseConnection, token: &str) -> Result<bool, DbErr> {
-        let hash = hash_token(token);
-        let stmt = Statement::from_sql_and_values(
-            db.get_database_backend(),
-            "SELECT EXISTS(SELECT 1 FROM used_tokens WHERE token_hash = $1);",
-            vec![hash.into()],
-        );
-        let row = db.query_one(stmt).await?;
-        match row {
-            Some(r) => r.try_get_by_index::<bool>(0),
-            None => Ok(false),
-        }
-    }
-
-    /// Token'ı kullanılmış olarak veritabanına kaydeder ve süresi dolmuşları temizler
-    pub async fn mark_token_used(
+    /// Kurtarma Kodu Aktif Hatırlama Teyidi (`POST /api/v1/auth/confirm-recovery`)
+    /// Kullanıcının girdiği son 5 karakteri kriptografik olarak teyit eder ve hesabı `is_verified = true` yapar.
+    pub async fn confirm_recovery(
         db: &DatabaseConnection,
-        token: &str,
-        token_type: &str,
         user_id: Uuid,
-        expires_at: chrono::DateTime<Utc>,
-    ) -> Result<(), DbErr> {
-        let hash = hash_token(token);
-        let stmt = Statement::from_sql_and_values(
-            db.get_database_backend(),
-            r#"
-            INSERT INTO used_tokens (token_hash, token_type, user_id, expires_at)
-            VALUES ($1, $2, $3, $4)
-            ON CONFLICT (token_hash) DO NOTHING;
-            "#,
-            vec![
-                hash.into(),
-                token_type.into(),
-                user_id.into(),
-                expires_at.into(),
-            ],
-        );
-        db.execute(stmt).await?;
-
-        // Fırsatçı (opportunistic) temizlik: Süresi dolmuş token kayıtlarını temizle
-        let cleanup_stmt = Statement::from_sql_and_values(
-            db.get_database_backend(),
-            "DELETE FROM used_tokens WHERE expires_at < NOW();",
-            vec![],
-        );
-        let _ = db.execute(cleanup_stmt).await;
-
-        Ok(())
-    }
-
-    pub async fn passwordless_login(
-        db: &DatabaseConnection,
-        jwt_secret: &str,
-        token: &str,
-        subnet_hash: Option<String>,
-    ) -> Result<(String, String, UserProfileDto), AuthError> {
-        let mut validation = jsonwebtoken::Validation::default();
-        validation.set_issuer(&["kepce"]);
-        validation.set_audience(&["kepce-passwordless"]);
-        let token_data = jsonwebtoken::decode::<VerificationClaims>(
-            token,
-            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
-            &validation,
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))?;
-
-        // Token blacklist kontrolü (Kalıcı DB kontrolü)
-        if Self::is_token_used(db, token)
-            .await
-            .map_err(AuthError::DatabaseError)?
-        {
-            return Err(AuthError::TokenError(
-                "Bu giriş bağlantısı zaten kullanılmış. Lütfen yeni bir bağlantı isteyin."
-                    .to_string(),
-            ));
-        }
-
-        let user = Users::find_by_id(token_data.claims.sub)
-            .one(db)
-            .await
-            .map_err(AuthError::DatabaseError)?
-            .ok_or(AuthError::InvalidCredentials)?;
-
-        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
-        {
-            return Err(AuthError::AccountDisabled);
-        }
-
-        // Token'ı kullanılmış olarak kaydet (15 dk geçerlilik)
-        Self::mark_token_used(
-            db,
-            token,
-            "passwordless",
-            user.id,
-            Utc::now() + chrono::Duration::minutes(15),
-        )
-        .await
-        .map_err(AuthError::DatabaseError)?;
-
-        let role = crate::services::user::UserService::map_role(&user.role);
-        let user_id = user.id;
-
-        let profile = crate::services::user::UserService::build_profile(db, user, true)
-            .await
-            .map_err(|_| AuthError::InvalidCredentials)?;
-
-        let access_token = Self::generate_token(user_id, &profile.username, &role, jwt_secret)?;
-        // Magic link ile giriş yapan kullanıcıların oturumu kalıcı (remember: true) olarak açılır.
-        let refresh_token =
-            Self::generate_refresh_token(db, user_id, jwt_secret, true, subnet_hash).await?;
-
-        Ok((access_token, refresh_token, profile))
-    }
-
-    pub async fn verify_email_token(
-        db: &DatabaseConnection,
-        jwt_secret: &str,
-        token: &str,
+        last_block: &str,
     ) -> Result<bool, AuthError> {
-        // SADECE kepce-verify türündeki token'lar kabul edilir; access/refresh
-        // token'ları artık e-posta doğrulamak için kullanılamaz (SA-5).
-        let mut validation = jsonwebtoken::Validation::default();
-        validation.set_issuer(&["kepce"]);
-        validation.set_audience(&["kepce-verify"]);
-        let token_data = jsonwebtoken::decode::<VerificationClaims>(
-            token,
-            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
-            &validation,
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))?;
-
-        let user = Users::find_by_id(token_data.claims.sub)
+        let user = Users::find_by_id(user_id)
             .one(db)
             .await
             .map_err(AuthError::DatabaseError)?
             .ok_or(AuthError::InvalidCredentials)?;
 
-        // Eğer kullanıcı zaten onaylıysa, hiçbir şey yapmadan "zaten onaylı" döndür
         if user.is_verified {
             return Ok(true);
         }
 
-        // Token blacklist kontrolü (Kalıcı DB kontrolü - 24 saat)
-        if Self::is_token_used(db, token)
-            .await
-            .map_err(AuthError::DatabaseError)?
-        {
-            return Err(AuthError::TokenError(
-                "Bu doğrulama bağlantısı geçersiz veya daha önce kullanılmış.".to_string(),
-            ));
-        }
+        let stored_raw = user
+            .recovery_key_hash
+            .as_deref()
+            .ok_or(AuthError::InvalidCredentials)?;
 
-        // Token'ı kullanılmış olarak kaydet (24 saat geçerlilik)
-        Self::mark_token_used(
-            db,
-            token,
-            "verify",
-            user.id,
-            Utc::now() + chrono::Duration::hours(24),
-        )
-        .await
-        .map_err(AuthError::DatabaseError)?;
+        let full_hash = if stored_raw.contains(':') {
+            let mut parts = stored_raw.split(':');
+            let full = parts.next().unwrap_or(stored_raw);
+            let expected_recall = parts.next().unwrap_or("");
+            let actual_recall = crate::core::crypto::hash_recall_block(last_block);
+
+            use subtle::ConstantTimeEq;
+            if expected_recall.as_bytes().ct_eq(actual_recall.as_bytes()).unwrap_u8() != 1 {
+                return Err(AuthError::InvalidRecallBlock);
+            }
+            full.to_string()
+        } else {
+            // Recall parçası bulunmuyorsa (önceden onaylı veya eski hesap)
+            stored_raw.to_string()
+        };
 
         let mut active: users::ActiveModel = user.into();
         active.is_verified = Set(true);
+        active.recovery_key_hash = Set(Some(full_hash));
         active.updated_at = Set(Some(Utc::now().into()));
         active.update(db).await.map_err(AuthError::DatabaseError)?;
 
-        Ok(false)
+        Ok(true)
     }
 
-    pub async fn reset_password(
+    /// Onaysız hesaplar veya kodunu kaybedenler için yeni kurtarma kodu üretimi
+    pub async fn regenerate_recovery_key(
         db: &DatabaseConnection,
-        jwt_secret: &str,
-        token: &str,
-        new_password: &str,
-    ) -> Result<shared::entities::users::Model, AuthError> {
-        let mut validation = jsonwebtoken::Validation::default();
-        validation.set_issuer(&["kepce"]);
-        validation.set_audience(&["kepce-reset"]);
-
-        let token_data = jsonwebtoken::decode::<VerificationClaims>(
-            token,
-            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
-            &validation,
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))?;
-
-        // Token blacklist kontrolü (Kalıcı DB kontrolü - 1 saat)
-        if Self::is_token_used(db, token)
-            .await
-            .map_err(AuthError::DatabaseError)?
-        {
-            return Err(AuthError::TokenError(
-                "Bu şifre sıfırlama bağlantısı zaten kullanılmış veya geçersiz.".to_string(),
-            ));
-        }
-
-        let user = Users::find_by_id(token_data.claims.sub)
+        user_id: Uuid,
+        password: &str,
+    ) -> Result<String, AuthError> {
+        let user = Users::find_by_id(user_id)
             .one(db)
             .await
             .map_err(AuthError::DatabaseError)?
             .ok_or(AuthError::InvalidCredentials)?;
 
-        let password_clone = new_password.to_string();
-        let hashed_password = tokio::task::spawn_blocking(move || {
-            bcrypt::hash(&password_clone, bcrypt::DEFAULT_COST)
-        })
-        .await
-        .map_err(|e| {
-            AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
-        })?
-        .map_err(AuthError::HashError)?;
-
-        // Token'ı kullanılmış olarak kaydet (1 saat geçerlilik)
-        Self::mark_token_used(
-            db,
-            token,
-            "reset",
-            user.id,
-            Utc::now() + chrono::Duration::hours(1),
-        )
-        .await
-        .map_err(AuthError::DatabaseError)?;
-
-        let mut active: users::ActiveModel = user.into();
-        active.password_hash = Set(hashed_password);
-        // SA-11: Şifre değiştiğinde token_version'ı artır (Kullanıcı tüm oturumlardan düşer, güvenlidir)
-        active.token_version = Set(active.token_version.clone().unwrap() + 1);
-        let updated_user = active.update(db).await.map_err(AuthError::DatabaseError)?;
-
-        // Ayrıca aktif session'ları da sil (Refresh token'lar tamamen iptal)
-        let _ = shared::entities::prelude::UserSessions::delete_many()
-            .filter(shared::entities::user_sessions::Column::UserId.eq(token_data.claims.sub))
-            .exec(db)
-            .await;
-
-        Ok(updated_user)
-    }
-
-    pub async fn verify_cross_border_consent_token(
-        db: &DatabaseConnection,
-        jwt_secret: &str,
-        token: &str,
-    ) -> Result<shared::entities::users::Model, AuthError> {
-        let mut validation = jsonwebtoken::Validation::default();
-        validation.set_issuer(&["kepce"]);
-        validation.set_audience(&["kepce-consent"]);
-
-        let token_data = jsonwebtoken::decode::<VerificationClaims>(
-            token,
-            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
-            &validation,
-        )
-        .map_err(|e| AuthError::TokenError(e.to_string()))?;
-
-        let user = Users::find_by_id(token_data.claims.sub)
-            .one(db)
-            .await
-            .map_err(AuthError::DatabaseError)?
-            .ok_or(AuthError::InvalidCredentials)?;
-
-        Ok(user)
-    }
-
-    /// OAuth Giriş veya Kayıt Akışı
-    #[allow(clippy::too_many_arguments)]
-    pub async fn register_or_login_oauth(
-        db: &DatabaseConnection,
-        jwt_secret: &str,
-        email: &str,
-        _name: Option<&str>,
-        _picture: Option<&str>,
-        email_blind_key: &str,
-        auth_pepper: &str,
-        subnet_hash: Option<String>,
-    ) -> Result<(String, String, bool), AuthError> {
-        let email_hash = crate::core::zero_knowledge::compute_email_hash(email, email_blind_key)
-            .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-        let auth_hash = crate::core::zero_knowledge::compute_auth_hash(email, auth_pepper)
-            .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-
-        let existing_user = Users::find()
-            .filter(users::Column::EmailHash.eq(&email_hash))
-            .one(db)
-            .await
-            .map_err(AuthError::DatabaseError)?;
-
-        if let Some(user) = existing_user {
-            if user.account_status
-                != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
-            {
-                return Err(AuthError::AccountDisabled);
-            }
-
-            let role = match user.role {
-                shared::entities::sea_orm_active_enums::UserRoleEnum::Admin => UserRole::Admin,
-                shared::entities::sea_orm_active_enums::UserRoleEnum::SystemBot => {
-                    UserRole::SystemBot
-                }
-                shared::entities::sea_orm_active_enums::UserRoleEnum::User => UserRole::User,
-            };
-
-            let access_token = Self::generate_token(user.id, &user.username, &role, jwt_secret)?;
-            let refresh_token =
-                Self::generate_refresh_token(db, user.id, jwt_secret, false, subnet_hash).await?;
-
-            return Ok((access_token, refresh_token, false));
-        }
-
-        let email_lower = email.to_lowercase();
-        let raw_prefix = email_lower.split('@').next().unwrap_or("user");
-        let sanitized_base: String = raw_prefix
-            .chars()
-            .filter(|c| c.is_ascii_alphanumeric() || *c == '_')
-            .take(18)
-            .collect();
-        let base_name = if sanitized_base.chars().count() >= 3 {
-            sanitized_base
-        } else {
-            "tabldotcu".to_string()
-        };
-
-        let mut final_username = base_name.clone();
-        let max_retries = 5;
-        let mut attempt = 0;
-
-        let final_username = loop {
-            let lower = final_username.to_lowercase();
-            let exists = Users::find()
-                .filter(
-                    sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
-                        sea_orm::sea_query::Expr::col(users::Column::Username),
-                    ))
-                    .eq(&lower),
-                )
-                .one(db)
-                .await
-                .map_err(AuthError::DatabaseError)?;
-
-            if exists.is_none() && !Self::is_reserved_username(&final_username) {
-                break final_username;
-            }
-
-            attempt += 1;
-            if attempt >= max_retries {
-                final_username = format!(
-                    "{}_{}",
-                    base_name,
-                    Uuid::new_v4().simple().to_string()[..5].to_lowercase()
-                );
-                break final_username;
-            }
-
-            let random_suffix: String = rand::thread_rng()
-                .sample_iter(&Alphanumeric)
-                .take(5)
-                .map(char::from)
-                .collect();
-            final_username = format!("{}_{}", base_name, random_suffix.to_lowercase());
-        };
-
-        let dummy_pass = Uuid::new_v4().to_string();
-        let hashed_password = tokio::task::spawn_blocking(move || hash(&dummy_pass, DEFAULT_COST))
+        let password_clone = password.to_string();
+        let hash_clone = user.password_hash.clone();
+        let is_valid = tokio::task::spawn_blocking(move || verify(&password_clone, &hash_clone))
             .await
             .map_err(|e| {
                 AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
             })?
             .map_err(AuthError::HashError)?;
 
-        let new_user = users::ActiveModel {
-            id: Set(Uuid::new_v4()),
-            username: Set(final_username),
-            email_hash: Set(Some(email_hash)),
-            auth_hash: Set(Some(auth_hash)),
-            password_hash: Set(hashed_password),
-            role: Set(shared::entities::sea_orm_active_enums::UserRoleEnum::User),
-            karma_score: Set(0),
-            is_verified: Set(true),
-            email_security: Set(false),
-            notif_replies: Set(false),
-            notif_interactions: Set(false),
-            notif_system: Set(false),
-            notif_breakfast_enabled: Set(false),
-            notif_breakfast_time: Set("07:30".to_string()),
-            notif_dinner_enabled: Set(false),
-            notif_dinner_time: Set("17:30".to_string()),
-            email_newsletter: Set(false),
-            email_updates: Set(false),
-            ..Default::default()
-        };
+        if !is_valid {
+            return Err(AuthError::InvalidCredentials);
+        }
 
-        let inserted_user = match new_user.insert(db).await {
-            Ok(u) => u,
-            Err(e) => {
-                if crate::utils::db::is_unique_constraint_violation(&e) {
-                    return Err(AuthError::UserAlreadyExists);
-                }
-                return Err(AuthError::DatabaseError(e));
-            }
-        };
+        let new_recovery_key = crate::core::crypto::generate_secure_recovery_key();
+        let full_hash = crate::core::crypto::hash_recovery_key(&new_recovery_key);
+        let last_block = crate::core::crypto::extract_last_block(&new_recovery_key).unwrap_or("");
+        let recall_hash = crate::core::crypto::hash_recall_block(last_block);
+        let stored_hash = format!("{}:{}", full_hash, recall_hash);
 
-        let role = UserRole::User;
-        let access_token =
-            Self::generate_token(inserted_user.id, &inserted_user.username, &role, jwt_secret)?;
-        let refresh_token =
-            Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, subnet_hash)
-                .await?;
+        let mut active: users::ActiveModel = user.into();
+        active.recovery_key_hash = Set(Some(stored_hash));
+        active.is_verified = Set(false);
+        active.updated_at = Set(Some(Utc::now().into()));
+        active.update(db).await.map_err(AuthError::DatabaseError)?;
 
-        Ok((access_token, refresh_token, true))
+        Ok(new_recovery_key)
     }
-}
 
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
-pub struct VerificationClaims {
-    pub sub: Uuid,
-    pub exp: usize,
-    pub iss: String,
-    pub aud: String,
+    /// Kurtarma Anahtarı ile Şifre Sıfırlama (`POST /api/v1/auth/password-reset`)
+    /// 1. Kullanıcı adı ve kurtarma kodunu BLAKE3 ile doğrular.
+    /// 2. Eski kodu anında geçersiz kılar ve SIFIRDAN YENİ bir 125-bit kod üretir.
+    /// 3. Şifreyi günceller, hesabı onaysız duruma (`is_verified = false`) alır.
+    /// 4. Kullanıcıya yeni kurtarma kodunu teslim eder.
+    pub async fn reset_password_with_recovery_key(
+        db: &DatabaseConnection,
+        dto: crate::dto::user::ResetPasswordWithRecoveryDto,
+    ) -> Result<String, AuthError> {
+        let lower = dto.nickname.trim().to_lowercase();
+        let user = Users::find()
+            .filter(
+                sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Expr::col(users::Column::Nickname),
+                ))
+                .eq(&lower),
+            )
+            .one(db)
+            .await
+            .map_err(AuthError::DatabaseError)?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        let stored_raw = user
+            .recovery_key_hash
+            .as_deref()
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        let stored_full = stored_raw.split(':').next().unwrap_or(stored_raw);
+        let incoming_hash = crate::core::crypto::hash_recovery_key(&dto.recovery_key);
+
+        use subtle::ConstantTimeEq;
+        if stored_full.as_bytes().ct_eq(incoming_hash.as_bytes()).unwrap_u8() != 1 {
+            return Err(AuthError::InvalidCredentials);
+        }
+
+        // Yeni kurtarma anahtarı üret
+        let new_recovery_key = crate::core::crypto::generate_secure_recovery_key();
+        let full_hash = crate::core::crypto::hash_recovery_key(&new_recovery_key);
+        let last_block = crate::core::crypto::extract_last_block(&new_recovery_key).unwrap_or("");
+        let recall_hash = crate::core::crypto::hash_recall_block(last_block);
+        let new_stored_hash = format!("{}:{}", full_hash, recall_hash);
+
+        // Yeni şifreyi hash'le
+        let new_password_clone = dto.new_password.clone();
+        let hashed_password =
+            tokio::task::spawn_blocking(move || hash(&new_password_clone, DEFAULT_COST))
+                .await
+                .map_err(|e| {
+                    AuthError::DatabaseError(DbErr::Custom(format!("Blocking task failed: {}", e)))
+                })?
+                .map_err(AuthError::HashError)?;
+
+        let mut active: users::ActiveModel = user.clone().into();
+        active.password_hash = Set(hashed_password);
+        active.recovery_key_hash = Set(Some(new_stored_hash));
+        active.is_verified = Set(false);
+        active.token_version = Set(active.token_version.unwrap() + 1);
+        active.updated_at = Set(Some(Utc::now().into()));
+        active.update(db).await.map_err(AuthError::DatabaseError)?;
+
+        // Önceki tüm aktif oturumları iptal et
+        let _ = shared::entities::prelude::UserSessions::delete_many()
+            .filter(shared::entities::user_sessions::Column::UserId.eq(user.id))
+            .exec(db)
+            .await;
+
+        Ok(new_recovery_key)
+    }
+
+    /// Refresh Token ile Yeni Erişim Token'ı Alma
+    pub async fn refresh(
+        db: &DatabaseConnection,
+        jwt_secret: &str,
+        refresh_token: &str,
+    ) -> Result<String, AuthError> {
+        let mut validation = jsonwebtoken::Validation::default();
+        validation.set_issuer(&["kepce"]);
+        validation.set_audience(&["kepce-refresh"]);
+
+        let token_data = jsonwebtoken::decode::<crate::extractors::auth::RefreshClaims>(
+            refresh_token,
+            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
+            &validation,
+        )
+        .map_err(|e| AuthError::TokenError(e.to_string()))?;
+
+        let session = shared::entities::prelude::UserSessions::find_by_id(token_data.claims.jti)
+            .one(db)
+            .await
+            .map_err(AuthError::DatabaseError)?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        if session.user_id != token_data.claims.sub {
+            return Err(AuthError::InvalidCredentials);
+        }
+
+        let user = Users::find_by_id(token_data.claims.sub)
+            .one(db)
+            .await
+            .map_err(AuthError::DatabaseError)?
+            .ok_or(AuthError::InvalidCredentials)?;
+
+        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
+            return Err(AuthError::AccountDisabled);
+        }
+
+        let role = crate::services::user::UserService::map_role(&user.role);
+        Self::generate_token(user.id, &user.nickname, &role, jwt_secret)
+    }
+
+    /// Oturum Kapatma (Logout)
+    pub async fn logout(
+        db: &DatabaseConnection,
+        jwt_secret: &str,
+        refresh_token: &str,
+    ) -> Result<(), AuthError> {
+        let mut validation = jsonwebtoken::Validation::default();
+        validation.set_issuer(&["kepce"]);
+        validation.set_audience(&["kepce-refresh"]);
+
+        if let Ok(token_data) = jsonwebtoken::decode::<crate::extractors::auth::RefreshClaims>(
+            refresh_token,
+            &jsonwebtoken::DecodingKey::from_secret(jwt_secret.as_bytes()),
+            &validation,
+        ) {
+            let _ = shared::entities::prelude::UserSessions::delete_by_id(token_data.claims.jti)
+                .exec(db)
+                .await;
+        }
+
+        Ok(())
+    }
 }

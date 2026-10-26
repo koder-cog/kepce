@@ -767,7 +767,7 @@ impl ModerationService {
             result.push(SubmissionItemDto {
                 id: sub.id,
                 user_id: sub.user_id,
-                username: user_info.as_ref().map(|u| u.username.clone()),
+                username: user_info.as_ref().map(|u| u.nickname.clone()),
                 user_is_banned: user_info
                     .as_ref()
                     .map(|u| u.account_status == AccountStatusEnum::Banned),

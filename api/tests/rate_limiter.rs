@@ -35,6 +35,8 @@ async fn setup_app() -> axum::Router {
             .to_string(),
         traffic_log_public_key: None,
         traffic_log_key_id: 1,
+        traffic_log_sync_token: None,
+        traffic_log_ram_dir: "/tmp/kepce_traffic".to_string(),
     };
     let db = sea_orm::DatabaseConnection::Disconnected;
     let rate_limiter = Arc::new(api::middleware::rate_limiter::RateLimiter::new());

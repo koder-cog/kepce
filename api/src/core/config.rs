@@ -29,6 +29,8 @@ pub struct Config {
     pub subnet_blind_key: String,
     pub traffic_log_public_key: Option<String>,
     pub traffic_log_key_id: i32,
+    pub traffic_log_sync_token: Option<String>,
+    pub traffic_log_ram_dir: String,
 }
 
 impl Config {
@@ -77,6 +79,9 @@ impl Config {
                 .ok()
                 .and_then(|p| p.parse().ok())
                 .unwrap_or(1),
+            traffic_log_sync_token: env::var("TRAFFIC_LOG_SYNC_TOKEN").ok(),
+            traffic_log_ram_dir: env::var("TRAFFIC_LOG_RAM_DIR")
+                .unwrap_or_else(|_| "/dev/shm/kepce_traffic".to_string()),
         }
     }
 }

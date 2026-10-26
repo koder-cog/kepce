@@ -60,6 +60,8 @@ mod tests {
                 .to_string(),
             traffic_log_public_key: None,
             traffic_log_key_id: 1,
+            traffic_log_sync_token: None,
+            traffic_log_ram_dir: "/tmp/kepce_traffic".to_string(),
         }
     }
 

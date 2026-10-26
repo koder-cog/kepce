@@ -1,8 +1,8 @@
-//! Kimlik doğrulama, kayıt, oturum yönetimi ve OAuth callback endpoint'leri.
+//! Kimlik doğrulama, kayıt, oturum yönetimi ve sıfır-bilgi kurtarma anahtarı endpoint'leri.
 use crate::config::Config;
 use crate::dto::user::{
-    AuthResponseDto, LoginRequestDto, PasswordlessLoginDto, PasswordlessRequestDto,
-    RegisterRequestDto, UserProfileDto, UserRole,
+    AuthResponseDto, ConfirmRecoveryDto, LoginRequestDto, RegenerateRecoveryDto,
+    RegisterRequestDto, ResetPasswordWithRecoveryDto, UserProfileDto, UserRole,
 };
 use crate::error::AppError;
 use crate::extractors::auth::AuthenticatedUser;
@@ -13,11 +13,9 @@ use axum::{
     Json, Router,
     extract::{Multipart, Path, Query, State},
     http::{HeaderMap, header::SET_COOKIE},
-    response::Redirect,
     routing::{delete, get, post, put},
 };
-use rand::Rng;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use sea_orm::{ActiveModelTrait, ActiveValue::Set, ColumnTrait, EntityTrait, QueryFilter};
 use shared::entities::{prelude::Users, users};
 use uuid::Uuid;
 
@@ -25,8 +23,9 @@ pub fn router() -> Router<crate::config::AppState> {
     Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
-        .route("/passwordless", post(request_passwordless))
-        .route("/passwordless-login", post(passwordless_login))
+        .route("/confirm-recovery", post(confirm_recovery))
+        .route("/regenerate-recovery", post(regenerate_recovery))
+        .route("/password-reset", post(reset_password_with_recovery))
         .route("/refresh", post(refresh))
         .route("/logout", post(logout))
         .route("/me", get(get_me).put(update_me).delete(delete_me))
@@ -46,14 +45,6 @@ pub fn router() -> Router<crate::config::AppState> {
             post(mark_all_notifications_read),
         )
         .route("/avatar", post(upload_avatar).delete(delete_avatar))
-        .route("/me/consent", post(give_consent))
-        .route("/consent-verify", get(verify_consent))
-        .route("/verify", get(verify_email))
-        .route("/resend-verification", post(resend_verification))
-        .route("/forgot-password", post(forgot_password))
-        .route("/reset-password", post(reset_password))
-        .route("/google/login", get(google_login))
-        .route("/google/callback", get(google_callback))
         // Projects
         .route("/projects", get(get_projects).post(create_project))
         .route("/projects/:id", put(update_project).delete(delete_project))
@@ -67,12 +58,21 @@ impl From<AuthError> for AppError {
     fn from(err: AuthError) -> Self {
         match err {
             AuthError::UserAlreadyExists => AppError::BadRequest(
-                "Bu e-posta veya kullanıcı adı sisteme zaten kayıtlı.".to_string(),
+                "Bu kullanıcı adı sisteme zaten kayıtlı.".to_string(),
             ),
             AuthError::InvalidCredentials => AppError::Unauthorized(
                 "Giriş bilgileri hatalı. Lütfen bilgilerinizi kontrol edin.".to_string(),
             ),
             AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
+            AuthError::EmailInputNotSupported => AppError::BadRequest(
+                "Kepçe artık e-posta tutmamaktadır. Lütfen kullanıcı adınız ve şifrenizle giriş yapınız.".to_string(),
+            ),
+            AuthError::InvalidRecoveryKey => AppError::Unauthorized(
+                "Kurtarma kodu hatalı veya geçersiz.".to_string(),
+            ),
+            AuthError::InvalidRecallBlock => AppError::BadRequest(
+                "Doğrulama başarısız: Son blok hatalı girildi.".to_string(),
+            ),
             AuthError::AccountDisabled => AppError::Forbidden(
                 "Hesabınız askıya alınmış veya yasaklanmış. Destek ile iletişime geçin."
                     .to_string(),
@@ -115,42 +115,16 @@ async fn register(
     };
     let subnet_hash = client_ip.as_ref().and_then(|ip| {
         let prefix = shared::domain::quality::ContentGuard::extract_subnet_prefix(&ip.to_string());
-        crate::core::zero_knowledge::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
+        crate::core::crypto::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
     });
 
-    let email_clone = payload.email.clone();
-    let (access_token, refresh_token, user) = AuthService::register(
+    let (access_token, refresh_token, user, recovery_key) = AuthService::register(
         &db,
         &config.jwt_secret,
         payload,
-        &config.email_blind_key,
-        &config.auth_pepper,
         subnet_hash,
     )
     .await?;
-
-    // E-posta doğrulama linki gönder (Eğer EmailService yapılandırılmışsa)
-    if let Ok(verify_token) = AuthService::generate_verification_token(user.id, &config.jwt_secret)
-    {
-        let email_service = crate::services::email::EmailService::from_config(&config);
-
-        let user_id = user.id;
-        // E-posta gönderimini bloklamaması için arka planda çalıştır
-        tokio::spawn(async move {
-            if let Err(e) = email_service
-                .send_verification_email(&email_clone, &verify_token)
-                .await
-            {
-                tracing::error!(
-                    "Failed to send verification email for user {}: {:?}",
-                    user_id,
-                    e
-                );
-            } else {
-                tracing::info!("Verification email sent successfully for user {}", user_id);
-            }
-        });
-    }
 
     let secure = config.cookie_secure;
     let mut headers = HeaderMap::new();
@@ -189,6 +163,7 @@ async fn register(
         Json(AuthResponseDto {
             user,
             token: Some(access_token),
+            recovery_key: Some(recovery_key),
         }),
     ))
 }
@@ -211,14 +186,13 @@ async fn login(
     };
     let subnet_hash = client_ip.as_ref().and_then(|ip| {
         let prefix = shared::domain::quality::ContentGuard::extract_subnet_prefix(&ip.to_string());
-        crate::core::zero_knowledge::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
+        crate::core::crypto::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
     });
 
     let (access_token, refresh_token, user) = AuthService::login(
         &db,
         &config.jwt_secret,
         payload,
-        &config.email_blind_key,
         subnet_hash,
     )
     .await?;
@@ -269,6 +243,7 @@ async fn login(
         Json(AuthResponseDto {
             user,
             token: Some(access_token),
+            recovery_key: None,
         }),
     ))
 }
@@ -353,11 +328,11 @@ async fn refresh(
     };
     let subnet_hash = client_ip.as_ref().and_then(|ip| {
         let prefix = shared::domain::quality::ContentGuard::extract_subnet_prefix(&ip.to_string());
-        crate::core::zero_knowledge::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
+        crate::core::crypto::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
     });
 
     let access_token =
-        AuthService::generate_token(user.id, &user.username, &role, &config.jwt_secret)
+        AuthService::generate_token(user.id, &user.nickname, &role, &config.jwt_secret)
             .map_err(|e| AppError::Internal(format!("Failed to generate access token: {:?}", e)))?;
     let new_refresh_token = AuthService::generate_refresh_token(
         &db,
@@ -493,23 +468,18 @@ async fn get_me(
 
 async fn update_me(
     State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<crate::dto::user::UpdateProfileDto>,
 ) -> Result<Json<crate::dto::user::UserProfileDto>, AppError> {
-    let password_changed = payload.password.is_some();
-    let user_submitted_email = payload.email.clone();
     let profile = crate::services::user::UserService::update_user(
         &db,
         user.id,
         payload,
-        &config.email_blind_key,
-        &config.auth_pepper,
     )
     .await
     .map_err(|e| match e {
         crate::services::auth::AuthError::UserAlreadyExists => {
-            AppError::BadRequest("Bu kullanıcı adı veya e-posta zaten kullanılıyor".to_string())
+            AppError::BadRequest("Bu kullanıcı adı zaten kullanılıyor".to_string())
         }
         crate::services::auth::AuthError::InvalidCredentials => {
             AppError::BadRequest("Mevcut şifre hatalı".to_string())
@@ -517,24 +487,6 @@ async fn update_me(
         crate::services::auth::AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
         _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
     })?;
-
-    // Şifre değiştiyse ve güvenlik e-postaları tercihi açıksa e-posta bildirimi gönder
-    if password_changed
-        && profile.email_security.unwrap_or(false)
-        && let Some(ref email) = user_submitted_email
-    {
-        let email_service = crate::services::email::EmailService::from_config(&config);
-        let to_email = email.clone();
-        let username = profile.username.clone();
-        tokio::spawn(async move {
-            let _ = email_service.send_security_alert(
-                    &to_email,
-                    &username,
-                    "Hesap Şifreniz Değiştirildi",
-                    "Hesabınızın giriş şifresi ayarlar sayfası üzerinden başarıyla güncellendi. Eski oturumlarınız güvenlik gereği sonlandırıldı.",
-                ).await;
-        });
-    }
 
     Ok(Json(profile))
 }
@@ -646,18 +598,74 @@ async fn revoke_session(
 }
 
 async fn upload_avatar(
-    State(_db): State<sea_orm::DatabaseConnection>,
-    _user: AuthenticatedUser,
-    mut _multipart: Multipart,
+    State(db): State<sea_orm::DatabaseConnection>,
+    user: AuthenticatedUser,
+    mut multipart: Multipart,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    Err(AppError::BadRequest(
-        "Profil fotoğrafları Sıfır Bilgi Gizlilik Mimarisi kapsamında sunucuda saklanmamaktadır."
-            .to_string(),
-    ))
+    let mut image_bytes: Option<Vec<u8>> = None;
+
+    while let Some(field) = multipart.next_field().await.map_err(|e| {
+        AppError::BadRequest(format!("Form verisi okunamadı: {}", e))
+    })? {
+        if field.name() == Some("avatar") || field.name() == Some("file") {
+            let bytes = field.bytes().await.map_err(|e| {
+                AppError::BadRequest(format!("Dosya okunamadı: {}", e))
+            })?;
+            if bytes.len() > 5 * 1024 * 1024 {
+                return Err(AppError::BadRequest("Görsel boyutu en fazla 5MB olabilir".to_string()));
+            }
+            image_bytes = Some(bytes.to_vec());
+            break;
+        }
+    }
+
+    let bytes = image_bytes.ok_or_else(|| AppError::BadRequest("Avatar dosyası bulunamadı".to_string()))?;
+
+    // RAM üzerinde EXIF metadata soyma ve 256x256 WebP'ye indirgeme
+    let processed_bytes = tokio::task::spawn_blocking(move || -> Result<Vec<u8>, AppError> {
+        let img = image::load_from_memory(&bytes).map_err(|e| {
+            AppError::BadRequest(format!("Geçersiz görsel formatı: {}", e))
+        })?;
+
+        let resized = img.resize_to_fill(256, 256, image::imageops::FilterType::Lanczos3);
+        let mut out = std::io::Cursor::new(Vec::new());
+        resized.write_to(&mut out, image::ImageFormat::WebP).map_err(|e| {
+            AppError::Internal(format!("WebP dönüştürme hatası: {}", e))
+        })?;
+        Ok(out.into_inner())
+    })
+    .await
+    .map_err(|e| AppError::Internal(format!("Blocking task failed: {}", e)))??;
+
+    tokio::fs::create_dir_all("static/avatars").await.map_err(|e| {
+        AppError::Internal(format!("Dizin oluşturulamadı: {}", e))
+    })?;
+
+    let file_path = format!("static/avatars/{}.webp", user.id);
+    tokio::fs::write(&file_path, &processed_bytes).await.map_err(|e| {
+        AppError::Internal(format!("Avatar kaydedilemedi: {}", e))
+    })?;
+
+    let avatar_url = format!("/static/avatars/{}.webp", user.id);
+    let mut user_model: users::ActiveModel = users::Entity::find_by_id(user.id)
+        .one(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Kullanıcı bulunamadı".to_string()))?
+        .into();
+
+    user_model.avatar_url = Set(Some(avatar_url.clone()));
+    user_model.updated_at = Set(Some(chrono::Utc::now().into()));
+    user_model.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "avatar_url": avatar_url
+    })))
 }
 
 async fn delete_avatar(
-    State(_db): State<sea_orm::DatabaseConnection>,
+    State(db): State<sea_orm::DatabaseConnection>,
     user: AuthenticatedUser,
 ) -> Result<Json<serde_json::Value>, AppError> {
     let extensions = ["jpg", "png", "webp"];
@@ -666,526 +674,55 @@ async fn delete_avatar(
         let _ = tokio::fs::remove_file(path).await;
     }
 
-    Ok(Json(serde_json::json!({ "status": "success" })))
-}
-
-#[derive(serde::Deserialize)]
-pub struct VerifyEmailQuery {
-    pub token: String,
-}
-
-async fn verify_email(
-    State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    Query(query): Query<VerifyEmailQuery>,
-) -> Result<Json<serde_json::Value>, AppError> {
-    let already_verified =
-        AuthService::verify_email_token(&db, &config.jwt_secret, &query.token).await?;
-    if already_verified {
-        Ok(Json(serde_json::json!({ "status": "already_verified" })))
-    } else {
-        Ok(Json(serde_json::json!({ "status": "success" })))
-    }
-}
-
-#[derive(serde::Deserialize)]
-pub struct ResendVerificationDto {
-    pub email: Option<String>,
-}
-
-async fn resend_verification(
-    State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    user: AuthenticatedUser,
-    payload: Option<Json<ResendVerificationDto>>,
-) -> Result<Json<serde_json::Value>, AppError> {
-    // Check if user is already verified
-    let db_user = shared::entities::prelude::Users::find_by_id(user.id)
+    let mut user_model: users::ActiveModel = users::Entity::find_by_id(user.id)
         .one(&db)
         .await
         .map_err(|e| AppError::Internal(e.to_string()))?
-        .ok_or_else(|| AppError::Unauthorized("Kullanıcı bulunamadı.".to_string()))?;
+        .ok_or_else(|| AppError::NotFound("Kullanıcı bulunamadı".to_string()))?
+        .into();
 
-    if db_user.is_verified {
-        return Err(AppError::BadRequest("E-postanız zaten onaylı.".to_string()));
-    }
+    user_model.avatar_url = Set(None);
+    user_model.updated_at = Set(Some(chrono::Utc::now().into()));
+    user_model.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
 
-    let email = payload.and_then(|p| p.0.email).ok_or_else(|| {
-        AppError::BadRequest("Sıfır bilgi gizlilik mimarisi gereği e-posta adresiniz sunucuda saklanmamaktadır. Doğrulama bağlantısı almak için lütfen e-posta adresinizi belirtin.".to_string())
-    })?;
-
-    let email_hash =
-        crate::core::zero_knowledge::compute_email_hash(&email, &config.email_blind_key)
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    if db_user.email_hash.as_deref() != Some(&email_hash) {
-        return Err(AppError::BadRequest(
-            "Girilen e-posta bu hesapla eşleşmiyor.".to_string(),
-        ));
-    }
-
-    // Check cooldown (24 hours)
-    {
-        let mut map = crate::services::auth::get_resend_cooldowns()
-            .lock()
-            .unwrap();
-        if map.len() > 1000 {
-            let now = std::time::Instant::now();
-            map.retain(|_, expires_at| *expires_at > now);
-        }
-
-        if let Some(expires_at) = map.get(&user.id)
-            && std::time::Instant::now() < *expires_at
-        {
-            return Err(AppError::TooManyRequests(
-                "Lütfen yeni bir onay e-postası istemeden önce 24 saat bekleyiniz.".to_string(),
-            ));
-        }
-
-        map.insert(
-            user.id,
-            std::time::Instant::now() + std::time::Duration::from_secs(24 * 3600),
-        );
-    }
-
-    // Send email
-    let verify_token = AuthService::generate_verification_token(user.id, &config.jwt_secret)?;
-    let email_service = crate::services::email::EmailService::from_config(&config);
-    let email_clone = email.clone();
-
-    let user_id = user.id;
-    tokio::spawn(async move {
-        if let Err(e) = email_service
-            .send_verification_email(&email_clone, &verify_token)
-            .await
-        {
-            tracing::error!(
-                "Failed to resend verification email for user {}: {:?}",
-                user_id,
-                e
-            );
-        } else {
-            tracing::info!(
-                "Verification email resent successfully for user {}",
-                user_id
-            );
-        }
-    });
-
-    Ok(Json(
-        serde_json::json!({ "status": "success", "message": "Onay e-postası tekrar gönderildi." }),
-    ))
+    Ok(Json(serde_json::json!({ "status": "success" })))
 }
 
-async fn give_consent(
+async fn confirm_recovery(
     State(db): State<sea_orm::DatabaseConnection>,
     user: AuthenticatedUser,
-) -> Result<Json<UserProfileDto>, AppError> {
-    let profile = UserService::give_cross_border_consent(&db, user.id).await?;
-    Ok(Json(profile))
-}
-
-#[derive(serde::Deserialize)]
-pub struct VerifyConsentQuery {
-    pub token: String,
-}
-
-async fn verify_consent(
-    State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    Query(query): Query<VerifyConsentQuery>,
-) -> Result<Redirect, AppError> {
-    AuthService::verify_cross_border_consent_token(&db, &config.jwt_secret, &query.token).await?;
-    Ok(Redirect::to("/?onay=tamamlandi"))
-}
-
-#[derive(serde::Deserialize, validator::Validate)]
-pub struct ForgotPasswordDto {
-    #[validate(email)]
-    pub email: String,
-}
-
-async fn forgot_password(
-    State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    ValidatedJson(payload): ValidatedJson<ForgotPasswordDto>,
+    ValidatedJson(payload): ValidatedJson<ConfirmRecoveryDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let email_hash =
-        crate::core::zero_knowledge::compute_email_hash(&payload.email, &config.email_blind_key)
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let user_opt = Users::find()
-        .filter(users::Column::EmailHash.eq(&email_hash))
-        .one(&db)
-        .await
-        .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    if let Some(user) = user_opt {
-        // SA-2: Reset token ASLA loglanmaz. Token üretilir ancak e-posta servisi
-        // (Faz 3A/3C - Resend) devreye girene kadar sadece bellekte tutulur.
-        // Token türü artık `kepce-reset` (SA-5): access/verify token'larıyla karışmaz.
-        let reset_token = AuthService::generate_reset_token(user.id, &config.jwt_secret)?;
-
-        let email_service = crate::services::email::EmailService::from_config(&config);
-        let email_clone = payload.email.clone();
-
-        let user_id = user.id;
-        // E-posta gönderimini bloklamaması için arka planda çalıştır
-        tokio::spawn(async move {
-            if let Err(e) = email_service
-                .send_reset_password_email(&email_clone, &reset_token)
-                .await
-            {
-                tracing::error!(
-                    "Failed to send password reset email for user {}: {:?}",
-                    user_id,
-                    e
-                );
-            } else {
-                tracing::info!(
-                    "Password reset email sent successfully for user {}",
-                    user_id
-                );
-            }
-        });
-
-        tracing::info!("Password reset requested for user_id {}", user.id);
-    } else {
-        tokio::time::sleep(std::time::Duration::from_millis(120)).await;
-    }
-
-    Ok(Json(serde_json::json!({ "status": "success" })))
+    let verified = AuthService::confirm_recovery(&db, user.id, &payload.last_block).await?;
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "is_verified": verified
+    })))
 }
 
-#[derive(serde::Deserialize, validator::Validate)]
-pub struct ResetPasswordDto {
-    pub token: String,
-
-    #[validate(length(min = 8, max = 72, message = "Şifre 8-72 karakter arasında olmalıdır"))]
-    pub new_password: String,
-}
-
-async fn reset_password(
+async fn regenerate_recovery(
     State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    ValidatedJson(payload): ValidatedJson<ResetPasswordDto>,
+    user: AuthenticatedUser,
+    ValidatedJson(payload): ValidatedJson<RegenerateRecoveryDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
-    let _user = AuthService::reset_password(
-        &db,
-        &config.jwt_secret,
-        &payload.token,
-        &payload.new_password,
-    )
-    .await?;
-
-    Ok(Json(serde_json::json!({ "status": "success" })))
+    let new_key = AuthService::regenerate_recovery_key(&db, user.id, &payload.password).await?;
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "recovery_key": new_key,
+        "new_recovery_key": new_key
+    })))
 }
 
-async fn google_login(
-    State(config): State<std::sync::Arc<Config>>,
-) -> Result<(HeaderMap, Redirect), AppError> {
-    let client_id = config
-        .google_client_id
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Google Client ID tanımlı değil.".to_string()))?;
-    let redirect_uri = config
-        .google_redirect_uri
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Google Redirect URI tanımlı değil.".to_string()))?;
-
-    // Güvenli rastgele state parametresi üret (OAuth CSRF koruması)
-    let mut random_bytes = [0u8; 16];
-    rand::thread_rng().fill(&mut random_bytes);
-    let state_token: String = random_bytes.iter().map(|b| format!("{:02x}", b)).collect();
-
-    let auth_url = format!(
-        "https://accounts.google.com/o/oauth2/v2/auth?response_type=code&client_id={}&redirect_uri={}&scope=openid%20email&state={}",
-        client_id, redirect_uri, state_token
-    );
-
-    let secure_flag = if config.cookie_secure { "; Secure" } else { "" };
-    let cookie_header = format!(
-        "kepce_oauth_state={}; Path=/; HttpOnly; SameSite=Lax; Max-Age=300{}",
-        state_token, secure_flag
-    );
-
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        SET_COOKIE,
-        cookie_header
-            .parse()
-            .map_err(|e: http::header::InvalidHeaderValue| AppError::Internal(e.to_string()))?,
-    );
-
-    Ok((headers, Redirect::temporary(&auth_url)))
-}
-
-#[derive(serde::Deserialize)]
-pub struct GoogleCallbackQuery {
-    pub code: Option<String>,
-    pub state: Option<String>,
-    pub error: Option<String>,
-}
-
-async fn google_callback(
+async fn reset_password_with_recovery(
     State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    req_headers: HeaderMap,
-    connect_info: Option<axum::extract::ConnectInfo<std::net::SocketAddr>>,
-    Query(query): Query<GoogleCallbackQuery>,
-) -> Result<(HeaderMap, Redirect), AppError> {
-    let base_callback_url = format!("{}/oauth/callback", config.base_url);
-
-    let secure_flag = if config.cookie_secure { "; Secure" } else { "" };
-    let clear_state_cookie = format!(
-        "kepce_oauth_state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0{}",
-        secure_flag
-    );
-    let mut clear_headers = HeaderMap::new();
-    if let Ok(val) = clear_state_cookie.parse() {
-        clear_headers.insert(SET_COOKIE, val);
-    }
-
-    if let Some(err_msg) = query.error {
-        tracing::warn!("Google OAuth error from Google: {}", err_msg);
-        return Ok((
-            clear_headers,
-            Redirect::temporary(&format!("{}?error={}", base_callback_url, err_msg)),
-        ));
-    }
-
-    // State parametresi eşleşme kontrolü (CSRF Koruması)
-    let cookie_header = req_headers
-        .get(axum::http::header::COOKIE)
-        .and_then(|h| h.to_str().ok())
-        .unwrap_or_default();
-    let expected_state = cookie_header.split(';').find_map(|c| {
-        let parts: Vec<&str> = c.trim().split('=').collect();
-        if parts.len() == 2 && parts[0] == "kepce_oauth_state" {
-            Some(parts[1])
-        } else {
-            None
-        }
-    });
-
-    let state_matches = matches!((query.state.as_deref(), expected_state), (Some(qs), Some(es)) if !qs.is_empty() && qs == es);
-
-    if !state_matches {
-        tracing::warn!("Google OAuth state eşleşmedi veya state çerezi eksik");
-        return Ok((
-            clear_headers,
-            Redirect::temporary(&format!("{}?error=invalid_oauth_state", base_callback_url)),
-        ));
-    }
-
-    let code = match query.code {
-        Some(c) => c,
-        None => {
-            return Ok((
-                clear_headers,
-                Redirect::temporary(&format!("{}?error=missing_code", base_callback_url)),
-            ));
-        }
-    };
-
-    let client_id = config
-        .google_client_id
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Google Client ID tanımlı değil.".to_string()))?;
-    let client_secret = config
-        .google_client_secret
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Google Client Secret tanımlı değil.".to_string()))?;
-    let redirect_uri = config
-        .google_redirect_uri
-        .as_ref()
-        .ok_or_else(|| AppError::Internal("Google Redirect URI tanımlı değil.".to_string()))?;
-
-    // HTTP Client
-    let client = reqwest::Client::new();
-
-    // 1. Exchange code for access token
-    let token_res = client
-        .post("https://oauth2.googleapis.com/token")
-        .form(&[
-            ("code", code.as_str()),
-            ("client_id", client_id.as_str()),
-            ("client_secret", client_secret.as_str()),
-            ("redirect_uri", redirect_uri.as_str()),
-            ("grant_type", "authorization_code"),
-        ])
-        .send()
-        .await;
-
-    let token_response = match token_res {
-        Ok(res) => {
-            if !res.status().is_success() {
-                let status = res.status();
-                let body = res.text().await.unwrap_or_default();
-                tracing::error!("Google token exchange failed: {} - {}", status, body);
-                return Ok((
-                    clear_headers,
-                    Redirect::temporary(&format!(
-                        "{}?error=token_exchange_failed",
-                        base_callback_url
-                    )),
-                ));
-            }
-            res
-        }
-        Err(e) => {
-            tracing::error!("Network error during token exchange: {:?}", e);
-            return Ok((
-                clear_headers,
-                Redirect::temporary(&format!("{}?error=network_error", base_callback_url)),
-            ));
-        }
-    };
-
-    #[derive(serde::Deserialize)]
-    struct GoogleTokenResponse {
-        access_token: String,
-    }
-
-    let token_data: GoogleTokenResponse = match token_response.json().await {
-        Ok(data) => data,
-        Err(e) => {
-            tracing::error!("Failed to parse Google token JSON: {:?}", e);
-            return Ok((
-                clear_headers,
-                Redirect::temporary(&format!(
-                    "{}?error=invalid_token_response",
-                    base_callback_url
-                )),
-            ));
-        }
-    };
-
-    // 2. Fetch User Info
-    let user_info_res = client
-        .get("https://www.googleapis.com/oauth2/v3/userinfo")
-        .bearer_auth(token_data.access_token)
-        .send()
-        .await;
-
-    let user_info_response = match user_info_res {
-        Ok(res) => {
-            if !res.status().is_success() {
-                let status = res.status();
-                let body = res.text().await.unwrap_or_default();
-                tracing::error!("Google userinfo request failed: {} - {}", status, body);
-                return Ok((
-                    clear_headers,
-                    Redirect::temporary(&format!("{}?error=userinfo_failed", base_callback_url)),
-                ));
-            }
-            res
-        }
-        Err(e) => {
-            tracing::error!("Network error during userinfo request: {:?}", e);
-            return Ok((
-                clear_headers,
-                Redirect::temporary(&format!("{}?error=network_error", base_callback_url)),
-            ));
-        }
-    };
-
-    #[derive(serde::Deserialize)]
-    struct GoogleUserInfo {
-        email: String,
-        email_verified: Option<bool>,
-        name: Option<String>,
-        picture: Option<String>,
-    }
-
-    let user_info: GoogleUserInfo = match user_info_response.json().await {
-        Ok(data) => data,
-        Err(e) => {
-            tracing::error!("Failed to parse Google userinfo JSON: {:?}", e);
-            return Ok((
-                clear_headers,
-                Redirect::temporary(&format!(
-                    "{}?error=invalid_userinfo_response",
-                    base_callback_url
-                )),
-            ));
-        }
-    };
-
-    if user_info.email_verified != Some(true) {
-        return Ok((
-            clear_headers,
-            Redirect::temporary(&format!("{}?error=email_not_verified", base_callback_url)),
-        ));
-    }
-
-    let email = user_info.email.to_lowercase();
-
-    let client_ip = {
-        let mut exts = axum::http::Extensions::new();
-        if let Some(conn) = connect_info {
-            exts.insert(conn);
-        }
-        crate::middleware::rate_limiter::get_client_ip(&req_headers, &exts)
-    };
-    let subnet_hash = client_ip.as_ref().and_then(|ip| {
-        let prefix = shared::domain::quality::ContentGuard::extract_subnet_prefix(&ip.to_string());
-        crate::core::zero_knowledge::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
-    });
-
-    let register_res = AuthService::register_or_login_oauth(
-        &db,
-        &config.jwt_secret,
-        &email,
-        user_info.name.as_deref(),
-        user_info.picture.as_deref(),
-        &config.email_blind_key,
-        &config.auth_pepper,
-        subnet_hash,
-    )
-    .await;
-
-    let (access_token, refresh_token, is_new) = match register_res {
-        Ok(res) => res,
-        Err(e) => {
-            tracing::error!("OAuth register/login failed: {:?}", e);
-            return Ok((
-                clear_headers,
-                Redirect::temporary(&format!("{}?error=auth_failed", base_callback_url)),
-            ));
-        }
-    };
-
-    // 4. Set cookies and redirect (state çerezini de temizle)
-    let secure = config.cookie_secure;
-    let mut headers = HeaderMap::new();
-    headers.append(SET_COOKIE, clear_state_cookie.parse().unwrap());
-    headers.append(
-        SET_COOKIE,
-        format!(
-            "kepce_token={}; Path=/; HttpOnly; SameSite=Strict; {}; Max-Age=900",
-            access_token,
-            if secure { "Secure" } else { "" }
-        )
-        .parse()
-        .unwrap(),
-    );
-
-    let refresh_cookie = format!(
-        "kepce_refresh_token={}; Path=/; HttpOnly; SameSite=Strict; {}",
-        refresh_token,
-        if secure { "Secure" } else { "" }
-    );
-    let logged_in_cookie = format!(
-        "kepce_logged_in=true; Path=/; SameSite=Strict; {}",
-        if secure { "Secure" } else { "" }
-    );
-
-    headers.append(SET_COOKIE, refresh_cookie.parse().unwrap());
-    headers.append(SET_COOKIE, logged_in_cookie.parse().unwrap());
-
-    let redirect_url = format!("{}?is_new={}", base_callback_url, is_new);
-    Ok((headers, Redirect::temporary(&redirect_url)))
+    ValidatedJson(payload): ValidatedJson<ResetPasswordWithRecoveryDto>,
+) -> Result<Json<serde_json::Value>, AppError> {
+    let new_key = AuthService::reset_password_with_recovery_key(&db, payload).await?;
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "recovery_key": new_key,
+        "new_recovery_key": new_key
+    })))
 }
 
 #[derive(serde::Deserialize, validator::Validate)]
@@ -1226,8 +763,7 @@ async fn toggle_pinned(
 }
 
 use crate::dto::user::{NotificationDto, NotificationMarkReadDto};
-use sea_orm::ActiveValue::Set;
-use sea_orm::{ActiveModelTrait, QueryOrder};
+use sea_orm::QueryOrder;
 use shared::entities::prelude::Notifications;
 
 async fn get_notifications(
@@ -1420,103 +956,3 @@ async fn revoke_api_key(
     Ok(Json(serde_json::json!({ "status": "success" })))
 }
 
-async fn request_passwordless(
-    State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    ValidatedJson(payload): ValidatedJson<PasswordlessRequestDto>,
-) -> Result<Json<serde_json::Value>, AppError> {
-    // E-postaya sahip kullanıcıyı bul
-    let email_hash =
-        crate::core::zero_knowledge::compute_email_hash(&payload.email, &config.email_blind_key)
-            .map_err(|e| AppError::Internal(e.to_string()))?;
-
-    let user = Users::find()
-        .filter(users::Column::EmailHash.eq(&email_hash))
-        .one(&db)
-        .await
-        .map_err(|_| AppError::Internal("Veritabanı hatası".into()))?;
-
-    // Güvenlik: Kullanıcı bulunamasa bile her zaman başarılı dönmeliyiz ki e-posta taraması (enumeration) yapılamasın.
-    if let Some(user) = user {
-        // Kullanıcı bulunduysa token üret ve e-posta at
-        let token = AuthService::generate_passwordless_token(user.id, &config.jwt_secret)
-            .map_err(|_| AppError::Internal("Token üretilemedi".into()))?;
-
-        let email_service = crate::services::email::EmailService::from_config(&config);
-        let to_email = payload.email.clone();
-
-        // E-postayı arka planda asenkron gönder
-        tokio::spawn(async move {
-            if let Err(e) = email_service
-                .send_passwordless_login(&to_email, &token)
-                .await
-            {
-                tracing::error!("Şifresiz giriş e-postası gönderilemedi: {:?}", e);
-            }
-        });
-    }
-
-    Ok(Json(serde_json::json!({
-        "message": "Eğer e-posta adresi kayıtlıysa şifresiz giriş bağlantısı gönderildi."
-    })))
-}
-
-async fn passwordless_login(
-    State(db): State<sea_orm::DatabaseConnection>,
-    State(config): State<std::sync::Arc<Config>>,
-    req_headers: HeaderMap,
-    connect_info: Option<axum::extract::ConnectInfo<std::net::SocketAddr>>,
-    ValidatedJson(payload): ValidatedJson<PasswordlessLoginDto>,
-) -> Result<(HeaderMap, Json<AuthResponseDto>), AppError> {
-    let client_ip = {
-        let mut exts = axum::http::Extensions::new();
-        if let Some(conn) = connect_info {
-            exts.insert(conn);
-        }
-        crate::middleware::rate_limiter::get_client_ip(&req_headers, &exts)
-    };
-    let subnet_hash = client_ip.as_ref().and_then(|ip| {
-        let prefix = shared::domain::quality::ContentGuard::extract_subnet_prefix(&ip.to_string());
-        crate::core::zero_knowledge::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
-    });
-
-    let (access_token, refresh_token, user) =
-        AuthService::passwordless_login(&db, &config.jwt_secret, &payload.token, subnet_hash)
-            .await?;
-
-    let secure = config.cookie_secure;
-    let mut headers = HeaderMap::new();
-    headers.append(
-        SET_COOKIE,
-        format!(
-            "kepce_token={}; Path=/; HttpOnly; SameSite=Strict; {}; Max-Age=900",
-            access_token,
-            if secure { "Secure" } else { "" }
-        )
-        .parse()
-        .unwrap(),
-    );
-
-    let (refresh_cookie, logged_in_cookie) = (
-        format!(
-            "kepce_refresh_token={}; Path=/; HttpOnly; SameSite=Strict; {}; Max-Age=31536000",
-            refresh_token,
-            if secure { "Secure" } else { "" }
-        ),
-        format!(
-            "kepce_logged_in=true; Path=/; SameSite=Strict; {}; Max-Age=31536000",
-            if secure { "Secure" } else { "" }
-        ),
-    );
-
-    headers.append(SET_COOKIE, refresh_cookie.parse().unwrap());
-    headers.append(SET_COOKIE, logged_in_cookie.parse().unwrap());
-
-    Ok((
-        headers,
-        Json(AuthResponseDto {
-            user,
-            token: Some(access_token),
-        }),
-    ))
-}

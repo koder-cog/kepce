@@ -351,7 +351,7 @@ async fn get_contact_replies(
                 .await
                 .ok()
                 .flatten()
-                .map(|u| u.username)
+                .map(|u| u.nickname)
         } else {
             None
         };

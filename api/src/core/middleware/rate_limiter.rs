@@ -197,14 +197,11 @@ pub async fn rate_limit_middleware(
         RateLimitCategory::Login
     } else if path.starts_with("/api/v1/auth/register") {
         RateLimitCategory::Register
-    } else if path.starts_with("/api/v1/auth/forgot-password")
-        || path.starts_with("/api/v1/auth/reset-password")
+    } else if path.starts_with("/api/v1/auth/password-reset")
+        || path.starts_with("/api/v1/auth/confirm-recovery")
+        || path.starts_with("/api/v1/auth/regenerate-recovery")
     {
         RateLimitCategory::ForgotPassword
-    } else if path.starts_with("/api/v1/auth/passwordless-login") {
-        RateLimitCategory::Login
-    } else if path.starts_with("/api/v1/auth/passwordless") {
-        RateLimitCategory::Passwordless
     } else if path.starts_with("/api/v1/ingestion") {
         RateLimitCategory::Ingestion
     } else if path.starts_with("/api/v1/internal") {

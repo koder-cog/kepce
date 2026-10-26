@@ -792,7 +792,7 @@ async fn get_all_votes(
                 .await
                 .map_err(|e| AppError::Internal(e.to_string()))?;
             u.map(|user| crate::dto::moderation::VoteModerationUserDto {
-                username: user.username,
+                username: user.nickname,
             })
         } else {
             None
@@ -886,7 +886,7 @@ async fn get_complaints(
                 .one(&db)
                 .await
                 .map_err(|e| AppError::Internal(e.to_string()))?
-                .map(|u| u.username)
+                .map(|u| u.nickname)
         } else {
             None
         };
@@ -896,7 +896,7 @@ async fn get_complaints(
                 .one(&db)
                 .await
                 .map_err(|e| AppError::Internal(e.to_string()))?
-                .map(|u| u.username)
+                .map(|u| u.nickname)
         } else {
             None
         };
@@ -1100,12 +1100,8 @@ async fn get_users(
             .into();
         result.push(crate::dto::moderation::UserModerationResponseDto {
             id: u.id,
-            username: u.username,
-            email: u
-                .email_hash
-                .filter(|h| h.len() >= 10)
-                .map(|h| format!("{}...{}", &h[..6], &h[h.len() - 4..]))
-                .unwrap_or_else(|| "kör-indeks".to_string()),
+            username: u.nickname,
+            email: "sıfır-bilgi (kayıt yok)".to_string(),
             role: match u.role {
                 shared::entities::sea_orm_active_enums::UserRoleEnum::Admin => "admin".to_string(),
                 shared::entities::sea_orm_active_enums::UserRoleEnum::User => "user".to_string(),

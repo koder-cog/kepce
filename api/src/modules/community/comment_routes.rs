@@ -151,7 +151,7 @@ async fn create_comment(
         });
 
         if let Ok(sealed_hex) =
-            crate::core::zero_knowledge::seal_traffic_log(pk_hex, &traffic_payload.to_string())
+            crate::core::crypto::seal_traffic_log(pk_hex, &traffic_payload.to_string())
         {
             use sea_orm::{ActiveModelTrait, Set};
             let log_entry = shared::entities::traffic_logs::ActiveModel {
@@ -219,7 +219,7 @@ async fn update_comment(
         });
 
         if let Ok(sealed_hex) =
-            crate::core::zero_knowledge::seal_traffic_log(pk_hex, &traffic_payload.to_string())
+            crate::core::crypto::seal_traffic_log(pk_hex, &traffic_payload.to_string())
         {
             use sea_orm::{ActiveModelTrait, Set};
             let log_entry = shared::entities::traffic_logs::ActiveModel {

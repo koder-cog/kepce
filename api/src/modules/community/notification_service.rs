@@ -37,7 +37,7 @@ impl NotificationService {
         if !should_send {
             tracing::debug!(
                 "Kullanıcı ({}) bildirim tercihini kapattığı için '{}' bildirimi atlandı.",
-                user.username,
+                user.nickname,
                 notif_type
             );
             return Ok(false);
@@ -58,7 +58,7 @@ impl NotificationService {
         notif.insert(db).await?;
         tracing::info!(
             "Kullanıcıya ({}) yeni bildirim gönderildi: [{}] {}",
-            user.username,
+            user.nickname,
             notif_type,
             title
         );

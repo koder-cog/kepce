@@ -188,7 +188,7 @@ async fn get_thread_og(
 
     let author_name = comment
         .1
-        .map(|u| u.username)
+        .map(|u| u.nickname)
         .unwrap_or_else(|| "anonim".to_string());
     let comment_data = comment.0;
 
@@ -248,7 +248,7 @@ async fn get_user_og(
 ) -> Result<Response, StatusCode> {
     let clean_user = username.trim_start_matches('@');
     let user = users::Entity::find()
-        .filter(users::Column::Username.eq(clean_user))
+        .filter(users::Column::Nickname.eq(clean_user))
         .one(&state.db)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
@@ -269,7 +269,7 @@ async fn get_user_og(
     let avatar_b64: Option<String> = None;
 
     let png_bytes = render_og_profile(
-        &format!("@{}", user.username),
+        &format!("@{}", user.nickname),
         &karma_sub,
         avatar_b64.as_deref(),
         "Kullanıcı Profili",

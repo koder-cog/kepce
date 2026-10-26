@@ -21,17 +21,9 @@ pub async fn bootstrap_admin(
     db: &DatabaseConnection,
     config: &Config,
 ) -> Result<(), anyhow::Error> {
-    if let (Some(email), Some(password)) =
-        (&config.initial_admin_email, &config.initial_admin_password)
-    {
-        let norm_email = crate::core::zero_knowledge::normalize_email(email);
-        let email_hash =
-            crate::core::zero_knowledge::compute_email_hash(&norm_email, &config.email_blind_key)?;
-        let auth_hash =
-            crate::core::zero_knowledge::compute_auth_hash(&norm_email, &config.auth_pepper)?;
-
+    if let Some(password) = &config.initial_admin_password {
         let admin_exists = users::Entity::find()
-            .filter(users::Column::EmailHash.eq(&email_hash))
+            .filter(users::Column::Nickname.eq("admin"))
             .one(db)
             .await?
             .is_some();
@@ -47,15 +39,17 @@ pub async fn bootstrap_admin(
                     .await
                     .map_err(|e| anyhow::anyhow!("Blocking task failed: {}", e))??;
 
+            let recovery_key = crate::core::crypto::generate_secure_recovery_key();
+            let recovery_key_hash = crate::core::crypto::hash_recovery_key(&recovery_key);
+
             let admin = users::ActiveModel {
                 id: Set(Uuid::new_v4()),
-                username: Set("admin".to_string()),
-                email_hash: Set(Some(email_hash)),
-                auth_hash: Set(Some(auth_hash)),
+                nickname: Set("admin".to_string()),
+                recovery_key_hash: Set(Some(recovery_key_hash)),
                 password_hash: Set(password_hash),
                 role: Set(UserRoleEnum::Admin),
                 account_status: Set(AccountStatusEnum::Active),
-                karma_score: Set(0),
+                karma_score: Set(10000),
                 is_verified: Set(true),
                 level: Set(99),
                 level_progress: Set(0),
@@ -70,7 +64,7 @@ pub async fn bootstrap_admin(
         }
     } else {
         tracing::warn!(
-            "Admin kullanıcısı yok, ancak INITIAL_ADMIN_EMAIL veya INITIAL_ADMIN_PASSWORD eksik olduğu için kurulamadı."
+            "Admin kullanıcısı yok, ancak INITIAL_ADMIN_PASSWORD eksik olduğu için kurulamadı."
         );
     }
 

@@ -165,7 +165,7 @@ async fn submit_menu(
             Users::find()
                 .filter(
                     sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
-                        sea_orm::sea_query::Expr::col(users::Column::Username),
+                        sea_orm::sea_query::Expr::col(users::Column::Nickname),
                     ))
                     .eq(&lower),
                 )
@@ -180,7 +180,7 @@ async fn submit_menu(
 
         let audit_tag = format!(
             "[Vekaleten Gönderim: @{} -> @{}]",
-            admin_user.username, target.username
+            admin_user.username, target.nickname
         );
         notes = Some(match notes {
             Some(existing) if !existing.trim().is_empty() => {

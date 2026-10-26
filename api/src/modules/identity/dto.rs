@@ -31,10 +31,9 @@ pub enum UserRole {
 /// Sadece giriş yaparken (Login) kullanılır.
 #[derive(Debug, Deserialize, Validate)]
 pub struct LoginRequestDto {
-    // E-posta veya Kullanıcı Adı girilebilir. Bu yüzden tipini identifier koyduk ve email validasyonunu kaldırdık.
     #[validate(length(
         min = 3,
-        message = "Kullanıcı adı veya e-posta en az 3 karakter olmalıdır"
+        message = "Kullanıcı adı en az 3 karakter olmalıdır"
     ))]
     pub identifier: String,
 
@@ -42,19 +41,6 @@ pub struct LoginRequestDto {
     pub password: String,
 
     pub remember: Option<bool>,
-}
-
-/// Şifresiz giriş linki istemek için
-#[derive(Debug, Deserialize, Validate)]
-pub struct PasswordlessRequestDto {
-    #[validate(email(message = "Geçerli bir e-posta adresi giriniz"))]
-    pub email: String,
-}
-
-/// E-postaya gelen token ile giriş yapmak için
-#[derive(Debug, Deserialize, Validate)]
-pub struct PasswordlessLoginDto {
-    pub token: String,
 }
 
 /// Boş string ("" veya "   ") geldiğinde None olarak ayrıştıran özel deserializer
@@ -73,27 +59,49 @@ where
     }))
 }
 
-/// Sadece yeni kayıt olurken (Register) kullanılır.
+/// Yeni kayıt (Register) isteği - Sıfır Bilgi Mimarisi
 #[derive(Debug, Deserialize, Validate)]
 pub struct RegisterRequestDto {
-    // Kullanıcı adı artık opsiyonel. Girilmezse AuthService e-postadan türetecek.
-    #[serde(default, deserialize_with = "empty_string_as_none")]
+    #[serde(alias = "username")]
     #[validate(length(
         min = 3,
-        max = 30,
-        message = "Kullanıcı adı 3-30 karakter arasında olmalıdır"
+        max = 25,
+        message = "Kullanıcı adı 3-25 karakter arasında olmalıdır"
     ))]
-    pub username: Option<String>,
-
-    #[validate(email(message = "Geçerli bir e-posta adresi giriniz"))]
-    pub email: String,
+    pub nickname: String,
 
     #[validate(length(min = 8, max = 72, message = "Şifre 8-72 karakter arasında olmalıdır"))]
     pub password: String,
 
     pub default_city_slug: Option<String>,
     pub diet_mode: Option<String>,
-    pub email_security: Option<bool>,
+}
+
+/// Kurtarma anahtarı aktif hatırlama doğrulama isteği
+#[derive(Debug, Deserialize, Validate)]
+pub struct ConfirmRecoveryDto {
+    #[validate(length(min = 5, max = 5, message = "Kurtarma kodunun son 5 karakteri girilmelidir"))]
+    pub last_block: String,
+}
+
+/// Onaysız hesaplar için şifre teyidiyle yeni kurtarma anahtarı üretme isteği
+#[derive(Debug, Deserialize, Validate)]
+pub struct RegenerateRecoveryDto {
+    #[validate(length(min = 1, max = 128, message = "Lütfen mevcut şifrenizi giriniz"))]
+    pub password: String,
+}
+
+/// Kurtarma anahtarı ile şifre sıfırlama isteği
+#[derive(Debug, Deserialize, Validate)]
+pub struct ResetPasswordWithRecoveryDto {
+    #[validate(length(min = 3, max = 50, message = "Geçersiz kullanıcı adı"))]
+    pub nickname: String,
+
+    #[validate(length(min = 20, max = 40, message = "Geçersiz kurtarma anahtarı formatı"))]
+    pub recovery_key: String,
+
+    #[validate(length(min = 8, max = 72, message = "Yeni şifre 8-72 karakter arasında olmalıdır"))]
+    pub new_password: String,
 }
 
 /// Dışarıya (Frontend'e) verilecek güvenli kullanıcı profili
@@ -110,33 +118,26 @@ pub struct LevelProgressDto {
 pub struct UserProfileDto {
     pub id: Uuid,
 
+    pub nickname: String,
+    // Geriye dönük frontend bileşen uyumluluğu için alias:
     pub username: String,
 
-    // SA-13: Rol yalnızca kullanıcının KENDİ profilinde (include_private) döner.
-    // Public profillerde admin hesaplarının enumeration'ını önlemek için gizlenir.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<UserRole>,
 
     pub karma_score: i32,
-
     pub is_verified: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
     pub joined_at: DateTime<Utc>,
     pub created_at: DateTime<Utc>,
     pub avatar_url: Option<String>,
-    pub bio: Option<String>,
     pub default_city_slug: Option<String>,
     pub level: i32,
     pub level_progress: LevelProgressDto,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub google_id: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_admin: Option<bool>,
     pub badge_count: i32,
     pub total_badges: i32,
 
-    // Kullanıcının kazandığı rozetlerin listesi
     pub badges: Vec<UserBadgeDto>,
     pub pinned_badges: Vec<String>,
     pub opt_out_statistics: bool,
@@ -155,19 +156,9 @@ pub struct UserProfileDto {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub notif_dinner_time: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub email_newsletter: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email_security: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email_updates: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
     pub is_blocked: Option<bool>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub is_blocked_by: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub consent_cross_border: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub consent_deadline_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize)]
@@ -193,12 +184,14 @@ pub struct UpdatePinnedBadgesDto {
     pub pinned_badges: Vec<String>,
 }
 
-/// Kimlik doğrulama yanıtı: JWT token + kullanıcı profili
+/// Kimlik doğrulama yanıtı: JWT token + kullanıcı profili + açık kurtarma kodu (varsa)
 #[derive(Debug, Serialize)]
 pub struct AuthResponseDto {
     pub user: UserProfileDto,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub token: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recovery_key: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -226,16 +219,13 @@ pub struct UserDashboardStatsDto {
 
 #[derive(Debug, Deserialize, validator::Validate)]
 pub struct UpdateProfileDto {
-    #[serde(default, deserialize_with = "empty_string_as_none")]
+    #[serde(default, alias = "username", deserialize_with = "empty_string_as_none")]
     #[validate(length(
         min = 3,
-        max = 30,
-        message = "Kullanıcı adı 3-30 karakter arasında olmalıdır"
+        max = 25,
+        message = "Kullanıcı adı 3-25 karakter arasında olmalıdır"
     ))]
-    pub username: Option<String>,
-
-    #[validate(email(message = "Geçerli bir e-posta adresi giriniz"))]
-    pub email: Option<String>,
+    pub nickname: Option<String>,
 
     pub current_password: Option<String>,
 
@@ -246,7 +236,6 @@ pub struct UpdateProfileDto {
     ))]
     pub password: Option<String>,
 
-    pub bio: Option<String>,
     pub default_city_slug: Option<String>,
     pub opt_out_statistics: Option<bool>,
     pub notif_replies: Option<bool>,
@@ -258,9 +247,6 @@ pub struct UpdateProfileDto {
     pub notif_dinner_enabled: Option<bool>,
     #[validate(custom(function = "validate_time_format"))]
     pub notif_dinner_time: Option<String>,
-    pub email_newsletter: Option<bool>,
-    pub email_security: Option<bool>,
-    pub email_updates: Option<bool>,
 }
 
 fn validate_time_format(time_str: &str) -> Result<(), validator::ValidationError> {
@@ -284,50 +270,4 @@ fn validate_time_format(time_str: &str) -> Result<(), validator::ValidationError
 pub struct DeleteAccountDto {
     #[validate(length(min = 1, max = 128, message = "Lütfen şifrenizi giriniz"))]
     pub password: String,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use validator::Validate;
-
-    #[test]
-    fn test_register_request_empty_username_deserializes_to_none() {
-        let json_empty = r#"{"email":"test@example.com","password":"password123","username":""}"#;
-        let dto: RegisterRequestDto = serde_json::from_str(json_empty).unwrap();
-        assert_eq!(dto.username, None);
-        assert!(dto.validate().is_ok());
-
-        let json_whitespace =
-            r#"{"email":"test@example.com","password":"password123","username":"   "}"#;
-        let dto: RegisterRequestDto = serde_json::from_str(json_whitespace).unwrap();
-        assert_eq!(dto.username, None);
-        assert!(dto.validate().is_ok());
-
-        let json_null = r#"{"email":"test@example.com","password":"password123","username":null}"#;
-        let dto: RegisterRequestDto = serde_json::from_str(json_null).unwrap();
-        assert_eq!(dto.username, None);
-        assert!(dto.validate().is_ok());
-
-        let json_omitted = r#"{"email":"test@example.com","password":"password123"}"#;
-        let dto: RegisterRequestDto = serde_json::from_str(json_omitted).unwrap();
-        assert_eq!(dto.username, None);
-        assert!(dto.validate().is_ok());
-    }
-
-    #[test]
-    fn test_register_request_valid_username() {
-        let json = r#"{"email":"test@example.com","password":"password123","username":"ahmet"}"#;
-        let dto: RegisterRequestDto = serde_json::from_str(json).unwrap();
-        assert_eq!(dto.username, Some("ahmet".to_string()));
-        assert!(dto.validate().is_ok());
-    }
-
-    #[test]
-    fn test_register_request_short_username_fails_validation() {
-        let json = r#"{"email":"test@example.com","password":"password123","username":"ab"}"#;
-        let dto: RegisterRequestDto = serde_json::from_str(json).unwrap();
-        assert_eq!(dto.username, Some("ab".to_string()));
-        assert!(dto.validate().is_err());
-    }
 }

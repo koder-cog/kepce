@@ -136,13 +136,13 @@ impl UserService {
         Self::build_profile(db, user, true).await
     }
 
-    /// Kullanıcı adıyla (username) profil arama ve çekme
+    /// Kullanıcı adıyla (rumuz) profil arama ve çekme
     pub async fn get_user_profile_by_username(
         db: &DatabaseConnection,
         username: &str,
     ) -> Result<UserProfileDto, UserError> {
         let user = Users::find()
-            .filter(users::Column::Username.eq(username))
+            .filter(users::Column::Nickname.eq(username))
             .one(db)
             .await
             .map_err(UserError::DatabaseError)?
@@ -382,7 +382,7 @@ impl UserService {
                 description: if is_hidden_and_locked {
                     Some(format!(
                         "@{} kepçeyi doğru daldırıp denk getirebilirse tabağına düşer.",
-                        user.username
+                        user.nickname
                     ))
                 } else {
                     badge.description
@@ -437,7 +437,8 @@ impl UserService {
 
         Ok(UserProfileDto {
             id: user.id,
-            username: user.username.clone(),
+            nickname: user.nickname.clone(),
+            username: user.nickname.clone(),
             role: if include_private {
                 Some(Self::map_role(&user.role))
             } else {
@@ -445,15 +446,12 @@ impl UserService {
             },
             karma_score: user.karma_score,
             is_verified: user.is_verified,
-            email: None,
             joined_at: created_at_time,
             created_at: created_at_time,
-            avatar_url: None,
-            bio: None,
+            avatar_url: user.avatar_url,
             default_city_slug: user.default_city_slug,
             level,
             level_progress,
-            google_id: None,
             is_admin: if include_private {
                 Some(is_admin)
             } else {
@@ -499,25 +497,8 @@ impl UserService {
             } else {
                 None
             },
-            email_newsletter: if include_private {
-                Some(user.email_newsletter)
-            } else {
-                None
-            },
-            email_security: if include_private {
-                Some(user.email_security)
-            } else {
-                None
-            },
-            email_updates: if include_private {
-                Some(user.email_updates)
-            } else {
-                None
-            },
             is_blocked: None,
             is_blocked_by: None,
-            consent_cross_border: None,
-            consent_deadline_at: None,
         })
     }
 
@@ -686,12 +667,12 @@ impl UserService {
         let authors_res = AuthorCount::find_by_statement(Statement::from_sql_and_values(
             db.get_database_backend(),
             r#"
-            SELECT u.username, u.level, u.karma_score, COUNT(v.id) as favorite_count
+            SELECT u.nickname as username, u.level, u.karma_score, COUNT(v.id) as favorite_count
             FROM vote_reactions v
             JOIN comments c ON c.id = v.comment_id
             JOIN users u ON u.id = c.user_id
             WHERE v.user_id = $1 AND v.reaction_type = 'upvote'
-            GROUP BY u.username, u.level, u.karma_score
+            GROUP BY u.nickname, u.level, u.karma_score
             ORDER BY favorite_count DESC
             LIMIT 5
             "#,
@@ -724,8 +705,6 @@ impl UserService {
         db: &DatabaseConnection,
         user_id: Uuid,
         dto: crate::dto::user::UpdateProfileDto,
-        email_blind_key: &str,
-        auth_pepper: &str,
     ) -> Result<UserProfileDto, crate::services::auth::AuthError> {
         use crate::services::auth::AuthError;
 
@@ -737,9 +716,8 @@ impl UserService {
 
         let mut user_model: users::ActiveModel = user.clone().into();
 
-        // Hassas profil değişiklikleri (kullanıcı adı, e-posta, şifre) mevcut şifre doğrulaması (step-up auth) gerektirir.
-        let needs_password_check =
-            dto.username.is_some() || dto.email.is_some() || dto.password.is_some();
+        // Hassas profil değişiklikleri (rumuz, şifre) mevcut şifre doğrulaması (step-up auth) gerektirir.
+        let needs_password_check = dto.nickname.is_some() || dto.password.is_some();
         if needs_password_check {
             let current_password = dto
                 .current_password
@@ -759,18 +737,18 @@ impl UserService {
             }
         }
 
-        if let Some(username) = dto.username {
-            let trimmed = username.trim().to_string();
-            crate::services::auth::AuthService::validate_username(&trimmed)?;
+        if let Some(nickname) = dto.nickname {
+            let trimmed = nickname.trim().to_string();
+            crate::services::auth::AuthService::validate_nickname(&trimmed)?;
 
             // Case-insensitive benzersizlik kontrolü
-            let lower_username = trimmed.to_lowercase();
+            let lower_nickname = trimmed.to_lowercase();
             let exists = Users::find()
                 .filter(
                     sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
-                        sea_orm::sea_query::Expr::col(users::Column::Username),
+                        sea_orm::sea_query::Expr::col(users::Column::Nickname),
                     ))
-                    .eq(&lower_username),
+                    .eq(&lower_nickname),
                 )
                 .filter(users::Column::Id.ne(user_id))
                 .one(db)
@@ -779,29 +757,7 @@ impl UserService {
             if exists.is_some() {
                 return Err(AuthError::UserAlreadyExists);
             }
-            user_model.username = Set(trimmed);
-        }
-
-        if let Some(ref email) = dto.email {
-            let norm = crate::core::zero_knowledge::normalize_email(email);
-            let email_hash =
-                crate::core::zero_knowledge::compute_email_hash(&norm, email_blind_key)
-                    .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-            let auth_hash = crate::core::zero_knowledge::compute_auth_hash(&norm, auth_pepper)
-                .map_err(|e| AuthError::DatabaseError(DbErr::Custom(e.to_string())))?;
-
-            let exists = Users::find()
-                .filter(users::Column::EmailHash.eq(&email_hash))
-                .filter(users::Column::Id.ne(user_id))
-                .one(db)
-                .await
-                .map_err(AuthError::DatabaseError)?;
-            if exists.is_some() {
-                return Err(AuthError::UserAlreadyExists);
-            }
-            user_model.email_hash = Set(Some(email_hash));
-            user_model.auth_hash = Set(Some(auth_hash));
-            user_model.is_verified = Set(false);
+            user_model.nickname = Set(trimmed);
         }
 
         if let Some(password) = dto.password {
@@ -854,15 +810,6 @@ impl UserService {
         }
         if let Some(val) = dto.notif_dinner_time {
             user_model.notif_dinner_time = Set(val);
-        }
-        if let Some(val) = dto.email_newsletter {
-            user_model.email_newsletter = Set(val);
-        }
-        if let Some(val) = dto.email_security {
-            user_model.email_security = Set(val);
-        }
-        if let Some(val) = dto.email_updates {
-            user_model.email_updates = Set(val);
         }
 
         user_model.updated_at = Set(Some(Utc::now().into()));
