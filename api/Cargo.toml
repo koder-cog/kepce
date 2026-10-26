@@ -43,10 +43,12 @@ web-push-native = "0.4"
 async-stream = "0.3"
 futures-util = "0.3"
 regex = "1.10"
-lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder"] }
 crypto_box = { version = "0.9", features = ["std", "seal"] }
 hmac = "0.12"
 hex = "0.4"
+blake3 = "1.5"
+image = { version = "0.25", default-features = false, features = ["png", "jpeg", "webp"] }
+lettre = { version = "0.11", default-features = false, features = ["tokio1-rustls-tls", "smtp-transport", "builder"] }
 
 [dev-dependencies]
 tower = { version = "0.5", features = ["util"] }

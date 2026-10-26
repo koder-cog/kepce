@@ -10,12 +10,14 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     #[sea_orm(unique)]
-    pub username: String,
+    pub nickname: String,
     pub password_hash: String,
+    pub recovery_key_hash: Option<String>,
     pub role: UserRoleEnum,
     pub account_status: AccountStatusEnum,
     pub karma_score: i32,
     pub is_verified: bool,
+    pub avatar_url: Option<String>,
     pub default_city_slug: Option<String>,
     pub level: i32,
     pub level_progress: i32,
@@ -30,15 +32,7 @@ pub struct Model {
     pub notif_breakfast_time: String,
     pub notif_dinner_enabled: bool,
     pub notif_dinner_time: String,
-    pub email_newsletter: bool,
-    pub email_security: bool,
-    pub email_updates: bool,
     pub pinned_badges: Option<Vec<String>>,
-    #[sea_orm(unique)]
-    pub email_hash: Option<String>,
-    #[sea_orm(unique)]
-    pub auth_hash: Option<String>,
-    pub nickname: Option<String>,
     pub report_trust: Decimal,
 }
 
