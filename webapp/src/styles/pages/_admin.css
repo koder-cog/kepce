@@ -361,6 +361,11 @@
     background: var(--color-card);
   }
 
+  .admin-preview-card--sunken {
+    background: var(--color-surface-sunken);
+    border: none;
+  }
+
   .admin-preview-card__header {
     font-size: var(--text-sm);
     font-weight: var(--font-weight-semibold);

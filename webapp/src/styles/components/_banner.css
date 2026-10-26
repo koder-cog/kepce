@@ -1,25 +1,20 @@
 @layer components {
   .banner {
     width: 100%;
-    padding: var(--space-sm) calc(var(--space-md) + 16px) var(--space-sm) var(--space-md);
+    padding: var(--space-xs) calc(var(--space-md) + 16px) var(--space-xs) var(--space-md);
     display: flex;
     justify-content: center;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-    /* Banner is part of page flow now, z-index removed */
-  }
-
-  .banner--accent-primary {
-    background: var(--color-surface-sunken);
+    background: var(--color-surface-elevated);
+    border-bottom: 1px solid var(--color-border-light);
     color: var(--color-text);
+    min-height: 38px;
   }
 
+  .banner--accent-primary,
   .banner--accent-disclaimer {
-    background: linear-gradient(
-      to left,
-      var(--color-accent-disclaimer),
-      color-mix(in srgb, var(--color-accent-disclaimer) 80%, black)
-    );
-    color: var(--color-text-on-accent);
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border-light);
   }
 
   .banner__content {
@@ -37,7 +32,7 @@
     font-size: var(--text-sm);
     font-weight: var(--font-weight-medium);
     line-height: var(--leading-relaxed);
-    /* Truncation removed, text can wrap naturally */
+    color: var(--color-text);
   }
 
   .banner__actions {
@@ -49,20 +44,24 @@
   }
 
   .banner__cta {
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    color: inherit;
-    text-decoration: underline;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-semibold);
+    color: var(--color-text);
+    background: color-mix(in srgb, var(--color-text) 10%, transparent);
+    border-radius: var(--radius-full);
+    padding: 3px 12px;
     cursor: pointer;
     white-space: nowrap;
-    background: transparent;
     border: none;
-    padding: 0;
-    font-family: inherit;
+    text-decoration: none;
+    transition: background var(--dur-fast) var(--ease-tactile);
   }
 
   .banner__cta:hover {
-    opacity: 0.8;
+    background: color-mix(in srgb, var(--color-text) 18%, transparent);
   }
 
   .banner__close {
@@ -71,59 +70,70 @@
     justify-content: center;
     background: transparent;
     border: none;
-    color: inherit;
+    color: var(--color-text-secondary);
     cursor: pointer;
-    width: 28px;
-    height: 28px;
+    width: 26px;
+    height: 26px;
     padding: 0;
-    border-radius: 50%;
+    border-radius: var(--radius-full);
     opacity: 0.7;
     transition: all var(--motion-effects-fast);
   }
 
   .banner__close:hover {
     opacity: 1;
-    background: rgba(128, 128, 128, 0.2);
+    background: color-mix(in srgb, var(--color-text) 10%, transparent);
   }
 
-  /* Tablet ve Mobil Kırılımlar (Her şey ortada birden fazla satır) */
+  /* Tablet ve Mobil Kırılımlar */
   @media (max-width: 600px) {
     .banner {
-      padding: var(--space-sm) var(--space-md);
+      padding: var(--space-xs) var(--space-md);
     }
 
     .banner__content {
       display: flex;
-      flex-direction: column;
-      justify-content: center;
-      text-align: center;
+      flex-direction: row;
+      justify-content: space-between;
+      text-align: left;
       gap: var(--space-sm);
     }
 
     .banner__text {
-      font-size: var(--text-sm);
+      font-size: var(--text-xs);
+      text-align: left;
     }
 
     .banner__actions {
-      justify-self: center;
+      justify-self: end;
+      flex-shrink: 0;
     }
 
     .banner__cta {
-      font-size: var(--text-sm);
+      font-size: var(--text-2xs);
+      padding: 2px 10px;
     }
   }
 
   /* Offline/Online Banner */
   .banner--offline {
-    background-color: var(--color-warning);
-    color: var(--color-text-on-accent);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .banner--offline .banner__icon {
+    color: var(--color-warning);
   }
 
   .banner--online {
-    background-color: var(--color-success);
-    color: var(--color-text-on-accent);
-    border-bottom: 1px solid var(--color-border);
+    background: var(--color-surface-elevated);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border-light);
+  }
+
+  .banner--online .banner__icon {
+    color: var(--color-success);
   }
 
   .banner__content-simple {

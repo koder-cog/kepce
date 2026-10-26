@@ -190,7 +190,7 @@
     }
 
     if (!globalState?.user?.is_verified) {
-      showToast('Oy verebilmek için e-postanızı onaylamalısınız.', {
+      showToast('Oy verebilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', {
         type: 'warning'
       });
       return;

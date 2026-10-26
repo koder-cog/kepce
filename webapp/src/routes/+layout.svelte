@@ -12,7 +12,6 @@
   import ToastContainer from '$lib/components/ui/ToastContainer.svelte';
   import AnnouncementBanner from '$lib/components/ui/AnnouncementBanner.svelte';
   import VerificationBanner from '$lib/components/ui/VerificationBanner.svelte';
-  import holidays from '$lib/domain/calendar/holidays.json';
   import { initScrollbar } from '$lib/dom/scrollbar.js';
   import { initTooltipManager } from '$lib/dom/tooltips.js';
   import { openMenuReportModal } from '$lib/components/features/moderation/report-modal.js';
@@ -35,9 +34,6 @@
       `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(new Date().getDate()).padStart(2, '0')}`
   );
   let year = $derived(todayStr.split('-')[0]);
-  let mmdd = $derived(`${todayStr.split('-')[1]}-${todayStr.split('-')[2]}`);
-  let currentHoliday = $derived(holidays[todayStr] || holidays[mmdd]);
-
   let navHeight = $state(64);
 
   let externalLinkModalOpen = $state(false);
@@ -55,10 +51,6 @@
 
     const a = e.target.closest('a');
     if (!a || !a.href) return;
-
-    // Sadece kullanıcıların girdiği yorum metinlerindeki dış bağlantılar için güvenlik uyarısı gösterilir
-    const isCommentLink = !!a.closest('.comment-node__text');
-    if (!isCommentLink) return;
 
     try {
       const url = new URL(a.href);
@@ -436,14 +428,6 @@
           <Nav />
         </div>
         <OfflineBanner />
-        {#if currentHoliday}
-          <AnnouncementBanner
-            id={`holiday-banner-${year}-${mmdd}`}
-            text={currentHoliday.message}
-            ctaText=""
-            theme={currentHoliday.theme || 'accent-primary'}
-          />
-        {/if}
         <VerificationBanner />
       </nav>
     {:else}
@@ -478,13 +462,3 @@
 {/if}
 
 <ToastContainer />
-
-<style>
-  #page-wrapper {
-    padding-top: var(--nav-height, 0);
-  }
-  :global(html.is-app) #page-wrapper,
-  :global(body.is-app) #page-wrapper {
-    padding-top: 0 !important;
-  }
-</style>

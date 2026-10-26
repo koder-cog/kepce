@@ -5,6 +5,7 @@
   import { normalizeItems } from '$lib/domain/menu/menu.js';
   import SeasonGuides from '$lib/components/features/timeline/SeasonGuides.svelte';
   import { isOrientationSeason } from '$lib/domain/calendar/season.js';
+  import { getHolidayInfo } from '$lib/domain/calendar/holidays.js';
 
   let { citySlug = 'istanbul', date = '', isSummer = false, lastMenuDay = null } = $props();
 
@@ -47,6 +48,7 @@
 
   let isRealSummer = $derived(selectedMonth === 7 || selectedMonth === 8);
   let isSeptemberPreSeason = $derived(selectedMonth === 9 && isSummer);
+  let holidayInfo = $derived(date ? getHolidayInfo(date) : null);
 </script>
 
 <div class="empty-hub">
@@ -63,6 +65,18 @@
       title="Yeni Dönem Hazırlığı"
       desc="KYK yurt yemekhaneleri yeni eğitim-öğretim dönemiyle birlikte hizmete açılacaktır. Nöbetçi yurtlar yerel düzenleme yapabilir."
     />
+  {:else if holidayInfo}
+    <EmptyState
+      iconName="calendar"
+      title={holidayInfo.name}
+      desc="Resmi tatil nedeniyle yemekhanede servis olmayabilir veya nöbetçi sistem uygulanıyor olabilir. Yine de menü biliyorsan gönderebilirsin."
+    >
+      <div class="empty-hub__action">
+        <a href="/menu-gonder" class="btn btn--primary u-w-full btn--squish" data-link>
+          Menü gönder
+        </a>
+      </div>
+    </EmptyState>
   {:else}
     <EmptyState
       iconName="ghost"
@@ -131,112 +145,3 @@
     </section>
   {/if}
 </div>
-
-<style>
-  .empty-hub {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-lg);
-    max-width: 680px;
-    margin: var(--space-md) auto var(--space-2xl);
-    width: 100%;
-  }
-
-  /* ── Action ─────────────────────────────────────────────── */
-  .empty-hub__action {
-    width: 100%;
-    max-width: 360px;
-    margin: var(--space-md) auto 0;
-  }
-
-  /* ── Eldeki Son Menü Kartı ───────────────────────────────── */
-  .empty-hub__menu-card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-xl);
-  }
-
-  .empty-hub__menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .empty-hub__menu-title {
-    font-family: var(--font-display);
-    font-size: var(--text-lg);
-    color: var(--color-text);
-    margin: 0;
-    letter-spacing: -0.01em;
-  }
-
-  .empty-hub__menu-date {
-    font-size: var(--text-xs);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-muted);
-  }
-
-  .empty-hub__meals-list {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-sm);
-  }
-
-  .empty-hub__meal-card {
-    background: var(--color-surface-sunken);
-    border: 1px solid var(--color-border-light);
-    border-radius: var(--radius-md);
-    padding: var(--space-md);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-xs);
-  }
-
-  .empty-hub__meal-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-sm);
-  }
-
-  .empty-hub__meal-badge {
-    font-family: var(--font-display);
-    font-size: var(--text-sm);
-    font-weight: var(--font-weight-bold);
-    color: var(--color-text);
-    letter-spacing: -0.01em;
-  }
-
-  .empty-hub__count-badge {
-    font-size: var(--text-xs);
-    color: var(--color-muted);
-    font-weight: var(--font-weight-medium);
-  }
-
-  .empty-hub__meal-content {
-    font-size: var(--text-sm);
-    line-height: var(--leading-relaxed);
-    color: var(--color-text-secondary);
-  }
-
-  .empty-hub__meal-items {
-    color: inherit;
-    word-break: break-word;
-  }
-
-  .empty-hub__archive-wrapper {
-    padding-top: var(--space-sm);
-    border-top: 1px dashed var(--color-border-light);
-  }
-
-  @media (max-width: 600px) {
-    .empty-hub {
-      gap: var(--space-md);
-    }
-
-    .empty-hub__menu-card {
-      padding: var(--space-md);
-    }
-  }
-</style>

@@ -157,6 +157,15 @@ export async function sendTestPush() {
     throw new Error('Web Push desteklenmiyor.');
   }
 
+  if (typeof Notification !== 'undefined') {
+    if (Notification.permission === 'denied') {
+      throw new Error('Tarayıcı bildirim izni engellenmiş. Lütfen tarayıcı ayarlarından bildirimlere izin verin.');
+    }
+    if (Notification.permission === 'default') {
+      throw new Error('Bildirim izni henüz verilmedi. Lütfen önce bildirimleri açın.');
+    }
+  }
+
   const reg = await navigator.serviceWorker.ready;
   let sub = await reg.pushManager.getSubscription();
   if (!sub) {

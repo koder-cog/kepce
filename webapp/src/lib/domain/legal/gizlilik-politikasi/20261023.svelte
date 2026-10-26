@@ -54,6 +54,12 @@
     matematiksel entropi olduğundan hiçbir gerçek kişiyle eşleştirilemez ve
     tamamen anonimdir.
   </p>
+  <p>
+    Hesabının onaylanması ve yorum/oy özelliklerini kullanabilmen için bu kodu
+    güvenli bir yere kaydettiğine dair teyit vermen istenir. Benzer şekilde,
+    önceki sistemden kalan mevcut hesaplar da sisteme girdiklerinde kurtarma
+    kodlarını oluşturup kaydettiklerini beyan ederek hesaplarını güvene alırlar.
+  </p>
 </section>
 
 <section>

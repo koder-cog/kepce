@@ -24,40 +24,81 @@
   import { nativeBridge } from '@/lib/native/bridge.js';
 
   let user = $derived(globalState?.user);
-  let maskedEmail = $derived(
-    user?.email ||
-      (typeof localStorage !== 'undefined' ? localStorage.getItem('masked_email') : '') ||
-      ''
-  );
-  let isResending = $state(false);
 
-  async function handleResendVerification() {
-    if (isResending) return;
-    const inputEmail =
-      typeof window !== 'undefined'
-        ? window.prompt(
-            'Sıfır bilgi mimarisi gereği e-posta adresiniz sunucuda saklanmaz. Doğrulama bağlantısı için lütfen kayıtlı e-posta adresinizi girin:'
-          )
-        : null;
-    if (!inputEmail || !inputEmail.trim()) return;
+  let isRecoveryRecallModalOpen = $state(false);
+  let recallLastBlock = $state('');
+  let isConfirmingRecall = $state(false);
+  let recallError = $state('');
 
-    isResending = true;
+  let isRegenerateModalOpen = $state(false);
+  let regeneratePassword = $state('');
+  let isRegenerating = $state(false);
+  let regenerateError = $state('');
+
+  let isRegenerateResultModalOpen = $state(false);
+  let newRegeneratedKey = $state('');
+
+  async function handleConfirmRecall() {
+    if (recallLastBlock.trim().length !== 5) return;
+    isConfirmingRecall = true;
+    recallError = '';
     try {
-      await api.resendVerification({ email: inputEmail.trim() });
-      showToast('Doğrulama bağlantısı e-posta adresinize gönderildi.', {
-        type: 'success'
-      });
-    } catch (e) {
-      if (e.status === 429) {
-        showToast('Lütfen yeni bir e-posta istemeden önce 24 saat bekleyiniz.', { type: 'error' });
-      } else {
-        showToast(e.message || 'E-posta gönderilirken bir hata oluştu.', {
-          type: 'error'
-        });
-      }
+      await api.confirmRecovery(recallLastBlock.trim().toLowerCase());
+      showToast('Kurtarma kodu teyit edildi.', 'success');
+      await authActions.refreshUser();
+      isRecoveryRecallModalOpen = false;
+      recallLastBlock = '';
+    } catch (err) {
+      recallError = err.message || 'Son blok eşleşmedi.';
+      showToast(recallError, { type: 'error' });
     } finally {
-      isResending = false;
+      isConfirmingRecall = false;
     }
+  }
+
+  function openRegenerateRecovery() {
+    regeneratePassword = '';
+    regenerateError = '';
+    isRegenerateModalOpen = true;
+  }
+
+  async function handleRegenerate() {
+    if (!regeneratePassword) return;
+    isRegenerating = true;
+    regenerateError = '';
+    try {
+      const res = await api.regenerateRecovery(regeneratePassword);
+      newRegeneratedKey = res.recovery_key || res.new_recovery_key || '';
+      isRegenerateModalOpen = false;
+      isRegenerateResultModalOpen = true;
+      await authActions.refreshUser();
+    } catch (err) {
+      regenerateError = err.message || 'Şifre hatalı.';
+      showToast(regenerateError, { type: 'error' });
+    } finally {
+      isRegenerating = false;
+    }
+  }
+
+  async function copyRegeneratedKey() {
+    try {
+      await navigator.clipboard.writeText(newRegeneratedKey);
+      showToast('Yeni kurtarma kodu panoya kopyalandı!', 'success');
+    } catch {
+      showToast('Kopyalama başarısız oldu.', 'error');
+    }
+  }
+
+  function downloadRegeneratedKey() {
+    const text = `KEPÇE YENİ HESAP KURTARMA KODU\n---------------------------------------------\nKullanıcı Adı: ${user?.username || ''}\nYeni Kurtarma Kodu: ${newRegeneratedKey}\nTarih: ${new Date().toLocaleString('tr-TR')}\n\nÖNEMLİ: Yeni kurtarma kodu üretildiğinde eski kodunuz iptal edilmiştir.\nBu kodu güvenli bir yerde saklayınız.\n---------------------------------------------\n`;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kepce_yeni_kurtarma_kodu_${user?.username || 'hesap'}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Yeni kurtarma kodu dosyası indirildi!', 'success');
   }
   let cities = $state([]);
   let cityOptions = $derived([
@@ -375,10 +416,6 @@
   let isNicknameModalOpen = $state(false);
   let nicknameInput = $state('');
 
-  let isEmailModalOpen = $state(false);
-  let emailInput = $state('');
-  let emailPasswordInput = $state('');
-
   let isPasswordModalOpen = $state(false);
   let currentPasswordInput = $state('');
   let newPasswordInput = $state('');
@@ -445,43 +482,6 @@
       showToast('Kullanıcı adın başarıyla güncellendi!', 'success');
       await authActions.refreshUser();
       isNicknameModalOpen = false;
-    } catch (err) {
-      showToast(err.message, 'error');
-    }
-  }
-
-  function changeEmail() {
-    emailInput = user.email || '';
-    emailPasswordInput = '';
-    isEmailModalOpen = true;
-  }
-
-  async function saveEmail() {
-    const email = emailInput.trim();
-    if (!email || (user?.email && email === user.email)) {
-      isEmailModalOpen = false;
-      return;
-    }
-    if (!emailPasswordInput) {
-      showToast('Lütfen mevcut şifrenizi giriniz.', 'warning');
-      return;
-    }
-    try {
-      await api.updateProfile({
-        email,
-        current_password: emailPasswordInput
-      });
-      if (typeof localStorage !== 'undefined' && email.includes('@')) {
-        const [u, d] = email.split('@');
-        const maskPart = (s) => (s.length <= 2 ? `${s[0]}***` : `${s[0]}***${s[s.length - 1]}`);
-        const dParts = d.split('.');
-        const maskedDomain =
-          dParts.length >= 2 ? `${maskPart(dParts[0])}.${dParts.slice(1).join('.')}` : maskPart(d);
-        localStorage.setItem('masked_email', `${maskPart(u)}@${maskedDomain}`);
-      }
-      showToast('E-posta adresin başarıyla güncellendi!', 'success');
-      await authActions.refreshUser();
-      isEmailModalOpen = false;
     } catch (err) {
       showToast(err.message, 'error');
     }
@@ -590,39 +590,144 @@
   </Modal>
 {/if}
 
-{#if isEmailModalOpen}
+{#if isRecoveryRecallModalOpen}
   <Modal
-    options={{ title: 'E-posta adresini değiştir', iconHtml: icon('mail', 24) }}
-    onClose={() => (isEmailModalOpen = false)}
+    options={{ title: 'Kurtarma Kodunu Teyit Et', iconHtml: icon('lock', 24) }}
+    onClose={() => (isRecoveryRecallModalOpen = false)}
   >
     {#snippet children()}
-      <div class="form-group form-group--floating">
+      <p class="u-text-sm u-color-muted u-mb-md">
+        Kayıt olurken aldığınız kurtarma kodunu kaydettiğinizi teyit etmek için kodun son bloğunu
+        (son 5 karakter) buraya girin.
+      </p>
+      <div
+        class="form-group form-group--floating"
+        class:form-group--error={!!recallError}
+        data-error={recallError || undefined}
+      >
         <input
-          type="email"
-          id="new-email"
+          type="text"
+          id="recall-block-input"
           class="form-input"
+          maxlength="5"
           placeholder=" "
-          bind:value={emailInput}
+          bind:value={recallLastBlock}
+          oninput={() => {
+            recallLastBlock = recallLastBlock.toLowerCase();
+          }}
         />
-        <label class="form-label" for="new-email">Yeni e-posta adresi</label>
+        <label class="form-label" for="recall-block-input">Son 5 Karakter</label>
       </div>
-      <div class="form-group form-group--floating">
+
+      <p class="u-text-xs u-color-muted u-mt-md">
+        Kurtarma kodunu bulamıyor musunuz?
+        <button
+          type="button"
+          class="c-link"
+          onclick={() => {
+            isRecoveryRecallModalOpen = false;
+            openRegenerateRecovery();
+          }}
+        >Yeni kod üretin</button>.
+      </p>
+    {/snippet}
+    {#snippet footer()}
+      <button
+        class="btn btn--secondary btn--squish"
+        onclick={() => (isRecoveryRecallModalOpen = false)}
+      >
+        İptal
+      </button>
+      <button
+        class="btn btn--primary btn--squish"
+        disabled={isConfirmingRecall || recallLastBlock.trim().length !== 5}
+        onclick={handleConfirmRecall}
+      >
+        {isConfirmingRecall ? 'Teyit ediliyor...' : 'Teyit Et'}
+      </button>
+    {/snippet}
+  </Modal>
+{/if}
+
+{#if isRegenerateModalOpen}
+  <Modal
+    options={{ title: 'Yeni Kurtarma Kodu Üret', iconHtml: icon('key', 24) }}
+    onClose={() => (isRegenerateModalOpen = false)}
+  >
+    {#snippet children()}
+      <p class="u-text-sm u-color-muted u-mb-md">
+        Yeni kurtarma kodu üretildiğinde mevcut kodunuz derhal iptal edilecektir. Onaylamak için
+        mevcut şifrenizi giriniz.
+      </p>
+      <div
+        class="form-group form-group--floating"
+        class:form-group--error={!!regenerateError}
+        data-error={regenerateError || undefined}
+      >
         <input
           type="password"
-          id="current-password-email"
+          id="regenerate-password"
           class="form-input"
           placeholder=" "
-          bind:value={emailPasswordInput}
-          maxlength="72"
+          bind:value={regeneratePassword}
         />
-        <label class="form-label" for="current-password-email">Mevcut şifre</label>
+        <label class="form-label" for="regenerate-password">Mevcut Şifreniz</label>
       </div>
     {/snippet}
     {#snippet footer()}
-      <button class="btn btn--secondary btn--squish" onclick={() => (isEmailModalOpen = false)}
-        >İptal</button
+      <button
+        class="btn btn--secondary btn--squish"
+        onclick={() => (isRegenerateModalOpen = false)}
       >
-      <button class="btn btn--primary btn--squish" onclick={saveEmail}>Güncelle</button>
+        İptal
+      </button>
+      <button
+        class="btn btn--primary btn--squish"
+        disabled={isRegenerating || !regeneratePassword}
+        onclick={handleRegenerate}
+      >
+        {isRegenerating ? 'Üretiliyor...' : 'Yeni Kod Üret'}
+      </button>
+    {/snippet}
+  </Modal>
+{/if}
+
+{#if isRegenerateResultModalOpen}
+  <Modal
+    options={{ title: 'Yeni Kurtarma Kodunuz', iconHtml: icon('lock', 24) }}
+    onClose={() => (isRegenerateResultModalOpen = false)}
+  >
+    {#snippet children()}
+      <div class="status-card--main status-card--kesinti status-card--notice u-mb-md">
+        <span class="status-card__notice-icon">{@html icon('warning', 20)}</span>
+        <div>
+          <strong class="u-text-sm u-weight-bold">Eski kurtarma kodunuz iptal edildi.</strong>
+          <p class="u-text-xs u-mt-2xs u-color-muted">Aşağıdaki yeni kodu güvenli bir yere kaydedin.</p>
+        </div>
+      </div>
+      <div class="recovery-key-box u-my-md">
+        {newRegeneratedKey}
+      </div>
+      <div class="u-flex u-flex-gap-sm u-flex-justify-center u-mb-md">
+        <button type="button" class="btn btn--secondary btn--squish" onclick={copyRegeneratedKey}>
+          {@html icon('copy', 16)} Kopyala
+        </button>
+        <button
+          type="button"
+          class="btn btn--secondary btn--squish"
+          onclick={downloadRegeneratedKey}
+        >
+          {@html icon('download', 16)} Dosya olarak indir
+        </button>
+      </div>
+    {/snippet}
+    {#snippet footer()}
+      <button
+        class="btn btn--primary btn--squish u-w-full"
+        onclick={() => (isRegenerateResultModalOpen = false)}
+      >
+        Tamam, Kaydettim
+      </button>
     {/snippet}
   </Modal>
 {/if}
@@ -748,6 +853,19 @@
 <div class="settings-page" id="settings-page">
   <h1 class="settings-page__title">Ayarlar</h1>
 
+  {#if globalState.user && !globalState.user.is_verified}
+    <div class="status-card--main status-card--yavas status-card--notice u-mb-xl">
+      <span class="status-card__notice-icon">{@html icon('info', 20)}</span>
+      <p class="status-card__notice-text">
+        Bazı hesap özelliklerini kullanabilmek için <button
+          type="button"
+          class="c-link"
+          onclick={() => (isRecoveryRecallModalOpen = true)}>kurtarma kodunuzu teyit edin</button
+        >.
+      </p>
+    </div>
+  {/if}
+
   {#if globalState.user}
     <section class="settings-section" id="settings-account">
       <h2 class="settings-section__heading">Hesap</h2>
@@ -766,39 +884,24 @@
           </div>
         </label>
 
-        <!-- E-posta adresi -->
-        <div class="c-list-row c-list-row--clickable c-list-row--tall">
+        <!-- Kurtarma Kodu -->
+        <div class="c-list-row c-list-row--clickable c-list-row--regular">
           <div class="c-list-row__info">
-            <div class="c-list-row__title">
-              E-posta adresi
-              {#if !user.is_verified}
-                <span class="u-color-negative u-text-xs u-ml-xs">(Doğrulanmadı)</span>
-              {:else}
-                <span class="u-color-positive u-text-xs u-ml-xs">(Doğrulandı)</span>
-              {/if}
-            </div>
-            <div class="c-list-row__desc">
-              {#if maskedEmail}
-                {maskedEmail}
-              {:else}
-                <span class="u-color-muted u-text-xs">Sıfır Bilgi Korumalı (Sunucuda Tutulmaz)</span
-                >
-              {/if}
-              {#if !user.is_verified}
-                &middot;
-                <button
-                  type="button"
-                  class="c-link u-text-xs"
-                  onclick={handleResendVerification}
-                  disabled={isResending}
-                >
-                  {isResending ? 'Gönderiliyor...' : 'Doğrulama Gönder'}
-                </button>
-              {/if}
-            </div>
+            <div class="c-list-row__title">Kurtarma Kodu</div>
           </div>
           <div class="c-list-row__control">
-            <button class="btn btn--secondary btn--squish" onclick={changeEmail}>Değiştir</button>
+            {#if !user.is_verified}
+              <button
+                class="btn btn--primary btn--squish"
+                onclick={() => (isRecoveryRecallModalOpen = true)}
+              >
+                Doğrula
+              </button>
+            {:else}
+              <button class="btn btn--secondary btn--squish" onclick={openRegenerateRecovery}>
+                Yeni Kod Üret
+              </button>
+            {/if}
           </div>
         </div>
 
@@ -831,16 +934,16 @@
           </div>
         </label>
 
-        <!-- Kayıtlı cihazlar -->
+        <!-- Aktif oturumlar -->
         <label class="c-list-row c-list-row--clickable c-list-row--tall">
           <div class="c-list-row__info">
-            <div class="c-list-row__title">Kayıtlı cihazlar</div>
-            <div class="c-list-row__desc">Oturum açtığın cihazları yönet</div>
+            <div class="c-list-row__title">Aktif oturumlar</div>
+            <div class="c-list-row__desc">Açık olan oturumlarını ve güvenlik durumunu incele</div>
           </div>
           <div class="c-list-row__control">
             <button
               class="btn btn--secondary btn--squish"
-              onclick={() => (isSessionModalOpen = true)}>Yönet</button
+              onclick={() => (isSessionModalOpen = true)}>İncele</button
             >
           </div>
         </label>
@@ -1237,30 +1340,6 @@
         </div>
       {/if}
     </div>
-
-    {#if globalState.user}
-      <h3>E-posta</h3>
-      <div class="c-boxed-list">
-        <!-- Güvenlik bildirimleri -->
-        <label class="c-list-row c-list-row--clickable c-list-row--tall">
-          <div class="c-list-row__info">
-            <div class="c-list-row__title">Güvenlik</div>
-            <div class="c-list-row__desc">Şifre değişiklikleri ve kritik güvenlik alarmları</div>
-          </div>
-          <div class="c-list-row__control">
-            <input
-              type="checkbox"
-              id="settings-email-security"
-              class="c-input-hidden"
-              checked={globalState.user?.email_security ?? false}
-              onchange={(e) =>
-                handlePreferenceChange('email_security', e.target.checked, 'Güvenlik e-postaları')}
-            />
-            <span class="c-switch"><span class="c-switch__handle"></span></span>
-          </div>
-        </label>
-      </div>
-    {/if}
   </section>
 
   <section class="settings-section" id="settings-privacy">

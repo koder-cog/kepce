@@ -22,12 +22,21 @@
     transform: translateY(0);
   }
 
-  .page-wrapper {
+  .page-wrapper,
+  #page-wrapper {
     min-height: 100dvh;
     display: flex;
     flex-direction: column;
     width: 100%;
     box-sizing: border-box;
+    padding-top: var(--nav-height, 0);
+  }
+
+  html.is-app #page-wrapper,
+  body.is-app #page-wrapper,
+  html.is-app .page-wrapper,
+  body.is-app .page-wrapper {
+    padding-top: 0 !important;
   }
 
   .page-container {

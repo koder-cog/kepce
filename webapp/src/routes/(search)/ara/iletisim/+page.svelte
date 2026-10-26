@@ -2,7 +2,6 @@
   import { page } from '$app/stores';
   import { icon } from '$lib/components/ui/icons.js';
   import '@/styles/pages/_content.css';
-  import '@/styles/pages/_auth.css';
   import { api } from '$lib/api/index.js';
   import { showToast } from '$lib/components/ui/toast.js';
   import Dropdown from '$lib/components/ui/Dropdown.svelte';
@@ -71,6 +70,7 @@
       category = 'error';
     } catch (err) {
       errorMsg = err.message || 'Bir hata oluştu.';
+      showToast(errorMsg, { type: 'error' });
     } finally {
       isLoading = false;
     }
@@ -117,8 +117,9 @@
       <section class="contact-form-section">
         <div class="contact-form-card">
           {#if errorMsg}
-            <div id="contact-error-container">
-              <div class="auth-error" role="alert">{errorMsg}</div>
+            <div id="contact-error-container" class="status-card--main status-card--kesinti status-card--notice u-mb-md" role="alert">
+              <span class="status-card__notice-icon">{@html icon('warning', 20)}</span>
+              <span class="status-card__notice-text">{errorMsg}</span>
             </div>
           {/if}
 

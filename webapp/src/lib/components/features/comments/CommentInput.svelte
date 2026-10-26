@@ -232,7 +232,7 @@
         if (!isUserLoggedIn) {
           authActions.triggerLogin();
         } else {
-          showToast('Yorum yapabilmek için e-postanızı onaylamalısınız.', { type: 'warning' });
+          showToast('Yorum yapabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', { type: 'warning' });
         }
       }}
     ></div>

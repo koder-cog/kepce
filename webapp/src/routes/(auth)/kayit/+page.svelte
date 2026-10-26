@@ -3,38 +3,22 @@
   import { slide } from 'svelte/transition';
   import { goto } from '$app/navigation';
   import { globalState, authActions } from '$lib/stores/appState.svelte.js';
-
   import { api } from '$lib/api/index.js';
-
-  import { CITY_MAP } from '$lib/utils/turkish.js';
   import { icon } from '$lib/components/ui/icons.js';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
-  import Dropdown from '$lib/components/ui/Dropdown.svelte';
+  import Modal from '$lib/components/ui/Modal.svelte';
   import Seo from '$lib/components/ui/Seo.svelte';
-  import { subscribeToPush, isPushSupported } from '$lib/utils/push.js';
-
-  const cityOptions = Object.entries(CITY_MAP)
-    .map(([slug, name]) => ({ value: slug, label: name }))
-    .sort((a, b) => a.label.localeCompare(b.label, 'tr'));
-  cityOptions.unshift({ value: '', label: 'Belirtmek istemiyorum' });
+  import { showToast } from '$lib/components/ui/toast.js';
 
   let user = $derived(globalState?.user);
 
   let username = $state('');
-  let email = $state('');
   let password = $state('');
   let repeatPassword = $state('');
-  let selectedCity = $state('');
 
   let showPassword = $state(false);
   let showRepeatPassword = $state(false);
   let honeypot = $state('');
-
-  let isCeliac = $state(false);
-
-  // Güvenlik e-postası bildirimi opt-in (varsayılan kapalı).
-  let emailSecurity = $state(false);
-  let enablePushNotifications = $state(false);
 
   let consentTerms = $state(false);
   let consentPrivacy = $state(false);
@@ -42,6 +26,14 @@
   let errors = $state({});
   let errorMsg = $state('');
   let isLoading = $state(false);
+
+  // Kurtarma Kodu Teyidi Durumu
+  let showRecoveryModal = $state(false);
+  let recoveryKey = $state('');
+  let lastBlockInput = $state('');
+  let recoveryAcknowledged = $state(false);
+  let isConfirmingRecovery = $state(false);
+  let recoveryError = $state('');
 
   $effect(() => {
     if (username.length > 0) {
@@ -61,61 +53,16 @@
 
   function generateRandomUsername() {
     const adjectives = [
-      'aci',
-      'tuzlu',
-      'tatli',
-      'eksi',
-      'gurme',
-      'ac',
-      'doymus',
-      'obur',
-      'hizli',
-      'yavas',
-      'komik',
-      'sinirli',
-      'mutlu',
-      'uykulu',
-      'bayat',
-      'taze',
-      'sicak',
-      'soguk',
-      'pismis',
-      'cig',
-      'kizarmis',
-      'haslanmis',
-      'soslu',
-      'sade',
-      'karisik',
-      'kivrak',
-      'saskin'
+      'aci', 'tuzlu', 'tatli', 'eksi', 'gurme', 'ac', 'doymus', 'obur',
+      'hizli', 'yavas', 'komik', 'sinirli', 'mutlu', 'uykulu', 'bayat',
+      'taze', 'sicak', 'soguk', 'pismis', 'cig', 'kizarmis', 'haslanmis',
+      'soslu', 'sade', 'karisik', 'kivrak', 'saskin'
     ];
     const nouns = [
-      'kepce',
-      'tabldot',
-      'tepsi',
-      'kasik',
-      'catal',
-      'bicak',
-      'tuzluk',
-      'biber',
-      'domates',
-      'patates',
-      'pilav',
-      'makarna',
-      'fasulye',
-      'nohut',
-      'corba',
-      'ekmek',
-      'ayran',
-      'su',
-      'elma',
-      'armut',
-      'karpuz',
-      'kavun',
-      'tatli',
-      'kofte',
-      'tavuk',
-      'et'
+      'kepce', 'tabldot', 'tepsi', 'kasik', 'catal', 'bicak', 'tuzluk',
+      'biber', 'domates', 'patates', 'pilav', 'makarna', 'fasulye',
+      'nohut', 'corba', 'ekmek', 'ayran', 'su', 'elma', 'armut',
+      'karpuz', 'kavun', 'tatli', 'kofte', 'tavuk', 'et'
     ];
     const rndAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const rndNoun = nouns[Math.floor(Math.random() * nouns.length)];
@@ -127,7 +74,7 @@
 
   function scrollToFirstError() {
     setTimeout(() => {
-      const firstErrorElement = document.querySelector('.form-group--error, .auth-error');
+      const firstErrorElement = document.querySelector('.form-group--error');
       if (firstErrorElement) {
         firstErrorElement.scrollIntoView({
           behavior: 'smooth',
@@ -139,18 +86,22 @@
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (honeypot) return; // Spam protection
+    if (honeypot) return;
 
     let newErrors = {};
-    let newErrorMsg = '';
 
-    if (username.length > 0) {
-      if (username.length < 3 || username.length > 25 || !/^[a-z0-9_]+$/.test(username)) {
-        newErrors.username = 'Kullanıcı adı kurallara uymuyor.';
-        errors = newErrors;
-        scrollToFirstError();
-        return;
-      }
+    if (!username || username.trim().length === 0) {
+      newErrors.username = 'Kullanıcı adı alanı zorunludur.';
+      errors = newErrors;
+      scrollToFirstError();
+      return;
+    }
+
+    if (username.length < 3 || username.length > 25 || !/^[a-z0-9_]+$/.test(username)) {
+      newErrors.username = 'Kullanıcı adı kurallara uymuyor (3-25 karakter, küçük harf/rakam/_).';
+      errors = newErrors;
+      scrollToFirstError();
+      return;
     }
 
     if (password !== repeatPassword) {
@@ -172,61 +123,73 @@
     }
 
     errors = newErrors;
-    errorMsg = newErrorMsg;
+    errorMsg = '';
     isLoading = true;
 
     try {
-      let diet_mode = isCeliac ? 'celiac' : null;
-      await api.register(
-        email,
-        password,
-        username.trim() || null,
-        selectedCity || null,
-        diet_mode,
-        emailSecurity
-      );
-      if (typeof localStorage !== 'undefined' && email && email.includes('@')) {
-        const [u, d] = email.split('@');
-        const maskPart = (s) => (s.length <= 2 ? `${s[0]}***` : `${s[0]}***${s[s.length - 1]}`);
-        const dParts = d.split('.');
-        const maskedDomain =
-          dParts.length >= 2 ? `${maskPart(dParts[0])}.${dParts.slice(1).join('.')}` : maskPart(d);
-        localStorage.setItem('masked_email', `${maskPart(u)}@${maskedDomain}`);
-      }
-      if (enablePushNotifications && isPushSupported()) {
-        try {
-          await subscribeToPush({
-            cityId: null,
-            breakfastEnabled: true,
-            breakfastTime: '07:30',
-            dinnerEnabled: true,
-            dinnerTime: '17:00'
-          });
-        } catch (pushErr) {
-          console.warn('Kayıt anında bildirim izni alınamadı:', pushErr);
-        }
-      }
+      const res = await api.register(username.trim(), password);
 
-      const { showToast } = await import('$lib/components/ui/toast.js');
-      showToast(
-        'Kayıt başarılı! Doğrulama linki e-postana gönderildi (Lütfen gereksiz/spam klasörünü de kontrol et).',
-        { type: 'success' }
-      );
-      goto('/giris');
+      // Kayıt başarılı: Kurtarma Kodunu Modal ile kullanıcıya sun
+      recoveryKey = res.recovery_key || '';
+      showRecoveryModal = true;
+      await authActions.refreshUser();
     } catch (err) {
-      const msg = err.message.toLowerCase();
+      const msg = (err.message || '').toLowerCase();
       let failedErrors = {};
-      if (msg.includes('email') || msg.includes('e-posta')) {
-        failedErrors.email = err.message;
-      } else if (msg.includes('kullanıcı adı') || msg.includes('username')) {
+      if (msg.includes('kullanıcı adı') || msg.includes('nickname') || msg.includes('rumuz') || msg.includes('zaten')) {
         failedErrors.username = err.message;
       } else {
         errorMsg = err.message || 'Bilinmeyen bir sorun oluştu.';
+        showToast(errorMsg, { type: 'error' });
       }
       errors = failedErrors;
       scrollToFirstError();
     } finally {
       isLoading = false;
+    }
+  }
+
+  async function copyRecoveryKey() {
+    try {
+      await navigator.clipboard.writeText(recoveryKey);
+      showToast('Kurtarma kodu kopyalandı.', { type: 'success' });
+    } catch {
+      showToast('Kopyalama başarısız oldu.', { type: 'error' });
+    }
+  }
+
+  function downloadRecoveryFile() {
+    const text = `KEPÇE HESAP KURTARMA KODU\n---------------------------------------------\nKullanıcı Adı: ${username}\nKurtarma Kodu: ${recoveryKey}\nTarih: ${new Date().toLocaleString('tr-TR')}\n\nÖNEMLİ: Kepçe'de e-posta veya telefon tutulmaz.\nŞifrenizi unutursanız hesabınızı kurtarmanın tek yolu bu koddur.\nDosyayı güvenli bir yerde saklayınız.\n---------------------------------------------\n`;
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kepce_kurtarma_kodu_${username}.txt`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Kurtarma kodu dosyası indirildi.', { type: 'success' });
+  }
+
+  async function handleConfirmRecovery(e) {
+    e?.preventDefault();
+    if (!recoveryAcknowledged || lastBlockInput.trim().length !== 5) {
+      return;
+    }
+
+    isConfirmingRecovery = true;
+    recoveryError = '';
+
+    try {
+      await api.confirmRecovery(lastBlockInput.trim().toLowerCase());
+      showToast('Kurtarma kodu teyit edildi, hoş geldiniz!', { type: 'success' });
+      showRecoveryModal = false;
+      await authActions.refreshUser();
+      goto('/');
+    } catch (err) {
+      recoveryError = err.message || 'Son blok eşleşmedi. Lütfen kodu tekrar kontrol ediniz.';
+      showToast(recoveryError, { type: 'error' });
+    } finally {
+      isConfirmingRecovery = false;
     }
   }
 
@@ -237,10 +200,10 @@
 
 <Seo
   title="Kayıt Ol | Kepçe"
-  description="Ücretsiz Kepçe hesabı oluşturun, yurt yemeklerini değerlendirin, yorum yapın ve menü takibi yapın."
+  description="Ücretsiz Kepçe hesabı oluşturun, yurt yemeklerini değerlendirin, menü takibi yapın."
 />
 
-{#if user}
+{#if user && !showRecoveryModal}
   <div class="empty-state-container">
     <EmptyState
       statusCode={403}
@@ -255,27 +218,9 @@
   <div class="auth-form-container auth-form-container--wide">
     <h1 class="auth-page__title u-mb-lg">Kayıt ol</h1>
 
-    <div class="auth-social-buttons">
-      <button
-        type="button"
-        class="btn btn--secondary btn--large btn--squish"
-        onclick={() => (window.location.href = '/api/v1/auth/google/login')}
-      >
-        Google Hesabı ile devam et
-      </button>
-    </div>
-
-    <div class="auth-divider">veya</div>
-
     <div class="form-footer-hint u-mb-xl u-text-sm u-weight-semibold u-color-secondary">
       <span class="form-required-mark">*</span>: Zorunlu
     </div>
-
-    {#if errorMsg}
-      <div id="register-error-container">
-        <div class="auth-error" role="alert">{errorMsg}</div>
-      </div>
-    {/if}
 
     <form class="auth-form" onsubmit={handleSubmit}>
       <!-- Honeypot field for spam protection -->
@@ -290,53 +235,33 @@
         bind:value={honeypot}
       />
 
-      <div class="auth-form-row">
-        <div class="form-group">
-          <div class="form-group--floating u-mb-0" class:form-group--error={errors.username}>
-            <input
-              type="text"
-              id="username"
-              bind:value={username}
-              autocomplete="username"
-              placeholder=" "
-            />
-            <label class="form-label" for="username">Kullanıcı adı</label>
-            <button
-              type="button"
-              class="password-toggle"
-              aria-label="Rastgele Kullanıcı Adı Üret"
-              onclick={generateRandomUsername}
-              title="Rastgele üret"
-            >
-              {@html icon('dice', 20)}
-            </button>
-          </div>
-          <div
-            class="form-help u-mt-xs u-weight-semibold"
-            class:u-color-negative={errors.username}
-            class:u-color-secondary={!errors.username}
-          >
-            Boş bırakılırsa e-postanızdan otomatik üretilir. 3-25 karakter arası sadece İngilizce
-            küçük harf, rakam ve _ içerebilir.
-          </div>
-        </div>
-
-        <div
-          class="form-group form-group--floating"
-          class:form-group--error={errors.email}
-          data-error={errors.email}
-        >
+      <div class="form-group">
+        <div class="form-group--floating u-mb-0" class:form-group--error={errors.username}>
           <input
-            type="email"
-            id="email"
-            bind:value={email}
+            type="text"
+            id="username"
+            bind:value={username}
+            autocomplete="username"
             required
-            autocomplete="email"
             placeholder=" "
           />
-          <label class="form-label" for="email"
-            >E-posta<span class="form-required-mark">*</span></label
+          <label class="form-label" for="username">Kullanıcı Adı<span class="form-required-mark">*</span></label>
+          <button
+            type="button"
+            class="password-toggle"
+            aria-label="Rastgele Kullanıcı Adı Üret"
+            onclick={generateRandomUsername}
+            title="Rastgele üret"
           >
+            {@html icon('dice', 20)}
+          </button>
+        </div>
+        <div
+          class="form-help u-mt-xs u-weight-semibold"
+          class:u-color-negative={errors.username}
+          class:u-color-secondary={!errors.username}
+        >
+          3-25 karakter arası sadece İngilizce küçük harf, rakam ve _ içerebilir.
         </div>
       </div>
 
@@ -367,35 +292,7 @@
               {@html icon(showPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
             </button>
           </div>
-          {#if password.length > 0}
-            <div class="password-checklist u-mt-sm u-text-sm u-weight-semibold" transition:slide>
-              <div
-                class="u-flex u-flex-gap-sm u-flex-align-center"
-                class:u-color-positive={password.length >= 8 && password.length <= 72}
-                class:u-color-negative={password.length < 8 || password.length > 72}
-              >
-                {@html icon(
-                  password.length >= 8 && password.length <= 72 ? 'checkCircle' : 'circle',
-                  16
-                )} 8-72 karakter uzunluğunda
-              </div>
-              <div
-                class="u-flex u-flex-gap-sm u-flex-align-center u-mt-2xs"
-                class:u-color-positive={/[a-zA-Z]/.test(password)}
-                class:u-color-negative={!/[a-zA-Z]/.test(password)}
-              >
-                {@html icon(/[a-zA-Z]/.test(password) ? 'checkCircle' : 'circle', 16)} En az bir harf
-              </div>
-              <div
-                class="u-flex u-flex-gap-sm u-flex-align-center u-mt-2xs"
-                class:u-color-positive={/\d/.test(password)}
-                class:u-color-negative={!/\d/.test(password)}
-              >
-                {@html icon(/\d/.test(password) ? 'checkCircle' : 'circle', 16)}
-                En az bir rakam
-              </div>
-            </div>
-          {/if}
+          <div class="form-help u-mt-xs">En az 8 karakter, harf ve rakam içermelidir.</div>
         </div>
 
         <div
@@ -422,66 +319,6 @@
           >
             {@html icon(showRepeatPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
           </button>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="form-label u-mb-xs">Bulunulan şehir</label>
-        <div class="dropdown-form-control">
-          <Dropdown options={cityOptions} bind:value={selectedCity} />
-        </div>
-        <div class="form-help">Seçilen şehir ana sayfada öncelikli olarak gösterilir.</div>
-      </div>
-
-      <div class="form-group">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="form-label">Diyet tercihleri</label>
-        <div class="c-boxed-list">
-          <label class="c-list-row c-list-row--clickable">
-            <div class="c-list-row__content">
-              <span class="c-list-row__title">Çölyak modu</span>
-              <span class="c-list-row__desc">Glutensiz menüleri ve uyarıları önceliklendir</span>
-            </div>
-            <div class="c-list-row__control">
-              <input type="checkbox" class="c-input-hidden" bind:checked={isCeliac} />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-        </div>
-      </div>
-
-      <div class="form-group">
-        <!-- svelte-ignore a11y_label_has_associated_control -->
-        <label class="form-label">İletişim tercihleri</label>
-        <div class="c-boxed-list">
-          <label class="c-list-row c-list-row--clickable">
-            <div class="c-list-row__content">
-              <span class="c-list-row__title">Güvenlik bildirimleri</span>
-              <span class="c-list-row__desc"
-                >Şifre değişiklikleri ve kritik güvenlik alarmlarında e-posta al</span
-              >
-            </div>
-            <div class="c-list-row__control">
-              <input type="checkbox" class="c-input-hidden" bind:checked={emailSecurity} />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
-
-          <label class="c-list-row c-list-row--clickable">
-            <div class="c-list-row__content">
-              <span class="c-list-row__title">Öğün bildirimleri</span>
-              <span class="c-list-row__desc">Günün menüsü açıklandığında anlık bildirim al </span>
-            </div>
-            <div class="c-list-row__control">
-              <input
-                type="checkbox"
-                class="c-input-hidden"
-                bind:checked={enablePushNotifications}
-              />
-              <span class="c-switch"><span class="c-switch__handle"></span></span>
-            </div>
-          </label>
         </div>
       </div>
 
@@ -512,14 +349,9 @@
           </label>
         </div>
 
-        <div class="u-text-xs u-color-muted u-mt-sm u-mb-md">
-          🛡️ <strong>Sıfır Bilgi Koruması:</strong> E-posta adresiniz sunucularda asla açık metin olarak
-          saklanmaz. Kriptografik kör indeksleme sayesinde kimliğiniz veritabanında tutulmaz.
-        </div>
-
         <button
           type="submit"
-          class="btn btn--primary btn--large auth-submit u-w-full"
+          class="btn btn--primary btn--large u-w-full btn--squish u-mt-xl"
           disabled={isLoading || !consentTerms || !consentPrivacy}
         >
           {isLoading ? 'Hesap oluşturuluyor...' : 'Hesap oluştur'}
@@ -532,4 +364,82 @@
       <a href="/giris" class="auth-footer__link" data-link>Giriş yapılası</a>
     </div>
   </div>
+{/if}
+
+{#if showRecoveryModal}
+  <Modal
+    options={{
+      title: 'Kurtarma Kodu',
+      iconHtml: icon('lock', 24)
+    }}
+    onClose={() => {
+      showRecoveryModal = false;
+      goto('/');
+    }}
+  >
+    {#snippet children()}
+      <div class="u-flex u-flex-column u-gap-md">
+        <p class="u-text-sm u-color-muted u-mb-sm">
+          Şifrenizi unutursanız hesabınıza erişmenin tek yolu bu koddur. E-posta veya telefon tutulmadığı için bu kod olmadan şifre sıfırlanamaz.
+        </p>
+
+        <div class="recovery-key-box">
+          {recoveryKey}
+        </div>
+
+        <div class="u-flex u-gap-sm u-flex-justify-center u-mb-md">
+          <button type="button" class="btn btn--secondary btn--squish" onclick={copyRecoveryKey}>
+            {@html icon('copy', 16)} Kopyala
+          </button>
+          <button type="button" class="btn btn--secondary btn--squish" onclick={downloadRecoveryFile}>
+            {@html icon('download', 16)} Dosya olarak indir
+          </button>
+        </div>
+
+        <form id="recovery-confirm-form" class="recovery-recall-form u-mt-md" onsubmit={handleConfirmRecovery}>
+          <div
+            class="form-group form-group--floating"
+            class:form-group--error={!!recoveryError}
+            data-error={recoveryError || undefined}
+          >
+            <input
+              type="text"
+              id="recall-last-block"
+              maxlength="5"
+              bind:value={lastBlockInput}
+              class="form-input"
+              placeholder=" "
+              required
+              autocomplete="off"
+              oninput={() => { lastBlockInput = lastBlockInput.toLowerCase(); }}
+            />
+            <label class="form-label" for="recall-last-block">
+              Son 5 Karakter<span class="form-required-mark">*</span>
+            </label>
+          </div>
+
+          <label class="form-switch-row u-mt-lg">
+            <input type="checkbox" class="c-input-hidden" bind:checked={recoveryAcknowledged} />
+            <div class="c-switch">
+              <div class="c-switch__handle"></div>
+            </div>
+            <span class="form-switch-row__text u-text-xs u-weight-bold">
+              Kurtarma kodumu güvenli bir yere kaydettim.
+            </span>
+          </label>
+        </form>
+      </div>
+    {/snippet}
+
+    {#snippet footer()}
+      <button
+        type="submit"
+        form="recovery-confirm-form"
+        class="btn btn--primary u-w-full"
+        disabled={isConfirmingRecovery || !recoveryAcknowledged || lastBlockInput.trim().length !== 5}
+      >
+        {isConfirmingRecovery ? 'Teyit ediliyor...' : 'Teyit Et ve Tamamla'}
+      </button>
+    {/snippet}
+  </Modal>
 {/if}

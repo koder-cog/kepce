@@ -128,7 +128,7 @@
 
   function handleCreateProject() {
     if (!globalState?.user?.is_verified) {
-      showToast('Proje oluşturabilmek için e-postanızı onaylamalısınız.', 'warning');
+      showToast('Proje oluşturabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', 'warning');
       return;
     }
     const modalInstance = createModal({
@@ -214,7 +214,7 @@
 
   function handleCreateApiKey() {
     if (!globalState?.user?.is_verified) {
-      showToast('API anahtarı oluşturabilmek için e-postanızı onaylamalısınız.', 'warning');
+      showToast('API anahtarı oluşturabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', 'warning');
       return;
     }
     if (projects.length === 0) {

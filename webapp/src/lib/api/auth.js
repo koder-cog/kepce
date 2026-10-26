@@ -2,43 +2,45 @@ import { request, HOST_BASE, buildQuery } from './client.js';
 
 export const authApi = {
   register: async (
-    email,
+    nickname,
     password,
-    username = null,
     default_city_slug = null,
-    diet_mode = null,
-    email_security = false
+    diet_mode = null
   ) => {
-    const cleanUsername =
-      username && typeof username === 'string' && username.trim() ? username.trim() : null;
+    const cleanNickname =
+      nickname && typeof nickname === 'string' && nickname.trim() ? nickname.trim() : null;
     return await request('/auth/register', {
       method: 'POST',
       body: JSON.stringify({
-        email,
+        nickname: cleanNickname,
         password,
-        username: cleanUsername,
         default_city_slug,
-        diet_mode,
-        email_security
+        diet_mode
       })
     });
   },
-  login: async (username, password, remember = false) => {
+  login: async (identifier, password, remember = false) => {
     return await request('/auth/login', {
       method: 'POST',
-      body: JSON.stringify({ identifier: username, password, remember })
+      body: JSON.stringify({ identifier, password, remember })
     });
   },
-  passwordless: async (email) => {
-    return await request('/auth/passwordless', {
+  confirmRecovery: async (last_block) => {
+    return await request('/auth/confirm-recovery', {
       method: 'POST',
-      body: JSON.stringify({ email })
+      body: JSON.stringify({ last_block })
     });
   },
-  passwordlessLogin: async (token) => {
-    return await request('/auth/passwordless-login', {
+  regenerateRecovery: async (password) => {
+    return await request('/auth/regenerate-recovery', {
       method: 'POST',
-      body: JSON.stringify({ token })
+      body: JSON.stringify({ password })
+    });
+  },
+  resetPasswordWithRecovery: async (nickname, recovery_key, new_password) => {
+    return await request('/auth/password-reset', {
+      method: 'POST',
+      body: JSON.stringify({ nickname, recovery_key, new_password })
     });
   },
   logout: async () => {
@@ -51,12 +53,6 @@ export const authApi = {
     request('/auth/me', {
       method: 'DELETE',
       body: JSON.stringify({ password })
-    }),
-  verifyEmail: (token) => request(`/auth/verify${buildQuery({ token })}`),
-  resendVerification: (data = {}) =>
-    request('/auth/resend-verification', {
-      method: 'POST',
-      body: JSON.stringify(data)
     }),
   getProjects: () => request('/auth/projects'),
   getApiUsage: (projectId = 'all', days = 28) =>
@@ -104,19 +100,5 @@ export const authApi = {
     if (url.startsWith('http')) return url;
     if (url.startsWith('/static')) return `${HOST_BASE}${url}`;
     return url;
-  },
-  forgotPassword: (email) =>
-    request('/auth/forgot-password', {
-      method: 'POST',
-      body: JSON.stringify({ email })
-    }),
-  resetPassword: (token, new_password) =>
-    request('/auth/reset-password', {
-      method: 'POST',
-      body: JSON.stringify({ token, new_password })
-    }),
-  giveCrossBorderConsent: () =>
-    request('/auth/me/consent', {
-      method: 'POST'
-    })
+  }
 };

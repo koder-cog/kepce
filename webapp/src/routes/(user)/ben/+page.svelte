@@ -25,34 +25,17 @@
 
 <h1 class="sr-only">Profilim</h1>
 
-<div class="ben-container">
+<div class="centered-content u-p-xl">
   {#if checked && !globalState.user}
     <EmptyState
       title="Oturum Açın"
       desc="Yorum yapmak, menüleri puanlamak ve favori yemeklerinizi kaydetmek için Kepçe hesabınıza giriş yapın."
       iconName="user"
     >
-      <div class="ben-actions">
+      <div class="u-flex u-gap-md u-flex-justify-center u-flex-wrap u-mt-md">
         <a href="/giris" class="btn btn--primary">Giriş Yap</a>
         <a href="/kayit" class="btn btn--secondary">Hesap Oluştur</a>
       </div>
     </EmptyState>
   {/if}
 </div>
-
-<style>
-  .ben-container {
-    padding: var(--space-xl) var(--space-md);
-    min-height: 65dvh;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-  }
-  .ben-actions {
-    display: flex;
-    gap: var(--space-md);
-    justify-content: center;
-    margin-top: var(--space-md);
-    flex-wrap: wrap;
-  }
-</style>

@@ -1,6 +1,5 @@
 <script>
   import '@/styles/pages/_content.css';
-  import '@/styles/pages/_auth.css';
   import { globalState, authActions } from '$lib/stores/appState.svelte.js';
 
   import { API_BASE } from '$lib/api/client.js';
@@ -277,6 +276,7 @@
       isSuccess = true;
     } catch (err) {
       submitError = err.message || 'Bir hata oluştu.';
+      showToast(submitError, { type: 'error' });
     } finally {
       isSubmitting = false;
     }
@@ -456,7 +456,10 @@
       {/if}
 
       {#if submitError}
-        <div class="auth-error u-block">{submitError}</div>
+        <div class="status-card--main status-card--kesinti status-card--notice u-mb-md" role="alert">
+          <span class="status-card__notice-icon">{@html icon('warning', 20)}</span>
+          <span class="status-card__notice-text">{submitError}</span>
+        </div>
       {/if}
 
       <button
@@ -508,11 +511,3 @@
     {/snippet}
   </Modal>
 {/if}
-
-<style>
-  .contribution-tabs-wrapper {
-    max-width: 760px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-</style>

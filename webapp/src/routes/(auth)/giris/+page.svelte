@@ -5,6 +5,7 @@
 
   import { api } from '$lib/api/index.js';
   import { icon } from '$lib/components/ui/icons.js';
+  import { showToast } from '$lib/components/ui/toast.js';
   import EmptyState from '$lib/components/ui/EmptyState.svelte';
   import Seo from '$lib/components/ui/Seo.svelte';
 
@@ -17,9 +18,6 @@
   let isLoading = $state(false);
   let errorMsg = $state('');
   let formError = $state(false);
-
-  let isPasswordlessMode = $state(false);
-  let isPasswordlessSuccess = $state(false);
   let isRedirecting = $state(false);
 
   const user = $derived(globalState?.user);
@@ -29,7 +27,6 @@
     const urlParams = new URLSearchParams(window.location.search);
     const redirectParam = urlParams.get('redirect');
 
-    // Sadece güvenli iç yollara izin ver (// veya javascript: engelle)
     if (
       redirectParam &&
       redirectParam.startsWith('/') &&
@@ -39,7 +36,6 @@
       return redirectParam;
     }
 
-    // document.referrer aynı origin ise ve auth sayfası değilse
     if (document.referrer) {
       try {
         const refUrl = new URL(document.referrer);
@@ -66,35 +62,19 @@
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (honeypot) return; // Spam protection
+    if (honeypot) return;
 
-    isLoading = true;
-
-    if (isPasswordlessMode) {
-      try {
-        await api.passwordless(username);
-        isPasswordlessSuccess = true;
-        errorMsg = '';
-        formError = false;
-      } catch (err) {
-        errorMsg = err.message || 'Bir hata oluştu.';
-        formError = true;
-      } finally {
-        isLoading = false;
-      }
+    if (!username.trim() || !password) {
+      errorMsg = 'Kullanıcı adı ve şifre alanları zorunludur.';
+      formError = true;
+      showToast(errorMsg, { type: 'error' });
       return;
     }
 
+    isLoading = true;
+
     try {
-      await api.login(username, password, remember);
-      if (typeof localStorage !== 'undefined' && username.includes('@')) {
-        const [u, d] = username.split('@');
-        const maskPart = (s) => (s.length <= 2 ? `${s[0]}***` : `${s[0]}***${s[s.length - 1]}`);
-        const dParts = d.split('.');
-        const maskedDomain =
-          dParts.length >= 2 ? `${maskPart(dParts[0])}.${dParts.slice(1).join('.')}` : maskPart(d);
-        localStorage.setItem('masked_email', `${maskPart(u)}@${maskedDomain}`);
-      }
+      await api.login(username.trim(), password, remember);
       isRedirecting = true;
       await authActions.refreshUser();
 
@@ -108,6 +88,7 @@
       errorMsg = err.message || 'Bir şeyleri hatalı girdin, tekrar dene istersen?';
       formError = true;
       isLoading = false;
+      showToast(errorMsg, { type: 'error' });
     }
   }
 
@@ -141,24 +122,6 @@
   <div class="auth-form-container">
     <h1 class="auth-page__title u-mb-lg">Giriş</h1>
 
-    <div class="auth-social-buttons">
-      <button
-        type="button"
-        class="btn btn--secondary btn--large btn--squish"
-        onclick={() => (window.location.href = '/api/v1/auth/google/login')}
-      >
-        Google Hesabı ile giriş yap
-      </button>
-    </div>
-
-    <div class="auth-divider">veya</div>
-
-    {#if errorMsg}
-      <div id="login-error-container">
-        <div class="auth-error" role="alert">{errorMsg}</div>
-      </div>
-    {/if}
-
     <form class="auth-form" onsubmit={handleSubmit}>
       <!-- Honeypot field for spam protection -->
       <input
@@ -172,99 +135,68 @@
         bind:value={honeypot}
       />
 
-      {#if isPasswordlessSuccess}
-        <div class="passwordless-success u-mb-md">
-          <div class="passwordless-success__icon">
-            {@html icon('send', 40) || icon('mail', 40) || icon('check', 40)}
-          </div>
-          <h3 class="passwordless-success__title">Bağlantı Yola Çıktı!</h3>
-          <p class="passwordless-success__desc">
-            Eğer <strong>{username}</strong> sistemde kayıtlıysa giriş bağlantını e-postana gönderdik.
-          </p>
-          <p class="passwordless-success__note">
-            Lütfen gelen kutunu (ve ne olur ne olmaz spam klasörünü) kontrol et.
-          </p>
-        </div>
-        <button
-          type="button"
-          class="btn btn--secondary auth-submit"
-          onclick={() => {
-            isPasswordlessSuccess = false;
-            isPasswordlessMode = false;
-          }}
+      <div class="form-group">
+        <div
+          class="form-group--floating u-mb-0"
+          class:form-group--error={formError && !username.trim()}
+          data-error={formError && !username.trim() ? 'Kullanıcı adınızı giriniz' : undefined}
         >
-          Şifreyle Girişe Dön
-        </button>
-      {:else}
-        <div class="form-group form-group--floating" class:form-group--error={formError}>
           <input
             type="text"
             id="username"
             bind:value={username}
             required
-            autocomplete={isPasswordlessMode ? 'email' : 'username'}
+            autocomplete="username"
             placeholder=" "
           />
           <label class="form-label" for="username"
-            >{isPasswordlessMode ? 'Kayıtlı E-posta Adresiniz' : 'E-posta veya kullanıcı adı'}<span
-              class="form-required-mark">*</span
-            ></label
+            >Kullanıcı Adı<span class="form-required-mark">*</span></label
           >
         </div>
+        <div class="form-help u-mt-xs">Kullanıcı adınızı giriniz.</div>
+      </div>
 
-        {#if !isPasswordlessMode}
-          <div class="form-group form-group--floating" class:form-group--error={formError}>
-            <input
-              type={showPassword ? 'text' : 'password'}
-              id="password"
-              bind:value={password}
-              required
-              autocomplete="current-password"
-              placeholder=" "
-            />
-            <label class="form-label" for="password"
-              >Şifre<span class="form-required-mark">*</span></label
-            >
-            <button
-              type="button"
-              class="password-toggle"
-              aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
-              onclick={() => (showPassword = !showPassword)}
-            >
-              {@html icon(showPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
-            </button>
-          </div>
-
-          <label class="auth-remember">
-            <input type="checkbox" class="c-input-hidden" bind:checked={remember} />
-            <div class="c-switch">
-              <div class="c-switch__handle"></div>
-            </div>
-            <span class="auth-remember__text">Unutma bunları</span>
-          </label>
-        {/if}
-
-        <button type="submit" class="btn btn--primary auth-submit" disabled={isLoading}>
-          {#if isLoading}
-            {isPasswordlessMode ? 'Gönderiliyor...' : 'Giriş yapılıyor...'}
-          {:else}
-            {isPasswordlessMode ? 'Giriş Bağlantısı Gönder' : 'Giriş yapmaya çabala'}
-          {/if}
-        </button>
-
+      <div
+        class="form-group form-group--floating"
+        class:form-group--error={formError && !password}
+        data-error={formError && !password ? 'Şifrenizi giriniz' : undefined}
+      >
+        <input
+          type={showPassword ? 'text' : 'password'}
+          id="password"
+          bind:value={password}
+          required
+          autocomplete="current-password"
+          placeholder=" "
+        />
+        <label class="form-label" for="password"
+          >Şifre<span class="form-required-mark">*</span></label
+        >
         <button
           type="button"
-          class="btn btn--secondary auth-submit u-mt-sm"
-          onclick={() => {
-            isPasswordlessMode = !isPasswordlessMode;
-            formError = false;
-            errorMsg = '';
-          }}
-          disabled={isLoading}
+          class="password-toggle"
+          aria-label={showPassword ? 'Şifreyi gizle' : 'Şifreyi göster'}
+          onclick={() => (showPassword = !showPassword)}
         >
-          {isPasswordlessMode ? 'Şifre ile giriş yap' : 'Şifresiz giriş yap'}
+          {@html icon(showPassword ? 'eyeNotLooking' : 'eyeLooking', 20)}
         </button>
-      {/if}
+      </div>
+
+      <label class="form-switch-row u-mt-sm">
+        <input type="checkbox" class="c-input-hidden" bind:checked={remember} />
+        <div class="c-switch">
+          <div class="c-switch__handle"></div>
+        </div>
+        <span class="form-switch-row__text u-weight-bold">Unutma bunları</span>
+      </label>
+
+      <button
+        type="submit"
+        class="btn btn--primary btn--large u-w-full btn--squish u-mt-xl"
+        disabled={isLoading}
+      >
+        {isLoading ? 'Giriş yapılıyor...' : 'Giriş yap'}
+      </button>
     </form>
 
     <div class="auth-footer">
@@ -276,45 +208,3 @@
     </div>
   </div>
 {/if}
-
-<style>
-  .passwordless-success {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 2rem 1.5rem;
-    text-align: center;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  }
-
-  .passwordless-success__icon {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 64px;
-    height: 64px;
-    background-color: var(--color-success-soft);
-    color: var(--color-success);
-    border-radius: 50%;
-    margin-bottom: 1rem;
-  }
-
-  .passwordless-success__title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--color-text);
-    margin-bottom: 0.5rem;
-  }
-
-  .passwordless-success__desc {
-    color: var(--color-text);
-    font-size: 1rem;
-    line-height: 1.5;
-    margin-bottom: 1rem;
-  }
-
-  .passwordless-success__note {
-    font-size: 0.875rem;
-    color: var(--color-muted);
-  }
-</style>

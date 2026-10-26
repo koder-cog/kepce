@@ -4,7 +4,6 @@
   import { icon } from '$lib/components/ui/icons.js';
   import { api } from '$lib/api/index.js';
   import { showToast } from '$lib/components/ui/toast.js';
-  import { parseUserAgent } from '$lib/utils/device.js';
 
   let { onClose } = $props();
 
@@ -14,8 +13,8 @@
   onMount(async () => {
     try {
       sessions = await api.getSessions();
-    } catch (e) {
-      showToast('Oturumlar yüklenemedi.', 'error');
+    } catch {
+      showToast('Oturumlar yüklenemedi.', { type: 'error' });
     } finally {
       loading = false;
     }
@@ -25,55 +24,54 @@
     try {
       await api.revokeSession(sessionId);
       sessions = sessions.filter((s) => s.id !== sessionId);
-      showToast('Cihaz oturumu başarıyla kapatıldı.', 'success');
+      showToast('Oturum başarıyla sonlandırıldı.', { type: 'success' });
     } catch (e) {
-      showToast(e.message || 'Oturum kapatılamadı.', 'error');
+      showToast(e.message || 'Oturum sonlandırılamadı.', { type: 'error' });
+    }
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return 'Bilinmiyor';
+    try {
+      return new Date(dateStr).toLocaleString('tr-TR', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch {
+      return dateStr;
     }
   }
 </script>
 
-<Modal options={{ title: 'Kayıtlı cihazlar', iconHtml: icon('laptop', 24) }} {onClose}>
+<Modal options={{ title: 'Aktif oturumlar', iconHtml: icon('lockClose', 24) }} {onClose}>
   {#snippet children()}
-    <div class="c-boxed-list session-list">
+    <div class="c-boxed-list">
       {#if loading}
         <div class="u-text-center u-p-md u-color-muted">Yükleniyor...</div>
       {:else if sessions.length === 0}
         <div class="u-text-center u-p-md u-color-muted">Aktif oturum bulunamadı.</div>
       {:else}
         {#each sessions as session (session.id)}
-          {@const device = parseUserAgent(session.user_agent)}
-          <div class="c-list-row session-row">
-            <div class="c-list-row__info u-flex u-gap-sm session-row-info">
-              <div class="session-icon-wrap">
-                {@html icon(device.icon, 20)}
+          <div class="c-list-row c-list-row--regular">
+            <div class="c-list-row__info">
+              <div class="c-list-row__title">
+                {session.is_current ? 'Bu oturum' : 'Diğer oturum'}
               </div>
-              <div class="session-details">
-                <div class="c-list-row__title session-title">
-                  {device.os} - {device.browser}
-                  {#if session.is_current}
-                    <span class="c-badge session-badge">Şu anki cihaz</span>
-                  {/if}
-                </div>
-                <div class="c-list-row__desc session-desc">
-                  {session.ip_address || 'Bilinmeyen IP'} • {new Date(
-                    session.last_used_at
-                  ).toLocaleDateString('tr-TR', {
-                    month: 'short',
-                    day: 'numeric',
-                    hour: '2-digit',
-                    minute: '2-digit'
-                  })}
-                </div>
+              <div class="c-list-row__desc">
+                Son işlem: {formatDate(session.last_used_at)}
               </div>
             </div>
             {#if !session.is_current}
-              <div class="c-list-row__control session-control">
+              <div class="c-list-row__control">
                 <button
-                  class="btn btn--danger btn--icon btn--squish"
+                  type="button"
+                  class="btn btn--secondary btn--squish btn--danger"
                   onclick={() => handleRevoke(session.id)}
-                  data-tooltip="Oturumu kapat"
                 >
-                  {@html icon('log-out', 18)}
+                  Sonlandır
                 </button>
               </div>
             {/if}
@@ -81,66 +79,8 @@
         {/each}
       {/if}
     </div>
-    <p class="u-text-sm u-color-muted u-mt-md session-hint">
-      Şüpheli bir etkinlik görürseniz, ilgili cihazın oturumunu hemen kapatın ve şifrenizi
-      değiştirin.
-    </p>
   {/snippet}
   {#snippet footer()}
-    <button class="btn btn--secondary" onclick={onClose}>Kapat</button>
+    <button type="button" class="btn btn--secondary" onclick={onClose}>Kapat</button>
   {/snippet}
 </Modal>
-
-<style>
-  .session-list {
-    margin: 0;
-    padding: 0;
-  }
-  .session-row {
-    align-items: center;
-  }
-  .session-row-info {
-    align-items: center;
-    flex: 1;
-    min-width: 0;
-  }
-  .session-icon-wrap {
-    background: var(--color-surface-sunken);
-    color: var(--color-text);
-    border-radius: var(--radius-sm);
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 8px;
-    flex-shrink: 0;
-  }
-  .session-details {
-    flex: 1;
-    min-width: 0;
-  }
-  .session-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-  .session-badge {
-    background: var(--color-accent-primary-light);
-    color: var(--color-accent-primary);
-    font-size: 0.7em;
-    padding: 2px 6px;
-  }
-  .session-desc {
-    font-size: 0.85em;
-    opacity: 0.8;
-    margin-top: 4px;
-  }
-  .session-control {
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-  .session-hint {
-    margin-top: var(--space-md);
-  }
-</style>

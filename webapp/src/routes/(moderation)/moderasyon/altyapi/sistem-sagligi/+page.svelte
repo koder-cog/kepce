@@ -138,15 +138,15 @@
       class="admin-preview-card u-p-md u-mb-lg u-flex u-items-center u-justify-between u-flex-wrap u-gap-sm"
     >
       <span class="u-font-bold u-text-sm">Global Fingerprint (Root Hash)</span>
-      <code class="u-text-xs u-color-muted wrap-text">{healthData.global_fingerprint || '-'}</code>
+      <code class="u-text-xs u-color-muted u-break-all u-min-w-0">{healthData.global_fingerprint || '-'}</code>
     </div>
 
     <h2 class="u-text-sm u-font-bold u-color-muted u-mb-sm u-mt-lg">Node İstatistikleri</h2>
 
     <!-- Hero Total Card -->
-    <div class="admin-preview-card u-p-lg u-text-center u-mb-md hero-total-card">
+    <div class="admin-preview-card admin-preview-card--sunken u-p-lg u-text-center u-mb-md">
       <div class="u-text-xs u-color-muted u-font-bold u-mb-xs">TOPLAM AKTİF NODE</div>
-      <div class="u-text-4xl u-font-black hero-total-number">
+      <div class="u-text-4xl u-font-black u-color-primary">
         {Object.values(healthData.node_counts || {}).reduce((a, b) => a + b, 0)}
       </div>
     </div>
@@ -265,17 +265,3 @@
     {/if}
   {/if}
 </div>
-
-<style>
-  .hero-total-card {
-    background: var(--color-surface-sunken);
-    border: none;
-  }
-  .hero-total-number {
-    color: var(--color-primary);
-  }
-  .wrap-text {
-    word-break: break-all;
-    min-width: 0;
-  }
-</style>

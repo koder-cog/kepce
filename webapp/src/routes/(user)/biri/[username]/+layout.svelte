@@ -362,52 +362,7 @@
   }
 
   // --- Setup / Owner actions ---
-  function openBioEditModal() {
-    const modalObj = createModal({
-      title: 'Biyografiyi düzenle',
-      iconHtml: icon('edit', 24),
-      contentHtml: `
-        <div class="c-modal__form-group">
-          <div class="form-group">
-            <textarea id="edit-bio" rows="5"
-              placeholder="Kendinden bahset..." 
-              maxlength="256">${sanitizeText(profile.bio || '')}</textarea>
-          </div>
-        </div>
-      `,
-      buttons: [
-        { label: 'Vazgeç', variant: 'secondary' },
-        {
-          label: 'Güncelle',
-          variant: 'primary',
-          onClick: async (modalEl) => {
-            const bio = modalEl.querySelector('#edit-bio').value.trim();
-            try {
-              await api.updateProfile({ bio });
-              if (globalState?.user && globalState.user.id === profile.id) {
-                globalState.user.bio = bio;
-              }
-              profile.bio = bio;
-              showToast('Biyografin güncellendi!', 'success');
-              return true;
-            } catch (err) {
-              showToast(err.message, 'error');
-              return false;
-            }
-          }
-        }
-      ]
-    });
-    const modalEl = modalObj.modal;
-    const textarea = modalEl.querySelector('#edit-bio');
-    const saveBtn = modalEl.querySelector('.btn--primary');
-    initCharCounter(textarea, {
-      onUpdate: (_count, limit, isOver) => {
-        saveBtn.disabled = isOver;
-      }
-    });
-    textarea.focus();
-  }
+
 
   function openAvatarManageModal() {
     const hasPhoto = !!profile.avatar_url;
@@ -510,6 +465,7 @@
           <button class="zoom-btn" id="zoom-in" title="Yakınlaştır">${icon('plus', 18)}</button>
         </div>
         <p class="cropper-help">Görseli sürükleyerek hizalayın, tekerlek ile yakınlaştırın.</p>
+        <p class="cropper-help u-color-warning u-text-xs u-mt-xs">Gizlilik Hatırlatması: Kepçe sıfır-bilgi mimarisiyle çalışır. Lütfen kendi yüzünüzü veya doğrudan kimliğinizi belli eden fotoğraflar yüklemeyiniz.</p>
       </div>
     `;
 
@@ -808,11 +764,7 @@
         </div>
       </div>
 
-      <div class="profile-intro__content" id="bio-container">
-        {#if profile.bio}
-          <p class="profile-intro__bio">{safeBio}</p>
-        {/if}
-      </div>
+
 
       <div class="profile-intro__footer">
         <div class="profile-intro__joined">
@@ -833,10 +785,6 @@
             items={[
               ...(isOwner
                 ? [
-                    {
-                      label: 'Biyografiyi düzenle',
-                      onClick: () => openBioEditModal()
-                    },
                     ...(getEarnedBadges(profile).length > 0
                       ? [
                           {

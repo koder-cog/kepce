@@ -133,7 +133,7 @@
       return;
     }
     if (!globalState?.user?.is_verified) {
-      showToast('Yorum yapabilmek için e-postanızı onaylamalısınız.', {
+      showToast('Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', {
         type: 'warning'
       });
       return;
@@ -145,7 +145,7 @@
   async function submitReply() {
     if (!replyText.trim()) return;
     if (!globalState?.user?.is_verified) {
-      showToast('Yorum yapabilmek için e-postanızı onaylamalısınız.', {
+      showToast('Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', {
         type: 'warning'
       });
       return;
@@ -177,7 +177,7 @@
     }
 
     if (!globalState?.user?.is_verified) {
-      showToast('Oy verebilmek için e-postanızı onaylamalısınız.', {
+      showToast('Oy verebilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', {
         type: 'warning'
       });
       return;

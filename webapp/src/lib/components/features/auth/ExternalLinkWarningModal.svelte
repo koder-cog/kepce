@@ -18,7 +18,7 @@
       Şu anda Kepçe'den ayrılıyorsunuz ve aşağıdaki bağlantıya yönlendirileceksiniz. Devam etmek
       istediğinize emin misiniz?
     </p>
-    <div class="external-url-box u-mt-md u-p-sm u-text-sm u-color-muted">
+    <div class="u-bg-sunken u-radius-lg u-break-all u-mt-md u-p-sm u-text-sm u-color-muted">
       {url}
     </div>
   {/snippet}
@@ -27,11 +27,3 @@
     <button class="btn btn--primary" onclick={onContinue}>Devam Et</button>
   {/snippet}
 </Modal>
-
-<style>
-  .external-url-box {
-    background-color: var(--bg-surface-2);
-    border-radius: var(--radius-md);
-    word-break: break-all;
-  }
-</style>
