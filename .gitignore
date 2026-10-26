@@ -1,29 +1,106 @@
-# Rust
-/target/
-**/*.rs.bk
-Cargo.lock.bak
+# ========================================
+# KEPÇE - Git Ignore Configuration
+# ========================================
 
-# Node & Frontend
-node_modules/
-.svelte-kit/
-/webapp/build/
-/webapp/dist/
+# 1. Environment & Secrets
+.env
 .env.local
 .env.*.local
+.env.production
+certs/
+*.pem
+*.crt
+*.key
+!.env.example
 
-# Fastembed & Caches
+# 2. Rust & Cargo
+/target/
+**/*.rs.bk
+*.pdb
+Cargo.lock.bak
+
+# 3. Node.js & Frontend
+node_modules/
+npm-debug.log*
+.svelte-kit/
+webapp/build/
+webapp/dist/
+webapp/.svelte-kit/
+webapp/.vite/
+webapp/static/*/index.html
+webapp/static/data/
+
+# 4. Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.venv/
+
+# 5. Databases
+*.db
+*.sqlite
+*.sqlite3
+test_*.db
+temp_*.db
+
+# 6. Logs & PID Files
+*.log
+*.pid
+api/log/
+worker/log/
+webapp/log/
+webapp/dev.log
+logs/
+
+# 7. OS & IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# 8. AI Tools
+.aider*
+.roo/
+.deep-review/
+*-preview-*.md
+
+# 9. Project Specific Data & Caches
+/backups/
+storage/
+worker/data/
+/data/staging/
+/data/vault/recovered/
 .fastembed_cache/
 worker_cache/
 /cache/
 
-# Logs & Runtime
-*.log
-/logs/
+# 10. Temporary & Scratch Files
+.scratch/
+findings.md
+*.tmp
+*.temp
+*.bak
+*.backup
+*_audit.txt
+*_report.json
+diff_*.txt
+fix_*.js
 
-# Secrets
-.env
-!.env.example
+# 11. Uploads & Avatars (Runtime Data)
+/static/avatars/*
+!/static/avatars/.gitkeep
+/api/static/avatars/*
+!/api/static/avatars/.gitkeep
+/uploads/
+docs/.cache/
+docs/node_modules/
 
-# OS
-.DS_Store
-Thumbs.db

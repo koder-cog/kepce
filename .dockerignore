@@ -1,0 +1,33 @@
+# Derleme çıktıları: imaja yalnızca kaynak girer, derlenmiş binary değil.
+target/
+**/target/
+
+.git/
+.gitignore
+.gitattributes
+.github/
+.agents/
+.roo/
+.cargo/
+
+.env
+.env.*
+
+.scratch/
+data/
+log/
+logs/
+uploads/
+certs/
+
+node_modules/
+**/node_modules/
+webapp/
+
+# docs/ dışlanır; ancak `prompts/` DIŞLANMAZ ve `*.md` deseni KULLANILMAZ:
+# api ve worker, prompt dosyasını `include_str!` ile derlemeye gömer.
+docs/
+
+*.pdf
+*.xlsx
+*.xls
