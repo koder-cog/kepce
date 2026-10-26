@@ -4,7 +4,7 @@
   import { cubicOut } from 'svelte/easing';
   import { isMotionEnabled } from '$lib/dom/motion.js';
   import { timelineState } from '$lib/stores/timeline.svelte.js';
-  import holidays from '$lib/domain/calendar/holidays.json';
+  import { getHolidayInfo } from '$lib/domain/calendar/holidays.js';
 
   const FULL_WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
   const MID_WEEKDAYS = ['Pazar', 'Pztsi', 'Salı', 'Çarş', 'Perş', 'Cuma', 'Cmtsi'];
@@ -88,6 +88,11 @@
       }
     });
   }
+
+  let selectedDateString = $derived(timelineState.selectedDateString);
+  let specialDayInfo = $derived(
+    selectedDateString ? getHolidayInfo(selectedDateString) : null
+  );
 </script>
 
 <div
@@ -229,6 +234,12 @@
           {/if}
         </div>
       {/key}
+
+      {#if specialDayInfo}
+        <div class="day-selector__holiday-badge day-selector__holiday-badge--{specialDayInfo.tone}">
+          {specialDayInfo.text}
+        </div>
+      {/if}
     </div>
   {/key}
 </div>

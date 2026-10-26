@@ -43,46 +43,42 @@
     scroll-snap-type: x proximity;
     scroll-padding-inline: 40px;
     /* Smooth Apple HIG style easing mask computed by python */
-    -webkit-mask-image: linear-gradient(
-      to right,
-      transparent 0px,
-      rgba(0, 0, 0, 0.195) 5px,
-      rgba(0, 0, 0, 0.383) 10px,
-      rgba(0, 0, 0, 0.556) 15px,
-      rgba(0, 0, 0, 0.707) 20px,
-      rgba(0, 0, 0, 0.831) 25px,
-      rgba(0, 0, 0, 0.924) 30px,
-      rgba(0, 0, 0, 0.981) 35px,
-      black calc(100% - 40px),
-      rgba(0, 0, 0, 0.981) calc(100% - 35px),
-      rgba(0, 0, 0, 0.924) calc(100% - 30px),
-      rgba(0, 0, 0, 0.831) calc(100% - 25px),
-      rgba(0, 0, 0, 0.707) calc(100% - 20px),
-      rgba(0, 0, 0, 0.556) calc(100% - 15px),
-      rgba(0, 0, 0, 0.383) calc(100% - 10px),
-      rgba(0, 0, 0, 0.195) calc(100% - 5px),
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to right,
-      transparent 0px,
-      rgba(0, 0, 0, 0.195) 5px,
-      rgba(0, 0, 0, 0.383) 10px,
-      rgba(0, 0, 0, 0.556) 15px,
-      rgba(0, 0, 0, 0.707) 20px,
-      rgba(0, 0, 0, 0.831) 25px,
-      rgba(0, 0, 0, 0.924) 30px,
-      rgba(0, 0, 0, 0.981) 35px,
-      black calc(100% - 40px),
-      rgba(0, 0, 0, 0.981) calc(100% - 35px),
-      rgba(0, 0, 0, 0.924) calc(100% - 30px),
-      rgba(0, 0, 0, 0.831) calc(100% - 25px),
-      rgba(0, 0, 0, 0.707) calc(100% - 20px),
-      rgba(0, 0, 0, 0.556) calc(100% - 15px),
-      rgba(0, 0, 0, 0.383) calc(100% - 10px),
-      rgba(0, 0, 0, 0.195) calc(100% - 5px),
-      transparent 100%
-    );
+    -webkit-mask-image: linear-gradient(to right,
+        transparent 0px,
+        rgba(0, 0, 0, 0.195) 5px,
+        rgba(0, 0, 0, 0.383) 10px,
+        rgba(0, 0, 0, 0.556) 15px,
+        rgba(0, 0, 0, 0.707) 20px,
+        rgba(0, 0, 0, 0.831) 25px,
+        rgba(0, 0, 0, 0.924) 30px,
+        rgba(0, 0, 0, 0.981) 35px,
+        black calc(100% - 40px),
+        rgba(0, 0, 0, 0.981) calc(100% - 35px),
+        rgba(0, 0, 0, 0.924) calc(100% - 30px),
+        rgba(0, 0, 0, 0.831) calc(100% - 25px),
+        rgba(0, 0, 0, 0.707) calc(100% - 20px),
+        rgba(0, 0, 0, 0.556) calc(100% - 15px),
+        rgba(0, 0, 0, 0.383) calc(100% - 10px),
+        rgba(0, 0, 0, 0.195) calc(100% - 5px),
+        transparent 100%);
+    mask-image: linear-gradient(to right,
+        transparent 0px,
+        rgba(0, 0, 0, 0.195) 5px,
+        rgba(0, 0, 0, 0.383) 10px,
+        rgba(0, 0, 0, 0.556) 15px,
+        rgba(0, 0, 0, 0.707) 20px,
+        rgba(0, 0, 0, 0.831) 25px,
+        rgba(0, 0, 0, 0.924) 30px,
+        rgba(0, 0, 0, 0.981) 35px,
+        black calc(100% - 40px),
+        rgba(0, 0, 0, 0.981) calc(100% - 35px),
+        rgba(0, 0, 0, 0.924) calc(100% - 30px),
+        rgba(0, 0, 0, 0.831) calc(100% - 25px),
+        rgba(0, 0, 0, 0.707) calc(100% - 20px),
+        rgba(0, 0, 0, 0.556) calc(100% - 15px),
+        rgba(0, 0, 0, 0.383) calc(100% - 10px),
+        rgba(0, 0, 0, 0.195) calc(100% - 5px),
+        transparent 100%);
   }
 
   .day-selector--calendar {
@@ -306,9 +302,50 @@
     opacity: 1;
   }
 
+  /* ── Calendar Special Day Banner ────────────────────────────── */
+
+  .day-selector__holiday-badge {
+    max-width: 1000px;
+    width: calc(100% - var(--space-xl) * 2);
+    box-sizing: border-box;
+    margin: 0 auto var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-size: var(--text-sm);
+    font-weight: var(--font-weight-medium);
+    line-height: var(--leading-normal);
+  }
+
+  .day-selector__holiday-badge--national,
+  .day-selector__holiday-badge--celebration {
+    background-color: var(--color-holiday-national-bg);
+    border: 1px solid var(--color-holiday-national-border);
+    color: var(--color-holiday-national-text);
+  }
+
+  .day-selector__holiday-badge--religious {
+    background-color: var(--color-holiday-religious-bg);
+    border: 1px solid var(--color-holiday-religious-border);
+    color: var(--color-holiday-religious-text);
+  }
+
+  .day-selector__holiday-badge--solemn {
+    background-color: var(--color-holiday-solemn-bg);
+    border: 1px solid var(--color-holiday-solemn-border);
+    color: var(--color-holiday-solemn-text);
+  }
+
   @media (max-width: 600px) {
     .day-selector-wrapper {
       margin-bottom: var(--space-md);
+    }
+
+    .day-selector__holiday-badge {
+      width: calc(100% - var(--space-lg) * 2);
+      margin-bottom: var(--space-sm);
+      padding: var(--space-2xs) var(--space-md);
+      font-size: var(--text-xs);
     }
 
     .calendar-grid__day {

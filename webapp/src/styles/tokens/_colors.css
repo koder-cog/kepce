@@ -86,6 +86,19 @@
     --color-tooltip-text: var(--color-text);
     --radius-tooltip: 8px;
 
+    /* ── special day / holiday banners ──────────────────────── */
+    --color-holiday-national-bg: #b23a2e;
+    --color-holiday-national-border: #d2564a;
+    --color-holiday-national-text: #ffffff;
+
+    --color-holiday-religious-bg: #2d5a27;
+    --color-holiday-religious-border: #4a8044;
+    --color-holiday-religious-text: #ffffff;
+
+    --color-holiday-solemn-bg: #e6e2d4;
+    --color-holiday-solemn-border: #b8b3a0;
+    --color-holiday-solemn-text: #242828;
+
     /* ── switch ─────────────────────────────────────────────── */
     --color-switch-handle: var(--color-text);
     --color-switch-handle-active: var(--color-card);
@@ -204,6 +217,17 @@
       --color-star: #ffb400;
       --color-star-active: #ffb400;
       --color-rating-star: #ffb400;
+      --color-holiday-national-bg: #b23a2e;
+      --color-holiday-national-border: #d2564a;
+      --color-holiday-national-text: #ffffff;
+
+      --color-holiday-religious-bg: #2d5a27;
+      --color-holiday-religious-border: #4a8044;
+      --color-holiday-religious-text: #ffffff;
+
+      --color-holiday-solemn-bg: #282b2b;
+      --color-holiday-solemn-border: #444949;
+      --color-holiday-solemn-text: #f9f5e5;
       --svg-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f9f5e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
     }
   }
@@ -263,6 +287,17 @@
     --color-star: #ffb400;
     --color-star-active: #ffb400;
     --color-rating-star: #ffb400;
+    --color-holiday-national-bg: #b23a2e;
+    --color-holiday-national-border: #d2564a;
+    --color-holiday-national-text: #ffffff;
+
+    --color-holiday-religious-bg: #2d5a27;
+    --color-holiday-religious-border: #4a8044;
+    --color-holiday-religious-text: #ffffff;
+
+    --color-holiday-solemn-bg: #282b2b;
+    --color-holiday-solemn-border: #444949;
+    --color-holiday-solemn-text: #f9f5e5;
     --svg-select-chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f9f5e5' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   }
 
@@ -291,5 +326,16 @@
     --color-switch-handle-border: transparent;
     --color-switch-track-off: var(--color-card);
     --color-switch-track-on: var(--color-accent-primary);
+    --color-holiday-national-bg: #b23a2e;
+    --color-holiday-national-border: #d2564a;
+    --color-holiday-national-text: #ffffff;
+
+    --color-holiday-religious-bg: #2d5a27;
+    --color-holiday-religious-border: #4a8044;
+    --color-holiday-religious-text: #ffffff;
+
+    --color-holiday-solemn-bg: #e6e2d4;
+    --color-holiday-solemn-border: #b8b3a0;
+    --color-holiday-solemn-text: #242828;
   }
 }
