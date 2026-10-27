@@ -68,10 +68,12 @@ ehthumbs.db
 Thumbs.db
 
 # 8. AI Tools
+.deep-review/
 .aider*
 .roo/
-.deep-review/
+/.agents/
 *-preview-*.md
+AGENTS.md
 
 # 9. Project Specific Data & Caches
 /backups/
