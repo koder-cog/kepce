@@ -1,6 +1,6 @@
 <script>
   import ContentPage from "$lib/components/layout/ContentPage.svelte";
-  import CurrentContent from "$lib/domain/legal/gizlilik-politikasi/20261023.svelte";
+  import CurrentContent from "$lib/domain/legal/gizlilik-politikasi/20261028.svelte";
   import Seo from "$lib/components/ui/Seo.svelte";
 </script>
 
@@ -12,7 +12,7 @@
 
 <ContentPage
   title="Aydınlatma Metni"
-  dateLabel="Son güncelleme: 23 Ekim 2026"
+  dateLabel="Son güncelleme: 28 Ekim 2026"
   archiveLink="/gizlilik-politikasi/arsiv"
 >
   <CurrentContent />

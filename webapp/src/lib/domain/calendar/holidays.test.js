@@ -18,10 +18,19 @@ describe('holidays Resolver', () => {
     expect(h).not.toBeNull();
     expect(h?.tone).toBe('solemn');
     expect(h?.name).toBe("Atatürk'ü Anma Günü");
-    expect(h?.text).toContain('09:05');
+    expect(h?.text).toMatch(/Atatürk|Atam/);
+
+    // 2024 yılı % 4 = 0 olduğu için index 0'daki vefat sayacı metnini seçer (2024 - 1938 = 86)
+    const h2024 = getHolidayInfo('2024-11-10');
+    expect(h2024?.text).toContain('86. yıl dönümünde');
   });
 
-  it('2026 Ramazan Bayramı günlerini (1-3) tanımalı ve religious ton dönmeli', () => {
+  it('2026 Ramazan Bayramı Arefesini ve bayram günlerini tanımalı ve religious ton dönmeli', () => {
+    const arefe = getHolidayInfo('2026-03-19');
+    expect(arefe?.tone).toBe('religious');
+    expect(arefe?.name).toBe('Ramazan Bayramı Arefesi');
+    expect(arefe?.text).toBeTruthy();
+
     const d1 = getHolidayInfo('2026-03-20');
     expect(d1?.tone).toBe('religious');
     expect(d1?.name).toBe('Ramazan Bayramı');
@@ -40,7 +49,12 @@ describe('holidays Resolver', () => {
     expect(dAfter).toBeNull();
   });
 
-  it('2026 Kurban Bayramı günlerini (1-4) tanımalı', () => {
+  it('2026 Kurban Bayramı Arefesini ve bayram günlerini (1-4) tanımalı', () => {
+    const arefe = getHolidayInfo('2026-05-26');
+    expect(arefe?.tone).toBe('religious');
+    expect(arefe?.name).toBe('Kurban Bayramı Arefesi');
+    expect(arefe?.text).toBeTruthy();
+
     const k1 = getHolidayInfo('2026-05-27');
     expect(k1?.tone).toBe('religious');
     expect(k1?.name).toBe('Kurban Bayramı');
@@ -48,7 +62,7 @@ describe('holidays Resolver', () => {
 
     const k4 = getHolidayInfo('2026-05-30');
     expect(k4?.tone).toBe('religious');
-    expect(k4?.text).toContain('bayram');
+    expect(k4?.text.toLowerCase()).toContain('bayram');
 
     const kAfter = getHolidayInfo('2026-05-31');
     expect(kAfter).toBeNull();
@@ -57,13 +71,27 @@ describe('holidays Resolver', () => {
   it('2027-05-19 çifte bayram override kaydını öncelikle getirmeli', () => {
     const doubleHoliday = getHolidayInfo('2027-05-19');
     expect(doubleHoliday?.tone).toBe('national');
-    expect(doubleHoliday?.text).toContain('çifte bayramımız kutlu olsun');
+    expect(doubleHoliday?.text.toLowerCase()).toContain('çifte bayram');
   });
 
   it('2029-02-14 sevgililer günü + ramazan çakışmasını override olarak getirmeli', () => {
     const val = getHolidayInfo('2029-02-14');
     expect(val?.tone).toBe('religious');
-    expect(val?.text).toContain('sevgililer günü ile ramazan bayramı aynı güne denk geldi');
+    expect(val?.text.toLowerCase()).toContain('gül buketiyle bayram çikolatasının');
+  });
+
+  it('2027-03-08 kadınlar günü + ramazan arefesi override kaydını getirmeli', () => {
+    const val = getHolidayInfo('2027-03-08');
+    expect(val?.tone).toBe('national');
+    expect(val?.name).toBe('Dünya Kadınlar Günü ve Ramazan Arefesi');
+    expect(val?.text.toLowerCase()).toContain('kadınların 8 mart');
+  });
+
+  it('2029-04-23 23 nisan + kurban arefesi override kaydını getirmeli', () => {
+    const val = getHolidayInfo('2029-04-23');
+    expect(val?.tone).toBe('national');
+    expect(val?.name).toBe('23 Nisan ve Kurban Arefesi');
+    expect(val?.text.toLowerCase()).toContain('bayram neşesi ile arefe telaşının');
   });
 
   it('2031 yılında schedule tanımlanmamış olsa bile otomatik fallback ile Ramazan ve Kurbanı tanımalı', () => {

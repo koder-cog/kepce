@@ -41,8 +41,8 @@ export const LEGAL_VERSIONS = {
       note: 'Yalnızca menü okuyan anonim ziyaretçilerden hiçbir veri kaydetmediğimi, yasal kayıtların sadece yorum ve fotoğraf paylaşanları kapsadığını belirttim.'
     },
     {
-      slug: '20261023',
-      version: '2026.10.23',
+      slug: '20261028',
+      version: '2026.10.28',
       current: true,
       note: 'Açık e-posta ve kimlik tutmayı tamamen bıraktım, hesapları anonimleştirdim. Kanunen tutulması gereken trafik kayıtlarını ise şifreleyerek yalnızca yetkili adli merciler için erişilebilir kıldım.'
     }
@@ -79,8 +79,8 @@ export const LEGAL_VERSIONS = {
       note: 'Yalnızca menü inceleyen ziyaretçilerden kayıt tutulmadığını, içerik sorumluluğunun yorum ve fotoğraf paylaşan kullanıcıya ait olduğunu belirttim.'
     },
     {
-      slug: '20261023',
-      version: '2026.10.23',
+      slug: '20261028',
+      version: '2026.10.28',
       current: true,
       note: 'Yemekhane bağımsızlığını, menülerdeki alerjen tahminlerinin bağlayıcı olmadığını ve mutfak teyidi sorumluluğunu en başa taşıdım.'
     }

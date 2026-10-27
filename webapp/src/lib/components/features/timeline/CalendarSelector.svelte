@@ -5,6 +5,7 @@
   import { isMotionEnabled } from '$lib/dom/motion.js';
   import { timelineState } from '$lib/stores/timeline.svelte.js';
   import { getHolidayInfo } from '$lib/domain/calendar/holidays.js';
+  import { icon } from '$lib/components/ui/icons.js';
 
   const FULL_WEEKDAYS = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
   const MID_WEEKDAYS = ['Pazar', 'Pztsi', 'Salı', 'Çarş', 'Perş', 'Cuma', 'Cmtsi'];
@@ -37,26 +38,28 @@
     return `/${city}?gun=${timelineState.viewYear}-${m}-${d}`;
   }
 
+  function getHolidayIcon(theme, tone) {
+    if (theme === 'ramadan' || theme === 'sacrifice' || tone === 'religious') {
+      return 'moon';
+    }
+    if (theme === 'national' || tone === 'national') {
+      return 'starFilled';
+    }
+    if (theme === 'new-year') {
+      return 'starFilled';
+    }
+    if (theme === 'solemn' || tone === 'solemn') {
+      return 'leafFall';
+    }
+    return 'starFilled';
+  }
+
   function getHolidays(year, month, day) {
     const m = String(month + 1).padStart(2, '0');
     const d = String(day).padStart(2, '0');
-    const mmdd = `${m}-${d}`;
     const yyyymmdd = `${year}-${m}-${d}`;
-
-    const dayHolidays = [];
-
-    if (holidays[yyyymmdd]) {
-      Array.isArray(holidays[yyyymmdd])
-        ? dayHolidays.push(...holidays[yyyymmdd])
-        : dayHolidays.push(holidays[yyyymmdd]);
-    }
-    if (holidays[mmdd]) {
-      Array.isArray(holidays[mmdd])
-        ? dayHolidays.push(...holidays[mmdd])
-        : dayHolidays.push(holidays[mmdd]);
-    }
-
-    return dayHolidays;
+    const info = getHolidayInfo(yyyymmdd);
+    return info ? [info] : [];
   }
 
   function handleScrollToActive(e) {
@@ -89,9 +92,38 @@
     });
   }
 
-  let selectedDateString = $derived(timelineState.selectedDateString);
-  let specialDayInfo = $derived(
-    selectedDateString ? getHolidayInfo(selectedDateString) : null
+  function getIstanbulTodayString() {
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Europe/Istanbul',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).format(new Date());
+  }
+
+  let showHolidayBanner = $state(
+    typeof window !== 'undefined'
+      ? localStorage.getItem('kepce_show_holiday_banner') !== 'false'
+      : true
+  );
+
+  onMount(() => {
+    window.addEventListener('timeline-scroll-to-active', handleScrollToActive);
+    const handleSettingChange = (e) => {
+      showHolidayBanner = e.detail?.show ?? true;
+    };
+    window.addEventListener('holiday-banner-setting-changed', handleSettingChange);
+    return () => {
+      window.removeEventListener('timeline-scroll-to-active', handleScrollToActive);
+      window.removeEventListener('holiday-banner-setting-changed', handleSettingChange);
+    };
+  });
+
+  let todayString = $derived(
+    timelineState.serverToday || getIstanbulTodayString()
+  );
+  let todayHolidayInfo = $derived(
+    todayString ? getHolidayInfo(todayString) : null
   );
 </script>
 
@@ -170,7 +202,7 @@
                       {#each dayHols as holiday}
                         <span
                           class="indicator-dot indicator-dot--holiday"
-                          style="--holiday-color: var(--color-{holiday.theme});"
+                          style="--holiday-color: var(--color-holiday-{holiday.tone}-border);"
                         ></span>
                       {/each}
                       {#if isWeekend}
@@ -222,7 +254,7 @@
                   {#each dayHols as holiday}
                     <span
                       class="indicator-dot indicator-dot--holiday"
-                      style="--holiday-color: var(--color-{holiday.theme});"
+                      style="--holiday-color: var(--color-holiday-{holiday.tone}-border);"
                     ></span>
                   {/each}
                   {#if isWeekend}
@@ -235,10 +267,21 @@
         </div>
       {/key}
 
-      {#if specialDayInfo}
-        <div class="day-selector__holiday-badge day-selector__holiday-badge--{specialDayInfo.tone}">
-          {specialDayInfo.text}
-        </div>
+      {#if todayHolidayInfo && showHolidayBanner}
+        {@const holidayIcon = getHolidayIcon(todayHolidayInfo.theme, todayHolidayInfo.tone)}
+        <aside
+          class="day-selector__holiday-banner day-selector__holiday-banner--{todayHolidayInfo.theme} day-selector__holiday-banner--tone-{todayHolidayInfo.tone}"
+          aria-label={todayHolidayInfo.name}
+        >
+          {#if holidayIcon}
+            <span class="day-selector__holiday-icon" aria-hidden="true">
+              {@html icon(holidayIcon, 20)}
+            </span>
+          {/if}
+          <p class="day-selector__holiday-text">
+            {todayHolidayInfo.text}
+          </p>
+        </aside>
       {/if}
     </div>
   {/key}

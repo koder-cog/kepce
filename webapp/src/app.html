@@ -95,13 +95,54 @@
           }
         }
       };
+      function safeGet(key, fallback) {
+        try {
+          return localStorage.getItem(key) ?? fallback;
+        } catch (_) {
+          return fallback;
+        }
+      }
+
       const syncThemeState = function () {
-        const savedTheme = localStorage.getItem('renkTercihi') || 'sistem';
+        const savedTheme = safeGet('renkTercihi', 'sistem');
         window.applyTheme(savedTheme, true);
-        if (localStorage.getItem('kepce_show_bot') === 'false') {
-          document.documentElement.classList.add('hide-ai');
+
+        const el = document.documentElement;
+
+        if (safeGet('kepce_show_bot', 'true') === 'false') {
+          el.classList.add('hide-ai');
         } else {
-          document.documentElement.classList.remove('hide-ai');
+          el.classList.remove('hide-ai');
+        }
+
+        if (safeGet('kepce_show_holiday_banner', 'true') === 'false') {
+          el.classList.add('hide-holiday-banner');
+        } else {
+          el.classList.remove('hide-holiday-banner');
+        }
+
+        if (safeGet('kepce_animations', 'true') === 'false') {
+          el.classList.add('disable-animations');
+        } else {
+          el.classList.remove('disable-animations');
+        }
+
+        if (safeGet('kepce_effects', 'true') === 'false') {
+          el.classList.add('disable-effects');
+        } else {
+          el.classList.remove('disable-effects');
+        }
+
+        if (safeGet('kepce_show_indicators', 'false') === 'true') {
+          el.classList.add('show-indicators');
+        } else {
+          el.classList.remove('show-indicators');
+        }
+
+        if (safeGet('kepce_show_empty_cards', 'true') === 'false') {
+          el.classList.add('hide-empty-cards');
+        } else {
+          el.classList.remove('hide-empty-cards');
         }
       };
 

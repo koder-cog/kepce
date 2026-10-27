@@ -324,6 +324,12 @@
     const showBot = localStorage.getItem('kepce_show_bot') !== 'false';
     document.documentElement.classList.toggle('hide-ai', !showBot);
 
+    const showHolidayBanner = localStorage.getItem('kepce_show_holiday_banner') !== 'false';
+    document.documentElement.classList.toggle('hide-holiday-banner', !showHolidayBanner);
+
+    const showEmptyCards = localStorage.getItem('kepce_show_empty_cards') !== 'false';
+    document.documentElement.classList.toggle('hide-empty-cards', !showEmptyCards);
+
     const devMode = localStorage.getItem('kepce_dev_mode') === 'true';
     globalState.devMode = devMode;
 

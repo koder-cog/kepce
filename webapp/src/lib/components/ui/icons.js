@@ -59,6 +59,7 @@ import windy from '@/assets/icons/weather/windy.svg?raw';
 import tornado from '@/assets/icons/weather/tornado.svg?raw';
 import sunrise from '@/assets/icons/weather/sunrise.svg?raw';
 import sunset from '@/assets/icons/weather/sunset.svg?raw';
+import leafFall from '@/assets/icons/weather/leaf-fall.svg?raw';
 
 // Food
 import bread from '@/assets/icons/food/bread.svg?raw';
@@ -188,6 +189,8 @@ export const icons = {
   tornado,
   sunrise,
   sunset,
+  leafFall,
+  'leaf-fall': leafFall,
   system,
   externalLink,
   logo,

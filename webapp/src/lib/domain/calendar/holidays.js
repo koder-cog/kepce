@@ -31,9 +31,13 @@ export function getHolidayInfo(date) {
   // 1. Manuel İstisna ve Çifte Bayram Önceliği (Overrides)
   const override = holidaysData.overrides?.[yyyymmdd];
   if (override) {
+    const theme =
+      override.theme ||
+      (override.tone === 'religious' ? 'ramadan' : override.tone === 'solemn' ? 'solemn' : 'national');
     return {
       name: override.name,
       tone: override.tone,
+      theme,
       text: override.message
     };
   }
@@ -44,11 +48,19 @@ export function getHolidayInfo(date) {
     const list = fixedHoliday.messages || [];
     let text = list.length > 0 ? list[year % list.length] : (fixedHoliday.message || fixedHoliday.name);
     const republicYear = year - 1923;
-    text = text.replace('{republicYear}', String(republicYear));
+    const passingYear = year - 1938;
+    text = text
+      .replaceAll('{republicYear}', String(republicYear))
+      .replaceAll('{passingYear}', String(passingYear));
+
+    let theme = 'national';
+    if (mmdd === '01-01' || mmdd === '12-31') theme = 'new-year';
+    else if (fixedHoliday.tone === 'solemn') theme = 'solemn';
 
     return {
       name: fixedHoliday.name,
       tone: fixedHoliday.tone,
+      theme,
       text
     };
   }
@@ -59,13 +71,16 @@ export function getHolidayInfo(date) {
   if (yearSchedule?.ramadan) {
     const [rM, rD] = yearSchedule.ramadan.split('-').map(Number);
     const diff = getDayDiff(year, month, day, year, rM, rD);
-    if (diff >= 0 && diff <= 2) {
-      const dayKey = `day_${diff + 1}`;
+    if (diff >= -1 && diff <= 2) {
+      const isArefe = diff === -1;
+      const dayKey = isArefe ? 'day_0' : `day_${diff + 1}`;
       const list = holidaysData.messages?.ramadan?.[dayKey] || [];
-      const text = list.length > 0 ? list[year % list.length] : 'Ramazan Bayramı kutlu olsun!';
+      const defaultText = isArefe ? 'Ramazan Bayramı Arefesi kutlu olsun!' : 'Ramazan Bayramı kutlu olsun!';
+      const text = list.length > 0 ? list[year % list.length] : defaultText;
       return {
-        name: 'Ramazan Bayramı',
+        name: isArefe ? 'Ramazan Bayramı Arefesi' : 'Ramazan Bayramı',
         tone: 'religious',
+        theme: 'ramadan',
         text
       };
     }
@@ -74,13 +89,16 @@ export function getHolidayInfo(date) {
   if (yearSchedule?.sacrifice) {
     const [sM, sD] = yearSchedule.sacrifice.split('-').map(Number);
     const diff = getDayDiff(year, month, day, year, sM, sD);
-    if (diff >= 0 && diff <= 3) {
-      const dayKey = `day_${diff + 1}`;
+    if (diff >= -1 && diff <= 3) {
+      const isArefe = diff === -1;
+      const dayKey = isArefe ? 'day_0' : `day_${diff + 1}`;
       const list = holidaysData.messages?.sacrifice?.[dayKey] || [];
-      const text = list.length > 0 ? list[year % list.length] : 'Kurban Bayramı kutlu olsun!';
+      const defaultText = isArefe ? 'Kurban Bayramı Arefesi kutlu olsun!' : 'Kurban Bayramı kutlu olsun!';
+      const text = list.length > 0 ? list[year % list.length] : defaultText;
       return {
-        name: 'Kurban Bayramı',
+        name: isArefe ? 'Kurban Bayramı Arefesi' : 'Kurban Bayramı',
         tone: 'religious',
+        theme: 'sacrifice',
         text
       };
     }
@@ -95,6 +113,23 @@ export function getHolidayInfo(date) {
       const hMonth = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10);
       const hDay = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
 
+      // Ramazan Bayramı Arefesi: Şevval 1'den bir önceki gün
+      const nextDt = new Date(Date.UTC(year, month - 1, day + 1));
+      const nextParts = fmt.formatToParts(nextDt);
+      const nextHMonth = parseInt(nextParts.find((p) => p.type === 'month')?.value || '0', 10);
+      const nextHDay = parseInt(nextParts.find((p) => p.type === 'day')?.value || '0', 10);
+
+      if (nextHMonth === 10 && nextHDay === 1) {
+        const list = holidaysData.messages?.ramadan?.day_0 || [];
+        const text = list.length > 0 ? list[year % list.length] : 'Ramazan Bayramı Arefesi kutlu olsun!';
+        return {
+          name: 'Ramazan Bayramı Arefesi',
+          tone: 'religious',
+          theme: 'ramadan',
+          text
+        };
+      }
+
       // Ramazan Bayramı: 10. ay (Şevval), 1-3. günler
       if (hMonth === 10 && hDay >= 1 && hDay <= 3) {
         const dayKey = `day_${hDay}`;
@@ -103,6 +138,19 @@ export function getHolidayInfo(date) {
         return {
           name: 'Ramazan Bayramı',
           tone: 'religious',
+          theme: 'ramadan',
+          text
+        };
+      }
+
+      // Kurban Bayramı Arefesi: 12. ay (Zilhicce), 9. gün
+      if (hMonth === 12 && hDay === 9) {
+        const list = holidaysData.messages?.sacrifice?.day_0 || [];
+        const text = list.length > 0 ? list[year % list.length] : 'Kurban Bayramı Arefesi kutlu olsun!';
+        return {
+          name: 'Kurban Bayramı Arefesi',
+          tone: 'religious',
+          theme: 'sacrifice',
           text
         };
       }
@@ -116,6 +164,7 @@ export function getHolidayInfo(date) {
         return {
           name: 'Kurban Bayramı',
           tone: 'religious',
+          theme: 'sacrifice',
           text
         };
       }

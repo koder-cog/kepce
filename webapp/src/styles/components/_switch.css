@@ -107,6 +107,8 @@
   }
 
   /* ── Mekanik Durum Göstergeleri (I/O) ── */
+  :root.show-indicators .c-switch::before,
+  :root.show-indicators .c-switch::after,
   body.show-indicators .c-switch::before,
   body.show-indicators .c-switch::after {
     position: absolute;
@@ -121,6 +123,7 @@
   }
 
   /* Açık ('I') göstergesi: Sol konum, kapalıyken buton tutamağının altında kalır */
+  :root.show-indicators .c-switch::before,
   body.show-indicators .c-switch::before {
     content: 'I';
     left: 14px;
@@ -130,6 +133,7 @@
   }
 
   /* Kapalı ('○') göstergesi: Sağ konum */
+  :root.show-indicators .c-switch::after,
   body.show-indicators .c-switch::after {
     content: '○';
     right: 11px;
@@ -139,14 +143,17 @@
   }
 
   /* Duruma göre gösterge görünürlükleri */
+  :root.show-indicators .c-input-hidden:checked + .c-switch::before,
   body.show-indicators .c-input-hidden:checked + .c-switch::before {
     opacity: 1;
   }
 
+  :root.show-indicators .c-input-hidden:not(:checked) + .c-switch::after,
   body.show-indicators .c-input-hidden:not(:checked) + .c-switch::after {
     opacity: 0.45;
   }
 
+  :root.show-indicators .c-input-hidden:checked + .c-switch::after,
   body.show-indicators .c-input-hidden:checked + .c-switch::after {
     opacity: 0;
   }

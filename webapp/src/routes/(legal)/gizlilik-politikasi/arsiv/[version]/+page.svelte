@@ -1,5 +1,5 @@
 <script>
-  import ContentPage from "$lib/components/layout/ContentPage.svelte";
+  import ContentPage from '$lib/components/layout/ContentPage.svelte';
   let { data } = $props();
 </script>
 
@@ -9,7 +9,7 @@
 </svelte:head>
 
 <ContentPage
-  title="Aydınlatma Metni"
+  title="Gizlilik Politikası"
   dateLabel={`Arşivlenmiş sürüm tarihi: ${data.versionData.version}`}
   isArchived={true}
   archiveLink="/gizlilik-politikasi/arsiv"

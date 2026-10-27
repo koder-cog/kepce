@@ -131,6 +131,7 @@
   }
 
   let showEmptyCards = $state(safeStorageGet('kepce_show_empty_cards', 'true') === 'true');
+  let showHolidayBanner = $state(safeStorageGet('kepce_show_holiday_banner', 'true') !== 'false');
   let scrollbarPermanent = $state(safeStorageGet('kepce_scrollbar_permanent', 'false') === 'true');
   let animationsEnabled = $state(safeStorageGet('kepce_animations', 'true') !== 'false');
   let effectsEnabled = $state(safeStorageGet('kepce_effects', 'true') !== 'false');
@@ -187,6 +188,15 @@
 
   function handleShowEmptyCardsToggle() {
     localStorage.setItem('kepce_show_empty_cards', showEmptyCards);
+    document.documentElement.classList.toggle('hide-empty-cards', !showEmptyCards);
+  }
+
+  function handleHolidayBannerToggle() {
+    localStorage.setItem('kepce_show_holiday_banner', showHolidayBanner);
+    document.documentElement.classList.toggle('hide-holiday-banner', !showHolidayBanner);
+    window.dispatchEvent(
+      new CustomEvent('holiday-banner-setting-changed', { detail: { show: showHolidayBanner } })
+    );
   }
 
   function handleDevModeToggle() {
@@ -627,8 +637,8 @@
           onclick={() => {
             isRecoveryRecallModalOpen = false;
             openRegenerateRecovery();
-          }}
-        >Yeni kod üretin</button>.
+          }}>Yeni kod üretin</button
+        >.
       </p>
     {/snippet}
     {#snippet footer()}
@@ -702,7 +712,9 @@
         <span class="status-card__notice-icon">{@html icon('warning', 20)}</span>
         <div>
           <strong class="u-text-sm u-weight-bold">Eski kurtarma kodunuz iptal edildi.</strong>
-          <p class="u-text-xs u-mt-2xs u-color-muted">Aşağıdaki yeni kodu güvenli bir yere kaydedin.</p>
+          <p class="u-text-xs u-mt-2xs u-color-muted">
+            Aşağıdaki yeni kodu güvenli bir yere kaydedin.
+          </p>
         </div>
       </div>
       <div class="recovery-key-box u-my-md">
@@ -1124,7 +1136,7 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Boş içerik kartları</div>
-          <div class="c-list-row__desc">İçinde bilgi bulunmayan kartları göster</div>
+          <div class="c-list-row__desc">Bilgi bulunmayan kartları göster</div>
         </div>
         <div class="c-list-row__control">
           <input
@@ -1133,6 +1145,23 @@
             class="c-input-hidden"
             bind:checked={showEmptyCards}
             onchange={handleShowEmptyCardsToggle}
+          />
+          <span class="c-switch"><span class="c-switch__handle"></span></span>
+        </div>
+      </label>
+
+      <!-- Özel gün ve bayram kartı -->
+      <label class="c-list-row c-list-row--clickable c-list-row--tall">
+        <div class="c-list-row__info">
+          <div class="c-list-row__title">Özel gün kartını göster</div>
+        </div>
+        <div class="c-list-row__control">
+          <input
+            type="checkbox"
+            id="settings-holiday-banner-toggle"
+            class="c-input-hidden"
+            bind:checked={showHolidayBanner}
+            onchange={handleHolidayBannerToggle}
           />
           <span class="c-switch"><span class="c-switch__handle"></span></span>
         </div>
@@ -1349,7 +1378,7 @@
       <label class="c-list-row c-list-row--clickable c-list-row--tall">
         <div class="c-list-row__info">
           <div class="c-list-row__title">Dış bağlantı uyarısı</div>
-          <div class="c-list-row__desc">Kepçe dışındaki sitelere giderken uyarı göster</div>
+          <div class="c-list-row__desc">Diğer sitelere giderken uyarı göster</div>
         </div>
         <div class="c-list-row__control">
           <input

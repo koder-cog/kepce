@@ -428,9 +428,7 @@ export function createTimelineStore() {
 
   function setServerToday(dateStr) {
     if (!dateStr) return;
-    if (!serverToday) {
-      serverToday = dateStr;
-    }
+    serverToday = dateStr;
   }
 
   function reload() {

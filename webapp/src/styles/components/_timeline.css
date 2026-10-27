@@ -450,6 +450,18 @@
     grid-template-columns: 1fr;
   }
 
+  html.hide-empty-cards .timeline__slot--breakfast:has(.empty-state):not(:has(.bot-card)) {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    margin-bottom: 0;
+    pointer-events: none;
+    visibility: hidden;
+  }
+
+  html.hide-empty-cards .timeline__slot--dinner:has(.empty-state) {
+    display: none !important;
+  }
+
   /* ── timeline notice banner ────────────────────────────────── */
 
   .timeline__notice-wrapper {

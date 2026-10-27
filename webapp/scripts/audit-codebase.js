@@ -382,7 +382,7 @@ async function main() {
     'c-', 'ci-',
     'is-', 'depth-', 'card--', 'pagination__btn--', 'stats-section-title--',
     'archive-row__votes--', 'admin-table-cell--pill--', 'action-btn--',
-    'comment-node__badge--'
+    'comment-node__badge--', 'day-selector__holiday-banner--'
   ];
 
   const DESIGN_TOKENS = new Set([

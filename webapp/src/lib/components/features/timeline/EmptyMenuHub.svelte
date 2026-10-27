@@ -5,7 +5,6 @@
   import { normalizeItems } from '$lib/domain/menu/menu.js';
   import SeasonGuides from '$lib/components/features/timeline/SeasonGuides.svelte';
   import { isOrientationSeason } from '$lib/domain/calendar/season.js';
-  import { getHolidayInfo } from '$lib/domain/calendar/holidays.js';
 
   let { citySlug = 'istanbul', date = '', isSummer = false, lastMenuDay = null } = $props();
 
@@ -48,7 +47,6 @@
 
   let isRealSummer = $derived(selectedMonth === 7 || selectedMonth === 8);
   let isSeptemberPreSeason = $derived(selectedMonth === 9 && isSummer);
-  let holidayInfo = $derived(date ? getHolidayInfo(date) : null);
 </script>
 
 <div class="empty-hub">
@@ -65,18 +63,6 @@
       title="Yeni Dönem Hazırlığı"
       desc="KYK yurt yemekhaneleri yeni eğitim-öğretim dönemiyle birlikte hizmete açılacaktır. Nöbetçi yurtlar yerel düzenleme yapabilir."
     />
-  {:else if holidayInfo}
-    <EmptyState
-      iconName="calendar"
-      title={holidayInfo.name}
-      desc="Resmi tatil nedeniyle yemekhanede servis olmayabilir veya nöbetçi sistem uygulanıyor olabilir. Yine de menü biliyorsan gönderebilirsin."
-    >
-      <div class="empty-hub__action">
-        <a href="/menu-gonder" class="btn btn--primary u-w-full btn--squish" data-link>
-          Menü gönder
-        </a>
-      </div>
-    </EmptyState>
   {:else}
     <EmptyState
       iconName="ghost"

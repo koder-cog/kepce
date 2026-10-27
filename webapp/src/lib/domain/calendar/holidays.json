@@ -4,140 +4,195 @@
       "name": "Yılbaşı",
       "tone": "national",
       "messages": [
-        "mutlu yıllar. umarız bu yıl yemekhanede daha çok et çıkar ve gelen yıl gideni aratmaz."
+        "Yeni yılın menüleri lezzetli, günleri huzurlu kılması dileğiyle. Mutlu yıllar!",
+        "Umarım bu yıl yemekhanede porsiyonların doyurduğu güzel bir yıl olur. Mutlu yıllar!",
+        "Gelen yılın gideni aratmadığı, güzel bir yıl dilerim. Mutlu yıllar!",
+        "Yeni takvimin telaşsız, günlerin umutlu geçmesini dilerim. İyi seneler!"
       ]
     },
     "04-23": {
       "name": "Ulusal Egemenlik ve Çocuk Bayramı",
       "tone": "national",
       "messages": [
-        "sabah ayazında bando takımında titreyen neslin ve tüm çocukların bayramı kutlu olsun. atam izindeyiz, hem de resmi tatil."
+        "Çocukluğumuzun o bayram heyecanı hiç kaybolmasın. 23 Nisan hepimize kutlu olsun!",
+        "Bugün meclisin açıldığı gün. Geleceğe umutla bakan tüm çocuklara ve içindeki çocuğu kaybetmeyenlere kutlu olsun.",
+        "Gazi Meclis'in açılışını ve çocukluğumuzun bayram neşesini saygıyla anıyorum. 23 Nisan kutlu olsun!",
+        "Egemenliğin millete verildiği bu özel gün hepimize kutlu olsun. 23 Nisan'ı umutla kutluyorum."
       ]
     },
     "05-01": {
       "name": "İşçi ve Emekçi Bayramı",
       "tone": "national",
       "messages": [
-        "bugün de tatil yapan plaza köleleri dahil, alın teriyle geçinen tüm emekçilerin 1 mayıs'ı kutlu olsun."
+        "Sabahın köründe kazanı kaynatan aşçısından temizlik personeline, çalışan herkese kolay gelsin. 1 Mayıs kutlu olsun.",
+        "Bugün emeğiyle geçinen herkese kolaylıklar dilerim. 1 Mayıs kutlu olsun.",
+        "Kazan başında ter döken yemekhane çalışanları başta olmak üzere tüm emekçilere kolay gelsin. 1 Mayıs kutlu olsun.",
+        "Alın teriyle çalışan, emeğiyle değer üreten herkese selam olsun. 1 Mayıs kutlu olsun."
       ]
     },
     "05-19": {
       "name": "Atatürk'ü Anma, Gençlik ve Spor Bayramı",
       "tone": "national",
       "messages": [
-        "ülkeye ve gençliğe inancını henüz kaybetmemiş olanların 19 mayıs'ı kutlu olsun. o vapur samsun'a iyi ki çıktı."
+        "O vapur Samsun'a iyi ki yanaşmış. Bize emanet edilen bu memlekette umut hiç bitmesin, 19 Mayıs kutlu olsun!",
+        "Bandırma Vapuru'nun Samsun'a ulaştığı günün inancıyla, 19 Mayıs Gençlik ve Spor Bayramı hepimize kutlu olsun.",
+        "Atatürk'ün yaktığı bağımsızlık meşalesi hiç sönmesin. 19 Mayıs kutlu olsun!",
+        "Geleceğe umutla bakan bu sıraların bayramı kutlu olsun. 19 Mayıs'ı gururla kutluyorum."
       ]
     },
     "07-15": {
       "name": "Demokrasi ve Milli Birlik Günü",
       "tone": "solemn",
       "messages": [
-        "o karanlık gecede sokağa çıkıp canını ortaya koyan masum insanları ve şehitleri saygıyla anıyoruz."
+        "Canını ortaya koyan tüm şehitlerimizi ve gazilerimizi saygıyla anıyorum.",
+        "Millet iradesine sahip çıkarken hayatını kaybedenleri rahmet ve saygıyla anıyorum.",
+        "O gece canını veren tüm kahramanlara rahmetle.",
+        "Milli irade uğruna can veren tüm şehitlerimizi saygıyla anıyorum."
       ]
     },
     "08-30": {
       "name": "Zafer Bayramı",
       "tone": "national",
       "messages": [
-        "bu toprakları emperyalizmin elinden söküp alan başkomutan mustafa kemal atatürk ve silah arkadaşlarına minnetle. zafer bayramımız kutlu olsun."
+        "Bağımsızlığımızın mimarı Gazi Mustafa Kemal Atatürk ve silah arkadaşlarına sonsuz minnetle. Zaferimiz kutlu olsun!",
+        "Büyük Zafer'in yıl dönümü kutlu olsun. Bu toprakları bize vatan kılanları saygıyla anıyorum.",
+        "Bağımsız yaşayabilmemiz için canını veren tüm kahramanlara sonsuz minnetle. 30 Ağustos kutlu olsun!",
+        "Atamızı ve yol arkadaşlarını minnetle anıyorum. Zafer Bayramı kutlu olsun!"
       ]
     },
     "10-29": {
       "name": "Cumhuriyet Bayramı",
       "tone": "national",
       "messages": [
-        "bu coğrafyada doğmuş olmamızı anlamlı kılan en güzel miras. cumhuriyetin {republicYear}. yılı kutlu olsun, ilelebet payidar kalacak."
+        "Cumhuriyetimizin {republicYear}. yılı kutlu olsun! Kimsesizlerin kimsesi olan Cumhuriyet en çok da bizlerin, bu sıralarda okuyanların emanetinde.",
+        "Cumhuriyetin {republicYear}. yılı kutlu olsun. Sahip çıkacak olan da yarınlara taşıyacak olan da biziz.",
+        "Cumhuriyetimizin {republicYear}. yılı kutlu olsun! İlelebet yaşatacağız.",
+        "Cumhuriyetin {republicYear}. yılı kutlu olsun. Gazi Mustafa Kemal Atatürk ve silah arkadaşlarına sonsuz minnetle."
       ]
     },
     "11-10": {
       "name": "Atatürk'ü Anma Günü",
       "tone": "solemn",
       "messages": [
-        "saat 09:05'te hayatın bir dakikalığına durduğu o an... saygı, minnet ve hiç bitmeyen bir özlemle anıyoruz atam."
+        "Cumhuriyetimizin kurucusu Gazi Mustafa Kemal Atatürk'ü aramızdan ayrılışının {passingYear}. yıl dönümünde saygıyla anıyoruz.",
+        "Fikirleri ve bize emanet ettiği Cumhuriyet ile yaşayan Atatürk'ü saygıyla anıyoruz.",
+        "Bize bıraktığı akıl ve bilim mirasına sahip çıkarak Atamızı saygıyla anıyoruz.",
+        "Atatürk'ü ve bağımsızlık yolunda emek veren tüm yol arkadaşlarını saygı ve minnetle anıyoruz."
       ]
     },
     "12-31": {
       "name": "Yılbaşı Arifesi",
       "tone": "national",
       "messages": [
-        "pijama, terlik, televizyon üçlüsüne ve çekilişte amorti bile çıkmayacak o bilete hazır mıyız? şimdiden iyi seneler."
+        "Yılı geride bırakırken yeni yılda daha lezzetli günler dilerim. Şimdiden iyi seneler!",
+        "Yeni yılda yüz güldüren güzel bir yıl dilerim. İyi seneler!",
+        "Umarım gelen yıl gideni aratmaz. Şimdiden mutlu seneler!",
+        "Eski yılı uğurlarken yeni yılın doyuran menüler ve ferah günler getirmesini dilerim. Şimdiden iyi seneler!"
       ]
     }
   },
   "schedule": {
-    "2026": { "ramadan": "03-20", "sacrifice": "05-27" },
-    "2027": { "ramadan": "03-09", "sacrifice": "05-16" },
-    "2028": { "ramadan": "02-26", "sacrifice": "05-05" },
-    "2029": { "ramadan": "02-14", "sacrifice": "04-24" },
-    "2030": { "ramadan": "02-04", "sacrifice": "04-13" }
+    "2026": {
+      "ramadan": "03-20",
+      "sacrifice": "05-27"
+    },
+    "2027": {
+      "ramadan": "03-09",
+      "sacrifice": "05-16"
+    },
+    "2028": {
+      "ramadan": "02-26",
+      "sacrifice": "05-05"
+    },
+    "2029": {
+      "ramadan": "02-14",
+      "sacrifice": "04-24"
+    },
+    "2030": {
+      "ramadan": "02-04",
+      "sacrifice": "04-13"
+    }
   },
   "messages": {
     "ramadan": {
+      "day_0": [
+        "Bayramın habercisi arefe günü... Akşama tatlı bir bayram telaşı, yarın için huzurlu bir bekleyiş dilerim. Arefe günümüz kutlu olsun!",
+        "Bir ayın ardından bayram kapıda. Sakin ve keyifli bir arefe günü dilerim. Şimdiden iyi bayramlar!",
+        "Bayram öncesi son hazırlıklar tamamlanırken günün telaşsız ve huzurlu geçmesini dilerim. Arefe günümüz kutlu olsun!",
+        "Arefe gününün o kendine has sükunetiyle... Yarına umutla uyandığımız güzel bir gün dilerim. Şimdiden iyi bayramlar!"
+      ],
       "day_1": [
-        "sabahın köründe bayram namazı, el öpme merasimi ve tütün kolonyası koması. ramazan bayramınız mübarek olsun.",
-        "kapıyı çalan çocuklara dandik şeker vermeme sınavı başladı. şeker tadında, huzurlu bir bayram dileriz.",
-        "şubat soğuğunda bayram sabahı... sıcak çay, bayram çöreği ve aile meclisi. ramazan bayramınız mübarek olsun.",
-        "yılın ilk kış bayramı; demlenen sıcak çay, bayram şekeri ve aile meclisi. ramazan bayramınız mübarek olsun."
+        "Bayramın ilk günü... Doyurucu sofraların olduğu sakin bir gün dilerim. İyi bayramlar!",
+        "Ramazan Bayramı kutlu olsun. Sofraların bereketli, günün huzurlu geçmesini dilerim.",
+        "Ağız tadıyla geçen güzel bir bayram günü dilerim. İyi bayramlar!",
+        "Bayramın gelişiyle sofraların neşelendiği güzel bir gün dilerim. Ramazan Bayramı kutlu olsun!"
       ],
       "day_2": [
-        "ikinci gün klasiği: \"ee ne zaman evleniyorsun / ne iş yapıyorsun sen tam olarak\" sorularından ustaca kaçış mesaisi. iyi bayramlar.",
-        "akraba ziyaretleri tamamlandıysa pijama-terlik moduna geçilebilir. ramazan bayramı tüm sakinliğiyle kutlu olsun.",
-        "büyüklerin eli, küçüklerin gözü öpüldü, harçlık bütçesi delindi. bayramınız kutlu olsun.",
-        "şeker koması hafiflerken başlayan o tatlı tatil mayışması. ramazan bayramı kutlu olsun.",
-        "akrabaların siyasete girdiği masadan usulca kaçıp sözlüğe sığınma anı. iyi bayramlar."
+        "Ramazan Bayramı'nın ikinci gününde telaşsız ve bereketli bir gün dilerim. İyi bayramlar!",
+        "Sakin ve dinlendirici bir bayram günü dilerim. İyi bayramlar!",
+        "Bayramın tadının çıkarıldığı güzel bir gün olsun. İyi bayramlar!",
+        "İkinci gününde de sofraların bereketli ve günün neşeli olmasını dilerim. İyi bayramlar!"
       ],
       "day_3": [
-        "bayramın son günü... baklava tepsisinin dibini sıyırıp yarın başlayacak hayat kavgasına mental olarak hazırlanıyoruz.",
-        "bayram bitti, tatil bitti hüznü çöktü bile. kalan sarma ve baklavaları buzluğa stoklayıp devam ediyoruz.",
-        "tatilin son saatlerinde gelen \"şu bayramı 9 güne bağlasalardı keşke\" düşüncesi. iyi bayramlar herkese.",
-        "üç gündür kesintisiz karbonhidrat yüklemesinden sonra pazartesi sendromuyla yüzleşme vakti. iyi bayramlar.",
-        "bayram rehavetinin doruk noktası; televizyonda yeşilçam klasiği, elde çay. tatil bitti, geçmiş olsun."
+        "Bayramın son gününde dinlendirici ve sakin bir gün dilerim.",
+        "Ramazan Bayramı'nın son gününde kalan saatlerin keyifle geçmesini dilerim. İyi bayramlar!",
+        "Bayram biterken ağız tadının ve keyfin yerinde olduğu güzel saatler dilerim. İyi bayramlar!",
+        "Tatilin son günü... Dinlenmiş bir şekilde tamamlanması dileğiyle. İyi bayramlar!"
       ]
     },
     "sacrifice": {
+      "day_0": [
+        "Kurban Bayramı'nın eşiğindeyiz. Bayram öncesi hazırlıkların telaşsız, günün huzurlu geçmesini dilerim. Arefe günümüz kutlu olsun!",
+        "Yarın başlayacak bayramın neşesi şimdiden sarsın. Sakin ve bereketli bir arefe günü dilerim. Şimdiden iyi bayramlar!",
+        "Arefe gününün tatlı koşturmacası ve bayram heyecanıyla... Herkese huzurlu bir gün dilerim. Şimdiden hayırlı bayramlar!",
+        "Bayramın kapıyı çaldığı bu güzel arefe gününde ferahlık ve afiyet dilerim. Kurban Bayramımız şimdiden kutlu olsun!"
+      ],
       "day_1": [
-        "sabahın köründe mahalleyi saran kavurma kokusu ve kaçan danaları kovalayan ekipler... kurban bayramınız mübarek olsun.",
-        "acemi kasapların hastane acillerini doldurmadığı, kazasız belasız bir bayram dileriz. kurban bayramınız mübarek olsun.",
-        "kavurmanın yağı donmadan sofraya yetişenlere selam olsun. kurban bayramınız mübarek olsun.",
-        "bahar havasında kavurma cızırtısı. eşe dosta payını ulaştıranların kurban bayramı mübarek olsun."
+        "Kurban Bayramı kutlu olsun. Paylaşmanın ve bereketli sofraların olduğu güzel bir gün dilerim!",
+        "Sofraların bereketli, günün güzel geçmesini dilerim. Kurban Bayramı kutlu olsun!",
+        "Paylaşmanın ve dayanışmanın güzelleştirdiği bereketli bir bayram dilerim. Kurban Bayramı kutlu olsun!",
+        "Bayramın ilk gününde bereketli sofralar ve neşeli sohbetler dilerim. İyi bayramlar!"
       ],
       "day_2": [
-        "dünden kalan taze kavurmayı ekmek arası yapıp kahvaltı niyetine yeme saati. bayram devam ediyor.",
-        "eti dinlendirmeden yiyip midesini bozanların günü. bol limonlu maden suyu eşliğinde iyi bayramlar.",
-        "vejetaryen sözlük yazarlarına sabır, mangal başındakilere afiyet dolu bir ikinci gün dileriz.",
-        "kıyma çektirme kuyruğunda ömrünü tüketen fedakar babaların bayramı. kurban bayramınız kutlu olsun.",
-        "akraba meclisinde \"kurbanlık bu sene kaç paraydı\" muhabbetinin hararetlendiği saatler. iyi bayramlar."
+        "Afiyetle ve dinlenerek geçen güzel bir gün dilerim. İyi bayramlar!",
+        "İkinci gününde de sofraların bereketli ve günün huzurlu olmasını dilerim. İyi bayramlar!",
+        "Sakin ve doyurucu geçen güzel bir bayram günü dilerim. İyi bayramlar!",
+        "Bayramın ikinci gününde afiyet dolu sofralar dilerim. Kurban Bayramı kutlu olsun!"
       ],
       "day_3": [
-        "derin dondurucuda yer kalmadıysa ve bünyeler hafiften fenalık geçirdiyse bayram amacına ulaşmıştır. iyi bayramlar.",
-        "akraba payları dağıtıldı, mangal yakıldı, derin dondurucu kilitlendi. bayramın tadını çıkarma vakti.",
-        "üç gündür kesintisiz kırmızı et tüketmekten gut eşiğine gelenlerin bayramı. yavaşlayın gençler, iyi bayramlar.",
-        "dolapta kurban etine yer açmak için dondurmayı bitirmeye çalışanların çaresizliği... iyi bayramlar.",
-        "et kokusundan sıkılıp gizlice zeytinyağlı taze fasulye arayanlara selam olsun. bayramınız kutlu olsun."
+        "Kurban Bayramı'nın üçüncü gününde sakin ve dinlendirici bir gün dilerim. İyi bayramlar!",
+        "Doyurucu sofralarla ve huzurla geçen güzel bir bayram günü dilerim. İyi bayramlar!",
+        "Kurban Bayramı'nın üçüncü gününde de sofranız bereketli, gününüz güzel geçsin!",
+        "Bayramın üçüncü gününde de ağız tadının ve neşenin eksik olmadığı güzel saatler dilerim. İyi bayramlar!"
       ],
       "day_4": [
-        "bayramın son günü, memleketten dönüş trafiği ve sebze yemeğine duyulan derin özlem. kazasız belasız dönüşler.",
-        "bayram bitti, bagajlar memleketten gelen et ve erzakla doldu. dönüş yolundakilere sabır ve selamet dileriz.",
-        "uzun tatilin son perdesi. yollarda radara girmeden, dikkatli dönün. hayırlı bayramlar.",
-        "dört günlük maratonun sonu. dinlenmiş ve karnı doymuş olarak hayata dönmek dileğiyle, iyi bayramlar."
+        "Dört günlük bayram biterken dinlenmiş ve huzurlu bir gün dilerim. İyi bayramlar!",
+        "Yola çıkacak olanlara güvenli yolculuklar, herkese hayırlı bayramlar dilerim.",
+        "Bayramın son gününde afiyet ve kolaylıklar dilerim. Bayram kutlu olsun!",
+        "Kurban Bayramı'nın son gününü geride bırakırken afiyet dolu sofralar dilerim. İyi bayramlar!"
       ]
     }
   },
   "overrides": {
+    "2027-03-08": {
+      "name": "Dünya Kadınlar Günü ve Ramazan Arefesi",
+      "tone": "national",
+      "message": "Bayram arefesinin telaşında, hayatın her alanında emeğiyle var olan kadınların 8 Mart Dünya Kadınlar Günü kutlu olsun. Yarınki bayram şimdiden huzur getirsin!"
+    },
     "2027-05-19": {
       "name": "19 Mayıs ve Kurban Bayramı",
       "tone": "national",
-      "message": "hem kurban bayramının son günü hem 19 mayıs atatürk'ü anma, gençlik ve spor bayramı. çifte bayramımız kutlu olsun!"
+      "message": "Sabah Bandırma Vapuru'nun gençlik inancı, akşama dört günlük bayramın kapanışı... Hem gençliğin hem bayramın kıymetini bildiğimiz güzel bir çifte bayram dilerim!"
     },
     "2029-02-14": {
-      "name": "Ramazan Bayramı",
+      "name": "Sevgililer Günü ve Ramazan Bayramı",
       "tone": "religious",
-      "message": "sevgililer günü ile ramazan bayramı aynı güne denk geldi; çiçeği manitaya, baklavayı kaynanaya götürme günü. iyi bayramlar!"
+      "message": "Gül buketiyle bayram çikolatasının aynı güne denk geldiği tarihi bir takvim cilvesi. İster bayramlaşın ister sevgilinizle kahve için, günün tadını çıkaran herkese afiyet ve huzur dilerim!"
     },
-    "2029-04-24": {
-      "name": "Kurban Bayramı",
-      "tone": "religious",
-      "message": "23 nisan tatiliyle birleşen efsane bayram başladı. kavurma kokuları eşliğinde hayırlı bayramlar."
+    "2029-04-23": {
+      "name": "23 Nisan ve Kurban Arefesi",
+      "tone": "national",
+      "message": "Bayram neşesi ile arefe telaşının birleştiği tesadüfi enstantane. 23 Nisan kutlu olsun, yarınki kurbana da şimdiden afiyet dilerim!"
     }
   }
 }
