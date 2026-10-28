@@ -127,7 +127,7 @@
         -->
     <CitySelector
       value={timelineState.currentCity}
-      cities={timelineState.cities}
+      cities={timelineState.visibleCities}
       onChange={(city) => {
         timelineState.currentCity = city;
       }}

@@ -1,6 +1,6 @@
 //! Şehir listesi, aktif menü mevcudiyeti ve coğrafi konum çözümleme servisi.
 use sea_orm::*;
-use shared::entities::{cities, menus};
+use shared::entities::cities;
 use std::collections::HashSet;
 
 #[derive(Debug)]
@@ -19,21 +19,43 @@ impl std::fmt::Display for CityError {
 pub struct CityService;
 
 impl CityService {
-    /// Aktif (onaylanmış menüsü olan) şehirleri getirir ve celiac (çölyak) durumlarını hesaplar.
+    /// Aktif (onaylanmış menüsü olan) şehirleri getirir, celiac durumlarını ve son menü tarihlerini hesaplar.
     pub async fn get_active_cities(
         db: &DatabaseConnection,
-    ) -> Result<Vec<(cities::Model, bool)>, CityError> {
-        // 1. Menüsü olan şehirlerin ID'lerini çek
-        // N+1 OLMAMASI İÇİN group_by kullanıyoruz.
-        let menu_cities: Vec<i32> = menus::Entity::find()
-            .join(JoinType::InnerJoin, menus::Relation::MenuDishes.def())
-            .select_only()
-            .column(menus::Column::CityId)
-            .group_by(menus::Column::CityId)
-            .into_tuple()
-            .all(db)
-            .await
-            .map_err(CityError::DatabaseError)?;
+    ) -> Result<Vec<(cities::Model, bool, Option<String>)>, CityError> {
+        #[derive(sea_orm::FromQueryResult)]
+        struct CityLatestMenuResult {
+            city_id: i32,
+            latest_menu_date: Option<String>,
+        }
+
+        // 1. Onaylı menüsü ve yemeği olan şehirlerin ID'lerini ve en son menü tarihlerini çek
+        let city_latest_res = CityLatestMenuResult::find_by_statement(
+            sea_orm::Statement::from_string(
+                sea_orm::DatabaseBackend::Postgres,
+                r#"
+                SELECT m.city_id, TO_CHAR(LEAST(MAX(m.serve_date), CURRENT_DATE), 'YYYY-MM-DD') AS latest_menu_date
+                FROM menus m
+                INNER JOIN menu_dishes md ON m.id = md.menu_id
+                WHERE m.status = 'approved'
+                GROUP BY m.city_id
+                "#.to_string(),
+            ),
+        )
+        .all(db)
+        .await
+        .map_err(CityError::DatabaseError)?;
+
+        if city_latest_res.is_empty() {
+            return Ok(vec![]);
+        }
+
+        let latest_dates: std::collections::HashMap<i32, Option<String>> = city_latest_res
+            .into_iter()
+            .map(|row| (row.city_id, row.latest_menu_date))
+            .collect();
+
+        let menu_cities: Vec<i32> = latest_dates.keys().copied().collect();
 
         #[derive(sea_orm::FromQueryResult)]
         struct CeliacCityResult {
@@ -62,10 +84,6 @@ impl CityService {
 
         tracing::info!("Celiac cities: {:?}", celiac_cities);
 
-        if menu_cities.is_empty() {
-            return Ok(vec![]);
-        }
-
         // 3. İlgili şehirleri is_in ile toplu olarak çek
         let mut active_cities = cities::Entity::find()
             .filter(cities::Column::Id.is_in(menu_cities))
@@ -79,13 +97,14 @@ impl CityService {
             active_cities
         })
         .await
-        .unwrap_or_default(); // Eğer task panik yaparsa (ki sıralama yapmaz) empty array dön.
+        .unwrap_or_default();
 
         let result = sorted_cities
             .into_iter()
             .map(|c| {
                 let has_celiac = celiac_cities.contains(&c.id);
-                (c, has_celiac)
+                let latest_menu_date = latest_dates.get(&c.id).cloned().flatten();
+                (c, has_celiac, latest_menu_date)
             })
             .collect();
 

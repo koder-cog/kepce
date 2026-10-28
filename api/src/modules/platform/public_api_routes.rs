@@ -18,12 +18,14 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 use serde_json::{Value, json};
 use shared::entities::cities;
 
-#[derive(serde::Serialize)]
+#[derive(serde::Serialize, serde::Deserialize, Clone, Debug)]
 pub struct CityResponseDto {
     pub id: i32,
     pub name: String,
     pub slug: String,
     pub has_celiac: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub latest_menu_date: Option<String>,
 }
 
 pub fn router() -> Router<crate::config::AppState> {
@@ -59,11 +61,12 @@ pub async fn get_cities(
 
     let response: Vec<CityResponseDto> = cities_data
         .into_iter()
-        .map(|(c, has_celiac)| CityResponseDto {
+        .map(|(c, has_celiac, latest_menu_date)| CityResponseDto {
             id: c.id,
             name: c.name,
             slug: c.slug,
             has_celiac,
+            latest_menu_date,
         })
         .collect();
 

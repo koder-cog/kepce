@@ -3,8 +3,10 @@ import {
   getCurrentCity,
   setCurrentCity,
   getCitiesData,
-  getCities
+  getCities,
+  refreshCities
 } from '$lib/stores/city.svelte.js';
+import { filterCitiesByViewPeriod } from '$lib/domain/menu/cityFilter.js';
 import { wait, getDuration, runNextTick, isMotionEnabled } from '$lib/dom/motion.js';
 
 export function createTimelineStore() {
@@ -54,6 +56,18 @@ export function createTimelineStore() {
   const MAY_2026 = new Date(2026, 4, 1);
 
   // Derived states
+  let visibleCities = $derived.by(() => {
+    const todayDate = serverTodayParts
+      ? new Date(serverTodayParts.year, serverTodayParts.month, serverTodayParts.day)
+      : new Date();
+    return filterCitiesByViewPeriod({
+      cities,
+      currentCity,
+      viewYear,
+      viewMonth,
+      today: todayDate
+    });
+  });
   let cityHasCeliac = $derived(cities.find((c) => c.slug === currentCity)?.has_celiac ?? false);
   let viewMonthHasCeliac = $derived.by(() => {
     if (!currentCity) return undefined;
@@ -393,6 +407,13 @@ export function createTimelineStore() {
 
     try {
       cities = await getCitiesData();
+      if (typeof window !== 'undefined') {
+        refreshCities()
+          .then((fresh) => {
+            if (fresh && fresh.length > 0) cities = fresh;
+          })
+          .catch(() => {});
+      }
     } catch {
       cities = [{ id: 1, name: 'İstanbul', slug: 'istanbul', has_celiac: false }];
     }
@@ -456,6 +477,9 @@ export function createTimelineStore() {
   return {
     get cities() {
       return cities;
+    },
+    get visibleCities() {
+      return visibleCities;
     },
     get selectedDate() {
       return selectedDate;

@@ -12,6 +12,9 @@ vi.mock('$lib/stores/city.svelte.js', () => ({
   getCities: vi.fn(() => [{ id: 1, name: 'İstanbul', slug: 'istanbul', has_celiac: false }]),
   getCitiesData: vi.fn(async () => [
     { id: 1, name: 'İstanbul', slug: 'istanbul', has_celiac: false }
+  ]),
+  refreshCities: vi.fn(async () => [
+    { id: 1, name: 'İstanbul', slug: 'istanbul', has_celiac: false }
   ])
 }));
 
@@ -137,5 +140,13 @@ describe('Timeline Store - Vote State & Hydration', () => {
     window.dispatchEvent(new CustomEvent('auth-changed', { detail: { user: null } }));
 
     expect(store.dinnerData[0].my_vote).toBeNull();
+  });
+
+  it('exposes visibleCities filtered by current period', () => {
+    const store = createTimelineStore();
+    expect(store.visibleCities).toBeDefined();
+    expect(Array.isArray(store.visibleCities)).toBe(true);
+    expect(store.visibleCities.length).toBeGreaterThan(0);
+    expect(store.visibleCities[0].slug).toBe('istanbul');
   });
 });
