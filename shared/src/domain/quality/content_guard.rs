@@ -509,8 +509,8 @@ impl ContentGuard {
         if trimmed.is_empty() {
             return Err("Yorum metni boş olamaz.");
         }
-        if trimmed.chars().count() > 1000 {
-            return Err("Yorum en fazla 1000 karakter olabilir.");
+        if trimmed.chars().count() > 280 {
+            return Err("Yorum en fazla 280 karakter olabilir.");
         }
         if Self::contains_tckn(trimmed) {
             return Err("Yorumunuz T.C. Kimlik Numarası (TCKN) içeremez.");
@@ -776,6 +776,11 @@ mod tests {
         assert!(ContentGuard::validate_comment_text("Çok güzel bir mercimek çorbasıydı.").is_ok());
         assert!(ContentGuard::validate_comment_text("Yemekhanede yine sosis bitti.").is_ok());
         assert!(ContentGuard::validate_comment_text("").is_err());
+        let valid_280 = "Çorba güzeldi. ".repeat(18) + "1234567890";
+        assert_eq!(valid_280.chars().count(), 280);
+        assert!(ContentGuard::validate_comment_text(&valid_280).is_ok());
+        let invalid_281 = valid_280 + "x";
+        assert!(ContentGuard::validate_comment_text(&invalid_281).is_err());
         assert!(ContentGuard::validate_comment_text("numaram 10000000146").is_err());
         assert!(ContentGuard::validate_comment_text("bana yaz 555ı234567").is_err());
         assert!(ContentGuard::validate_comment_text("sitemize gelin bit.ly/kyk-burs").is_err());

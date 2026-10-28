@@ -170,7 +170,7 @@
         contentHtml: `
           <div class="c-modal__form-group">
             <div class="form-group">
-              <textarea id="profile-edit-comment-input" rows="5" maxlength="500" placeholder="Yorumunu güncelle...">${sanitizeText(currentText)}</textarea>
+              <textarea id="profile-edit-comment-input" rows="5" maxlength="280" placeholder="Yorumunu güncelle...">${sanitizeText(currentText)}</textarea>
             </div>
           </div>
         `,
@@ -183,6 +183,10 @@
               const newText = modalEl.querySelector('#profile-edit-comment-input').value.trim();
               if (!newText) {
                 showToast('Yorum boş bırakılamaz.', 'warning');
+                return false;
+              }
+              if (newText.length > 280) {
+                showToast('Yorum 280 karakterden uzun olamaz.', 'warning');
                 return false;
               }
               try {

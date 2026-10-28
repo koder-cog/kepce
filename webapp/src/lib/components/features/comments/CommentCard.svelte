@@ -147,6 +147,10 @@
 
   async function submitReply() {
     if (!replyText.trim()) return;
+    if (replyText.length > 280) {
+      showToast('Yanıt 280 karakterden uzun olamaz.', 'error');
+      return;
+    }
     if (!globalState?.user?.is_verified) {
       showToast(
         'Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.',
@@ -260,7 +264,7 @@
       contentHtml: `
                 <div class="c-modal__form-group">
                     <div class="form-group">
-                        <textarea id="edit-comment-input" rows="5" maxlength="500" placeholder="Yorumunu güncelle...">${sanitizeText(currentText)}</textarea>
+                        <textarea id="edit-comment-input" rows="5" maxlength="280" placeholder="Yorumunu güncelle...">${sanitizeText(currentText)}</textarea>
                     </div>
                 </div>
             `,
@@ -273,6 +277,10 @@
             const newText = modalEl.querySelector('#edit-comment-input').value.trim();
             if (!newText) {
               showToast('Yorum boş bırakılamaz.', 'warning');
+              return false;
+            }
+            if (newText.length > 280) {
+              showToast('Yorum 280 karakterden uzun olamaz.', 'warning');
               return false;
             }
             try {
@@ -552,16 +560,26 @@
                 <textarea
                   bind:value={replyText}
                   autofocus
+                  maxlength="280"
                   placeholder="Yanıtınızı buraya yazın..."
                   class="comment-reply-textarea"></textarea>
-                <div class="u-flex u-flex-justify-end u-flex-gap-sm u-mt-sm">
-                  <button
-                    class="btn btn--secondary btn--sm btn--squish"
-                    onclick={() => (replying = false)}>Vazgeç</button
+                <div class="u-flex u-flex-justify-between u-flex-align-center u-mt-sm">
+                  <span
+                    class="c-char-counter {replyText.length > 280 ? 'c-char-counter--over' : ''}"
                   >
-                  <button class="btn btn--primary btn--sm btn--squish" onclick={submitReply}
-                    >Yanıtla</button
-                  >
+                    {replyText.length} / 280
+                  </span>
+                  <div class="u-flex u-flex-gap-sm">
+                    <button
+                      class="btn btn--secondary btn--sm btn--squish"
+                      onclick={() => (replying = false)}>Vazgeç</button
+                    >
+                    <button
+                      class="btn btn--primary btn--sm btn--squish"
+                      disabled={!replyText.trim() || replyText.length > 280}
+                      onclick={submitReply}>Yanıtla</button
+                    >
+                  </div>
                 </div>
               </div>
             </div>

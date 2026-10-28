@@ -16,7 +16,7 @@ pub mod comment {
     pub struct CreateCommentDto {
         pub menu_id: i32,
         pub dish_id: Option<i32>,
-        #[validate(length(max = 500, message = "Yorum 500 karakterden uzun olamaz"))]
+        #[validate(length(max = 280, message = "Yorum 280 karakterden uzun olamaz"))]
         pub comment: Option<String>,
         pub sentiment: Sentiment,
         pub parent_id: Option<Uuid>,
@@ -27,8 +27,8 @@ pub mod comment {
     pub struct UpdateCommentDto {
         #[validate(length(
             min = 1,
-            max = 500,
-            message = "Yorum 1 ile 500 karakter arasında olmalıdır"
+            max = 280,
+            message = "Yorum 1 ile 280 karakter arasında olmalıdır"
         ))]
         pub comment: String,
     }
