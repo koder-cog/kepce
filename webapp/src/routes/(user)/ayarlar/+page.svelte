@@ -22,6 +22,7 @@
     isPushSupported
   } from '$lib/utils/push.js';
   import { nativeBridge } from '@/lib/native/bridge.js';
+  import { USERNAME_REGEX } from '$lib/utils/username.js';
 
   let user = $derived(globalState?.user);
 
@@ -443,7 +444,7 @@
     isNicknameModalOpen = true;
   }
 
-  const USERNAME_RE = /^[a-zA-Z0-9çÇğĞıİöÖşŞüÜ\-_]+$/;
+  const USERNAME_RE = USERNAME_REGEX;
   const RESERVED_NAMES = [
     'silinmis',
     'silinmiş',
@@ -468,8 +469,8 @@
       isNicknameModalOpen = false;
       return;
     }
-    if (nickname.length < 3 || nickname.length > 25) {
-      showToast('Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.', 'error');
+    if (nickname.length < 3 || nickname.length > 32) {
+      showToast('Kullanıcı adı en az 3, en fazla 32 karakter olmalıdır.', 'error');
       return;
     }
     if (RESERVED_NAMES.includes(nickname.toLowerCase())) {
@@ -477,7 +478,10 @@
       return;
     }
     if (!USERNAME_RE.test(nickname)) {
-      showToast('Kullanıcı adı yalnızca harf, rakam, alt çizgi ve tire içerebilir.', 'error');
+      showToast(
+        'Kullanıcı adı harfle başlamalı; yalnızca İngilizce harf, rakam, tekil alt çizgi ve tire içerebilir.',
+        'error'
+      );
       return;
     }
     if (!nicknamePasswordInput) {
@@ -569,12 +573,12 @@
           class="form-input"
           placeholder=" "
           bind:value={nicknameInput}
-          maxlength="25"
+          maxlength="32"
         />
         <label class="form-label" for="new-nickname">Yeni kullanıcı adı</label>
       </div>
       <span class="form-help u-mb-md u-display-block">
-        En az 3, en fazla 25 karakter. Harf, rakam, alt çizgi ve tire kullanılabilir.
+        En az 3, en fazla 32 karakter. Harf, rakam, alt çizgi ve tire kullanılabilir.
       </span>
       <div class="form-group form-group--floating">
         <input
@@ -738,7 +742,7 @@
         class="btn btn--primary btn--squish u-w-full"
         onclick={() => (isRegenerateResultModalOpen = false)}
       >
-        Tamam, Kaydettim
+        Kaydettim
       </button>
     {/snippet}
   </Modal>

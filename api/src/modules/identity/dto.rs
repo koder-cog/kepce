@@ -62,8 +62,8 @@ pub struct RegisterRequestDto {
     #[serde(alias = "username")]
     #[validate(length(
         min = 3,
-        max = 25,
-        message = "Kullanıcı adı 3-25 karakter arasında olmalıdır"
+        max = 32,
+        message = "Kullanıcı adı 3-32 karakter arasında olmalıdır"
     ))]
     pub nickname: String,
 
@@ -95,7 +95,7 @@ pub struct RegenerateRecoveryDto {
 /// Kurtarma anahtarı ile şifre sıfırlama isteği
 #[derive(Debug, Deserialize, Validate)]
 pub struct ResetPasswordWithRecoveryDto {
-    #[validate(length(min = 3, max = 50, message = "Geçersiz kullanıcı adı"))]
+    #[validate(length(min = 3, max = 32, message = "Geçersiz kullanıcı adı"))]
     pub nickname: String,
 
     #[validate(length(min = 20, max = 40, message = "Geçersiz kurtarma anahtarı formatı"))]
@@ -227,8 +227,8 @@ pub struct UpdateProfileDto {
     #[serde(default, alias = "username", deserialize_with = "empty_string_as_none")]
     #[validate(length(
         min = 3,
-        max = 25,
-        message = "Kullanıcı adı 3-25 karakter arasında olmalıdır"
+        max = 32,
+        message = "Kullanıcı adı 3-32 karakter arasında olmalıdır"
     ))]
     pub nickname: Option<String>,
 

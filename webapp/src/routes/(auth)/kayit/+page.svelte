@@ -9,6 +9,7 @@
   import Modal from '$lib/components/ui/Modal.svelte';
   import Seo from '$lib/components/ui/Seo.svelte';
   import { showToast } from '$lib/components/ui/toast.js';
+  import { generateRandomUsername, USERNAME_REGEX } from '$lib/utils/username.js';
 
   let user = $derived(globalState?.user);
 
@@ -39,10 +40,11 @@
     if (username.length > 0) {
       if (username.length < 3) {
         errors.username = 'En az 3 karakter olmalıdır.';
-      } else if (username.length > 25) {
-        errors.username = 'En fazla 25 karakter olabilir.';
-      } else if (!/^[a-z0-9_]+$/.test(username)) {
-        errors.username = 'Sadece İngilizce küçük harf, rakam ve _ içerebilir.';
+      } else if (username.length > 32) {
+        errors.username = 'En fazla 32 karakter olabilir.';
+      } else if (!USERNAME_REGEX.test(username)) {
+        errors.username =
+          '3-32 karakter arası, İngilizce harf, rakam, _ veya - içerebilir. Harfle başlamalıdır.';
       } else {
         errors.username = null;
       }
@@ -51,70 +53,8 @@
     }
   });
 
-  function generateRandomUsername() {
-    const adjectives = [
-      'aci',
-      'tuzlu',
-      'tatli',
-      'eksi',
-      'gurme',
-      'ac',
-      'doymus',
-      'obur',
-      'hizli',
-      'yavas',
-      'komik',
-      'sinirli',
-      'mutlu',
-      'uykulu',
-      'bayat',
-      'taze',
-      'sicak',
-      'soguk',
-      'pismis',
-      'cig',
-      'kizarmis',
-      'haslanmis',
-      'soslu',
-      'sade',
-      'karisik',
-      'kivrak',
-      'saskin'
-    ];
-    const nouns = [
-      'kepce',
-      'tabldot',
-      'tepsi',
-      'kasik',
-      'catal',
-      'bicak',
-      'tuzluk',
-      'biber',
-      'domates',
-      'patates',
-      'pilav',
-      'makarna',
-      'fasulye',
-      'nohut',
-      'corba',
-      'ekmek',
-      'ayran',
-      'su',
-      'elma',
-      'armut',
-      'karpuz',
-      'kavun',
-      'tatli',
-      'kofte',
-      'tavuk',
-      'et'
-    ];
-    const rndAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const rndNoun = nouns[Math.floor(Math.random() * nouns.length)];
-    const rndNum = Math.floor(Math.random() * 10000)
-      .toString()
-      .padStart(4, '0');
-    username = `${rndAdj}_${rndNoun}_${rndNum}`;
+  function handleGenerateUsername() {
+    username = generateRandomUsername();
   }
 
   function scrollToFirstError() {
@@ -142,8 +82,9 @@
       return;
     }
 
-    if (username.length < 3 || username.length > 25 || !/^[a-z0-9_]+$/.test(username)) {
-      newErrors.username = 'Kullanıcı adı kurallara uymuyor (3-25 karakter, küçük harf/rakam/_).';
+    if (username.length < 3 || username.length > 32 || !USERNAME_REGEX.test(username)) {
+      newErrors.username =
+        'Kullanıcı adı kurallara uymuyor (3-32 karakter, harfle başlamalı, tekil _ veya -).';
       errors = newErrors;
       scrollToFirstError();
       return;
@@ -292,6 +233,7 @@
             id="username"
             bind:value={username}
             autocomplete="username"
+            maxlength="32"
             required
             placeholder=" "
           />
@@ -302,7 +244,7 @@
             type="button"
             class="password-toggle"
             aria-label="Rastgele Kullanıcı Adı Üret"
-            onclick={generateRandomUsername}
+            onclick={handleGenerateUsername}
             title="Rastgele üret"
           >
             {@html icon('dice', 20)}
@@ -313,7 +255,7 @@
           class:u-color-negative={errors.username}
           class:u-color-secondary={!errors.username}
         >
-          3-25 karakter arası sadece İngilizce küçük harf, rakam ve _ içerebilir.
+          3-32 karakter arası, İngilizce harf, rakam, _ veya - içerebilir. Harfle başlamalıdır.
         </div>
       </div>
 

@@ -47,12 +47,20 @@ impl AuthService {
         )
     }
 
+    pub fn is_valid_username_pattern(name: &str) -> bool {
+        static USERNAME_REGEX: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+        let re = USERNAME_REGEX.get_or_init(|| {
+            regex::Regex::new(r"^[a-zA-Z][a-zA-Z0-9]*(?:[_-][a-zA-Z0-9]+)*$").unwrap()
+        });
+        re.is_match(name)
+    }
+
     pub fn validate_nickname(name: &str) -> Result<(), AuthError> {
         let trimmed = name.trim();
         let char_count = trimmed.chars().count();
-        if !(3..=25).contains(&char_count) {
+        if !(3..=32).contains(&char_count) {
             return Err(AuthError::InvalidUsername(
-                "Kullanıcı adı en az 3, en fazla 25 karakter olmalıdır.".to_string(),
+                "Kullanıcı adı en az 3, en fazla 32 karakter olmalıdır.".to_string(),
             ));
         }
         if Self::is_reserved_username(trimmed) {
@@ -61,13 +69,10 @@ impl AuthService {
                     .to_string(),
             ));
         }
-        // Sadece küçük harf, rakam ve alt çizgi (/^[a-z0-9_]+$/)
-        let is_valid = trimmed
-            .chars()
-            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_');
-        if !is_valid {
+        // Harfle başlamalı; yalnızca İngilizce harf, rakam ve tekil ayraç (_ veya -) içerebilir
+        if !Self::is_valid_username_pattern(trimmed) {
             return Err(AuthError::InvalidUsername(
-                "Kullanıcı adı yalnızca İngilizce küçük harf, rakam ve alt çizgi (_) içerebilir."
+                "Kullanıcı adı harfle başlamalı; yalnızca İngilizce harf, rakam, tekil alt çizgi ve tire içerebilir."
                     .to_string(),
             ));
         }
@@ -152,16 +157,17 @@ impl AuthService {
         dto: RegisterRequestDto,
         subnet_hash: Option<String>,
     ) -> Result<(String, String, UserProfileDto, String), AuthError> {
-        let clean_nickname = dto.nickname.trim().to_lowercase();
-        Self::validate_nickname(&clean_nickname)?;
+        let display_nickname = dto.nickname.trim().to_string();
+        Self::validate_nickname(&display_nickname)?;
 
-        // Rumuz benzersizlik kontrolü
+        // Rumuz benzersizlik kontrolü (küçük harfe normalize ederek case-insensitive kontrol)
+        let lower_nickname = display_nickname.to_lowercase();
         let exists = Users::find()
             .filter(
                 sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
                     sea_orm::sea_query::Expr::col(users::Column::Nickname),
                 ))
-                .eq(&clean_nickname),
+                .eq(&lower_nickname),
             )
             .one(db)
             .await
@@ -190,7 +196,7 @@ impl AuthService {
 
         let new_user = users::ActiveModel {
             id: Set(Uuid::new_v4()),
-            nickname: Set(clean_nickname),
+            nickname: Set(display_nickname),
             password_hash: Set(hashed_password),
             recovery_key_hash: Set(Some(recovery_key_hash)),
             role: Set(shared::entities::sea_orm_active_enums::UserRoleEnum::User),
@@ -541,5 +547,51 @@ impl AuthService {
         }
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_nickname_accepts_valid_alphanumeric() {
+        assert!(AuthService::validate_nickname("TuzluMercimek7893").is_ok());
+        assert!(AuthService::validate_nickname("gurme_yemek_123").is_ok());
+        assert!(AuthService::validate_nickname("tuzlu-mercimek-123").is_ok());
+        assert!(AuthService::validate_nickname("KepceUser").is_ok());
+    }
+
+    #[test]
+    fn test_validate_nickname_rejects_invalid_inputs() {
+        // Çok kısa veya çok uzun
+        assert!(AuthService::validate_nickname("ab").is_err());
+        assert!(AuthService::validate_nickname(&"a".repeat(32)).is_ok());
+        assert!(AuthService::validate_nickname(&"a".repeat(33)).is_err());
+
+        // Harfle başlamama
+        assert!(AuthService::validate_nickname("123gurme").is_err());
+        assert!(AuthService::validate_nickname("_gurme").is_err());
+        assert!(AuthService::validate_nickname("-gurme").is_err());
+
+        // Sonda ayraç veya ardışık ayraç
+        assert!(AuthService::validate_nickname("gurme_").is_err());
+        assert!(AuthService::validate_nickname("gurme-").is_err());
+        assert!(AuthService::validate_nickname("gurme__yemek").is_err());
+        assert!(AuthService::validate_nickname("gurme--yemek").is_err());
+        assert!(AuthService::validate_nickname("gurme_-yemek").is_err());
+
+        // Rezerve isimler
+        assert!(AuthService::validate_nickname("admin").is_err());
+        assert!(AuthService::validate_nickname("Admin").is_err());
+        assert!(AuthService::validate_nickname("kepce").is_err());
+
+        // Türkçe veya özel karakterler
+        assert!(AuthService::validate_nickname("türkçe_yemek").is_err());
+        assert!(AuthService::validate_nickname("Tuzlu Mercimek").is_err());
+
+        // Telefon numarası biçimi
+        assert!(AuthService::validate_nickname("05321234567").is_err());
+        assert!(AuthService::validate_nickname("5321234567").is_err());
     }
 }

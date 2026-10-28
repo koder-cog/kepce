@@ -141,8 +141,14 @@ impl UserService {
         db: &DatabaseConnection,
         username: &str,
     ) -> Result<UserProfileDto, UserError> {
+        let lower = username.trim().to_lowercase();
         let user = Users::find()
-            .filter(users::Column::Nickname.eq(username))
+            .filter(
+                sea_orm::sea_query::Expr::expr(sea_orm::sea_query::Func::lower(
+                    sea_orm::sea_query::Expr::col(users::Column::Nickname),
+                ))
+                .eq(&lower),
+            )
             .one(db)
             .await
             .map_err(UserError::DatabaseError)?
