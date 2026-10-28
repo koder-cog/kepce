@@ -63,9 +63,7 @@
         <h2 class="project-card__title">Kepçe Ara</h2>
       </div>
 
-      <p class="project-card__desc">
-        Gizlilik odaklı ve reklam barındırmayan SearXNG tabanlı arama motoru.
-      </p>
+      <p class="project-card__desc">SearXNG tabanlı arama motoru</p>
 
       <div class="project-card__meta">
         <span class="project-card__author"
@@ -81,6 +79,38 @@
       <div class="project-card__footer">
         <a href="/ara" class="btn btn--secondary btn--squish" data-link>
           <span>Siteyi Aç</span>
+          {@html icon('externalLink', 14)}
+        </a>
+      </div>
+    </article>
+
+    <article class="project-card">
+      <div class="project-card__header">
+        <h2 class="project-card__title">Turnike</h2>
+      </div>
+
+      <p class="project-card__desc">GSBWIFI için GTK4 masaüstü istemcisi</p>
+
+      <div class="project-card__meta">
+        <span class="project-card__author"
+          ><a
+            href="https://github.com/koder-cog/"
+            target="_blank"
+            rel="noopener"
+            class="site-footer__link">koder-cog</a
+          ></span
+        >
+      </div>
+
+      <div class="project-card__footer">
+        <a
+          href="https://github.com/koder-cog/turnike"
+          target="_blank"
+          rel="noopener"
+          class="btn btn--secondary btn--squish"
+          data-link
+        >
+          <span>Projeyi Görüntüle</span>
           {@html icon('externalLink', 14)}
         </a>
       </div>
