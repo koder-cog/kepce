@@ -88,6 +88,8 @@ worker_cache/
 /cache/
 
 # 10. Temporary & Scratch Files
+ops/scripts/archive/
+archive/
 .scratch/
 findings.md
 *.old*
