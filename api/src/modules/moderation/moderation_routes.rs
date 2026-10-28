@@ -1101,7 +1101,7 @@ async fn get_users(
         result.push(crate::dto::moderation::UserModerationResponseDto {
             id: u.id,
             username: u.nickname,
-            email: "sıfır-bilgi (kayıt yok)".to_string(),
+            email: "-".to_string(),
             role: match u.role {
                 shared::entities::sea_orm_active_enums::UserRoleEnum::Admin => "admin".to_string(),
                 shared::entities::sea_orm_active_enums::UserRoleEnum::User => "user".to_string(),

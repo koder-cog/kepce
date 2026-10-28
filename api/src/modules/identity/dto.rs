@@ -59,7 +59,7 @@ where
     }))
 }
 
-/// Yeni kayıt (Register) isteği - Sıfır Bilgi Mimarisi
+/// Yeni kayıt (Register) isteği.
 #[derive(Debug, Deserialize, Validate)]
 pub struct RegisterRequestDto {
     #[serde(alias = "username")]

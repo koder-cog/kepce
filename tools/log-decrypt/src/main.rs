@@ -15,7 +15,7 @@ fn generate_keypair() {
     let secret_key = SecretKey::generate(&mut OsRng);
     let public_key = secret_key.public_key();
 
-    println!("=== KEPÇE 5651 SIFIR BİLGİ ANAHTAR ÇİFTİ ===");
+    println!("=== KEPÇE 5651 MÜHÜRLÜ LOG ANAHTAR ÇİFTİ ===");
     println!("\n1. FRANSA SUNUCUSU .env İÇİN AÇIK ANAHTAR:");
     println!(
         "TRAFFIC_LOG_PUBLIC_KEY=\"{}\"",

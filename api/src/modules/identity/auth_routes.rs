@@ -1,4 +1,4 @@
-//! Kimlik doğrulama, kayıt, oturum yönetimi ve sıfır-bilgi kurtarma anahtarı endpoint'leri.
+//! Kimlik doğrulama, kayıt, oturum yönetimi ve kriptografik kurtarma anahtarı endpoint'leri.
 use crate::config::Config;
 use crate::dto::user::{
     AuthResponseDto, ConfirmRecoveryDto, LoginRequestDto, RegenerateRecoveryDto,

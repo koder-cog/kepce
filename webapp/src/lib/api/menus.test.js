@@ -55,7 +55,7 @@ describe('normalizeMenu', () => {
     expect(normalized.alternatives).toEqual([]);
   });
 
-  it('ana menüyle aynı veya kendi arasında mükerrer alternatifleri eler', () => {
+  it('ana menüyle aynı veya kendi arasında tekrarlayan alternatifleri eler', () => {
     const rawData = {
       id: 3,
       serve_date: '2026-09-13',
@@ -99,7 +99,7 @@ describe('normalizeMenu', () => {
             }
           ]
         },
-        // Yukarıdaki alternatifle aynı olan mükerrer kopya elenmeli
+        // Yukarıdaki alternatifle aynı olan kopya elenmeli
         {
           id: 103,
           source_type: 'kykmenu.com.tr',

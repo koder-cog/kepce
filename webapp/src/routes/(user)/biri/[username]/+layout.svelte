@@ -363,7 +363,6 @@
 
   // --- Setup / Owner actions ---
 
-
   function openAvatarManageModal() {
     const hasPhoto = !!profile.avatar_url;
     const modalObj = createModal({
@@ -465,7 +464,7 @@
           <button class="zoom-btn" id="zoom-in" title="Yakınlaştır">${icon('plus', 18)}</button>
         </div>
         <p class="cropper-help">Görseli sürükleyerek hizalayın, tekerlek ile yakınlaştırın.</p>
-        <p class="cropper-help u-color-warning u-text-xs u-mt-xs">Gizlilik Hatırlatması: Kepçe sıfır-bilgi mimarisiyle çalışır. Lütfen kendi yüzünüzü veya doğrudan kimliğinizi belli eden fotoğraflar yüklemeyiniz.</p>
+        <p class="cropper-help u-color-warning u-text-xs u-mt-xs">Kendi yüzünüzü veya doğrudan kimliğinizi belli eden fotoğraflar yüklemeyiniz.</p>
       </div>
     `;
 
@@ -763,8 +762,6 @@
           </div>
         </div>
       </div>
-
-
 
       <div class="profile-intro__footer">
         <div class="profile-intro__joined">

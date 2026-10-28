@@ -143,7 +143,7 @@ impl AuthService {
         Ok(token)
     }
 
-    /// Kullanıcı Kaydı (Register - Sıfır Bilgi)
+    /// Kullanıcı Kaydı (Register)
     /// 130-bit Base32 kurtarma anahtarı üretir, hash'ler ve açık kodu yanıtta döner.
     pub async fn register(
         db: &DatabaseConnection,

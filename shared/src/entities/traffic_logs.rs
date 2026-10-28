@@ -1,4 +1,4 @@
-//! `SeaORM` Entity for sealed 5651 traffic logs (Zero-Knowledge)
+//! `SeaORM` Entity for sealed 5651 traffic logs
 
 use sea_orm::entity::prelude::*;
 

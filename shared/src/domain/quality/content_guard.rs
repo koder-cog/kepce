@@ -502,7 +502,7 @@ impl ContentGuard {
         }
     }
 
-    /// Yorum metnini Sıfır Bilgi güvenlik ilkelerine göre doğrular ve temizler.
+    /// Yorum metnini temel güvenlik ve içerik kurallarına göre doğrular.
     pub fn validate_comment_text(input: &str) -> Result<String, &'static str> {
         let cleaned_input = strip_invisible_chars(input);
         let trimmed = cleaned_input.trim();

@@ -279,14 +279,54 @@ async fn remove_empty_subdirectories(
     Ok(removed_count)
 }
 
-/// Sıfır bilgi (Zero-Knowledge) mimarisi sonrası açık kimlik verileri (e-posta vb.) yurt dışında
-/// tutulmadığından ve ilgili sütunlar silindiğinden, yurt dışı aktarım onayı kontrolü gereksiz kılınmıştır.
+use sea_orm::{ConnectionTrait, DatabaseBackend, Statement};
+
+/// Açık kimlik verileri (e-posta vb.) yurt dışında tutulmadığından ve ilgili sütunlar silindiğinden,
+/// yurt dışı aktarım onayı kontrolü gereksiz kılınmıştır.
 /// Geriye uyumluluk adına bu fonksiyon korunmuş olup no-op olarak 0 döner.
 pub async fn deactivate_expired_unconsented_accounts(
     _db: &sea_orm::DatabaseConnection,
     _dry_run: bool,
 ) -> Result<usize> {
     Ok(0)
+}
+
+/// Çözümlenen veya süresi dolan iletişim mesajlarını temizler.
+/// Yasal bildirimler (category = 'legal') hariç tutulmak üzere;
+/// çözülmüş (resolved/dismissed) ve üzerinden 30 gün geçmiş mesajlar ile
+/// genel olarak 90 günü geçmiş eski iletişim mesajları veri tabanından kalıcı olarak silinir.
+pub async fn clean_expired_contact_messages(
+    db: &sea_orm::DatabaseConnection,
+    dry_run: bool,
+) -> Result<usize> {
+    if dry_run {
+        return Ok(0);
+    }
+
+    let result = db
+        .execute(Statement::from_sql_and_values(
+            DatabaseBackend::Postgres,
+            r#"
+            DELETE FROM contact_messages
+            WHERE category != 'legal'
+              AND (
+                (status IN ('resolved', 'dismissed') AND COALESCE(resolved_at, created_at) < NOW() - INTERVAL '30 days')
+                OR created_at < NOW() - INTERVAL '90 days'
+              )
+            "#,
+            vec![],
+        ))
+        .await?;
+
+    let rows_affected = result.rows_affected() as usize;
+    if rows_affected > 0 {
+        tracing::info!(
+            "[RETENTION-CLEANUP] {} adet süresi dolan iletişim mesajı temizlendi.",
+            rows_affected
+        );
+    }
+
+    Ok(rows_affected)
 }
 
 #[cfg(test)]

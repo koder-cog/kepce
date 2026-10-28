@@ -2,7 +2,7 @@
 name = "log-decrypt"
 version = "0.1.0"
 edition = "2024"
-description = "Kepçe 5651 Sıfır Bilgi Kriptografik Log Anahtar Üreticisi ve Çözücüsü (Çevrimdışı)"
+description = "Kepçe 5651 Mühürlü Kriptografik Log Anahtar Üreticisi ve Çözücüsü (Çevrimdışı)"
 
 [dependencies]
 crypto_box = { version = "0.9", features = ["std", "seal"] }

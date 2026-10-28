@@ -14,8 +14,8 @@
     Üstelik bir yanda 6698 sayılı KVKK diğer yanda 5651 sayılı İnternet Kanunu yan yana konulunca
     Kafkaesk bir paradoks oluşturuyor. Öğrenci bütçesiyle sunucuyu yurt dışında tutmak zorunda
     olduğumdan, bu iki kanunun arasında ezilmemek ve kimsenin verisinin yükünü taşımamak için
-    sistemi Fransa'da hiçbir kişisel veriyi şifresiz depolamayacak şekilde kurdum. Veri sandığı da o sandığı
-    açacak anahtar da Türkiye'de internete kapalı bir ortamda duruyor.
+    sistemi Fransa'da hiçbir kişisel veriyi şifresiz depolamayacak şekilde kurdum. Veri sandığı da o
+    sandığı açacak anahtar da Türkiye'de internete kapalı bir ortamda duruyor.
   </p>
 </section>
 
@@ -96,9 +96,13 @@
       ile mühürlenerek doğrudan Türkiye'deki yerel arşive aktarılır ve Fransa belleğinden silinir.
     </li>
     <li>
-      Yemeklere ve yorumlara bırakılan <strong>oylar ve tepkiler</strong> mükerrer kullanımı engellemek
-      için veri tabanında anonim kullanıcı koduyla tekil olarak eşleştirilir. Tablolarda IP adresi tutulmaz
-      ve aynı butona tekrar basıldığında verilen oy geri alınır.
+      Yemeklere ve yorumlara bırakılan <strong>oylar ve tepkiler</strong> çift oy kullanılmasını önlemek
+      için veri tabanında anonim kullanıcı koduyla tekil olarak eşleştirilir.
+    </li>
+    <li>
+      Sitedeki <strong>iletişim formu</strong> üzerinden iletilen e-posta ve mesaj içerikleri, yalnızca
+      talebinizi veya uyar-kaldır bildirimlerinizi yanıtlamak amacıyla kullanılır. Bu veriler kullanıcı
+      hesabınızla eşleştirilmez ve talep sonuçlandıktan sonra makul sürede silinir.
     </li>
   </ul>
 </section>
@@ -128,10 +132,9 @@
     </li>
   </ul>
   <p>
-    Sağlık durumu, gıda alerjisi, çölyak veya inanç tercihleri kesinlikle toplanmaz ve işlenmez.
-    Sitedeki alerjen ve diyet filtreleri yalnızca kendi tarayıcında yerel olarak çalışır, sunucuya
-    gönderilmez. Yorum alanlarında kendine veya başkalarına ait sağlık verilerini paylaşmaman
-    gerekir.
+    Sağlık durumu, gıda alerjisi veya çölyak toplanmaz ve işlenmez. Sitedeki alerjen ve diyet
+    filtreleri yalnızca kendi tarayıcında yerel olarak çalışır, sunucuya gönderilmez. Yorum
+    alanlarında kendine veya başkalarına ait sağlık verilerini paylaşmaman gerekir.
   </p>
 </section>
 

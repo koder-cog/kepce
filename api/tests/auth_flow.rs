@@ -41,7 +41,7 @@ async fn setup_app() -> Option<(axum::Router, AppState)> {
 }
 
 #[tokio::test]
-async fn test_full_zero_knowledge_auth_flow() {
+async fn test_auth_flow() {
     let _ = tracing_subscriber::fmt().with_test_writer().try_init();
 
     let Some((app, state)) = setup_app().await else {

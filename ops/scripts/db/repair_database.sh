@@ -5,7 +5,7 @@
 # 1. Devre kesici kilit dosyalarını temizler.
 # 2. Proxy havuzu üzerinden kykyemek.com bültenlerini yeni ayrıştırıcıyla baştan tarar.
 # 3. Al-Götür paketlerini şablonlardan giydirir (500 ml su, sandviç vb. eksikleri tamamlar).
-# 4. Yemek ve alias mükerrerliklerini birleştirir, yabancı anahtarları normalize eder.
+# 4. Yemek ve alias tekrarlılıklarını birleştirir, yabancı anahtarları normalize eder.
 # 5. Kategori eşlemelerini günceller ve güncel istatistikleri ekrana basar.
 # ==============================================================================
 
@@ -35,7 +35,7 @@ if [ "$MODE" = "local" ] || ([ "$MODE" = "auto" ] && [ -z "$DEPLOY_HOST" ]); the
     echo "3. Al-Götür menüleri şablonlardan zenginleştiriliyor..."
     WORKER_ENRICH_TAKEAWAY=1 WORKER_ONESHOT=1 cargo run -p worker
 
-    echo "4. Yemek ve alias mükerrerlikleri uzlaştırılıyor..."
+    echo "4. Yemek ve alias tekrarlılıkları uzlaştırılıyor..."
     WORKER_RECONCILE_DISHES=1 WORKER_ONESHOT=1 cargo run -p worker
 
     echo "5. Yemek kategorileri yenileniyor..."
@@ -52,7 +52,7 @@ else
     echo "-> Al-Götür menüleri şablonlardan zenginleştiriliyor..."
     ssh -i "$DEPLOY_KEY" "$DEPLOY_HOST" "cd '$DEPLOY_DEST' && docker compose run --rm -e WORKER_ENRICH_TAKEAWAY=1 -e WORKER_ONESHOT=1 worker /app/kepce-worker"
 
-    echo "-> Yemek ve alias mükerrerlikleri uzlaştırılıyor..."
+    echo "-> Yemek ve alias tekrarlılıkları uzlaştırılıyor..."
     ssh -i "$DEPLOY_KEY" "$DEPLOY_HOST" "cd '$DEPLOY_DEST' && docker compose run --rm -e WORKER_RECONCILE_DISHES=1 -e WORKER_ONESHOT=1 worker /app/kepce-worker"
 
     echo "-> Yemek kategorileri yenileniyor..."

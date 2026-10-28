@@ -68,7 +68,7 @@ async function main() {
 		try {
 			let optimized = await critters.process(original);
 
-			// Mükerrer stylesheet linklerini temizle
+			// Tekrarlayan stylesheet linklerini temizle
 			const seenLinks = new Set();
 			optimized = optimized.replace(/<link\s+[^>]*rel="stylesheet"[^>]*>/gi, (match) => {
 				if (seenLinks.has(match)) {

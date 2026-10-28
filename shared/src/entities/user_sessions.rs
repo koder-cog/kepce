@@ -1,4 +1,4 @@
-//! `SeaORM` Entity for user sessions (Zero-Knowledge: subnet_hash only, no cleartext IP/UserAgent)
+//! `SeaORM` Entity for user sessions (subnet_hash only, no cleartext IP/UserAgent)
 
 use sea_orm::entity::prelude::*;
 

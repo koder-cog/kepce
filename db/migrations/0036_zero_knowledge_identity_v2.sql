@@ -1,6 +1,6 @@
 -- ============================================================================
 -- 0036_zero_knowledge_identity_v2.sql
--- KEPÇE SIFIR BİLGİ (ZERO-KNOWLEDGE) MİMARİSİ: USERS TABLOSU GÖÇÜ
+-- USERS TABLOSU GÖÇÜ (NICKNAME VE RECOVERY KEY)
 -- ============================================================================
 
 -- 1. Mevcut 'username' sütununu 'nickname' olarak taşı/adlandır:
@@ -22,7 +22,7 @@ BEGIN
     END IF;
 END $$;
 
--- 2. Yeni anonimlik ve kurtarma alanlarını garanti altına al
+-- 2. Yeni profil ve kurtarma alanlarını kur
 ALTER TABLE users
     ADD COLUMN IF NOT EXISTS nickname VARCHAR(50),
     ADD COLUMN IF NOT EXISTS recovery_key_hash VARCHAR(255),

@@ -2,7 +2,7 @@
 
 Bu dizin, Kepçe PostgreSQL veritabanının güncel şemasını etki alanlarına göre ayrılmış SQL dosyalarıyla belgeler.
 
-## Makine ve Geliştirici Ayrımı
+## Sistem ve Geliştirici Ayrımı
 
 Veritabanı yapısı iki farklı ihtiyaca göre iki ayrı dizinde tutulur:
 
@@ -51,6 +51,6 @@ Veritabanı yapısı iki farklı ihtiyaca göre iki ayrı dizinde tutulur:
    - `system_incidents`: Altyapı kesintileri ve durum kayıtları.
 
 7. [07_indexes.sql](07_indexes.sql)
-   - Veri bütünlüğü tetikleyicisi: `trg_menu_dishes_unique_dish` ile aynı menü yuvasında mükerrer yemek kaydı engellenir.
+   - Veri bütünlüğü tetikleyicisi: `trg_menu_dishes_unique_dish` ile aynı menü yuvasında kopya yemek kayıtları engellenir.
    - Kısmi tekillik indeksi: `uq_menu_dishes_primary_slot` ile her menü yuvasına yalnızca tek bir ana yemek tanımlanabilir.
    - Yabancı anahtar ve sorgu indeksleri: Tablolar arası ilişkiler ve tarih filtreleri için tanımlanan performans indeksleri.

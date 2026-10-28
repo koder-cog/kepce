@@ -973,7 +973,7 @@ impl UserService {
     }
 
     /// KVKK Madde 9 yurt dışı barındırma onay durumunu kontrol eder.
-    /// Sıfır Bilgi Mimarisi kapsamında yurt dışı veri aktarımı kalktığı için bu kontrol doğrudan Ok döner.
+    /// Açık kişisel veri tutulmadığı ve yurt dışı veri aktarımı kalktığı için bu kontrol doğrudan Ok döner.
     pub async fn ensure_cross_border_consent(
         _db: &DatabaseConnection,
         _user_id: Uuid,

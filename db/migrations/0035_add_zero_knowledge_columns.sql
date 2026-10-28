@@ -1,5 +1,5 @@
 -- 0035_add_zero_knowledge_columns.sql
--- Sıfır Bilgi Kriptografik Mimari Sütunları ve 5651 Mühürlü Trafik Günlüğü
+-- users tablosu hash sütunları ve 5651 trafik günlüğü
 -- Bu betik yalnızca DDL ekleme işlemlerini yapar; var olan açık verileri silmez.
 
 -- 1. users tablosuna kör indeks ve takma ad sütunları eklenir

@@ -70,6 +70,14 @@ async fn main() -> anyhow::Result<()> {
             e
         );
     }
+    if let Err(e) =
+        tasks::cleanup::clean_expired_contact_messages(&db, retention_dry_run).await
+    {
+        tracing::error!(
+            "[RETENTION] Süresi dolmuş iletişim mesajlarını temizleme hatası: {:?}",
+            e
+        );
+    }
     if std::env::var("WORKER_RETENTION_CLEANUP").is_ok() && std::env::var("WORKER_ONESHOT").is_ok()
     {
         tracing::info!("[RETENTION] Tek seferlik saklama temizliği tamamlandı. Çıkış yapılıyor.");
@@ -588,6 +596,14 @@ async fn main() -> anyhow::Result<()> {
                 {
                     tracing::error!(
                         "[RECONCILE] Gece süresi dolmuş onaysız hesapları pasifleştirme hatası: {:?}",
+                        e
+                    );
+                }
+                if let Err(e) =
+                    tasks::cleanup::clean_expired_contact_messages(&db_reconcile, false).await
+                {
+                    tracing::error!(
+                        "[RECONCILE] Gece süresi dolmuş iletişim mesajlarını temizleme hatası: {:?}",
                         e
                     );
                 }

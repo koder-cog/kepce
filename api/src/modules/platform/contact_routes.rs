@@ -40,7 +40,7 @@ pub struct SubmitContactDto {
 async fn submit_contact_form(
     State(state): State<crate::config::AppState>,
     headers: HeaderMap,
-    user: OptionalUser,
+    _user: OptionalUser,
     ValidatedJson(payload): ValidatedJson<SubmitContactDto>,
 ) -> Result<Json<serde_json::Value>, AppError> {
     let referer = headers
@@ -65,7 +65,7 @@ async fn submit_contact_form(
     let page_url = payload.page_url.or(referer);
 
     let contact_model = contact_messages::ActiveModel {
-        user_id: Set(user.0.map(|u| u.id)),
+        user_id: Set(None),
         email: Set(payload.email),
         category: Set(payload.report_type),
         subject: Set(payload.subject),

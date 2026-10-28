@@ -30,7 +30,7 @@ WHERE target.dish_alias_id = da_target.id
   AND target.package_name = src.package_name 
   AND da_target.dish_id = src.dish_id;
 
--- B. Mükerrer Satırları Temizle
+-- B. Fazladan Satırları Temizle
 WITH ranked_same_dish AS (
     SELECT 
         md.id,
