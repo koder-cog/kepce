@@ -1,12 +1,7 @@
 import { request, HOST_BASE, buildQuery } from './client.js';
 
 export const authApi = {
-  register: async (
-    nickname,
-    password,
-    default_city_slug = null,
-    diet_mode = null
-  ) => {
+  register: async (nickname, password, default_city_slug = null, diet_mode = null) => {
     const cleanNickname =
       nickname && typeof nickname === 'string' && nickname.trim() ? nickname.trim() : null;
     return await request('/auth/register', {

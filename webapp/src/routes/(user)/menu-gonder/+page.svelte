@@ -456,7 +456,10 @@
       {/if}
 
       {#if submitError}
-        <div class="status-card--main status-card--kesinti status-card--notice u-mb-md" role="alert">
+        <div
+          class="status-card--main status-card--kesinti status-card--notice u-mb-md"
+          role="alert"
+        >
           <span class="status-card__notice-icon">{@html icon('warning', 20)}</span>
           <span class="status-card__notice-text">{submitError}</span>
         </div>

@@ -92,7 +92,9 @@
           autocomplete="username"
           required
         />
-        <label class="form-label" for="auth-gate-identifier">Kullanıcı Adı<span class="form-required-mark">*</span></label>
+        <label class="form-label" for="auth-gate-identifier"
+          >Kullanıcı Adı<span class="form-required-mark">*</span></label
+        >
       </div>
 
       <div
@@ -108,16 +110,28 @@
           autocomplete="current-password"
           required
         />
-        <label class="form-label" for="auth-gate-password">Şifre<span class="form-required-mark">*</span></label>
+        <label class="form-label" for="auth-gate-password"
+          >Şifre<span class="form-required-mark">*</span></label
+        >
       </div>
     </form>
   {/snippet}
 
   {#snippet footer()}
-    <button type="button" class="btn btn--secondary btn--squish" onclick={close} disabled={isLoading}>
+    <button
+      type="button"
+      class="btn btn--secondary btn--squish"
+      onclick={close}
+      disabled={isLoading}
+    >
       Kalsın
     </button>
-    <button type="submit" form="auth-gate-form" class="btn btn--primary btn--squish" disabled={isLoading}>
+    <button
+      type="submit"
+      form="auth-gate-form"
+      class="btn btn--primary btn--squish"
+      disabled={isLoading}
+    >
       {isLoading ? 'Giriş yapılıyor...' : 'Giriş yap'}
     </button>
   {/snippet}

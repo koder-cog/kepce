@@ -138,7 +138,9 @@
       class="admin-preview-card u-p-md u-mb-lg u-flex u-items-center u-justify-between u-flex-wrap u-gap-sm"
     >
       <span class="u-font-bold u-text-sm">Global Fingerprint (Root Hash)</span>
-      <code class="u-text-xs u-color-muted u-break-all u-min-w-0">{healthData.global_fingerprint || '-'}</code>
+      <code class="u-text-xs u-color-muted u-break-all u-min-w-0"
+        >{healthData.global_fingerprint || '-'}</code
+      >
     </div>
 
     <h2 class="u-text-sm u-font-bold u-color-muted u-mb-sm u-mt-lg">Node İstatistikleri</h2>

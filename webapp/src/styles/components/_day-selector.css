@@ -44,42 +44,46 @@
     scroll-snap-type: x proximity;
     scroll-padding-inline: 40px;
     /* Smooth Apple HIG style easing mask computed by python */
-    -webkit-mask-image: linear-gradient(to right,
-        transparent 0px,
-        rgba(0, 0, 0, 0.195) 5px,
-        rgba(0, 0, 0, 0.383) 10px,
-        rgba(0, 0, 0, 0.556) 15px,
-        rgba(0, 0, 0, 0.707) 20px,
-        rgba(0, 0, 0, 0.831) 25px,
-        rgba(0, 0, 0, 0.924) 30px,
-        rgba(0, 0, 0, 0.981) 35px,
-        black calc(100% - 40px),
-        rgba(0, 0, 0, 0.981) calc(100% - 35px),
-        rgba(0, 0, 0, 0.924) calc(100% - 30px),
-        rgba(0, 0, 0, 0.831) calc(100% - 25px),
-        rgba(0, 0, 0, 0.707) calc(100% - 20px),
-        rgba(0, 0, 0, 0.556) calc(100% - 15px),
-        rgba(0, 0, 0, 0.383) calc(100% - 10px),
-        rgba(0, 0, 0, 0.195) calc(100% - 5px),
-        transparent 100%);
-    mask-image: linear-gradient(to right,
-        transparent 0px,
-        rgba(0, 0, 0, 0.195) 5px,
-        rgba(0, 0, 0, 0.383) 10px,
-        rgba(0, 0, 0, 0.556) 15px,
-        rgba(0, 0, 0, 0.707) 20px,
-        rgba(0, 0, 0, 0.831) 25px,
-        rgba(0, 0, 0, 0.924) 30px,
-        rgba(0, 0, 0, 0.981) 35px,
-        black calc(100% - 40px),
-        rgba(0, 0, 0, 0.981) calc(100% - 35px),
-        rgba(0, 0, 0, 0.924) calc(100% - 30px),
-        rgba(0, 0, 0, 0.831) calc(100% - 25px),
-        rgba(0, 0, 0, 0.707) calc(100% - 20px),
-        rgba(0, 0, 0, 0.556) calc(100% - 15px),
-        rgba(0, 0, 0, 0.383) calc(100% - 10px),
-        rgba(0, 0, 0, 0.195) calc(100% - 5px),
-        transparent 100%);
+    -webkit-mask-image: linear-gradient(
+      to right,
+      transparent 0px,
+      rgba(0, 0, 0, 0.195) 5px,
+      rgba(0, 0, 0, 0.383) 10px,
+      rgba(0, 0, 0, 0.556) 15px,
+      rgba(0, 0, 0, 0.707) 20px,
+      rgba(0, 0, 0, 0.831) 25px,
+      rgba(0, 0, 0, 0.924) 30px,
+      rgba(0, 0, 0, 0.981) 35px,
+      black calc(100% - 40px),
+      rgba(0, 0, 0, 0.981) calc(100% - 35px),
+      rgba(0, 0, 0, 0.924) calc(100% - 30px),
+      rgba(0, 0, 0, 0.831) calc(100% - 25px),
+      rgba(0, 0, 0, 0.707) calc(100% - 20px),
+      rgba(0, 0, 0, 0.556) calc(100% - 15px),
+      rgba(0, 0, 0, 0.383) calc(100% - 10px),
+      rgba(0, 0, 0, 0.195) calc(100% - 5px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to right,
+      transparent 0px,
+      rgba(0, 0, 0, 0.195) 5px,
+      rgba(0, 0, 0, 0.383) 10px,
+      rgba(0, 0, 0, 0.556) 15px,
+      rgba(0, 0, 0, 0.707) 20px,
+      rgba(0, 0, 0, 0.831) 25px,
+      rgba(0, 0, 0, 0.924) 30px,
+      rgba(0, 0, 0, 0.981) 35px,
+      black calc(100% - 40px),
+      rgba(0, 0, 0, 0.981) calc(100% - 35px),
+      rgba(0, 0, 0, 0.924) calc(100% - 30px),
+      rgba(0, 0, 0, 0.831) calc(100% - 25px),
+      rgba(0, 0, 0, 0.707) calc(100% - 20px),
+      rgba(0, 0, 0, 0.556) calc(100% - 15px),
+      rgba(0, 0, 0, 0.383) calc(100% - 10px),
+      rgba(0, 0, 0, 0.195) calc(100% - 5px),
+      transparent 100%
+    );
   }
 
   .day-selector--calendar {
@@ -320,7 +324,8 @@
     border-radius: var(--radius-lg);
     background-color: var(--color-surface);
     border: 1px solid var(--color-border);
-    transition: background-color var(--dur-fast) var(--ease-standard),
+    transition:
+      background-color var(--dur-fast) var(--ease-standard),
       border-color var(--dur-fast) var(--ease-standard);
   }
 
@@ -345,8 +350,16 @@
   }
 
   .day-selector__holiday-banner--ramadan {
-    border-color: color-mix(in srgb, var(--color-holiday-religious-border) 25%, var(--color-border));
-    background-color: color-mix(in srgb, var(--color-holiday-religious-bg) 5%, var(--color-surface));
+    border-color: color-mix(
+      in srgb,
+      var(--color-holiday-religious-border) 25%,
+      var(--color-border)
+    );
+    background-color: color-mix(
+      in srgb,
+      var(--color-holiday-religious-bg) 5%,
+      var(--color-surface)
+    );
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120' viewBox='0 0 200 120'%3E%3Cg fill='%234a8044'%3E%3Cpolygon points='20,10 26,16 20,22 14,16' opacity='0.08'/%3E%3Cpolygon points='85,45 90,50 85,55 80,50' opacity='0.06'/%3E%3Cpolygon points='145,18 152,25 145,32 138,25' opacity='0.09'/%3E%3Cpolygon points='180,75 185,80 180,85 175,80' opacity='0.06'/%3E%3Cpolygon points='40,85 47,92 40,99 33,92' opacity='0.07'/%3E%3Cpolygon points='115,95 120,100 115,105 110,100' opacity='0.05'/%3E%3Cpolygon points='60,20 64,24 60,28 56,24' opacity='0.05'/%3E%3Cpolygon points='170,30 175,35 170,40 165,35' opacity='0.06'/%3E%3C/g%3E%3C/svg%3E");
     background-size: 200px 120px;
   }
@@ -356,8 +369,16 @@
   }
 
   .day-selector__holiday-banner--sacrifice {
-    border-color: color-mix(in srgb, var(--color-holiday-religious-border) 25%, var(--color-border));
-    background-color: color-mix(in srgb, var(--color-holiday-religious-bg) 5%, var(--color-surface));
+    border-color: color-mix(
+      in srgb,
+      var(--color-holiday-religious-border) 25%,
+      var(--color-border)
+    );
+    background-color: color-mix(
+      in srgb,
+      var(--color-holiday-religious-bg) 5%,
+      var(--color-surface)
+    );
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='120' viewBox='0 0 200 120'%3E%3Cdefs%3E%3Cpath id='c' d='M8 1c-3.86 0-7 3.14-7 7s3.14 7 7 7 7-3.14 7-7c0-.43-.04-.86-.13-1.29-.1-.53-.85-.54-.97-.02-.4 1.75-1.95 2.98-3.74 2.98-2.12 0-3.83-1.71-3.83-3.83 0-1.79 1.23-3.33 2.97-3.73.53-.12.51-.88-.02-.98-.42-.08-.85-.13-1.28-.13z' fill='%234a8044'/%3E%3C/defs%3E%3Cg%3E%3Cuse href='%23c' transform='translate(22,14) scale(0.65)' opacity='0.08'/%3E%3Cuse href='%23c' transform='translate(88,48) scale(0.42)' opacity='0.06'/%3E%3Cuse href='%23c' transform='translate(142,16) scale(0.8)' opacity='0.09'/%3E%3Cuse href='%23c' transform='translate(178,72) scale(0.48)' opacity='0.05'/%3E%3Cuse href='%23c' transform='translate(42,88) scale(0.58)' opacity='0.07'/%3E%3Cuse href='%23c' transform='translate(120,92) scale(0.38)' opacity='0.05'/%3E%3C/g%3E%3C/svg%3E");
     background-size: 200px 120px;
   }
@@ -403,16 +424,30 @@
     background-color: color-mix(in srgb, var(--color-holiday-national-bg) 5%, var(--color-surface));
   }
 
-  .day-selector__holiday-banner--tone-national:not([class*='--national']) .day-selector__holiday-icon {
+  .day-selector__holiday-banner--tone-national:not([class*='--national'])
+    .day-selector__holiday-icon {
     color: var(--color-holiday-national-border);
   }
 
-  .day-selector__holiday-banner--tone-religious:not([class*='--ramadan']):not([class*='--sacrifice']) {
-    border-color: color-mix(in srgb, var(--color-holiday-religious-border) 25%, var(--color-border));
-    background-color: color-mix(in srgb, var(--color-holiday-religious-bg) 5%, var(--color-surface));
+  .day-selector__holiday-banner--tone-religious:not([class*='--ramadan']):not(
+      [class*='--sacrifice']
+    ) {
+    border-color: color-mix(
+      in srgb,
+      var(--color-holiday-religious-border) 25%,
+      var(--color-border)
+    );
+    background-color: color-mix(
+      in srgb,
+      var(--color-holiday-religious-bg) 5%,
+      var(--color-surface)
+    );
   }
 
-  .day-selector__holiday-banner--tone-religious:not([class*='--ramadan']):not([class*='--sacrifice']) .day-selector__holiday-icon {
+  .day-selector__holiday-banner--tone-religious:not([class*='--ramadan']):not(
+      [class*='--sacrifice']
+    )
+    .day-selector__holiday-icon {
     color: var(--color-holiday-religious-border);
   }
 

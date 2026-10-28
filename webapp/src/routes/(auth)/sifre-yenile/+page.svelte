@@ -91,7 +91,11 @@
   }
 </script>
 
-<Seo title="Şifre Sıfırlama | Kepçe" description="Kepçe hesap kurtarma ve şifre sıfırlama." noindex={true} />
+<Seo
+  title="Şifre Sıfırlama | Kepçe"
+  description="Kepçe hesap kurtarma ve şifre sıfırlama."
+  noindex={true}
+/>
 
 <h1 class="auth-page__title">Şifre Sıfırlama</h1>
 
@@ -100,7 +104,9 @@
     <div class="u-text-center u-py-md u-mb-lg">
       <h2 class="u-text-xl u-weight-bold u-mb-xs u-color-text">Şifreniz Güncellendi</h2>
       <p class="u-text-sm u-color-muted">
-        Eski kurtarma kodunuz iptal edildi. Bir sonraki şifre sıfırlama işlemi için aşağıdaki <strong>yeni kurtarma kodunu</strong> güvenli bir yere kaydedin.
+        Eski kurtarma kodunuz iptal edildi. Bir sonraki şifre sıfırlama işlemi için aşağıdaki <strong
+          >yeni kurtarma kodunu</strong
+        > güvenli bir yere kaydedin.
       </p>
 
       <div class="recovery-key-box u-my-md">
@@ -152,7 +158,9 @@
           required
           autocomplete="off"
           placeholder=" "
-          oninput={() => { recoveryKey = recoveryKey.toLowerCase(); }}
+          oninput={() => {
+            recoveryKey = recoveryKey.toLowerCase();
+          }}
         />
         <label class="form-label" for="reset-recovery-key"
           >Kurtarma Kodu (örn. kpc-...)<span class="form-required-mark">*</span></label
@@ -162,7 +170,9 @@
       <div
         class="form-group form-group--floating"
         class:form-group--error={formError && newPassword.length < 8}
-        data-error={formError && newPassword.length < 8 ? 'Yeni şifre en az 8 karakter olmalıdır' : undefined}
+        data-error={formError && newPassword.length < 8
+          ? 'Yeni şifre en az 8 karakter olmalıdır'
+          : undefined}
       >
         <input
           type={showPassword ? 'text' : 'password'}

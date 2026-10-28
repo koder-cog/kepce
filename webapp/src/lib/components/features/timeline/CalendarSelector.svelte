@@ -119,12 +119,8 @@
     };
   });
 
-  let todayString = $derived(
-    timelineState.serverToday || getIstanbulTodayString()
-  );
-  let todayHolidayInfo = $derived(
-    todayString ? getHolidayInfo(todayString) : null
-  );
+  let todayString = $derived(timelineState.serverToday || getIstanbulTodayString());
+  let todayHolidayInfo = $derived(todayString ? getHolidayInfo(todayString) : null);
 </script>
 
 <div

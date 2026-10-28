@@ -53,16 +53,61 @@
 
   function generateRandomUsername() {
     const adjectives = [
-      'aci', 'tuzlu', 'tatli', 'eksi', 'gurme', 'ac', 'doymus', 'obur',
-      'hizli', 'yavas', 'komik', 'sinirli', 'mutlu', 'uykulu', 'bayat',
-      'taze', 'sicak', 'soguk', 'pismis', 'cig', 'kizarmis', 'haslanmis',
-      'soslu', 'sade', 'karisik', 'kivrak', 'saskin'
+      'aci',
+      'tuzlu',
+      'tatli',
+      'eksi',
+      'gurme',
+      'ac',
+      'doymus',
+      'obur',
+      'hizli',
+      'yavas',
+      'komik',
+      'sinirli',
+      'mutlu',
+      'uykulu',
+      'bayat',
+      'taze',
+      'sicak',
+      'soguk',
+      'pismis',
+      'cig',
+      'kizarmis',
+      'haslanmis',
+      'soslu',
+      'sade',
+      'karisik',
+      'kivrak',
+      'saskin'
     ];
     const nouns = [
-      'kepce', 'tabldot', 'tepsi', 'kasik', 'catal', 'bicak', 'tuzluk',
-      'biber', 'domates', 'patates', 'pilav', 'makarna', 'fasulye',
-      'nohut', 'corba', 'ekmek', 'ayran', 'su', 'elma', 'armut',
-      'karpuz', 'kavun', 'tatli', 'kofte', 'tavuk', 'et'
+      'kepce',
+      'tabldot',
+      'tepsi',
+      'kasik',
+      'catal',
+      'bicak',
+      'tuzluk',
+      'biber',
+      'domates',
+      'patates',
+      'pilav',
+      'makarna',
+      'fasulye',
+      'nohut',
+      'corba',
+      'ekmek',
+      'ayran',
+      'su',
+      'elma',
+      'armut',
+      'karpuz',
+      'kavun',
+      'tatli',
+      'kofte',
+      'tavuk',
+      'et'
     ];
     const rndAdj = adjectives[Math.floor(Math.random() * adjectives.length)];
     const rndNoun = nouns[Math.floor(Math.random() * nouns.length)];
@@ -136,7 +181,12 @@
     } catch (err) {
       const msg = (err.message || '').toLowerCase();
       let failedErrors = {};
-      if (msg.includes('kullanıcı adı') || msg.includes('nickname') || msg.includes('rumuz') || msg.includes('zaten')) {
+      if (
+        msg.includes('kullanıcı adı') ||
+        msg.includes('nickname') ||
+        msg.includes('rumuz') ||
+        msg.includes('zaten')
+      ) {
         failedErrors.username = err.message;
       } else {
         errorMsg = err.message || 'Bilinmeyen bir sorun oluştu.';
@@ -245,7 +295,9 @@
             required
             placeholder=" "
           />
-          <label class="form-label" for="username">Kullanıcı Adı<span class="form-required-mark">*</span></label>
+          <label class="form-label" for="username"
+            >Kullanıcı Adı<span class="form-required-mark">*</span></label
+          >
           <button
             type="button"
             class="password-toggle"
@@ -380,7 +432,8 @@
     {#snippet children()}
       <div class="u-flex u-flex-column u-gap-md">
         <p class="u-text-sm u-color-muted u-mb-sm">
-          Şifrenizi unutursanız hesabınıza erişmenin tek yolu bu koddur. E-posta veya telefon tutulmadığı için bu kod olmadan şifre sıfırlanamaz.
+          Şifrenizi unutursanız hesabınıza erişmenin tek yolu bu koddur. E-posta veya telefon
+          tutulmadığı için bu kod olmadan şifre sıfırlanamaz.
         </p>
 
         <div class="recovery-key-box">
@@ -391,12 +444,20 @@
           <button type="button" class="btn btn--secondary btn--squish" onclick={copyRecoveryKey}>
             {@html icon('copy', 16)} Kopyala
           </button>
-          <button type="button" class="btn btn--secondary btn--squish" onclick={downloadRecoveryFile}>
+          <button
+            type="button"
+            class="btn btn--secondary btn--squish"
+            onclick={downloadRecoveryFile}
+          >
             {@html icon('download', 16)} Dosya olarak indir
           </button>
         </div>
 
-        <form id="recovery-confirm-form" class="recovery-recall-form u-mt-md" onsubmit={handleConfirmRecovery}>
+        <form
+          id="recovery-confirm-form"
+          class="recovery-recall-form u-mt-md"
+          onsubmit={handleConfirmRecovery}
+        >
           <div
             class="form-group form-group--floating"
             class:form-group--error={!!recoveryError}
@@ -411,7 +472,9 @@
               placeholder=" "
               required
               autocomplete="off"
-              oninput={() => { lastBlockInput = lastBlockInput.toLowerCase(); }}
+              oninput={() => {
+                lastBlockInput = lastBlockInput.toLowerCase();
+              }}
             />
             <label class="form-label" for="recall-last-block">
               Son 5 Karakter<span class="form-required-mark">*</span>
@@ -436,7 +499,9 @@
         type="submit"
         form="recovery-confirm-form"
         class="btn btn--primary u-w-full"
-        disabled={isConfirmingRecovery || !recoveryAcknowledged || lastBlockInput.trim().length !== 5}
+        disabled={isConfirmingRecovery ||
+          !recoveryAcknowledged ||
+          lastBlockInput.trim().length !== 5}
       >
         {isConfirmingRecovery ? 'Teyit ediliyor...' : 'Teyit Et ve Tamamla'}
       </button>

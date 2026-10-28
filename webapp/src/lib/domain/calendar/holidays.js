@@ -33,7 +33,11 @@ export function getHolidayInfo(date) {
   if (override) {
     const theme =
       override.theme ||
-      (override.tone === 'religious' ? 'ramadan' : override.tone === 'solemn' ? 'solemn' : 'national');
+      (override.tone === 'religious'
+        ? 'ramadan'
+        : override.tone === 'solemn'
+          ? 'solemn'
+          : 'national');
     return {
       name: override.name,
       tone: override.tone,
@@ -46,7 +50,8 @@ export function getHolidayInfo(date) {
   const fixedHoliday = holidaysData.fixed?.[mmdd];
   if (fixedHoliday) {
     const list = fixedHoliday.messages || [];
-    let text = list.length > 0 ? list[year % list.length] : (fixedHoliday.message || fixedHoliday.name);
+    let text =
+      list.length > 0 ? list[year % list.length] : fixedHoliday.message || fixedHoliday.name;
     const republicYear = year - 1923;
     const passingYear = year - 1938;
     text = text
@@ -75,7 +80,9 @@ export function getHolidayInfo(date) {
       const isArefe = diff === -1;
       const dayKey = isArefe ? 'day_0' : `day_${diff + 1}`;
       const list = holidaysData.messages?.ramadan?.[dayKey] || [];
-      const defaultText = isArefe ? 'Ramazan Bayramı Arefesi kutlu olsun!' : 'Ramazan Bayramı kutlu olsun!';
+      const defaultText = isArefe
+        ? 'Ramazan Bayramı Arefesi kutlu olsun!'
+        : 'Ramazan Bayramı kutlu olsun!';
       const text = list.length > 0 ? list[year % list.length] : defaultText;
       return {
         name: isArefe ? 'Ramazan Bayramı Arefesi' : 'Ramazan Bayramı',
@@ -93,7 +100,9 @@ export function getHolidayInfo(date) {
       const isArefe = diff === -1;
       const dayKey = isArefe ? 'day_0' : `day_${diff + 1}`;
       const list = holidaysData.messages?.sacrifice?.[dayKey] || [];
-      const defaultText = isArefe ? 'Kurban Bayramı Arefesi kutlu olsun!' : 'Kurban Bayramı kutlu olsun!';
+      const defaultText = isArefe
+        ? 'Kurban Bayramı Arefesi kutlu olsun!'
+        : 'Kurban Bayramı kutlu olsun!';
       const text = list.length > 0 ? list[year % list.length] : defaultText;
       return {
         name: isArefe ? 'Kurban Bayramı Arefesi' : 'Kurban Bayramı',
@@ -108,7 +117,10 @@ export function getHolidayInfo(date) {
   if (!yearSchedule) {
     try {
       const dt = new Date(Date.UTC(year, month - 1, day));
-      const fmt = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', { month: 'numeric', day: 'numeric' });
+      const fmt = new Intl.DateTimeFormat('en-u-ca-islamic-umalqura', {
+        month: 'numeric',
+        day: 'numeric'
+      });
       const parts = fmt.formatToParts(dt);
       const hMonth = parseInt(parts.find((p) => p.type === 'month')?.value || '0', 10);
       const hDay = parseInt(parts.find((p) => p.type === 'day')?.value || '0', 10);
@@ -121,7 +133,8 @@ export function getHolidayInfo(date) {
 
       if (nextHMonth === 10 && nextHDay === 1) {
         const list = holidaysData.messages?.ramadan?.day_0 || [];
-        const text = list.length > 0 ? list[year % list.length] : 'Ramazan Bayramı Arefesi kutlu olsun!';
+        const text =
+          list.length > 0 ? list[year % list.length] : 'Ramazan Bayramı Arefesi kutlu olsun!';
         return {
           name: 'Ramazan Bayramı Arefesi',
           tone: 'religious',
@@ -146,7 +159,8 @@ export function getHolidayInfo(date) {
       // Kurban Bayramı Arefesi: 12. ay (Zilhicce), 9. gün
       if (hMonth === 12 && hDay === 9) {
         const list = holidaysData.messages?.sacrifice?.day_0 || [];
-        const text = list.length > 0 ? list[year % list.length] : 'Kurban Bayramı Arefesi kutlu olsun!';
+        const text =
+          list.length > 0 ? list[year % list.length] : 'Kurban Bayramı Arefesi kutlu olsun!';
         return {
           name: 'Kurban Bayramı Arefesi',
           tone: 'religious',

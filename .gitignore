@@ -3,7 +3,7 @@
 # ========================================
 
 # 1. Environment & Secrets
-.env
+.env*
 .env.local
 .env.*.local
 .env.production
@@ -47,6 +47,7 @@ temp_*.db
 # 6. Logs & PID Files
 *.log
 *.pid
+/log/
 api/log/
 worker/log/
 webapp/log/
@@ -79,8 +80,9 @@ AGENTS.md
 /backups/
 storage/
 worker/data/
-/data/staging/
-/data/vault/recovered/
+/data/*
+!/data/.gitkeep
+worker/assets/tessdata/
 .fastembed_cache/
 worker_cache/
 /cache/
@@ -88,6 +90,7 @@ worker_cache/
 # 10. Temporary & Scratch Files
 .scratch/
 findings.md
+*.old*
 *.tmp
 *.temp
 *.bak

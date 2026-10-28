@@ -116,12 +116,56 @@ pub fn reset_ban_status() {
     }
 }
 
+/// Farklı sağlayıcı formatlarındaki proxy adreslerini RFC standardına dönüştürür.
+///
+/// Desteklenen formatlar:
+/// - `http://user:pass@host:port` (Standart RFC)
+/// - `http://host:port:user:pass` veya `host:port:user:pass` (Sağlayıcı varsayılanı)
+/// - `http://user:pass:host:port` veya `user:pass:host:port` (Ters format)
+/// - `http://host:port` veya `host:port` (Kimlik doğrulamasız)
+/// - Çevreleyen tırnak işaretleri (" veya ') otomatik temizlenir.
+pub fn normalize_proxy_url(raw: &str) -> Option<String> {
+    let trimmed = raw.trim().trim_matches('"').trim_matches('\'').trim();
+    if trimmed.is_empty() {
+        return None;
+    }
+
+    let (scheme, rest) = if let Some((s, r)) = trimmed.split_once("://") {
+        (s, r)
+    } else {
+        ("http", trimmed)
+    };
+
+    if rest.contains('@') {
+        return Some(format!("{scheme}://{rest}"));
+    }
+
+    let parts: Vec<&str> = rest.split(':').collect();
+    if parts.len() == 4 {
+        if parts[1].parse::<u16>().is_ok() {
+            let (host, port, user, pass) = (parts[0], parts[1], parts[2], parts[3]);
+            return Some(format!("{scheme}://{user}:{pass}@{host}:{port}"));
+        }
+        if parts[3].parse::<u16>().is_ok() {
+            let (user, pass, host, port) = (parts[0], parts[1], parts[2], parts[3]);
+            return Some(format!("{scheme}://{user}:{pass}@{host}:{port}"));
+        }
+    }
+
+    if parts.len() == 2 && parts[1].parse::<u16>().is_ok() {
+        let (host, port) = (parts[0], parts[1]);
+        return Some(format!("{scheme}://{host}:{port}"));
+    }
+
+    Some(format!("{scheme}://{rest}"))
+}
+
 /// Proxy URL'indeki kullanıcı ve şifre bilgilerini log güvenliği için maskeler.
 pub fn mask_proxy_url(raw: &str) -> String {
-    if let Some((scheme, rest)) = raw.split_once("://")
-        && let Some((_creds, host_port)) = rest.split_once('@')
-    {
-        return format!("{scheme}://***@{host_port}");
+    if let Some((scheme, rest)) = raw.split_once("://") {
+        if let Some((_creds, host_port)) = rest.split_once('@') {
+            return format!("{scheme}://***@{host_port}");
+        }
     }
     raw.to_string()
 }
@@ -223,10 +267,9 @@ pub struct ActiveKykSession {
 impl KykYemekClientPool {
     pub fn new(proxy_config: Option<&str>, default_client: Client) -> Self {
         let raw_proxies = proxy_config.unwrap_or_default();
-        let proxy_list: Vec<&str> = raw_proxies
-            .split(',')
-            .map(|s| s.trim())
-            .filter(|s| !s.is_empty())
+        let proxy_list: Vec<String> = raw_proxies
+            .split([',', '\n', '\r', ';'])
+            .filter_map(normalize_proxy_url)
             .collect();
 
         if proxy_list.is_empty() {
@@ -237,9 +280,9 @@ impl KykYemekClientPool {
         }
 
         let mut entries = Vec::new();
-        for raw in proxy_list {
-            let masked = mask_proxy_url(raw);
-            match reqwest::Proxy::all(raw) {
+        for norm in &proxy_list {
+            let masked = mask_proxy_url(norm);
+            match reqwest::Proxy::all(norm) {
                 Ok(proxy) => {
                     match Client::builder()
                         .proxy(proxy)
@@ -539,25 +582,30 @@ pub fn extract_cities_from_kykyemek_html(html: &str) -> Vec<String> {
 pub fn extract_token_from_html(html: &str) -> Result<String> {
     static TOKEN_REGEX: OnceLock<regex::Regex> = OnceLock::new();
     let re = TOKEN_REGEX.get_or_init(|| {
-        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*value=["']([^"']+)["']"#)
+        regex::Regex::new(r#"name=["']__RequestVerificationToken["'][^>]*?value=["']([^"']+)["']"#)
             .unwrap()
     });
 
-    if let Some(caps) = re.captures(html)
-        && let Some(token) = caps.get(1)
-    {
-        return Ok(token.as_str().to_string());
+    if let Some(caps) = re.captures(html) {
+        return Ok(caps[1].to_string());
     }
 
     static TOKEN_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
     let re_fb = TOKEN_FALLBACK.get_or_init(|| {
-        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*name=["']__RequestVerificationToken["']"#)
+        regex::Regex::new(r#"value=["']([^"']+)["'][^>]*?name=["']__RequestVerificationToken["']"#)
             .unwrap()
     });
-    if let Some(caps) = re_fb.captures(html)
-        && let Some(token) = caps.get(1)
-    {
-        return Ok(token.as_str().to_string());
+    if let Some(caps) = re_fb.captures(html) {
+        return Ok(caps[1].to_string());
+    }
+
+    static TOKEN_JS_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
+    let re_js = TOKEN_JS_FALLBACK.get_or_init(|| {
+        regex::Regex::new(r#"__RequestVerificationToken["']?\s*[:=]\s*["']([^"']+)["']"#)
+            .unwrap()
+    });
+    if let Some(caps) = re_js.captures(html) {
+        return Ok(caps[1].to_string());
     }
 
     anyhow::bail!("__RequestVerificationToken HTML içinde bulunamadı")
@@ -579,11 +627,12 @@ pub async fn fetch_kykyemek_session(client: &Client) -> Result<(String, Vec<Stri
         .header("Accept-Language", "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7")
         .send()
         .await?;
-    if matches!(
-        res.status(),
-        reqwest::StatusCode::FORBIDDEN | reqwest::StatusCode::TOO_MANY_REQUESTS
-    ) {
-        anyhow::bail!("kykyemek.com erişimi engellendi (HTTP {})", res.status());
+
+    let status = res.status();
+    if !status.is_success() {
+        let text_preview = res.text().await.unwrap_or_default();
+        let preview: String = text_preview.chars().take(200).collect();
+        anyhow::bail!("kykyemek.com oturum isteği başarısız oldu (HTTP {status}): {preview}");
     }
     let html = res.text().await?;
 
@@ -2683,6 +2732,76 @@ mod tests {
         assert_eq!(
             super::mask_proxy_url("socks5://admin:pass@proxy.example.com:1080"),
             "socks5://***@proxy.example.com:1080"
+        );
+    }
+
+    #[test]
+    fn test_normalize_proxy_url() {
+        // Standard provider format (IP:PORT:USER:PASS)
+        assert_eq!(
+            super::normalize_proxy_url("http://64.137.96.74:6641:jaluykzi:h1xj152bzdy1").unwrap(),
+            "http://jaluykzi:h1xj152bzdy1@64.137.96.74:6641"
+        );
+        // With leading and trailing quotes from environment / secrets
+        assert_eq!(
+            super::normalize_proxy_url("\"http://45.38.107.97:6014:jaluykzi:h1xj152bzdy1").unwrap(),
+            "http://jaluykzi:h1xj152bzdy1@45.38.107.97:6014"
+        );
+        assert_eq!(
+            super::normalize_proxy_url("http://23.26.71.145:5628:jaluykzi:h1xj152bzdy1\"").unwrap(),
+            "http://jaluykzi:h1xj152bzdy1@23.26.71.145:5628"
+        );
+        // Reverse format (USER:PASS:IP:PORT)
+        assert_eq!(
+            super::normalize_proxy_url("jaluykzi:h1xj152bzdy1:64.137.96.74:6641").unwrap(),
+            "http://jaluykzi:h1xj152bzdy1@64.137.96.74:6641"
+        );
+        // Simple IP:PORT without credentials
+        assert_eq!(
+            super::normalize_proxy_url("64.137.96.74:6641").unwrap(),
+            "http://64.137.96.74:6641"
+        );
+        // Empty or whitespace
+        assert!(super::normalize_proxy_url("   ").is_none());
+        assert!(super::normalize_proxy_url("\"\"").is_none());
+    }
+
+    #[test]
+    fn test_extract_token_from_html_variants() {
+        // 1. Script tag dynamic JavaScript token
+        let script_html = r#"
+        <script>
+            function gettoken() {
+                var token = '<input name="__RequestVerificationToken" type="hidden" value="CfDJ8MnQc0UX6iROqbbU3nDv6TM7u" />';
+                token = $(token).val();
+                return token;
+            }
+        </script>
+        "#;
+        assert_eq!(
+            super::extract_token_from_html(script_html).unwrap(),
+            "CfDJ8MnQc0UX6iROqbbU3nDv6TM7u"
+        );
+
+        // 2. Standard form input
+        let form_html = r#"<form><input name="__RequestVerificationToken" type="hidden" value="token_val_123" /></form>"#;
+        assert_eq!(
+            super::extract_token_from_html(form_html).unwrap(),
+            "token_val_123"
+        );
+
+        // 3. Reversed value/name order
+        let rev_html = r#"<input value="token_val_rev" type="hidden" name="__RequestVerificationToken" />"#;
+        assert_eq!(
+            super::extract_token_from_html(rev_html).unwrap(),
+            "token_val_rev"
+        );
+
+        // 4. JS object/variable fallback
+        let js_html = r#"var config = { "__RequestVerificationToken": "token_val_json" };"#;
+        assert_eq!(
+            super::extract_token_from_html(js_html).unwrap(),
+            "token_val_json"
         );
     }
 

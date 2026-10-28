@@ -150,6 +150,7 @@ async fn main() -> anyhow::Result<()> {
     tracing::info!("Remote Scraper başlatılıyor (dry_run: {})...", dry_run);
 
     let default_client = reqwest::Client::builder()
+        .cookie_store(true)
         .timeout(Duration::from_secs(30))
         .build()?;
 

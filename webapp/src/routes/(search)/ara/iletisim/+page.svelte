@@ -117,7 +117,11 @@
       <section class="contact-form-section">
         <div class="contact-form-card">
           {#if errorMsg}
-            <div id="contact-error-container" class="status-card--main status-card--kesinti status-card--notice u-mb-md" role="alert">
+            <div
+              id="contact-error-container"
+              class="status-card--main status-card--kesinti status-card--notice u-mb-md"
+              role="alert"
+            >
               <span class="status-card__notice-icon">{@html icon('warning', 20)}</span>
               <span class="status-card__notice-text">{errorMsg}</span>
             </div>

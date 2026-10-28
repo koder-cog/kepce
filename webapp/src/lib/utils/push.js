@@ -159,7 +159,9 @@ export async function sendTestPush() {
 
   if (typeof Notification !== 'undefined') {
     if (Notification.permission === 'denied') {
-      throw new Error('Tarayıcı bildirim izni engellenmiş. Lütfen tarayıcı ayarlarından bildirimlere izin verin.');
+      throw new Error(
+        'Tarayıcı bildirim izni engellenmiş. Lütfen tarayıcı ayarlarından bildirimlere izin verin.'
+      );
     }
     if (Notification.permission === 'default') {
       throw new Error('Bildirim izni henüz verilmedi. Lütfen önce bildirimleri açın.');

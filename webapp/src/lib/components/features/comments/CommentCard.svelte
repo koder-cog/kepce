@@ -133,9 +133,12 @@
       return;
     }
     if (!globalState?.user?.is_verified) {
-      showToast('Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', {
-        type: 'warning'
-      });
+      showToast(
+        'Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.',
+        {
+          type: 'warning'
+        }
+      );
       return;
     }
     replying = !replying;
@@ -145,9 +148,12 @@
   async function submitReply() {
     if (!replyText.trim()) return;
     if (!globalState?.user?.is_verified) {
-      showToast('Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.', {
-        type: 'warning'
-      });
+      showToast(
+        'Yorum yanıtlayabilmek için lütfen ayarlar sayfasından kurtarma kodunuzu teyit ediniz.',
+        {
+          type: 'warning'
+        }
+      );
       return;
     }
     try {
