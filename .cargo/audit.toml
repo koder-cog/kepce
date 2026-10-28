@@ -7,4 +7,5 @@ ignore = [
     "RUSTSEC-2026-0368", # zip: sembolik bag acigi calamine icinde calistirilmiyor
     "RUSTSEC-2026-0369", # zip: izin ve sembolik bag islemleri kullanilmiyor
     "RUSTSEC-2024-0436", # paste: ust kutuphaneler pastey veya yerel makrolara gecene kadar gecisli bagimlilik
+    "RUSTSEC-2026-0387", # crypto-bigint: elliptic-curve 0.13 gecisli bagimliligi, ust paket guncellemesi bekleniyor
 ]

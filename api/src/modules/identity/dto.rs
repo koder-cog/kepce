@@ -31,10 +31,7 @@ pub enum UserRole {
 /// Sadece giriş yaparken (Login) kullanılır.
 #[derive(Debug, Deserialize, Validate)]
 pub struct LoginRequestDto {
-    #[validate(length(
-        min = 3,
-        message = "Kullanıcı adı en az 3 karakter olmalıdır"
-    ))]
+    #[validate(length(min = 3, message = "Kullanıcı adı en az 3 karakter olmalıdır"))]
     pub identifier: String,
 
     #[validate(length(min = 1, max = 128, message = "Lütfen şifrenizi giriniz"))]
@@ -80,7 +77,11 @@ pub struct RegisterRequestDto {
 /// Kurtarma anahtarı aktif hatırlama doğrulama isteği
 #[derive(Debug, Deserialize, Validate)]
 pub struct ConfirmRecoveryDto {
-    #[validate(length(min = 5, max = 5, message = "Kurtarma kodunun son 5 karakteri girilmelidir"))]
+    #[validate(length(
+        min = 5,
+        max = 5,
+        message = "Kurtarma kodunun son 5 karakteri girilmelidir"
+    ))]
     pub last_block: String,
 }
 
@@ -100,7 +101,11 @@ pub struct ResetPasswordWithRecoveryDto {
     #[validate(length(min = 20, max = 40, message = "Geçersiz kurtarma anahtarı formatı"))]
     pub recovery_key: String,
 
-    #[validate(length(min = 8, max = 72, message = "Yeni şifre 8-72 karakter arasında olmalıdır"))]
+    #[validate(length(
+        min = 8,
+        max = 72,
+        message = "Yeni şifre 8-72 karakter arasında olmalıdır"
+    ))]
     pub new_password: String,
 }
 

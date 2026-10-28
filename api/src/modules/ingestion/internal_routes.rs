@@ -6,8 +6,8 @@ use axum::{
     routing::{get, post},
 };
 use sha2::{Digest, Sha256};
-use subtle::ConstantTimeEq;
 use std::path::Path;
+use subtle::ConstantTimeEq;
 
 use crate::{
     config::AppState, dto::internal_ingest::InternalKykyemekIngestRequest,
@@ -41,10 +41,7 @@ fn verify_sync_token(headers: &HeaderMap, expected_secret: Option<&str>) -> bool
 }
 
 /// 5651 RAM Tamponundan şifreli paketleri çeker (`GET /api/v1/internal/traffic-logs/pull`).
-async fn pull_traffic_logs(
-    State(state): State<AppState>,
-    headers: HeaderMap,
-) -> impl IntoResponse {
+async fn pull_traffic_logs(State(state): State<AppState>, headers: HeaderMap) -> impl IntoResponse {
     if !verify_sync_token(&headers, state.config.traffic_log_sync_token.as_deref()) {
         tracing::warn!("Trafik log çekme isteğinde yetkisiz token sağlandı.");
         return (
@@ -63,14 +60,12 @@ async fn pull_traffic_logs(
                 header::CONTENT_TYPE,
                 "application/octet-stream".parse().unwrap(),
             );
-            response.headers_mut().insert(
-                "x-batch-seq-id",
-                seq_id.parse().unwrap(),
-            );
-            response.headers_mut().insert(
-                "x-batch-hash",
-                hash.parse().unwrap(),
-            );
+            response
+                .headers_mut()
+                .insert("x-batch-seq-id", seq_id.parse().unwrap());
+            response
+                .headers_mut()
+                .insert("x-batch-hash", hash.parse().unwrap());
             response
         }
         Ok(None) => StatusCode::NO_CONTENT.into_response(),

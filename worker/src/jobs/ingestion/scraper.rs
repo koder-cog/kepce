@@ -162,12 +162,13 @@ pub fn normalize_proxy_url(raw: &str) -> Option<String> {
 
 /// Proxy URL'indeki kullanıcı ve şifre bilgilerini log güvenliği için maskeler.
 pub fn mask_proxy_url(raw: &str) -> String {
-    if let Some((scheme, rest)) = raw.split_once("://") {
-        if let Some((_creds, host_port)) = rest.split_once('@') {
-            return format!("{scheme}://***@{host_port}");
-        }
+    match raw.split_once("://") {
+        Some((scheme, rest)) => match rest.split_once('@') {
+            Some((_creds, host_port)) => format!("{scheme}://***@{host_port}"),
+            None => raw.to_string(),
+        },
+        None => raw.to_string(),
     }
-    raw.to_string()
 }
 
 /// Havuzdaki her bir proxy çıkışının izole durum kaydı.
@@ -601,8 +602,7 @@ pub fn extract_token_from_html(html: &str) -> Result<String> {
 
     static TOKEN_JS_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
     let re_js = TOKEN_JS_FALLBACK.get_or_init(|| {
-        regex::Regex::new(r#"__RequestVerificationToken["']?\s*[:=]\s*["']([^"']+)["']"#)
-            .unwrap()
+        regex::Regex::new(r#"__RequestVerificationToken["']?\s*[:=]\s*["']([^"']+)["']"#).unwrap()
     });
     if let Some(caps) = re_js.captures(html) {
         return Ok(caps[1].to_string());
@@ -2791,7 +2791,8 @@ mod tests {
         );
 
         // 3. Reversed value/name order
-        let rev_html = r#"<input value="token_val_rev" type="hidden" name="__RequestVerificationToken" />"#;
+        let rev_html =
+            r#"<input value="token_val_rev" type="hidden" name="__RequestVerificationToken" />"#;
         assert_eq!(
             super::extract_token_from_html(rev_html).unwrap(),
             "token_val_rev"

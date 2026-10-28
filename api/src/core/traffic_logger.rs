@@ -4,8 +4,8 @@
 //! log paketlerini yalnızca Linux tmpfs (`/dev/shm`) üzerinde tutar.
 //! Türkiye sunucusundaki cron/pull servisi `X-Sync-Token` ile paketleri çeker ve onaylar (`ack`).
 
-use std::path::{Path, PathBuf};
 use chrono::Utc;
+use std::path::{Path, PathBuf};
 use uuid::Uuid;
 
 /// 128 MB RAM tampon limitinin %85'i (Devre kesici eşiği: ~108 MB)
@@ -17,9 +17,7 @@ pub async fn get_ram_buffer_usage_bytes(ram_dir: &Path) -> u64 {
     if let Ok(mut entries) = tokio::fs::read_dir(ram_dir).await {
         while let Ok(Some(entry)) = entries.next_entry().await {
             if let Ok(meta) = entry.metadata().await {
-                if meta.is_file() {
-                    total += meta.len();
-                }
+                total += if meta.is_file() { meta.len() } else { 0 };
             }
         }
     }
@@ -89,12 +87,12 @@ pub async fn pull_log_batch(
 
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
-        if path.is_file() {
-            if let Some(ext) = path.extension() {
-                if ext == "age" || ext == "log" {
-                    files.push(path);
-                }
-            }
+        let is_target = path.is_file()
+            && path
+                .extension()
+                .is_some_and(|ext| ext == "age" || ext == "log");
+        if is_target {
+            files.push(path);
         }
     }
 
@@ -140,13 +138,14 @@ pub async fn ack_log_batch(ram_dir: &Path, up_to_seq_id: &str) -> anyhow::Result
 
     while let Some(entry) = entries.next_entry().await? {
         let path = entry.path();
-        if path.is_file() {
-            if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                if name <= up_to_seq_id {
-                    let _ = tokio::fs::remove_file(&path).await;
-                    deleted_count += 1;
-                }
-            }
+        let should_delete = path.is_file()
+            && path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .is_some_and(|name| name <= up_to_seq_id);
+        if should_delete {
+            let _ = tokio::fs::remove_file(&path).await;
+            deleted_count += 1;
         }
     }
 
@@ -159,7 +158,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_traffic_logger_lifecycle() {
-        let temp_dir = std::env::temp_dir().join(format!("traffic_test_{}", Uuid::new_v4().simple()));
+        let temp_dir =
+            std::env::temp_dir().join(format!("traffic_test_{}", Uuid::new_v4().simple()));
         tokio::fs::create_dir_all(&temp_dir).await.unwrap();
 
         // 1. İki log kaydı yaz

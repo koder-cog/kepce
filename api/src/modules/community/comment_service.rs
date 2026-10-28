@@ -519,7 +519,8 @@ impl CommentService {
                 .as_ref()
                 .map(|u| u.nickname.clone())
                 .unwrap_or_else(|| "Bilinmeyen Kullanıcı".to_string());
-            let mut avatar_url: Option<String> = user_opt.as_ref().and_then(|u| u.avatar_url.clone());
+            let mut avatar_url: Option<String> =
+                user_opt.as_ref().and_then(|u| u.avatar_url.clone());
 
             // Silinen veya maskelenen içerik kontrolü
             let is_deleted = comment.is_deleted || author_username == "silinmiş";

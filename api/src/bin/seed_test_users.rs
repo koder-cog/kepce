@@ -1,9 +1,7 @@
 use anyhow::Result;
 use bcrypt::{DEFAULT_COST, hash};
 use chrono::Utc;
-use sea_orm::{
-    ActiveModelTrait, ColumnTrait, Database, EntityTrait, QueryFilter, Set,
-};
+use sea_orm::{ActiveModelTrait, ColumnTrait, Database, EntityTrait, QueryFilter, Set};
 use shared::entities::{
     sea_orm_active_enums::{AccountStatusEnum, UserRoleEnum},
     users,

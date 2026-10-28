@@ -65,7 +65,9 @@ async fn test_auth_flow() {
         .extension(axum::extract::connect_info::ConnectInfo(
             std::net::SocketAddr::from(([127, 0, 0, 1], 8080)),
         ))
-        .body(Body::from(serde_json::to_string(&register_payload).unwrap()))
+        .body(Body::from(
+            serde_json::to_string(&register_payload).unwrap(),
+        ))
         .unwrap();
 
     let response = app.clone().oneshot(req).await.unwrap();
@@ -115,7 +117,7 @@ async fn test_auth_flow() {
     // 2.b Doğru Kurtarma Anahtarı Son Blok Teyidi (Confirm Recovery)
     let last_block = recovery_key
         .split('-')
-        .last()
+        .next_back()
         .unwrap_or(&recovery_key)
         .to_string();
 
@@ -155,7 +157,9 @@ async fn test_auth_flow() {
         .extension(axum::extract::connect_info::ConnectInfo(
             std::net::SocketAddr::from(([127, 0, 0, 1], 8080)),
         ))
-        .body(Body::from(serde_json::to_string(&email_login_payload).unwrap()))
+        .body(Body::from(
+            serde_json::to_string(&email_login_payload).unwrap(),
+        ))
         .unwrap();
 
     let email_resp = app.clone().oneshot(email_req).await.unwrap();

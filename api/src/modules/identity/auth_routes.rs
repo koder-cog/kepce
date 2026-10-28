@@ -118,13 +118,8 @@ async fn register(
         crate::core::crypto::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
     });
 
-    let (access_token, refresh_token, user, recovery_key) = AuthService::register(
-        &db,
-        &config.jwt_secret,
-        payload,
-        subnet_hash,
-    )
-    .await?;
+    let (access_token, refresh_token, user, recovery_key) =
+        AuthService::register(&db, &config.jwt_secret, payload, subnet_hash).await?;
 
     let secure = config.cookie_secure;
     let mut headers = HeaderMap::new();
@@ -189,13 +184,8 @@ async fn login(
         crate::core::crypto::compute_subnet_hash(&prefix, &config.subnet_blind_key).ok()
     });
 
-    let (access_token, refresh_token, user) = AuthService::login(
-        &db,
-        &config.jwt_secret,
-        payload,
-        subnet_hash,
-    )
-    .await?;
+    let (access_token, refresh_token, user) =
+        AuthService::login(&db, &config.jwt_secret, payload, subnet_hash).await?;
 
     let secure = config.cookie_secure;
     let mut headers = HeaderMap::new();
@@ -471,22 +461,18 @@ async fn update_me(
     user: AuthenticatedUser,
     ValidatedJson(payload): ValidatedJson<crate::dto::user::UpdateProfileDto>,
 ) -> Result<Json<crate::dto::user::UserProfileDto>, AppError> {
-    let profile = crate::services::user::UserService::update_user(
-        &db,
-        user.id,
-        payload,
-    )
-    .await
-    .map_err(|e| match e {
-        crate::services::auth::AuthError::UserAlreadyExists => {
-            AppError::BadRequest("Bu kullanıcı adı zaten kullanılıyor".to_string())
-        }
-        crate::services::auth::AuthError::InvalidCredentials => {
-            AppError::BadRequest("Mevcut şifre hatalı".to_string())
-        }
-        crate::services::auth::AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
-        _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
-    })?;
+    let profile = crate::services::user::UserService::update_user(&db, user.id, payload)
+        .await
+        .map_err(|e| match e {
+            crate::services::auth::AuthError::UserAlreadyExists => {
+                AppError::BadRequest("Bu kullanıcı adı zaten kullanılıyor".to_string())
+            }
+            crate::services::auth::AuthError::InvalidCredentials => {
+                AppError::BadRequest("Mevcut şifre hatalı".to_string())
+            }
+            crate::services::auth::AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
+            _ => AppError::Internal("Profil güncellenirken bir hata oluştu".to_string()),
+        })?;
 
     Ok(Json(profile))
 }
@@ -604,47 +590,52 @@ async fn upload_avatar(
 ) -> Result<Json<serde_json::Value>, AppError> {
     let mut image_bytes: Option<Vec<u8>> = None;
 
-    while let Some(field) = multipart.next_field().await.map_err(|e| {
-        AppError::BadRequest(format!("Form verisi okunamadı: {}", e))
-    })? {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| AppError::BadRequest(format!("Form verisi okunamadı: {}", e)))?
+    {
         if field.name() == Some("avatar") || field.name() == Some("file") {
-            let bytes = field.bytes().await.map_err(|e| {
-                AppError::BadRequest(format!("Dosya okunamadı: {}", e))
-            })?;
+            let bytes = field
+                .bytes()
+                .await
+                .map_err(|e| AppError::BadRequest(format!("Dosya okunamadı: {}", e)))?;
             if bytes.len() > 5 * 1024 * 1024 {
-                return Err(AppError::BadRequest("Görsel boyutu en fazla 5MB olabilir".to_string()));
+                return Err(AppError::BadRequest(
+                    "Görsel boyutu en fazla 5MB olabilir".to_string(),
+                ));
             }
             image_bytes = Some(bytes.to_vec());
             break;
         }
     }
 
-    let bytes = image_bytes.ok_or_else(|| AppError::BadRequest("Avatar dosyası bulunamadı".to_string()))?;
+    let bytes =
+        image_bytes.ok_or_else(|| AppError::BadRequest("Avatar dosyası bulunamadı".to_string()))?;
 
     // RAM üzerinde EXIF metadata soyma ve 256x256 WebP'ye indirgeme
     let processed_bytes = tokio::task::spawn_blocking(move || -> Result<Vec<u8>, AppError> {
-        let img = image::load_from_memory(&bytes).map_err(|e| {
-            AppError::BadRequest(format!("Geçersiz görsel formatı: {}", e))
-        })?;
+        let img = image::load_from_memory(&bytes)
+            .map_err(|e| AppError::BadRequest(format!("Geçersiz görsel formatı: {}", e)))?;
 
         let resized = img.resize_to_fill(256, 256, image::imageops::FilterType::Lanczos3);
         let mut out = std::io::Cursor::new(Vec::new());
-        resized.write_to(&mut out, image::ImageFormat::WebP).map_err(|e| {
-            AppError::Internal(format!("WebP dönüştürme hatası: {}", e))
-        })?;
+        resized
+            .write_to(&mut out, image::ImageFormat::WebP)
+            .map_err(|e| AppError::Internal(format!("WebP dönüştürme hatası: {}", e)))?;
         Ok(out.into_inner())
     })
     .await
     .map_err(|e| AppError::Internal(format!("Blocking task failed: {}", e)))??;
 
-    tokio::fs::create_dir_all("static/avatars").await.map_err(|e| {
-        AppError::Internal(format!("Dizin oluşturulamadı: {}", e))
-    })?;
+    tokio::fs::create_dir_all("static/avatars")
+        .await
+        .map_err(|e| AppError::Internal(format!("Dizin oluşturulamadı: {}", e)))?;
 
     let file_path = format!("static/avatars/{}.webp", user.id);
-    tokio::fs::write(&file_path, &processed_bytes).await.map_err(|e| {
-        AppError::Internal(format!("Avatar kaydedilemedi: {}", e))
-    })?;
+    tokio::fs::write(&file_path, &processed_bytes)
+        .await
+        .map_err(|e| AppError::Internal(format!("Avatar kaydedilemedi: {}", e)))?;
 
     let avatar_url = format!("/static/avatars/{}.webp", user.id);
     let mut user_model: users::ActiveModel = users::Entity::find_by_id(user.id)
@@ -656,7 +647,10 @@ async fn upload_avatar(
 
     user_model.avatar_url = Set(Some(avatar_url.clone()));
     user_model.updated_at = Set(Some(chrono::Utc::now().into()));
-    user_model.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    user_model
+        .update(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     Ok(Json(serde_json::json!({
         "status": "success",
@@ -683,7 +677,10 @@ async fn delete_avatar(
 
     user_model.avatar_url = Set(None);
     user_model.updated_at = Set(Some(chrono::Utc::now().into()));
-    user_model.update(&db).await.map_err(|e| AppError::Internal(e.to_string()))?;
+    user_model
+        .update(&db)
+        .await
+        .map_err(|e| AppError::Internal(e.to_string()))?;
 
     Ok(Json(serde_json::json!({ "status": "success" })))
 }
@@ -955,4 +952,3 @@ async fn revoke_api_key(
     DeveloperService::revoke_api_key(&db, user.id, key_id).await?;
     Ok(Json(serde_json::json!({ "status": "success" })))
 }
-

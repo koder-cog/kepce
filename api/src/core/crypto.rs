@@ -53,7 +53,7 @@ pub fn hash_recall_block(block: &str) -> String {
 
 /// Kurtarma anahtarından son 5 karakterlik bloğu çeker
 pub fn extract_last_block(key: &str) -> Option<&str> {
-    key.trim().split('-').last()
+    key.trim().split('-').next_back()
 }
 
 /// Alt ağ kör indeksi (KYK WiFi / CGNAT mahremiyeti için)

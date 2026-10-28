@@ -57,7 +57,8 @@ impl AuthService {
         }
         if Self::is_reserved_username(trimmed) {
             return Err(AuthError::InvalidUsername(
-                "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz.".to_string(),
+                "Bu kullanıcı adı sistem tarafından rezerve edilmiştir ve kullanılamaz."
+                    .to_string(),
             ));
         }
         // Sadece küçük harf, rakam ve alt çizgi (/^[a-z0-9_]+$/)
@@ -232,14 +233,15 @@ impl AuthService {
             Self::generate_refresh_token(db, inserted_user.id, jwt_secret, false, subnet_hash)
                 .await?;
 
-        let user_profile = crate::services::user::UserService::build_profile(db, inserted_user, true)
-            .await
-            .map_err(|e| match e {
-                crate::services::user::UserError::DatabaseError(db_err) => {
-                    AuthError::DatabaseError(db_err)
-                }
-                _ => AuthError::InvalidCredentials,
-            })?;
+        let user_profile =
+            crate::services::user::UserService::build_profile(db, inserted_user, true)
+                .await
+                .map_err(|e| match e {
+                    crate::services::user::UserError::DatabaseError(db_err) => {
+                        AuthError::DatabaseError(db_err)
+                    }
+                    _ => AuthError::InvalidCredentials,
+                })?;
 
         Ok((access_token, refresh_token, user_profile, recovery_key))
     }
@@ -272,7 +274,8 @@ impl AuthService {
             .map_err(AuthError::DatabaseError)?
             .ok_or(AuthError::InvalidCredentials)?;
 
-        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
+        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
+        {
             return Err(AuthError::AccountDisabled);
         }
 
@@ -338,7 +341,12 @@ impl AuthService {
             let actual_recall = crate::core::crypto::hash_recall_block(last_block);
 
             use subtle::ConstantTimeEq;
-            if expected_recall.as_bytes().ct_eq(actual_recall.as_bytes()).unwrap_u8() != 1 {
+            if expected_recall
+                .as_bytes()
+                .ct_eq(actual_recall.as_bytes())
+                .unwrap_u8()
+                != 1
+            {
                 return Err(AuthError::InvalidRecallBlock);
             }
             full.to_string()
@@ -427,7 +435,12 @@ impl AuthService {
         let incoming_hash = crate::core::crypto::hash_recovery_key(&dto.recovery_key);
 
         use subtle::ConstantTimeEq;
-        if stored_full.as_bytes().ct_eq(incoming_hash.as_bytes()).unwrap_u8() != 1 {
+        if stored_full
+            .as_bytes()
+            .ct_eq(incoming_hash.as_bytes())
+            .unwrap_u8()
+            != 1
+        {
             return Err(AuthError::InvalidCredentials);
         }
 
@@ -498,7 +511,8 @@ impl AuthService {
             .map_err(AuthError::DatabaseError)?
             .ok_or(AuthError::InvalidCredentials)?;
 
-        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active {
+        if user.account_status != shared::entities::sea_orm_active_enums::AccountStatusEnum::Active
+        {
             return Err(AuthError::AccountDisabled);
         }
 

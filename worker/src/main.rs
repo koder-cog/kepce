@@ -70,9 +70,7 @@ async fn main() -> anyhow::Result<()> {
             e
         );
     }
-    if let Err(e) =
-        tasks::cleanup::clean_expired_contact_messages(&db, retention_dry_run).await
-    {
+    if let Err(e) = tasks::cleanup::clean_expired_contact_messages(&db, retention_dry_run).await {
         tracing::error!(
             "[RETENTION] Süresi dolmuş iletişim mesajlarını temizleme hatası: {:?}",
             e
