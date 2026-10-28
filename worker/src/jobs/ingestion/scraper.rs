@@ -2739,27 +2739,27 @@ mod tests {
     fn test_normalize_proxy_url() {
         // Standard provider format (IP:PORT:USER:PASS)
         assert_eq!(
-            super::normalize_proxy_url("http://64.137.96.74:6641:jaluykzi:h1xj152bzdy1").unwrap(),
-            "http://jaluykzi:h1xj152bzdy1@64.137.96.74:6641"
+            super::normalize_proxy_url("http://198.51.100.1:6641:testuser:testpass").unwrap(),
+            "http://testuser:testpass@198.51.100.1:6641"
         );
         // With leading and trailing quotes from environment / secrets
         assert_eq!(
-            super::normalize_proxy_url("\"http://45.38.107.97:6014:jaluykzi:h1xj152bzdy1").unwrap(),
-            "http://jaluykzi:h1xj152bzdy1@45.38.107.97:6014"
+            super::normalize_proxy_url("\"http://198.51.100.2:6014:testuser:testpass").unwrap(),
+            "http://testuser:testpass@198.51.100.2:6014"
         );
         assert_eq!(
-            super::normalize_proxy_url("http://23.26.71.145:5628:jaluykzi:h1xj152bzdy1\"").unwrap(),
-            "http://jaluykzi:h1xj152bzdy1@23.26.71.145:5628"
+            super::normalize_proxy_url("http://198.51.100.3:5628:testuser:testpass\"").unwrap(),
+            "http://testuser:testpass@198.51.100.3:5628"
         );
         // Reverse format (USER:PASS:IP:PORT)
         assert_eq!(
-            super::normalize_proxy_url("jaluykzi:h1xj152bzdy1:64.137.96.74:6641").unwrap(),
-            "http://jaluykzi:h1xj152bzdy1@64.137.96.74:6641"
+            super::normalize_proxy_url("testuser:testpass:198.51.100.1:6641").unwrap(),
+            "http://testuser:testpass@198.51.100.1:6641"
         );
         // Simple IP:PORT without credentials
         assert_eq!(
-            super::normalize_proxy_url("64.137.96.74:6641").unwrap(),
-            "http://64.137.96.74:6641"
+            super::normalize_proxy_url("198.51.100.1:6641").unwrap(),
+            "http://198.51.100.1:6641"
         );
         // Empty or whitespace
         assert!(super::normalize_proxy_url("   ").is_none());

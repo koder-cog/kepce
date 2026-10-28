@@ -2,7 +2,7 @@ name: Deploy
 
 # main'e push -> ARM64 imajlari derle -> GHCR'a gonder -> sunucuda pull + restart
 # Gereken repo secret'lari:
-#   DEPLOY_HOST  (orn. ubuntu@130.110.247.87)
+#   DEPLOY_HOST  (orn. ubuntu@192.168.1.1)
 #   DEPLOY_USER  (orn. ubuntu)
 #   DEPLOY_KEY   (SSH private key, PEM icerigi)
 # Sunucuda bir kerelik: ghcr.io login (public paket icin gerekmez) +

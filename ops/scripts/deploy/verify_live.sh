@@ -19,8 +19,8 @@ if [ -f .env ]; then
     set -a; . ./.env; set +a
 fi
 
-HOST="${KEPCE_DEPLOY_HOST:-ubuntu@130.110.247.87}"
-KEY="${KEPCE_DEPLOY_KEY:-$HOME/.ssh/kepce-ampere.key}"
+HOST="${KEPCE_DEPLOY_HOST:?HATA: KEPCE_DEPLOY_HOST tanimlanmali (.env dosyasini kontrol edin)}"
+KEY="${KEPCE_DEPLOY_KEY:-$HOME/.ssh/id_rsa}"
 DEST="${KEPCE_DEPLOY_DEST:-/home/ubuntu/kepce}"
 DB_USER="${POSTGRES_USER:-kepce_admin}"
 DB_NAME="${POSTGRES_DB:-kepce}"
