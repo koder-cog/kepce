@@ -2,9 +2,17 @@
 -- users tablosu hash sütunları ve 5651 trafik günlüğü
 -- Bu betik yalnızca DDL ekleme işlemlerini yapar; var olan açık verileri silmez.
 
--- 1. users tablosuna kör indeks ve takma ad sütunları eklenir
+DO $$
+BEGIN
+    IF EXISTS (
+        SELECT 1 FROM information_schema.columns 
+        WHERE table_name = 'users' AND column_name = 'email'
+    ) THEN
+        ALTER TABLE users ALTER COLUMN email DROP NOT NULL;
+    END IF;
+END $$;
+
 ALTER TABLE users
-    ALTER COLUMN email DROP NOT NULL,
     ADD COLUMN IF NOT EXISTS email_hash VARCHAR(64) NULL,
     ADD COLUMN IF NOT EXISTS auth_hash VARCHAR(64) NULL,
     ADD COLUMN IF NOT EXISTS nickname VARCHAR(50) NULL,

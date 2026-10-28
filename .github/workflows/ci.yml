@@ -52,6 +52,8 @@ jobs:
           for f in $(ls db/migrations/*.sql | sort); do
             echo "Applying migration: $f"
             PGPASSWORD=SIFRE psql -v ON_ERROR_STOP=1 -h localhost -U kepce_admin -d kepce -f "$f"
+            base=$(basename "$f")
+            PGPASSWORD=SIFRE psql -h localhost -U kepce_admin -d kepce -c "INSERT INTO schema_migrations (version) VALUES ('$base') ON CONFLICT DO NOTHING;"
           done
 
       - name: Seed Database
