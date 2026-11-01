@@ -57,22 +57,23 @@ pub fn router() -> Router<crate::config::AppState> {
 impl From<AuthError> for AppError {
     fn from(err: AuthError) -> Self {
         match err {
-            AuthError::UserAlreadyExists => AppError::BadRequest(
-                "Bu kullanıcı adı sisteme zaten kayıtlı.".to_string(),
-            ),
+            AuthError::UserAlreadyExists => {
+                AppError::BadRequest("Bu kullanıcı adı sisteme zaten kayıtlı.".to_string())
+            }
             AuthError::InvalidCredentials => AppError::Unauthorized(
                 "Giriş bilgileri hatalı. Lütfen bilgilerinizi kontrol edin.".to_string(),
             ),
             AuthError::InvalidUsername(msg) => AppError::BadRequest(msg),
             AuthError::EmailInputNotSupported => AppError::BadRequest(
-                "Kepçe artık e-posta tutmamaktadır. Lütfen kullanıcı adınız ve şifrenizle giriş yapınız.".to_string(),
+                "Kepçe artık e-posta tutmamaktadır. Lütfen kullanıcı adınızla giriş yapınız."
+                    .to_string(),
             ),
-            AuthError::InvalidRecoveryKey => AppError::Unauthorized(
-                "Kurtarma kodu hatalı veya geçersiz.".to_string(),
-            ),
-            AuthError::InvalidRecallBlock => AppError::BadRequest(
-                "Doğrulama başarısız: Son blok hatalı girildi.".to_string(),
-            ),
+            AuthError::InvalidRecoveryKey => {
+                AppError::Unauthorized("Kurtarma kodu hatalı veya geçersiz.".to_string())
+            }
+            AuthError::InvalidRecallBlock => {
+                AppError::BadRequest("Doğrulama başarısız: Son blok hatalı girildi.".to_string())
+            }
             AuthError::AccountDisabled => AppError::Forbidden(
                 "Hesabınız askıya alınmış veya yasaklanmış. Destek ile iletişime geçin."
                     .to_string(),

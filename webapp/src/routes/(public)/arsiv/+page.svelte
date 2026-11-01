@@ -269,8 +269,7 @@
   {:else}
     <section class="archive-discovery u-fade-in">
       <div class="archive-discovery__header">
-        <h2 class="archive-discovery__title">Hızlı Göz At</h2>
-        <span class="archive-discovery__subtitle">Rastgele şehirler</span>
+        <h2 class="archive-discovery__title">Rastgele seçenekler</h2>
       </div>
 
       {#if quickArchivePicks.length > 0}
@@ -290,9 +289,9 @@
 
       <div class="archive-contrib-card">
         <p class="archive-contrib-card__text">
-          Eski aylardan elinizde kalan liste veya pano fotoğrafı varsa sisteme ekleyebiliriz.
+          Eski aylardan elinizde kalan yemek listesi varsa sisteme ekleyebiliriz.
         </p>
-        <a href="/menu-gonder" class="archive-contrib-card__link">Menü Gönder &rarr;</a>
+        <a href="/menu-gonder" class="archive-contrib-card__link">Menü gönder &rarr;</a>
       </div>
     </section>
   {/if}
@@ -300,6 +299,6 @@
 
 <Seo
   title="KYK Menü Arşivi | Kepçe"
-  description="Geçmiş aylarda KYK yurtlarında çıkan yemek menüleri ve öğrenci değerlendirmeleri."
+  description="Geçmiş aylarda KYK yurtlarında çıkan yemek menüleri."
   image="https://kepce.org/api/v1/public/og/page/arsiv"
 />

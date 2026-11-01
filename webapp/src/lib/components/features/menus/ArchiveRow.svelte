@@ -11,25 +11,34 @@
   let ratingSum = $derived(menu.rating_sum || 0);
   let voteCount = $derived(menu.vote_count || 0);
 
-  let voteClass = $derived(
-    voteCount === 0
-      ? 'archive-row__votes--soluk'
-      : ratingSum > 0
-        ? 'archive-row__votes--positive'
-        : ratingSum < 0
-          ? 'archive-row__votes--negative'
-          : 'archive-row__votes--soluk'
-  );
-
-  let voteIcon = $derived(
-    voteCount === 0
-      ? 'votedNone'
-      : ratingSum > 0
-        ? 'votedUpMore'
-        : ratingSum < 0
-          ? 'votedDownMore'
-          : 'votedNone'
-  );
+  let voteMeta = $derived.by(() => {
+    if (voteCount === 0) {
+      return {
+        css: 'archive-row__votes--soluk',
+        icon: 'votedNone',
+        text: 'Oylamaya tenezzül edilmedi'
+      };
+    }
+    if (ratingSum > 0) {
+      return {
+        css: 'archive-row__votes--positive',
+        icon: 'votedUpMore',
+        text: 'Sevildi'
+      };
+    }
+    if (ratingSum < 0) {
+      return {
+        css: 'archive-row__votes--negative',
+        icon: 'votedDownMore',
+        text: 'Nefret edildi'
+      };
+    }
+    return {
+      css: 'archive-row__votes--disclaimer',
+      icon: 'votedNone',
+      text: 'İnsanlar ikiye bölündü'
+    };
+  });
 
   let rawItems = $derived(normalizeItems(menu));
   let items = $derived(groupItems(rawItems));
@@ -58,8 +67,8 @@
     <span class="archive-row__meal-badge">{label}</span>
   </div>
   <div class="archive-row__stats">
-    <div class="archive-row__votes {voteClass}" data-tooltip="{voteCount} oy kullanıldı">
-      {@html icon(voteIcon, 14)}
+    <div class="archive-row__votes {voteMeta.css}" data-tooltip={voteMeta.text}>
+      {@html icon(voteMeta.icon, 14)}
       <span>{ratingSum}</span>
     </div>
   </div>
