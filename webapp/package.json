@@ -13,7 +13,7 @@
     "format": "prettier --write \"src/**/*.{svelte,js,css}\"",
     "format:check": "prettier --check \"src/**/*.{svelte,js,css}\"",
     "test": "vitest run",
-    "prepare": "git config core.hooksPath ../.hooks || true"
+    "prepare": "git config core.hooksPath .hooks || true"
   },
   "devDependencies": {
     "@sveltejs/adapter-node": "^5.5.7",
