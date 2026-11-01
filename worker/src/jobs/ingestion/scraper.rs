@@ -580,6 +580,95 @@ pub fn extract_cities_from_kykyemek_html(html: &str) -> Vec<String> {
     }
 }
 
+/// Slug değerini (örn: "ankara", "kahramanmaras") kykyemek.com'un ASP.NET uç noktasının
+/// beklediği orijinal şehir parametresine (örn: "Ankara", "Kahramanmaraş") dönüştürür.
+pub fn slug_to_kykyemek_city_param(slug: &str) -> &str {
+    match slug {
+        "adana" => "Adana",
+        "adiyaman" => "Adıyaman",
+        "afyonkarahisar" | "afyon" => "Afyonkarahisar",
+        "agri" => "Ağrı",
+        "aksaray" => "Aksaray",
+        "amasya" => "Amasya",
+        "ankara" => "Ankara",
+        "antalya" => "Antalya",
+        "ardahan" => "Ardahan",
+        "artvin" => "Artvin",
+        "aydin" => "Aydın",
+        "balikesir" => "Balıkesir",
+        "bartin" => "Bartın",
+        "batman" => "Batman",
+        "bayburt" => "Bayburt",
+        "bilecik" => "Bilecik",
+        "bingol" => "Bingöl",
+        "bitlis" => "Bitlis",
+        "bolu" => "Bolu",
+        "burdur" => "Burdur",
+        "bursa" => "Bursa",
+        "canakkale" => "Çanakkale",
+        "cankiri" => "Çankırı",
+        "corum" => "Çorum",
+        "denizli" => "Denizli",
+        "diyarbakir" => "Diyarbakır",
+        "duzce" => "Düzce",
+        "edirne" => "Edirne",
+        "elazig" => "Elazığ",
+        "erzincan" => "Erzincan",
+        "erzurum" => "Erzurum",
+        "eskisehir" => "Eskişehir",
+        "gaziantep" | "antep" => "Gaziantep",
+        "giresun" => "Giresun",
+        "gumushane" => "Gümüşhane",
+        "hakkari" => "Hakkari",
+        "hatay" | "antakya" => "Hatay",
+        "igdir" => "Iğdır",
+        "isparta" => "Isparta",
+        "istanbul" => "İstanbul",
+        "izmir" => "İzmir",
+        "kahramanmaras" | "maras" => "Kahramanmaraş",
+        "karabuk" => "Karabük",
+        "karaman" => "Karaman",
+        "kars" => "Kars",
+        "kastamonu" => "Kastamonu",
+        "kayseri" => "Kayseri",
+        "kirikkale" => "Kırıkkale",
+        "kirklareli" => "Kırklareli",
+        "kirsehir" => "Kırşehir",
+        "kilis" => "Kilis",
+        "kocaeli" | "izmit" => "Kocaeli",
+        "konya" => "Konya",
+        "kutahya" => "Kütahya",
+        "malatya" => "Malatya",
+        "manisa" => "Manisa",
+        "mardin" => "Mardin",
+        "mersin" | "icel" => "Mersin",
+        "mugla" => "Muğla",
+        "mus" => "Muş",
+        "nevsehir" => "Nevşehir",
+        "nigde" => "Niğde",
+        "ordu" => "Ordu",
+        "osmaniye" => "Osmaniye",
+        "rize" => "Rize",
+        "sakarya" | "adapazari" => "Sakarya",
+        "samsun" => "Samsun",
+        "siirt" => "Siirt",
+        "sinop" => "Sinop",
+        "sivas" => "Sivas",
+        "sanliurfa" | "urfa" => "Şanlıurfa",
+        "sirnak" => "Şırnak",
+        "tekirdag" => "Tekirdağ",
+        "tokat" => "Tokat",
+        "trabzon" => "Trabzon",
+        "tunceli" | "dersim" => "Tunceli",
+        "usak" => "Uşak",
+        "van" => "Van",
+        "yalova" => "Yalova",
+        "yozgat" => "Yozgat",
+        "zonguldak" => "Zonguldak",
+        other => other,
+    }
+}
+
 pub fn extract_token_from_html(html: &str) -> Result<String> {
     static TOKEN_REGEX: OnceLock<regex::Regex> = OnceLock::new();
     let re = TOKEN_REGEX.get_or_init(|| {
@@ -605,6 +694,17 @@ pub fn extract_token_from_html(html: &str) -> Result<String> {
         regex::Regex::new(r#"__RequestVerificationToken["']?\s*[:=]\s*["']([^"']+)["']"#).unwrap()
     });
     if let Some(caps) = re_js.captures(html) {
+        return Ok(caps[1].to_string());
+    }
+
+    static TOKEN_META_FALLBACK: OnceLock<regex::Regex> = OnceLock::new();
+    let re_meta = TOKEN_META_FALLBACK.get_or_init(|| {
+        regex::Regex::new(
+            r#"<meta[^>]*?name=["']request-verification-token["'][^>]*?content=["']([^"']+)["']"#,
+        )
+        .unwrap()
+    });
+    if let Some(caps) = re_meta.captures(html) {
         return Ok(caps[1].to_string());
     }
 
@@ -636,7 +736,7 @@ pub async fn fetch_kykyemek_session(client: &Client) -> Result<(String, Vec<Stri
     }
     let html = res.text().await?;
 
-    let token = extract_token_from_html(&html)?;
+    let token = extract_token_from_html(&html).unwrap_or_default();
     let cities = extract_cities_from_kykyemek_html(&html);
     tracing::info!(
         "[KYKYEMEK.COM-DISCOVERY] Oturum açıldı. Kykyemek üzerinde dinamik olarak {} aktif şehir tespit edildi.",
@@ -670,7 +770,7 @@ pub async fn scrape_today_menus(
 
     let mut active_slugs = match fetch_kykyemek_session(&session.client).await {
         Ok((tok, slugs)) => {
-            session.token = Some(tok);
+            session.token = (!tok.is_empty()).then_some(tok);
             slugs
         }
         Err(e) => {
@@ -754,7 +854,7 @@ pub async fn scrape_today_menus(
                                 new_s.endpoint_label
                             );
                             if let Ok((tok, _)) = fetch_kykyemek_session(&new_s.client).await {
-                                new_s.token = Some(tok);
+                                new_s.token = (!tok.is_empty()).then_some(tok);
                             }
                             session = new_s;
                         } else {
@@ -799,7 +899,7 @@ pub async fn scrape_today_menus(
                                 new_s.endpoint_label
                             );
                             if let Ok((tok, _)) = fetch_kykyemek_session(&new_s.client).await {
-                                new_s.token = Some(tok);
+                                new_s.token = (!tok.is_empty()).then_some(tok);
                             }
                             session = new_s;
                         } else {
@@ -929,7 +1029,8 @@ async fn fetch_and_save(
     } else {
         "false"
     };
-    let url = format!("https://kykyemek.com/Menu/GetDailyMenu/{}", city.slug);
+    let city_param = slug_to_kykyemek_city_param(&city.slug);
+    let url = format!("https://kykyemek.com/Menu/GetDailyMenu/{}", city_param);
 
     let mut attempt = 0;
     let max_retries = 3;
@@ -941,7 +1042,7 @@ async fn fetch_and_save(
         }
 
         let mut req = with_xhr_headers(session.client.get(&url).query(&[
-            ("city", city.slug.as_str()),
+            ("city", city_param),
             ("mealType", is_dinner),
             ("monthShift", month_shift),
             ("hidePast", "false"),
@@ -1006,7 +1107,7 @@ async fn fetch_and_save(
                 } else if status == reqwest::StatusCode::UNAUTHORIZED {
                     tracing::warn!("HTTP 401 (Yetkisiz), yeni oturum token'ı alınıyor...");
                     if let Ok((new_token, _)) = fetch_kykyemek_session(&session.client).await {
-                        session.token = Some(new_token);
+                        session.token = (!new_token.is_empty()).then_some(new_token);
                     }
                 } else {
                     tracing::warn!(
@@ -2803,6 +2904,30 @@ mod tests {
         assert_eq!(
             super::extract_token_from_html(js_html).unwrap(),
             "token_val_json"
+        );
+
+        // 5. Meta tag fallback
+        let meta_html = r#"<meta name="request-verification-token" content="token_val_meta">"#;
+        assert_eq!(
+            super::extract_token_from_html(meta_html).unwrap(),
+            "token_val_meta"
+        );
+    }
+
+    #[test]
+    fn test_slug_to_kykyemek_city_param() {
+        assert_eq!(super::slug_to_kykyemek_city_param("ankara"), "Ankara");
+        assert_eq!(super::slug_to_kykyemek_city_param("eskisehir"), "Eskişehir");
+        assert_eq!(
+            super::slug_to_kykyemek_city_param("kahramanmaras"),
+            "Kahramanmaraş"
+        );
+        assert_eq!(super::slug_to_kykyemek_city_param("maras"), "Kahramanmaraş");
+        assert_eq!(super::slug_to_kykyemek_city_param("konya"), "Konya");
+        assert_eq!(super::slug_to_kykyemek_city_param("sakarya"), "Sakarya");
+        assert_eq!(
+            super::slug_to_kykyemek_city_param("custom_city"),
+            "custom_city"
         );
     }
 

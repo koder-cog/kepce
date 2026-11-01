@@ -10,8 +10,8 @@ use worker::parser::takeaway::{
     get_cached_fastmenu, insert_cached_fastmenu, parse_fast_menu_foods_html,
 };
 use worker::tasks::scraper::{
-    ActiveKykSession, KykYemekClientPool, fetch_kykyemek_session, throttle_kykyemek,
-    with_xhr_headers,
+    ActiveKykSession, KykYemekClientPool, fetch_kykyemek_session, slug_to_kykyemek_city_param,
+    throttle_kykyemek, with_xhr_headers,
 };
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -84,7 +84,22 @@ async fn main() -> anyhow::Result<()> {
             "--dry-run" => dry_run = true,
             "--city" => {
                 if i + 1 < args.len() {
-                    target_city = Some(args[i + 1].to_lowercase());
+                    let raw = args[i + 1].trim();
+                    let norm = raw
+                        .replace(['İ', 'I', 'ı'], "i")
+                        .replace(['Ş', 'ş'], "s")
+                        .replace(['Ğ', 'ğ'], "g")
+                        .replace(['Ü', 'ü'], "u")
+                        .replace(['Ö', 'ö'], "o")
+                        .replace(['Ç', 'ç'], "c")
+                        .to_lowercase()
+                        .replace(' ', "-");
+                    let final_slug = if norm == "maras" {
+                        "kahramanmaras".to_string()
+                    } else {
+                        norm
+                    };
+                    target_city = Some(final_slug);
                     i += 1;
                 }
             }
@@ -398,16 +413,14 @@ async fn obtain_ready_session_and_cities(
 ) -> Option<(ActiveKykSession, Vec<String>)> {
     for _ in 0..15 {
         if let Some(s) = pool.acquire_session() {
-            if let Some(cached) = session_cache.get(&s.proxy_idx)
-                && cached.token.is_some()
-            {
+            if let Some(cached) = session_cache.get(&s.proxy_idx) {
                 return Some((cached.clone(), Vec::new()));
             }
 
             match fetch_kykyemek_session(&s.client).await {
                 Ok((tok, cities)) => {
                     let mut ready = s.clone();
-                    ready.token = Some(tok);
+                    ready.token = (!tok.is_empty()).then_some(tok);
                     session_cache.insert(s.proxy_idx, ready.clone());
                     return Some((ready, cities));
                 }
@@ -450,14 +463,15 @@ async fn scrape_and_collect(
     } else {
         "false"
     };
-    let url = format!("https://kykyemek.com/Menu/GetDailyMenu/{}", slug);
+    let city_param = slug_to_kykyemek_city_param(slug);
+    let url = format!("https://kykyemek.com/Menu/GetDailyMenu/{}", city_param);
 
     let mut attempt = 0;
     let max_retries = 2;
 
     while attempt < max_retries {
         let mut req = with_xhr_headers(session.client.get(&url).query(&[
-            ("city", slug),
+            ("city", city_param),
             ("mealType", is_dinner),
             ("monthShift", shift),
             ("hidePast", "false"),
