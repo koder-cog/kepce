@@ -6,7 +6,7 @@
 # SSH gerektirir; yurt/ofis ağı port 22'yi kapatıyorsa whitelist'li bir ağdan çalıştır.
 #
 # Kullanım:
-#   bash .scratch/verify_live.sh
+#   bash ops/scripts/deploy/verify_live.sh
 #
 # .env varsa oradan KEPCE_DEPLOY_* değerlerini okur, yoksa varsayılanları kullanır.
 # ==============================================================================

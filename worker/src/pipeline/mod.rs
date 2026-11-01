@@ -330,9 +330,13 @@ pub fn parse_date_string(s: &str) -> Option<String> {
     parse_date_with_order(s, DateTokenOrder::DayMonth)
 }
 
-/// Hücrenin belirlenen token sırasına göre bir tarih içerip içermediğini kontrol eder.
+/// Hücrenin belirlenen token sırasına göre geçerli bir tarih içerip içermediğini kontrol eder.
 fn is_date_cell(s: &str, order: DateTokenOrder) -> bool {
-    parse_date_with_order(s, order).is_some()
+    if let Some(date_str) = parse_date_with_order(s, order) {
+        validation::validate_date_range(&date_str)
+    } else {
+        false
+    }
 }
 
 /// Parantez içindeki ayıraçları yok sayarak string'i böler.
@@ -607,7 +611,7 @@ pub fn parse_grid_with_order(
                             if alternatives.is_empty() {
                                 let norm = crate::parser::normalizer::normalize_food_item(&name);
                                 if !norm.name.is_empty() {
-                                    let comp_amount = amount.or(norm.amount);
+                                    let comp_amount = amount.clone().or(norm.amount);
                                     alternatives.push(MenuComponent {
                                         name: norm.name,
                                         amount: comp_amount,
@@ -620,14 +624,35 @@ pub fn parse_grid_with_order(
                                 takeaway_id: None,
                                 alternatives,
                             });
-                            cc += 2; // yemek + olası gramaj hücresini atla
+                            if amount.is_some() {
+                                cc += 2;
+                            } else {
+                                cc += 1;
+                            }
                         } else {
                             cc += 1;
                         }
                     }
                 }
+                let is_horizontal = if long_items.len() >= 3 {
+                    true
+                } else if !long_items.is_empty() {
+                    let has_vertical_dishes = (r + 1..height.min(r + 5)).any(|down_r| {
+                        if c < sheet.rows[down_r].len() {
+                            let cell = sheet.rows[down_r][c].trim();
+                            !cell.is_empty()
+                                && !is_date_cell(cell, date_order)
+                                && validation::validate_item_name(cell).is_some()
+                        } else {
+                            false
+                        }
+                    });
+                    !has_vertical_dishes
+                } else {
+                    false
+                };
 
-                if !long_items.is_empty() {
+                if is_horizontal {
                     let day_data = db.entry(date_str.clone()).or_insert_with(|| DayData {
                         metadata: Some(DayMetadata {
                             trust_score: 100,
@@ -683,69 +708,35 @@ pub fn parse_grid_with_order(
                         continue;
                     }
 
-                    let raw_str = &sheet.rows[item_row][c];
-                    let raw_upper = raw_str.to_uppercase();
+                    let raw_str = sheet.rows[item_row][c].trim();
 
-                    let is_takeaway = raw_upper.contains("AL GÖTÜR")
-                        || raw_upper.contains("ALGÖTÜR")
-                        || raw_upper.contains("AL-GÖTÜR")
-                        || raw_upper.contains("AL GÖTUR")
-                        || raw_upper.contains("ALGÖTUR");
-
-                    let mut item_name = raw_str
-                        .trim()
-                        .trim_start_matches('*')
-                        .trim_start_matches('-')
-                        .trim_start_matches('•')
-                        .trim_start_matches('⁃')
-                        .trim()
-                        .to_string();
-
-                    if item_name.contains("Cay") {
-                        item_name = item_name.replace("Cay", "Çay");
-                    } else if item_name.contains("cay") {
-                        item_name = item_name.replace("cay", "çay");
-                    }
-
-                    let item_name = match validation::validate_item_name(&item_name) {
-                        Some(name) => name,
-                        None if !item_name.trim().is_empty() => {
-                            tracing::warn!(
-                                "SKIP item: name too long ({} chars): {}...",
-                                item_name.len(),
-                                &item_name[..50.min(item_name.len())]
-                            );
-                            item_row += 1;
-                            continue;
-                        }
-                        None => item_name,
-                    };
-
-                    let mut amount_str = String::new();
-                    if has_gramaj && c + 1 < item_row_len {
-                        amount_str = sheet.rows[item_row][c + 1].clone();
-                    }
-
-                    let lower_name = item_name.to_lowercase();
-                    let lower_amt = amount_str.to_lowercase();
-                    if lower_name.contains("hazırlanıp")
-                        || lower_name.contains("sunulacaktır")
-                        || lower_name.contains("garnitür")
-                        || lower_name.contains("ortalama")
-                        || lower_amt.contains("hazırlanıp")
-                        || lower_amt.contains("sunulacaktır")
-                        || lower_amt.contains("garnitür")
-                        || lower_amt.contains("ortalama")
-                    {
-                        item_row += 1;
-                        continue;
-                    }
-
+                    // Fren 1: Hücrenin kendisi bir tarihse veya 2 ardışık boş satır görüldüyse dur
                     if is_date_cell(raw_str, date_order) || empty_count >= 2 {
                         break;
                     }
 
-                    if item_name.is_empty() {
+                    // Fren 2: Satırın herhangi bir hücresi tarih içeriyorsa (yeni hafta bloğu başladı)
+                    if sheet.rows[item_row]
+                        .iter()
+                        .any(|cell| is_date_cell(cell, date_order))
+                    {
+                        break;
+                    }
+
+                    let raw_upper = shared::domain::quality::normalizer::tr_uppercase(raw_str);
+
+                    // Fren 3: Tablo başlıkları veya dipnot/müdürlük blokları
+                    if raw_upper.contains("YEMEK ÇEŞİTLERİ")
+                        || raw_upper.contains("YEMEK CESITLERI")
+                        || raw_upper.starts_with("NOT:")
+                        || raw_upper.starts_with("NOT ")
+                        || raw_upper.contains("MÜDÜR")
+                        || raw_upper.contains("MUDUR")
+                    {
+                        break;
+                    }
+
+                    if raw_str.is_empty() {
                         empty_count += 1;
                         item_row += 1;
                         continue;
@@ -753,53 +744,70 @@ pub fn parse_grid_with_order(
                         empty_count = 0;
                     }
 
-                    item_count += 1;
-                    if !validation::validate_meal_item_count(item_count) {
-                        tracing::warn!(
-                            "WARN: meal for {} exceeded max items ({}), truncating",
-                            date_str,
-                            item_count
-                        );
-                        break;
-                    }
+                    let is_takeaway = raw_upper.contains("AL GÖTÜR")
+                        || raw_upper.contains("ALGÖTÜR")
+                        || raw_upper.contains("AL-GÖTÜR")
+                        || raw_upper.contains("AL GÖTUR")
+                        || raw_upper.contains("ALGÖTUR");
 
-                    let day_data = db.entry(date_str.clone()).or_insert_with(|| DayData {
-                        metadata: Some(DayMetadata {
-                            trust_score: 100,
-                            anomaly_score: Some(0.0),
-                            status: "approved".to_string(),
-                            source_file: Some(file_name_hint.to_string()),
-                        }),
-                        ..Default::default()
-                    });
-                    let menu_ref = if is_colyak {
-                        &mut day_data.colyak
-                    } else {
-                        &mut day_data.normal
-                    };
-
-                    let target_list = match resolved_meal_type {
-                        MealType::Breakfast => {
-                            if menu_ref.breakfast_kcal.is_none() {
-                                menu_ref.breakfast_kcal = sheet_kcal.clone();
-                            }
-                            &mut menu_ref.breakfast
-                        }
-                        MealType::Lunch => {
-                            if menu_ref.lunch_kcal.is_none() {
-                                menu_ref.lunch_kcal = sheet_kcal.clone();
-                            }
-                            &mut menu_ref.lunch
-                        }
-                        MealType::Dinner => {
-                            if menu_ref.dinner_kcal.is_none() {
-                                menu_ref.dinner_kcal = sheet_kcal.clone();
-                            }
-                            &mut menu_ref.dinner
-                        }
-                    };
+                    let amount_col = c + 1;
+                    let cal_col = if has_gramaj { c + 2 } else { c + 1 };
 
                     if is_takeaway {
+                        let item_name = raw_str
+                            .trim_start_matches('*')
+                            .trim_start_matches('-')
+                            .trim_start_matches('•')
+                            .trim_start_matches('⁃')
+                            .trim()
+                            .to_string();
+
+                        item_count += 1;
+                        if !validation::validate_meal_item_count(item_count) {
+                            tracing::warn!(
+                                "WARN: meal for {} exceeded max items ({}), truncating",
+                                date_str,
+                                item_count
+                            );
+                            break;
+                        }
+
+                        let day_data = db.entry(date_str.clone()).or_insert_with(|| DayData {
+                            metadata: Some(DayMetadata {
+                                trust_score: 100,
+                                anomaly_score: Some(0.0),
+                                status: "approved".to_string(),
+                                source_file: Some(file_name_hint.to_string()),
+                            }),
+                            ..Default::default()
+                        });
+                        let menu_ref = if is_colyak {
+                            &mut day_data.colyak
+                        } else {
+                            &mut day_data.normal
+                        };
+
+                        let target_list = match resolved_meal_type {
+                            MealType::Breakfast => {
+                                if menu_ref.breakfast_kcal.is_none() {
+                                    menu_ref.breakfast_kcal = sheet_kcal.clone();
+                                }
+                                &mut menu_ref.breakfast
+                            }
+                            MealType::Lunch => {
+                                if menu_ref.lunch_kcal.is_none() {
+                                    menu_ref.lunch_kcal = sheet_kcal.clone();
+                                }
+                                &mut menu_ref.lunch
+                            }
+                            MealType::Dinner => {
+                                if menu_ref.dinner_kcal.is_none() {
+                                    menu_ref.dinner_kcal = sheet_kcal.clone();
+                                }
+                                &mut menu_ref.dinner
+                            }
+                        };
+
                         let mut has_nums = false;
                         for cap in re_nums.captures_iter(&item_name) {
                             has_nums = true;
@@ -820,7 +828,6 @@ pub fn parse_grid_with_order(
                                 });
                             }
                         }
-                        // Numarasız al-götür: Menü adını ezmeden orijinal ismi koru
                         if !has_nums
                             && !target_list
                                 .iter()
@@ -843,79 +850,190 @@ pub fn parse_grid_with_order(
                             });
                         }
                     } else {
-                        let mut amount = None;
-                        let mut calories = None;
+                        // 1. Yemek hücresini satırlarına (\n, \r) ayır
+                        let dish_lines: Vec<String> = raw_str
+                            .split(['\n', '\r'])
+                            .map(|s| s.trim())
+                            .filter(|s| !s.is_empty())
+                            .map(|s| {
+                                s.trim_start_matches('*')
+                                    .trim_start_matches('-')
+                                    .trim_start_matches('•')
+                                    .trim_start_matches('⁃')
+                                    .trim_start_matches('/')
+                                    .trim()
+                                    .to_string()
+                            })
+                            .filter(|s| !s.is_empty())
+                            .collect();
 
-                        let amount_col = c + 1;
-                        let cal_col = if has_gramaj { c + 2 } else { c + 1 };
+                        // İdari / hazırlık notlarını filtrele
+                        let dish_lines: Vec<String> = dish_lines
+                            .into_iter()
+                            .filter(|s| {
+                                let lower = shared::domain::quality::normalizer::tr_lowercase(s);
+                                !lower.contains("hazırlanıp")
+                                    && !lower.contains("sunulacaktır")
+                                    && !lower.contains("garnitür")
+                                    && !lower.contains("ortalama")
+                            })
+                            .collect();
 
+                        if dish_lines.is_empty() {
+                            item_row += 1;
+                            continue;
+                        }
+
+                        item_count += 1;
+                        if !validation::validate_meal_item_count(item_count) {
+                            tracing::warn!(
+                                "WARN: meal for {} exceeded max items ({}), truncating",
+                                date_str,
+                                item_count
+                            );
+                            break;
+                        }
+
+                        // 2. Gramaj ve enerji hücrelerini satır bazlı ayır
+                        let mut amount_lines: Vec<String> = Vec::new();
                         if has_gramaj && amount_col < item_row_len {
-                            let a = &sheet.rows[item_row][amount_col];
-                            amount = validation::validate_numeric_value(a);
+                            let raw_a = &sheet.rows[item_row][amount_col];
+                            amount_lines = raw_a
+                                .split(['\n', '\r'])
+                                .map(|s| s.trim())
+                                .filter(|s| !s.is_empty())
+                                .filter_map(validation::validate_numeric_value)
+                                .map(|s| {
+                                    shared::domain::quality::normalizer::standardize_amount(&s)
+                                })
+                                .collect();
                         }
 
+                        let mut cal_lines: Vec<String> = Vec::new();
                         if has_enerji && cal_col < item_row_len {
-                            let cal = &sheet.rows[item_row][cal_col];
-                            calories = validation::validate_numeric_value(cal);
+                            let raw_cal = &sheet.rows[item_row][cal_col];
+                            cal_lines = raw_cal
+                                .split(['\n', '\r'])
+                                .map(|s| s.trim())
+                                .filter(|s| !s.is_empty())
+                                .filter_map(validation::validate_numeric_value)
+                                .collect();
                         }
 
+                        // 3. Hiyerarşik eşleme ve satır içi '/' alt alternatif çoğaltması
                         let mut alternatives = Vec::new();
-                        let names: Vec<String> =
-                            crate::parser::normalizer::split_smart_alternatives(&item_name);
 
-                        let amounts: Vec<String> = if let Some(ref a) = amount {
-                            split_outside_parens(a, '/')
+                        if dish_lines.len() == 1 {
+                            let sub_dishes =
+                                crate::parser::normalizer::split_smart_alternatives(&dish_lines[0]);
+                            let sub_count = sub_dishes.len();
+                            for (sub_idx, sub) in sub_dishes.into_iter().enumerate() {
+                                let line_amt = if amount_lines.len() == sub_count {
+                                    Some(amount_lines[sub_idx].clone())
+                                } else if !amount_lines.is_empty() {
+                                    Some(amount_lines[0].clone())
+                                } else {
+                                    None
+                                };
+
+                                let line_cal = if cal_lines.len() == sub_count {
+                                    Some(cal_lines[sub_idx].clone())
+                                } else if !cal_lines.is_empty() {
+                                    Some(cal_lines[0].clone())
+                                } else {
+                                    None
+                                };
+
+                                let norm = crate::parser::normalizer::normalize_food_item(&sub);
+                                if !norm.name.is_empty()
+                                    && validation::validate_item_name(&norm.name).is_some()
+                                {
+                                    let comp_amount = line_amt.or(norm.amount);
+                                    alternatives.push(MenuComponent {
+                                        name: norm.name,
+                                        amount: comp_amount,
+                                        calories: line_cal,
+                                        category: None,
+                                    });
+                                }
+                            }
                         } else {
-                            Vec::new()
-                        };
+                            for (line_idx, dish_line) in dish_lines.iter().enumerate() {
+                                let line_amt = if amount_lines.len() == 1 {
+                                    Some(amount_lines[0].clone())
+                                } else if line_idx < amount_lines.len() {
+                                    Some(amount_lines[line_idx].clone())
+                                } else {
+                                    None
+                                };
 
-                        let cals: Vec<String> = if let Some(ref cal) = calories {
-                            split_outside_parens(cal, '/')
-                        } else {
-                            Vec::new()
-                        };
+                                let line_cal = if cal_lines.len() == 1 {
+                                    Some(cal_lines[0].clone())
+                                } else if line_idx < cal_lines.len() {
+                                    Some(cal_lines[line_idx].clone())
+                                } else {
+                                    None
+                                };
 
-                        for (i, name) in names.iter().enumerate() {
-                            let amt = if amounts.len() > i {
-                                Some(amounts[i].to_string())
-                            } else if amounts.len() == 1 {
-                                Some(amounts[0].to_string())
-                            } else {
-                                None
-                            };
-
-                            let cal_val = if cals.len() > i {
-                                Some(cals[i].to_string())
-                            } else if cals.len() == 1 {
-                                Some(cals[0].to_string())
-                            } else {
-                                None
-                            };
-
-                            let norm = crate::parser::normalizer::normalize_food_item(name);
-                            if !norm.name.is_empty() {
-                                let comp_amount = amt.or(norm.amount);
-                                alternatives.push(MenuComponent {
-                                    name: norm.name,
-                                    amount: comp_amount,
-                                    calories: cal_val,
-                                    category: None,
-                                });
+                                let sub_dishes =
+                                    crate::parser::normalizer::split_smart_alternatives(dish_line);
+                                for sub in sub_dishes {
+                                    let norm = crate::parser::normalizer::normalize_food_item(&sub);
+                                    if !norm.name.is_empty()
+                                        && validation::validate_item_name(&norm.name).is_some()
+                                    {
+                                        let comp_amount = line_amt.clone().or(norm.amount);
+                                        alternatives.push(MenuComponent {
+                                            name: norm.name,
+                                            amount: comp_amount,
+                                            calories: line_cal.clone(),
+                                            category: None,
+                                        });
+                                    }
+                                }
                             }
                         }
 
                         if alternatives.is_empty() {
-                            let norm = crate::parser::normalizer::normalize_food_item(&item_name);
-                            if !norm.name.is_empty() {
-                                let comp_amount = amount.or(norm.amount);
-                                alternatives.push(MenuComponent {
-                                    name: norm.name,
-                                    amount: comp_amount,
-                                    calories,
-                                    category: None,
-                                });
-                            }
+                            item_row += 1;
+                            continue;
                         }
+
+                        let day_data = db.entry(date_str.clone()).or_insert_with(|| DayData {
+                            metadata: Some(DayMetadata {
+                                trust_score: 100,
+                                anomaly_score: Some(0.0),
+                                status: "approved".to_string(),
+                                source_file: Some(file_name_hint.to_string()),
+                            }),
+                            ..Default::default()
+                        });
+                        let menu_ref = if is_colyak {
+                            &mut day_data.colyak
+                        } else {
+                            &mut day_data.normal
+                        };
+
+                        let target_list = match resolved_meal_type {
+                            MealType::Breakfast => {
+                                if menu_ref.breakfast_kcal.is_none() {
+                                    menu_ref.breakfast_kcal = sheet_kcal.clone();
+                                }
+                                &mut menu_ref.breakfast
+                            }
+                            MealType::Lunch => {
+                                if menu_ref.lunch_kcal.is_none() {
+                                    menu_ref.lunch_kcal = sheet_kcal.clone();
+                                }
+                                &mut menu_ref.lunch
+                            }
+                            MealType::Dinner => {
+                                if menu_ref.dinner_kcal.is_none() {
+                                    menu_ref.dinner_kcal = sheet_kcal.clone();
+                                }
+                                &mut menu_ref.dinner
+                            }
+                        };
 
                         target_list.push(MenuItem {
                             takeaway_id: None,
@@ -970,13 +1088,12 @@ pub async fn save_menu_database(
             Vec<Vec<MenuComponent>>,
             Vec<(String, Vec<Vec<MenuComponent>>)>,
         );
-        let process_list = |list: &Vec<MenuItem>, is_breakfast: bool| -> ProcessListResult {
+        let process_list = |list: &Vec<MenuItem>, meal_str: &str| -> ProcessListResult {
             let mut out = Vec::new();
             let mut t_out: Vec<(String, Vec<Vec<MenuComponent>>)> = Vec::new();
 
             for item in list {
                 if let Some(ref num) = item.takeaway_id {
-                    let meal_str = if is_breakfast { "breakfast" } else { "dinner" };
                     if let Some(parsed_packages) = crate::quality::takeaway::parse_takeaway_menu(
                         &format!("Al Götür {}", num),
                         city_slug,
@@ -994,25 +1111,25 @@ pub async fn save_menu_database(
             (out, t_out)
         };
 
-        let (b_out, b_take) = process_list(&day_data.normal.breakfast, true);
+        let (b_out, b_take) = process_list(&day_data.normal.breakfast, "breakfast");
         normal_breakfast.extend(b_out);
         takeaways_breakfast.extend(b_take);
 
-        let (l_out, l_take) = process_list(&day_data.normal.lunch, false);
+        let (l_out, l_take) = process_list(&day_data.normal.lunch, "lunch");
         normal_lunch.extend(l_out);
         takeaways_lunch.extend(l_take);
 
-        let (d_out, d_take) = process_list(&day_data.normal.dinner, false);
+        let (d_out, d_take) = process_list(&day_data.normal.dinner, "dinner");
         normal_dinner.extend(d_out);
         takeaways_dinner.extend(d_take);
 
-        let (cb_out, _) = process_list(&day_data.colyak.breakfast, true);
+        let (cb_out, _) = process_list(&day_data.colyak.breakfast, "breakfast");
         colyak_breakfast.extend(cb_out);
 
-        let (cl_out, _) = process_list(&day_data.colyak.lunch, false);
+        let (cl_out, _) = process_list(&day_data.colyak.lunch, "lunch");
         colyak_lunch.extend(cl_out);
 
-        let (cd_out, _) = process_list(&day_data.colyak.dinner, false);
+        let (cd_out, _) = process_list(&day_data.colyak.dinner, "dinner");
         colyak_dinner.extend(cd_out);
 
         takeaways_breakfast.dedup_by(|a, b| a.0 == b.0);

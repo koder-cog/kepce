@@ -1,38 +1,67 @@
 use regex::Regex;
 use std::sync::OnceLock;
 
+/// Yerel duyarlı Türkçe küçük harfe dönüştürücü.
+/// macOS NFD ayrışık karakterlerini ('I\u{0307}') düzgünce 'i'ye indirger,
+/// 'I' -> 'ı', 'İ' -> 'i' dönüşümlerini yapar ve birleştirici noktaları (\u{0307}) temizler.
+pub fn tr_lowercase(s: &str) -> String {
+    let pre = s.replace("I\u{0307}", "i").replace("i\u{0307}", "i");
+    let mut out = String::with_capacity(pre.len());
+    for c in pre.chars() {
+        match c {
+            'I' => out.push('ı'),
+            'İ' => out.push('i'),
+            other => {
+                for lc in other.to_lowercase() {
+                    if lc != '\u{0307}' {
+                        out.push(lc);
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
+/// Yerel duyarlı Türkçe büyük harfe dönüştürücü.
+/// 'ı' -> 'I', 'i' -> 'İ' dönüşümlerini yapar.
+pub fn tr_uppercase(s: &str) -> String {
+    let mut out = String::with_capacity(s.len());
+    for c in s.chars() {
+        match c {
+            'ı' => out.push('I'),
+            'i' => out.push('İ'),
+            other => out.extend(other.to_uppercase()),
+        }
+    }
+    out
+}
+
 /// Turkish Title Casing helper for words.
 /// Handles Turkish dotted/dotless I ('i' -> 'İ', 'ı' -> 'I') and preserves lowercase units/conjunctions.
-pub fn tr_title_word(word: &str) -> String {
+pub fn tr_title_word(word: &str, is_first: bool) -> String {
     if word.is_empty() {
         return String::new();
     }
 
-    let lower = word.to_lowercase().replace("i̇", "i").replace('I', "ı");
+    let lower = tr_lowercase(word);
 
     // Turkish specific known spellings (ASCII to proper Turkish)
     match lower.as_str() {
-        "izgara" | "ızgara" => return "Izgara".to_string(),
-        "ispanak" | "ıspanak" => return "Ispanak".to_string(),
-        "ispanaklı" | "ıspanaklı" => return "Ispanaklı".to_string(),
-        "islim" => return "İslim".to_string(),
-        "iskender" => return "İskender".to_string(),
-        "incik" => return "İncik".to_string(),
-        "inegöl" => return "İnegöl".to_string(),
-        "izmir" => return "İzmir".to_string(),
-        "imam" => return "İmam".to_string(),
-        "içli" => return "İçli".to_string(),
-        "işkembe" => return "İşkembe".to_string(),
-        "iftariyelik" => return "İftariyelik".to_string(),
+        "izgara" => return "Izgara".to_string(),
+        "ispanak" => return "Ispanak".to_string(),
+        "ispanaklı" => return "Ispanaklı".to_string(),
         _ => {}
     }
 
     // Conjunctions, units, and prepositions stay lowercase unless they are the start of a title
-    let preserve_lower = [
-        "ve", "veya", "ile", "de", "da", "ml", "g", "gr", "kg", "l", "lt", "kcal", "adet",
-    ];
-    if preserve_lower.contains(&lower.as_str()) {
-        return lower;
+    if !is_first {
+        let preserve_lower = [
+            "ve", "veya", "ile", "de", "da", "ml", "g", "gr", "kg", "l", "lt", "kcal", "adet",
+        ];
+        if preserve_lower.contains(&lower.as_str()) {
+            return lower;
+        }
     }
 
     let mut chars = lower.chars();
@@ -40,7 +69,7 @@ pub fn tr_title_word(word: &str) -> String {
         let first_upper = match first {
             'i' => "İ".to_string(),
             'ı' => "I".to_string(),
-            c => c.to_uppercase().to_string(),
+            c => tr_uppercase(&c.to_string()),
         };
         let rest: String = chars.collect();
         format!("{}{}", first_upper, rest)
@@ -49,22 +78,37 @@ pub fn tr_title_word(word: &str) -> String {
     }
 }
 
-/// Applies Turkish title casing to a full text string while preserving parentheses, slashes, plus signs.
+fn title_single_token(token: &str, is_first: bool) -> String {
+    let trimmed_start = token.trim_start_matches(|c: char| !c.is_alphabetic());
+    let prefix = &token[..token.len() - trimmed_start.len()];
+
+    let word_only = trimmed_start.trim_end_matches(|c: char| !c.is_alphabetic());
+    let suffix = &trimmed_start[word_only.len()..];
+
+    if word_only.is_empty() {
+        token.to_string()
+    } else {
+        let titled = tr_title_word(word_only, is_first);
+        format!("{}{}{}", prefix, titled, suffix)
+    }
+}
+
+/// Applies Turkish title casing to a full text string while preserving parentheses, slashes, plus signs,
+/// and hyphenated compounds (e.g. "al-götür" -> "Al-Götür").
 pub fn turkish_title_case(text: &str) -> String {
     let mut result = Vec::new();
-    for token in text.split_whitespace() {
-        // Handle parentheses or prefixes like "(100" or "+Patates"
-        let trimmed_start = token.trim_start_matches(|c: char| !c.is_alphabetic());
-        let prefix = &token[..token.len() - trimmed_start.len()];
-
-        let word_only = trimmed_start.trim_end_matches(|c: char| !c.is_alphabetic());
-        let suffix = &trimmed_start[word_only.len()..];
-
-        if word_only.is_empty() {
-            result.push(token.to_string());
+    let tokens: Vec<&str> = text.split_whitespace().collect();
+    for (i, token) in tokens.iter().enumerate() {
+        let is_first = i == 0;
+        if token.contains('-') && !token.starts_with('-') && !token.ends_with('-') {
+            let sub_parts: Vec<String> = token
+                .split('-')
+                .enumerate()
+                .map(|(sub_i, sub)| title_single_token(sub, is_first && sub_i == 0))
+                .collect();
+            result.push(sub_parts.join("-"));
         } else {
-            let titled = tr_title_word(word_only);
-            result.push(format!("{}{}{}", prefix, titled, suffix));
+            result.push(title_single_token(token, is_first));
         }
     }
     result.join(" ")
@@ -125,6 +169,29 @@ pub fn split_outside_parens(s: &str, delimiter: char) -> Vec<String> {
 pub fn standardize_amount(raw: &str) -> String {
     let s = raw.trim().trim_end_matches('.').trim();
 
+    // Check meat/total portion pattern: e.g. "60 g et/250", "100 g et / 200", "150 get/250"
+    static RE_MEAT_PORTION: OnceLock<Regex> = OnceLock::new();
+    let re_meat = RE_MEAT_PORTION.get_or_init(|| {
+        Regex::new(
+            r"(?i)^\s*(\d+(?:[.,]\d+)?)\s*(?:g|gr)?\s*et\s*/\s*(\d+(?:[.,]\d+)?)\s*(?:g|gr)?\s*$",
+        )
+        .unwrap()
+    });
+    if let Some(caps) = re_meat.captures(s) {
+        let meat = caps.get(1).unwrap().as_str().replace(',', ".");
+        let total = caps.get(2).unwrap().as_str().replace(',', ".");
+        return format!("{} g et / {} g", meat, total);
+    }
+
+    // Single meat portion, e.g. "90 gr et" -> "90 g et"
+    static RE_SINGLE_MEAT: OnceLock<Regex> = OnceLock::new();
+    let re_single_meat = RE_SINGLE_MEAT
+        .get_or_init(|| Regex::new(r"(?i)^\s*(\d+(?:[.,]\d+)?)\s*(?:g|gr)\s*et\s*$").unwrap());
+    if let Some(caps) = re_single_meat.captures(s) {
+        let meat = caps.get(1).unwrap().as_str().replace(',', ".");
+        return format!("{} g Et", meat);
+    }
+
     static RE_AMOUNT_SPACING: OnceLock<Regex> = OnceLock::new();
     let re_spacing = RE_AMOUNT_SPACING.get_or_init(|| {
         Regex::new(
@@ -156,6 +223,14 @@ pub fn standardize_amount(raw: &str) -> String {
             _ => return format!("{} {}", val_str, unit),
         }
     }
+
+    // Default standalone integer numbers without unit (e.g. "150", "200") to grams
+    static RE_PURE_DIGITS: OnceLock<Regex> = OnceLock::new();
+    let re_pure = RE_PURE_DIGITS.get_or_init(|| Regex::new(r"^\d+$").unwrap());
+    if re_pure.is_match(s) {
+        return format!("{} g", s);
+    }
+
     s.to_string()
 }
 
@@ -202,13 +277,25 @@ fn normalize_single_food_item(raw: &str) -> NormalizedFoodItem {
         return NormalizedFoodItem::new("", None);
     }
 
-    // 1. Clean bullet characters & leading/trailing hyphens/asterisks
+    // 1. Clean bullet characters, leading/trailing slashes, hyphens and asterisks
     s = s
         .trim_start_matches(|c: char| {
-            c == '*' || c == '-' || c == '•' || c == '⁃' || c == '+' || c.is_whitespace()
+            c == '*'
+                || c == '-'
+                || c == '•'
+                || c == '⁃'
+                || c == '+'
+                || c == '/'
+                || c.is_whitespace()
         })
         .trim_end_matches(|c: char| {
-            c == '*' || c == '-' || c == '•' || c == '⁃' || c == '+' || c.is_whitespace()
+            c == '*'
+                || c == '-'
+                || c == '•'
+                || c == '⁃'
+                || c == '+'
+                || c == '/'
+                || c.is_whitespace()
         })
         .to_string();
 
@@ -216,15 +303,26 @@ fn normalize_single_food_item(raw: &str) -> NormalizedFoodItem {
         return NormalizedFoodItem::new("", None);
     }
 
+    // 1b. Clean contract quota percentage tags: (%50), (50%), ( % 50 ), ( 50 % ) and standalone %50, 50%
+    static RE_PERCENT_PAREN: OnceLock<Regex> = OnceLock::new();
+    let re_percent_paren = RE_PERCENT_PAREN
+        .get_or_init(|| Regex::new(r"(?i)\s*\(\s*(?:%\s*\d+|\d+\s*%)\s*\)").unwrap());
+    s = re_percent_paren.replace_all(&s, "").to_string();
+
+    static RE_PERCENT_BARE: OnceLock<Regex> = OnceLock::new();
+    let re_percent_bare =
+        RE_PERCENT_BARE.get_or_init(|| Regex::new(r"(?i)\s*(?:%\s*\d+\b|\b\d+\s*%)").unwrap());
+    s = re_percent_bare.replace_all(&s, "").to_string();
+
     let mut extracted_amount = None;
 
     // 2. Extract numerical portion / contract specification inside parentheses
-    // e.g. "(50 g)", "(120 gr)", "(200 ml)", "(90 g Et)", "(60 g Et)", "(100 g Et-izgara Sebze ile)"
+    // e.g. "(50 g)", "(120 gr)", "(200 ml)", "(90 g Et)", "(60 g Et/250)", "(100 g Et-izgara Sebze ile)"
     // Descriptive parentheses like "(Yoğurt+Sos)" or "(Göbek Marul+Dilim Limon)" are preserved.
     static RE_PAREN_PORTION: OnceLock<Regex> = OnceLock::new();
     let re_paren_portion = RE_PAREN_PORTION.get_or_init(|| {
         Regex::new(
-            r"(?i)\s*\(\s*(\d+(?:[.,]\d+)?\s*(?:g|gr|kg|ml|lt|l|adet|porsiyon|dilim|paket)(?:\s+[A-Za-zğüşıöçĞÜŞİÖÇ]+(?:-[^)]*)?)?)\s*\)",
+            r"(?i)\s*\(\s*(\d+(?:[.,]\d+)?\s*(?:g|gr|kg|ml|lt|l|adet|porsiyon|dilim|paket)(?:\s+(?:et|[A-Za-zğüşıöçĞÜŞİÖÇ]+)(?:/[^)]*|-[^)]*)?|/[^)]*)?)\s*\)",
         )
         .unwrap()
     });
@@ -321,16 +419,16 @@ fn normalize_single_food_item(raw: &str) -> NormalizedFoodItem {
 
     // 8. TDK Compound Word Standardizations
     static RE_DEREOTU: OnceLock<Regex> = OnceLock::new();
-    let re_dereotu = RE_DEREOTU.get_or_init(|| Regex::new(r"(?i)\bdere\s+ot(u|lu)?\b").unwrap());
+    let re_dereotu = RE_DEREOTU.get_or_init(|| Regex::new(r"(?i)\bdere\s*ot(u|lu)?\b").unwrap());
     s = re_dereotu.replace_all(&s, "dereot$1").to_string();
 
     static RE_SEMIZOTU: OnceLock<Regex> = OnceLock::new();
-    let re_semizotu = RE_SEMIZOTU.get_or_init(|| Regex::new(r"(?i)\bsemiz\s+ot(u|lu)?\b").unwrap());
+    let re_semizotu = RE_SEMIZOTU.get_or_init(|| Regex::new(r"(?i)\bsemiz\s*ot(u|lu)?\b").unwrap());
     s = re_semizotu.replace_all(&s, "semizot$1").to_string();
 
     static RE_COREKOTU: OnceLock<Regex> = OnceLock::new();
     let re_corekotu =
-        RE_COREKOTU.get_or_init(|| Regex::new(r"(?i)\bçöre[k]?\s+ot(u|lu)?\b").unwrap());
+        RE_COREKOTU.get_or_init(|| Regex::new(r"(?i)\bçöre[k]?\s*ot(u|lu)?\b").unwrap());
     s = re_corekotu.replace_all(&s, "çöreot$1").to_string();
 
     static RE_KURUFASULYE: OnceLock<Regex> = OnceLock::new();
@@ -395,7 +493,7 @@ fn normalize_single_food_item(raw: &str) -> NormalizedFoodItem {
     static RE_CORBA_ABBR: OnceLock<Regex> = OnceLock::new();
     let re_corba_abbr = RE_CORBA_ABBR.get_or_init(|| {
         Regex::new(
-            r"(?i)\b([A-Za-zğüşıöçĞÜŞİÖÇ]{2,}(?:\s+[A-Za-zğüşıöçĞÜŞİÖÇ]{2,})*)\s+[çÇ]\.?(\s*(?:\+|,|$))",
+            r"(?i)\b([A-Za-zğüşıöçĞÜŞİÖÇ]{2,}(?:\s+[A-Za-zğüşıöçĞÜŞİÖÇ]{2,})*)\s+[çÇ]\.?(\s*(?:\+|,|\(|$))",
         )
         .unwrap()
     });
@@ -405,7 +503,7 @@ fn normalize_single_food_item(raw: &str) -> NormalizedFoodItem {
     static RE_CORBA_SUFFIX: OnceLock<Regex> = OnceLock::new();
     let re_corba_suffix = RE_CORBA_SUFFIX.get_or_init(|| {
         Regex::new(
-            r"(?i)\b([A-Za-zğüşıöçĞÜŞİÖÇ]{2,}(?:\s+[A-Za-zğüşıöçĞÜŞİÖÇ]{2,})*)\s+çorba(\s*(?:\+|,|$))",
+            r"(?i)\b([A-Za-zğüşıöçĞÜŞİÖÇ]{2,}(?:\s+[A-Za-zğüşıöçĞÜŞİÖÇ]{2,})*)\s+çorba(\s*(?:\+|,|\(|$))",
         )
         .unwrap()
     });
@@ -575,7 +673,9 @@ pub fn split_smart_alternatives(raw_item: &str) -> Vec<String> {
                 current.push(c);
             }
             ')' | ']' => {
-                parens -= 1;
+                if parens > 0 {
+                    parens -= 1;
+                }
                 current.push(c);
             }
             '/' if parens == 0 => {
@@ -601,26 +701,26 @@ pub fn split_smart_alternatives(raw_item: &str) -> Vec<String> {
         return vec![norm];
     }
 
-    // Check for smart distribution of head noun across 2 alternatives
-    let p1 = raw_parts[0].trim();
-    let p2 = raw_parts[1].trim();
+    let lowers: Vec<String> = raw_parts.iter().map(|p| tr_lowercase(p.trim())).collect();
+    let n = raw_parts.len();
+    let last_lower = &lowers[n - 1];
 
-    let p1_lower = p1.to_lowercase().replace("i̇", "i").replace('I', "ı");
-    let p2_lower = p2.to_lowercase().replace("i̇", "i").replace('I', "ı");
-
-    // Case 1: Olives ("Siyah" / "Yeşil Zeytin" or "Yeşil" / "Siyah Zeytin")
-    if p1_lower == "siyah" && p2_lower.contains("zeytin") {
-        let n1 = "Siyah Zeytin".to_string();
-        let n2 = normalize_food_name(p2);
-        return vec![n1, n2];
+    // Case 1: Olives ("Siyah / Yeşil Zeytin" veya 3+ alternatif)
+    if last_lower.contains("zeytin") {
+        let mut result = Vec::new();
+        for (i, p) in raw_parts.iter().enumerate() {
+            if i == n - 1 {
+                result.push(normalize_food_name(p));
+            } else if lowers[i] == "siyah" || lowers[i] == "yeşil" {
+                result.push(format!("{} Zeytin", turkish_title_case(p.trim())));
+            } else {
+                result.push(normalize_food_name(p));
+            }
+        }
+        return result;
     }
-    if p1_lower == "yeşil" && p2_lower.contains("zeytin") {
-        let n1 = "Yeşil Zeytin".to_string();
-        let n2 = normalize_food_name(p2);
-        return vec![n1, n2];
-    }
 
-    // Case 2: Pastries / Açma / Börek / Poğaça
+    // Case 2: Pastries / Hamur İşleri ("Zeytinli / Peynirli / Patatesli Açma")
     let pastry_adjectives = [
         "zeytinli",
         "peynirli",
@@ -642,30 +742,54 @@ pub fn split_smart_alternatives(raw_item: &str) -> Vec<String> {
         "tepsi böreği",
     ];
 
-    if pastry_adjectives.contains(&p1_lower.as_str()) {
-        for noun in &pastry_nouns {
-            if p2_lower.contains(noun) {
-                let suffix = turkish_title_case(noun);
-                let n1 = format!("{} {}", turkish_title_case(p1), suffix);
-                let n2 = normalize_food_name(p2);
-                return vec![n1, n2];
+    for noun in &pastry_nouns {
+        if last_lower.contains(noun) {
+            let suffix = turkish_title_case(noun);
+            let mut result = Vec::new();
+            for (i, p) in raw_parts.iter().enumerate() {
+                if i == n - 1 {
+                    result.push(normalize_food_name(p));
+                } else if pastry_adjectives.contains(&lowers[i].as_str()) {
+                    result.push(format!("{} {}", turkish_title_case(p.trim()), suffix));
+                } else {
+                    result.push(normalize_food_name(p));
+                }
             }
+            return result;
         }
     }
 
-    // Case 3: Pilavs ("Pirinç" / "Bulgur Pilavı", "Bulgur" / "Pirinç Pilavı")
-    if (p1_lower == "pirinç" || p1_lower == "bulgur") && p2_lower.contains("pilav") {
-        let n1 = format!("{} Pilavı", turkish_title_case(p1));
-        let n2 = normalize_food_name(p2);
-        return vec![n1, n2];
+    // Case 3: Pilavlar ("Pirinç / Bulgur Pilavı")
+    if last_lower.contains("pilav") {
+        let mut result = Vec::new();
+        for (i, p) in raw_parts.iter().enumerate() {
+            if i == n - 1 {
+                result.push(normalize_food_name(p));
+            } else if lowers[i] == "pirinç" || lowers[i] == "bulgur" {
+                result.push(format!("{} Pilavı", turkish_title_case(p.trim())));
+            } else {
+                result.push(normalize_food_name(p));
+            }
+        }
+        return result;
     }
 
-    // Case 4: Cheeses ("Örgü" / "Çeçil Peyniri", "Kaşar" / "Beyaz Peynir")
-    let cheese_adjectives = ["örgü", "çeçil", "kaşar", "tulum", "lor", "dil", "otlu"];
-    if cheese_adjectives.contains(&p1_lower.as_str()) && p2_lower.contains("peynir") {
-        let n1 = format!("{} Peyniri", turkish_title_case(p1));
-        let n2 = normalize_food_name(p2);
-        return vec![n1, n2];
+    // Case 4: Peynirler ("Örgü / Çeçil Peyniri", "Kaşar / Beyaz Peynir")
+    let cheese_adjectives = [
+        "örgü", "çeçil", "kaşar", "tulum", "lor", "dil", "otlu", "beyaz",
+    ];
+    if last_lower.contains("peynir") {
+        let mut result = Vec::new();
+        for (i, p) in raw_parts.iter().enumerate() {
+            if i == n - 1 {
+                result.push(normalize_food_name(p));
+            } else if cheese_adjectives.contains(&lowers[i].as_str()) {
+                result.push(format!("{} Peyniri", turkish_title_case(p.trim())));
+            } else {
+                result.push(normalize_food_name(p));
+            }
+        }
+        return result;
     }
 
     // Default: normalize all parsed parts

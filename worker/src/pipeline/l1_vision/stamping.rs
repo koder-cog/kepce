@@ -117,12 +117,14 @@ pub fn resolve_source(label: &str) -> SourceMetadata {
     }
 }
 
-const DEFAULT_ATTEMPT_HISTORY_FILE: &str = ".scratch/ocr_lab/outputs/.attempt_history.json";
-
 fn resolve_history_path(output_dir: Option<&Path>) -> std::path::PathBuf {
     output_dir
         .map(|d| d.join(".attempt_history.json"))
-        .unwrap_or_else(|| std::path::PathBuf::from(DEFAULT_ATTEMPT_HISTORY_FILE))
+        .unwrap_or_else(|| {
+            let p = std::env::var("OCR_ATTEMPT_HISTORY_FILE")
+                .unwrap_or_else(|_| "data/ocr_outputs/.attempt_history.json".to_string());
+            std::path::PathBuf::from(p)
+        })
 }
 
 fn load_attempt_history(history_file: &Path) -> std::collections::HashMap<String, u32> {

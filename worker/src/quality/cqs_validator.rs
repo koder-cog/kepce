@@ -111,6 +111,15 @@ pub fn validate_item_name(name: &str) -> Option<String> {
         return None;
     }
 
+    // If it's a descriptive portion/quantity (e.g. "1 adet L boy", "2 dilim", "1 porsiyon")
+    static RE_PORTION_DESC: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re_portion = RE_PORTION_DESC.get_or_init(|| {
+        regex::Regex::new(r"(?i)^\s*\d+([.,]\d+)?\s*(?:adet|porsiyon|dilim|paket|kutu|kase|bardak|gram|gr|g|kg|ml|lt|l)\b").unwrap()
+    });
+    if re_portion.is_match(trimmed) {
+        return None;
+    }
+
     // If it's wrapped entirely in parentheses without an external dish name (e.g. "(Söğüşlü)", "(Kemiksiz)")
     if trimmed.starts_with('(')
         && trimmed.ends_with(')')
@@ -122,8 +131,8 @@ pub fn validate_item_name(name: &str) -> Option<String> {
     Some(trimmed.to_string())
 }
 
-/// Validates that a gramaj/calorie value is numeric or a range format.
-/// Accepts: "150", "100-200", "1.5", "150 g", "250 kcal", "100,5"
+/// Validates that a gramaj/calorie value is numeric, a range format, or a meat portion.
+/// Accepts: "150", "100-200", "1.5", "150 g", "250 kcal", "100,5", "60 g et/250", "100 g et/200"
 /// Rejects: "çok fazla", "NaN", "biraz", empty-ish text
 pub fn validate_numeric_value(val: &str) -> Option<String> {
     let trimmed = val.trim();
@@ -136,15 +145,39 @@ pub fn validate_numeric_value(val: &str) -> Option<String> {
         return None;
     }
 
+    // Check meat/total portion pattern: e.g. "60 g et/250", "100 g et/200", "150 get/250", "90 g et / 200"
+    static RE_MEAT_PORTION: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re_meat = RE_MEAT_PORTION.get_or_init(|| {
+        regex::Regex::new(
+            r"(?i)^\s*\d+([.,]\d+)?\s*(?:g|gr)?\s*et\s*/\s*\d+([.,]\d+)?\s*(?:g|gr)?\s*$",
+        )
+        .unwrap()
+    });
+    if re_meat.is_match(trimmed) {
+        return Some(trimmed.to_string());
+    }
+
     // Strip known unit suffixes for validation, but keep the original string
-    let check = trimmed
+    let check_lower = shared::domain::quality::normalizer::tr_lowercase(trimmed);
+    let check = check_lower
+        .trim_end_matches('.')
         .trim_end_matches(|c: char| c.is_whitespace())
         .trim_end_matches("kcal")
         .trim_end_matches("kkal")
+        .trim_end_matches("cal")
         .trim_end_matches("gr")
         .trim_end_matches("g")
         .trim_end_matches("ml")
         .trim_end_matches("cc")
+        .trim_end_matches("lt")
+        .trim_end_matches("l")
+        .trim_end_matches("kg")
+        .trim_end_matches("adet")
+        .trim_end_matches("paket")
+        .trim_end_matches("porsiyon")
+        .trim_end_matches("dilim")
+        .trim_end_matches("kutu")
+        .trim_end_matches('.')
         .trim();
 
     if check.is_empty() {
@@ -153,7 +186,9 @@ pub fn validate_numeric_value(val: &str) -> Option<String> {
 
     // Check if it's a valid number or range pattern
     // Allow: digits, commas (Turkish decimal), dots, dashes (range), spaces around dash
-    let re = regex::Regex::new(r"^\d+([.,]\d+)?(\s*[-–]\s*\d+([.,]\d+)?)?$").unwrap();
+    static RE_NUM_OR_RANGE: std::sync::OnceLock<regex::Regex> = std::sync::OnceLock::new();
+    let re = RE_NUM_OR_RANGE
+        .get_or_init(|| regex::Regex::new(r"^\d+([.,]\d+)?(\s*[-–]\s*\d+([.,]\d+)?)?$").unwrap());
     if re.is_match(check) {
         Some(trimmed.to_string())
     } else {
@@ -166,7 +201,7 @@ pub fn validate_numeric_value(val: &str) -> Option<String> {
 /// 2. Content signal analysis from sample item names
 /// 3. Returns None if both stages are inconclusive
 pub fn detect_meal_type(sheet_name: &str, sample_items: &[String]) -> Option<MealType> {
-    let upper = sheet_name.to_uppercase();
+    let upper = shared::domain::quality::normalizer::tr_uppercase(sheet_name);
 
     // Stage 1: Sheet name matching
     if upper.contains("KAHVALTI") || upper.contains("SABAH") {
@@ -192,7 +227,7 @@ pub fn detect_meal_type(sheet_name: &str, sample_items: &[String]) -> Option<Mea
     let mut dinner_score: i32 = 0;
 
     for item in sample_items {
-        let lower = item.to_lowercase();
+        let lower = shared::domain::quality::normalizer::tr_lowercase(item);
         for signal in BREAKFAST_SIGNALS {
             if lower.contains(signal) {
                 breakfast_score += 1;
@@ -247,8 +282,10 @@ pub fn calculate_trust_score(
     };
 
     process_items(&day.normal.breakfast);
+    process_items(&day.normal.lunch);
     process_items(&day.normal.dinner);
     process_items(&day.colyak.breakfast);
+    process_items(&day.colyak.lunch);
     process_items(&day.colyak.dinner);
 
     let avg_score = if item_count > 0 {
@@ -288,8 +325,10 @@ pub fn finalize_day_metadata(day_data: &mut crate::parser::models::DayData) {
     };
 
     process_items(&day_data.normal.breakfast);
+    process_items(&day_data.normal.lunch);
     process_items(&day_data.normal.dinner);
     process_items(&day_data.colyak.breakfast);
+    process_items(&day_data.colyak.lunch);
     process_items(&day_data.colyak.dinner);
 
     let combined_text = all_text.join(" ");
@@ -513,5 +552,22 @@ mod tests {
         assert_eq!(validate_item_name("(Domates Sos + Yoğurt)"), None);
         assert_eq!(validate_item_name("Simit"), Some("Simit".to_string()));
         assert_eq!(validate_item_name("Su"), Some("Su".to_string()));
+    }
+
+    #[test]
+    fn test_calculate_trust_score_includes_lunch() {
+        let mut day = crate::parser::models::DayData::default();
+        day.normal.lunch.push(crate::parser::models::MenuItem {
+            takeaway_id: None,
+            alternatives: vec![crate::parser::models::MenuComponent {
+                name: "Mercimek Çorbası".to_string(),
+                amount: Some("250 g".to_string()),
+                calories: None,
+                category: None,
+            }],
+        });
+        let meta = calculate_trust_score(&day);
+        assert_eq!(meta.status, "approved");
+        assert!(meta.trust_score >= 30);
     }
 }

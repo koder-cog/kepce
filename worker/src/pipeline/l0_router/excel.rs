@@ -1,9 +1,10 @@
 use anyhow::Result;
 use calamine::{Data, DataType, Reader, Xlsx, open_workbook};
+use chrono::Datelike;
 use std::path::Path;
 
 use crate::parser::core::{
-    DateOrderResolution, ParseDiagnostics, SheetGrid, parse_grid_with_order,
+    DateOrderResolution, DateTokenOrder, ParseDiagnostics, SheetGrid, parse_grid_with_order,
     resolve_file_date_order,
 };
 use crate::parser::models::MenuDatabase;
@@ -50,6 +51,7 @@ pub fn parse_excel_with_diagnostics(
 
     // 1. geçiş: tüm sayfaları ızgaraya çevir
     let mut grids: Vec<SheetGrid> = Vec::new();
+    let mut has_native_excel_dates = false;
     for sheet_name in sheet_names {
         if let Ok(range) = workbook.worksheet_range(&sheet_name) {
             let height = range.height();
@@ -63,7 +65,12 @@ pub fn parse_excel_with_diagnostics(
 
                     // Gerçek tarih hücreleri DMY metnine normalize edilir;
                     // böylece seri numarası belirsizliği ortadan kalkar.
-                    if let Some(date) = cell.as_date() {
+                    // 1900 gibi sahte seri numarası dönüşümlerini (örn: 150 gramajı) engelle.
+                    if let Some(date) = cell.as_date()
+                        && date.year() >= 2020
+                        && date.year() <= 2035
+                    {
+                        has_native_excel_dates = true;
                         row.push(date.format("%d.%m.%Y").to_string());
                     } else {
                         row.push(cell.to_string());
@@ -80,7 +87,18 @@ pub fn parse_excel_with_diagnostics(
     }
 
     // Dosya bazlı deterministik sıra çözümü (T1..T5)
-    let resolution = resolve_file_date_order(&grids, &file_name_hint);
+    let mut resolution = resolve_file_date_order(&grids, &file_name_hint);
+
+    // Eğer tarih sırası kanıtı zayıfsa ama sayfada doğrulanmış Excel DateTime hücreleri varsa,
+    // cell.as_date() çıktısı bizzat DMY (%d.%m.%Y) formatında yazıldığı için Resolved(DayMonth) seviyesine terfi ettir.
+    if matches!(resolution, DateOrderResolution::Weak(_)) && has_native_excel_dates {
+        tracing::debug!(
+            "{}: yerel Excel tarih hücresi tespitiyle Weak -> Resolved(DayMonth) terfisi yapıldı",
+            file_name_hint
+        );
+        resolution = DateOrderResolution::Resolved(DateTokenOrder::DayMonth);
+    }
+
     match &resolution {
         DateOrderResolution::Resolved(order) => {
             tracing::debug!("{}: tarih sırası çözüldü: {:?}", file_name_hint, order);
@@ -106,6 +124,11 @@ pub fn parse_excel_with_diagnostics(
     // 2. geçiş: çözülen sırayla ayrıştır
     for grid in &grids {
         parse_grid_with_order(grid, db, &file_name_hint, date_order, &mut diag);
+    }
+
+    // Her ayrıştırılan gün için kalite ve güven skorunu finalize et
+    for day_data in db.values_mut() {
+        crate::quality::cqs_validator::finalize_day_metadata(day_data);
     }
 
     Ok(diag)

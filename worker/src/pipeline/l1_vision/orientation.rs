@@ -286,19 +286,25 @@ struct Classification {
 ///
 /// **Güvenlik ilkesi:** yanlış döndürme doğru veriyi bozar. Bu yüzden karar
 /// yalnızca güvenilir olduğunda bir döndürme döner; aksi halde `Rotation::None`.
-fn decide_orientation(img: &DynamicImage) -> PageOrientation {
+pub fn decide_orientation(img: &DynamicImage) -> PageOrientation {
     let gray = img.to_luma8();
     let axis = detect_axis(&gray);
 
     if let Some(c) = classify(img) {
         let agrees = axis_agrees(axis, c.rotation);
-        let trusted = if agrees && axis != PageAxis::Unknown {
-            c.prob >= CLASSIFIER_AGREED_MIN_PROB && c.margin >= CLASSIFIER_AGREED_MIN_MARGIN
-        } else {
-            c.prob >= CLASSIFIER_MIN_PROB && c.margin >= CLASSIFIER_MIN_MARGIN
-        };
 
-        if trusted && agrees {
+        // 1. Model net bir marj ile tek bir açıyı işaret ediyorsa doğrudan model kararı geçerlidir.
+        // Tablo belgelerinde dikey sütun çizgileri projeksiyon eksenini şaşırtabildiği için
+        // yüksek güvenli model kararı projeksiyon onayına (agrees) muhtaç bırakılmaz.
+        let high_confidence = c.prob >= CLASSIFIER_MIN_PROB && c.margin >= CLASSIFIER_MIN_MARGIN;
+
+        // 2. Model orta güvenilirlikteyse projeksiyon profiliyle çapraz teyit aranır.
+        let moderate_agreed = agrees
+            && axis != PageAxis::Unknown
+            && c.prob >= CLASSIFIER_AGREED_MIN_PROB
+            && c.margin >= CLASSIFIER_AGREED_MIN_MARGIN;
+
+        if high_confidence || moderate_agreed {
             return PageOrientation {
                 rotation: c.rotation,
                 confidence: c.prob,
@@ -402,9 +408,24 @@ fn classify_orientation(img: &DynamicImage) -> Option<PageOrientation> {
 /// 4 sınıfın birleşik softmax olasılıklarını döndürür.
 /// Çoklu kırpma (başlangıç, orta, bitiş) ile dokümanın farklı alanları taranır
 /// ve olasılıkların ortalaması alınır.
-fn classify_probs(img: &DynamicImage) -> Option<Vec<f32>> {
+pub fn classify_probs(img: &DynamicImage) -> Option<Vec<f32>> {
     let session = orientation_session()?;
-    let input = ort::value::Value::from_array(model_input_array(img)).ok()?;
+
+    // Yüksek çözünürlüklü fotoğraflarda tüm sayfayı 256'ya sıkıştırmak harfleri
+    // 1 piksele indirip 0° ile 180° arasındaki karakter ayırt ediciliğini bozar.
+    // Bu yüzden büyük görsellerde tablonun asıl yazı içeren merkez alanına odaklanılır.
+    let focused = if img.width() > 1200 || img.height() > 1200 {
+        let (iw, ih) = (img.width(), img.height());
+        let crop_w = (iw as f32 * 0.55) as u32;
+        let crop_h = (ih as f32 * 0.55) as u32;
+        let crop_x = (iw - crop_w) / 2;
+        let crop_y = (ih - crop_h) / 2;
+        img.crop_imm(crop_x, crop_y, crop_w, crop_h)
+    } else {
+        img.clone()
+    };
+
+    let input = ort::value::Value::from_array(model_input_array(&focused)).ok()?;
 
     let mut guard = session.lock().ok()?;
     let input_name = guard.inputs().first()?.name().to_string();
