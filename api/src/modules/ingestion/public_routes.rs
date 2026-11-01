@@ -142,8 +142,6 @@ async fn submit_menu(
 
     let city_slug =
         city_slug.ok_or_else(|| AppError::BadRequest("Şehir seçimi zorunludur".to_string()))?;
-    let year = year.ok_or_else(|| AppError::BadRequest("Yıl seçimi zorunludur".to_string()))?;
-    let month = month.ok_or_else(|| AppError::BadRequest("Ay seçimi zorunludur".to_string()))?;
 
     let user_id = if let Some(ref target_identifier) = on_behalf_of {
         let admin_user = match auth {

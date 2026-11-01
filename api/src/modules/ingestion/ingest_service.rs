@@ -56,8 +56,8 @@ pub struct IngestedFile {
 /// Input parsed from multipart form data.
 pub struct MenuSubmissionInput {
     pub city_slug: String,
-    pub year: i32,
-    pub month: i32,
+    pub year: Option<i32>,
+    pub month: Option<i32>,
     pub notes: Option<String>,
     pub files: Vec<IngestedFile>,
 }
@@ -82,26 +82,39 @@ impl IngestionService {
         user_id: Option<Uuid>,
         input: MenuSubmissionInput,
     ) -> Result<MenuSubmissionResponseDto, IngestionError> {
-        // 1. Validate fields (Ocak 2026'dan bulunulan tarihin 1 ay sonrasına kadar)
+        // 1. Validate fields (Belirtilmişse 2026-01 ile 1 ay sonrası aralığı; belirtilmemişse otonom çıkarım için geçerli tarih holding değeri atanır)
         let now = Utc::now().date_naive();
         let max_date = now + chrono::Months::new(1);
         let max_year = max_date.year();
         let max_month = max_date.month() as i32;
 
-        if input.year < 2026
-            || input.year > max_year
-            || (input.year == max_year && input.month > max_month)
-        {
-            return Err(IngestionError::InvalidInput(format!(
-                "Menü tarihi 2026-01 ile {}-{:02} arasında olmalıdır",
-                max_year, max_month
-            )));
-        }
-        if input.month < 1 || input.month > 12 {
-            return Err(IngestionError::InvalidInput(
-                "Geçersiz ay (1-12 arasında olmalıdır)".to_string(),
-            ));
-        }
+        let effective_year = match input.year {
+            Some(y) => {
+                if y < 2026
+                    || y > max_year
+                    || (y == max_year && input.month.unwrap_or(1) > max_month)
+                {
+                    return Err(IngestionError::InvalidInput(format!(
+                        "Menü tarihi 2026-01 ile {}-{:02} arasında olmalıdır",
+                        max_year, max_month
+                    )));
+                }
+                y
+            }
+            None => now.year(),
+        };
+
+        let effective_month = match input.month {
+            Some(m) => {
+                if !(1..=12).contains(&m) {
+                    return Err(IngestionError::InvalidInput(
+                        "Geçersiz ay (1-12 arasında olmalıdır)".to_string(),
+                    ));
+                }
+                m
+            }
+            None => now.month() as i32,
+        };
         if let Some(ref n) = input.notes
             && n.len() > 1000
         {
@@ -193,7 +206,7 @@ impl IngestionService {
         let submission_id = Uuid::new_v4();
         let upload_dir = format!(
             "uploads/quarantine/menus/{}/{}/{}",
-            input.city_slug, input.year, submission_id
+            input.city_slug, effective_year, submission_id
         );
         tokio::fs::create_dir_all(&upload_dir).await?;
 
@@ -219,8 +232,8 @@ impl IngestionService {
         let new_sub = menu_submissions::ActiveModel {
             user_id: Set(user_id),
             city_slug: Set(input.city_slug),
-            year: Set(input.year),
-            month: Set(input.month),
+            year: Set(effective_year),
+            month: Set(effective_month),
             notes: Set(Some(sanitized_notes)),
             // Karantina dizin adını kalıcı hale getir: onay sonrası dosya taşıma
             // bu referans üzerinden yapılır (bkz. ModerationService::update_submission_status).

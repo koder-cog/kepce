@@ -176,13 +176,8 @@
     }
 
     .view-toggle.is-alone .c-segmented-control__indicator {
-      width: var(
-        --indicator-width,
-        calc(
-          (100% - (2 * var(--seg-pad)) - ((var(--total-options, 1) - 1) * var(--seg-gap))) /
-            var(--total-options, 1)
-        )
-      );
+      width: var(--indicator-width,
+          calc((100% - (2 * var(--seg-pad)) - ((var(--total-options, 1) - 1) * var(--seg-gap))) / var(--total-options, 1)));
     }
 
     .diet-mode-selector .c-segmented-control {
@@ -360,13 +355,11 @@
     top: 0;
     bottom: 0;
     width: 3px;
-    background: repeating-linear-gradient(
-      to bottom,
-      var(--color-muted) 0px,
-      var(--color-muted) 8px,
-      transparent 8px,
-      transparent 16px
-    );
+    background: repeating-linear-gradient(to bottom,
+        var(--color-muted) 0px,
+        var(--color-muted) 8px,
+        transparent 8px,
+        transparent 16px);
     opacity: 0.5;
     transition: opacity var(--dur-standard) var(--ease-standard);
   }
@@ -387,7 +380,7 @@
       margin-bottom var(--dur-standard) var(--ease-standard);
   }
 
-  .timeline__slot--breakfast > * {
+  .timeline__slot--breakfast>* {
     min-height: 0;
     overflow: hidden;
   }
@@ -707,7 +700,7 @@
     width: 100%;
   }
 
-  .alternate-view__stack > .meal-card {
+  .alternate-view__stack>.meal-card {
     width: 100%;
     max-width: 100%;
   }
@@ -741,7 +734,7 @@
     display: flex;
     align-items: center;
     gap: var(--space-md);
-    padding: var(--space-md) var(--space-lg);
+    padding: var(--space-lg);
     border-radius: var(--radius-lg);
     background: rgba(var(--color-accent-disclaimer-rgb), 0.1);
     color: var(--color-text);
