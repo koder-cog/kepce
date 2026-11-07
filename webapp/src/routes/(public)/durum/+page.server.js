@@ -8,4 +8,3 @@ export async function load({ setHeaders }) {
   });
   return {};
 }
-
