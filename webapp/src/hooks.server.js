@@ -111,6 +111,9 @@ export async function handle({ event, resolve }) {
     if (errorType === 'application/json') {
       return formatJson404(pathname);
     }
+    if (!response.headers.has('cache-control')) {
+      response.headers.set('cache-control', 'public, max-age=300, s-maxage=600');
+    }
   }
 
   return response;

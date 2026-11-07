@@ -22,7 +22,7 @@ export async function load({ params, url, setHeaders }) {
   const isOffSeason = isOffSeasonDate(date);
 
   setHeaders({
-    'cache-control': 'public, s-maxage=120, stale-while-revalidate=600'
+    'cache-control': 'public, max-age=600, s-maxage=7200, stale-while-revalidate=86400'
   });
 
   const payload = await apiGet(`/api/v1/menus?city=${encodeURIComponent(citySlug)}&date=${date}`);

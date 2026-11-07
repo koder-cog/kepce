@@ -1,8 +1,12 @@
 User-agent: *
 Allow: /
 
-# OAuth & Authentication Callbacks
+# OAuth ve oturum geri dönüş yolları
 Disallow: /oauth
 
-Sitemap: https://kepce.org/sitemap.xml
+# Agresif eğitim kazıyıcıları
+User-agent: Bytespider
+User-agent: CCBot
+Disallow: /
 
+Sitemap: https://kepce.org/sitemap.xml

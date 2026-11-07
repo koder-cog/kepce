@@ -38,21 +38,28 @@ impl std::fmt::Display for AppError {
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
-        let (status, error_message) = match self {
-            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg),
-            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg),
-            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg),
-            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg),
-            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg),
-            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg),
-            AppError::TooManyRequests(msg) => (StatusCode::TOO_MANY_REQUESTS, msg),
+        let (status, error_message, is_not_found) = match self {
+            AppError::NotFound(msg) => (StatusCode::NOT_FOUND, msg, true),
+            AppError::Unauthorized(msg) => (StatusCode::UNAUTHORIZED, msg, false),
+            AppError::Forbidden(msg) => (StatusCode::FORBIDDEN, msg, false),
+            AppError::BadRequest(msg) => (StatusCode::BAD_REQUEST, msg, false),
+            AppError::Conflict(msg) => (StatusCode::CONFLICT, msg, false),
+            AppError::Internal(msg) => (StatusCode::INTERNAL_SERVER_ERROR, msg, false),
+            AppError::TooManyRequests(msg) => (StatusCode::TOO_MANY_REQUESTS, msg, false),
         };
 
         let body = Json(json!({
             "error": error_message,
         }));
 
-        (status, body).into_response()
+        let mut res = (status, body).into_response();
+        if is_not_found {
+            res.headers_mut().insert(
+                axum::http::header::CACHE_CONTROL,
+                axum::http::HeaderValue::from_static("public, max-age=300, s-maxage=600"),
+            );
+        }
+        res
     }
 }
 

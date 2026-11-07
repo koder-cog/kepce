@@ -15,7 +15,7 @@ export async function load({ url, setHeaders }) {
   const isSummer = ['07', '08'].includes(date.slice(5, 7));
 
   setHeaders({
-    'cache-control': 'public, s-maxage=120, stale-while-revalidate=600'
+    'cache-control': 'public, max-age=600, s-maxage=7200, stale-while-revalidate=86400'
   });
 
   const payload = await apiGet(`/api/v1/menus?city=${encodeURIComponent(city)}&date=${date}`);

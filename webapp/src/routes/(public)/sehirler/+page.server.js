@@ -31,7 +31,7 @@ function formatMonthYear(dateStr) {
  */
 export async function load({ setHeaders }) {
   setHeaders({
-    'cache-control': 'public, s-maxage=3600, stale-while-revalidate=86400'
+    'cache-control': 'public, max-age=600, s-maxage=7200, stale-while-revalidate=86400'
   });
 
   const cityLastmods = await apiGet('/api/v1/public/menus/latest-by-city', {

@@ -181,7 +181,7 @@ export function formatJson404(pathname) {
       status: 404,
       headers: {
         'Content-Type': 'application/json; charset=utf-8',
-        'Cache-Control': 'private, no-cache, no-store, max-age=0',
+        'Cache-Control': 'public, max-age=300, s-maxage=600',
         Vary: 'Accept'
       }
     }

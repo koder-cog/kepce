@@ -41,6 +41,8 @@ pub struct DishVoteStats {
 
 pub struct MenuService;
 
+pub const KEPCE_ATTRIBUTION: &str = "https://kepce.org - Veriler FSEK Ek Madde 8 ve TTK Madde 55 uyarınca kaynak belirtilerek kullanılabilir.";
+
 impl MenuService {
     /// Şehir parametresini hem plaka ID (örn: 34) hem de slug (örn: istanbul) üzerinden çözer.
     pub async fn resolve_city(
@@ -479,6 +481,7 @@ impl MenuService {
             calorie_range_min: menu.calorie_range_min,
             calorie_range_max: menu.calorie_range_max,
             calculated_calories,
+            attribution: Some(KEPCE_ATTRIBUTION.to_string()),
         })
     }
 
@@ -828,6 +831,7 @@ impl MenuService {
                 calorie_range_min: menu.calorie_range_min,
                 calorie_range_max: menu.calorie_range_max,
                 calculated_calories,
+                attribution: Some(KEPCE_ATTRIBUTION.to_string()),
             });
         }
 
@@ -1223,6 +1227,7 @@ impl MenuService {
                     calorie_range_min: menu.calorie_range_min,
                     calorie_range_max: menu.calorie_range_max,
                     calculated_calories,
+                    attribution: Some(KEPCE_ATTRIBUTION.to_string()),
                 });
             } else {
                 // Şehir kaydı bulunamayan menü yanıttan çıkarılsa da düzleştirilmiş dizi indekslerinin senkron kalması için sayaçlar ilerletilir.

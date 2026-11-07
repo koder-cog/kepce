@@ -51,6 +51,8 @@ pub struct MenuResponseDto {
     pub calorie_range_max: Option<i32>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub calculated_calories: Option<i32>, // Yemeklerin estimated_calories toplamı
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attribution: Option<String>,
 }
 
 /// Al Götür paketinin detayı
@@ -149,6 +151,7 @@ mod tests {
             calorie_range_min: Some(1100),
             calorie_range_max: Some(1500),
             calculated_calories: None,
+            attribution: None,
         };
 
         let json_str = serde_json::to_string(&dto).expect("JSON serialize edilmeli");

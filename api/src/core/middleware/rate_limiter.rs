@@ -277,13 +277,22 @@ pub async fn rate_limit_middleware(
 
     let reject_req = |wait_dur: Duration| -> Response {
         let retry_after = wait_dur.as_secs().max(1);
+        let body_json = serde_json::json!({
+            "error": "too_many_requests",
+            "retry_after_seconds": retry_after,
+            "message": format!(
+                "Hız sınırını aştınız. Lütfen {} saniye sonra tekrar deneyin.",
+                retry_after
+            ),
+            "developer_portal": "https://kepce.org/gelistirici",
+            "rehber": "Otomatik veri çekimi veya botlar için lütfen https://kepce.org/gelistirici üzerinden ücretsiz API anahtarı kullanınız."
+        });
         Response::builder()
             .status(StatusCode::TOO_MANY_REQUESTS)
+            .header(axum::http::header::CONTENT_TYPE, "application/json")
             .header(axum::http::header::RETRY_AFTER, retry_after)
-            .body(Body::from(format!(
-                "Too Many Requests. Lütfen {} saniye sonra tekrar deneyin.",
-                retry_after
-            )))
+            .header("X-Developer-Portal", "https://kepce.org/gelistirici")
+            .body(Body::from(body_json.to_string()))
             .unwrap()
     };
 
